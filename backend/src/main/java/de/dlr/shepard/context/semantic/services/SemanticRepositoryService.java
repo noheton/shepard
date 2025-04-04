@@ -1,7 +1,9 @@
 package de.dlr.shepard.context.semantic.services;
 
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.semantic.SemanticRepositoryConnectorFactory;
@@ -18,42 +20,42 @@ import java.util.List;
 @RequestScoped
 public class SemanticRepositoryService {
 
-  private SemanticRepositoryDAO semanticRepositoryDAO;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
-
-  SemanticRepositoryService() {}
+  @Inject
+  SemanticRepositoryDAO semanticRepositoryDAO;
 
   @Inject
-  public SemanticRepositoryService(
-    SemanticRepositoryDAO semanticRepositoryDAO,
-    UserDAO userDAO,
-    DateHelper dateHelper,
-    SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory
-  ) {
-    this.semanticRepositoryDAO = semanticRepositoryDAO;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.semanticRepositoryConnectorFactory = semanticRepositoryConnectorFactory;
-  }
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
 
   public List<SemanticRepository> getAllRepositories(QueryParamHelper params) {
     var repositories = semanticRepositoryDAO.findAllSemanticRepositories(params);
     return repositories;
   }
 
+  /**
+   * Returns a semantic repository by Id
+   * @param id
+   * @return SemanticRepository
+   * @throws InvalidPathException if repository could not be found
+   */
   public SemanticRepository getRepository(long id) {
     var repository = semanticRepositoryDAO.findByNeo4jId(id);
     if (repository == null || repository.isDeleted()) {
-      Log.errorf("Semantic Repository with id %s is null or deleted", id);
-      return null;
+      String errorMsg = String.format("ID ERROR - Semantic Repository with id %s is null or deleted", id);
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+
     return repository;
   }
 
-  public SemanticRepository createRepository(SemanticRepositoryIO repositoryIO, String username) {
-    var user = userDAO.find(username);
+  public SemanticRepository createRepository(SemanticRepositoryIO repositoryIO) {
+    User user = userService.getCurrentUser();
     var toCreate = new SemanticRepository();
     validateRepository(repositoryIO);
 
@@ -67,17 +69,20 @@ public class SemanticRepositoryService {
     return created;
   }
 
-  public boolean deleteRepository(long repositoryId, String username) {
-    var user = userDAO.find(username);
-    var repositoy = semanticRepositoryDAO.findByNeo4jId(repositoryId);
-    if (repositoy == null) {
-      return false;
-    }
-    repositoy.setDeleted(true);
-    repositoy.setUpdatedAt(dateHelper.getDate());
-    repositoy.setUpdatedBy(user);
-    semanticRepositoryDAO.createOrUpdate(repositoy);
-    return true;
+  /**
+   * Deletes a semantic repository by Id
+   *
+   * @param repositoryId
+   * @throws InvalidPathException if repository with repositoryId does not exist
+   */
+  public void deleteRepository(long repositoryId) {
+    SemanticRepository repository = getRepository(repositoryId);
+
+    User user = userService.getCurrentUser();
+    repository.setDeleted(true);
+    repository.setUpdatedAt(dateHelper.getDate());
+    repository.setUpdatedBy(user);
+    semanticRepositoryDAO.createOrUpdate(repository);
   }
 
   private void validateRepository(SemanticRepositoryIO repository) {

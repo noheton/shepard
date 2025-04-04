@@ -1,11 +1,14 @@
 package de.dlr.shepard.data.structureddata.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.data.IContainerService;
+import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
@@ -18,30 +21,22 @@ import java.util.List;
 
 @RequestScoped
 public class StructuredDataContainerService
-  implements IContainerService<StructuredDataContainer, StructuredDataContainerIO> {
-
-  private StructuredDataContainerDAO structuredDataContainerDAO;
-  private StructuredDataService structuredDataService;
-  private PermissionsService permissionsService;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-
-  StructuredDataContainerService() {}
+  extends AbstractContainerService<StructuredDataContainer, StructuredDataContainerIO> {
 
   @Inject
-  public StructuredDataContainerService(
-    StructuredDataContainerDAO structuredDataContainerDAO,
-    StructuredDataService structuredDataService,
-    PermissionsService permissionsService,
-    UserDAO userDAO,
-    DateHelper dateHelper
-  ) {
-    this.structuredDataContainerDAO = structuredDataContainerDAO;
-    this.structuredDataService = structuredDataService;
-    this.permissionsService = permissionsService;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-  }
+  StructuredDataContainerDAO structuredDataContainerDAO;
+
+  @Inject
+  StructuredDataService structuredDataService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
 
   /**
    * Creates a StructuredDataContainer and stores it in Neo4J
@@ -51,13 +46,14 @@ public class StructuredDataContainerService
    * @return the created StructuredDataContainer
    */
   @Override
-  public StructuredDataContainer createContainer(StructuredDataContainerIO structuredDataContainerIO, String username) {
-    var user = userDAO.find(username);
-    String mongoid = structuredDataService.createStructuredDataContainer();
+  public StructuredDataContainer createContainer(StructuredDataContainerIO structuredDataContainerIO) {
+    User user = userService.getCurrentUser();
+    String mongoId = structuredDataService.createStructuredDataContainer();
+
     var toCreate = new StructuredDataContainer();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
-    toCreate.setMongoId(mongoid);
+    toCreate.setMongoId(mongoId);
     toCreate.setName(structuredDataContainerIO.getName());
 
     var created = structuredDataContainerDAO.createOrUpdate(toCreate);
@@ -75,9 +71,11 @@ public class StructuredDataContainerService
   public StructuredDataContainer getContainer(long id) {
     StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(id);
     if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      Log.errorf("Structured Data Container with id %s is null or deleted", id);
-      return null;
+      String errorMsg = String.format("ID ERROR - Structured Data Container with id %s is null or deleted", id);
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+    assertIsAllowedToReadContainer(id);
     return structuredDataContainer;
   }
 
@@ -89,8 +87,9 @@ public class StructuredDataContainerService
    * @return a list of StructuredDataContainers
    */
   @Override
-  public List<StructuredDataContainer> getAllContainers(QueryParamHelper params, String username) {
-    var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params, username);
+  public List<StructuredDataContainer> getAllContainers(QueryParamHelper params) {
+    User user = userService.getCurrentUser();
+    var containers = structuredDataContainerDAO.findAllStructuredDataContainers(params, user.getUsername());
     return containers;
   }
 
@@ -101,20 +100,21 @@ public class StructuredDataContainerService
    * @param username         identifies the deleting user
    * @return a boolean to determine if StructuredDataContainer was successfully
    *         deleted
+   * @throws InvalidRequestException If StructuredDataContainer could not be deleted
    */
   @Override
-  public boolean deleteContainer(long structuredDataId, String username) {
-    var user = userDAO.find(username);
-    StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataId);
-    if (structuredDataContainer == null) {
-      return false;
-    }
-    String mongoid = structuredDataContainer.getMongoId();
+  public void deleteContainer(long structuredDataId) {
+    StructuredDataContainer structuredDataContainer = getContainer(structuredDataId);
+    assertIsAllowedToEditContainer(structuredDataId);
+
+    User user = userService.getCurrentUser();
+    String mongoId = structuredDataContainer.getMongoId();
     structuredDataContainer.setDeleted(true);
     structuredDataContainer.setUpdatedAt(dateHelper.getDate());
     structuredDataContainer.setUpdatedBy(user);
     structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
-    return structuredDataService.deleteStructuredDataContainer(mongoid);
+
+    structuredDataService.deleteStructuredDataContainer(mongoId);
   }
 
   /**
@@ -125,16 +125,11 @@ public class StructuredDataContainerService
    * @return StructuredData with the new oid
    */
   public StructuredData createStructuredData(long structuredDataContainerID, StructuredDataPayload payload) {
-    var structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataContainerID);
-    if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      Log.errorf("Structured Data Container with id %s is null or deleted", structuredDataContainerID);
-      return null;
-    }
-    var result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
-    if (result == null) {
-      Log.error("Failed to create structured data");
-      return null;
-    }
+    StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    assertIsAllowedToEditContainer(structuredDataContainerID);
+
+    StructuredData result = structuredDataService.createStructuredData(structuredDataContainer.getMongoId(), payload);
+
     structuredDataContainer.addStructuredData(result);
     structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
     return result;
@@ -149,13 +144,9 @@ public class StructuredDataContainerService
    * @return StructuredDataPayload
    */
   public StructuredDataPayload getStructuredData(long structuredDataContainerID, String oid) {
-    var structuredDataContainer = structuredDataContainerDAO.findLightByNeo4jId(structuredDataContainerID);
-    if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      Log.errorf("Structured Data Container with id %s is null or deleted", structuredDataContainerID);
-      return null;
-    }
-    var result = structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);
-    return result;
+    StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+
+    return structuredDataService.getPayload(structuredDataContainer.getMongoId(), oid);
   }
 
   /**
@@ -164,21 +155,19 @@ public class StructuredDataContainerService
    * @param structuredDataContainerID identifies the container
    * @param oid                       identifies the structured data within the
    *                                  container
-   * @return Whether the deletion was successful or not
    */
-  public boolean deleteStructuredData(long structuredDataContainerID, String oid) {
-    var structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(structuredDataContainerID);
-    if (structuredDataContainer == null || structuredDataContainer.isDeleted()) return false;
-    var result = structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);
-    if (result) {
-      var newStructuredDatas = structuredDataContainer
-        .getStructuredDatas()
-        .stream()
-        .filter(f -> !f.getOid().equals(oid))
-        .toList();
-      structuredDataContainer.setStructuredDatas(newStructuredDatas);
-      structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
-    }
-    return result;
+  public void deleteStructuredData(long structuredDataContainerID, String oid) {
+    StructuredDataContainer structuredDataContainer = getContainer(structuredDataContainerID);
+    assertIsAllowedToEditContainer(structuredDataContainerID);
+
+    structuredDataService.deletePayload(structuredDataContainer.getMongoId(), oid);
+
+    List<StructuredData> newStructuredDatas = structuredDataContainer
+      .getStructuredDatas()
+      .stream()
+      .filter(f -> !f.getOid().equals(oid))
+      .toList();
+    structuredDataContainer.setStructuredDatas(newStructuredDatas);
+    structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
   }
 }

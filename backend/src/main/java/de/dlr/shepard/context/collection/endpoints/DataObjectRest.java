@@ -40,17 +40,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class DataObjectRest {
 
-  private DataObjectService dataObjectService;
+  @Inject
+  DataObjectService dataObjectService;
 
   @Context
   private SecurityContext securityContext;
-
-  DataObjectRest() {}
-
-  @Inject
-  public DataObjectRest(DataObjectService dataObjectService) {
-    this.dataObjectService = dataObjectService;
-  }
 
   @GET
   @Tag(name = Constants.DATA_OBJECT)
@@ -140,11 +134,7 @@ public class DataObjectRest {
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
     ) @Valid DataObjectIO dataObject
   ) {
-    DataObject newDataObject = dataObjectService.createDataObject(
-      collectionId,
-      dataObject,
-      securityContext.getUserPrincipal().getName()
-    );
+    DataObject newDataObject = dataObjectService.createDataObject(collectionId, dataObject);
     return Response.ok(new DataObjectIO(newDataObject)).status(Status.CREATED).build();
   }
 
@@ -169,15 +159,7 @@ public class DataObjectRest {
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
     ) @Valid DataObjectIO dataObject
   ) {
-    DataObject updatedDataObject = dataObjectService.updateDataObject(
-      collectionId,
-      dataObjectId,
-      dataObject,
-      securityContext.getUserPrincipal().getName()
-    );
-    if (updatedDataObject == null) {
-      return Response.status(Status.NOT_FOUND).build();
-    }
+    DataObject updatedDataObject = dataObjectService.updateDataObject(collectionId, dataObjectId, dataObject);
     return Response.ok(new DataObjectIO(updatedDataObject)).build();
   }
 
@@ -194,8 +176,7 @@ public class DataObjectRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
   ) {
-    return dataObjectService.deleteDataObject(collectionId, dataObjectId, securityContext.getUserPrincipal().getName())
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    dataObjectService.deleteDataObject(collectionId, dataObjectId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

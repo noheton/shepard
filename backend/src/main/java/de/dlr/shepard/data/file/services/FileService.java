@@ -14,6 +14,8 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.xml.bind.DatatypeConverter;
 import java.io.InputStream;
 import java.security.DigestInputStream;
@@ -36,16 +38,11 @@ public class FileService {
   @Named("mongoDatabase")
   MongoDatabase mongoDatabase;
 
-  private UUIDHelper uuidHelper;
-  private DateHelper dateHelper;
-
-  FileService() {}
+  @Inject
+  UUIDHelper uuidHelper;
 
   @Inject
-  public FileService(UUIDHelper uuidHelper, DateHelper dateHelper) {
-    this.uuidHelper = uuidHelper;
-    this.dateHelper = dateHelper;
-  }
+  DateHelper dateHelper;
 
   public String createFileContainer() {
     String oid = "FileContainer" + uuidHelper.getUUID().toString();
@@ -53,22 +50,33 @@ public class FileService {
     return oid;
   }
 
-  public ShepardFile createFile(String mongoid, String fileName, InputStream inputStream) {
+  /**
+   * Creates a new file in file container
+   *
+   * @param mongoId
+   * @param fileName
+   * @param inputStream
+   * @return ShepardFile
+   */
+  public ShepardFile createFile(String mongoId, String fileName, InputStream inputStream) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDatabase.getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", mongoid);
-      return null;
+      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
 
     MessageDigest md;
     try {
       md = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
-      Log.error("No Such Algorithm while uploading file");
-      return null;
+      String errorMsg = "No Such Algorithm while uploading file";
+      Log.error(errorMsg);
+      throw new InternalServerErrorException(errorMsg);
     }
+
     DigestInputStream dis = new DigestInputStream(inputStream, md);
     String fileMongoId = createBucket()
       .withChunkSizeBytes(CHUNK_SIZE_BYTES)
@@ -81,19 +89,29 @@ public class FileService {
     return file;
   }
 
-  public NamedInputStream getPayload(String containerId, String fileoid) {
+  /**
+   * Returns the payload as an InputStream for a given file.
+   *
+   * @param containerId
+   * @param fileOid
+   * @return NamedInputStream
+   * @throws NotFoundException if container could not be found by MongoId or document could be found by Oid
+   */
+  public NamedInputStream getPayload(String containerId, String fileOid) {
     MongoCollection<Document> collection;
     try {
       collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", containerId);
-      return null;
+      String errorMsg = String.format("Could not find container with mongoId: %s", containerId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
-    var oid = new ObjectId(fileoid);
+    var oid = new ObjectId(fileOid);
     var payloadDocument = collection.find(eq(ID_ATTR, oid)).first();
     if (payloadDocument == null) {
-      Log.errorf("Could not find document with oid: %s", fileoid);
-      return null;
+      String errorMsg = String.format("Could not find document with oid: %s", fileOid);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     var fileId = new ObjectId(payloadDocument.getString(FILEID_ATTR));
     var filename = payloadDocument.getString(FILENAME_ATTR);
@@ -101,57 +119,73 @@ public class FileService {
     var gridFsFile = gridBucket.find(eq(ID_ATTR, fileId)).first();
     var inputStream = gridBucket.openDownloadStream(fileId);
 
-    return new NamedInputStream(fileoid, inputStream, filename, gridFsFile.getLength());
+    return new NamedInputStream(fileOid, inputStream, filename, gridFsFile.getLength());
   }
 
-  public ShepardFile getFile(String containerId, String fileoid) {
+  /**
+   * Returns a ShepardFile for a given container and oid
+   *
+   * @param containerId
+   * @param fileOid
+   * @return ShepardFile
+   * @throws NotFoundException if container could not be found by MongoId or file could be found by Oid
+   */
+  public ShepardFile getFile(String containerId, String fileOid) {
     MongoCollection<Document> collection;
     try {
       collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", containerId);
-      return null;
+      String errorMsg = String.format("Could not find container with mongoId: %s", containerId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
-    var doc = collection.find(eq(ID_ATTR, new ObjectId(fileoid))).first();
+    var doc = collection.find(eq(ID_ATTR, new ObjectId(fileOid))).first();
     if (doc == null) {
-      Log.errorf("Could not find file with oid: %s", fileoid);
-      return null;
+      String errorMsg = String.format("Could not find file with oid: %s", fileOid);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     return toShepardFile(doc);
   }
 
-  public boolean deleteFileContainer(String mongoid) {
+  /**
+   *
+   * @param mongoId
+   * @throws NotFoundException if deleting container fails
+   */
+  public void deleteFileContainer(String mongoId) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoDatabase.getCollection(mongoid);
+      toDelete = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not delete container with mongoid: %s", mongoid);
-      return false;
+      String errorMsg = String.format("Could not delete container with mongoid: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     GridFSBucket gridBucket = createBucket();
     for (Document doc : toDelete.find()) {
       gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
     }
     toDelete.drop();
-    return true;
   }
 
-  public boolean deleteFile(String mongoId, String fileoid) {
+  public void deleteFile(String mongoId, String fileOid) {
     MongoCollection<Document> collection;
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", mongoId);
-      return false;
+      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
-    var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(fileoid)));
+    var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(fileOid)));
     if (doc == null) {
-      Log.warnf("Could not find and delete file with oid: %s", fileoid);
-      return true;
+      String errorMsg = String.format("Could not find and delete file with oid: %s", fileOid);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     var gridBucket = createBucket();
     gridBucket.delete(new ObjectId(doc.getString(FILEID_ATTR)));
-    return true;
   }
 
   private static ShepardFile toShepardFile(Document doc) {

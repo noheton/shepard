@@ -3,60 +3,86 @@ package de.dlr.shepard.auth.apikey.services;
 import de.dlr.shepard.auth.apikey.daos.ApiKeyDAO;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.io.ApiKeyIO;
-import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 @RequestScoped
 public class ApiKeyService {
 
-  private ApiKeyDAO apiKeyDAO;
-
-  private UserDAO userDAO;
-
-  private DateHelper dateHelper;
-
-  private PKIHelper pkiHelper;
-
-  ApiKeyService() {}
+  @Inject
+  ApiKeyDAO apiKeyDAO;
 
   @Inject
-  ApiKeyService(ApiKeyDAO apiKeyDao, UserDAO userDao, DateHelper dateHelper, PKIHelper pkiHelper) {
-    this.apiKeyDAO = apiKeyDao;
-    this.userDAO = userDao;
-    this.dateHelper = dateHelper;
-    this.pkiHelper = pkiHelper;
-  }
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  PKIHelper pkiHelper;
 
   /**
    * Searches the neo4j database for all ApiKeys associated with a given user.
    *
    * @param username Identifies the associated user
    * @return The list of ApiKeys associated with the given user
+   * @throws InvalidPathException if the user of this name does not exist
+   * @throws InvalidAuthException if the username does not match the user making the request
    */
   public List<ApiKey> getAllApiKeys(String username) {
-    User user = userDAO.find(username);
-    if (user != null) {
-      return user.getApiKeys();
-    }
-    return Collections.emptyList();
+    userService.assertCurrentUserEquals(username);
+    User user = userService.getUser(username);
+    return user.getApiKeys();
   }
 
   /**
    * Searches the neo4j database for an ApiKey
    *
+   * @param username of the user owning the api key
+   * @param apiKeyUid Identifies the ApiKey to be searched
+   * @return The ApiKey with the given uid or null
+   * @throws InvalidPathException if the ApiKey or the user of this name does not exist
+   * @throws InvalidAuthException if the username does not match the user making the request or the ApiKey does not belong to the user
+   */
+  public ApiKey getApiKey(String username, UUID apiKeyUid) {
+    userService.getUser(username);
+    userService.assertCurrentUserEquals(username);
+
+    ApiKey requestedKey = apiKeyDAO.find(apiKeyUid);
+
+    if (requestedKey == null) {
+      throw new InvalidPathException("ID ERROR - ApiKey does not exist");
+    }
+    if (!requestedKey.getBelongsTo().getUsername().equals(username)) {
+      throw new InvalidAuthException("You do not have permissions for this ApiKey.");
+    }
+
+    return apiKeyDAO.find(apiKeyUid);
+  }
+
+  /**
+   * Searches the neo4j database for an ApiKey.
+   *
    * @param apiKeyUid Identifies the ApiKey to be searched
    * @return The ApiKey with the given uid or null
    */
   public ApiKey getApiKey(UUID apiKeyUid) {
-    return apiKeyDAO.find(apiKeyUid);
+    ApiKey requestedKey = apiKeyDAO.find(apiKeyUid);
+
+    if (requestedKey == null) {
+      throw new InvalidPathException("ID ERROR - ApiKey does not exist");
+    }
+
+    return requestedKey;
   }
 
   /**
@@ -66,9 +92,12 @@ public class ApiKeyService {
    * @param username The user who wants to create an apiKey
    * @param baseUri  The current Uri
    * @return The created ApiKey
+   * @throws InvalidPathException if the user of this name does not exist
+   * @throws InvalidAuthException if the username does not match the user making the request
    */
   public ApiKey createApiKey(ApiKeyIO apiKey, String username, String baseUri) {
-    var user = userDAO.find(username);
+    var user = userService.getUser(username);
+    userService.assertCurrentUserEquals(username);
 
     var toCreate = new ApiKey();
     toCreate.setBelongsTo(user);
@@ -85,8 +114,13 @@ public class ApiKeyService {
    *
    * @param apiKeyUid Identifies the ApiKey to be deleted
    * @return A boolean to identify whether the ApiKey was successfully removed
+   * @throws InvalidPathException if the ApiKey or the user of this name does not exist
+   * @throws InvalidAuthException if the username does not match the user making the request or the ApiKey does not belong to the user
    */
-  public boolean deleteApiKey(UUID apiKeyUid) {
+  public boolean deleteApiKey(String username, UUID apiKeyUid) {
+    userService.assertCurrentUserEquals(username);
+    getApiKey(username, apiKeyUid);
+
     return apiKeyDAO.delete(apiKeyUid);
   }
 

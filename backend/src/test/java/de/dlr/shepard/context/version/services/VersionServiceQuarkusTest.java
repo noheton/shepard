@@ -3,6 +3,8 @@ package de.dlr.shepard.context.version.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -60,6 +62,9 @@ public class VersionServiceQuarkusTest {
   UserService userService;
 
   @Inject
+  AuthenticationContext authenticationContext;
+
+  @Inject
   TimeseriesService timeseriesService;
 
   @Inject
@@ -105,7 +110,8 @@ public class VersionServiceQuarkusTest {
   public void setUp() {
     if (user == null) {
       User user = new User(username);
-      userService.createUser(user);
+      userService.createOrUpdateUser(user);
+      authenticationContext.setPrincipal(new JWTPrincipal(username, "key"));
     }
   }
 
@@ -150,51 +156,59 @@ public class VersionServiceQuarkusTest {
   private Collection createCollection(String name) {
     CollectionIO cIO = new CollectionIO();
     cIO.setName(name);
-    return collectionService.createCollection(cIO, username);
+    return collectionService.createCollection(cIO);
   }
 
-  private StructuredDataReference createStructuredDataReference(String name, DataObject referencingDataObject) {
+  private StructuredDataReference createStructuredDataReference(
+    long collectionId,
+    String name,
+    DataObject referencingDataObject
+  ) {
     StructuredDataContainerIO containerIO = new StructuredDataContainerIO();
     containerIO.setName(name + "Container");
-    StructuredDataContainer container = structuredDataContainerService.createContainer(containerIO, username);
+    StructuredDataContainer container = structuredDataContainerService.createContainer(containerIO);
     StructuredDataReferenceIO referenceIO = new StructuredDataReferenceIO();
     referenceIO.setName(name);
     referenceIO.setStructuredDataContainerId(container.getId());
     String[] OIDs = {};
     referenceIO.setStructuredDataOids(OIDs);
-    return structuredDataReferenceService.createReferenceByShepardId(
+    return structuredDataReferenceService.createReference(
+      collectionId,
       referencingDataObject.getShepardId(),
-      referenceIO,
-      username
+      referenceIO
     );
   }
 
-  private TimeseriesReference createTimeseriesReference(String name, DataObject referencingDataObject) {
+  private TimeseriesReference createTimeseriesReference(
+    long collectionShepardId,
+    String name,
+    DataObject referencingDataObject
+  ) {
     TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
     containerIO.setName(name + "Container");
-    TimeseriesContainer container = timeseriesContainerService.createContainer(containerIO.getName(), username);
+    TimeseriesContainer container = timeseriesContainerService.createContainer(containerIO);
     TimeseriesReferenceIO referenceIO = new TimeseriesReferenceIO();
     referenceIO.setName(name);
     referenceIO.setTimeseriesContainerId(container.getId());
     List<Timeseries> timeseries = new ArrayList<Timeseries>();
     referenceIO.setTimeseries(timeseries);
-    return timeseriesReferenceService.createReferenceByShepardId(
+    return timeseriesReferenceService.createReference(
+      collectionShepardId,
       referencingDataObject.getShepardId(),
-      referenceIO,
-      username
+      referenceIO
     );
   }
 
-  private FileReference createFileReference(String name, DataObject referencingDataObject) {
+  private FileReference createFileReference(long collectionShepardId, String name, DataObject referencingDataObject) {
     FileContainerIO containerIO = new FileContainerIO();
     containerIO.setName(name + "Container");
-    FileContainer container = fileContainerService.createContainer(containerIO, username);
+    FileContainer container = fileContainerService.createContainer(containerIO);
     FileReferenceIO referenceIO = new FileReferenceIO();
     referenceIO.setName(name);
     referenceIO.setFileContainerId(container.getId());
     String[] fileOIDs = {};
     referenceIO.setFileOids(fileOIDs);
-    return fileReferenceService.createReferenceByShepardId(referencingDataObject.getShepardId(), referenceIO, username);
+    return fileReferenceService.createReference(collectionShepardId, referencingDataObject.getShepardId(), referenceIO);
   }
 
   private DataObject createDataObject(String name, Collection collection, Long parentId, long[] predecessorIds) {
@@ -202,10 +216,11 @@ public class VersionServiceQuarkusTest {
     dIO.setName(name);
     dIO.setParentId(parentId);
     dIO.setPredecessorIds(predecessorIds);
-    return dataObjectService.createDataObject(collection.getShepardId(), dIO, username);
+    return dataObjectService.createDataObject(collection.getShepardId(), dIO);
   }
 
   private DataObjectReference createDataObjectReference(
+    long collectionId,
     String name,
     DataObject referencingDataObject,
     DataObject referencedDataObject
@@ -213,10 +228,11 @@ public class VersionServiceQuarkusTest {
     DataObjectReferenceIO dorIO = new DataObjectReferenceIO();
     dorIO.setName(name);
     dorIO.setReferencedDataObjectId(referencedDataObject.getShepardId());
-    return dataObjectReferenceService.createReferenceByShepardId(referencingDataObject.getShepardId(), dorIO, username);
+    return dataObjectReferenceService.createReference(collectionId, referencingDataObject.getShepardId(), dorIO);
   }
 
   private CollectionReference createCollectionReference(
+    long collectionId,
     String name,
     DataObject referencingDataObject,
     Collection referencedCollection
@@ -224,7 +240,7 @@ public class VersionServiceQuarkusTest {
     CollectionReferenceIO crIO = new CollectionReferenceIO();
     crIO.setName(name);
     crIO.setReferencedCollectionId(referencedCollection.getShepardId());
-    return collectionReferenceService.createReferenceByShepardId(referencingDataObject.getShepardId(), crIO, username);
+    return collectionReferenceService.createReference(collectionId, referencingDataObject.getShepardId(), crIO);
   }
 
   private Version createVersion(String name, Collection collection) {
@@ -311,14 +327,22 @@ public class VersionServiceQuarkusTest {
   public void createVersion_collectionWithStructuredDataReferences_copiedSuccessfully() {
     Collection collection = createCollection("collection");
     DataObject dataObject = createDataObject("DataObject", collection, null, null);
-    StructuredDataReference reference = createStructuredDataReference("reference", dataObject);
+    StructuredDataReference reference = createStructuredDataReference(
+      collection.getShepardId(),
+      "reference",
+      dataObject
+    );
     Version HEADVersion = collection.getVersion();
     Version version1 = createVersion("version1", collection);
-    StructuredDataReference HEADReference = structuredDataReferenceService.getReferenceByShepardId(
+    StructuredDataReference HEADReference = structuredDataReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       HEADVersion.getUid()
     );
-    StructuredDataReference version1Reference = structuredDataReferenceService.getReferenceByShepardId(
+    StructuredDataReference version1Reference = structuredDataReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       version1.getUid()
     );
@@ -338,14 +362,18 @@ public class VersionServiceQuarkusTest {
   public void createVersion_collectionWithTimeseriesReferences_copiedSuccessfully() {
     Collection collection = createCollection("collection");
     DataObject dataObject = createDataObject("DataObject", collection, null, null);
-    TimeseriesReference reference = createTimeseriesReference("reference", dataObject);
+    TimeseriesReference reference = createTimeseriesReference(collection.getShepardId(), "reference", dataObject);
     Version HEADVersion = collection.getVersion();
     Version version1 = createVersion("version1", collection);
-    TimeseriesReference HEADReference = timeseriesReferenceService.getReferenceByShepardId(
+    TimeseriesReference HEADReference = timeseriesReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       HEADVersion.getUid()
     );
-    TimeseriesReference version1Reference = timeseriesReferenceService.getReferenceByShepardId(
+    TimeseriesReference version1Reference = timeseriesReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       version1.getUid()
     );
@@ -362,14 +390,18 @@ public class VersionServiceQuarkusTest {
   public void createVersion_collectionWithFileReferences_copiedSuccessfully() {
     Collection collection = createCollection("collection");
     DataObject dataObject = createDataObject("DataObject", collection, null, null);
-    FileReference reference = createFileReference("reference", dataObject);
+    FileReference reference = createFileReference(collection.getShepardId(), "reference", dataObject);
     Version HEADVersion = collection.getVersion();
     Version version1 = createVersion("version1", collection);
-    FileReference HEADReference = fileReferenceService.getReferenceByShepardId(
+    FileReference HEADReference = fileReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       HEADVersion.getUid()
     );
-    FileReference version1Reference = fileReferenceService.getReferenceByShepardId(
+    FileReference version1Reference = fileReferenceService.getReference(
+      collection.getShepardId(),
+      dataObject.getShepardId(),
       reference.getShepardId(),
       version1.getUid()
     );
@@ -388,12 +420,15 @@ public class VersionServiceQuarkusTest {
     DataObject dataObject1 = createDataObject("DataObject1", collection1, null, null);
     DataObject dataObject2 = createDataObject("DataObject1", collection1, dataObject1.getShepardId(), null);
     DataObjectReference dataObject1ToDataObject2 = createDataObjectReference(
+      collection1.getShepardId(),
       "dataObject1ToDataObject2",
       dataObject1,
       dataObject2
     );
     Version version1 = createVersion("version1", collection1);
-    DataObjectReference dataObject1ToDataObject2Version1 = dataObjectReferenceService.getReferenceByShepardId(
+    DataObjectReference dataObject1ToDataObject2Version1 = dataObjectReferenceService.getReference(
+      collection1.getShepardId(),
+      dataObject1.getShepardId(),
       dataObject1ToDataObject2.getShepardId(),
       version1.getUid()
     );
@@ -418,6 +453,7 @@ public class VersionServiceQuarkusTest {
     Collection collection2 = createCollection("collection2");
     DataObject collection2DataObject1 = createDataObject("collection2DataObject1", collection2, null, null);
     DataObjectReference collection1DataObject1ToCollection2DataObject1 = createDataObjectReference(
+      collection1.getShepardId(),
       "collection1DataObject1ToCollection2DataObject1",
       collection1DataObject1,
       collection2DataObject1
@@ -444,6 +480,7 @@ public class VersionServiceQuarkusTest {
     Collection referencedCollection = createCollection("referencedCollection");
     DataObject referencingDataObject = createDataObject("referencingDataObject", referencingCollection, null, null);
     CollectionReference collectionReference = createCollectionReference(
+      referencingCollection.getShepardId(),
       "collectionReference",
       referencingDataObject,
       referencedCollection
@@ -473,6 +510,7 @@ public class VersionServiceQuarkusTest {
     Collection referencedCollection = createCollection("referencedCollection");
     DataObject referencingDataObject = createDataObject("referencingDataObject", referencingCollection, null, null);
     CollectionReference collectionReference = createCollectionReference(
+      referencingCollection.getShepardId(),
       "collectionReference",
       referencingDataObject,
       referencedCollection
@@ -497,13 +535,16 @@ public class VersionServiceQuarkusTest {
     Collection collection2 = createCollection("collection2");
     DataObject collection2DataObject1 = createDataObject("collection2DataObject1", collection2, null, null);
     DataObjectReference collection1DataObject1ToCollection2DataObject1 = createDataObjectReference(
+      collection1.getShepardId(),
       "collection1DataObject1ToCollection2DataObject1",
       collection1DataObject1,
       collection2DataObject1
     );
     Version collection1Version1 = createVersion("collection1Version1", collection1);
     DataObjectReference collection1DataObject1ToCollection2DataObject1Version1 =
-      dataObjectReferenceService.getReferenceByShepardId(
+      dataObjectReferenceService.getReference(
+        collection1.getShepardId(),
+        collection1DataObject1.getShepardId(),
         collection1DataObject1ToCollection2DataObject1.getShepardId(),
         collection1Version1.getUid()
       );

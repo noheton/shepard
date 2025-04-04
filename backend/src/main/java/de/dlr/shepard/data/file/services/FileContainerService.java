@@ -1,12 +1,15 @@
 package de.dlr.shepard.data.file.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.data.IContainerService;
+import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
@@ -14,35 +17,28 @@ import de.dlr.shepard.data.file.io.FileContainerIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.InternalServerErrorException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
 @RequestScoped
-public class FileContainerService implements IContainerService<FileContainer, FileContainerIO> {
-
-  private FileContainerDAO fileContainerDAO;
-  private PermissionsService permissionsService;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-  private FileService fileService;
-
-  FileContainerService() {}
+public class FileContainerService extends AbstractContainerService<FileContainer, FileContainerIO> {
 
   @Inject
-  public FileContainerService(
-    FileContainerDAO fileContainerDAO,
-    PermissionsService permissionsService,
-    UserDAO userDAO,
-    DateHelper dateHelper,
-    FileService fileService
-  ) {
-    this.fileContainerDAO = fileContainerDAO;
-    this.permissionsService = permissionsService;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.fileService = fileService;
-  }
+  FileContainerDAO fileContainerDAO;
+
+  @Inject
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  FileService fileService;
+
+  @Inject
+  PermissionsService permissionsService;
 
   /**
    * Creates a FileContainer and stores it in Neo4J
@@ -52,9 +48,9 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    * @return the created FileContainer
    */
   @Override
-  public FileContainer createContainer(FileContainerIO fileContainerIO, String username) {
-    var user = userDAO.find(username);
-    var toCreate = new FileContainer();
+  public FileContainer createContainer(FileContainerIO fileContainerIO) {
+    User user = userService.getCurrentUser();
+    FileContainer toCreate = new FileContainer();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setMongoId(fileService.createFileContainer());
@@ -66,18 +62,23 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
   }
 
   /**
-   * Searches the FileContainer in Neo4j
+   * Gets the FileContainer
    *
    * @param id identifies the searched FileContainer
    * @return the FileContainer with matching id or null
+   * @throws InvalidPathException if the file container cannot be found
+   * @throws InvalidAuthException if user has no read permission on container
    */
   @Override
   public FileContainer getContainer(long id) {
     FileContainer fileContainer = fileContainerDAO.findByNeo4jId(id);
+
     if (fileContainer == null || fileContainer.isDeleted()) {
-      Log.errorf("File Container with id %s is null or deleted", id);
-      return null;
+      String errorMsg = String.format("ID ERROR - File Container with id %s is null or deleted", id);
+      Log.errorf(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+    assertIsAllowedToReadContainer(id);
     return fileContainer;
   }
 
@@ -89,8 +90,9 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    * @return a list of FileContainers
    */
   @Override
-  public List<FileContainer> getAllContainers(QueryParamHelper params, String username) {
-    var containers = fileContainerDAO.findAllFileContainers(params, username);
+  public List<FileContainer> getAllContainers(QueryParamHelper params) {
+    User user = userService.getCurrentUser();
+    List<FileContainer> containers = fileContainerDAO.findAllFileContainers(params, user.getUsername());
     return containers;
   }
 
@@ -99,21 +101,22 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    *
    * @param fileContainerId identifies the FileContainer
    * @param username        the deleting user
-   * @return a boolean to determine if FileContainer was successfully deleted
+   * @throws InvalidPathException if the file container cannot be found
+   * @throws InvalidAuthException if user has no write permission on container
    */
   @Override
-  public boolean deleteContainer(long fileContainerId, String username) {
-    var user = userDAO.find(username);
-    FileContainer fileContainer = fileContainerDAO.findByNeo4jId(fileContainerId);
-    if (fileContainer == null) {
-      return false;
-    }
-    String mongoid = fileContainer.getMongoId();
+  public void deleteContainer(long fileContainerId) {
+    User user = userService.getCurrentUser();
+    FileContainer fileContainer = getContainer(fileContainerId);
+
+    assertIsAllowedToEditContainer(fileContainerId);
+
+    String mongoId = fileContainer.getMongoId();
     fileContainer.setDeleted(true);
     fileContainer.setUpdatedAt(dateHelper.getDate());
     fileContainer.setUpdatedBy(user);
     fileContainerDAO.createOrUpdate(fileContainer);
-    return fileService.deleteFileContainer(mongoid);
+    fileService.deleteFileContainer(mongoId);
   }
 
   /**
@@ -122,15 +125,13 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    * @param fileContainerId The container to get the payload from
    * @param oid             The specific file
    * @return a NamedInputStream
+   * @throws InvalidPathException if the file container cannot be found
+   * @throws InvalidAuthException if user has no read permission on container
    */
   public NamedInputStream getFile(long fileContainerId, String oid) {
-    var container = fileContainerDAO.findLightByNeo4jId(fileContainerId);
-    if (container == null || container.isDeleted()) {
-      Log.errorf("File Container with id %s is null or deleted", fileContainerId);
-      return null;
-    }
-    var result = fileService.getPayload(container.getMongoId(), oid);
-    return result;
+    FileContainer container = getContainer(fileContainerId);
+
+    return fileService.getPayload(container.getMongoId(), oid);
   }
 
   /**
@@ -140,23 +141,22 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    * @param fileName        the name of the new file
    * @param inputStream     the file itself
    * @return The newly created file
+   * @throws InternalServerErrorException if file creation fails
+   * @throws InvalidPathException if the file container cannot be found
+   * @throws InvalidAuthException if user has no read or write permission on container
    */
   public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
-    var fileContainer = fileContainerDAO.findByNeo4jId(fileContainerId);
-    if (fileContainer == null || fileContainer.isDeleted()) {
-      Log.errorf("File Container with id %s is null or deleted", fileContainerId);
-      return null;
-    }
+    FileContainer fileContainer = getContainer(fileContainerId);
+    assertIsAllowedToEditContainer(fileContainerId);
+
     if (fileName == null || fileName.isBlank()) {
       var sdf = new SimpleDateFormat("yyyyMMdd-HHmmss");
       var dateStr = sdf.format(dateHelper.getDate());
       fileName = "shepard-file-" + dateStr;
     }
-    var result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
-    if (result == null) {
-      Log.error("Failed to create shepard file");
-      return null;
-    }
+
+    ShepardFile result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+
     fileContainer.addFile(result);
     fileContainerDAO.createOrUpdate(fileContainer);
     return result;
@@ -167,17 +167,16 @@ public class FileContainerService implements IContainerService<FileContainer, Fi
    *
    * @param fileContainerId The container to get the payload from
    * @param oid             The specific file
-   * @return Whether the deletion was successful or not
+   
    */
-  public boolean deleteFile(long fileContainerId, String oid) {
-    var container = fileContainerDAO.findByNeo4jId(fileContainerId);
-    if (container == null || container.isDeleted()) return false;
-    var result = fileService.deleteFile(container.getMongoId(), oid);
-    if (result) {
-      var newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
-      container.setFiles(newFiles);
-      fileContainerDAO.createOrUpdate(container);
-    }
-    return result;
+  public void deleteFile(long fileContainerId, String oid) {
+    FileContainer container = getContainer(fileContainerId);
+    assertIsAllowedToEditContainer(fileContainerId);
+
+    fileService.deleteFile(container.getMongoId(), oid);
+
+    List<ShepardFile> newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
+    container.setFiles(newFiles);
+    fileContainerDAO.createOrUpdate(container);
   }
 }

@@ -49,19 +49,14 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @RequestScoped
 public class FileRest {
 
-  private FileContainerService fileContainerService;
-  private PermissionsService permissionsService;
+  @Inject
+  FileContainerService fileContainerService;
+
+  @Inject
+  PermissionsService permissionsService;
 
   @Context
   private SecurityContext securityContext;
-
-  FileRest() {}
-
-  @Inject
-  public FileRest(FileContainerService fileContainerService, PermissionsService permissionsService) {
-    this.fileContainerService = fileContainerService;
-    this.permissionsService = permissionsService;
-  }
 
   @GET
   @Tag(name = Constants.FILE_CONTAINER)
@@ -88,7 +83,7 @@ public class FileRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var containers = fileContainerService.getAllContainers(params, securityContext.getUserPrincipal().getName());
+    var containers = fileContainerService.getAllContainers(params);
     var result = new ArrayList<FileContainerIO>(containers.size());
     for (var container : containers) {
       result.add(new FileContainerIO(container));
@@ -127,7 +122,7 @@ public class FileRest {
       content = @Content(schema = @Schema(implementation = FileContainerIO.class))
     ) @Valid FileContainerIO fileContainer
   ) {
-    var result = fileContainerService.createContainer(fileContainer, securityContext.getUserPrincipal().getName());
+    var result = fileContainerService.createContainer(fileContainer);
     return Response.ok(new FileContainerIO(result)).status(Status.CREATED).build();
   }
 
@@ -140,8 +135,8 @@ public class FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var result = fileContainerService.deleteContainer(fileContainerId, securityContext.getUserPrincipal().getName());
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    fileContainerService.deleteContainer(fileContainerId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -181,12 +176,10 @@ public class FileRest {
     @PathParam(Constants.OID) String oid
   ) {
     var payload = fileContainerService.getFile(fileContainerId, oid);
-    return payload != null
-      ? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
-        .header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
-        .header("Content-Length", payload.getSize())
-        .build()
-      : Response.status(Status.NOT_FOUND).build();
+    return Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
+      .header("Content-Length", payload.getSize())
+      .build();
   }
 
   @DELETE
@@ -202,8 +195,8 @@ public class FileRest {
     @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
     @PathParam(Constants.OID) String oid
   ) {
-    var result = fileContainerService.deleteFile(fileContainerId, oid);
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    fileContainerService.deleteFile(fileContainerId, oid);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @POST
@@ -269,8 +262,8 @@ public class FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var perms = permissionsService.getPermissionsOfEntity(fileContainerId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = fileContainerService.getContainerPermissions(fileContainerId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @PUT
@@ -291,8 +284,8 @@ public class FileRest {
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
-    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, fileContainerId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = fileContainerService.updateContainerPermissions(permissions, fileContainerId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @GET
@@ -307,7 +300,7 @@ public class FileRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
-    var roles = permissionsService.getUserRolesOnEntity(fileContainerId, securityContext.getUserPrincipal().getName());
-    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+    var roles = fileContainerService.getContainerRoles(fileContainerId);
+    return Response.ok(roles).build();
   }
 }

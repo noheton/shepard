@@ -9,6 +9,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -24,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -58,6 +60,9 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
 
   @Mock
   private LabJournalEntryService labJournalEntryService;
+
+  @Mock
+  private PermissionLastSeenCache permissionLastSeenCache;
 
   @InjectMocks
   private PermissionsService permissionsService;
@@ -114,7 +119,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     when(idSeg.getPath()).thenReturn("abc");
     when(uriInfo.getPathSegments()).thenReturn(List.of(rootSeg, idSeg));
     var actual = permissionsService.isAllowed(request, AccessType.Write, "principal");
-    assertFalse(actual);
+    assertTrue(actual);
   }
 
   @Test
@@ -159,7 +164,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     when(idSeg.getPath()).thenReturn("different");
 
     var actual = permissionsService.isAllowed(request, AccessType.Read, "principal");
-    assertFalse(actual);
+    assertTrue(actual);
   }
 
   @Test
@@ -284,8 +289,9 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
         setWriterGroups(writerGroups);
       }
     };
-    when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
+    when(userGroupService.getUserGroupOptional(35L)).thenReturn(Optional.of(writerGroup));
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
+
     assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Write, "principal"));
   }
 
@@ -324,7 +330,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
         setReaderGroups(readerGroups);
       }
     };
-    when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
+    when(userGroupService.getUserGroupOptional(35L)).thenReturn(Optional.of(readerGroup));
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
     assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Read, "principal"));
   }

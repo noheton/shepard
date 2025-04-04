@@ -1,9 +1,8 @@
 package de.dlr.shepard.context.references.structureddata.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -11,10 +10,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
@@ -30,10 +32,12 @@ import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
+import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -70,15 +74,40 @@ public class StructuredDataReferenceServiceTest {
   @InjectMock
   PermissionsService permissionsService;
 
+  @InjectMock
+  AuthenticationContext authenticationContext;
+
+  @InjectMock
+  UserService userService;
+
   @Inject
   StructuredDataReferenceService service;
 
+  @Inject
+  StructuredDataContainerService structuredDataContainerService;
+
+  private final long collectionId = 14123L;
+  private final User user = new User("Testuser");
+
   @Test
   public void getStructuredDataReferenceByShepardIdTest_successful() {
+    DataObject dataObject = new DataObject(123L);
+    dataObject.setShepardId(321L);
+
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    StructuredDataReference actual = service.getReference(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId(),
+      null
+    );
     assertEquals(ref, actual);
   }
 
@@ -86,8 +115,8 @@ public class StructuredDataReferenceServiceTest {
   public void getStructuredDataReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    StructuredDataReference actual = service.getReferenceByShepardId(shepardId, null);
-    assertNull(actual);
+    var ex = assertThrows(InvalidPathException.class, () -> service.getReference(collectionId, 312L, shepardId, null));
+    assertEquals(ex.getMessage(), "ID ERROR - Structured Data Reference with id 15 is null or deleted");
   }
 
   @Test
@@ -95,9 +124,18 @@ public class StructuredDataReferenceServiceTest {
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15L);
     ref.setDeleted(true);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(4321L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    StructuredDataReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
-    assertNull(actual);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    var ex = assertThrows(InvalidPathException.class, () ->
+      service.getReference(collectionId, 312L, ref.getShepardId(), null)
+    );
+    assertEquals(ex.getMessage(), "ID ERROR - Structured Data Reference with id 15 is null or deleted");
   }
 
   @Test
@@ -110,7 +148,8 @@ public class StructuredDataReferenceServiceTest {
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<StructuredDataReference> actual = service.getAllReferencesByDataObjectShepardId(
+    List<StructuredDataReference> actual = service.getAllReferencesByDataObjectId(
+      collectionId,
       dataObject.getShepardId(),
       null
     );
@@ -119,7 +158,6 @@ public class StructuredDataReferenceServiceTest {
 
   @Test
   public void createStructuredDataReferenceByShepardIdTest() {
-    User user = new User("Bob");
     Version version = new Version(new UUID(1L, 2L));
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
@@ -169,19 +207,24 @@ public class StructuredDataReferenceServiceTest {
     };
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), structuredData.getOid())).thenReturn(structuredData);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
-    var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    var actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
   @Test
   public void createStructuredDataReferenceByShepardIdTest_notFound() {
-    User user = new User("Bob");
     Version version = new Version(new UUID(1L, 2L));
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
@@ -228,21 +271,28 @@ public class StructuredDataReferenceServiceTest {
         setStructuredDataContainer(created.getStructuredDataContainer());
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
-    when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
+
+    when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(null);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
-    var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    var actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
   @Test
   public void createStructuredDataReferenceByShepardIdTestIsDeleted() {
-    User user = new User("Bob");
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     StructuredDataContainer container = new StructuredDataContainer(300L);
@@ -297,15 +347,18 @@ public class StructuredDataReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
     var ex = assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
-    assertEquals(ex.getMessage(), "invalid container");
+    assertEquals(ex.getMessage(), "ID ERROR - Structured Data Container with id 300 is null or deleted");
   }
 
   @Test
   public void createStructuredDataReferenceByShepardIdTestContainerIsNull() {
-    User user = new User("Bob");
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     StructuredDataContainer container = new StructuredDataContainer(300L);
@@ -360,15 +413,19 @@ public class StructuredDataReferenceServiceTest {
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
     var ex = assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
-    assertEquals(ex.getMessage(), "invalid container");
+    assertEquals(ex.getMessage(), "ID ERROR - Structured Data Container with id 300 is null or deleted");
   }
 
   @Test
   public void createStructuredDataReferenceByShepardIdTest_ContainerIsDeleted() {
-    User user = new User("Bob");
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     StructuredDataContainer container = new StructuredDataContainer(300L);
@@ -383,14 +440,14 @@ public class StructuredDataReferenceServiceTest {
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
   }
 
   @Test
   public void createStructuredDataReferenceByShepardIdTest_ContainerIsNull() {
-    User user = new User("Bob");
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     Long nullContainerId = 300L;
@@ -405,14 +462,14 @@ public class StructuredDataReferenceServiceTest {
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findLightByNeo4jId(nullContainerId)).thenReturn(null);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
   }
 
   @Test
   public void deleteReferenceByShepardIdTest() {
-    User user = new User("Bob");
     Date date = new Date(30L);
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15L);
@@ -421,17 +478,23 @@ public class StructuredDataReferenceServiceTest {
     expected.setDeleted(true);
     expected.setUpdatedAt(date);
     expected.setUpdatedBy(user);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(4321L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(dateHelper.getDate()).thenReturn(date);
-    boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
-    verify(dao).createOrUpdate(expected);
-    assertTrue(actual);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    assertDoesNotThrow(() -> service.deleteReference(collectionId, dataObject.getShepardId(), ref.getShepardId()));
   }
 
   @Test
   public void getAllPayloadByShepardIdTest() {
-    String username = "blob";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     StructuredDataReference ref = new StructuredDataReference(1L);
@@ -442,17 +505,32 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
     StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, "json2");
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(payloadB);
-    List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    List<StructuredDataPayload> actual = service.getAllPayloads(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId()
+    );
     assertEquals(List.of(payloadA, payloadB), actual);
   }
 
   @Test
   public void getAllPayloadByShepardIdTest_notAllowed() {
-    String username = "blubb";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     StructuredDataReference ref = new StructuredDataReference(1L);
@@ -461,18 +539,29 @@ public class StructuredDataReferenceServiceTest {
     StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
     StructuredData structuredDataB = new StructuredData("def", new Date(), "name");
     ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
-    StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, null);
-    StructuredDataPayload payloadB = new StructuredDataPayload(structuredDataB, null);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
-    assertEquals(List.of(payloadA, payloadB), actual);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(false);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    assertThrows(InvalidAuthException.class, () ->
+      service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId())
+    );
+
     verify(structuredDataService, never()).getPayload(eq(container.getMongoId()), any(String.class));
   }
 
   @Test
   public void getAllPayloadByShepardIdTest_unknownOid() {
-    String username = "bla";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     StructuredDataReference ref = new StructuredDataReference(1L);
@@ -482,17 +571,31 @@ public class StructuredDataReferenceServiceTest {
     StructuredData structuredDataB = new StructuredData("def", new Date(), "name");
     ref.setStructuredDatas(List.of(structuredDataA, structuredDataB));
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
-    when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(null);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+    when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenThrow(
+      new NotFoundException()
+    );
+
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());
     assertEquals(List.of(payloadA, new StructuredDataPayload(structuredDataB, null)), actual);
   }
 
   @Test
-  public void getAllPayloadByShepardIdTest_isNull() {
-    String username = "schorsch";
+  public void getAllPayloadByShepardIdTest_isNull_returnsNullPayload() {
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     StructuredData structuredData = new StructuredData("abc", new Date(), "name");
@@ -500,17 +603,32 @@ public class StructuredDataReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setStructuredDataContainer(container);
     ref.setStructuredDatas(List.of(structuredData));
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
-    when(structuredDataService.getPayload("mongoId", "abc")).thenReturn(null);
-    List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(structuredDataService.getPayload("mongoId", "abc")).thenThrow(new NotFoundException());
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    List<StructuredDataPayload> actual = service.getAllPayloads(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId()
+    );
     StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
     assertEquals(List.of(payload), actual);
   }
 
   @Test
-  public void getAllPayloadByShepardIdTest_ContainerIsDeleted() {
-    String username = "schorsch";
+  public void getAllPayloadByShepardIdTest_ContainerIsDeleted_ThrowsNotFoundException() {
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     container.setDeleted(true);
@@ -519,71 +637,134 @@ public class StructuredDataReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setStructuredDataContainer(container);
     ref.setStructuredDatas(List.of(structuredData));
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
-    List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
-    StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
-    assertEquals(List.of(payload), actual);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    var ex = assertThrows(NotFoundException.class, () ->
+      service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId())
+    );
+    assertEquals(
+      "StructuredData Container referenced by StructuredData Reference with Id 15 is null or deleted",
+      ex.getMessage()
+    );
   }
 
   @Test
-  public void getAllPayloadByShepardIdTest_ContainerIsNull() {
-    String username = "schorsch";
+  public void getAllPayloadByShepardIdTest_ContainerIsNull_ThrowsNotFoundException() {
     StructuredData structuredData = new StructuredData("abc", new Date(), "name");
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15L);
     ref.setStructuredDatas(List.of(structuredData));
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    List<StructuredDataPayload> actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
-    StructuredDataPayload payload = new StructuredDataPayload(structuredData, null);
-    assertEquals(List.of(payload), actual);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+
+    var ex = assertThrows(NotFoundException.class, () ->
+      service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId())
+    );
+    assertEquals(
+      "StructuredData Container referenced by StructuredData Reference with Id 15 is null or deleted",
+      ex.getMessage()
+    );
   }
 
   @Test
   public void getPayloadByShepardIdTest() {
-    String username = "Murat";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
+
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15l);
     ref.setStructuredDataContainer(container);
+
     StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
     ref.setStructuredDatas(List.of(structuredDataA));
     StructuredDataPayload payloadA = new StructuredDataPayload(structuredDataA, "json1");
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
-    var actual = service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    var actual = service.getPayload(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId(),
+      structuredDataA.getOid()
+    );
     assertEquals(payloadA, actual);
   }
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsNull() {
-    String username = "Murat";
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15l);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    assertThrows(InvalidRequestException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), "oid")
     );
   }
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsDeleted() {
-    String username = "Murat";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     container.setDeleted(true);
+
     StructuredDataReference ref = new StructuredDataReference(1L);
     ref.setShepardId(15l);
     ref.setStructuredDataContainer(container);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () -> service.getPayloadByShepardId(ref.getShepardId(), "oid", username)
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    assertThrows(InvalidRequestException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), "oid")
     );
   }
 
   @Test
   public void getPayloadByShepardIdTest_notAllowed() {
-    String username = "Mehmet";
     StructuredDataContainer container = new StructuredDataContainer(20L);
     container.setMongoId("mongoId");
     StructuredDataReference ref = new StructuredDataReference(1L);
@@ -591,10 +772,21 @@ public class StructuredDataReferenceServiceTest {
     ref.setStructuredDataContainer(container);
     StructuredData structuredDataA = new StructuredData("abc", new Date(), "name");
     ref.setStructuredDatas(List.of(structuredDataA));
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(false);
+
+    DataObject dataObject = new DataObject(12345L);
+    dataObject.setShepardId(54321L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(false);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
     assertThrows(InvalidAuthException.class, () ->
-      service.getPayloadByShepardId(ref.getShepardId(), structuredDataA.getOid(), username)
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), structuredDataA.getOid())
     );
   }
 }

@@ -167,7 +167,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection with id 99999 does not exist");
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - Collection with id 99999 is null or deleted");
   }
 
   @Test
@@ -418,6 +418,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
+  @Order(21)
   public void updateCollection_deleteAttribute_successfullyDeleteAttribute() {
     // Arrange
     CollectionIO collectionIO = new CollectionIO();

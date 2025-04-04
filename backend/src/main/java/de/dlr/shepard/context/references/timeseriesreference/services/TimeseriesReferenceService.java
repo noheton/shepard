@@ -1,12 +1,14 @@
 package de.dlr.shepard.context.references.timeseriesreference.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
-import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
-import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
@@ -15,18 +17,20 @@ import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesRefere
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.services.VersionService;
-import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
+import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -50,13 +54,16 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   DataObjectService dataObjectService;
 
   @Inject
-  TimeseriesContainerDAO timeseriesContainerDAO;
-
-  @Inject
   ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
 
   @Inject
-  UserDAO userDAO;
+  UserService userService;
+
+  @Inject
+  CollectionService collectionService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
 
   @Inject
   VersionService versionService;
@@ -67,38 +74,92 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   @Inject
   PermissionsService permissionsService;
 
+  /**
+   * Gets TimeseriesReference list for a given dataobject.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param versionUID the version UUID
+   * @return List<TimeseriesReference>
+   * @throws InvalidPathException If collection or dataobject cannot be found, or no association between dataobject and collection exists
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
+   */
   @Override
-  public List<TimeseriesReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
+  public List<TimeseriesReference> getAllReferencesByDataObjectId(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    UUID versionUID
+  ) {
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
     var references = timeseriesReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
+  /**
+   * Gets TimeseriesReference by shepard id.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param shepardId
+   * @param versionUID the version UUID
+   * @return TimeseriesReference
+   * @throws InvalidPathException If reference with Id does not exist or is deleted, or if collection or dataObject Id of path is not valid
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
+   */
   @Override
-  public TimeseriesReference getReferenceByShepardId(long shepardId, UUID versionUID) {
-    var reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
+  public TimeseriesReference getReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long shepardId,
+    UUID versionUID
+  ) {
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
+    TimeseriesReference reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      Log.errorf("Timeseries Reference with id %s is null or deleted", shepardId);
-      return null;
+      String errorMsg = String.format("ID ERROR - Timeseries Reference with id %s is null or deleted", shepardId);
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+
+    if (reference.getDataObject() == null || !reference.getDataObject().getShepardId().equals(dataObjectShepardId)) {
+      String errorMsg = "ID ERROR - There is no association between dataObject and reference";
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
+    }
+
     return reference;
   }
 
+  /**
+   * Creates a new TimeseriesReference reference
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId DataObject id for the reference to be created
+   * @param timeseriesReference Reference object
+   * @return FileReference
+   * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
+   * @throws InvalidAuthException if user has no permission to edit referencing collection or no read permissions on referenced container
+   * @throws InvalidRequestException if user provides a timeseries reference with a non-accessible container
+   */
   @Override
-  public TimeseriesReference createReferenceByShepardId(
+  public TimeseriesReference createReference(
+    long collectionShepardId,
     long dataObjectShepardId,
-    TimeseriesReferenceIO timeseriesReference,
-    String username
+    TimeseriesReferenceIO timeseriesReference
   ) {
-    var user = userDAO.find(username);
-    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
-    var container = timeseriesContainerDAO.findLightByNeo4jId(timeseriesReference.getTimeseriesContainerId());
-    if (container == null || container.isDeleted()) {
-      throw new InvalidBodyException(
-        String.format(
-          "The timeseries container with id %d could not be found.",
-          timeseriesReference.getTimeseriesContainerId()
-        )
-      );
+    DataObject dataObject = dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
+
+    TimeseriesContainer container;
+    try {
+      container = timeseriesContainerService.getContainer(timeseriesReference.getTimeseriesContainerId());
+    } catch (InvalidPathException ex) {
+      Log.error(ex.getMessage());
+      throw new InvalidRequestException(ex.getMessage());
     }
 
     // sanitize timeseries
@@ -136,43 +197,60 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     return created;
   }
 
+  /**
+   * Deletes the Timeseries reference.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param fileReferenceShepardId
+   * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
+   * @throws InvalidAuthException if user has no permissions to edit the collection, which the reference is assigned to
+   */
   @Override
-  public boolean deleteReferenceByShepardId(long timeseriesShepardId, String username) {
-    var user = userDAO.find(username);
+  public void deleteReference(long collectionShepardId, long dataObjectShepardId, long timeseriesShepardId) {
+    TimeseriesReference fileReference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      timeseriesShepardId,
+      null
+    );
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
-    var old = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-    old.setDeleted(true);
-    old.setUpdatedAt(dateHelper.getDate());
-    old.setUpdatedBy(user);
-
-    timeseriesReferenceDAO.createOrUpdate(old);
-    return true;
+    User user = userService.getCurrentUser();
+    fileReference.setDeleted(true);
+    fileReference.setUpdatedAt(dateHelper.getDate());
+    fileReference.setUpdatedBy(user);
+    timeseriesReferenceDAO.createOrUpdate(fileReference);
   }
 
   public List<TimeseriesWithDataPoints> getReferencedTimeseriesWithDataPointsList(
+    long collectionShepardId,
+    long dataObjectShepardId,
     long timeseriesShepardId,
     AggregateFunction function,
     Long timeSliceNanoseconds,
     FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
-    Set<String> symbolicNameFilterSet,
-    String username
+    Set<String> symbolicNameFilterSet
   ) {
-    var reference = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-    if (
-      reference.getTimeseriesContainer() == null ||
-      reference.getTimeseriesContainer().isDeleted() ||
-      !permissionsService.isAccessTypeAllowedForUser(
-        reference.getTimeseriesContainer().getId(),
-        AccessType.Read,
-        username
-      )
-    ) return reference
-      .getReferencedTimeseriesList()
-      .stream()
-      .map(ts -> new TimeseriesWithDataPoints(ts.toTimeseries(), Collections.emptyList()))
-      .toList();
+    TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
+
+    if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "Referenced Timeseries Container from reference with id %s is null or has been deleted",
+        timeseriesShepardId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
+    try {
+      // check that referenced container is actually accessible
+      timeseriesContainerService.getContainer(reference.getTimeseriesContainer().getId());
+    } catch (InvalidPathException ex) {
+      throw new NotFoundException(ex.getMessage());
+    }
 
     var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
     var filteredTimeseriesList = timeseriesList
@@ -192,26 +270,32 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   }
 
   public InputStream exportReferencedTimeseriesByShepardId(
+    long collectionShepardId,
+    long dataObjectShepardId,
     long timeseriesShepardId,
     AggregateFunction function,
     Long timeSliceNanoseconds,
     FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
-    Set<String> symbolicNameFilterSet,
-    String username
+    Set<String> symbolicNameFilterSet
   ) throws IOException {
-    var reference = timeseriesReferenceDAO.findByShepardId(timeseriesShepardId);
-    if (
-      reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()
-    ) throw new InvalidRequestException("The timeseries container in question is not accessible");
-    if (
-      !permissionsService.isAccessTypeAllowedForUser(
-        reference.getTimeseriesContainer().getId(),
-        AccessType.Read,
-        username
-      )
-    ) throw new InvalidAuthException("You are not authorized to access this timeseries");
+    TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
+
+    if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "The referenced TimeseriesContainer is null or deleted for Reference with id %s",
+        timeseriesShepardId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
+    try {
+      timeseriesContainerService.getContainer(reference.getTimeseriesContainer().getId());
+    } catch (InvalidPathException ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
 
     var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
     var filteredTimeseriesList = timeseriesList
@@ -234,32 +318,37 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     );
   }
 
-  public InputStream exportReferencedTimeseriesByShepardId(long referenceId, String username) throws IOException {
+  public InputStream exportReferencedTimeseriesByShepardId(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long referenceId
+  ) throws IOException {
     return exportReferencedTimeseriesByShepardId(
+      collectionShepardId,
+      dataObjectShepardId,
       referenceId,
       null,
       null,
       null,
       Collections.emptySet(),
       Collections.emptySet(),
-      Collections.emptySet(),
-      username
+      Collections.emptySet()
     );
   }
 
   private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {
     var deviceMatches = true;
-    var locatioMatches = true;
+    var locationMatches = true;
     var symbolicNameMatches = true;
     if (!device.isEmpty()) {
       deviceMatches = device.contains(timeseries.getDevice());
     }
     if (!location.isEmpty()) {
-      locatioMatches = location.contains(timeseries.getLocation());
+      locationMatches = location.contains(timeseries.getLocation());
     }
     if (!symName.isEmpty()) {
       symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
     }
-    return deviceMatches && locatioMatches && symbolicNameMatches;
+    return deviceMatches && locationMatches && symbolicNameMatches;
   }
 }

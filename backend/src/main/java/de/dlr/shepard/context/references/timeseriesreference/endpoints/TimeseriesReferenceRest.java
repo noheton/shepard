@@ -18,11 +18,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,17 +51,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class TimeseriesReferenceRest {
 
-  private TimeseriesReferenceService timeseriesReferenceService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  TimeseriesReferenceRest() {}
-
   @Inject
-  public TimeseriesReferenceRest(TimeseriesReferenceService timeseriesReferenceService) {
-    this.timeseriesReferenceService = timeseriesReferenceService;
-  }
+  TimeseriesReferenceService timeseriesReferenceService;
 
   @GET
   @Tag(name = Constants.TIMESERIES_REFERENCE)
@@ -82,7 +71,7 @@ public class TimeseriesReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = timeseriesReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    var references = timeseriesReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
     var result = new ArrayList<TimeseriesReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new TimeseriesReferenceIO(reference));
@@ -111,7 +100,7 @@ public class TimeseriesReferenceRest {
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = timeseriesReferenceService.getReferenceByShepardId(timeseriesId, versionUID);
+    var result = timeseriesReferenceService.getReference(collectionId, dataObjectId, timeseriesId, versionUID);
 
     return Response.ok(new TimeseriesReferenceIO(result)).build();
   }
@@ -136,11 +125,7 @@ public class TimeseriesReferenceRest {
       content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
     ) @Valid TimeseriesReferenceIO timeseriesReference
   ) {
-    var result = timeseriesReferenceService.createReferenceByShepardId(
-      dataObjectId,
-      timeseriesReference,
-      securityContext.getUserPrincipal().getName()
-    );
+    var result = timeseriesReferenceService.createReference(collectionId, dataObjectId, timeseriesReference);
 
     return Response.ok(new TimeseriesReferenceIO(result)).status(Status.CREATED).build();
   }
@@ -160,12 +145,8 @@ public class TimeseriesReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId
   ) {
-    var result = timeseriesReferenceService.deleteReferenceByShepardId(
-      timeseriesId,
-      securityContext.getUserPrincipal().getName()
-    );
-
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    timeseriesReferenceService.deleteReference(collectionId, dataObjectId, timeseriesId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -200,14 +181,15 @@ public class TimeseriesReferenceRest {
   ) {
     List<TimeseriesWithDataPoints> timeseriesWithDataPointsList =
       timeseriesReferenceService.getReferencedTimeseriesWithDataPointsList(
+        collectionId,
+        dataObjectId,
         timeseriesReferenceId,
         function,
         groupBy,
         fillOption,
         deviceFilterTag,
         locationFilterTag,
-        symbolicNameFilterTag,
-        securityContext.getUserPrincipal().getName()
+        symbolicNameFilterTag
       );
     return Response.ok(timeseriesWithDataPointsList).build();
   }
@@ -247,14 +229,15 @@ public class TimeseriesReferenceRest {
     @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag
   ) throws IOException {
     var stream = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
+      collectionId,
+      dataObjectId,
       timeseriesReferenceId,
       function,
       groupBy,
       fillOption,
       deviceFilterTag,
       locationFilterTag,
-      symbolicNameFilterTag,
-      securityContext.getUserPrincipal().getName()
+      symbolicNameFilterTag
     );
     if (stream == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();

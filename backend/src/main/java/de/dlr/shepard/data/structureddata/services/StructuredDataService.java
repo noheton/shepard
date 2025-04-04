@@ -13,6 +13,8 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.UUID;
 import org.bson.Document;
 import org.bson.json.JsonParseException;
@@ -21,34 +23,30 @@ import org.bson.types.ObjectId;
 @RequestScoped
 public class StructuredDataService {
 
-  private static final String ID_ATTR = "_id";
-  private static final String META_OBJECT = "_meta";
+  @Inject
   private DateHelper dateHelper;
-
-  StructuredDataService() {}
 
   @Inject
   @Named("mongoDatabase")
   MongoDatabase mongoDatabase;
 
-  @Inject
-  public StructuredDataService(DateHelper dateHelper) {
-    this.dateHelper = dateHelper;
-  }
+  private static final String ID_ATTR = "_id";
+  private static final String META_OBJECT = "_meta";
 
   public String createStructuredDataContainer() {
-    String mongoid = "StructuredDataContainer" + UUID.randomUUID().toString();
-    mongoDatabase.createCollection(mongoid);
-    return mongoid;
+    String mongoId = "StructuredDataContainer" + UUID.randomUUID().toString();
+    mongoDatabase.createCollection(mongoId);
+    return mongoId;
   }
 
-  public StructuredData createStructuredData(String mongoid, StructuredDataPayload payload) {
+  public StructuredData createStructuredData(String mongoId, StructuredDataPayload payload) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDatabase.getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", mongoid);
-      return null;
+      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     Document toInsert;
     try {
@@ -69,38 +67,51 @@ public class StructuredDataService {
     try {
       collection.insertOne(toInsert);
     } catch (MongoException e) {
-      Log.errorf("Could not write to mongodb: %s", e.toString());
-      return null;
+      String errorMsg = String.format("Could not write to mongodb: %s", e.toString());
+      Log.error(errorMsg);
+      throw new InternalServerErrorException(errorMsg);
     }
     structuredData.setOid(toInsert.getObjectId(ID_ATTR).toHexString());
     return structuredData;
   }
 
-  public boolean deleteStructuredDataContainer(String mongoid) {
+  public void deleteStructuredDataContainer(String mongoId) {
     MongoCollection<Document> toDelete;
     try {
-      toDelete = mongoDatabase.getCollection(mongoid);
+      toDelete = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not delete container with mongoid: %s", mongoid);
-      return false;
+      String errorMsg = String.format("Could not delete container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     toDelete.drop();
-    return true;
   }
 
-  public StructuredDataPayload getPayload(String mongoid, String oid) {
+  public StructuredDataPayload getPayload(String mongoId, String oid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDatabase.getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", mongoid);
-      return null;
+      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
-    var payloadDocument = collection.find(eq(ID_ATTR, new ObjectId(oid))).first();
-    if (payloadDocument == null) {
-      Log.errorf("Could not find document with oid: %s", oid);
-      return null;
+
+    Document payloadDocument;
+    try {
+      payloadDocument = collection.find(eq(ID_ATTR, new ObjectId(oid))).first();
+      if (payloadDocument == null) {
+        String errorMsg = String.format("Could not find document with oid: %s", oid);
+        Log.error(errorMsg);
+        throw new NotFoundException(errorMsg);
+      }
+    } catch (Exception e) {
+      String errorMsg = String.format("Could not find document with oid: %s", oid);
+      Log.error(e);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
+
     var structuredDataDocument = payloadDocument.get(META_OBJECT, Document.class);
     var structuredData = structuredDataDocument != null
       ? new StructuredData(structuredDataDocument)
@@ -110,19 +121,20 @@ public class StructuredDataService {
     return payload;
   }
 
-  public boolean deletePayload(String mongoid, String oid) {
+  public void deletePayload(String mongoId, String oid) {
     MongoCollection<Document> collection;
     try {
-      collection = mongoDatabase.getCollection(mongoid);
+      collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      Log.errorf("Could not find container with mongoid: %s", mongoid);
-      return false;
+      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(oid)));
     if (doc == null) {
-      Log.warnf("Could not find and delete document with oid: %s", oid);
-      return true;
+      String errorMsg = String.format("Could not delete document with oid: %s", oid);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
-    return true;
   }
 }

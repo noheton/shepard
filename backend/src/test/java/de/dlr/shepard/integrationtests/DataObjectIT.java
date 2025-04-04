@@ -957,6 +957,7 @@ public class DataObjectIT extends BaseTestCaseIT {
 
   @Test
   public void getDataObject_privateCollection_forbidden() {
+    // This is a test implementation for the Bug described in #475
     CollectionIO privateCollection = createCollection("private collection", otherUser);
     DataObjectIO privateDataObject = createDataObject("private data object", privateCollection.getId(), otherUser);
 

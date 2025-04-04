@@ -1,18 +1,21 @@
 package de.dlr.shepard.context.collection.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
@@ -53,24 +56,54 @@ public class DataObjectServiceTest {
   @InjectMock
   DateHelper dateHelper;
 
+  @InjectMock
+  UserService userService;
+
+  @InjectMock
+  PermissionsService permissionsService;
+
   @Inject
   DataObjectService service;
 
+  private final User defaultUser = new User("Bob");
+
   @Test
   public void getDataObjectTest() {
+    Collection collection = new Collection(555L);
+    collection.setShepardId(5555L);
     DataObject dataObject = new DataObject(5L);
     dataObject.setShepardId(55L);
+    dataObject.setCollection(collection);
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        collection.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObject, returned);
   }
 
   @Test
   public void getDataObjectWithVersionUIDTest() {
+    Collection collection = new Collection(555L);
+    collection.setShepardId(5555L);
     DataObject dataObject = new DataObject(5L);
     UUID versionUID = new UUID(0L, 1L);
     dataObject.setShepardId(55L);
+    dataObject.setCollection(collection);
     when(dao.findByShepardId(dataObject.getShepardId(), versionUID)).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        collection.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId(), versionUID);
     assertEquals(dataObject, returned);
   }
@@ -97,31 +130,78 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectTest_deletedParent() {
+    Collection collection = new Collection(555L);
+    collection.setShepardId(5555L);
     DataObject parent = new DataObject(1L);
     parent.setShepardId(15L);
     parent.setDeleted(true);
     DataObject dataObject = new DataObject(2L);
     dataObject.setShepardId(25L);
     dataObject.setParent(parent);
+    dataObject.setCollection(collection);
     DataObject dataObjectCut = new DataObject(2L);
     dataObjectCut.setShepardId(25L);
+    dataObjectCut.setCollection(collection);
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        collection.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObjectCut, returned);
   }
 
   @Test
   public void getDataObjectTest_withParent() {
+    Collection collection = new Collection(555L);
+    collection.setShepardId(5555L);
     DataObject parent = new DataObject(1L);
     parent.setShepardId(15L);
     DataObject dataObject = new DataObject(2L);
     dataObject.setShepardId(25L);
     dataObject.setParent(parent);
+    dataObject.setCollection(collection);
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        collection.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObject, returned);
+  }
+
+  @Test
+  public void getDataObjectTest_notInCollection() {
+    Collection collection = new Collection(555L);
+    collection.setShepardId(5555L);
+    Collection otherCollection = new Collection(15L);
+    otherCollection.setShepardId(10L);
+    DataObject dataObject = new DataObject(2L);
+    dataObject.setShepardId(25L);
+    dataObject.setCollection(otherCollection);
+
+    when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        collection.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
+    assertThrows(InvalidPathException.class, () ->
+      service.getDataObject(collection.getShepardId(), dataObject.getShepardId())
+    );
   }
 
   @Test
@@ -138,7 +218,6 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdWithoutPredecessorsTest() {
-    User user = new User("bob");
     Date date = new Date(23);
     Version version = new Version(new UUID(1L, 2L));
     Collection collection = new Collection(2L);
@@ -161,7 +240,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
       }
@@ -172,7 +251,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
         setId(1L);
@@ -184,7 +263,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
         setId(created.getId());
@@ -193,18 +272,17 @@ public class DataObjectServiceTest {
     };
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dateHelper.getDate()).thenReturn(date);
-    when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
 
-    DataObject actual = service.createDataObject(collection.getShepardId(), input, user.getUsername());
+    DataObject actual = service.createDataObject(collection.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
   @Test
   public void createDataObjectByShepardIdTest() {
-    User user = new User("bob");
     Date date = new Date(23);
     Version version = new Version(new UUID(1L, 2L));
     Collection collection = new Collection(2L);
@@ -231,7 +309,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
         setPredecessors(List.of(predecessor));
@@ -243,7 +321,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
         setPredecessors(List.of(predecessor));
@@ -256,7 +334,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setCollection(collection);
         setParent(parent);
         setPredecessors(List.of(predecessor));
@@ -267,11 +345,12 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor);
     when(dateHelper.getDate()).thenReturn(date);
-    when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
-    DataObject actual = service.createDataObject(collection.getShepardId(), input, user.getUsername());
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+
+    DataObject actual = service.createDataObject(collection.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
@@ -293,9 +372,7 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
@@ -316,9 +393,7 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
@@ -342,9 +417,7 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
@@ -368,9 +441,7 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
@@ -396,9 +467,7 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
@@ -424,16 +493,13 @@ public class DataObjectServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(userDAO.find(user.getUsername())).thenReturn(user);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
-    assertThrows(InvalidBodyException.class, () ->
-      service.createDataObject(collection.getShepardId(), input, user.getUsername())
-    );
+    assertThrows(InvalidBodyException.class, () -> service.createDataObject(collection.getShepardId(), input));
   }
 
   @Test
   public void updateDataObjectByShepardIdTest() {
     Collection collection = new Collection(100L);
     collection.setShepardId(1005L);
-    User user = new User("bob");
     Date date = new Date(23);
     User updateUser = new User("claus");
     Date updateDate = new Date(43);
@@ -464,7 +530,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setId(1L);
         setShepardId(1L);
         setCollection(collection);
@@ -477,7 +543,7 @@ public class DataObjectServiceTest {
         setDescription("newDesc");
         setName("newName");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setUpdatedAt(updateDate);
         setUpdatedBy(updateUser);
         setParent(parent);
@@ -489,21 +555,23 @@ public class DataObjectServiceTest {
     };
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
+    when(dao.createOrUpdate(old)).thenReturn(updated);
     when(dao.findByNeo4jId(aPredecessor.getId())).thenReturn(aPredecessor);
-    when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
+
     when(dateHelper.getDate()).thenReturn(updateDate);
-    when(dao.createOrUpdate(updated)).thenReturn(updated);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+    ).thenReturn(true);
 
     predecessors.forEach(predecessor -> when(dao.createOrUpdate(predecessor)).thenReturn(predecessor));
     predecessors.forEach(predecessor -> when(dao.findByShepardId(predecessor.getShepardId())).thenReturn(predecessor));
 
-    var actual = service.updateDataObject(
-      collection.getShepardId(),
-      old.getShepardId(),
-      input,
-      updateUser.getUsername()
-    );
+    DataObject actual = service.updateDataObject(collection.getShepardId(), old.getShepardId(), input);
 
     predecessors.forEach(predecessor -> verify(dao, atLeast(1)).findByShepardId(predecessor.getShepardId()));
     predecessors.forEach(predecessor ->
@@ -516,7 +584,6 @@ public class DataObjectServiceTest {
   public void updateDataObjectByShepardIdTest_UpdateParent() {
     Collection collection = new Collection(100L);
     collection.setShepardId(1005L);
-    User user = new User("bob");
     Date date = new Date(23);
     User updateUser = new User("claus");
     Date updateDate = new Date(43);
@@ -545,7 +612,7 @@ public class DataObjectServiceTest {
         setDescription("Desc");
         setName("Name");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setId(1L);
         setShepardId(1L);
         setCollection(collection);
@@ -559,7 +626,7 @@ public class DataObjectServiceTest {
         setDescription("newDesc");
         setName("newName");
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setUpdatedAt(updateDate);
         setUpdatedBy(updateUser);
         setParent(parent);
@@ -575,18 +642,19 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.findByShepardId(oldParent.getShepardId())).thenReturn(oldParent);
     when(dao.findByNeo4jId(parent.getId())).thenReturn(parent);
-    when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
+    when(dao.createOrUpdate(old)).thenReturn(updated);
+
     when(dateHelper.getDate()).thenReturn(updateDate);
-    when(dao.createOrUpdate(updated)).thenReturn(updated);
-
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+    ).thenReturn(true);
 
-    var actual = service.updateDataObject(
-      collection.getShepardId(),
-      old.getShepardId(),
-      input,
-      updateUser.getUsername()
-    );
+    var actual = service.updateDataObject(collection.getShepardId(), old.getShepardId(), input);
     verify(dao).deleteHasChildRelation(anyLong(), anyLong());
 
     assertEquals(updated, actual);
@@ -596,7 +664,6 @@ public class DataObjectServiceTest {
   public void updateDataObjectByShepardIdTest_SelfReferences() {
     Collection collection = new Collection(100L);
     collection.setShepardId(1005L);
-    User user = new User("bob");
     Date date = new Date(23);
 
     DataObjectIO input = new DataObjectIO() {
@@ -614,18 +681,23 @@ public class DataObjectServiceTest {
     };
 
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
-    when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, defaultUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, defaultUser.getUsername())
+    ).thenReturn(true);
 
     assertThrows(InvalidBodyException.class, () ->
-      service.updateDataObject(collection.getShepardId(), old.getShepardId(), input, user.getUsername())
+      service.updateDataObject(collection.getShepardId(), old.getShepardId(), input)
     );
   }
 
   @Test
   public void deleteDataObjectByShepardIdTest() {
-    User user = new User("bob");
     Date date = new Date(23);
 
     Collection collection = new Collection();
@@ -635,13 +707,26 @@ public class DataObjectServiceTest {
     dataObject.setShepardId(15L);
     dataObject.setCollection(collection);
 
-    when(userDAO.find(user.getUsername())).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dao.deleteDataObjectByShepardId(dataObject.getShepardId(), user, date)).thenReturn(true);
+    when(dao.deleteDataObjectByShepardId(dataObject.getShepardId(), defaultUser, date)).thenReturn(true);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        dataObject.getShepardId(),
+        AccessType.Write,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        dataObject.getShepardId(),
+        AccessType.Read,
+        defaultUser.getUsername()
+      )
+    ).thenReturn(true);
 
-    var result = service.deleteDataObject(1005L, dataObject.getShepardId(), user.getUsername());
-    assertTrue(result);
+    assertDoesNotThrow(() -> service.deleteDataObject(1005L, dataObject.getShepardId()));
   }
 }

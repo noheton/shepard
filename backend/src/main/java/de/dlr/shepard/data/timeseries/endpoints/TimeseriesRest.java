@@ -3,7 +3,7 @@ package de.dlr.shepard.data.timeseries.endpoints;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
@@ -14,7 +14,6 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
@@ -43,9 +42,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -63,30 +62,20 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 @RequestScoped
 public class TimeseriesRest {
 
-  private TimeseriesService timeseriesService;
-  private TimeseriesCsvService timeseriesCsvService;
-  private TimeseriesContainerService timeseriesContainerService;
-  private PermissionsService permissionsService;
+  @Inject
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesCsvService timeseriesCsvService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
+
+  @Inject
+  PermissionsService permissionsService;
 
   @Context
   private SecurityContext securityContext;
-
-  TimeseriesRest() {}
-
-  @Inject
-  public TimeseriesRest(
-    TimeseriesService timeseriesService,
-    TimeseriesCsvService timeseriesCsvService,
-    TimeseriesContainerService timeseriesContainerService,
-    SecurityContext securityContext,
-    PermissionsService permissionsService
-  ) {
-    this.timeseriesService = timeseriesService;
-    this.timeseriesCsvService = timeseriesCsvService;
-    this.timeseriesContainerService = timeseriesContainerService;
-    this.securityContext = securityContext;
-    this.permissionsService = permissionsService;
-  }
 
   @GET
   @Tag(name = Constants.TIMESERIES_CONTAINER)
@@ -113,7 +102,7 @@ public class TimeseriesRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var containers = timeseriesContainerService.getContainers(params, securityContext.getUserPrincipal().getName());
+    var containers = timeseriesContainerService.getAllContainers(params);
     var result = TimeseriesContainerIOMapper.map(containers);
 
     return Response.ok(result).build();
@@ -151,11 +140,7 @@ public class TimeseriesRest {
       content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
     ) @Valid TimeseriesContainerIO timeseriesContainer
   ) {
-    var container = timeseriesContainerService.createContainer(
-      timeseriesContainer.getName(),
-      securityContext.getUserPrincipal().getName()
-    );
-
+    var container = timeseriesContainerService.createContainer(timeseriesContainer);
     return Response.ok(TimeseriesContainerIOMapper.map(container)).status(Status.CREATED).build();
   }
 
@@ -168,8 +153,7 @@ public class TimeseriesRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    timeseriesContainerService.deleteContainer(timeseriesContainerId, securityContext.getUserPrincipal().getName());
-
+    timeseriesContainerService.deleteContainer(timeseriesContainerId);
     return Response.status(Status.NO_CONTENT).build();
   }
 
@@ -193,14 +177,8 @@ public class TimeseriesRest {
       content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
     ) @Valid TimeseriesWithDataPoints payload
   ) {
-    Optional<TimeseriesContainer> containerOptional = this.timeseriesContainerService.getContainerOptional(containerId);
-
-    if (containerOptional.isEmpty()) {
-      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", containerId);
-    }
-
     TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
-      containerOptional.get().getId(),
+      containerId,
       payload.getTimeseries(),
       payload.getPoints()
     );
@@ -222,14 +200,13 @@ public class TimeseriesRest {
   )
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    Optional<TimeseriesContainer> containerOptional =
-      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
+    List<TimeseriesEntity> timeseriesEntityList;
 
-    if (containerOptional.isEmpty()) {
+    try {
+      timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    } catch (InvalidPathException | InvalidAuthException e) {
       return Response.ok(Collections.emptyList()).build();
     }
-
-    List<TimeseriesEntity> timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
 
     List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
       .stream()
@@ -251,16 +228,8 @@ public class TimeseriesRest {
   @APIResponse(responseCode = "404", description = "Not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesOfContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
-    Optional<TimeseriesContainer> containerOptional =
-      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
-
-    if (containerOptional.isEmpty()) {
-      return Response.status(404, "Timeseries container not found").build();
-    }
-
     var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
     var timeseriesList = timeseriesEntityList.stream().map(entity -> new TimeseriesIO(entity)).toList();
-
     return Response.ok(timeseriesList).build();
   }
 
@@ -279,15 +248,7 @@ public class TimeseriesRest {
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
     @PathParam(Constants.TIMESERIES_ID) int timeseriesId
   ) {
-    Optional<TimeseriesContainer> containerOptional =
-      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
-
-    if (containerOptional.isEmpty()) {
-      return Response.status(404, "Timeseries container not found").build();
-    }
-
-    var timeseries = timeseriesService.getTimeseriesById(timeseriesId);
-
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
     return Response.ok(new TimeseriesIO(timeseries)).build();
   }
 
@@ -339,11 +300,8 @@ public class TimeseriesRest {
       fillOption,
       function
     );
-
     var timeseriesData = timeseriesService.getDataPointsByTimeseries(timeseriesContainerId, timeseries, queryParams);
-
     TimeseriesWithDataPoints timeseriesWithData = new TimeseriesWithDataPoints(timeseries, timeseriesData);
-
     return Response.ok(timeseriesWithData).build();
   }
 
@@ -389,13 +347,6 @@ public class TimeseriesRest {
       throw new InvalidRequestException("Some query params are missing");
     }
 
-    Optional<TimeseriesContainer> containerOptional =
-      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
-
-    if (containerOptional.isEmpty()) {
-      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", timeseriesContainerId);
-    }
-
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
@@ -404,11 +355,7 @@ public class TimeseriesRest {
       fillOption,
       function
     );
-    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(
-      containerOptional.get().getId(),
-      timeseries,
-      queryParams
-    );
+    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(timeseriesContainerId, timeseries, queryParams);
 
     return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
@@ -434,14 +381,7 @@ public class TimeseriesRest {
       throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
     }
 
-    Optional<TimeseriesContainer> containerOptional =
-      this.timeseriesContainerService.getContainerOptional(timeseriesContainerId);
-
-    if (containerOptional.isEmpty()) {
-      throw new InvalidBodyException("Timeseries container with id %s is null or deleted.", timeseriesContainerId);
-    }
-
-    timeseriesCsvService.importTimeseriesFromCsv(containerOptional.get(), filePath);
+    timeseriesCsvService.importTimeseriesFromCsv(timeseriesContainerId, filePath);
     return Response.ok().build();
   }
 
@@ -460,7 +400,6 @@ public class TimeseriesRest {
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
   ) {
     var permissions = permissionsService.getPermissionsOfEntity(timeseriesContainerId);
-    if (permissions == null) throw new NotFoundException();
     return new PermissionsIO(permissions);
   }
 

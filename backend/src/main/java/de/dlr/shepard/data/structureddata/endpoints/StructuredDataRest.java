@@ -3,11 +3,13 @@ package de.dlr.shepard.data.structureddata.endpoints;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
+import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
@@ -23,12 +25,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -44,22 +45,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class StructuredDataRest {
 
-  private StructuredDataContainerService structuredDataContainerService;
-  private PermissionsService permissionsService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  StructuredDataRest() {}
+  @Inject
+  StructuredDataContainerService structuredDataContainerService;
 
   @Inject
-  public StructuredDataRest(
-    StructuredDataContainerService structuredDataContainerService,
-    PermissionsService permissionsService
-  ) {
-    this.structuredDataContainerService = structuredDataContainerService;
-    this.permissionsService = permissionsService;
-  }
+  PermissionsService permissionsService;
+
+  @Inject
+  UserService userService;
 
   @GET
   @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
@@ -86,10 +79,8 @@ public class StructuredDataRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var containers = structuredDataContainerService.getAllContainers(
-      params,
-      securityContext.getUserPrincipal().getName()
-    );
+
+    List<StructuredDataContainer> containers = structuredDataContainerService.getAllContainers(params);
     var result = new ArrayList<StructuredDataContainerIO>(containers.size());
     for (var container : containers) {
       result.add(new StructuredDataContainerIO(container));
@@ -124,11 +115,8 @@ public class StructuredDataRest {
   public Response deleteStructuredDataContainer(
     @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
   ) {
-    var result = structuredDataContainerService.deleteContainer(
-      structuredDataId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    structuredDataContainerService.deleteContainer(structuredDataId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @POST
@@ -146,10 +134,7 @@ public class StructuredDataRest {
       content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
     ) @Valid StructuredDataContainerIO structuredDataContainer
   ) {
-    var result = structuredDataContainerService.createContainer(
-      structuredDataContainer,
-      securityContext.getUserPrincipal().getName()
-    );
+    var result = structuredDataContainerService.createContainer(structuredDataContainer);
     return Response.ok(new StructuredDataContainerIO(result)).status(Status.CREATED).build();
   }
 
@@ -173,9 +158,7 @@ public class StructuredDataRest {
     ) @Valid StructuredDataPayload payload
   ) {
     var result = structuredDataContainerService.createStructuredData(structuredDataId, payload);
-    return result != null
-      ? Response.status(Status.CREATED).entity(result).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    return Response.status(Status.CREATED).entity(result).build();
   }
 
   @GET
@@ -211,7 +194,7 @@ public class StructuredDataRest {
     @PathParam(Constants.OID) String oid
   ) {
     var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
-    return result != null ? Response.ok(result).build() : Response.status(Status.NOT_FOUND).build();
+    return Response.ok(result).build();
   }
 
   @DELETE
@@ -227,8 +210,8 @@ public class StructuredDataRest {
     @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
   ) {
-    var result = structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -245,8 +228,8 @@ public class StructuredDataRest {
   public Response getStructuredDataPermissions(
     @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
   ) {
-    var perms = permissionsService.getPermissionsOfEntity(structuredDataId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = structuredDataContainerService.getContainerPermissions(structuredDataId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @PUT
@@ -267,8 +250,8 @@ public class StructuredDataRest {
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
-    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, structuredDataId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = structuredDataContainerService.updateContainerPermissions(permissions, structuredDataId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @GET
@@ -283,7 +266,7 @@ public class StructuredDataRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response getStructuredDataRoles(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
-    var roles = permissionsService.getUserRolesOnEntity(structuredDataId, securityContext.getUserPrincipal().getName());
-    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+    var roles = structuredDataContainerService.getContainerRoles(structuredDataId);
+    return Response.ok(roles).build();
   }
 }

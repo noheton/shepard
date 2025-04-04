@@ -1,16 +1,21 @@
 package de.dlr.shepard.context.collection.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -26,6 +31,7 @@ import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +48,10 @@ public class CollectionServiceTest {
   BasicReferenceDAO referenceDAO;
 
   @InjectMock
-  UserDAO userDAO;
+  UserService userService;
+
+  @InjectMock
+  AuthenticationContext authenticationContext;
 
   @InjectMock
   PermissionsService permissionsService;
@@ -62,8 +71,9 @@ public class CollectionServiceTest {
     collectionDeleted.setShepardId(65L);
     collectionDeleted.setDeleted(true);
 
+    when(authenticationContext.getCurrentUserName()).thenReturn("manni");
     when(dao.findAllCollectionsByShepardId(null, username)).thenReturn(List.of(collectionNotDeleted));
-    List<Collection> returned = service.getAllCollectionsByShepardId(null, username);
+    List<Collection> returned = service.getAllCollections(null);
     assertEquals(List.of(collectionNotDeleted), returned);
   }
 
@@ -77,8 +87,9 @@ public class CollectionServiceTest {
     collectionDeleted.setDeleted(true);
 
     QueryParamHelper params = new QueryParamHelper().withName("test");
+    when(authenticationContext.getCurrentUserName()).thenReturn("kurac");
     when(dao.findAllCollectionsByShepardId(params, username)).thenReturn(List.of(collectionNotDeleted));
-    List<Collection> returned = service.getAllCollectionsByShepardId(params, username);
+    List<Collection> returned = service.getAllCollections(params);
     assertEquals(List.of(collectionNotDeleted), returned);
   }
 
@@ -125,12 +136,12 @@ public class CollectionServiceTest {
       }
     };
     createdWithShepardId.setVersion(nullVersion);
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(versionDAO.createOrUpdate(any())).thenReturn(nullVersion);
-    Collection actual = service.createCollection(input, user.getUsername());
+    Collection actual = service.createCollection(input);
     assertEquals(createdWithShepardId, actual);
     verify(permissionsService).createPermissions(created, user, PermissionType.Private);
   }
@@ -176,12 +187,76 @@ public class CollectionServiceTest {
     };
 
     when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
-    when(userDAO.find(updateUser.getUsername())).thenReturn(updateUser);
+    when(userService.getCurrentUser()).thenReturn(updateUser);
     when(dateHelper.getDate()).thenReturn(updateDate);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
+    when(authenticationContext.getCurrentUserName()).thenReturn(updateUser.getUsername());
 
-    var actual = service.updateCollectionByShepardId(old.getShepardId(), input, updateUser.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+    ).thenReturn(true);
+
+    var actual = service.updateCollectionByShepardId(old.getShepardId(), input);
     assertEquals(updated, actual);
+  }
+
+  @Test
+  public void updateCollectionByShepardIdTest_noUpdatePermissions() {
+    User user = new User("bob");
+    Date date = new Date(23);
+    User updateUser = new User("claus");
+    Date updateDate = new Date(43);
+
+    CollectionIO input = new CollectionIO() {
+      {
+        setId(1L);
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("newDesc");
+        setName("newName");
+      }
+    };
+    Collection old = new Collection() {
+      {
+        setAttributes(Map.of("a", "b", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setId(15L);
+        setShepardId(input.getId());
+      }
+    };
+    var updated = new Collection() {
+      {
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("newDesc");
+        setName("newName");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setUpdatedAt(updateDate);
+        setUpdatedBy(updateUser);
+        setId(old.getId());
+        setShepardId(old.getShepardId());
+      }
+    };
+
+    when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
+    when(userService.getCurrentUser()).thenReturn(updateUser);
+    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(dao.createOrUpdate(updated)).thenReturn(updated);
+    when(authenticationContext.getCurrentUserName()).thenReturn(updateUser.getUsername());
+
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+    ).thenReturn(false);
+
+    assertThrows(InvalidAuthException.class, () -> service.updateCollectionByShepardId(old.getShepardId(), input));
   }
 
   @Test
@@ -192,13 +267,44 @@ public class CollectionServiceTest {
     Collection collection = new Collection(1L);
     collection.setShepardId(15L);
 
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.deleteCollectionByShepardId(collection.getShepardId(), user, date)).thenReturn(true);
-    when(dao.findByShepardId(collection.getShepardId(), false)).thenReturn(collection);
+    when(dao.findByShepardId(collection.getShepardId(), true)).thenReturn(collection);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
 
-    var result = service.deleteCollection(collection.getShepardId(), user.getUsername());
-    assertTrue(result);
+    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, "bob")).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Write, "bob")).thenReturn(
+      true
+    );
+
+    assertDoesNotThrow(() -> service.deleteCollection(collection.getShepardId()));
+  }
+
+  @Test
+  public void deleteCollectionByShepardIdTestNoUpdatePermissions() {
+    User user = new User("timbo");
+    Date date = new Date(23);
+
+    Collection collection = new Collection(1L);
+    collection.setShepardId(15L);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(dao.deleteCollectionByShepardId(collection.getShepardId(), user, date)).thenReturn(true);
+    when(dao.findByShepardId(collection.getShepardId(), true)).thenReturn(collection);
+    when(authenticationContext.getCurrentUserName()).thenReturn("timbo");
+
+    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, "timbo")).thenReturn(
+      true
+    );
+    when(
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Write, "timbo")
+    ).thenReturn(false);
+
+    assertThrows(InvalidAuthException.class, () -> service.deleteCollection(collection.getShepardId()));
   }
 
   @Test
@@ -206,6 +312,8 @@ public class CollectionServiceTest {
     Collection ret = new Collection(1L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     assertEquals(ret, result);
   }
@@ -232,12 +340,24 @@ public class CollectionServiceTest {
     });
   }
 
+  public void getCollectionByShepardIdNoVersionNoReadPermissions() {
+    Collection ret = new Collection(1L);
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
+    when(authenticationContext.getCurrentUserName()).thenReturn("eric");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "eric")).thenReturn(false);
+    assertThrows(InvalidAuthException.class, () -> service.getCollectionWithDataObjectsAndIncomingReferences(shepardId)
+    );
+  }
+
   @Test
   public void getCollectionByShepardId() {
     Collection ret = new Collection(1L);
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID, false)).thenReturn(ret);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     assertEquals(ret, result);
   }
@@ -263,5 +383,67 @@ public class CollectionServiceTest {
     assertThrows(InvalidPathException.class, () -> {
       service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     });
+  }
+
+  @Test
+  public void getCollectionPermissions() {
+    Collection col = new Collection(1L);
+    Permissions ret = new Permissions(col, new User("bob"), PermissionType.Private);
+    col.setPermissions(ret);
+    long shepardId = 2L;
+
+    when(dao.findByShepardId(shepardId, true)).thenReturn(col);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob")).thenReturn(true);
+    when(permissionsService.getPermissionsOfEntity(shepardId)).thenReturn(ret);
+
+    var result = service.getCollectionPermissions(shepardId);
+    assertEquals(ret, result);
+  }
+
+  @Test
+  public void getCollectionPermissionsNoManagePermissions() {
+    Collection col = new Collection(1L);
+    Permissions ret = new Permissions(col, new User("bob"), PermissionType.Private);
+    col.setPermissions(ret);
+    long shepardId = 2L;
+    when(dao.findByShepardId(shepardId, true)).thenReturn(col);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob")).thenReturn(false);
+    when(permissionsService.getPermissionsOfEntityOptional(shepardId)).thenReturn(Optional.of(ret));
+    assertThrows(InvalidAuthException.class, () -> service.getCollectionPermissions(shepardId));
+  }
+
+  @Test
+  public void updateCollectionPermissions() {
+    Collection col = new Collection(1L);
+    long shepardId = 2L;
+    col.setShepardId(shepardId);
+    Permissions newPermissions = new Permissions(col, new User("bob"), PermissionType.Public);
+    PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
+    when(dao.findByShepardId(shepardId, true)).thenReturn(col);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob")).thenReturn(true);
+    when(permissionsService.updatePermissionsByNeo4jId(permissionsIO, shepardId)).thenReturn(newPermissions);
+    var result = service.updateCollectionPermissions(permissionsIO, shepardId);
+    assertEquals(newPermissions, result);
+  }
+
+  @Test
+  public void updateCollectionPermissionsNoManagePermissions() {
+    Collection col = new Collection(1L);
+    long shepardId = 2L;
+    col.setShepardId(shepardId);
+    Permissions newPermissions = new Permissions(col, new User("bob"), PermissionType.Public);
+    PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
+    when(dao.findByShepardId(shepardId, true)).thenReturn(col);
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob")).thenReturn(false);
+    when(permissionsService.updatePermissionsByNeo4jId(permissionsIO, shepardId)).thenReturn(newPermissions);
+    assertThrows(InvalidAuthException.class, () -> service.updateCollectionPermissions(permissionsIO, shepardId));
   }
 }

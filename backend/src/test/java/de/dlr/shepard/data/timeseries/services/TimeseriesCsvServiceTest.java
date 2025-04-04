@@ -2,14 +2,20 @@ package de.dlr.shepard.data.timeseries.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -26,6 +32,12 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 public class TimeseriesCsvServiceTest {
 
+  @InjectMock
+  UserService userService;
+
+  @InjectMock
+  AuthenticationContext authenticationContext;
+
   @Inject
   TimeseriesContainerService timeseriesContainerService;
 
@@ -36,7 +48,6 @@ public class TimeseriesCsvServiceTest {
   TimeseriesCsvService timeseriesCsvService;
 
   private final String containerName = "AnotherContainer";
-  private final String userName = "Testuser";
 
   /**********************
    * exportTimeseriesDataToCsv
@@ -45,7 +56,14 @@ public class TimeseriesCsvServiceTest {
   @Test
   @Transactional
   public void exportTimeseriesDataToCsv_oneTimeseriesWithDoubleValues_success() throws IOException, URISyntaxException {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("water_level");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
@@ -87,7 +105,14 @@ public class TimeseriesCsvServiceTest {
   @Test
   @Transactional
   public void exportTimeseriesDataToCsv_oneTimeseriesWithStringValues_success() throws IOException, URISyntaxException {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("status");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
@@ -124,7 +149,14 @@ public class TimeseriesCsvServiceTest {
   @Transactional
   public void exportTimeseriesDataToCsv_oneTimeseriesWithBooleanValues_success()
     throws IOException, URISyntaxException {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("motion");
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
@@ -171,7 +203,14 @@ public class TimeseriesCsvServiceTest {
   @Transactional
   public void importTimeseriesFromCsv_multipleTimeseriesWithMultipleValues_success()
     throws IOException, URISyntaxException {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
 
     File importCSVFile = new File(
       getClass().getClassLoader().getResource("timeseries_import_experimental.csv").toURI()
@@ -179,7 +218,7 @@ public class TimeseriesCsvServiceTest {
 
     String csvFileContent = Files.readString(importCSVFile.toPath());
 
-    timeseriesCsvService.importTimeseriesFromCsv(container, importCSVFile.toPath().toString());
+    timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
     List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
@@ -240,13 +279,20 @@ public class TimeseriesCsvServiceTest {
   @Test
   @Transactional
   public void importTimeseriesFromCsv_emptyTimeseries_noDataCreation() throws IOException, URISyntaxException {
-    var container = timeseriesContainerService.createContainer(containerName, userName);
+    User user = new User("Testuser");
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    var container = timeseriesContainerService.createContainer(containerIO);
 
     File importCSVFile = new File(
       getClass().getClassLoader().getResource("timeseries_import_experimental_empty.csv").toURI()
     );
 
-    timeseriesCsvService.importTimeseriesFromCsv(container, importCSVFile.toPath().toString());
+    timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
     List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 

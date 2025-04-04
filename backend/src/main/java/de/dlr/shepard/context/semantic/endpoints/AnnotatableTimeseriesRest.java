@@ -43,12 +43,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class AnnotatableTimeseriesRest {
 
-  private AnnotatableTimeseriesService annotatableTimeseriesService;
-
   @Inject
-  AnnotatableTimeseriesRest(AnnotatableTimeseriesService annotatableTimeseriesService) {
-    this.annotatableTimeseriesService = annotatableTimeseriesService;
-  }
+  AnnotatableTimeseriesService annotatableTimeseriesService;
 
   @GET
   @Tag(name = Constants.TIMESERIES_CONTAINER)
@@ -136,7 +132,7 @@ public class AnnotatableTimeseriesRest {
     @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long annotationId
   ) {
-    annotatableTimeseriesService.deleteAnnotation(timeseriesId, annotationId);
+    annotatableTimeseriesService.deleteAnnotation(containerId, timeseriesId, annotationId);
     return Response.status(Status.NO_CONTENT).build();
   }
 }

@@ -1,5 +1,7 @@
 package de.dlr.shepard.context.export;
 
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.ShepardException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
@@ -7,6 +9,7 @@ import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
+import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.file.services.FileReferenceService;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
@@ -29,54 +32,50 @@ import java.util.List;
 @RequestScoped
 public class ExportService {
 
-  private CollectionService collectionService;
-  private DataObjectService dataObjectService;
-  private BasicReferenceService basicReferenceService;
-  private TimeseriesReferenceService timeseriesReferenceService;
-  private FileReferenceService fileReferenceService;
-  private StructuredDataReferenceService structuredDataReferenceService;
-  private URIReferenceService uriReferenceService;
-
-  ExportService() {}
+  @Inject
+  CollectionService collectionService;
 
   @Inject
-  public ExportService(
-    CollectionService collectionService,
-    DataObjectService dataObjectService,
-    BasicReferenceService basicReferenceService,
-    TimeseriesReferenceService timeseriesReferenceService,
-    FileReferenceService fileReferenceService,
-    StructuredDataReferenceService structuredDataReferenceService,
-    URIReferenceService uriReferenceService
-  ) {
-    this.collectionService = collectionService;
-    this.dataObjectService = dataObjectService;
-    this.basicReferenceService = basicReferenceService;
-    this.timeseriesReferenceService = timeseriesReferenceService;
-    this.fileReferenceService = fileReferenceService;
-    this.structuredDataReferenceService = structuredDataReferenceService;
-    this.uriReferenceService = uriReferenceService;
-  }
+  DataObjectService dataObjectService;
+
+  @Inject
+  BasicReferenceService basicReferenceService;
+
+  @Inject
+  TimeseriesReferenceService timeseriesReferenceService;
+
+  @Inject
+  FileReferenceService fileReferenceService;
+
+  @Inject
+  StructuredDataReferenceService structuredDataReferenceService;
+
+  @Inject
+  URIReferenceService uriReferenceService;
+
+  @Inject
+  AuthenticationContext authenticationContext;
 
   /**
    * Exports collection by shepard Id
+   *
    * @param collectionId
-   * @param username
    * @return InputStream
    * @throws InvalidPathException if collection with 'collectionId' could not be found
+   * @throws InvalidAuthException if user has no read permissions on collection
    * @throws IOException if building the InputStream fails
    */
-  public InputStream exportCollectionByShepardId(long collectionId, String username) throws IOException {
+  public InputStream exportCollectionByShepardId(long collectionId) throws IOException {
     var collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
     var builder = new ExportBuilder(collection);
     for (var dataObject : collection.getDataObjects()) {
-      fetchAndWriteDataObject(builder, dataObject.getShepardId(), username);
+      fetchAndWriteDataObject(collectionId, builder, dataObject.getShepardId());
     }
     return builder.build();
   }
 
-  private void fetchAndWriteDataObject(ExportBuilder builder, long dataObjectId, String username)
+  private void fetchAndWriteDataObject(long collectionId, ExportBuilder builder, long dataObjectId)
     throws IOException, InvalidBodyException {
     var dataObject = dataObjectService.getDataObject(dataObjectId);
     builder.addDataObject(dataObject);
@@ -84,28 +83,60 @@ public class ExportService {
     // TODO: Add more types, maybe improve (StrategyPattern?)
     for (var reference : dataObject.getReferences()) {
       switch (reference.getType()) {
-        case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(builder, reference.getShepardId(), username);
-        case "FileReference" -> fetchAndWriteFileReference(builder, reference.getShepardId(), username);
-        case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
+        case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
+          collectionId,
+          dataObjectId,
           builder,
           reference.getShepardId(),
-          username
+          authenticationContext.getCurrentUserName()
         );
-        case "URIReference" -> fetchAndWriteUriReference(builder, reference.getShepardId(), username);
-        default -> fetchAndWriteBasicReference(builder, reference.getShepardId());
+        case "FileReference" -> fetchAndWriteFileReference(
+          collectionId,
+          dataObjectId,
+          builder,
+          reference.getShepardId()
+        );
+        case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
+          collectionId,
+          dataObjectId,
+          builder,
+          reference.getShepardId()
+        );
+        case "URIReference" -> fetchAndWriteUriReference(
+          collectionId,
+          dataObjectId,
+          builder,
+          reference.getShepardId(),
+          authenticationContext.getCurrentUserName()
+        );
+        default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
       }
     }
   }
 
-  private void fetchAndWriteTimeseriesReference(ExportBuilder builder, long referenceId, String username)
-    throws IOException {
-    var reference = timeseriesReferenceService.getReferenceByShepardId(referenceId, null);
+  private void fetchAndWriteTimeseriesReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    ExportBuilder builder,
+    long referenceId,
+    String username
+  ) throws IOException {
+    var reference = timeseriesReferenceService.getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      referenceId,
+      null
+    );
 
     builder.addReference(new TimeseriesReferenceIO(reference), reference.getCreatedBy());
 
     InputStream timeseriesPayload = null;
     try {
-      timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(referenceId, username);
+      timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
+        collectionShepardId,
+        dataObjectShepardId,
+        referenceId
+      );
     } catch (ShepardException e) {
       Log.warn("Cannot access timeseries payload during export");
     }
@@ -114,14 +145,24 @@ public class ExportService {
     }
   }
 
-  private void fetchAndWriteFileReference(ExportBuilder builder, long referenceId, String username) throws IOException {
-    var reference = fileReferenceService.getReferenceByShepardId(referenceId, null);
+  private void fetchAndWriteFileReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    ExportBuilder builder,
+    long referenceId
+  ) throws IOException {
+    FileReference reference = fileReferenceService.getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      referenceId,
+      null
+    );
 
     builder.addReference(new FileReferenceIO(reference), reference.getCreatedBy());
 
     List<NamedInputStream> payloads = Collections.emptyList();
     try {
-      payloads = fileReferenceService.getAllPayloadsByShepardId(referenceId, username);
+      payloads = fileReferenceService.getAllPayloads(collectionShepardId, dataObjectShepardId, referenceId);
     } catch (ShepardException e) {
       Log.warn("Cannot access file payload during export");
     }
@@ -131,15 +172,19 @@ public class ExportService {
     }
   }
 
-  private void fetchAndWriteStructuredDataReference(ExportBuilder builder, long referenceId, String username)
-    throws IOException {
-    var reference = structuredDataReferenceService.getReferenceByShepardId(referenceId, null);
+  private void fetchAndWriteStructuredDataReference(
+    long collectionId,
+    long dataObjectId,
+    ExportBuilder builder,
+    long referenceId
+  ) throws IOException {
+    var reference = structuredDataReferenceService.getReference(collectionId, dataObjectId, referenceId, null);
 
     builder.addReference(new StructuredDataReferenceIO(reference), reference.getCreatedBy());
 
     List<StructuredDataPayload> payloads = Collections.emptyList();
     try {
-      payloads = structuredDataReferenceService.getAllPayloadsByShepardId(referenceId, username);
+      payloads = structuredDataReferenceService.getAllPayloads(collectionId, dataObjectId, referenceId);
     } catch (ShepardException e) {
       Log.warn("Cannot access structured data payload during export");
     }
@@ -149,14 +194,25 @@ public class ExportService {
     }
   }
 
-  private void fetchAndWriteUriReference(ExportBuilder builder, long referenceId, String username) throws IOException {
-    var reference = uriReferenceService.getReferenceByShepardId(referenceId, null);
+  private void fetchAndWriteUriReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    ExportBuilder builder,
+    long referenceId,
+    String username
+  ) throws IOException {
+    var reference = uriReferenceService.getReference(collectionShepardId, dataObjectShepardId, referenceId, null);
 
     builder.addReference(new URIReferenceIO(reference), reference.getCreatedBy());
   }
 
-  private void fetchAndWriteBasicReference(ExportBuilder builder, long referenceId) throws IOException {
-    var reference = basicReferenceService.getReferenceByShepardId(referenceId);
+  private void fetchAndWriteBasicReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    ExportBuilder builder,
+    long referenceId
+  ) throws IOException {
+    var reference = basicReferenceService.getReference(collectionShepardId, dataObjectShepardId, referenceId);
 
     builder.addReference(new BasicReferenceIO(reference), reference.getCreatedBy());
   }

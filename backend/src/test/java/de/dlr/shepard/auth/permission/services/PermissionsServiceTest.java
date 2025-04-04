@@ -1,7 +1,8 @@
 package de.dlr.shepard.auth.permission.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -17,9 +19,11 @@ import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.file.entities.FileContainer;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -35,8 +39,13 @@ public class PermissionsServiceTest extends BaseTestCase {
   @Mock
   private PermissionsDAO dao;
 
+  @Mock
+  private PermissionLastSeenCache lastSeenCache;
+
   @InjectMocks
   private PermissionsService service;
+
+  private final User user = new User("testuser");
 
   @Test
   public void createPermissions_callsDAO() {
@@ -56,6 +65,8 @@ public class PermissionsServiceTest extends BaseTestCase {
     perms.setEntities(conList);
 
     when(dao.findByEntityNeo4jId(2L)).thenReturn(perms);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(lastSeenCache.isKeyCached(anyString())).thenReturn(false);
     var actual = service.getPermissionsOfEntity(2L);
     assertEquals(perms, actual);
   }
@@ -63,10 +74,11 @@ public class PermissionsServiceTest extends BaseTestCase {
   @Test
   public void getPermissionsByNeo4jIdTest_notFound() {
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(lastSeenCache.isKeyCached(anyString())).thenReturn(false);
 
-    var actual = service.getPermissionsOfEntity(2L);
-    assertNull(actual);
-    verify(dao).findByEntityNeo4jId(2L);
+    var ex = assertThrows(NotFoundException.class, () -> service.getPermissionsOfEntity(2L));
+    assertEquals("Permissions with entity 2 is null", ex.getMessage());
   }
 
   @Test
@@ -109,13 +121,14 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userService.getUser("owner")).thenReturn(owner);
-    when(userService.getUser("reader")).thenReturn(reader);
-    when(userService.getUser("writer")).thenReturn(writer);
-    when(userService.getUser("manager")).thenReturn(manager);
-    when(userGroupService.getUserGroup(12L)).thenReturn(writerGroup);
+    when(userService.getUserOptional("owner")).thenReturn(Optional.of(owner));
+    when(userService.getUserOptional("reader")).thenReturn(Optional.of(reader));
+    when(userService.getUserOptional("writer")).thenReturn(Optional.of(writer));
+    when(userService.getUserOptional("manager")).thenReturn(Optional.of(manager));
+    when(userGroupService.getUserGroupOptional(12L)).thenReturn(Optional.of(writerGroup));
     when(dao.findByEntityNeo4jId(2L)).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
+
     var actual = service.updatePermissionsByNeo4jId(perms, 2L);
     assertEquals(updated, actual);
   }
@@ -165,10 +178,10 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userService.getUser("owner")).thenReturn(owner);
-    when(userService.getUser("reader")).thenReturn(reader);
-    when(userService.getUser("writer")).thenReturn(writer);
-    when(userService.getUser("manager")).thenReturn(manager);
+    when(userService.getUserOptional("owner")).thenReturn(Optional.of(owner));
+    when(userService.getUserOptional("reader")).thenReturn(Optional.of(reader));
+    when(userService.getUserOptional("writer")).thenReturn(Optional.of(writer));
+    when(userService.getUserOptional("manager")).thenReturn(Optional.of(manager));
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
     when(dao.createOrUpdate(toCreate)).thenReturn(updated);
 
@@ -209,9 +222,9 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userService.getUser("reader")).thenReturn(reader);
-    when(userService.getUser("writer")).thenReturn(writer);
-    when(userService.getUser("manager")).thenReturn(manager);
+    when(userService.getUserOptional("reader")).thenReturn(Optional.of(reader));
+    when(userService.getUserOptional("writer")).thenReturn(Optional.of(writer));
+    when(userService.getUserOptional("manager")).thenReturn(Optional.of(manager));
     when(dao.findByEntityNeo4jId(2L)).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 
@@ -253,9 +266,9 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
-    when(userService.getUser("reader")).thenReturn(reader);
-    when(userService.getUser("writer")).thenReturn(writer);
-    when(userService.getUser("manager")).thenReturn(manager);
+    when(userService.getUserOptional("reader")).thenReturn(Optional.of(reader));
+    when(userService.getUserOptional("writer")).thenReturn(Optional.of(writer));
+    when(userService.getUserOptional("manager")).thenReturn(Optional.of(manager));
     when(dao.findByEntityNeo4jId(col.getShepardId())).thenReturn(existing);
     when(dao.createOrUpdate(updated)).thenReturn(updated);
 

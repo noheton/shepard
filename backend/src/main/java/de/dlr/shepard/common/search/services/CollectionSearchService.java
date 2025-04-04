@@ -1,5 +1,7 @@
 package de.dlr.shepard.common.search.services;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
@@ -16,29 +18,27 @@ import java.util.Optional;
 @RequestScoped
 public class CollectionSearchService {
 
-  private SearchDAO searchDAO;
-
-  CollectionSearchService() {}
+  @Inject
+  SearchDAO searchDAO;
 
   @Inject
-  public CollectionSearchService(SearchDAO searchDAO) {
-    this.searchDAO = searchDAO;
-  }
+  UserService userService;
 
   public PaginatedCollectionList search(
     String collectionSearchQuery,
-    String userName,
     Optional<Integer> page,
     Optional<Integer> pageSize,
     BasicCollectionAttributes orderBy,
     Boolean orderDesc
   ) {
+    User user = userService.getCurrentUser();
+
     QueryValidator.checkQuery(collectionSearchQuery);
     PaginationHelper pagination = null;
     if (page.isPresent() && pageSize.isPresent()) pagination = new PaginationHelper(page.get(), pageSize.get());
     String neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
       collectionSearchQuery,
-      userName,
+      user.getUsername(),
       new SortingHelper(orderBy, orderDesc)
     );
     List<Collection> resultList = searchDAO.findCollections(

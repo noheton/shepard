@@ -3,6 +3,8 @@ package de.dlr.shepard.common.search.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.QueryType;
@@ -36,6 +38,11 @@ public class ReferenceSearchServiceTest {
   @Inject
   ReferenceSearchService referenceSearcher;
 
+  @InjectMock
+  UserService userService;
+
+  private static final User user = new User("Testuser");
+
   private static String query = String.format(
     """
     {
@@ -53,7 +60,6 @@ public class ReferenceSearchServiceTest {
     ]}""",
     1L
   );
-  private static String userName = "user";
 
   @ParameterizedTest
   @MethodSource
@@ -69,12 +75,15 @@ public class ReferenceSearchServiceTest {
     SearchScope[] scopes = { scope };
     SearchParams searchParams = new SearchParams(query, QueryType.Reference);
     SearchBody searchBody = new SearchBody(scopes, searchParams);
+
     when(searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY)).thenReturn(List.of(reference));
+    when(userService.getCurrentUser()).thenReturn(user);
+
     ResultTriple resultTriple = new ResultTriple(1L, 2L, 3L);
     ResultTriple[] resultTriples = { resultTriple };
     BasicEntityIO[] results = { new BasicEntityIO(reference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = referenceSearcher.search(searchBody, userName);
+    var actual = referenceSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -86,14 +95,18 @@ public class ReferenceSearchServiceTest {
     var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
     var scope4 = new SearchScope(1L, 2L, traversalRules);
 
-    var query1 = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(query, userName);
-    var query2 = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(query, 1L, userName);
-    var query3 = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(scope3, query, userName);
+    var query1 = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(query, user.getUsername());
+    var query2 = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(query, 1L, user.getUsername());
+    var query3 = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(
+      scope3,
+      query,
+      user.getUsername()
+    );
     var query4 = Neo4jQueryBuilder.collectionDataObjectBasicReferenceSelectionQueryWithNeo4jId(
       scope4,
       traversalRules[0],
       query,
-      userName
+      user.getUsername()
     );
 
     // @formatter:off
@@ -114,7 +127,7 @@ public class ReferenceSearchServiceTest {
     ResultTriple[] resultTriples = {};
     BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = referenceSearcher.search(searchBody, userName);
+    var actual = referenceSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 }

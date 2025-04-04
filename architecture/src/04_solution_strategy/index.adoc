@@ -58,15 +58,9 @@ A module should only expose it's services to other modules, not internal compone
 Also, following <<adr-016>> the services are responsible for validating the operation.
 That includes checking the appropriate permissions of the user or the existence of the resource.
 
-To provide useful methods providing resources for other modules, they may provide two types of `get...` methods:
-
-1. The standard method, e.g. `getCollection(long shepardId)`.
-This will throw a runtime exception in case the collection does not exist, is deleted or the user does not have appropriate permissions.
+Service methods will throw a runtime exception in case the collection does not exist, is deleted or the user does not have appropriate permissions.
 Usually it would be an `InvalidPathException` or `InvalidAuthException`.
 The exception type should be documented in the JavaDoc of the methods.
-
-2. The method returning an optional, e.g. `getCollectionOptional(long shepardId)`.
-This will return an optional, leaving handling empty return values to the caller.
 
 [[solution_strategy_rest-endpoints]]
 ==== REST Endpoints

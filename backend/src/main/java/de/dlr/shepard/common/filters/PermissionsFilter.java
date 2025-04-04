@@ -1,7 +1,7 @@
 package de.dlr.shepard.common.filters;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.security.PermissionGracePeriod;
+import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -27,15 +27,15 @@ public class PermissionsFilter implements ContainerRequestFilter {
   private static final List<String> writerMethods = List.of(HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE);
   private static final List<String> readerMethods = List.of(HttpMethod.GET);
 
-  private PermissionGracePeriod lastSeen;
+  private PermissionLastSeenCache permissionLastSeenCache;
 
   private PermissionsService permissionsService;
 
   PermissionsFilter() {}
 
   @Inject
-  public PermissionsFilter(PermissionGracePeriod lastSeen, PermissionsService permissionsService) {
-    this.lastSeen = lastSeen;
+  public PermissionsFilter(PermissionLastSeenCache permissionLastSeenCache, PermissionsService permissionsService) {
+    this.permissionLastSeenCache = permissionLastSeenCache;
     this.permissionsService = permissionsService;
   }
 
@@ -50,12 +50,12 @@ public class PermissionsFilter implements ContainerRequestFilter {
     }
 
     var lastSeenKey = principal.getName() + requestContext.getMethod() + requestContext.getUriInfo().getPath();
-    if (lastSeen.elementIsKnown(lastSeenKey)) {
+    if (permissionLastSeenCache.isKeyCached(lastSeenKey)) {
       return;
     }
     var accessType = getAccessType(requestContext.getUriInfo().getPathSegments(), requestContext.getMethod());
     if (permissionsService.isAllowed(requestContext, accessType, principal.getName())) {
-      lastSeen.elementSeen(lastSeenKey);
+      permissionLastSeenCache.cacheKey(lastSeenKey);
       return;
     }
 

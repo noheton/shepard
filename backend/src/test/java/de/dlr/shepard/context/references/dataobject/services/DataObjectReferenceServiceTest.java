@@ -1,16 +1,19 @@
 package de.dlr.shepard.context.references.dataobject.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
+import de.dlr.shepard.common.util.PermissionType;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
@@ -21,9 +24,9 @@ import de.dlr.shepard.context.version.entities.Version;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +40,7 @@ public class DataObjectReferenceServiceTest {
   DataObjectService dataObjectService;
 
   @InjectMock
-  UserDAO userDAO;
+  UserService userService;
 
   @InjectMock
   DateHelper dateHelper;
@@ -48,12 +51,28 @@ public class DataObjectReferenceServiceTest {
   @Inject
   DataObjectReferenceService service;
 
+  private final Long collectionId = 1120L;
+  private final User defaultUser = new User("Martha");
+
   @Test
   public void getDataObjectReferenceByShepardIdTest_successful() {
     DataObjectReference ref = new DataObjectReference(1L);
     ref.setShepardId(15L);
+
+    DataObject dataObject = new DataObject(1121L);
+    dataObject.setShepardId(2212L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    DataObjectReference actual = service.getReference(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId(),
+      null
+    );
     assertEquals(ref, actual);
   }
 
@@ -61,8 +80,8 @@ public class DataObjectReferenceServiceTest {
   public void getDataObjectReferenceByShepardIdTest_notFound() {
     Long shepardId = 1L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    var actual = service.getReferenceByShepardId(shepardId, null);
-    assertNull(actual);
+    var ex = assertThrows(InvalidPathException.class, () -> service.getReference(collectionId, 1114L, shepardId, null));
+    assertEquals(ex.getMessage(), "ID ERROR - Data Object Reference with id 1 is null or deleted");
   }
 
   @Test
@@ -71,8 +90,29 @@ public class DataObjectReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    DataObjectReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
-    assertNull(actual);
+    var ex = assertThrows(InvalidPathException.class, () ->
+      service.getReference(collectionId, 1114L, ref.getShepardId(), null)
+    );
+    assertEquals(ex.getMessage(), "ID ERROR - Data Object Reference with id 15 is null or deleted");
+  }
+
+  @Test
+  public void getDataObjectReferenceShepardIdTest_noAssociationBetweenDataObjectAndReference() {
+    DataObject dataObject = new DataObject(2L);
+    dataObject.setShepardId(20L);
+
+    DataObject otherDataObject = new DataObject(100L);
+    otherDataObject.setShepardId(110L);
+
+    DataObjectReference ref = new DataObjectReference(30L);
+    ref.setShepardId(35L);
+    ref.setDataObject(otherDataObject);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+
+    var ex = assertThrows(InvalidPathException.class, () ->
+      service.getReference(collectionId, dataObject.getShepardId(), ref.getShepardId(), null)
+    );
+    assertEquals(ex.getMessage(), "ID ERROR - There is no association between dataObject and reference");
   }
 
   @Test
@@ -88,13 +128,16 @@ public class DataObjectReferenceServiceTest {
     ref3.setDeleted(true);
     dataObject.setReferences(List.of(ref1, ref2, ref3));
     when(dao.findByDataObjectShepardId(dataObject.getShepardId(), null)).thenReturn(List.of(ref1, ref2));
-    List<DataObjectReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
+    List<DataObjectReference> actual = service.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObject.getShepardId(),
+      null
+    );
     assertEquals(List.of(ref1, ref2), actual);
   }
 
   @Test
   public void createDataObjectReferenceByShepardIdTest() {
-    User user = new User("Bob");
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
     Date date = new Date(30L);
@@ -111,7 +154,7 @@ public class DataObjectReferenceServiceTest {
     DataObjectReference toCreate = new DataObjectReference() {
       {
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setDataObject(dataObject);
         setName(input.getName());
         setReferencedDataObject(referenced);
@@ -122,7 +165,7 @@ public class DataObjectReferenceServiceTest {
       {
         setId(1L);
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setDataObject(dataObject);
         setName(toCreate.getName());
         setReferencedDataObject(toCreate.getReferencedDataObject());
@@ -134,25 +177,23 @@ public class DataObjectReferenceServiceTest {
         setId(created.getId());
         setShepardId(created.getId());
         setCreatedAt(date);
-        setCreatedBy(user);
+        setCreatedBy(defaultUser);
         setDataObject(dataObject);
         setName(created.getName());
         setReferencedDataObject(created.getReferencedDataObject());
         setRelationship(created.getRelationship());
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObjectOptional(referenced.getShepardId())).thenReturn(Optional.of(referenced));
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
-    DataObjectReference actual = service.createReferenceByShepardId(
-      dataObject.getShepardId(),
-      input,
-      user.getUsername()
-    );
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    DataObjectReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
@@ -169,12 +210,11 @@ public class DataObjectReferenceServiceTest {
         setRelationship("MyRelationship");
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObjectOptional(nullDataObjectShepardId)).thenReturn(Optional.empty());
-
+    when(dataObjectService.getDataObject(nullDataObjectShepardId)).thenThrow(InvalidPathException.class);
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
   }
 
@@ -193,12 +233,45 @@ public class DataObjectReferenceServiceTest {
         setRelationship("MyRelationship");
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidPathException.class);
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
+  }
+
+  @Test
+  public void createDataObjectReferenceByShepardId_noPermissionsOnReferencedDataObject() {
+    DataObject dataObject = new DataObject(1L);
+    dataObject.setShepardId(2L);
+
+    User otherUser = new User("Chandler");
+    Collection referenceCollection = new Collection(18L);
+    referenceCollection.setShepardId(19L);
+    referenceCollection.setPermissions(new Permissions(referenceCollection, otherUser, PermissionType.Private));
+    DataObject referenced = new DataObject(20L);
+    referenced.setShepardId(21L);
+    referenced.setCollection(referenceCollection);
+    DataObjectReference ref = new DataObjectReference(10L);
+    ref.setShepardId(11L);
+    ref.setReferencedDataObject(referenced);
+
+    DataObjectReferenceIO input = new DataObjectReferenceIO() {
+      {
+        setName("MyName");
+        setReferencedDataObjectId(referenced.getShepardId());
+        setRelationship("MyRelationship");
+      }
+    };
+
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidAuthException.class);
+    var ex = assertThrows(InvalidBodyException.class, () ->
+      service.createReference(collectionId, dataObject.getShepardId(), input)
+    );
+    assertEquals("You do not have permissions to access the referenced DataObject with id 21.", ex.getMessage());
   }
 
   @Test
@@ -213,24 +286,38 @@ public class DataObjectReferenceServiceTest {
     expected.setUpdatedAt(date);
     expected.setUpdatedBy(user);
 
-    when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(dateHelper.getDate()).thenReturn(date);
-    boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
-    verify(dao).createOrUpdate(expected);
-    assertTrue(actual);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    assertDoesNotThrow(() -> service.deleteReference(collectionId, dataObject.getShepardId(), ref.getShepardId()));
   }
 
   @Test
   public void getPayloadByShepardIdTest() {
     DataObject referenced = new DataObject(100L);
     referenced.setShepardId(1005L);
+
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
     reference.setReferencedDataObject(referenced);
+
+    DataObject dataObject = new DataObject(1002L);
+    dataObject.setShepardId(12412L);
+    dataObject.setReferences(List.of(reference));
+    reference.setDataObject(dataObject);
+
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
     when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
-    var actual = service.getPayloadByShepardId(reference.getShepardId(), null);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    DataObject actual = service.getPayload(collectionId, dataObject.getShepardId(), reference.getShepardId(), null);
     assertEquals(referenced, actual);
   }
 
@@ -241,9 +328,57 @@ public class DataObjectReferenceServiceTest {
     referenced.setDeleted(true);
     DataObjectReference reference = new DataObjectReference(1L);
     reference.setShepardId(15L);
+
+    DataObject dataObject = new DataObject(1002L);
+    dataObject.setShepardId(12412L);
+    dataObject.setReferences(List.of(reference));
+    reference.setDataObject(dataObject);
+
     when(dao.findByShepardId(reference.getShepardId(), null)).thenReturn(reference);
     when(dataObjectService.getDataObject(referenced.getShepardId())).thenReturn(referenced);
-    DataObject actual = service.getPayloadByShepardId(reference.getShepardId(), null);
-    assertNull(actual);
+    assertThrows(NotFoundException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), reference.getShepardId(), null)
+    );
+  }
+
+  @Test
+  public void getPayloadByShepardIdTest_noPermissionsOnReferencedDataObject() {
+    User otherUser = new User("Monica");
+    DataObject dataObject = new DataObject(3L);
+    dataObject.setShepardId(17L);
+    Collection referenceCollection = new Collection(18L);
+    referenceCollection.setShepardId(19L);
+    referenceCollection.setPermissions(new Permissions(referenceCollection, otherUser, PermissionType.Private));
+    DataObject referenced = new DataObject(20L);
+    referenced.setShepardId(21L);
+    referenced.setCollection(referenceCollection);
+    DataObjectReference ref = new DataObjectReference(10L);
+    ref.setShepardId(11L);
+    ref.setReferencedDataObject(referenced);
+    ref.setDataObject(dataObject);
+
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(dataObjectService.getDataObject(referenced.getShepardId())).thenThrow(InvalidAuthException.class);
+    assertThrows(InvalidAuthException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), null)
+    );
+  }
+
+  @Test
+  public void getPayloadByShepardIdTest_referencedDataObjectNotFound() {
+    DataObjectReference ref = new DataObjectReference(1L);
+    ref.setShepardId(15L);
+    DataObject dataObject = new DataObject(3L);
+    dataObject.setShepardId(17L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(dataObjectService.getDataObject(200L)).thenThrow(InvalidPathException.class);
+
+    assertThrows(NotFoundException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), null)
+    );
   }
 }

@@ -102,10 +102,10 @@ public class ApiKeyIT extends BaseTestCaseIT {
       .when()
       .get(apiKeyURL + "/" + otherUser.getApiKey().getUid())
       .then()
-      .statusCode(404)
+      .statusCode(403)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - There is no association between apiKey and user");
+    assertThat(response.getMessage()).isEqualTo("You do not have permissions for this ApiKey.");
   }
 
   @Test

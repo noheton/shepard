@@ -1,7 +1,7 @@
 package de.dlr.shepard.common.filters;
 
 import de.dlr.shepard.auth.security.JWTPrincipal;
-import de.dlr.shepard.auth.security.UserGracePeriod;
+import de.dlr.shepard.auth.security.UserLastSeenCache;
 import de.dlr.shepard.auth.security.Userinfo;
 import de.dlr.shepard.auth.security.UserinfoService;
 import de.dlr.shepard.auth.users.entities.User;
@@ -26,15 +26,15 @@ import java.io.IOException;
 @ApplicationScoped
 public class UserFilter implements ContainerRequestFilter {
 
-  private UserGracePeriod lastSeen;
+  private UserLastSeenCache userLastSeenCache;
   private UserService userService;
   private UserinfoService userInfoService;
 
   UserFilter() {}
 
   @Inject
-  public UserFilter(UserGracePeriod lastSeen, UserService userService, UserinfoService userInfoService) {
-    this.lastSeen = lastSeen;
+  public UserFilter(UserLastSeenCache userLastSeenCache, UserService userService, UserinfoService userInfoService) {
+    this.userLastSeenCache = userLastSeenCache;
     this.userService = userService;
     this.userInfoService = userInfoService;
   }
@@ -50,7 +50,7 @@ public class UserFilter implements ContainerRequestFilter {
     }
     var jwtPrincipal = (JWTPrincipal) principal;
     var header = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-    if (header != null && header.startsWith("Bearer ") && !lastSeen.elementIsKnown(jwtPrincipal.getUsername())) {
+    if (header != null && header.startsWith("Bearer ") && !userLastSeenCache.isKeyCached(jwtPrincipal.getUsername())) {
       User user;
       Userinfo userinfo;
       try {
@@ -65,13 +65,13 @@ public class UserFilter implements ContainerRequestFilter {
         abort(requestContext, "The usernames from the access token and the userinfo response do not match");
         return;
       }
-      var created = userService.updateUser(user);
+      var created = userService.createOrUpdateUser(user);
       if (created == null) {
         Log.warn("The user could not be updated or created");
         abort(requestContext, "The user could not be updated or created");
         return;
       }
-      lastSeen.elementSeen(jwtPrincipal.getUsername());
+      userLastSeenCache.cacheKey(jwtPrincipal.getUsername());
     }
   }
 

@@ -1,8 +1,8 @@
 package de.dlr.shepard.auth.users.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -10,19 +10,23 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserGroupDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.neo4j.ogm.session.Session;
 
@@ -33,7 +37,7 @@ public class UserGroupServiceTest {
   UserGroupDAO userGroupDAO;
 
   @InjectMock
-  UserDAO userDAO;
+  UserService userService;
 
   @InjectMock
   PermissionsService permissionsService;
@@ -44,8 +48,13 @@ public class UserGroupServiceTest {
   @InjectMock
   DateHelper dateHelper;
 
+  @InjectMock
+  AuthenticationContext authenticationContext;
+
   @Inject
   UserGroupService service;
+
+  private final User user = new User("Testuser");
 
   @Test
   public void createUserGroupTest() {
@@ -72,13 +81,13 @@ public class UserGroupServiceTest {
     created.setCreatedAt(date);
     created.setId(1L);
 
-    when(userDAO.find("creator")).thenReturn(creator);
-    when(userDAO.find("user")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(creator);
+    when(userService.getUserOptional("user")).thenReturn(Optional.of(user));
     when(dateHelper.getDate()).thenReturn(date);
     when(userGroupDAO.createOrUpdate(toCreate)).thenReturn(created);
     when(permissionsService.createPermissions(any(), any(), any())).thenReturn(null);
 
-    UserGroup actual = service.createUserGroup(input, "creator");
+    UserGroup actual = service.createUserGroup(input);
     assertEquals(created, actual);
   }
 
@@ -87,7 +96,17 @@ public class UserGroupServiceTest {
     UserGroup userGroup = new UserGroup();
     userGroup.setName("group");
     Long userGroupId = 1L;
+
     when(userGroupDAO.findByNeo4jId(userGroupId)).thenReturn(userGroup);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(
+        userGroupId,
+        AccessType.Read,
+        authenticationContext.getCurrentUserName()
+      )
+    ).thenReturn(true);
+
     UserGroup actual = service.getUserGroup(1L);
     assertEquals(userGroup, actual);
   }
@@ -97,7 +116,7 @@ public class UserGroupServiceTest {
     List<UserGroup> allUserGroups = new ArrayList<>();
     QueryParamHelper params = new QueryParamHelper();
     when(userGroupDAO.findAllUserGroups(params, "user1")).thenReturn(allUserGroups);
-    assertEquals(0, service.getAllUserGroups(params, "user1").size());
+    assertEquals(0, service.getAllUserGroups(params).size());
   }
 
   @Test
@@ -114,7 +133,6 @@ public class UserGroupServiceTest {
 
     UserGroup oldGroup = new UserGroup();
     oldGroup.setName("group");
-    var user = new User("user");
     ArrayList<User> users = new ArrayList<>();
     users.add(user);
     oldGroup.setUsers(users);
@@ -132,11 +150,18 @@ public class UserGroupServiceTest {
     newGroup.setUpdatedBy(updateUser);
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(oldGroup);
-    when(userDAO.find("updater")).thenReturn(updateUser);
+    when(userService.getUser("updater")).thenReturn(updateUser);
     when(dateHelper.getDate()).thenReturn(updateDate);
     when(userGroupDAO.createOrUpdate(oldGroup)).thenReturn(newGroup);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var actual = service.updateUserGroup(input.getId(), input, "updater");
+    var actual = service.updateUserGroup(input.getId(), input);
     assertEquals(newGroup, actual);
   }
 
@@ -149,11 +174,17 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
-    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(true);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var result = service.deleteUserGroup(1L);
-    assertTrue(result);
+    assertDoesNotThrow(() -> service.deleteUserGroup(1L));
   }
 
   @Test
@@ -163,10 +194,16 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(true);
-    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(null);
+    when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.empty());
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var result = service.deleteUserGroup(1L);
-    assertTrue(result);
+    assertDoesNotThrow(() -> service.deleteUserGroup(1L));
   }
 
   @Test
@@ -177,20 +214,31 @@ public class UserGroupServiceTest {
     permissions.setId(2L);
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
-    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(false);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var result = service.deleteUserGroup(1L);
-    assertFalse(result);
+    assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));
+
     verify(userGroupDAO, never()).deleteByNeo4jId(1L);
   }
 
   @Test
   public void deleteUserGroupTest_notFound() {
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(null);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var result = service.deleteUserGroup(1L);
-    assertFalse(result);
+    assertThrows(InvalidPathException.class, () -> service.deleteUserGroup(1L));
     verify(userGroupDAO, never()).deleteByNeo4jId(1L);
   }
 
@@ -203,10 +251,15 @@ public class UserGroupServiceTest {
 
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(userGroup);
     when(userGroupDAO.deleteByNeo4jId(1L)).thenReturn(false);
-    when(permissionsService.getPermissionsOfEntity(1L)).thenReturn(permissions);
+    when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName())
+    ).thenReturn(true);
 
-    var result = service.deleteUserGroup(1L);
-    assertFalse(result);
+    assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));
   }
 }

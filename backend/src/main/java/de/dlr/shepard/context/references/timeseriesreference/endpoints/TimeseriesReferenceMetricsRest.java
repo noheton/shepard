@@ -9,7 +9,6 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -89,8 +88,12 @@ public class TimeseriesReferenceMetricsRest {
     @QueryParam(Constants.FIELD) String field,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var reference = timeseriesReferenceService.getReferenceByShepardId(timeseriesReferenceId, versionUID);
-    if (reference == null) throw new NotFoundException("Timeseries reference not found.");
+    var reference = timeseriesReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      timeseriesReferenceId,
+      versionUID
+    );
 
     // Todo: Implementation for metrics will be done with #574
     Log.infof(

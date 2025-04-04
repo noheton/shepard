@@ -1,6 +1,7 @@
 package de.dlr.shepard.auth.apikey.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -8,8 +9,11 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.apikey.daos.ApiKeyDAO;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.io.ApiKeyIO;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
@@ -22,7 +26,6 @@ import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -36,7 +39,10 @@ public class ApiKeyServiceTest extends BaseTestCase {
   ApiKeyDAO dao;
 
   @InjectMock
-  UserDAO userDAO;
+  UserService userService;
+
+  @InjectMock
+  AuthenticationContext authenticationContext;
 
   @InjectMock
   DateHelper dateHelper;
@@ -57,14 +63,17 @@ public class ApiKeyServiceTest extends BaseTestCase {
     var decoded = Base64.getDecoder().decode(privateKey);
     var spec = new PKCS8EncodedKeySpec(decoded);
     key = kFactory.generatePrivate(spec);
+    authenticationContext.setPrincipal(new JWTPrincipal("bob", "key"));
   }
 
   @Test
   public void getApiKeyTest() {
     var uid = UUID.randomUUID();
     var key = new ApiKey(uid);
+    var user = new User("bob");
+    key.setBelongsTo(user);
     when(dao.find(uid)).thenReturn(key);
-    var actual = service.getApiKey(uid);
+    var actual = service.getApiKey("bob", uid);
     assertEquals(key, actual);
   }
 
@@ -75,7 +84,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
     var user = new User("bob");
     user.setApiKeys(List.of(key));
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getUser("bob")).thenReturn(user);
 
     var actual = service.getAllApiKeys("bob");
     assertEquals(List.of(key), actual);
@@ -83,18 +92,20 @@ public class ApiKeyServiceTest extends BaseTestCase {
 
   @Test
   public void getAllApiKeysTest_noUser() {
-    when(userDAO.find("bob")).thenReturn(null);
+    when(userService.getUser("bob")).thenThrow(InvalidPathException.class);
 
-    var actual = service.getAllApiKeys("bob");
-    assertEquals(Collections.emptyList(), actual);
+    assertThrows(InvalidPathException.class, () -> service.getAllApiKeys("bob"));
   }
 
   @Test
   public void deleteApiKeyTest() {
     var uid = UUID.randomUUID();
-
+    var key = new ApiKey(uid);
+    var user = new User("bob");
+    key.setBelongsTo(user);
+    when(dao.find(uid)).thenReturn(key);
     when(dao.delete(uid)).thenReturn(true);
-    var actual = service.deleteApiKey(uid);
+    var actual = service.deleteApiKey("bob", uid);
 
     assertTrue(actual);
   }
@@ -140,7 +151,7 @@ public class ApiKeyServiceTest extends BaseTestCase {
     };
 
     when(dateHelper.getDate()).thenReturn(date);
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getUser("bob")).thenReturn(user);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(signed)).thenReturn(signed);
     when(pkiHelper.getPrivateKey()).thenReturn(key);

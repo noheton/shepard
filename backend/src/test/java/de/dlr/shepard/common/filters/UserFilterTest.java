@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.security.JWTPrincipal;
-import de.dlr.shepard.auth.security.UserGracePeriod;
+import de.dlr.shepard.auth.security.UserLastSeenCache;
 import de.dlr.shepard.auth.security.Userinfo;
 import de.dlr.shepard.auth.security.UserinfoService;
 import de.dlr.shepard.auth.users.entities.User;
@@ -43,7 +43,7 @@ public class UserFilterTest {
   UserinfoService userinfoService;
 
   @InjectMock
-  UserGracePeriod lastSeen;
+  UserLastSeenCache userLastSeenCache;
 
   @InjectMock
   UriInfo uriInfo;
@@ -90,11 +90,11 @@ public class UserFilterTest {
 
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
-    when(userService.updateUser(u)).thenReturn(u);
+    when(userService.createOrUpdateUser(u)).thenReturn(u);
 
     filter.filter(requestContext);
-    verify(userService).updateUser(u);
-    verify(lastSeen).elementSeen("bob");
+    verify(userService).createOrUpdateUser(u);
+    verify(userLastSeenCache).cacheKey("bob");
     verify(requestContext, never()).abortWith(any());
   }
 
@@ -107,14 +107,14 @@ public class UserFilterTest {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
-    when(userService.updateUser(u)).thenReturn(u);
+    when(userService.createOrUpdateUser(u)).thenReturn(u);
     String relativePath = "/projects";
     when(uriInfo.getPath()).thenReturn(relativePath);
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService).updateUser(u);
-    verify(lastSeen).elementSeen("bob");
+    verify(userService).createOrUpdateUser(u);
+    verify(userLastSeenCache).cacheKey("bob");
     verify(requestContext, never()).abortWith(any());
   }
 
@@ -124,14 +124,14 @@ public class UserFilterTest {
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
-    when(lastSeen.elementIsKnown("bob")).thenReturn(true);
+    when(userLastSeenCache.isKeyCached("bob")).thenReturn(true);
     String relativePath = "/projects";
     when(uriInfo.getPath()).thenReturn(relativePath);
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
   }
 
   @Test
@@ -143,8 +143,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
     verify(requestContext).abortWith(any());
   }
 
@@ -164,8 +164,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
     verify(requestContext).abortWith(any());
   }
 
@@ -180,8 +180,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
   }
 
   @Test
@@ -195,8 +195,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
   }
 
   @Test
@@ -211,8 +211,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
     verify(requestContext).abortWith(any());
   }
 
@@ -229,8 +229,8 @@ public class UserFilterTest {
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(userService, never()).updateUser(any());
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userService, never()).createOrUpdateUser(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
     verify(requestContext).abortWith(any());
   }
 
@@ -243,13 +243,13 @@ public class UserFilterTest {
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
     when(userinfoService.fetchUserinfo("Bearer abc")).thenReturn(ui);
-    when(userService.updateUser(u)).thenReturn(null);
+    when(userService.createOrUpdateUser(u)).thenReturn(null);
     String relativePath = "/projects";
     when(uriInfo.getPath()).thenReturn(relativePath);
     when(requestContext.getUriInfo()).thenReturn(uriInfo);
 
     filter.filter(requestContext);
-    verify(lastSeen, never()).elementSeen(any());
+    verify(userLastSeenCache, never()).cacheKey(any());
     verify(requestContext).abortWith(any());
   }
 }

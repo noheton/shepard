@@ -191,7 +191,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Data Object Reference with id 99999 is null or deleted");
   }
 
   @Test
@@ -256,6 +256,55 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(9)
+  public void getDataObjectReferencePayload_referencedDataObjectPrivateFromOtherUser_returnsForbidden() {
+    // This test is a check for the bug described in #475
+    // Arrange
+    CollectionIO collectionWithReferencingDataObject = createCollection(
+      "collectionWithReferencedDataObject",
+      otherUser
+    );
+    DataObjectIO referencingDataObject = createDataObject(
+      "referencingDataObject",
+      collectionWithReferencingDataObject.getId(),
+      otherUser
+    );
+
+    String referencesURL = String.format(
+      "/%s/%d/%s/%d/%s",
+      Constants.COLLECTIONS,
+      collectionWithReferencingDataObject.getId(),
+      Constants.DATA_OBJECTS,
+      referencingDataObject.getId(),
+      Constants.DATAOBJECT_REFERENCES
+    );
+
+    DataObjectReferenceIO referenceToCreate = new DataObjectReferenceIO();
+    referenceToCreate.setName("reference");
+    referenceToCreate.setRelationship("integrationtest");
+    referenceToCreate.setReferencedDataObjectId(dataObject11.getId()); // create ref to foreign dataobject 'dataobject11' from 'user'
+
+    // Act + Assert
+    var error = given()
+      .spec(requestSpecOfOtherUser)
+      .body(referenceToCreate)
+      .when()
+      .post(referencesURL)
+      .then()
+      .statusCode(400)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertEquals(
+      String.format(
+        "You do not have permissions to access the referenced DataObject with id %s.",
+        dataObject11.getId()
+      ),
+      error.getMessage()
+    );
+  }
+
+  @Test
+  @Order(10)
   public void deleteDataObjectReferenceTest() {
     given()
       .spec(requestSpecOfDefaultUser)

@@ -2,7 +2,6 @@ package de.dlr.shepard.auth.users.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
-import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -20,11 +19,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,20 +39,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class UserGroupRest {
 
-  @Context
-  private SecurityContext securityContext;
-
-  private UserGroupService userGroupService;
-
-  private PermissionsService permissionsService;
-
-  UserGroupRest() {}
-
   @Inject
-  public UserGroupRest(UserGroupService userGroupService, PermissionsService permissionsService) {
-    this.userGroupService = userGroupService;
-    this.permissionsService = permissionsService;
-  }
+  UserGroupService userGroupService;
 
   @POST
   @Tag(name = Constants.USERGROUP)
@@ -72,7 +57,7 @@ public class UserGroupRest {
       content = @Content(schema = @Schema(implementation = UserGroupIO.class))
     ) @Valid UserGroupIO userGroup
   ) {
-    var newUserGroup = userGroupService.createUserGroup(userGroup, securityContext.getUserPrincipal().getName());
+    var newUserGroup = userGroupService.createUserGroup(userGroup);
     return Response.ok(new UserGroupIO(newUserGroup)).status(Status.CREATED).build();
   }
 
@@ -94,11 +79,7 @@ public class UserGroupRest {
       content = @Content(schema = @Schema(implementation = UserGroupIO.class))
     ) @Valid UserGroupIO userGroup
   ) {
-    UserGroup updatedUserGroup = userGroupService.updateUserGroup(
-      id,
-      userGroup,
-      securityContext.getUserPrincipal().getName()
-    );
+    UserGroup updatedUserGroup = userGroupService.updateUserGroup(id, userGroup);
     return Response.ok(new UserGroupIO(updatedUserGroup)).build();
   }
 
@@ -110,9 +91,8 @@ public class UserGroupRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
-    return userGroupService.deleteUserGroup(id)
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    userGroupService.deleteUserGroup(id);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -128,7 +108,6 @@ public class UserGroupRest {
   @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
     UserGroup ret = userGroupService.getUserGroup(id);
-    if (ret == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(new UserGroupIO(ret)).build();
   }
 
@@ -154,10 +133,7 @@ public class UserGroupRest {
     var params = new QueryParamHelper();
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    List<UserGroup> allUserGroups = userGroupService.getAllUserGroups(
-      params,
-      securityContext.getUserPrincipal().getName()
-    );
+    List<UserGroup> allUserGroups = userGroupService.getAllUserGroups(params);
     var result = new ArrayList<UserGroupIO>(allUserGroups.size());
     for (UserGroup userGroup : allUserGroups) {
       result.add(new UserGroupIO(userGroup));
@@ -177,8 +153,8 @@ public class UserGroupRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-    var perms = permissionsService.getPermissionsOfEntity(userGroupId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = userGroupService.getUserGroupPermissions(userGroupId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @PUT
@@ -199,8 +175,8 @@ public class UserGroupRest {
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
-    var perms = permissionsService.updatePermissionsByNeo4jId(permissions, userGroupId);
-    return perms != null ? Response.ok(new PermissionsIO(perms)).build() : Response.status(Status.NOT_FOUND).build();
+    var perms = userGroupService.updateUserGroupPermissions(permissions, userGroupId);
+    return Response.ok(new PermissionsIO(perms)).build();
   }
 
   @GET
@@ -215,7 +191,7 @@ public class UserGroupRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
-    var roles = permissionsService.getUserRolesOnEntity(userGroupId, securityContext.getUserPrincipal().getName());
-    return roles != null ? Response.ok(roles).build() : Response.status(Status.NOT_FOUND).build();
+    var roles = userGroupService.getUserGroupRoles(userGroupId);
+    return Response.ok(roles).build();
   }
 }

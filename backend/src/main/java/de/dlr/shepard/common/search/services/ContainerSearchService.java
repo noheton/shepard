@@ -1,5 +1,7 @@
 package de.dlr.shepard.common.search.services;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.neo4j.io.BasicContainerIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
@@ -17,28 +19,26 @@ import java.util.List;
 @RequestScoped
 public class ContainerSearchService {
 
-  private SearchDAO searchDAO;
-
-  ContainerSearchService() {}
+  @Inject
+  SearchDAO searchDAO;
 
   @Inject
-  public ContainerSearchService(SearchDAO searchDAO) {
-    this.searchDAO = searchDAO;
-  }
+  UserService userService;
 
   public ContainerSearchResult search(
     ContainerSearchBody containerSearchBody,
     PaginationHelper pagination,
-    SortingHelper sortOrder,
-    String userName
+    SortingHelper sortOrder
   ) {
+    User user = userService.getCurrentUser();
+
     ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
     QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
     String neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       containerSearchParams.getQuery(),
       containerSearchParams.getQueryType(),
       sortOrder,
-      userName
+      user.getUsername()
     );
     List<BasicContainerIO> resultList = findContainerList(neo4jSelectionQuery, containerSearchParams, pagination);
     Integer totalResultCount = searchDAO.getContainerTotalCount(

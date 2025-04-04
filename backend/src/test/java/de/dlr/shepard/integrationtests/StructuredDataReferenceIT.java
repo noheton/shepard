@@ -156,7 +156,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Structured Data Reference with id 99999 is null or deleted");
   }
 
   @Test
@@ -171,7 +171,9 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+    assertThat(actual.getMessage()).isEqualTo(
+      String.format("ID ERROR - Structured Data Reference with id %s is null or deleted", collection.getId())
+    );
   }
 
   @Test
@@ -245,6 +247,46 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
 
   @Test
   @Order(8)
+  public void getStructuredDataReference_referenceToPrivateContainerOfOtherUser_notAllowed() {
+    // This test is a testing the bug described in #475
+    CollectionIO otherCollection = createCollection("CollectionContainingReferencingDataObject", otherUser);
+    DataObjectIO otherDataObject = createDataObject(
+      "ReferencingDataObjectOfOtherUser",
+      otherCollection.getId(),
+      otherUser
+    );
+
+    StructuredDataReferenceIO toCreate = new StructuredDataReferenceIO();
+    toCreate.setName("StructuredDataReferenceDummy");
+    // create reference to other container with specific data oid
+    toCreate.setStructuredDataOids(new String[] { payload.getStructuredData().getOid() });
+    toCreate.setStructuredDataContainerId(container.getId());
+
+    // Act + Assert
+    ErrorResponse errorResponse = given()
+      .spec(requestSpecOfOtherUser)
+      .body(toCreate)
+      .when()
+      .post(
+        String.format(
+          "/%s/%d/%s/%d/%s",
+          Constants.COLLECTIONS,
+          otherCollection.getId(),
+          Constants.DATA_OBJECTS,
+          otherDataObject.getId(),
+          Constants.STRUCTURED_DATA_REFERENCES
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+
+    assertThat(errorResponse.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+  }
+
+  @Test
+  @Order(9)
   public void deleteReferences() {
     given()
       .spec(requestSpecOfDefaultUser)

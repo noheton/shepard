@@ -9,9 +9,9 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.services.ApiKeyService;
+import de.dlr.shepard.auth.security.ApiKeyLastSeenCache;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
-import de.dlr.shepard.auth.security.JwtFilterGracePeriod;
 import de.dlr.shepard.auth.security.RolesList;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.PKIHelper;
@@ -67,7 +67,7 @@ public class JWTFilterTest extends BaseTestCase {
   ApiKeyService apiKeyService;
 
   @InjectMock
-  JwtFilterGracePeriod lastSeen;
+  ApiKeyLastSeenCache apiKeyLastSeenCache;
 
   @Inject
   JWTFilter filter;
@@ -383,7 +383,7 @@ public class JWTFilterTest extends BaseTestCase {
     filter.filter(context);
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
-    verify(lastSeen).elementSeen(uid.toString());
+    verify(apiKeyLastSeenCache).cacheKey(uid.toString());
     assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
   }
 
@@ -407,7 +407,7 @@ public class JWTFilterTest extends BaseTestCase {
     apiKey.setBelongsTo(user);
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+    when(apiKeyService.getApiKey(user.getUsername(), uid)).thenReturn(apiKey);
 
     filter.filter(context);
     verify(context).abortWith(responseCaptor.capture());
@@ -435,7 +435,7 @@ public class JWTFilterTest extends BaseTestCase {
     apiKey.setBelongsTo(user);
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+    when(apiKeyService.getApiKey(user.getUsername(), uid)).thenReturn(apiKey);
 
     filter.filter(context);
     verify(context).abortWith(responseCaptor.capture());
@@ -463,7 +463,7 @@ public class JWTFilterTest extends BaseTestCase {
     apiKey.setBelongsTo(user);
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+    when(apiKeyService.getApiKey(user.getUsername(), uid)).thenReturn(apiKey);
 
     filter.filter(context);
     verify(context).abortWith(responseCaptor.capture());
@@ -484,7 +484,7 @@ public class JWTFilterTest extends BaseTestCase {
       .compact();
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(apiKeyService.getApiKey(uid)).thenReturn(null);
+    when(apiKeyService.getApiKey("MyUserName", uid)).thenReturn(null);
 
     filter.filter(context);
     verify(context).abortWith(responseCaptor.capture());
@@ -512,7 +512,7 @@ public class JWTFilterTest extends BaseTestCase {
     apiKey.setBelongsTo(user);
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+    when(apiKeyService.getApiKey(user.getUsername(), uid)).thenReturn(apiKey);
 
     filter.filter(context);
     verify(context).abortWith(responseCaptor.capture());
@@ -536,12 +536,12 @@ public class JWTFilterTest extends BaseTestCase {
     JWTSecurityContext securityContext = new JWTSecurityContext(context.getSecurityContext(), principal);
 
     when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
-    when(lastSeen.elementIsKnown(uid.toString())).thenReturn(true);
+    when(apiKeyLastSeenCache.isKeyCached(uid.toString())).thenReturn(true);
 
     filter.filter(context);
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
-    verify(apiKeyService, never()).getApiKey(uid);
+    verify(apiKeyService, never()).getApiKey("MyUserName", uid);
     assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
   }
 }

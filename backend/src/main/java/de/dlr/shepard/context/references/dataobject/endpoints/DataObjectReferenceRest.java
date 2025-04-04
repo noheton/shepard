@@ -2,7 +2,9 @@ package de.dlr.shepard.context.references.dataobject.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
 import jakarta.enterprise.context.RequestScoped;
@@ -22,6 +24,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -48,17 +51,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class DataObjectReferenceRest {
 
-  private DataObjectReferenceService dataObjectReferenceService;
+  @Inject
+  DataObjectReferenceService dataObjectReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  DataObjectReferenceRest() {}
-
-  @Inject
-  public DataObjectReferenceRest(DataObjectReferenceService dataObjectReferenceService) {
-    this.dataObjectReferenceService = dataObjectReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.DATAOBJECT_REFERENCE)
@@ -77,7 +74,11 @@ public class DataObjectReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = dataObjectReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    List<DataObjectReference> references = dataObjectReferenceService.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObjectId,
+      versionUID
+    );
     var result = new ArrayList<DataObjectReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new DataObjectReferenceIO(reference));
@@ -105,7 +106,12 @@ public class DataObjectReferenceRest {
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = dataObjectReferenceService.getReferenceByShepardId(dataObjectReferenceId, versionUID);
+    DataObjectReference result = dataObjectReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      dataObjectReferenceId,
+      versionUID
+    );
     return Response.ok(new DataObjectReferenceIO(result)).build();
   }
 
@@ -129,10 +135,10 @@ public class DataObjectReferenceRest {
       content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
     ) @Valid DataObjectReferenceIO dataObjectReference
   ) {
-    var result = dataObjectReferenceService.createReferenceByShepardId(
+    DataObjectReference result = dataObjectReferenceService.createReference(
+      collectionId,
       dataObjectId,
-      dataObjectReference,
-      securityContext.getUserPrincipal().getName()
+      dataObjectReference
     );
     return Response.ok(new DataObjectReferenceIO(result)).status(Status.CREATED).build();
   }
@@ -152,11 +158,8 @@ public class DataObjectReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
   ) {
-    var result = dataObjectReferenceService.deleteReferenceByShepardId(
-      dataObjectReferenceId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    dataObjectReferenceService.deleteReference(collectionId, dataObjectId, dataObjectReferenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -179,7 +182,12 @@ public class DataObjectReferenceRest {
     @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var payload = dataObjectReferenceService.getPayloadByShepardId(dataObjectReferenceId, versionUID);
-    return payload != null ? Response.ok(new DataObjectIO(payload)).build() : Response.status(Status.NOT_FOUND).build();
+    DataObject payload = dataObjectReferenceService.getPayload(
+      collectionId,
+      dataObjectId,
+      dataObjectReferenceId,
+      versionUID
+    );
+    return Response.ok(new DataObjectIO(payload)).build();
   }
 }

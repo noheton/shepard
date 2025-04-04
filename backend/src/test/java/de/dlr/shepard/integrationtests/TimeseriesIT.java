@@ -103,7 +103,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(actual.getMessage()).isEqualTo("Timeseries container with id 99999 not found.");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Timeseries Container with id 99999 is null or deleted");
   }
 
   @Test

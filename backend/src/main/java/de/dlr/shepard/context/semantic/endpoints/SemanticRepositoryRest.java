@@ -16,11 +16,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -37,17 +35,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SemanticRepositoryRest {
 
-  private SemanticRepositoryService semanticRepositoryService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  SemanticRepositoryRest() {}
-
   @Inject
-  public SemanticRepositoryRest(SemanticRepositoryService semanticRepositoryService) {
-    this.semanticRepositoryService = semanticRepositoryService;
-  }
+  SemanticRepositoryService semanticRepositoryService;
 
   @GET
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
@@ -114,10 +103,7 @@ public class SemanticRepositoryRest {
       content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
     ) @Valid SemanticRepositoryIO semanticRepository
   ) {
-    var result = semanticRepositoryService.createRepository(
-      semanticRepository,
-      securityContext.getUserPrincipal().getName()
-    );
+    var result = semanticRepositoryService.createRepository(semanticRepository);
     return Response.ok(new SemanticRepositoryIO(result)).status(Status.CREATED).build();
   }
 
@@ -130,10 +116,7 @@ public class SemanticRepositoryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.SEMANTIC_REPOSITORY_ID)
   public Response deleteSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
-    var result = semanticRepositoryService.deleteRepository(
-      semanticRepositoryId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    semanticRepositoryService.deleteRepository(semanticRepositoryId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

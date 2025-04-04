@@ -1,11 +1,13 @@
 package de.dlr.shepard.data.timeseries.migration.influxtimeseries;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
-import de.dlr.shepard.data.IContainerService;
+import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
@@ -18,30 +20,23 @@ import java.util.Collections;
 import java.util.List;
 
 @RequestScoped
-public class InfluxTimeseriesContainerService implements IContainerService<TimeseriesContainer, TimeseriesContainerIO> {
-
-  private TimeseriesContainerDAO timeseriesContainerDAO;
-  private InfluxTimeseriesService timeseriesService;
-  private PermissionsService permissionsService;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-
-  InfluxTimeseriesContainerService() {}
+public class InfluxTimeseriesContainerService
+  extends AbstractContainerService<TimeseriesContainer, TimeseriesContainerIO> {
 
   @Inject
-  public InfluxTimeseriesContainerService(
-    TimeseriesContainerDAO timeseriesContainerDAO,
-    InfluxTimeseriesService timeseriesService,
-    PermissionsService permissionsService,
-    UserDAO userDAO,
-    DateHelper dateHelper
-  ) {
-    this.timeseriesContainerDAO = timeseriesContainerDAO;
-    this.timeseriesService = timeseriesService;
-    this.permissionsService = permissionsService;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-  }
+  TimeseriesContainerDAO timeseriesContainerDAO;
+
+  @Inject
+  InfluxTimeseriesService timeseriesService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
 
   /**
    * Creates a TimeseriesContainer and stores it in Neo4J
@@ -51,8 +46,8 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
    * @return the created timeseriesContainer
    */
   @Override
-  public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainer, String username) {
-    var user = userDAO.find(username);
+  public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainer) {
+    User user = userService.getCurrentUser();
 
     var toCreate = new TimeseriesContainer();
     toCreate.setCreatedAt(dateHelper.getDate());
@@ -89,8 +84,9 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
    * @return a list of TimeseriesContainers
    */
   @Override
-  public List<TimeseriesContainer> getAllContainers(QueryParamHelper params, String username) {
-    var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, username);
+  public List<TimeseriesContainer> getAllContainers(QueryParamHelper params) {
+    User user = userService.getCurrentUser();
+    var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, user.getUsername());
     return containers;
   }
 
@@ -104,11 +100,14 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
    */
 
   @Override
-  public boolean deleteContainer(long timeSeriesContainerId, String username) {
-    var user = userDAO.find(username);
+  public void deleteContainer(long timeSeriesContainerId) {
+    User user = userService.getCurrentUser();
     TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeSeriesContainerId);
+
     if (timeseriesContainer == null) {
-      return false;
+      throw new InvalidPathException(
+        String.format("Timeseries container with ID %s is not accessible", timeSeriesContainerId)
+      );
     }
 
     timeseriesContainer.setDeleted(true);
@@ -116,7 +115,6 @@ public class InfluxTimeseriesContainerService implements IContainerService<Times
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
     timeseriesService.deleteDatabase(timeseriesContainer.getDatabase());
-    return true;
   }
 
   /**

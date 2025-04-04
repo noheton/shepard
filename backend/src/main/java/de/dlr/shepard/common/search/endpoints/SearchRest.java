@@ -28,10 +28,8 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -47,31 +45,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SearchRest {
 
-  @Context
-  private SecurityContext securityContext;
-
-  private SearchService searchService;
-  private UserSearchService userSearchService;
-  private UserGroupSearchService userGroupSearchService;
-  private ContainerSearchService containerSearchService;
-  private CollectionSearchService collectionSearchService;
-
-  SearchRest() {}
+  @Inject
+  SearchService searchService;
 
   @Inject
-  public SearchRest(
-    SearchService searchService,
-    UserSearchService userSearchService,
-    UserGroupSearchService userGroupSearchService,
-    ContainerSearchService containerSearchService,
-    CollectionSearchService collectionSearchService
-  ) {
-    this.searchService = searchService;
-    this.userSearchService = userSearchService;
-    this.userGroupSearchService = userGroupSearchService;
-    this.containerSearchService = containerSearchService;
-    this.collectionSearchService = collectionSearchService;
-  }
+  UserSearchService userSearchService;
+
+  @Inject
+  UserGroupSearchService userGroupSearchService;
+
+  @Inject
+  ContainerSearchService containerSearchService;
+
+  @Inject
+  CollectionSearchService collectionSearchService;
 
   @POST
   @Tag(name = Constants.SEARCH)
@@ -88,7 +75,7 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = SearchBody.class))
     ) @Valid SearchBody body
   ) {
-    ResponseBody ret = searchService.search(body, securityContext.getUserPrincipal().getName());
+    ResponseBody ret = searchService.search(body);
     return Response.ok(ret).build();
   }
 
@@ -119,7 +106,6 @@ public class SearchRest {
   ) {
     PaginatedCollectionList paginatedCollectionList = collectionSearchService.search(
       collectionSearchBody.getSearchParams().getQuery(),
-      securityContext.getUserPrincipal().getName(),
       Optional.ofNullable(page),
       Optional.ofNullable(size),
       Optional.ofNullable(orderBy).orElse(BasicCollectionAttributes.createdAt),
@@ -165,12 +151,7 @@ public class SearchRest {
       Optional.ofNullable(orderBy).orElse(BasicContainerAttributes.createdAt),
       Optional.ofNullable(orderDesc).orElse(true)
     );
-    ContainerSearchResult ret = containerSearchService.search(
-      containerSearchBody,
-      pagination,
-      sortingHelper,
-      securityContext.getUserPrincipal().getName()
-    );
+    ContainerSearchResult ret = containerSearchService.search(containerSearchBody, pagination, sortingHelper);
     return Response.ok(ret).build();
   }
 

@@ -1,9 +1,13 @@
 package de.dlr.shepard.context.collection.services;
 
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
@@ -20,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RequestScoped
@@ -33,7 +36,7 @@ public class DataObjectService {
   DataObjectReferenceDAO dataObjectReferenceDAO;
 
   @Inject
-  UserDAO userDAO;
+  UserService userService;
 
   @Inject
   DateHelper dateHelper;
@@ -44,18 +47,25 @@ public class DataObjectService {
   @Inject
   CollectionService collectionService;
 
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  AuthenticationContext authenticationContext;
+
   /**
    * Creates a DataObject
    *
    * @param collectionShepardId identifies the Collection
    * @param dataObject          to be stored
-   * @param username            of the related user
    * @return the stored DataObject with the auto generated id
    * @throws InvalidPathException if collection with collectionShepardId does not exist
    */
-  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject, String username) {
+  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) {
     Collection collection = collectionService.getCollection(collectionShepardId);
-    User user = userDAO.find(username);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
     List<DataObject> predecessors = findRelatedDataObjects(
       collection.getShepardId(),
@@ -83,7 +93,8 @@ public class DataObjectService {
    *
    * @param shepardId identifies the searched dataObject
    * @return the DataObject with the given id
-   * @throws InvalidPathException if dataobject cannot be found
+   * @throws InvalidPathException if the DataObject cannot be found
+   * @throws InvalidAuthException if user does not have read permissions on the data object's collection
    */
   public DataObject getDataObject(long shepardId) {
     return getDataObject(shepardId, null);
@@ -93,75 +104,12 @@ public class DataObjectService {
    *  Get DataObject
    *
    * @param shepardId identifies the searched dataObject
-   * @return an Optional containing the DataObject with the given id
-   */
-  public Optional<DataObject> getDataObjectOptional(long shepardId) {
-    return getDataObjectOptional(shepardId, null);
-  }
-
-  /**
-   * Get DataObject
-   *
-   * @param shepardId identifies the searched dataObject
-   * @param versionUID UUID specifying the version
-   * @return the DataObject with the given id
-   * @throws InvalidPathException if dataobject (with version UID)  cannot be found
-   */
-  public DataObject getDataObject(long shepardId, UUID versionUID) {
-    Optional<DataObject> ret = getDataObjectOptional(shepardId, versionUID);
-    if (ret.isEmpty()) {
-      if (versionUID == null) {
-        throw new InvalidPathException(String.format("ID ERROR - DataObject with id %s is null or deleted", shepardId));
-      } else {
-        throw new InvalidPathException(
-          String.format("ID ERROR - DataObject with id %s and versionUID %s is null or deleted", shepardId, versionUID)
-        );
-      }
-    }
-    return ret.get();
-  }
-
-  /** Get DataObject
-   *
-   * @param shepardCollectionId identifies the collection the dataobject is in
-   * @param shepardId identifies the searched dataObject
-   * @param versionUID UUID specifying the version
-   * @return the DataObject with the given id
-   * @throws InvalidPathException if dataobject (with version UID) cannot be found or the dataobject is not in the provided collection
-   */
-  public DataObject getDataObject(long shepardCollectionId, long shepardId, UUID versionUID) {
-    Optional<DataObject> ret = getDataObjectOptional(shepardCollectionId, shepardId, versionUID);
-    if (ret.isEmpty()) {
-      if (versionUID == null) {
-        throw new InvalidPathException(
-          String.format(
-            "ID ERROR - DataObject with id %s cannot be found in collection with id %s",
-            shepardId,
-            shepardCollectionId
-          )
-        );
-      } else {
-        throw new InvalidPathException(
-          String.format(
-            "ID ERROR - DataObject with id %s and versionUID %s cannot be found in collection with id %s",
-            shepardId,
-            versionUID,
-            shepardCollectionId
-          )
-        );
-      }
-    }
-    return ret.get();
-  }
-
-  /**
-   *  Get DataObject
-   *
-   * @param shepardId identifies the searched dataObject
    * @param versionUID the dataobject's version UUID
    * @return an Optional containing the DataObject with the given id
+   * @throws InvalidPathException if DataObject (with version UUID) cannot be found
+   * @throws InvalidAuthException if user does not have read permissions on the data object's collection
    */
-  private Optional<DataObject> getDataObjectOptional(long shepardId, UUID versionUID) {
+  public DataObject getDataObject(long shepardId, UUID versionUID) {
     DataObject ret;
     String errorMsg;
     if (versionUID == null) {
@@ -173,9 +121,10 @@ public class DataObjectService {
     }
     if (ret == null || ret.isDeleted()) {
       Log.error(errorMsg);
-      return Optional.empty();
+      throw new InvalidPathException("ID ERROR - " + errorMsg);
     }
 
+    collectionService.assertIsAllowedToReadCollection(ret.getCollection().getShepardId());
     cutDeleted(ret);
 
     HashSet<Long> incomingReferencesIdList = new HashSet<Long>();
@@ -203,19 +152,7 @@ public class DataObjectService {
     ret.setPredecessors(completePredecessors);
     ret.setSuccessors(completeSuccessors);
     if (ret.getParent() != null) ret.setParent(dataObjectDAO.findByNeo4jId(ret.getParent().getId()));
-    return Optional.of(ret);
-  }
-
-  private Optional<DataObject> getDataObjectOptional(long shepardCollectionId, long shepardId, UUID versionUID) {
-    Optional<DataObject> dataObjectOptional = getDataObjectOptional(shepardId, versionUID);
-
-    if (dataObjectOptional.isPresent()) {
-      Collection collection = collectionService.getCollection(shepardCollectionId);
-      if (!dataObjectOptional.get().getCollection().getShepardId().equals(collection.getShepardId())) {
-        return Optional.empty();
-      }
-    }
-    return dataObjectOptional;
+    return ret;
   }
 
   /**
@@ -225,9 +162,37 @@ public class DataObjectService {
    * @param shepardId identifies the searched dataObject
    * @return the DataObject with the given id
    * @throws InvalidPathException if dataobject or collection cannot be found or the dataobject does not match the collection
+   * @throws InvalidAuthException if user does not have read permissions on the collection
    */
   public DataObject getDataObject(long collectionShepardId, long shepardId) {
     return getDataObject(collectionShepardId, shepardId, null);
+  }
+
+  /**
+   * Get DataObject
+   *
+   * @param collectionShepardId collection's shepardId
+   * @param shepardId identifies the searched dataObject
+   * @param versionUID the DataObject's version UUID
+   * @return the DataObject with the given id
+   * @throws InvalidPathException if DataObject or collection cannot be found or the DataObject does not match the collection
+   * @throws InvalidAuthException if user does not have read permissions on the collection
+   */
+  public DataObject getDataObject(long shepardCollectionId, long shepardId, UUID versionUID) {
+    collectionService.getCollection(shepardCollectionId);
+
+    DataObject dataObject;
+    try {
+      // This may throw a 403 if the data object is in a different collection for which the user does not have permissions -> handle that exception specifically
+      dataObject = getDataObject(shepardId, versionUID);
+    } catch (InvalidAuthException ex) {
+      throw new InvalidPathException("ID ERROR - There is no association between collection and dataObject");
+    }
+
+    if (!dataObject.getCollection().getShepardId().equals(shepardCollectionId)) {
+      throw new InvalidPathException("ID ERROR - There is no association between collection and dataObject");
+    }
+    return dataObject;
   }
 
   /**
@@ -238,6 +203,7 @@ public class DataObjectService {
    * @param versionUID identifies the version
    * @return a List of DataObjects
    * @throws InvalidPathException if collection with collectionShepardId does not exist
+   * @throws InvalidAuthException if user does not have read permissions on the collection
    */
   public List<DataObject> getAllDataObjectsByShepardIds(
     long collectionShepardId,
@@ -245,6 +211,7 @@ public class DataObjectService {
     UUID versionUID
   ) {
     collectionService.getCollection(collectionShepardId, versionUID);
+
     var unfiltered = dataObjectDAO.findByCollectionByShepardIds(collectionShepardId, paramsWithShepardIds, versionUID);
     var dataObjects = unfiltered.stream().map(this::cutDeleted).toList();
     return dataObjects;
@@ -257,18 +224,15 @@ public class DataObjectService {
    * @param collectionShepardId ShepardId of the collection the dataobject is assigned to
    * @param dataObjectShepardId Identifies the dataObject
    * @param dataObject          DataObject entity for updating.
-   * @param username            of the related user
    * @return updated DataObject.
    * @throws InvalidPathException if dataobject cannot be found or collection with collectionShepardId does not exist
+   * @throws InvalidAuthException if user does not have read or write permissions on the collection
    */
-  public DataObject updateDataObject(
-    long collectionShepardId,
-    long dataObjectShepardId,
-    DataObjectIO dataObject,
-    String username
-  ) {
+  public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
-    User user = userDAO.find(username);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
 
     if (old.getParent() != null) {
       dataObjectDAO.deleteHasChildRelation(old.getParent().getShepardId(), old.getShepardId());
@@ -311,16 +275,22 @@ public class DataObjectService {
    *
    * @param collectionShepardId ShepardId of the collection the dataobject is assigned to
    * @param dataObjectShepardId identifies the DataObject to be deleted
-   * @param username            of the related user
    * @return a boolean to identify if the DataObject was successfully removed
    * @throws InvalidPathException if dataobject cannot be found or collection with collectionShepardId does not exist
+   * @throws InvalidAuthException if user does not have read or write permissions on the collection
    */
-  public boolean deleteDataObject(long collectionShepardId, long dataObjectShepardId, String username) {
+  public void deleteDataObject(long collectionShepardId, long dataObjectShepardId) {
     getDataObject(collectionShepardId, dataObjectShepardId);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
     Date date = dateHelper.getDate();
-    User user = userDAO.find(username);
-    boolean result = dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date);
-    return result;
+    User user = userService.getCurrentUser();
+
+    if (!dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date)) {
+      throw new InvalidRequestException(
+        String.format("Could not delete DataObject with ShepardId %s", dataObjectShepardId)
+      );
+    }
   }
 
   private DataObject cutDeleted(DataObject dataObject) {
@@ -333,8 +303,8 @@ public class DataObjectService {
     dataObject.setChildren(children);
     var predecessors = dataObject.getPredecessors().stream().filter(s -> !s.isDeleted()).toList();
     dataObject.setPredecessors(predecessors);
-    var sucessors = dataObject.getSuccessors().stream().filter(s -> !s.isDeleted()).toList();
-    dataObject.setSuccessors(sucessors);
+    var successors = dataObject.getSuccessors().stream().filter(s -> !s.isDeleted()).toList();
+    dataObject.setSuccessors(successors);
     var references = dataObject.getReferences().stream().filter(ref -> !ref.isDeleted()).toList();
     dataObject.setReferences(references);
     return dataObject;
@@ -380,5 +350,12 @@ public class DataObjectService {
     );
 
     return dataObject;
+  }
+
+  /**
+   * Only needed for fixing session problems in unit tests
+   */
+  public void clearSession() {
+    dataObjectDAO.clearSession();
   }
 }

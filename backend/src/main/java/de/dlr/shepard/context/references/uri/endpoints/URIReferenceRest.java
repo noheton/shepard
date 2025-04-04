@@ -47,17 +47,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class URIReferenceRest {
 
-  private URIReferenceService uriReferenceService;
+  @Inject
+  URIReferenceService uriReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  URIReferenceRest() {}
-
-  @Inject
-  public URIReferenceRest(URIReferenceService uriReferenceService) {
-    this.uriReferenceService = uriReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.URI_REFERENCE)
@@ -76,7 +70,7 @@ public class URIReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = uriReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    var references = uriReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
     var result = new ArrayList<URIReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new URIReferenceIO(ref));
@@ -104,7 +98,7 @@ public class URIReferenceRest {
     @PathParam(Constants.URI_REFERENCE_ID) long referenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var reference = uriReferenceService.getReferenceByShepardId(referenceId, versionUID);
+    var reference = uriReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUID);
     return Response.ok(new URIReferenceIO(reference)).build();
   }
 
@@ -128,12 +122,7 @@ public class URIReferenceRest {
       content = @Content(schema = @Schema(implementation = URIReferenceIO.class))
     ) @Valid URIReferenceIO timeseriesReference
   ) {
-    var result = uriReferenceService.createReferenceByShepardId(
-      dataObjectId,
-      timeseriesReference,
-      securityContext.getUserPrincipal().getName()
-    );
-
+    var result = uriReferenceService.createReference(collectionId, dataObjectId, timeseriesReference);
     return Response.ok(new URIReferenceIO(result)).status(Status.CREATED).build();
   }
 
@@ -152,8 +141,7 @@ public class URIReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.URI_REFERENCE_ID) long referenceId
   ) {
-    return uriReferenceService.deleteReferenceByShepardId(referenceId, securityContext.getUserPrincipal().getName())
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    uriReferenceService.deleteReference(collectionId, dataObjectId, referenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

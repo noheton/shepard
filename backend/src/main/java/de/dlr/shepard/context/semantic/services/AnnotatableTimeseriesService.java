@@ -1,38 +1,36 @@
 package de.dlr.shepard.context.semantic.services;
 
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
 @RequestScoped
 public class AnnotatableTimeseriesService {
 
-  private AnnotatableTimeseriesDAO dao;
-  private SemanticAnnotationService semanticAnnotationService;
-  private TimeseriesService timeseriesService;
-
-  AnnotatableTimeseriesService() {}
+  @Inject
+  AnnotatableTimeseriesDAO dao;
 
   @Inject
-  public AnnotatableTimeseriesService(
-    AnnotatableTimeseriesDAO annotatableTimeseriesDAO,
-    SemanticAnnotationService semanticAnnotationService,
-    TimeseriesService timeseriesService
-  ) {
-    this.dao = annotatableTimeseriesDAO;
-    this.semanticAnnotationService = semanticAnnotationService;
-    this.timeseriesService = timeseriesService;
-  }
+  SemanticAnnotationService semanticAnnotationService;
+
+  @Inject
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
 
   public SemanticAnnotation createAnnotation(long containerId, int timeseriesId, SemanticAnnotationIO annotationIO) {
-    timeseriesService.getTimeseriesById(timeseriesId);
+    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
     var annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
     if (annotatableTimeseries == null) {
@@ -58,24 +56,31 @@ public class AnnotatableTimeseriesService {
     return annotation;
   }
 
-  public void deleteAnnotation(int timeseriesId, long annotationId) {
-    timeseriesService.getTimeseriesById(timeseriesId);
+  public void deleteAnnotation(long containerId, int timeseriesId, long annotationId) {
+    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
     dao.deleteAnnotation(annotationId);
   }
 
   public List<SemanticAnnotation> getAnnotations(long containerId, int timeseriesId) {
-    timeseriesService.getTimeseriesById(timeseriesId);
+    timeseriesService.getTimeseriesById(containerId, timeseriesId);
 
-    var annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
-    if (annotatableTimeseries != null) {
-      return annotatableTimeseries.getAnnotations();
+    AnnotatableTimeseries annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
+    if (annotatableTimeseries == null) {
+      String errorMsg = String.format(
+        "ID ERROR - Could not find semantic annotation with Id %s in container %s",
+        timeseriesId,
+        containerId
+      );
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
-    throw new NotFoundException();
+    return annotatableTimeseries.getAnnotations();
   }
 
   public SemanticAnnotation getAnnotationById(long containerId, int timeseriesId, long annotationId) {
-    timeseriesService.getTimeseriesById(timeseriesId);
+    timeseriesService.getTimeseriesById(containerId, timeseriesId);
 
     return dao.getAnnotationById(annotationId);
   }

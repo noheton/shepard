@@ -47,5 +47,6 @@
   "editor.gotoLocation.multipleDefinitions": "goto",
   "[dotenv]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
-  }
+  },
+  "java.debug.settings.onBuildFailureProceed": true
 }

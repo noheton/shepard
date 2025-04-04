@@ -4,10 +4,12 @@ import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -15,29 +17,30 @@ import de.dlr.shepard.common.util.PermissionType;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 @RequestScoped
 public class PermissionsService {
 
+  @Inject
   private PermissionsDAO permissionsDAO;
-  private UserService userService;
-  private UserGroupService userGroupService;
-
-  PermissionsService() {}
 
   @Inject
-  public PermissionsService(PermissionsDAO permissionsDAO, UserService userService, UserGroupService userGroupService) {
-    this.permissionsDAO = permissionsDAO;
-    this.userService = userService;
-    this.userGroupService = userGroupService;
-  }
+  private UserService userService;
+
+  @Inject
+  private UserGroupService userGroupService;
+
+  @Inject
+  private PermissionLastSeenCache permissionLastSeenCache;
 
   /**
    * @param entity the entity the permissions belong to
@@ -52,16 +55,36 @@ public class PermissionsService {
   /**
    * Searches for permissions in Neo4j.
    *
+   * This function does NOT perform a check if the user is allowed to query the permissions of an entity.
+   *
    * @param entityId identifies the entity that the permissions object belongs to
-   * @return Permissions with matching entity or null
+   * @return Optional<Permissions> with matching entity
    */
-  public Permissions getPermissionsOfEntity(long entityId) {
+  public Optional<Permissions> getPermissionsOfEntityOptional(long entityId) {
     var permissions = permissionsDAO.findByEntityNeo4jId(entityId);
     if (permissions == null) {
       Log.errorf("Permissions with entity id %s is null", entityId);
-      return null;
+      return Optional.empty();
     }
-    return permissions;
+    return Optional.of(permissions);
+  }
+
+  /**
+   * Searches for permissions in Neo4j.
+   *
+   * This function does perform a check if the user is allowed to query the permissions of an entity.
+   *
+   * @param entityId identifies the entity that the permissions object belongs to
+   * @return Permissions with matching entity
+   * @throws NotFoundException if permission could not be found
+   * @throws InvalidAuthException if user has to rights to read permissions
+   */
+  public Permissions getPermissionsOfEntity(long entityId) {
+    User user = userService.getCurrentUser();
+    isAccessTypeAllowedForUser(entityId, AccessType.Manage, user.getUsername());
+    return getPermissionsOfEntityOptional(entityId).orElseThrow(() ->
+      new NotFoundException(String.format("Permissions with entity %s is null", entityId))
+    );
   }
 
   /**
@@ -70,7 +93,7 @@ public class PermissionsService {
    * @return an object describing the roles of the user on the entity
    */
   public Roles getUserRolesOnEntity(long entityId, String username) {
-    var perms = getPermissionsOfEntity(entityId);
+    var perms = getPermissionsOfEntityOptional(entityId);
     return getRoles(perms, username);
   }
 
@@ -83,16 +106,27 @@ public class PermissionsService {
    * @return whether the access is allowed or not
    */
   public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    String cacheKey = String.format("%s,%s,%s", entityId, accessType.toString(), username);
+    if (permissionLastSeenCache.isKeyCached(cacheKey)) return true;
+
     Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
 
-    if (userRolesOnEntity.isOwner()) return true;
+    boolean isAllowed;
+    if (userRolesOnEntity.isOwner()) {
+      isAllowed = true;
+    } else {
+      isAllowed = switch (accessType) {
+        case Read -> userRolesOnEntity.isReader();
+        case Write -> userRolesOnEntity.isWriter();
+        case Manage -> userRolesOnEntity.isManager();
+        case None -> false;
+      };
+    }
 
-    return switch (accessType) {
-      case Read -> userRolesOnEntity.isReader();
-      case Write -> userRolesOnEntity.isWriter();
-      case Manage -> userRolesOnEntity.isManager();
-      case None -> false;
-    };
+    if (isAllowed) {
+      permissionLastSeenCache.cacheKey(cacheKey);
+    }
+    return isAllowed;
   }
 
   /**
@@ -104,20 +138,22 @@ public class PermissionsService {
    */
   public Permissions updatePermissionsByNeo4jId(PermissionsIO permissionsIo, long id) {
     var permissions = convertPermissionsIO(permissionsIo);
-    var old = getPermissionsOfEntity(id);
-    if (old == null) {
+    Optional<Permissions> old = getPermissionsOfEntityOptional(id);
+    if (old.isEmpty()) {
       // There is no old permissions object
       permissions.setEntities(List.of(new BasicEntity(id)));
       return permissionsDAO.createOrUpdate(permissions);
     }
-    old.setOwner(permissions.getOwner());
-    old.setReader(permissions.getReader());
-    old.setWriter(permissions.getWriter());
-    old.setReaderGroups(permissions.getReaderGroups());
-    old.setWriterGroups(permissions.getWriterGroups());
-    old.setManager(permissions.getManager());
-    old.setPermissionType(permissions.getPermissionType());
-    return permissionsDAO.createOrUpdate(old);
+    var oldPermissions = old.get();
+    oldPermissions.setOwner(permissions.getOwner());
+    oldPermissions.setReader(permissions.getReader());
+    oldPermissions.setWriter(permissions.getWriter());
+    oldPermissions.setReaderGroups(permissions.getReaderGroups());
+    oldPermissions.setWriterGroups(permissions.getWriterGroups());
+    oldPermissions.setManager(permissions.getManager());
+    oldPermissions.setPermissionType(permissions.getPermissionType());
+    var res = permissionsDAO.createOrUpdate(oldPermissions);
+    return res;
   }
 
   public boolean deletePermissions(Permissions permissions) {
@@ -151,6 +187,12 @@ public class PermissionsService {
       return true;
     }
 
+    // users, apiKeys, subscriptions
+    if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
+      // Permissions are already checked inside User- ApiKey- and SubscriptionService
+      return true;
+    }
+
     // entity paths
     if (StringUtils.isNumeric(idSegment)) {
       var entityId = Long.parseLong(idSegment);
@@ -168,36 +210,32 @@ public class PermissionsService {
       return true;
     }
 
-    // users
-    if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
-      if (pathSegments.size() <= 2 && AccessType.Read.equals(accessType)) return true; // it is allowed to read all users
-      else if (userName.equals(idSegment)) return true; // it is allowed to access yourself
-    }
-
     return false;
   }
 
   private Set<String> fetchUserNames(List<UserGroup> userGroups) {
     Set<String> ret = new HashSet<>();
     for (UserGroup userGroup : userGroups) {
-      UserGroup fullUserGroup = userGroupService.getUserGroup(userGroup.getId());
-      for (User user : fullUserGroup.getUsers()) {
-        ret.add(user.getUsername());
+      Optional<UserGroup> fullUserGroup = userGroupService.getUserGroupOptional(userGroup.getId());
+      if (fullUserGroup.isPresent()) {
+        for (User user : fullUserGroup.get().getUsers()) {
+          ret.add(user.getUsername());
+        }
       }
     }
     return ret;
   }
 
-  private Roles getRoles(Permissions perms, String username) {
-    if (perms == null) {
+  private Roles getRoles(Optional<Permissions> perms, String username) {
+    if (perms.isEmpty()) {
       // Legacy entity without permissions
       return new Roles(false, true, true, true);
     }
     var roles = new Roles(
-      isOwner(perms, username),
-      isManager(perms, username),
-      isWriter(perms, username),
-      isReader(perms, username)
+      isOwner(perms.get(), username),
+      isManager(perms.get(), username),
+      isWriter(perms.get(), username),
+      isReader(perms.get(), username)
     );
     return roles;
   }
@@ -229,7 +267,9 @@ public class PermissionsService {
    * Fetches all missing data and transforms PermissionsIO to a Permissions object.
    */
   private Permissions convertPermissionsIO(PermissionsIO permissions) {
-    var owner = permissions.getOwner() != null ? userService.getUser(permissions.getOwner()) : null;
+    var owner = permissions.getOwner() != null
+      ? userService.getUserOptional(permissions.getOwner()).orElseGet(null)
+      : null;
     var permissionType = permissions.getPermissionType();
     var reader = fetchUsers(permissions.getReader());
     var writer = fetchUsers(permissions.getWriter());
@@ -246,10 +286,8 @@ public class PermissionsService {
         continue;
       }
 
-      var user = userService.getUser(username);
-      if (user != null) {
-        result.add(user);
-      }
+      Optional<User> user = userService.getUserOptional(username);
+      user.ifPresent((User u) -> result.add(u));
     }
     return result;
   }
@@ -257,9 +295,9 @@ public class PermissionsService {
   private List<UserGroup> fetchUserGroups(long[] userGroupIds) {
     var result = new ArrayList<UserGroup>(userGroupIds.length);
     for (var userGroupId : userGroupIds) {
-      var userGroup = userGroupService.getUserGroup(userGroupId);
-      if (userGroup != null) {
-        result.add(userGroup);
+      Optional<UserGroup> userGroup = userGroupService.getUserGroupOptional(userGroupId);
+      if (userGroup.isPresent()) {
+        result.add(userGroup.get());
       }
     }
     return result;

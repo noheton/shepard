@@ -3,6 +3,7 @@ package de.dlr.shepard.context.collection.endpoints;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -22,12 +23,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -45,19 +45,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class CollectionRest {
 
-  private CollectionService collectionService;
-  private ExportService exportService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  CollectionRest() {}
+  @Inject
+  CollectionService collectionService;
 
   @Inject
-  public CollectionRest(CollectionService collectionService, ExportService exportService) {
-    this.collectionService = collectionService;
-    this.exportService = exportService;
-  }
+  ExportService exportService;
+
+  @Inject
+  AuthenticationContext authenticationContext;
 
   @GET
   @Tag(name = Constants.COLLECTION)
@@ -84,10 +79,7 @@ public class CollectionRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var collections = collectionService.getAllCollectionsByShepardId(
-      params,
-      securityContext.getUserPrincipal().getName()
-    );
+    var collections = collectionService.getAllCollections(params);
 
     var result = new ArrayList<CollectionIO>(collections.size());
     for (var collection : collections) {
@@ -138,11 +130,7 @@ public class CollectionRest {
       content = @Content(schema = @Schema(implementation = CollectionIO.class))
     ) @Valid CollectionIO collection
   ) {
-    Collection updatedCollection = collectionService.updateCollectionByShepardId(
-      collectionId,
-      collection,
-      securityContext.getUserPrincipal().getName()
-    );
+    Collection updatedCollection = collectionService.updateCollectionByShepardId(collectionId, collection);
     return Response.ok(new CollectionIO(updatedCollection)).build();
   }
 
@@ -155,9 +143,8 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    return collectionService.deleteCollection(collectionId, securityContext.getUserPrincipal().getName())
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    collectionService.deleteCollection(collectionId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -172,10 +159,7 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    Permissions permissions = collectionService.getCollectionPermissions(
-      collectionId,
-      securityContext.getUserPrincipal().getName()
-    );
+    Permissions permissions = collectionService.getCollectionPermissions(collectionId);
 
     if (permissions == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(new PermissionsIO(permissions)).build();
@@ -199,11 +183,7 @@ public class CollectionRest {
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO newPermissions
   ) {
-    Permissions updatedPermissions = collectionService.updateCollectionPermissions(
-      newPermissions,
-      collectionId,
-      securityContext.getUserPrincipal().getName()
-    );
+    Permissions updatedPermissions = collectionService.updateCollectionPermissions(newPermissions, collectionId);
 
     return Response.ok(new PermissionsIO(updatedPermissions)).build();
   }
@@ -220,7 +200,7 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
-    Roles roles = collectionService.getCollectionRoles(collectionId, securityContext.getUserPrincipal().getName());
+    Roles roles = collectionService.getCollectionRoles(collectionId);
     return Response.ok(roles).build();
   }
 
@@ -238,10 +218,7 @@ public class CollectionRest {
       content = @Content(schema = @Schema(implementation = CollectionIO.class))
     ) @Valid CollectionIO collection
   ) {
-    Collection newCollection = collectionService.createCollection(
-      collection,
-      securityContext.getUserPrincipal().getName()
-    );
+    Collection newCollection = collectionService.createCollection(collection);
     return Response.ok(new CollectionIO(newCollection)).status(Status.CREATED).build();
   }
 
@@ -261,11 +238,10 @@ public class CollectionRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response exportCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) throws IOException {
-    var is = exportService.exportCollectionByShepardId(collectionId, securityContext.getUserPrincipal().getName());
-    return is != null
-      ? Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
-        .header("Content-Disposition", "attachment; filename=\"export.zip\"")
-        .build()
-      : Response.status(Status.NOT_FOUND).build();
+    InputStream is = exportService.exportCollectionByShepardId(collectionId);
+
+    return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"export.zip\"")
+      .build();
   }
 }

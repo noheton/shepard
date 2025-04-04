@@ -80,10 +80,8 @@ public class SubscriptionRest {
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
   ) {
-    Subscription subscription = subscriptionService.getSubscription(subscriptionId);
-    return subscription != null
-      ? Response.ok(new SubscriptionIO(subscription)).build()
-      : Response.status(Status.NOT_FOUND).build();
+    Subscription subscription = subscriptionService.getSubscription(subscriptionId, username);
+    return Response.ok(new SubscriptionIO(subscription)).build();
   }
 
   @POST
@@ -122,9 +120,7 @@ public class SubscriptionRest {
     ) @Valid SubscriptionIO subscription
   ) {
     Subscription created = subscriptionService.createSubscription(subscription, username);
-    return created != null
-      ? Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    return Response.status(Status.CREATED).entity(new SubscriptionIO(created)).build();
   }
 
   @DELETE
@@ -139,8 +135,7 @@ public class SubscriptionRest {
     @PathParam(Constants.USERNAME) String username,
     @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
   ) {
-    return subscriptionService.deleteSubscription(subscriptionId)
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.NOT_FOUND).build();
+    subscriptionService.deleteSubscription(subscriptionId, username);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

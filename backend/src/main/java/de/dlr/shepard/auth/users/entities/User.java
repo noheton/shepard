@@ -44,6 +44,9 @@ public class User implements HasId {
    */
   public User(String username) {
     this.username = username;
+    this.firstName = "";
+    this.lastName = "";
+    this.email = "";
   }
 
   /**

@@ -2,7 +2,9 @@ package de.dlr.shepard.context.references.dataobject.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
+import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import jakarta.enterprise.context.RequestScoped;
@@ -22,6 +24,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -48,17 +51,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class CollectionReferenceRest {
 
-  private CollectionReferenceService collectionReferenceService;
+  @Inject
+  CollectionReferenceService collectionReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  CollectionReferenceRest() {}
-
-  @Inject
-  public CollectionReferenceRest(CollectionReferenceService collectionReferenceService) {
-    this.collectionReferenceService = collectionReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.COLLECTION_REFERENCE)
@@ -77,7 +74,11 @@ public class CollectionReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = collectionReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    List<CollectionReference> references = collectionReferenceService.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObjectId,
+      versionUID
+    );
     var result = new ArrayList<CollectionReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new CollectionReferenceIO(reference));
@@ -105,7 +106,12 @@ public class CollectionReferenceRest {
     @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = collectionReferenceService.getReferenceByShepardId(collectionReferenceId, versionUID);
+    CollectionReference result = collectionReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      collectionReferenceId,
+      versionUID
+    );
     return Response.ok(new CollectionReferenceIO(result)).build();
   }
 
@@ -129,10 +135,10 @@ public class CollectionReferenceRest {
       content = @Content(schema = @Schema(implementation = CollectionReferenceIO.class))
     ) @Valid CollectionReferenceIO collectionReference
   ) {
-    var result = collectionReferenceService.createReferenceByShepardId(
+    CollectionReference result = collectionReferenceService.createReference(
+      collectionId,
       dataObjectId,
-      collectionReference,
-      securityContext.getUserPrincipal().getName()
+      collectionReference
     );
     return Response.ok(new CollectionReferenceIO(result)).status(Status.CREATED).build();
   }
@@ -152,11 +158,8 @@ public class CollectionReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId
   ) {
-    var result = collectionReferenceService.deleteReferenceByShepardId(
-      collectionReferenceId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    collectionReferenceService.deleteReference(collectionId, dataObjectId, collectionReferenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -179,7 +182,12 @@ public class CollectionReferenceRest {
     @PathParam(Constants.COLLECTION_REFERENCE_ID) long collectionReferenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var payload = collectionReferenceService.getPayloadByShepardId(collectionReferenceId, versionUID);
+    Collection payload = collectionReferenceService.getPayload(
+      collectionId,
+      dataObjectId,
+      collectionReferenceId,
+      versionUID
+    );
     return Response.ok(new CollectionIO(payload)).build();
   }
 }

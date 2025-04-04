@@ -12,7 +12,6 @@ import de.dlr.shepard.data.spatialdata.repositories.SpatialDataPointRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.BadRequestException;
 import java.util.List;
 import java.util.stream.Collectors;
 import kotlin.NotImplementedError;
@@ -21,23 +20,16 @@ import org.locationtech.jts.geom.Coordinate;
 @RequestScoped
 public class SpatialDataPointService {
 
-  private SpatialDataPointRepository spatialDataPointRepository;
-  private SpatialDataContainerService spatialDataContainerService;
+  @Inject
+  SpatialDataPointRepository spatialDataPointRepository;
 
   @Inject
-  public SpatialDataPointService(
-    SpatialDataPointRepository spatialGeometryRepository,
-    SpatialDataContainerService spatialDataContainerService
-  ) {
-    this.spatialDataPointRepository = spatialGeometryRepository;
-    this.spatialDataContainerService = spatialDataContainerService;
-  }
-
-  SpatialDataPointService() {}
+  SpatialDataContainerService spatialDataContainerService;
 
   @Transactional
   public void createSpatialDataPoints(Long containerId, List<SpatialDataPointIO> dataPoints) {
     spatialDataContainerService.getContainer(containerId);
+    spatialDataContainerService.assertIsAllowedToEditContainer(containerId);
 
     final List<SpatialDataPoint> spatialGeometryList = mapSpatialDataPointIO(containerId, dataPoints);
     spatialDataPointRepository.insert(containerId, spatialGeometryList.toArray(new SpatialDataPoint[0]));
@@ -47,6 +39,8 @@ public class SpatialDataPointService {
     long containerId,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    spatialDataContainerService.getContainer(containerId);
+
     List<String> validationErrors = spatialDataQueryParams.validate();
     if (!validationErrors.isEmpty()) {
       throw new InvalidRequestException("The following errors occurred: " + String.join(", ", validationErrors));
@@ -91,6 +85,9 @@ public class SpatialDataPointService {
 
   @Transactional
   public void deleteByContainerId(long containerId) {
+    spatialDataContainerService.getContainer(containerId);
+    spatialDataContainerService.assertIsAllowedToEditContainer(containerId);
+
     spatialDataPointRepository.deleteByContainerId(containerId);
   }
 
@@ -99,6 +96,8 @@ public class SpatialDataPointService {
     AxisAlignedBoundingBox boundingBox,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    spatialDataContainerService.getContainer(containerId);
+
     final Coordinate bottomLeft = new Coordinate(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ());
     final Coordinate topRight = new Coordinate(boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
     return mapSpatialDataPoints(
@@ -121,6 +120,8 @@ public class SpatialDataPointService {
     BoundingSphere boundingSphere,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    spatialDataContainerService.getContainer(containerId);
+
     final Coordinate sphereCenter = new Coordinate(
       boundingSphere.getCenterX(),
       boundingSphere.getCenterY(),
@@ -147,6 +148,8 @@ public class SpatialDataPointService {
     KNearestNeighbor knn,
     SpatialDataQueryParams spatialDataQueryParams
   ) {
+    spatialDataContainerService.getContainer(containerId);
+
     final Coordinate kCoordinate = new Coordinate(knn.getX(), knn.getY(), knn.getZ());
     return mapSpatialDataPoints(
       spatialDataPointRepository.getByKNN(

@@ -1,5 +1,7 @@
 package de.dlr.shepard.common.search.services;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.ResponseBody;
@@ -18,23 +20,25 @@ import java.util.Set;
 @RequestScoped
 public class DataObjectSearchService {
 
-  private SearchDAO searchDAO;
-
-  DataObjectSearchService() {}
+  @Inject
+  SearchDAO searchDAO;
 
   @Inject
-  public DataObjectSearchService(SearchDAO searchDAO) {
-    this.searchDAO = searchDAO;
-  }
+  UserService userService;
 
-  public ResponseBody search(SearchBody searchBody, String userName) {
+  public ResponseBody search(SearchBody searchBody) {
+    User user = userService.getCurrentUser();
+
     Set<DataObject> resultsSet = new HashSet<>();
     SearchScope[] scopes = searchBody.getScopes();
     String searchBodyQuery = searchBody.getSearchParams().getQuery();
     for (SearchScope scope : scopes) {
       // no CollectionId and no DataObjectId given
       if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(searchBodyQuery, userName);
+        String selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(
+          searchBodyQuery,
+          user.getUsername()
+        );
         var res = searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY);
         resultsSet.addAll(res);
       }
@@ -43,7 +47,7 @@ public class DataObjectSearchService {
         String selectionQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(
           scope.getCollectionId(),
           searchBodyQuery,
-          userName
+          user.getUsername()
         );
         var res = searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY);
         resultsSet.addAll(res);
@@ -57,7 +61,7 @@ public class DataObjectSearchService {
               scope,
               traversalRules,
               searchBodyQuery,
-              userName
+              user.getUsername()
             );
             var res = searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY);
             resultsSet.addAll(res);
@@ -68,7 +72,7 @@ public class DataObjectSearchService {
           String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
             scope,
             searchBodyQuery,
-            userName
+            user.getUsername()
           );
           var res = searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY);
           resultsSet.addAll(res);

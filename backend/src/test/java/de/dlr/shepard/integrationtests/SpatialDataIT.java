@@ -240,7 +240,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(actual.getMessage()).isEqualTo("Spatial data container with id 999999 not found.");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Spatial data container with id 999999 is null or deleted");
   }
 
   @Test

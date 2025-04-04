@@ -1,11 +1,9 @@
 package de.dlr.shepard.data.structureddata.services;
 
 import static com.mongodb.client.model.Filters.eq;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -27,6 +25,8 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -163,8 +163,10 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
     var expectedData = new StructuredData();
     expectedData.setName("name");
-    var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
-    assertNull(actual);
+
+    assertThrows(InternalServerErrorException.class, () ->
+      service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload))
+    );
   }
 
   @Test
@@ -177,8 +179,10 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoId);
 
-    var actual = service.createStructuredData(mongoId, new StructuredDataPayload(expectedData, payload));
-    assertNull(actual);
+    assertThrows(NotFoundException.class, () ->
+      service.createStructuredData(mongoId, new StructuredDataPayload(expectedData, payload))
+    );
+
     verify(collection, never()).insertOne(any(Document.class));
   }
 
@@ -199,17 +203,14 @@ public class StructuredDataServiceTest extends BaseTestCase {
   public void deleteStructuredDataTest() {
     when(mongoDatabase.getCollection("collection")).thenReturn(collection);
 
-    var actual = service.deleteStructuredDataContainer("collection");
-    assertTrue(actual);
-    verify(collection).drop();
+    assertDoesNotThrow(() -> service.deleteStructuredDataContainer("collection"));
   }
 
   @Test
   public void deleteStructuredDataTest_collectionIsNull() {
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection("collection");
 
-    var actual = service.deleteStructuredDataContainer("collection");
-    assertFalse(actual);
+    assertThrows(NotFoundException.class, () -> service.deleteStructuredDataContainer("collection"));
   }
 
   @Test
@@ -252,8 +253,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection("collection");
 
-    var actual = service.getPayload("collection", oid.toHexString());
-    assertNull(actual);
+    assertThrows(NotFoundException.class, () -> service.getPayload("collection", oid.toHexString()));
   }
 
   @Test
@@ -264,8 +264,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     when(collection.find(eq("_id", oid))).thenReturn(result);
     when(result.first()).thenReturn(null);
 
-    var actual = service.getPayload("collection", oid.toHexString());
-    assertNull(actual);
+    assertThrows(NotFoundException.class, () -> service.getPayload("collection", oid.toHexString()));
   }
 
   @Test
@@ -276,8 +275,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
     when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(new Document());
 
-    var result = service.deletePayload(mongoOid, oid.toHexString());
-    assertTrue(result);
+    assertDoesNotThrow(() -> service.deletePayload(mongoOid, oid.toHexString()));
   }
 
   @Test
@@ -287,8 +285,7 @@ public class StructuredDataServiceTest extends BaseTestCase {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoOid);
 
-    var result = service.deletePayload(mongoOid, oid.toHexString());
-    assertFalse(result);
+    assertThrows(NotFoundException.class, () -> service.deletePayload(mongoOid, oid.toHexString()));
   }
 
   @Test
@@ -299,7 +296,6 @@ public class StructuredDataServiceTest extends BaseTestCase {
     when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
-    var result = service.deletePayload(mongoOid, oid.toHexString());
-    assertTrue(result);
+    assertThrows(NotFoundException.class, () -> service.deletePayload(mongoOid, oid.toHexString()));
   }
 }

@@ -114,10 +114,10 @@ public class SubscriptionIT extends BaseTestCaseIT {
         )
       )
       .then()
-      .statusCode(404)
+      .statusCode(403)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - There is no association between subscription and user");
+    assertThat(actual.getMessage()).isEqualTo("You do not have permissions for this Subscription.");
   }
 
   @Test

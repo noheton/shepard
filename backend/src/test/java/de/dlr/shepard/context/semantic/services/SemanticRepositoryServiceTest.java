@@ -1,16 +1,15 @@
 package de.dlr.shepard.context.semantic.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.semantic.ISemanticRepositoryConnector;
@@ -34,10 +33,10 @@ public class SemanticRepositoryServiceTest {
   SemanticRepositoryDAO semanticRepositoryDAO;
 
   @InjectMock
-  UserDAO userDAO;
+  DateHelper dateHelper;
 
   @InjectMock
-  DateHelper dateHelper;
+  UserService userService;
 
   @InjectMock
   SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
@@ -47,6 +46,8 @@ public class SemanticRepositoryServiceTest {
 
   @Inject
   SemanticRepositoryService service;
+
+  private final User user = new User("Testuser");
 
   @BeforeEach
   public void setUpRepositories() {
@@ -88,9 +89,9 @@ public class SemanticRepositoryServiceTest {
   @Test
   public void getRepositoryTest_isNull() {
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(null);
-    var actual = service.getRepository(1L);
 
-    assertNull(actual);
+    var ex = assertThrows(InvalidPathException.class, () -> service.getRepository(1L));
+    assertEquals("ID ERROR - Semantic Repository with id 1 is null or deleted", ex.getMessage());
   }
 
   @Test
@@ -99,14 +100,13 @@ public class SemanticRepositoryServiceTest {
     expected.setDeleted(true);
 
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(expected);
-    var actual = service.getRepository(1L);
 
-    assertNull(actual);
+    var ex = assertThrows(InvalidPathException.class, () -> service.getRepository(1L));
+    assertEquals("ID ERROR - Semantic Repository with id 1 is null or deleted", ex.getMessage());
   }
 
   @Test
   public void createRepositoryTest() {
-    var user = new User("bob");
     var date = new Date();
     var input = new SemanticRepositoryIO() {
       {
@@ -135,12 +135,12 @@ public class SemanticRepositoryServiceTest {
       }
     };
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryConnector.healthCheck()).thenReturn(true);
     when(semanticRepositoryDAO.createOrUpdate(toCreate)).thenReturn(expected);
 
-    var actual = service.createRepository(input, "bob");
+    var actual = service.createRepository(input);
     assertEquals(expected, actual);
   }
 
@@ -156,10 +156,10 @@ public class SemanticRepositoryServiceTest {
       }
     };
 
-    when(userDAO.find("bob")).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getCurrentUser()).thenReturn(user);
 
-    assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
+    assertThrows(InvalidBodyException.class, () -> service.createRepository(input));
   }
 
   @Test
@@ -174,11 +174,11 @@ public class SemanticRepositoryServiceTest {
       }
     };
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryConnector.healthCheck()).thenReturn(false);
 
-    assertThrows(InvalidBodyException.class, () -> service.createRepository(input, "bob"));
+    assertThrows(InvalidBodyException.class, () -> service.createRepository(input));
   }
 
   @Test
@@ -192,12 +192,11 @@ public class SemanticRepositoryServiceTest {
     expected.setUpdatedBy(user);
     expected.setUpdatedAt(date);
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(repository);
 
-    var actual = service.deleteRepository(1L, "bob");
-    assertTrue(actual);
+    assertDoesNotThrow(() -> service.deleteRepository(1L));
     verify(semanticRepositoryDAO).createOrUpdate(expected);
   }
 
@@ -206,11 +205,10 @@ public class SemanticRepositoryServiceTest {
     var user = new User("bob");
     var date = new Date();
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(semanticRepositoryDAO.findByNeo4jId(1L)).thenReturn(null);
 
-    var actual = service.deleteRepository(1L, "bob");
-    assertFalse(actual);
+    assertThrows(InvalidPathException.class, () -> service.deleteRepository(1L));
   }
 }

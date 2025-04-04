@@ -14,43 +14,34 @@ import java.util.Optional;
 @RequestScoped
 public class SearchService {
 
-  private StructuredDataSearchService structuredDataSearcher;
-  private CollectionSearchService collectionSearcher;
-  private DataObjectSearchService dataObjectSearcher;
-  private ReferenceSearchService referenceSearcher;
-
-  SearchService() {}
+  @Inject
+  StructuredDataSearchService structuredDataSearcher;
 
   @Inject
-  public SearchService(
-    StructuredDataSearchService structuredDataSearcher,
-    CollectionSearchService collectionSearcher,
-    DataObjectSearchService dataObjectSearcher,
-    ReferenceSearchService referenceSearcher
-  ) {
-    this.structuredDataSearcher = structuredDataSearcher;
-    this.collectionSearcher = collectionSearcher;
-    this.dataObjectSearcher = dataObjectSearcher;
-    this.referenceSearcher = referenceSearcher;
-  }
+  CollectionSearchService collectionSearcher;
 
-  public ResponseBody search(SearchBody searchBody, String userName) {
+  @Inject
+  DataObjectSearchService dataObjectSearcher;
+
+  @Inject
+  ReferenceSearchService referenceSearcher;
+
+  public ResponseBody search(SearchBody searchBody) {
     QueryValidator.checkQuery(searchBody.getSearchParams().getQuery());
     ResponseBody ret =
       switch (searchBody.getSearchParams().getQueryType()) {
-        case StructuredData -> structuredDataSearcher.search(searchBody, userName);
-        case Collection -> searchCollections(searchBody, userName);
-        case DataObject -> dataObjectSearcher.search(searchBody, userName);
-        case Reference -> referenceSearcher.search(searchBody, userName);
+        case StructuredData -> structuredDataSearcher.search(searchBody);
+        case Collection -> searchCollections(searchBody);
+        case DataObject -> dataObjectSearcher.search(searchBody);
+        case Reference -> referenceSearcher.search(searchBody);
         default -> null;
       };
     return ret;
   }
 
-  private ResponseBody searchCollections(SearchBody searchBody, String userName) {
+  private ResponseBody searchCollections(SearchBody searchBody) {
     PaginatedCollectionList paginatedCollectionList = collectionSearcher.search(
       searchBody.getSearchParams().getQuery(),
-      userName,
       Optional.empty(),
       Optional.empty(),
       BasicCollectionAttributes.createdAt,

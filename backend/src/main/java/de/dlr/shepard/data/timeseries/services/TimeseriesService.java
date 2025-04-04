@@ -1,6 +1,8 @@
 package de.dlr.shepard.data.timeseries.services;
 
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -11,13 +13,13 @@ import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
+import io.quarkus.logging.Log;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,50 +29,100 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @RequestScoped
 public class TimeseriesService {
 
-  private TimeseriesRepository timeseriesRepository;
-  private TimeseriesDataPointRepository timeseriesDataPointRepository;
-
-  TimeseriesService() {}
+  @Inject
+  TimeseriesRepository timeseriesRepository;
 
   @Inject
-  public TimeseriesService(
-    TimeseriesRepository timeseriesRepository,
-    TimeseriesDataPointRepository timeseriesDataPointRepository
-  ) {
-    this.timeseriesRepository = timeseriesRepository;
-    this.timeseriesDataPointRepository = timeseriesDataPointRepository;
-  }
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
 
   /**
    * Returns a list of timeseries objects that are in the given database.
+   *
+   * Returns an empty list if the timeseries container is not accessible (cannot be found or wrong permissions).
    *
    * @param containerId of the given timeseries container
    * @return a list of timeseries entities
    */
   public List<TimeseriesEntity> getTimeseriesAvailable(long containerId) {
+    timeseriesContainerService.getContainer(containerId);
+
     return timeseriesRepository.list("containerId", containerId);
   }
 
-  public TimeseriesEntity getTimeseriesById(int id) {
+  /**
+   * Returns a timeseries by id
+   *
+   * @param containerId timeseries container id
+   * @param id
+   * @return TimeseriesEntity
+   * @throws InvalidPathException if container with containerId or the timeseries are not accessible
+   * @throws InvalidAuthException if user has no read permissions on the timeseries container
+   */
+  public TimeseriesEntity getTimeseriesById(long containerId, int id) {
+    timeseriesContainerService.getContainer(containerId);
+
     var timeseries = timeseriesRepository.findById(id);
-    if (timeseries == null) throw new NotFoundException("Timeseries not found.");
+    if (timeseries == null) {
+      String errorMsg = String.format(
+        "ID ERROR - Timeseries with id %s in container %s is null or deleted",
+        id,
+        containerId
+      );
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
+    }
     return timeseries;
   }
 
+  /**
+   * Deletes timeseries container by id
+   *
+   * @param containerId
+   * @throws InvalidPathException if container could not be found
+   * @throws InvalidAuthException if user has no edit permissions on container
+   */
   @Transactional
   public void deleteTimeseriesByContainerId(long containerId) {
+    timeseriesContainerService.getContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
     this.timeseriesRepository.deleteByContainerId(containerId);
   }
 
   /**
    * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
    *
-   * We add <code>@ActivateRequestContext</code> in order to call this method in a parallel stream.
-   *
    * @return List of TimeseriesDataPoint
+   * @throws InvalidPathException if container is null or deleted
+   * @throws InvalidAuthException if user has no read permissions on container
+   */
+  public List<TimeseriesDataPoint> getDataPointsByTimeseries(
+    long containerId,
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    return getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams);
+  }
+
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
+   *
+   * This function does not check if the container specified by containerId is accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a parallel stream.
+   * The container check relies on an active request context.
+   * However, the 'ActivateRequestContext' annotation does not allow for a container check.
+   *
+   * @param containerId
+   * @param timeseries
+   * @param queryParams
+   * @return List<TimeseriesDataPoint>
    */
   @ActivateRequestContext
-  public List<TimeseriesDataPoint> getDataPointsByTimeseries(
+  public List<TimeseriesDataPoint> getDataPointsByTimeseriesActivatedRequestContext(
     long containerId,
     Timeseries timeseries,
     TimeseriesDataPointsQueryParams queryParams
@@ -90,6 +142,8 @@ public class TimeseriesService {
     List<Timeseries> timeseriesList,
     TimeseriesDataPointsQueryParams queryParams
   ) {
+    timeseriesContainerService.getContainer(containerId);
+
     ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<
       TimeseriesWithDataPoints
     >();
@@ -97,7 +151,10 @@ public class TimeseriesService {
       .parallelStream()
       .forEach(timeseries -> {
         timeseriesWithDataPointsQueue.add(
-          new TimeseriesWithDataPoints(timeseries, getDataPointsByTimeseries(containerId, timeseries, queryParams))
+          new TimeseriesWithDataPoints(
+            timeseries,
+            getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
+          )
         );
       });
     return new ArrayList<TimeseriesWithDataPoints>(timeseriesWithDataPointsQueue);
@@ -117,6 +174,9 @@ public class TimeseriesService {
     Timeseries timeseries,
     List<TimeseriesDataPoint> dataPoints
   ) {
+    timeseriesContainerService.getContainer(timeseriesContainerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
+
     DataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(dataPoints.get(0).getValue()).orElseThrow(
       () -> new InvalidBodyException()
     );
@@ -142,6 +202,9 @@ public class TimeseriesService {
     List<TimeseriesDataPoint> dataPoints,
     DataPointValueType dataType
   ) {
+    timeseriesContainerService.getContainer(timeseriesContainerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
+
     TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(timeseriesContainerId, timeseries, dataType);
 
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
@@ -156,6 +219,9 @@ public class TimeseriesService {
     Timeseries timeseries,
     DataPointValueType incomingValueType
   ) {
+    timeseriesContainerService.getContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
+
     // try to find timeseries in db
     Optional<TimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
 

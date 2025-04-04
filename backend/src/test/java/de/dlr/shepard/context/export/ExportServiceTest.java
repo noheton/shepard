@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.util.DateHelper;
@@ -67,6 +68,9 @@ public class ExportServiceTest {
   @InjectMock
   URIReferenceService uriReferenceService;
 
+  @InjectMock
+  AuthenticationContext authenticationContext;
+
   @Inject
   ExportService service;
 
@@ -91,7 +95,7 @@ public class ExportServiceTest {
     collection.addDataObject(dataObject);
     dataObject.setCollection(collection);
 
-    when(userService.getUser(user.getUsername())).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(collection.getShepardId())).thenReturn(
       collection
     );
@@ -102,7 +106,9 @@ public class ExportServiceTest {
   public void exportTest_basicReference() throws IOException {
     var reference = hydrateReferenceMock(mock(BasicReference.class), "BasicReference");
     dataObject.addReference(reference);
-    when(basicReferenceService.getReferenceByShepardId(reference.getShepardId())).thenReturn(reference);
+    when(
+      basicReferenceService.getReference(collection.getShepardId(), dataObject.getShepardId(), reference.getShepardId())
+    ).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -110,7 +116,7 @@ public class ExportServiceTest {
         when(mock.build()).thenReturn(mockStream);
       });
     ) {
-      var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+      var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
       var exportBuilderMock = exportBuilderMockController.constructed().get(0);
       verify(exportBuilderMock).addReference(any(BasicReferenceIO.class), eq(user));
@@ -125,7 +131,14 @@ public class ExportServiceTest {
   public void exportTest_uriReference() throws IOException {
     var reference = hydrateReferenceMock(mock(URIReference.class), "URIReference");
     dataObject.addReference(reference);
-    when(uriReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(
+      uriReferenceService.getReference(
+        collection.getShepardId(),
+        dataObject.getShepardId(),
+        reference.getShepardId(),
+        null
+      )
+    ).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -133,7 +146,7 @@ public class ExportServiceTest {
         when(mock.build()).thenReturn(mockStream);
       });
     ) {
-      var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+      var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
       var exportBuilderMock = exportBuilderMockController.constructed().get(0);
       verify(exportBuilderMock).addReference(any(BasicReferenceIO.class), eq(user));
@@ -148,7 +161,14 @@ public class ExportServiceTest {
   public void exportTest_timeseriesReference() throws IOException {
     var reference = hydrateReferenceMock(mock(TimeseriesReference.class), "TimeseriesReference");
     dataObject.addReference(reference);
-    when(timeseriesReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(
+      timeseriesReferenceService.getReference(
+        collection.getShepardId(),
+        dataObject.getShepardId(),
+        reference.getShepardId(),
+        null
+      )
+    ).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -156,7 +176,7 @@ public class ExportServiceTest {
         when(mock.build()).thenReturn(mockStream);
       });
     ) {
-      var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+      var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
       var exportBuilderMock = exportBuilderMockController.constructed().get(0);
       verify(exportBuilderMock).addReference(any(TimeseriesReferenceIO.class), eq(user));
@@ -171,7 +191,15 @@ public class ExportServiceTest {
   public void exportTest_fileReference() throws IOException {
     var reference = hydrateReferenceMock(mock(FileReference.class), "FileReference");
     dataObject.addReference(reference);
-    when(fileReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+
+    when(
+      fileReferenceService.getReference(
+        collection.getShepardId(),
+        dataObject.getShepardId(),
+        reference.getShepardId(),
+        null
+      )
+    ).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -179,7 +207,7 @@ public class ExportServiceTest {
         when(mock.build()).thenReturn(mockStream);
       });
     ) {
-      var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+      InputStream actual = service.exportCollectionByShepardId(collection.getShepardId());
 
       var exportBuilderMock = exportBuilderMockController.constructed().get(0);
       verify(exportBuilderMock).addReference(any(FileReferenceIO.class), eq(user));
@@ -194,7 +222,14 @@ public class ExportServiceTest {
   public void exportTest_structuredDataReference() throws IOException {
     var reference = hydrateReferenceMock(mock(StructuredDataReference.class), "StructuredDataReference");
     dataObject.addReference(reference);
-    when(structuredDataReferenceService.getReferenceByShepardId(reference.getShepardId(), null)).thenReturn(reference);
+    when(
+      structuredDataReferenceService.getReference(
+        collection.getShepardId(),
+        dataObject.getShepardId(),
+        reference.getShepardId(),
+        null
+      )
+    ).thenReturn(reference);
 
     var mockStream = mock(InputStream.class);
     try (
@@ -202,7 +237,7 @@ public class ExportServiceTest {
         when(mock.build()).thenReturn(mockStream);
       });
     ) {
-      var actual = service.exportCollectionByShepardId(collection.getShepardId(), user.getUsername());
+      InputStream actual = service.exportCollectionByShepardId(collection.getShepardId());
 
       var exportBuilderMock = exportBuilderMockController.constructed().get(0);
       verify(exportBuilderMock).addReference(any(StructuredDataReferenceIO.class), eq(user));

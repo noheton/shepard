@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
@@ -50,16 +52,22 @@ public class SearchServiceTest {
   @Inject
   SearchService searcher;
 
+  @InjectMock
+  UserService userService;
+
+  private final User user = new User("Testuser");
+
   @Test
   public void invalidQueryTest() {
-    String userName = "user1";
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("match invalid", QueryType.Collection);
     var searchBody = new SearchBody(scopes, params);
-    assertThrows(InvalidBodyException.class, () -> searcher.search(searchBody, userName));
+
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    assertThrows(InvalidBodyException.class, () -> searcher.search(searchBody));
     verify(collectionSearcher, never()).search(
       searchBody.getSearchParams().getQuery(),
-      userName,
       Optional.empty(),
       Optional.empty(),
       BasicCollectionAttributes.createdAt,
@@ -69,7 +77,6 @@ public class SearchServiceTest {
 
   @Test
   public void collectionSearchTest() {
-    String userName = "user1";
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("{}", QueryType.Collection);
     var searchBody = new SearchBody(scopes, params);
@@ -95,16 +102,14 @@ public class SearchServiceTest {
       true
     );
 
-    when(collectionSearcher.search(anyString(), anyString(), any(), any(), any(), any())).thenReturn(
-      paginatedCollectionListMock
-    );
-    ResponseBody actual = searcher.search(searchBody, userName);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(collectionSearcher.search(anyString(), any(), any(), any(), any())).thenReturn(paginatedCollectionListMock);
+    ResponseBody actual = searcher.search(searchBody);
     assertEquals(collectionSearchResultMock.toResponseBody(), actual);
   }
 
   @Test
   public void dataObjectSearchTest() {
-    String userName = "user1";
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("{}", QueryType.DataObject);
     var searchBody = new SearchBody(scopes, params);
@@ -113,14 +118,16 @@ public class SearchServiceTest {
     dataObject.setShepardId(dataObject.getId());
     BasicEntityIO[] results = { new BasicEntityIO(dataObject) };
     var expected = new ResponseBody(resultTriples, results, params);
-    when(dataObjectSearcher.search(searchBody, userName)).thenReturn(expected);
-    ResponseBody actual = searcher.search(searchBody, userName);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dataObjectSearcher.search(searchBody)).thenReturn(expected);
+
+    ResponseBody actual = searcher.search(searchBody);
     assertEquals(expected, actual);
   }
 
   @Test
   public void referenceSearchTest() {
-    String userName = "user1";
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("{}", QueryType.Reference);
     var searchBody = new SearchBody(scopes, params);
@@ -129,14 +136,16 @@ public class SearchServiceTest {
     reference.setShepardId(reference.getId());
     BasicEntityIO[] results = { new BasicEntityIO(reference) };
     var expected = new ResponseBody(resultTriples, results, params);
-    when(referenceSearcher.search(searchBody, userName)).thenReturn(expected);
-    ResponseBody actual = searcher.search(searchBody, userName);
+
+    when(referenceSearcher.search(searchBody)).thenReturn(expected);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    ResponseBody actual = searcher.search(searchBody);
     assertEquals(expected, actual);
   }
 
   @Test
   public void structuredDataSearchTest() {
-    String userName = "user1";
     SearchScope[] scopes = { new SearchScope() };
     var params = new SearchParams("{}", QueryType.StructuredData);
     var searchBody = new SearchBody(scopes, params);
@@ -145,8 +154,11 @@ public class SearchServiceTest {
     reference.setShepardId(reference.getId());
     BasicEntityIO[] results = { new BasicEntityIO(reference) };
     var expected = new ResponseBody(resultTriples, results, params);
-    when(structuredDataSearcher.search(searchBody, userName)).thenReturn(expected);
-    ResponseBody actual = searcher.search(searchBody, userName);
+
+    when(structuredDataSearcher.search(searchBody)).thenReturn(expected);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    ResponseBody actual = searcher.search(searchBody);
     assertEquals(expected, actual);
   }
 }

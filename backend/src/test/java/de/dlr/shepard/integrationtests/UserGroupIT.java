@@ -80,7 +80,7 @@ public class UserGroupIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(response.getMessage()).isEqualTo("ID ERROR - UserGroup does not exist");
+    assertThat(response.getMessage()).isEqualTo("ID ERROR - User Group with id 99999 is null or deleted");
   }
 
   @Test

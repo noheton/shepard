@@ -39,17 +39,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class ApiKeyRest {
 
-  private ApiKeyService apiKeyService;
+  @Inject
+  ApiKeyService apiKeyService;
 
   @Context
   private UriInfo uriInfo;
-
-  ApiKeyRest() {}
-
-  @Inject
-  public ApiKeyRest(ApiKeyService apiKeyService) {
-    this.apiKeyService = apiKeyService;
-  }
 
   @GET
   @Tag(name = Constants.APIKEY)
@@ -96,7 +90,7 @@ public class ApiKeyRest {
       Log.errorf("The given api key uid has an invalid format: %s", apiKeyUid);
       throw new InvalidRequestException("The given api key uid has an invalid format");
     }
-    ApiKey apiKey = apiKeyService.getApiKey(uid);
+    ApiKey apiKey = apiKeyService.getApiKey(username, uid);
     return Response.ok(new ApiKeyIO(apiKey)).build();
   }
 
@@ -140,7 +134,7 @@ public class ApiKeyRest {
       Log.errorf("The given api key uid has an invalid format: %s", apiKeyUid);
       throw new InvalidRequestException("The given api key uid has an invalid format");
     }
-    return apiKeyService.deleteApiKey(uid)
+    return apiKeyService.deleteApiKey(username, uid)
       ? Response.status(Status.NO_CONTENT).build()
       : Response.status(Status.INTERNAL_SERVER_ERROR).build();
   }

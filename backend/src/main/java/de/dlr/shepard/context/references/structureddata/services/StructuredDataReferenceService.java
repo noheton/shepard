@@ -1,26 +1,31 @@
 package de.dlr.shepard.context.references.structureddata.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
-import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.structureddata.daos.StructuredDataReferenceDAO;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.version.services.VersionService;
-import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataDAO;
+import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
+import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -36,13 +41,10 @@ public class StructuredDataReferenceService
   DataObjectService dataObjectService;
 
   @Inject
-  StructuredDataContainerDAO containerDAO;
-
-  @Inject
   StructuredDataDAO structuredDataDAO;
 
   @Inject
-  UserDAO userDAO;
+  StructuredDataContainerService structuredDataContainerService;
 
   @Inject
   VersionService versionService;
@@ -51,21 +53,43 @@ public class StructuredDataReferenceService
   DateHelper dateHelper;
 
   @Inject
+  UserService userService;
+
+  @Inject
   StructuredDataService structuredDataService;
 
   @Inject
   PermissionsService permissionsService;
 
+  @Inject
+  AuthenticationContext authenticationContext;
+
+  @Inject
+  CollectionService collectionService;
+
   @Override
-  public StructuredDataReference createReferenceByShepardId(
+  public StructuredDataReference createReference(
+    long collectionShepardId,
     long dataObjectShepardId,
-    StructuredDataReferenceIO structuredDataReference,
-    String username
+    StructuredDataReferenceIO structuredDataReference
   ) {
-    var user = userDAO.find(username);
-    DataObject dataObject = dataObjectService.getDataObject(dataObjectShepardId);
-    var container = containerDAO.findLightByNeo4jId(structuredDataReference.getStructuredDataContainerId());
-    if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
+    DataObject dataObject = dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
+
+    StructuredDataContainer container;
+    try {
+      container = structuredDataContainerService.getContainer(structuredDataReference.getStructuredDataContainerId());
+    } catch (InvalidPathException e) {
+      throw new InvalidBodyException(
+        String.format(
+          "ID ERROR - Structured Data Container with id %s is null or deleted",
+          structuredDataReference.getStructuredDataContainerId()
+        )
+      );
+    }
+
     var toCreate = new StructuredDataReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
@@ -90,79 +114,144 @@ public class StructuredDataReferenceService
     return created;
   }
 
+  /**
+   * Gets Structured Data Reference list for a given dataobject.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param versionUID the version UUID
+   * @return List<StructuredDataReference>
+   * @throws InvalidPathException If collection or dataobject cannot be found, or no association between dataobject and collection exists
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
+   */
   @Override
-  public List<StructuredDataReference> getAllReferencesByDataObjectShepardId(
+  public List<StructuredDataReference> getAllReferencesByDataObjectId(
+    long collectionShepardId,
     long dataObjectShepardId,
     UUID versionUID
   ) {
-    var references = structuredDataReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
+    List<StructuredDataReference> references = structuredDataReferenceDAO.findByDataObjectShepardId(
+      dataObjectShepardId
+    );
     return references;
   }
 
   /**
    * Searches the neo4j database for a StructuredDataReference
    *
-   * @param shepardId identifies the searched StructuredDataReference
-   *
-   * @return the StructuredDataReference with the given id or null
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param shepardId  identifies the searched StructuredDataReference
+   * @param versionUID the collections UUID
+   * @return CollectionReference
+   * @throws InvalidPathException If collection reference with Id does not exist or is deleted, or if collection or dataobject Id of path is not valid
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
    */
   @Override
-  public StructuredDataReference getReferenceByShepardId(long shepardId, UUID versionUID) {
+  public StructuredDataReference getReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long shepardId,
+    UUID versionUID
+  ) {
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
     StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId, versionUID);
     if (structuredDataReference == null || structuredDataReference.isDeleted()) {
-      Log.errorf("Structured Data Reference with id %s is null or deleted", shepardId);
-      return null;
+      String errorMsg = String.format("ID ERROR - Structured Data Reference with id %s is null or deleted", shepardId);
+      Log.errorf(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+
+    if (
+      structuredDataReference.getDataObject() == null ||
+      !structuredDataReference.getDataObject().getShepardId().equals(dataObjectShepardId)
+    ) {
+      Log.error("ID ERROR - There is no association between dataObject and reference");
+      throw new InvalidPathException("ID ERROR - There is no association between dataObject and reference");
+    }
+
     return structuredDataReference;
   }
 
   /**
-   * set the deleted flag for the Reference
+   * Deletes the Structured Data reference.
    *
-   * @param structuredDataReferenceShepardId identifies the StructuredDataReference to be deleted
-   * @param username the deleting user
-   * @return a boolean to identify if the StructuredDataReference was successfully removed
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param dataObjectReferenceShepardId
+   * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
+   * @throws InvalidAuthException if user has no permissions to request the collection, which the reference is assigned to
+   * @throws InvalidBodyException If user has no permissions to access the referenced Structured Data or the referenced collection cannot be found
    */
   @Override
-  public boolean deleteReferenceByShepardId(long structuredDataReferenceShepardId, String username) {
-    StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(
-      structuredDataReferenceShepardId
+  public void deleteReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long structuredDataReferenceShepardId
+  ) {
+    StructuredDataReference structuredDataReference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      structuredDataReferenceShepardId,
+      null
     );
-    var user = userDAO.find(username);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
     structuredDataReference.setDeleted(true);
     structuredDataReference.setUpdatedBy(user);
     structuredDataReference.setUpdatedAt(dateHelper.getDate());
     structuredDataReferenceDAO.createOrUpdate(structuredDataReference);
-    return true;
   }
 
   /**
-   * Returns all structured data objects with payload. The payload attribute is null when the container is not accessible.
+   * Returns all structured data objects with payload.
+   *
+   * The payload attribute is null when the container is not accessible.
    *
    * @param structuredDataReferenceShepardId identifies the sd reference
-   * @param username the current user
    * @return a list of StructuredDataPayload
    */
-  public List<StructuredDataPayload> getAllPayloadsByShepardId(long structuredDataReferenceShepardId, String username) {
-    StructuredDataReference reference = structuredDataReferenceDAO.findByShepardId(structuredDataReferenceShepardId);
+  public List<StructuredDataPayload> getAllPayloads(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long structuredDataReferenceShepardId
+  ) {
+    StructuredDataReference reference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      structuredDataReferenceShepardId,
+      null
+    );
 
-    // Return empty structured data objects when the container is not accessible
-    if (
-      reference.getStructuredDataContainer() == null ||
-      reference.getStructuredDataContainer().isDeleted() ||
-      !permissionsService.isAccessTypeAllowedForUser(
-        reference.getStructuredDataContainer().getId(),
-        AccessType.Read,
-        username
-      )
-    ) return reference.getStructuredDatas().stream().map(sd -> new StructuredDataPayload(sd, null)).toList();
+    if (reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "StructuredData Container referenced by StructuredData Reference with Id %s is null or deleted",
+        structuredDataReferenceShepardId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
+    try {
+      // check that referenced container is actually accessible
+      structuredDataContainerService.getContainer(reference.getStructuredDataContainer().getId());
+    } catch (InvalidPathException ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
 
     String mongoId = reference.getStructuredDataContainer().getMongoId();
     var result = new ArrayList<StructuredDataPayload>(reference.getStructuredDatas().size());
     for (var structuredData : reference.getStructuredDatas()) {
-      var payload = structuredDataService.getPayload(mongoId, structuredData.getOid());
-      if (payload != null) result.add(payload);
-      else result.add(new StructuredDataPayload(structuredData, null));
+      try {
+        StructuredDataPayload payload = structuredDataService.getPayload(mongoId, structuredData.getOid());
+        result.add(payload);
+      } catch (NotFoundException ex) {
+        result.add(new StructuredDataPayload(structuredData, null));
+      }
     }
     return result;
   }
@@ -177,20 +266,38 @@ public class StructuredDataReferenceService
    * @throws InvalidRequestException when container is not accessible
    * @throws InvalidAuthException when the user is not authorized to access the container
    */
-  public StructuredDataPayload getPayloadByShepardId(
+  public StructuredDataPayload getPayload(
+    long collectionShepardId,
+    long dataObjectShepardId,
     long structuredDataReferenceShepardId,
-    String oid,
-    String username
+    String oid
   ) {
-    StructuredDataReference reference = structuredDataReferenceDAO.findByShepardId(structuredDataReferenceShepardId);
-    if (
-      reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted()
-    ) throw new InvalidRequestException("The structured data container in question is not accessible");
+    StructuredDataReference reference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      structuredDataReferenceShepardId,
+      null
+    );
 
-    long containerId = reference.getStructuredDataContainer().getId();
-    if (
-      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
-    ) throw new InvalidAuthException("You are not authorized to access this structured data");
+    if (reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "Structured Data Container referenced by StructuredDataReference with id %s is deleted",
+        reference.getShepardId()
+      );
+      Log.errorf(errorMsg);
+      throw new InvalidRequestException(errorMsg);
+    }
+
+    try {
+      structuredDataContainerService.getContainer(reference.getStructuredDataContainer().getId());
+    } catch (InvalidPathException e) {
+      throw new NotFoundException(
+        String.format(
+          "The StructuredData Container with id %d could not be found.",
+          reference.getStructuredDataContainer().getId()
+        )
+      );
+    }
 
     String mongoId = reference.getStructuredDataContainer().getMongoId();
     return structuredDataService.getPayload(mongoId, oid);

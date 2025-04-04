@@ -71,6 +71,6 @@ public class UserIT extends BaseTestCaseIT {
       .statusCode(404)
       .extract()
       .as(ErrorResponse.class);
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - User does not exist");
+    assertThat(actual.getMessage()).isEqualTo(String.format("User with name %s not found", "fake-user-id"));
   }
 }

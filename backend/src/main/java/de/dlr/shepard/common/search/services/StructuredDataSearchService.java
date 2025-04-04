@@ -2,6 +2,8 @@ package de.dlr.shepard.common.search.services;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.io.ResponseBody;
@@ -28,21 +30,20 @@ import org.bson.Document;
 @RequestScoped
 public class StructuredDataSearchService {
 
-  private StructuredDataReferenceDAO structuredDataReferenceDAO;
+  @Inject
+  StructuredDataReferenceDAO structuredDataReferenceDAO;
 
-  public StructuredDataSearchService() {}
+  @Inject
+  UserService userService;
 
   @Inject
   @Named("mongoDatabase")
   MongoDatabase mongoDatabase;
 
-  @Inject
-  public StructuredDataSearchService(StructuredDataReferenceDAO structuredDataReferenceDAO) {
-    this.structuredDataReferenceDAO = structuredDataReferenceDAO;
-  }
+  public ResponseBody search(SearchBody searchBody) {
+    User user = userService.getCurrentUser();
 
-  public ResponseBody search(SearchBody searchBody, String userName) {
-    var reachableReferences = findReachableReferences(searchBody, userName);
+    var reachableReferences = findReachableReferences(searchBody, user.getUsername());
     var matchingReferences = findMatchingReferences(reachableReferences, searchBody);
     return getStructuredDataResponse(matchingReferences, searchBody);
   }

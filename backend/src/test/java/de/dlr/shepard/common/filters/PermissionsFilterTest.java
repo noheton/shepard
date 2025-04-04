@@ -6,7 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.security.PermissionGracePeriod;
+import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.common.util.AccessType;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
@@ -50,7 +50,7 @@ public class PermissionsFilterTest {
   PermissionsService permissionsService;
 
   @InjectMock
-  PermissionGracePeriod lastSeen;
+  PermissionLastSeenCache permissionLastSeenCache;
 
   @Inject
   PermissionsFilter filter;
@@ -135,7 +135,7 @@ public class PermissionsFilterTest {
 
   @Test
   public void filterTest_lastSeen() {
-    when(lastSeen.elementIsKnown("principalGET/shepard/api/projects")).thenReturn(true);
+    when(permissionLastSeenCache.isKeyCached("principalGET/shepard/api/projects")).thenReturn(true);
 
     filter.filter(request);
     verify(permissionsService, never()).isAllowed(any(), any(), any());

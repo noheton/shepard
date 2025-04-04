@@ -59,7 +59,6 @@ public class BasicApiIT extends BaseTestCaseIT {
   }
 
   @Test
-  // TODO: Fix these issues and reenable the test
   @Disabled
   public void getCollectionTest_invalidId_badRequest() {
     given().spec(requestSpecOfDefaultUser).when().get("/collections/-1").then().statusCode(400);

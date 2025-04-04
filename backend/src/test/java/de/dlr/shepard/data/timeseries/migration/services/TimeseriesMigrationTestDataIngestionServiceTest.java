@@ -51,7 +51,7 @@ public class TimeseriesMigrationTestDataIngestionServiceTest {
   @BeforeAll
   public void setupUser() {
     User user = new User(userName);
-    userService.createUser(user);
+    userService.createOrUpdateUser(user);
   }
 
   @BeforeEach

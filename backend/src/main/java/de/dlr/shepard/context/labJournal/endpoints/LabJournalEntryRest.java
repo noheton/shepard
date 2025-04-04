@@ -36,23 +36,22 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+//TODO: Much of the functionality of the endpoint functions can be refactored into the LabJournal Service layer
+
 @Consumes(MediaType.APPLICATION_JSON)
 @Path("/" + Constants.LAB_JOURNAL_ENTRIES)
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 public class LabJournalEntryRest {
 
-  private LabJournalEntryService labJournalEntryService;
-  private DataObjectService dataObjectService;
+  @Inject
+  LabJournalEntryService labJournalEntryService;
+
+  @Inject
+  DataObjectService dataObjectService;
 
   @Context
   private SecurityContext securityContext;
-
-  @Inject
-  public LabJournalEntryRest(LabJournalEntryService labJournalEntryService, DataObjectService dataObjectService) {
-    this.labJournalEntryService = labJournalEntryService;
-    this.dataObjectService = dataObjectService;
-  }
 
   @GET
   @Path("/")
@@ -68,10 +67,7 @@ public class LabJournalEntryRest {
   public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
     DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
-    for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(
-      dataObject,
-      securityContext.getUserPrincipal().getName()
-    )) {
+    for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(dataObject)) {
       result.add(new LabJournalEntryIO(labJournalEntry));
     }
     return Response.ok(result).build();
@@ -89,10 +85,7 @@ public class LabJournalEntryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response getLabJournalById(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
-    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(
-      labJournalEntryId,
-      securityContext.getUserPrincipal().getName()
-    );
+    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
     return Response.ok(new LabJournalEntryIO(labJournalEntry)).build();
   }
 
@@ -127,11 +120,7 @@ public class LabJournalEntryRest {
     }
 
     labJournalEntryIO = new LabJournalEntryIO(
-      labJournalEntryService.createLabJournalEntry(
-        dataObjectId,
-        labJournalEntryIO.getJournalContent(),
-        securityContext.getUserPrincipal().getName()
-      )
+      labJournalEntryService.createLabJournalEntry(dataObjectId, labJournalEntryIO.getJournalContent())
     );
     return Response.ok(labJournalEntryIO).status(Status.CREATED).build();
   }
@@ -164,6 +153,12 @@ public class LabJournalEntryRest {
       )
     ) @Valid LabJournalEntryIO labJournalEntryIO
   ) {
+    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
+    String userName = securityContext.getUserPrincipal().getName();
+    if (!labJournalEntry.getCreatedBy().getUsername().equals(userName)) return Response.status(
+      Status.FORBIDDEN
+    ).build();
+
     if (!HtmlSanitizer.isSafeHtml(labJournalEntryIO.getJournalContent())) {
       String sanitizedHtml = HtmlSanitizer.cleanHtmlString(labJournalEntryIO.getJournalContent());
       return Response.status(Status.BAD_REQUEST)
@@ -171,18 +166,9 @@ public class LabJournalEntryRest {
         .build();
     }
 
-    LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(
-      labJournalEntryId,
-      securityContext.getUserPrincipal().getName()
-    );
-    String userName = securityContext.getUserPrincipal().getName();
-    if (!labJournalEntry.getCreatedBy().getUsername().equals(userName)) return Response.status(
-      Status.FORBIDDEN
-    ).build();
     labJournalEntry = labJournalEntryService.updateLabJournalEntry(
       labJournalEntryId,
-      labJournalEntryIO.getJournalContent(),
-      securityContext.getUserPrincipal().getName()
+      labJournalEntryIO.getJournalContent()
     );
     return Response.ok(new LabJournalEntryIO(labJournalEntry)).build();
   }
@@ -195,7 +181,7 @@ public class LabJournalEntryRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response deleteLabJournal(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
-    labJournalEntryService.deleteLabJournalEntry(labJournalEntryId, securityContext.getUserPrincipal().getName());
+    labJournalEntryService.deleteLabJournalEntry(labJournalEntryId);
     return Response.status(Status.NO_CONTENT).build();
   }
 }

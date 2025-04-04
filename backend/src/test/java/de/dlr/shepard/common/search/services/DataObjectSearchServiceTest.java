@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.QueryType;
@@ -36,6 +38,11 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
   @Inject
   DataObjectSearchService dataObjectSearcher;
 
+  @InjectMock
+  UserService userService;
+
+  private static final User user = new User("Testuser");
+
   private static String query = String.format(
     """
     {
@@ -53,7 +60,6 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
     ]}""",
     1L
   );
-  private static String userName = "user";
 
   @ParameterizedTest
   @MethodSource
@@ -66,12 +72,15 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
     SearchScope[] scopes = { scope };
     SearchParams searchParams = new SearchParams(query, QueryType.DataObject);
     SearchBody searchBody = new SearchBody(scopes, searchParams);
+
     when(searchDAO.findDataObjects(selectionQuery, Constants.DATAOBJECT_IN_QUERY)).thenReturn(List.of(dataObject));
+    when(userService.getCurrentUser()).thenReturn(user);
+
     ResultTriple resultTriple = new ResultTriple(1L, 2L);
     ResultTriple[] resultTriples = { resultTriple };
     BasicEntityIO[] results = { new BasicEntityIO(dataObject) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = dataObjectSearcher.search(searchBody, userName);
+    var actual = dataObjectSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -83,14 +92,18 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
     var scope3 = new SearchScope(1L, 2L, new TraversalRules[0]);
     var scope4 = new SearchScope(1L, 2L, traversalRules);
 
-    var query1 = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(query, userName);
-    var query2 = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(1L, query, userName);
-    var query3 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(scope3, query, userName);
+    var query1 = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(query, user.getUsername());
+    var query2 = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(1L, query, user.getUsername());
+    var query3 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
+      scope3,
+      query,
+      user.getUsername()
+    );
     var query4 = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
       scope4,
       traversalRules[0],
       query,
-      userName
+      user.getUsername()
     );
 
     // @formatter:off
@@ -111,7 +124,7 @@ public class DataObjectSearchServiceTest extends BaseTestCase {
     ResultTriple[] resultTriples = {};
     BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchParams);
-    var actual = dataObjectSearcher.search(searchBody, userName);
+    var actual = dataObjectSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 }

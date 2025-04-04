@@ -2,7 +2,6 @@ package de.dlr.shepard.context.semantic.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -22,6 +21,7 @@ import de.dlr.shepard.context.version.daos.VersionableEntityConcreteDAO;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +41,9 @@ public class SemanticAnnotationServiceTest {
 
   @InjectMock
   SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
+
+  @InjectMock
+  SemanticRepositoryService semanticRepositoryService;
 
   @InjectMock
   ISemanticRepositoryConnector propConnector;
@@ -109,8 +112,8 @@ public class SemanticAnnotationServiceTest {
   @Test
   public void getAnnotationTest_Null() {
     when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(null);
-    var actual = service.getAnnotationByNeo4jId(1L);
-    assertNull(actual);
+
+    assertThrows(NotFoundException.class, () -> service.getAnnotationByNeo4jId(1L));
   }
 
   @Test
@@ -152,6 +155,8 @@ public class SemanticAnnotationServiceTest {
 
     when(concreteDAO.findByShepardId(entity.getShepardId())).thenReturn(entity);
     when(semanticAnnotationDAO.createOrUpdate(toCreate)).thenReturn(expected);
+    when(semanticRepositoryService.getRepository(propRepo.getId())).thenReturn(propRepo);
+    when(semanticRepositoryService.getRepository(valRepo.getId())).thenReturn(valRepo);
 
     var actual = service.createAnnotationByShepardId(entity.getShepardId(), annotation);
     assertEquals(expected, actual);
@@ -196,6 +201,7 @@ public class SemanticAnnotationServiceTest {
   @Test
   public void deleteAnnotationTest() {
     when(semanticAnnotationDAO.deleteByNeo4jId(1L)).thenReturn(true);
+    when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(new SemanticAnnotation(1L));
 
     var actual = service.deleteAnnotationByNeo4jId(1L);
     assertTrue(actual);
@@ -204,6 +210,7 @@ public class SemanticAnnotationServiceTest {
   @Test
   public void deleteAnnotationTest_isNull() {
     when(semanticAnnotationDAO.deleteByNeo4jId(1L)).thenReturn(false);
+    when(semanticAnnotationDAO.findByNeo4jId(1L)).thenReturn(new SemanticAnnotation(1L));
 
     var actual = service.deleteAnnotationByNeo4jId(1L);
     assertFalse(actual);

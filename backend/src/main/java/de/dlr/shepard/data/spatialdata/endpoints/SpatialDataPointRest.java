@@ -7,7 +7,6 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
 import de.dlr.shepard.data.spatialdata.model.geometryFilter.AbstractGeometryFilter;
-import de.dlr.shepard.data.spatialdata.model.geometryFilter.KNearestNeighbor;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataContainerService;
 import de.dlr.shepard.data.spatialdata.services.SpatialDataPointService;
 import io.quarkus.resteasy.reactive.server.EndpointDisabled;
@@ -15,7 +14,6 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -50,19 +48,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SpatialDataPointRest {
 
-  private SpatialDataPointService dataPointService;
-  private SpatialDataContainerService containerService;
+  @Inject
+  SpatialDataPointService dataPointService;
+
+  @Inject
+  SpatialDataContainerService containerService;
 
   @Context
   private SecurityContext securityContext;
-
-  SpatialDataPointRest() {}
-
-  @Inject
-  SpatialDataPointRest(SpatialDataPointService dataPointService, SpatialDataContainerService containerService) {
-    this.dataPointService = dataPointService;
-    this.containerService = containerService;
-  }
 
   //#region Container functions
   @GET
@@ -94,7 +87,7 @@ public class SpatialDataPointRest {
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
 
-    var containers = containerService.getContainers(params, securityContext.getUserPrincipal().getName());
+    var containers = containerService.getAllContainers(params);
     var result = SpatialDataContainerIO.fromEntities(containers);
     return Response.ok(result).build();
   }
@@ -130,11 +123,7 @@ public class SpatialDataPointRest {
       content = @Content(schema = @Schema(implementation = SpatialDataContainerIO.class))
     ) @Valid SpatialDataContainerIO containerIo
   ) {
-    var container = containerService.createContainer(
-      containerIo.getName(),
-      securityContext.getUserPrincipal().getName()
-    );
-
+    var container = containerService.createContainer(containerIo);
     return Response.ok(SpatialDataContainerIO.fromEntity(container)).status(Status.CREATED).build();
   }
 
@@ -146,7 +135,7 @@ public class SpatialDataPointRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response deleteSpatialDataContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
-    containerService.deleteContainer(containerId, securityContext.getUserPrincipal().getName());
+    containerService.deleteContainer(containerId);
     return Response.status(Status.OK).build();
   }
 
@@ -255,7 +244,8 @@ public class SpatialDataPointRest {
       limit,
       skip
     );
-    return Response.ok(dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams)).build();
+    var result = dataPointService.getSpatialDataPointIOs(containerId, spatialDataParams);
+    return Response.ok(result).build();
   }
 
   @POST

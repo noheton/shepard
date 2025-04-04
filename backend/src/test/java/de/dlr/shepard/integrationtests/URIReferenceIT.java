@@ -110,7 +110,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Reference does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - URI Reference with id 99999 is null or deleted");
   }
 
   @Test

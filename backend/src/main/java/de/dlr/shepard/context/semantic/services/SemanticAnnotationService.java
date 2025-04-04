@@ -3,7 +3,6 @@ package de.dlr.shepard.context.semantic.services;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.context.semantic.SemanticRepositoryConnectorFactory;
 import de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO;
-import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
@@ -12,30 +11,24 @@ import de.dlr.shepard.context.version.entities.VersionableEntity;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
+import java.nio.file.InvalidPathException;
 import java.util.List;
 
 @RequestScoped
 public class SemanticAnnotationService {
 
-  private SemanticAnnotationDAO semanticAnnotationDAO;
-  private SemanticRepositoryDAO semanticRepositoryDAO;
-  private VersionableEntityConcreteDAO versionableEntityConcreteDAO;
-  private SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
-
-  SemanticAnnotationService() {}
+  @Inject
+  SemanticAnnotationDAO semanticAnnotationDAO;
 
   @Inject
-  public SemanticAnnotationService(
-    SemanticAnnotationDAO semanticAnnotationDAO,
-    SemanticRepositoryDAO semanticRepositoryDAO,
-    VersionableEntityConcreteDAO versionableEntityConcreteDAO,
-    SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory
-  ) {
-    this.semanticAnnotationDAO = semanticAnnotationDAO;
-    this.semanticRepositoryDAO = semanticRepositoryDAO;
-    this.versionableEntityConcreteDAO = versionableEntityConcreteDAO;
-    this.semanticRepositoryConnectorFactory = semanticRepositoryConnectorFactory;
-  }
+  SemanticRepositoryService semanticRepositoryService;
+
+  @Inject
+  VersionableEntityConcreteDAO versionableEntityConcreteDAO;
+
+  @Inject
+  SemanticRepositoryConnectorFactory semanticRepositoryConnectorFactory;
 
   public List<SemanticAnnotation> getAllAnnotationsByNeo4jId(long entityId) {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByNeo4jId(entityId);
@@ -45,11 +38,19 @@ public class SemanticAnnotationService {
     return semanticAnnotationDAO.findAllSemanticAnnotationsByShepardId(shepardId);
   }
 
+  /**
+   * Gets semantic annotation by neo4j id
+   *
+   * @param id
+   * @return
+   * @throws NotFoundException if semantic annotation is null or deleted
+   */
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
     if (annotation == null) {
-      Log.errorf("Semantic Annotation with id %s is null or deleted", id);
-      return null;
+      String errorMsg = String.format("ID ERROR - Semantic Annotation with id %s is null or deleted", id);
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
     }
     return annotation;
   }
@@ -78,15 +79,19 @@ public class SemanticAnnotationService {
   }
 
   public boolean deleteAnnotationByNeo4jId(long id) {
+    getAnnotationByNeo4jId(id);
+
     var result = semanticAnnotationDAO.deleteByNeo4jId(id);
     return result;
   }
 
   private SemanticRepository getRepository(long id) {
-    var repository = semanticRepositoryDAO.findByNeo4jId(id);
-    if (repository == null || repository.isDeleted()) throw new InvalidBodyException("invalid repository");
-
-    return repository;
+    try {
+      return semanticRepositoryService.getRepository(id);
+    } catch (InvalidPathException ex) {
+      Log.error(ex.getMessage());
+      throw new NotFoundException(ex.getMessage());
+    }
   }
 
   public String validateTerm(SemanticRepository repository, String iri) {

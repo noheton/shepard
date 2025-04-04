@@ -48,15 +48,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SpatialDataReferenceRest {
 
-  private SpatialDataReferenceService spatialDataReferenceService;
+  @Inject
+  SpatialDataReferenceService spatialDataReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  @Inject
-  public SpatialDataReferenceRest(SpatialDataReferenceService spatialDataReferenceService) {
-    this.spatialDataReferenceService = spatialDataReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
@@ -75,7 +71,7 @@ public class SpatialDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = spatialDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    var references = spatialDataReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
     List<SpatialDataReferenceIO> result = references
       .stream()
       .map(SpatialDataReferenceIO::new)
@@ -103,7 +99,12 @@ public class SpatialDataReferenceRest {
     @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var result = spatialDataReferenceService.getReferenceByShepardId(spatialDataReferenceId, versionUID);
+    var result = spatialDataReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      spatialDataReferenceId,
+      versionUID
+    );
 
     return Response.ok(new SpatialDataReferenceIO(result)).build();
   }
@@ -129,12 +130,7 @@ public class SpatialDataReferenceRest {
       content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
     ) @Valid SpatialDataReferenceIO spatialDataReference
   ) {
-    var result = spatialDataReferenceService.createReferenceByShepardId(
-      dataObjectId,
-      spatialDataReference,
-      securityContext.getUserPrincipal().getName()
-    );
-
+    var result = spatialDataReferenceService.createReference(collectionId, dataObjectId, spatialDataReference);
     return Response.ok(new SpatialDataReferenceIO(result)).status(Response.Status.CREATED).build();
   }
 
@@ -153,14 +149,8 @@ public class SpatialDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
   ) {
-    var result = spatialDataReferenceService.deleteReferenceByShepardId(
-      spatialDataReferenceId,
-      securityContext.getUserPrincipal().getName()
-    );
-
-    return result
-      ? Response.status(Response.Status.NO_CONTENT).build()
-      : Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+    spatialDataReferenceService.deleteReference(collectionId, dataObjectId, spatialDataReferenceId);
+    return Response.status(Response.Status.NO_CONTENT).build();
   }
 
   @GET
@@ -181,6 +171,8 @@ public class SpatialDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
   ) {
-    return Response.ok(spatialDataReferenceService.getReferencePayload(spatialDataReferenceId)).build();
+    return Response.ok(
+      spatialDataReferenceService.getReferencePayload(collectionId, dataObjectId, spatialDataReferenceId)
+    ).build();
   }
 }

@@ -7,9 +7,7 @@ include::documentation.adoc[]
 
 include::persistence.adoc[]
 
-include::authentication.adoc[]
-
-include::authorization.adoc[]
+include::auth.adoc[]
 
 include::user-information.adoc[]
 

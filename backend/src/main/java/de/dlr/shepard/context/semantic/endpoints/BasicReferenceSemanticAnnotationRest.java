@@ -2,8 +2,10 @@ package de.dlr.shepard.context.semantic.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
-import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -46,12 +48,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest {
 
-  BasicReferenceSemanticAnnotationRest() {}
+  @Inject
+  CollectionService collectionService;
 
   @Inject
-  public BasicReferenceSemanticAnnotationRest(SemanticAnnotationService semanticAnnotationService) {
-    super(semanticAnnotationService);
-  }
+  BasicReferenceService basicReferenceService;
 
   @GET
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
@@ -73,7 +74,12 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
-  public Response getAllAnnotations(@PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId) {
+  public Response getAllAnnotations(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId
+  ) {
+    basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
     return getAllByShepardId(basicReferenceId);
   }
 
@@ -100,9 +106,13 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
   ) {
+    BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
+    assertSemanticAnnotationBelongsToEntity(basicReference, semanticAnnotationId);
     return get(semanticAnnotationId);
   }
 
@@ -128,12 +138,17 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response createAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
     ) @Valid SemanticAnnotationIO semanticAnnotation
   ) {
+    basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+
     return createByShepardId(basicReferenceId, semanticAnnotation);
   }
 
@@ -157,9 +172,14 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response deleteAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
   ) {
+    BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+    assertSemanticAnnotationBelongsToEntity(basicReference, semanticAnnotationId);
     return delete(semanticAnnotationId);
   }
 }

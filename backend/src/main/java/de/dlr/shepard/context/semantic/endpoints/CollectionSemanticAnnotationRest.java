@@ -2,8 +2,9 @@ package de.dlr.shepard.context.semantic.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
-import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -31,12 +32,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
 
-  CollectionSemanticAnnotationRest() {}
-
   @Inject
-  public CollectionSemanticAnnotationRest(SemanticAnnotationService semanticAnnotationService) {
-    super(semanticAnnotationService);
-  }
+  CollectionService collectionService;
 
   @GET
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
@@ -49,6 +46,8 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
   @Operation(operationId = "getAllCollectionAnnotations", description = "Get all semantic annotations")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getAllAnnotations(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+    collectionService.getCollection(collectionId);
+
     return getAllByShepardId(collectionId);
   }
 
@@ -68,6 +67,10 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
   ) {
+    // check that collection exists
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
+    // check that semantic annotation exists and actually belongs to collection
+    assertSemanticAnnotationBelongsToEntity(collection, semanticAnnotationId);
     return get(semanticAnnotationId);
   }
 
@@ -89,6 +92,9 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
     ) @Valid SemanticAnnotationIO semanticAnnotation
   ) {
+    collectionService.getCollection(collectionId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+
     return createByShepardId(collectionId, semanticAnnotation);
   }
 
@@ -105,6 +111,9 @@ public class CollectionSemanticAnnotationRest extends SemanticAnnotationRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
   ) {
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+    assertSemanticAnnotationBelongsToEntity(collection, semanticAnnotationId);
     return delete(semanticAnnotationId);
   }
 }

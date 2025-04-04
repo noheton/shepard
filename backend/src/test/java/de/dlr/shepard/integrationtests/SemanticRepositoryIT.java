@@ -136,7 +136,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - SemanticRepository does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Semantic Repository with id 99999 is null or deleted");
   }
 
   @Test
@@ -307,9 +307,15 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actualCollectionAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
-    assertThat(actualDataObjectAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
-    assertThat(actualReferenceAnnotation.getMessage()).isEqualTo("ID ERROR - SemanticAnnotation does not exist");
+    assertThat(actualCollectionAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - Semantic Annotation with id 99999 is null or deleted"
+    );
+    assertThat(actualDataObjectAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - Semantic Annotation with id 99999 is null or deleted"
+    );
+    assertThat(actualReferenceAnnotation.getMessage()).isEqualTo(
+      "ID ERROR - Semantic Annotation with id 99999 is null or deleted"
+    );
   }
 
   @Test
@@ -338,13 +344,13 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .as(ErrorResponse.class);
 
     assertThat(actualCollectionAnnotation.getMessage()).isEqualTo(
-      "ID ERROR - There is no association between annotation and collection"
+      "ID ERROR - There is no association between annotation and entity"
     );
     assertThat(actualDataObjectAnnotation.getMessage()).isEqualTo(
-      "ID ERROR - There is no association between annotation and dataObject"
+      "ID ERROR - There is no association between annotation and entity"
     );
     assertThat(actualReferenceAnnotation.getMessage()).isEqualTo(
-      "ID ERROR - There is no association between annotation and reference"
+      "ID ERROR - There is no association between annotation and entity"
     );
   }
 

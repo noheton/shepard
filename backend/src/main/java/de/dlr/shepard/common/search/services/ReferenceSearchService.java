@@ -1,5 +1,7 @@
 package de.dlr.shepard.common.search.services;
 
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.ResponseBody;
@@ -17,23 +19,25 @@ import java.util.Set;
 @RequestScoped
 public class ReferenceSearchService {
 
-  private SearchDAO searchDAO;
-
-  ReferenceSearchService() {}
+  @Inject
+  SearchDAO searchDAO;
 
   @Inject
-  public ReferenceSearchService(SearchDAO searchDAO) {
-    this.searchDAO = searchDAO;
-  }
+  UserService userService;
 
-  public ResponseBody search(SearchBody searchBody, String userName) {
+  public ResponseBody search(SearchBody searchBody) {
+    User user = userService.getCurrentUser();
+
     Set<BasicReference> resultsSet = new HashSet<>();
     SearchScope[] scopes = searchBody.getScopes();
     String searchBodyQuery = searchBody.getSearchParams().getQuery();
     for (SearchScope scope : scopes) {
       // no CollectionId and no DataObjectId given
       if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(searchBodyQuery, userName);
+        String selectionQuery = Neo4jQueryBuilder.basicReferenceSelectionQueryWithNeo4jId(
+          searchBodyQuery,
+          user.getUsername()
+        );
         var res = searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY);
         resultsSet.addAll(res);
       }
@@ -42,7 +46,7 @@ public class ReferenceSearchService {
         String selectionQuery = Neo4jQueryBuilder.collectionBasicReferenceSelectionQueryWithNeo4jId(
           searchBodyQuery,
           scope.getCollectionId(),
-          userName
+          user.getUsername()
         );
         var res = searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY);
         resultsSet.addAll(res);
@@ -56,7 +60,7 @@ public class ReferenceSearchService {
               scope,
               scope.getTraversalRules()[j],
               searchBodyQuery,
-              userName
+              user.getUsername()
             );
             var res = searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY);
             resultsSet.addAll(res);
@@ -67,7 +71,7 @@ public class ReferenceSearchService {
           String selectionQuery = Neo4jQueryBuilder.collectionDataObjectReferenceSelectionQueryWithNeo4jId(
             scope,
             searchBodyQuery,
-            userName
+            user.getUsername()
           );
           var res = searchDAO.findReferences(selectionQuery, Constants.REFERENCE_IN_QUERY);
           resultsSet.addAll(res);

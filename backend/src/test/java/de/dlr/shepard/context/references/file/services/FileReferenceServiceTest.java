@@ -1,18 +1,17 @@
 package de.dlr.shepard.context.references.file.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
@@ -27,10 +26,12 @@ import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.ShepardFileDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.data.file.services.FileService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -56,7 +57,7 @@ public class FileReferenceServiceTest {
   ShepardFileDAO fileDAO;
 
   @InjectMock
-  UserDAO userDAO;
+  AuthenticationContext authenticationContext;
 
   @InjectMock
   VersionDAO versionDAO;
@@ -67,15 +68,30 @@ public class FileReferenceServiceTest {
   @InjectMock
   PermissionsService permissionsService;
 
+  @InjectMock
+  UserService userService;
+
   @Inject
   FileReferenceService service;
+
+  @Inject
+  FileContainerService fileContainerService;
+
+  private final long collectionId = 112200L;
 
   @Test
   public void getFileReferenceByShepardIdTest_successful() {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
+
+    DataObject dataObject = new DataObject(1121L);
+    dataObject.setShepardId(2212L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    FileReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    FileReference actual = service.getReference(collectionId, dataObject.getShepardId(), ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -83,8 +99,9 @@ public class FileReferenceServiceTest {
   public void getFileReferenceByShepardIdTest_notFound() {
     Long shepardId = 15L;
     when(dao.findByShepardId(shepardId)).thenReturn(null);
-    FileReference actual = service.getReferenceByShepardId(shepardId, null);
-    assertNull(actual);
+
+    var ex = assertThrows(InvalidPathException.class, () -> service.getReference(collectionId, 1114L, shepardId, null));
+    assertEquals(ex.getMessage(), "ID ERROR - File Reference with id 15 is null or deleted");
   }
 
   @Test
@@ -93,8 +110,11 @@ public class FileReferenceServiceTest {
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    FileReference actual = service.getReferenceByShepardId(ref.getShepardId(), null);
-    assertNull(actual);
+
+    var ex = assertThrows(InvalidPathException.class, () ->
+      service.getReference(collectionId, 1114L, ref.getShepardId(), null)
+    );
+    assertEquals(ex.getMessage(), "ID ERROR - File Reference with id 15 is null or deleted");
   }
 
   @Test
@@ -106,8 +126,10 @@ public class FileReferenceServiceTest {
     FileReference ref2 = new FileReference(2L);
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
+
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
-    List<FileReference> actual = service.getAllReferencesByDataObjectShepardId(dataObject.getShepardId(), null);
+
+    List<FileReference> actual = service.getAllReferencesByDataObjectId(collectionId, dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 
@@ -161,15 +183,20 @@ public class FileReferenceServiceTest {
         setShepardId(created.getId());
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
-    FileReference actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+
+    FileReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
@@ -222,15 +249,20 @@ public class FileReferenceServiceTest {
         setFileContainer(container);
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(fileContainerDAO.findLightByNeo4jId(container.getId())).thenReturn(container);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(null);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
-    var actual = service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername());
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
+
+    var actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
@@ -248,11 +280,16 @@ public class FileReferenceServiceTest {
         setFileContainerId(container.getId());
       }
     };
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(fileContainerDAO.findLightByNeo4jId(300L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
   }
 
@@ -270,11 +307,16 @@ public class FileReferenceServiceTest {
       }
     };
 
-    when(userDAO.find(user.getUsername())).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(fileContainerDAO.findLightByNeo4jId(nullFileContainerId)).thenReturn(null);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(nullFileContainerId, AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(fileContainerDAO.findByNeo4jId(nullFileContainerId)).thenReturn(null);
+
     assertThrows(InvalidBodyException.class, () ->
-      service.createReferenceByShepardId(dataObject.getShepardId(), input, user.getUsername())
+      service.createReference(collectionId, dataObject.getShepardId(), input)
     );
   }
 
@@ -284,75 +326,124 @@ public class FileReferenceServiceTest {
     Date date = new Date(30L);
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
+
+    DataObject dataObject = new DataObject(1121L);
+    dataObject.setShepardId(2212L);
+    ref.setDataObject(dataObject);
+    dataObject.setReferences(List.of(ref));
+
     FileReference expected = new FileReference(ref.getId());
     expected.setShepardId(ref.getShepardId());
     expected.setDeleted(true);
     expected.setUpdatedAt(date);
     expected.setUpdatedBy(user);
-    when(userDAO.find(user.getUsername())).thenReturn(user);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(dateHelper.getDate()).thenReturn(date);
-    boolean actual = service.deleteReferenceByShepardId(ref.getShepardId(), user.getUsername());
-    verify(dao).createOrUpdate(expected);
-    assertTrue(actual);
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId(), null)).thenReturn(dataObject);
+
+    assertDoesNotThrow(() -> service.deleteReference(collectionId, dataObject.getShepardId(), ref.getShepardId()));
   }
 
   @Test
   public void getPayloadByShepardIdTest() {
-    String username = "123";
+    User user = new User("123");
     String fileOID = "oid";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
     NamedInputStream result = new NamedInputStream(fileOID, null, "myInputStream", 123L);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+    ).thenReturn(true);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
-    NamedInputStream actual = service.getPayloadByShepardId(ref.getShepardId(), fileOID, username, null);
+
+    NamedInputStream actual = service.getPayload(
+      collectionId,
+      dataObject.getShepardId(),
+      ref.getShepardId(),
+      fileOID,
+      null
+    );
 
     assertEquals(result, actual);
   }
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsNull() {
-    String username = "Murat";
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15l);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () ->
-      service.getPayloadByShepardId(ref.getShepardId(), "oid", username, null)
+    when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId(), null)).thenReturn(dataObject);
+
+    assertThrows(NotFoundException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), "oid", null)
     );
   }
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsDeleted() {
-    String username = "Murat";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
     container.setDeleted(true);
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15l);
     ref.setFileContainer(container);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () ->
-      service.getPayloadByShepardId(ref.getShepardId(), "oid", username, null)
+    assertThrows(NotFoundException.class, () ->
+      service.getPayload(collectionId, dataObject.getShepardId(), ref.getShepardId(), "oid", null)
     );
   }
 
   @Test
   public void getPayloadByShepardIdTest_NotAllowed() {
     String username = "Xrj§84eEi6fY?";
+
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
+
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, username)).thenReturn(false);
-    assertThrows(InvalidAuthException.class, () -> service.getPayloadByShepardId(15L, "oid", username, null));
+
+    assertThrows(InvalidAuthException.class, () ->
+      service.getPayload(15L, dataObject.getShepardId(), ref.getShepardId(), "oid", null)
+    );
   }
 
   @Test
@@ -367,11 +458,19 @@ public class FileReferenceServiceTest {
     var nis1 = new NamedInputStream("oid1", null, "myInputStream", 123L);
     var nis2 = new NamedInputStream("oid1", null, "mySecondStream", 124L);
 
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(username);
     when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(nis2);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+
+    var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());
 
     assertEquals(List.of(nis1, nis2), actual);
   }
@@ -392,11 +491,19 @@ public class FileReferenceServiceTest {
       new NamedInputStream("oid2", null, "file456", 0L)
     );
 
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    when(authenticationContext.getCurrentUserName()).thenReturn(username);
     when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.get(0));
-    when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(null);
-    var actual = service.getAllPayloadsByShepardId(ref.getShepardId(), username);
+    when(fileService.getPayload(container.getMongoId(), "oid2")).thenThrow(new NotFoundException());
+
+    var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());
 
     assertEquals(nis, actual);
   }
@@ -404,28 +511,45 @@ public class FileReferenceServiceTest {
   @Test
   public void getAllPayloadsByShepardIdTest_ContainerIsDeleted() {
     String username = "123";
+
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
     container.setDeleted(true);
+
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
 
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
-    assertThrows(InvalidRequestException.class, () -> service.getAllPayloadsByShepardId(ref.getShepardId(), username));
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    assertThrows(NotFoundException.class, () ->
+      service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId())
+    );
   }
 
   @Test
   public void getAllPayloadsByShepardIdTest_ContainerIsNull() {
-    String username = "123";
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
 
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
-    assertThrows(InvalidRequestException.class, () -> service.getAllPayloadsByShepardId(ref.getShepardId(), username));
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
+    assertThrows(NotFoundException.class, () ->
+      service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId())
+    );
   }
 
   @Test
@@ -436,13 +560,23 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
-    when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
+    when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, username)).thenReturn(false);
-    assertThrows(InvalidAuthException.class, () -> service.getAllPayloadsByShepardId(15L, username));
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+
+    assertThrows(InvalidAuthException.class, () -> service.getAllPayloads(collectionId, dataObject.getShepardId(), 15L)
+    );
   }
 
   @Test
   public void getFilesByShepardIdTest() {
+    User user = new User("1234");
     List<ShepardFile> files = List.of(
       new ShepardFile("a", new Date(), "b", "c"),
       new ShepardFile("d", new Date(), "e", "f")
@@ -450,8 +584,22 @@ public class FileReferenceServiceTest {
     FileReference ref = new FileReference(1L);
     ref.setShepardId(15L);
     ref.setFiles(files);
+
+    FileContainer container = new FileContainer(20L);
+    container.setMongoId("mongoId");
+    ref.setFileContainer(container);
+
+    DataObject dataObject = new DataObject(1234L);
+    dataObject.setShepardId(541231L);
+    dataObject.setReferences(List.of(ref));
+    ref.setDataObject(dataObject);
+
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    List<ShepardFile> actual = service.getFilesByShepardId(ref.getShepardId(), null);
+    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, user.getUsername())).thenReturn(true);
+
+    List<ShepardFile> actual = service.getFiles(collectionId, dataObject.getShepardId(), ref.getShepardId(), null);
     assertEquals(files, actual);
   }
 }

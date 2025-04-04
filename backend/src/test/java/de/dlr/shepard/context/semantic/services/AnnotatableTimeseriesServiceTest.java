@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 
 import de.dlr.shepard.RandomGenerator;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
@@ -32,15 +37,17 @@ import org.mockito.Mockito;
 @ActivateRequestContext
 public class AnnotatableTimeseriesServiceTest {
 
-  private TimeseriesContainer container;
-  private SemanticRepository semanticRepository;
-  private final String iri = "http://purl.obolibrary.org/obo/uo.owl";
-
   @InjectMock
   SemanticAnnotationService semanticAnnotationService;
 
   @InjectMock
   TimeseriesService timeseriesService;
+
+  @InjectMock
+  UserService userService;
+
+  @InjectMock
+  AuthenticationContext authenticationContext;
 
   @Inject
   TimeseriesContainerDAO timeseriesContainerDao;
@@ -50,6 +57,12 @@ public class AnnotatableTimeseriesServiceTest {
 
   @Inject
   AnnotatableTimeseriesService service;
+
+  private final User user = new User("Testuser");
+
+  private TimeseriesContainer container;
+  private SemanticRepository semanticRepository;
+  private final String iri = "http://purl.obolibrary.org/obo/uo.owl";
 
   @BeforeAll
   @Transactional
@@ -64,7 +77,11 @@ public class AnnotatableTimeseriesServiceTest {
     semanticRepository.setType(SemanticRepositoryType.SPARQL);
     semanticRepositoryDao.createOrUpdate(semanticRepository);
 
-    Mockito.when(timeseriesService.getTimeseriesById(ArgumentMatchers.anyInt())).thenReturn(null);
+    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), ArgumentMatchers.anyInt())).thenReturn(
+      null
+    );
+    Mockito.when(userService.getCurrentUser()).thenReturn(user);
+    Mockito.when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
   }
 
   @BeforeEach
@@ -98,7 +115,9 @@ public class AnnotatableTimeseriesServiceTest {
   @Test
   public void createAnnotation_TimeseriesIdDoesNotExist_throwNotFoundException() {
     int nonExistingTimeseriesId = 9999999;
-    Mockito.when(timeseriesService.getTimeseriesById(ArgumentMatchers.anyInt())).thenThrow(NotFoundException.class);
+    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), ArgumentMatchers.anyInt())).thenThrow(
+      NotFoundException.class
+    );
 
     assertThrows(NotFoundException.class, () ->
       service.createAnnotation(container.getId(), nonExistingTimeseriesId, null)
@@ -108,12 +127,12 @@ public class AnnotatableTimeseriesServiceTest {
   @Test
   public void getAnnotations_AnnotatableTimeseriesWithTwoAnnotationsExist_returnsTwoAnnotations() {
     int timeseriesId = 2;
+
     var firstAnnotation = new SemanticAnnotationIO();
     firstAnnotation.setPropertyRepositoryId(semanticRepository.getId());
     firstAnnotation.setPropertyIRI(iri);
     firstAnnotation.setValueRepositoryId(semanticRepository.getId());
     firstAnnotation.setValueIRI(iri);
-
     service.createAnnotation(container.getId(), timeseriesId, firstAnnotation);
 
     var secondAnnotation = new SemanticAnnotationIO();
@@ -121,7 +140,6 @@ public class AnnotatableTimeseriesServiceTest {
     secondAnnotation.setPropertyIRI(iri);
     secondAnnotation.setValueRepositoryId(semanticRepository.getId());
     secondAnnotation.setValueIRI(iri);
-
     service.createAnnotation(container.getId(), timeseriesId, secondAnnotation);
 
     service.clearSession();
@@ -136,7 +154,7 @@ public class AnnotatableTimeseriesServiceTest {
   public void getAnnotations_TimeseriesDoesNotExist_throwsNotFoundException() {
     int nonExistingTimeseriesId = 9999999;
 
-    assertThrows(NotFoundException.class, () -> service.getAnnotations(container.getId(), nonExistingTimeseriesId));
+    assertThrows(InvalidPathException.class, () -> service.getAnnotations(container.getId(), nonExistingTimeseriesId));
   }
 
   @Test
@@ -184,7 +202,7 @@ public class AnnotatableTimeseriesServiceTest {
     var storedEntity = service.createAnnotation(container.getId(), timeseriesId, annotationIO);
 
     service.clearSession();
-    service.deleteAnnotation(timeseriesId, storedEntity.getId());
+    service.deleteAnnotation(container.getId(), timeseriesId, storedEntity.getId());
 
     service.clearSession();
     assertThrows(NotFoundException.class, () ->

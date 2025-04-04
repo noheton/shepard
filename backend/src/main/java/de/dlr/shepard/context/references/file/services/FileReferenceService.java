@@ -1,26 +1,31 @@
 package de.dlr.shepard.context.references.file.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
-import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
+import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
 import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.version.services.VersionService;
-import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.ShepardFileDAO;
+import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
+import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.data.file.services.FileService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,13 +40,10 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   DataObjectService dataObjectService;
 
   @Inject
-  FileContainerDAO containerDAO;
+  FileContainerService fileContainerService;
 
   @Inject
   ShepardFileDAO fileDAO;
-
-  @Inject
-  UserDAO userDAO;
 
   @Inject
   VersionService versionService;
@@ -55,32 +57,104 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   @Inject
   PermissionsService permissionsService;
 
+  @Inject
+  CollectionService collectionService;
+
+  @Inject
+  AuthenticationContext authenticationContext;
+
+  @Inject
+  UserService userService;
+
+  /**
+   * Gets FileReference list for a given dataobject.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param versionUID the version UUID
+   * @return List<FileReference>
+   * @throws InvalidPathException If collection or dataobject cannot be found, or no association between dataobject and collection exists
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
+   */
   @Override
-  public List<FileReference> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID) {
-    var references = fileReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
+  public List<FileReference> getAllReferencesByDataObjectId(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    UUID versionUID
+  ) {
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
+    List<FileReference> references = fileReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
+  /**
+   * Gets FileReference by shepard id.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param shepardId
+   * @param versionUID the version UUID
+   * @return FileReference
+   * @throws InvalidPathException If reference with Id does not exist or is deleted, or if collection or dataObject Id of path is not valid
+   * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
+   */
   @Override
-  public FileReference getReferenceByShepardId(long shepardId, UUID versionUID) {
+  public FileReference getReference(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long shepardId,
+    UUID versionUID
+  ) {
+    dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
+
     FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId, versionUID);
     if (fileReference == null || fileReference.isDeleted()) {
-      Log.errorf("File Reference with id %s is null or deleted", shepardId);
-      return null;
+      String errorMsg = String.format("ID ERROR - File Reference with id %s is null or deleted", shepardId);
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
+
+    if (
+      fileReference.getDataObject() == null || !fileReference.getDataObject().getShepardId().equals(dataObjectShepardId)
+    ) {
+      String errorMsg = "ID ERROR - There is no association between dataObject and reference";
+      Log.error(errorMsg);
+      throw new InvalidPathException(errorMsg);
+    }
+
     return fileReference;
   }
 
+  /**
+   * Creates a new FileReference
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId DataObject id for the reference to be created
+   * @param fileReference Reference object
+   * @return FileReference
+   * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
+   * @throws InvalidAuthException if user has no permission to edit referencing collection or no read permissions on referenced container
+   */
   @Override
-  public FileReference createReferenceByShepardId(
+  public FileReference createReference(
+    long collectionShepardId,
     long dataObjectShepardId,
-    FileReferenceIO fileReference,
-    String username
+    FileReferenceIO fileReference
   ) {
-    var user = userDAO.find(username);
-    var dataObject = dataObjectService.getDataObject(dataObjectShepardId);
-    var container = containerDAO.findLightByNeo4jId(fileReference.getFileContainerId());
-    if (container == null || container.isDeleted()) throw new InvalidBodyException("invalid container");
+    var dataObject = dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
+
+    FileContainer container;
+    try {
+      container = fileContainerService.getContainer(fileReference.getFileContainerId());
+    } catch (InvalidPathException | InvalidAuthException ex) {
+      Log.error(ex.getMessage());
+      throw new InvalidBodyException(ex.getMessage());
+    }
+
     var toCreate = new FileReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
@@ -105,25 +179,66 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     return created;
   }
 
+  /**
+   * Deletes the file reference.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
+   * @param fileReferenceShepardId
+   * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
+   * @throws InvalidAuthException if user has no permissions to edit the collection, which the reference is assigned to
+   */
   @Override
-  public boolean deleteReferenceByShepardId(long fileReferenceShepardId, String username) {
-    FileReference fileReference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
-    var user = userDAO.find(username);
+  public void deleteReference(long collectionShepardId, long dataObjectShepardId, long fileReferenceShepardId) {
+    FileReference fileReference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
+    collectionService.assertIsAllowedToEditCollection(collectionShepardId);
+
+    User user = userService.getCurrentUser();
     fileReference.setDeleted(true);
     fileReference.setUpdatedBy(user);
     fileReference.setUpdatedAt(dateHelper.getDate());
     fileReferenceDAO.createOrUpdate(fileReference);
-    return true;
   }
 
   /**
-   * Returns list of ShepardFile. This works even when the container in question is not accessible.
+   * Returns list of ShepardFile.
    *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
    * @param fileReferenceShepardId identifies the file reference
+   * @param versionUID
    * @return list of shepard files
+   * @throws InvalidPathException if collection, dataobject or reference specified by their Ids are null or deleted
    */
-  public List<ShepardFile> getFilesByShepardId(long fileReferenceShepardId, UUID versionUID) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId, versionUID);
+  public List<ShepardFile> getFiles(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long fileReferenceShepardId,
+    UUID versionUID
+  ) {
+    FileReference reference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      fileReferenceShepardId,
+      versionUID
+    );
+
+    if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "Referenced FileContainer is not set or deleted in FileReference with id %s",
+        reference.getId()
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
+    try {
+      fileContainerService.getContainer(reference.getFileContainer().getId());
+    } catch (InvalidPathException ex) {
+      Log.error(ex.getMessage());
+      throw new NotFoundException(ex.getMessage());
+    }
+
     return reference.getFiles();
   }
 
@@ -134,24 +249,41 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    * @param oid identifies the actual file
    * @param username the current user
    * @return NamedInputStream
-   * @throws InvalidRequestException when container is not accessible
+   * @throws InvalidPathException when FileReference cannot be found due to invalid collection, dataobject or reference Ids
    * @throws InvalidAuthException when the user is not authorized to access the container
+   * @throws NotFoundException when mongoDb is not able to find document container or file by mongoId or oid, or when Referenced file container is not accessible
+   * @throws InvalidRequestException when FileContainer is not accessible
    */
-  public NamedInputStream getPayloadByShepardId(
+  public NamedInputStream getPayload(
+    long collectionShepardId,
+    long dataObjectShepardId,
     long fileReferenceShepardId,
     String oid,
-    String username,
     UUID versionUID
   ) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId, versionUID);
-    if (
-      reference.getFileContainer() == null || reference.getFileContainer().isDeleted()
-    ) throw new InvalidRequestException("The file container in question is not accessible");
+    FileReference reference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      fileReferenceShepardId,
+      versionUID
+    );
 
-    long containerId = reference.getFileContainer().getId();
-    if (
-      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
-    ) throw new InvalidAuthException("You are not authorized to access this file");
+    if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "FileContainer with id %s is not set or deleted in FileReference",
+        reference.getFileContainer()
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
+    try {
+      // check that FileContainer is actually accessible and user has permissions to read from it
+      fileContainerService.getContainer(reference.getFileContainer().getId());
+    } catch (InvalidPathException e) {
+      Log.error(e.getMessage());
+      throw new NotFoundException(e.getMessage());
+    }
 
     String mongoId = reference.getFileContainer().getMongoId();
     return fileService.getPayload(mongoId, oid);
@@ -160,32 +292,50 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   /**
    * Returns a list of NamedInputStreams of all files in that reference
    *
+   * Returns empty input streams if referenced file container is not accessible.
+   *
+   * @param collectionShepardId
+   * @param dataObjectShepardId
    * @param fileReferenceShepardId identifies the file reference
-   * @param username the current user
    * @return list of NamedInputStreams
-   * @throws InvalidRequestException when container is not accessible
+   * @throws InvalidPathException when FileReference cannot be found due to invalid collection, dataobject or reference Ids
+   * @throws NotFoundException when container is not accessible
    * @throws InvalidAuthException when the user is not authorized to access the container
    */
-  public List<NamedInputStream> getAllPayloadsByShepardId(long fileReferenceShepardId, String username) {
-    FileReference reference = fileReferenceDAO.findByShepardId(fileReferenceShepardId);
-    var files = reference.getFiles();
+  public List<NamedInputStream> getAllPayloads(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long fileReferenceShepardId
+  ) {
+    FileReference reference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
 
-    // Return empty named input streams when the container is not accessible
-    if (
-      reference.getFileContainer() == null || reference.getFileContainer().isDeleted()
-    ) throw new InvalidRequestException("The file container in question is not accessible");
+    if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
+      String errorMsg = String.format(
+        "Referenced FileContainer is not set or deleted in FileReference with id %s",
+        reference.getId()
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
 
-    // Throw exception when not isAllowed
-    var containerId = reference.getFileContainer().getId();
-    if (
-      !permissionsService.isAccessTypeAllowedForUser(containerId, AccessType.Read, username)
-    ) throw new InvalidAuthException("You are not authorized to access this file container");
+    try {
+      // check that referenced container is actually accessible
+      fileContainerService.getContainer(reference.getFileContainer().getId());
+    } catch (InvalidPathException ex) {
+      throw new NotFoundException(ex.getMessage());
+    }
+
+    List<ShepardFile> files = reference.getFiles();
 
     var result = new ArrayList<NamedInputStream>(files.size());
     for (var file : files) {
-      var nis = fileService.getPayload(reference.getFileContainer().getMongoId(), file.getOid());
-      if (nis != null) result.add(nis);
-      else result.add(new NamedInputStream(file.getOid(), null, file.getFilename(), 0L));
+      NamedInputStream nis;
+      try {
+        nis = fileService.getPayload(reference.getFileContainer().getMongoId(), file.getOid());
+        result.add(nis);
+      } catch (NotFoundException e) {
+        result.add(new NamedInputStream(file.getOid(), null, file.getFilename(), 0L));
+      }
     }
     return result;
   }

@@ -2,6 +2,7 @@ package de.dlr.shepard.context.references.structureddata.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
@@ -22,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -48,17 +50,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class StructuredDataReferenceRest {
 
-  private StructuredDataReferenceService structuredDataReferenceService;
+  @Inject
+  StructuredDataReferenceService structuredDataReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  StructuredDataReferenceRest() {}
-
-  @Inject
-  public StructuredDataReferenceRest(StructuredDataReferenceService structuredDataReferenceService) {
-    this.structuredDataReferenceService = structuredDataReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.STRUCTURED_DATA_REFERENCE)
@@ -77,8 +73,12 @@ public class StructuredDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = structuredDataReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
-    var result = new ArrayList<StructuredDataReferenceIO>(references.size());
+    var references = structuredDataReferenceService.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObjectId,
+      versionUID
+    );
+    List<StructuredDataReferenceIO> result = new ArrayList<StructuredDataReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new StructuredDataReferenceIO(ref));
     }
@@ -105,7 +105,12 @@ public class StructuredDataReferenceRest {
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long referenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ref = structuredDataReferenceService.getReferenceByShepardId(referenceId, versionUID);
+    StructuredDataReference ref = structuredDataReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      referenceId,
+      versionUID
+    );
     return Response.ok(new StructuredDataReferenceIO(ref)).build();
   }
 
@@ -129,10 +134,10 @@ public class StructuredDataReferenceRest {
       content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))
     ) @Valid StructuredDataReferenceIO structuredDataReference
   ) {
-    var ref = structuredDataReferenceService.createReferenceByShepardId(
+    StructuredDataReference ref = structuredDataReferenceService.createReference(
+      collectionId,
       dataObjectId,
-      structuredDataReference,
-      securityContext.getUserPrincipal().getName()
+      structuredDataReference
     );
     return Response.ok(new StructuredDataReferenceIO(ref)).status(Status.CREATED).build();
   }
@@ -152,11 +157,8 @@ public class StructuredDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataReferenceId
   ) {
-    var result = structuredDataReferenceService.deleteReferenceByShepardId(
-      structuredDataReferenceId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    structuredDataReferenceService.deleteReference(collectionId, dataObjectId, structuredDataReferenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -177,9 +179,10 @@ public class StructuredDataReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId
   ) {
-    var payload = structuredDataReferenceService.getAllPayloadsByShepardId(
-      structuredDataId,
-      securityContext.getUserPrincipal().getName()
+    List<StructuredDataPayload> payload = structuredDataReferenceService.getAllPayloads(
+      collectionId,
+      dataObjectId,
+      structuredDataId
     );
     return Response.ok(payload).build();
   }
@@ -204,11 +207,12 @@ public class StructuredDataReferenceRest {
     @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId,
     @PathParam(Constants.OID) String oid
   ) {
-    var payload = structuredDataReferenceService.getPayloadByShepardId(
+    StructuredDataPayload payload = structuredDataReferenceService.getPayload(
+      collectionId,
+      dataObjectId,
       structuredDataId,
-      oid,
-      securityContext.getUserPrincipal().getName()
+      oid
     );
-    return payload != null ? Response.ok(payload).build() : Response.status(Status.NOT_FOUND).build();
+    return Response.ok(payload).build();
   }
 }

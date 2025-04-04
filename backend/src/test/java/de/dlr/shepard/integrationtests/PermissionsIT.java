@@ -256,7 +256,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     var permissions = new PermissionsIO() {
       {
         setOwner(user2.getUser().getUsername());
-        setReader(new String[] {});
+        setReader(new String[] { "user1" });
         setWriter(new String[] { "user1" });
         setReaderGroupIds(new long[] {});
         setWriterGroupIds(new long[] {});
@@ -312,10 +312,6 @@ public class PermissionsIT extends BaseTestCaseIT {
       .build();
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
-    requestSpecification3 = new RequestSpecBuilder()
-      .setContentType(ContentType.JSON)
-      .addHeader("X-API-KEY", jws3)
-      .build();
     var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
     assertEquals(403, answer.statusCode());
   }
@@ -326,10 +322,12 @@ public class PermissionsIT extends BaseTestCaseIT {
     UserGroupIO readersGroup = new UserGroupIO();
     readersGroup.setName("readersGroup1");
     readersGroup.setUsernames(new String[] { "user3" });
+
     userGroupSpecification = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
       .build();
+
     readersGroup = given()
       .spec(userGroupSpecification)
       .body(readersGroup)
@@ -351,8 +349,9 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
+
     permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
-    given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
+    given().spec(requestSpecification2).body(permissions).when().put(permissionsURL).then().statusCode(200);
 
     var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
     assertEquals(200, answer.statusCode());
@@ -425,7 +424,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setOwner(user2.getUser().getUsername());
         setReader(new String[] {});
         setWriter(new String[] {});
-        setReaderGroupIds(new long[] {});
+        setReaderGroupIds(writersGroupIds);
         setWriterGroupIds(writersGroupIds);
         setManager(new String[] {});
         setPermissionType(PermissionType.Private);

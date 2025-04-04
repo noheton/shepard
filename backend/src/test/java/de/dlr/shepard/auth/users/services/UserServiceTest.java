@@ -30,7 +30,7 @@ public class UserServiceTest {
   public void createUserTest() {
     var user = new User("Bob");
     when(dao.createOrUpdate(user)).thenReturn(user);
-    var actual = service.createUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(user, actual);
   }
 
@@ -49,7 +49,7 @@ public class UserServiceTest {
 
     when(dao.find("bob")).thenReturn(old);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     verify(dao, never()).createOrUpdate(any(User.class));
     assertEquals(old, actual);
   }
@@ -61,7 +61,7 @@ public class UserServiceTest {
     when(dao.find("bob")).thenReturn(null);
     when(dao.createOrUpdate(user)).thenReturn(user);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(user, actual);
   }
 
@@ -79,7 +79,7 @@ public class UserServiceTest {
     when(dao.find("bob")).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(expected, actual);
   }
 
@@ -97,7 +97,7 @@ public class UserServiceTest {
     when(dao.find("bob")).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(expected, actual);
   }
 
@@ -115,7 +115,7 @@ public class UserServiceTest {
     when(dao.find("bob")).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(expected, actual);
   }
 
@@ -126,10 +126,13 @@ public class UserServiceTest {
     old.setApiKeys(List.of(new ApiKey(uid)));
     old.setSubscriptions(List.of(new Subscription(3L)));
     var user = new User("bob");
+    user.setFirstName(null);
+    user.setLastName(null);
+    user.setEmail(null);
 
     when(dao.find("bob")).thenReturn(old);
 
-    var actual = service.updateUser(user);
+    var actual = service.createOrUpdateUser(user);
     assertEquals(old, actual);
   }
 }

@@ -2,7 +2,6 @@ package de.dlr.shepard.data.timeseries.services;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import jakarta.enterprise.context.RequestScoped;
@@ -15,14 +14,11 @@ import java.util.List;
 @RequestScoped
 public class TimeseriesCsvService {
 
-  private TimeseriesService timeseriesService;
-
-  TimeseriesCsvService() {}
+  @Inject
+  TimeseriesService timeseriesService;
 
   @Inject
-  public TimeseriesCsvService(TimeseriesService timeseriesService) {
-    this.timeseriesService = timeseriesService;
-  }
+  TimeseriesContainerService timeseriesContainerService;
 
   /**
    * Export one timeseries as CSV File if found.
@@ -37,6 +33,8 @@ public class TimeseriesCsvService {
     Timeseries timeseries,
     TimeseriesDataPointsQueryParams queryParams
   ) {
+    timeseriesContainerService.getContainer(containerId);
+
     var stream = CsvConverter.convertToCsv(
       timeseries,
       this.timeseriesService.getDataPointsByTimeseries(containerId, timeseries, queryParams)
@@ -58,6 +56,8 @@ public class TimeseriesCsvService {
     List<Timeseries> timeseriesList,
     TimeseriesDataPointsQueryParams queryParams
   ) throws IOException {
+    timeseriesContainerService.getContainer(containerId);
+
     var timeseriesWithDataPointsList = timeseriesService.getManyTimeseriesWithDataPoints(
       containerId,
       timeseriesList,
@@ -67,14 +67,17 @@ public class TimeseriesCsvService {
     return stream;
   }
 
-  public void importTimeseriesFromCsv(TimeseriesContainer container, String filePath) throws IOException {
+  public void importTimeseriesFromCsv(long containerId, String filePath) throws IOException {
+    timeseriesContainerService.getContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
+
     try (InputStream fileInputStream = new FileInputStream(filePath)) {
       List<TimeseriesWithDataPoints> timeseriesWithDataPointsList = CsvConverter.convertToTimeseriesWithData(
         fileInputStream
       );
       for (var timeseriesWithDataPoints : timeseriesWithDataPointsList) {
         this.timeseriesService.saveDataPoints(
-            container.getId(),
+            containerId,
             timeseriesWithDataPoints.getTimeseries(),
             timeseriesWithDataPoints.getPoints()
           );

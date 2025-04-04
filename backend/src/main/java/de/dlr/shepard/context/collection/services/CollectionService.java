@@ -4,9 +4,11 @@ import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
@@ -17,12 +19,10 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RequestScoped
@@ -32,7 +32,7 @@ public class CollectionService {
   CollectionDAO collectionDAO;
 
   @Inject
-  UserDAO userDAO;
+  UserService userService;
 
   @Inject
   PermissionsService permissionsService;
@@ -43,16 +43,19 @@ public class CollectionService {
   @Inject
   VersionDAO versionDAO;
 
+  @Inject
+  AuthenticationContext authenticationContext;
+
   /**
    * Creates a Collection and stores it in Neo4J
    *
    * @param collection to be stored
-   * @param username   of the related user
    * @return the created collection
    */
-  public Collection createCollection(CollectionIO collection, String username) {
+  public Collection createCollection(CollectionIO collection) {
     Date date = dateHelper.getDate();
-    var user = userDAO.find(username);
+    var user = userService.getCurrentUser();
+
     var toCreate = new Collection();
     toCreate.setAttributes(collection.getAttributes());
     toCreate.setCreatedBy(user);
@@ -80,8 +83,11 @@ public class CollectionService {
    * @param username the name of the user
    * @return a list of Collections
    */
-  public List<Collection> getAllCollectionsByShepardId(QueryParamHelper params, String username) {
-    List<Collection> queryResult = collectionDAO.findAllCollectionsByShepardId(params, username);
+  public List<Collection> getAllCollections(QueryParamHelper params) {
+    List<Collection> queryResult = collectionDAO.findAllCollectionsByShepardId(
+      params,
+      authenticationContext.getCurrentUserName()
+    );
     List<Collection> collections = queryResult.stream().map(this::cutDeleted).toList();
     return collections;
   }
@@ -91,19 +97,9 @@ public class CollectionService {
    * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
    *
    * @param shepardId long
-   * @return Optional<Collection>
-   */
-  public Optional<Collection> getCollectionOptional(long shepardId) {
-    return getCollectionOptional(shepardId, null, true);
-  }
-
-  /**
-   * Retrieves a collection by shepardId.
-   * The returned collection is in 'light' format, so dataobjects and incoming references are excluded.
-   *
-   * @param shepardId long
    * @return Collection
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
    */
   public Collection getCollection(long shepardId) {
     return getCollection(shepardId, null, true);
@@ -117,6 +113,7 @@ public class CollectionService {
    * @param versionUID UUID
    * @return Collection
    * @throws InvalidPathException if no collection (with specified version) could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
    */
   public Collection getCollection(long shepardId, UUID versionUID) {
     return getCollection(shepardId, versionUID, true);
@@ -127,6 +124,7 @@ public class CollectionService {
    * @param shepardId shepardId of the desired collection
    * @return Collection
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
    */
   public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId) {
     return getCollection(shepardId, null, false);
@@ -135,18 +133,10 @@ public class CollectionService {
   /**
    * Fetches a collection including permissions, attributes, contained data objects and incoming references.
    * @param shepardId shepardId of the desired collection
-   * @return Collection if available
-   */
-  public Optional<Collection> getCollectionOptionalWithDataObjectsAndIncomingReferences(long shepardId) {
-    return getCollectionOptional(shepardId, null, false);
-  }
-
-  /**
-   * Fetches a collection including permissions, attributes, contained data objects and incoming references.
-   * @param shepardId shepardId of the desired collection
    * @param versionUID ID of the version to retrieve
    * @return Collection
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
    */
   public Collection getCollectionWithDataObjectsAndIncomingReferences(long shepardId, UUID versionUID) {
     return getCollection(shepardId, versionUID, false);
@@ -157,18 +147,9 @@ public class CollectionService {
    *
    * @return Collection
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read the collection
    */
   private Collection getCollection(long shepardId, UUID versionUID, boolean excludeDataObjectsAndIncomingReferences) {
-    return getCollectionOptional(shepardId, versionUID, excludeDataObjectsAndIncomingReferences).orElseThrow(() ->
-      new InvalidPathException(String.format("ID ERROR - Collection with id %s does not exist", shepardId))
-    );
-  }
-
-  private Optional<Collection> getCollectionOptional(
-    long shepardId,
-    UUID versionUID,
-    boolean excludeDataObjectsAndIncomingReferences
-  ) {
     Collection ret;
     String errorMsg;
     if (versionUID == null) {
@@ -179,11 +160,11 @@ public class CollectionService {
       errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
-      Log.error(errorMsg);
-      return Optional.empty();
+      throw new InvalidPathException("ID ERROR - " + errorMsg);
     }
+    assertIsAllowedToReadCollection(shepardId);
     cutDeleted(ret);
-    return Optional.of(ret);
+    return ret;
   }
 
   /**
@@ -194,14 +175,18 @@ public class CollectionService {
    * @param username   of the related user
    * @return updated Collection
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read or edit the collection
    */
-  public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection, String username) {
+  public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection) {
     Collection old = getCollectionWithDataObjectsAndIncomingReferences(shepardId);
-    old.setUpdatedBy(userDAO.find(username));
+    assertIsAllowedToEditCollection(shepardId);
+
+    old.setUpdatedBy(userService.getCurrentUser());
     old.setUpdatedAt(dateHelper.getDate());
     old.setAttributes(collection.getAttributes());
     old.setDescription(collection.getDescription());
     old.setName(collection.getName());
+
     Collection updated = collectionDAO.createOrUpdate(old);
     cutDeleted(updated);
     return updated;
@@ -215,51 +200,115 @@ public class CollectionService {
    * @param username  of the related user
    * @return a boolean to determine if Collection was successfully deleted
    * @throws InvalidPathException if no collection could be found by shepardId
+   * @throws InvalidAuthException if the user does not have permissions to read or edit the collection
    */
-  public boolean deleteCollection(long shepardId, String username) {
-    getCollection(shepardId, null, false);
+  public void deleteCollection(long shepardId) {
+    getCollection(shepardId);
+    assertIsAllowedToEditCollection(shepardId);
+
     var date = dateHelper.getDate();
-    var user = userDAO.find(username);
-    var result = collectionDAO.deleteCollectionByShepardId(shepardId, user, date);
-    return result;
+    var user = userService.getCurrentUser();
+    if (!collectionDAO.deleteCollectionByShepardId(shepardId, user, date)) {
+      throw new InvalidRequestException(String.format("Could not delete Collection with ShepardId %s", shepardId));
+    }
   }
 
-  public Roles getCollectionRoles(long collectionId, String username) {
+  /**
+   * Gets roles for collection specified by id
+   *
+   * @param collectionId
+   * @return Roles
+   * @throws InvalidPathException if collection with collectionId does not exist
+   * @throws InvalidAuthException if user has no read permissions on specified collection
+   */
+  public Roles getCollectionRoles(long collectionId) {
+    getCollection(collectionId);
+
     // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
-    return permissionsService.getUserRolesOnEntity(collectionId, username);
+    return permissionsService.getUserRolesOnEntity(collectionId, authenticationContext.getCurrentUserName());
   }
 
-  // TODO: Use assertions in all relevant methods
-  public void assertUserIsAllowedToReadCollection(long collectionId, String username) {
-    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Read, username)) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
-    }
-  }
-
-  public void assertUserIsAllowedToEditCollection(long collectionId, String username) {
-    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Write, username)) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
-    }
-  }
-
-  public void assertUserIsAllowedToManageCollection(long collectionId, String username) {
-    if (!permissionsService.isAccessTypeAllowedForUser(collectionId, AccessType.Manage, username)) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
-    }
-  }
-
-  public Permissions getCollectionPermissions(long collectionId, String username) {
-    assertUserIsAllowedToManageCollection(collectionId, username);
+  /**
+   * Gets Permissions for collection specified by id
+   *
+   * @param collectionId
+   * @return Permissions
+   * @throws InvalidPathException if collection with collectionId does not exist
+   * @throws InvalidAuthException if user has no read permissions on specified collection, or is not allowed to manage permissions on collection
+   */
+  public Permissions getCollectionPermissions(long collectionId) {
+    getCollection(collectionId);
+    assertIsAllowedToManageCollection(collectionId);
 
     // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
     return permissionsService.getPermissionsOfEntity(collectionId);
   }
 
-  public Permissions updateCollectionPermissions(PermissionsIO newPermissions, long collectionId, String username) {
-    assertUserIsAllowedToManageCollection(collectionId, username);
+  /**
+   * Updates Permissions for collection specified by id
+   *
+   * @param collectionId
+   * @return Permissions
+   * @throws InvalidPathException if collection with collectionId does not exist
+   * @throws InvalidAuthException if user has no read permissions on specified collection, or is not allowed to manage permissions on collection
+   */
+  public Permissions updateCollectionPermissions(PermissionsIO newPermissions, long collectionId) {
+    getCollection(collectionId);
+    assertIsAllowedToManageCollection(collectionId);
 
     // We can use the collectionId as neo4jId here since permissions are global for all versions and shepardId and neo4jId are equal for the head version.
     return permissionsService.updatePermissionsByNeo4jId(newPermissions, collectionId);
+  }
+
+  /**
+   * Checks if the user requested the Collection is allowed to read it
+   *
+   * @throws InvalidAuthException when user is not allowed to read the Collection
+   */
+  public void assertIsAllowedToReadCollection(long collectionId) {
+    if (
+      !permissionsService.isAccessTypeAllowedForUser(
+        collectionId,
+        AccessType.Read,
+        authenticationContext.getCurrentUserName()
+      )
+    ) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  /**
+   * Checks if the user requested the Collection is allowed to edit it
+   *
+   * @throws InvalidAuthException when user is not allowed to edit the Collection
+   */
+  public void assertIsAllowedToEditCollection(long collectionId) {
+    if (
+      !permissionsService.isAccessTypeAllowedForUser(
+        collectionId,
+        AccessType.Write,
+        authenticationContext.getCurrentUserName()
+      )
+    ) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  /**
+   * Checks if the user requested the Collection is allowed to manage it
+   *
+   * @throws InvalidAuthException when user is not allowed to manage the Collection
+   */
+  public void assertIsAllowedToManageCollection(long collectionId) {
+    if (
+      !permissionsService.isAccessTypeAllowedForUser(
+        collectionId,
+        AccessType.Manage,
+        authenticationContext.getCurrentUserName()
+      )
+    ) {
+      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
   }
 
   private Collection cutDeleted(Collection collection) {

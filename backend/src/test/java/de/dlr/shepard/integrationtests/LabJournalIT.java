@@ -125,7 +125,7 @@ public class LabJournalIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - LabJournalEntry does not exist");
+    assertThat(actual.getMessage()).isEqualTo("LabJournal with Id 99999 cannot be found or is deleted");
   }
 
   @Test

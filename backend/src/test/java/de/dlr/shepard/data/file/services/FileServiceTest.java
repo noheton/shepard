@@ -1,9 +1,8 @@
 package de.dlr.shepard.data.file.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -31,6 +30,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,8 +121,7 @@ public class FileServiceTest {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingContainerId);
 
-    var result = fileService.getFile(nonExistingContainerId, fileoid);
-    assertNull(result);
+    assertThrows(NotFoundException.class, () -> fileService.getFile(nonExistingContainerId, fileoid));
   }
 
   @Test
@@ -135,8 +134,7 @@ public class FileServiceTest {
     when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
     when(collection.find(Filters.eq("_id", new ObjectId(nonExistingFileoid)))).thenReturn(collectionReturn);
     when(collectionReturn.first()).thenReturn(null);
-    var result = fileService.getFile(containerId, nonExistingFileoid);
-    assertNull(result);
+    assertThrows(NotFoundException.class, () -> fileService.getFile(containerId, nonExistingFileoid));
   }
 
   @Test
@@ -186,8 +184,7 @@ public class FileServiceTest {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingMongoid);
 
-    var result = fileService.createFile(nonExistingMongoid, fileName, inputStream);
-    assertNull(result);
+    assertThrows(NotFoundException.class, () -> fileService.createFile(nonExistingMongoid, fileName, inputStream));
   }
 
   @Test
@@ -203,8 +200,7 @@ public class FileServiceTest {
     when(collection.find()).thenReturn(collectionReturn);
     when(doc.getString("FileMongoId")).thenReturn(oid.toHexString());
 
-    var result = fileService.deleteFileContainer(existingMongoOid);
-    assertTrue(result);
+    assertDoesNotThrow(() -> fileService.deleteFileContainer(existingMongoOid));
     verify(gridBucket).delete(oid);
   }
 
@@ -214,8 +210,7 @@ public class FileServiceTest {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingMongoOid);
 
-    var result = fileService.deleteFileContainer(nonExistingMongoOid);
-    assertFalse(result);
+    assertThrows(NotFoundException.class, () -> fileService.deleteFileContainer(nonExistingMongoOid));
   }
 
   @Test
@@ -254,8 +249,7 @@ public class FileServiceTest {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(nonExistingContainerId);
 
-    var result = fileService.getPayload(nonExistingContainerId, fileoid);
-    assertNull(result);
+    assertThrows(NotFoundException.class, () -> fileService.getPayload(nonExistingContainerId, fileoid));
   }
 
   @Test
@@ -269,8 +263,7 @@ public class FileServiceTest {
     when(collection.find(Filters.eq("_id", new ObjectId(fileoid)))).thenReturn(emptyCollectionReturn);
     when(emptyCollectionReturn.first()).thenReturn(null);
 
-    var result = fileService.getPayload(containerId, fileoid);
-    assertNull(result);
+    assertThrows(NotFoundException.class, () -> fileService.getPayload(containerId, fileoid));
   }
 
   @Test
@@ -284,8 +277,7 @@ public class FileServiceTest {
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(doc);
     when(doc.getString("FileMongoId")).thenReturn(fileOid);
 
-    var result = fileService.deleteFile(mongoOid, oid.toHexString());
-    assertTrue(result);
+    assertDoesNotThrow(() -> fileService.deleteFile(mongoOid, oid.toHexString()));
     verify(gridBucket).delete(new ObjectId(fileOid));
   }
 
@@ -296,8 +288,7 @@ public class FileServiceTest {
 
     doThrow(new IllegalArgumentException()).when(mongoDatabase).getCollection(mongoOid);
 
-    var result = fileService.deleteFile(mongoOid, oid.toHexString());
-    assertFalse(result);
+    assertThrows(NotFoundException.class, () -> fileService.deleteFile(mongoOid, oid.toHexString()));
   }
 
   @Test
@@ -308,8 +299,7 @@ public class FileServiceTest {
     when(mongoDatabase.getCollection(mongoOid)).thenReturn(collection);
     when(collection.findOneAndDelete(Filters.eq("_id", oid))).thenReturn(null);
 
-    var result = fileService.deleteFile(mongoOid, oid.toHexString());
-    assertTrue(result);
+    assertThrows(NotFoundException.class, () -> fileService.deleteFile(mongoOid, oid.toHexString()));
   }
 
   /**

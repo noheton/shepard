@@ -2,8 +2,10 @@ package de.dlr.shepard.context.semantic.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
-import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -42,12 +44,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
 
-  DataObjectSemanticAnnotationRest() {}
+  @Inject
+  CollectionService collectionService;
 
   @Inject
-  public DataObjectSemanticAnnotationRest(SemanticAnnotationService semanticAnnotationService) {
-    super(semanticAnnotationService);
-  }
+  DataObjectService dataObjectService;
 
   @GET
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
@@ -64,7 +65,12 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.DATA_OBJECT_ID)
-  public Response getAllAnnotations(@PathParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
+  public Response getAllAnnotations(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+  ) {
+    dataObjectService.getDataObject(collectionId, dataObjectId);
+
     return getAllByShepardId(dataObjectId);
   }
 
@@ -89,7 +95,15 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
-  public Response getAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
+  public Response getAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    // check that data object exists
+    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId);
+    // check that semantic annotation exists and actually belongs to data object
+    assertSemanticAnnotationBelongsToEntity(dataObject, semanticAnnotationId);
     return get(semanticAnnotationId);
   }
 
@@ -110,12 +124,16 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
   )
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
     ) @Valid SemanticAnnotationIO semanticAnnotation
   ) {
+    dataObjectService.getDataObject(collectionId, dataObjectId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+
     return createByShepardId(dataObjectId, semanticAnnotation);
   }
 
@@ -137,7 +155,14 @@ public class DataObjectSemanticAnnotationRest extends SemanticAnnotationRest {
     schema = @Schema(type = SchemaType.INTEGER, format = "int64")
   )
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
-  public Response deleteAnnotation(@PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId) {
+  public Response deleteAnnotation(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+  ) {
+    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId);
+    collectionService.assertIsAllowedToEditCollection(collectionId);
+    assertSemanticAnnotationBelongsToEntity(dataObject, semanticAnnotationId);
     return delete(semanticAnnotationId);
   }
 }

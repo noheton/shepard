@@ -15,11 +15,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -45,17 +43,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class BasicReferenceRest {
 
-  private BasicReferenceService basicReferenceService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  BasicReferenceRest() {}
-
   @Inject
-  public BasicReferenceRest(BasicReferenceService basicReferenceService) {
-    this.basicReferenceService = basicReferenceService;
-  }
+  BasicReferenceService basicReferenceService;
 
   @GET
   @Tag(name = Constants.BASIC_REFERENCE)
@@ -86,7 +75,7 @@ public class BasicReferenceRest {
     if (name != null) params = params.withName(name);
     if (page != null && size != null) params = params.withPageAndSize(page, size);
     if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
-    var references = basicReferenceService.getAllBasicReferencesByDataObjectShepardId(dataObjectId, params);
+    var references = basicReferenceService.getAllBasicReferences(collectionId, dataObjectId, params);
     var result = new ArrayList<BasicReferenceIO>(references.size());
 
     for (var ref : references) {
@@ -113,7 +102,7 @@ public class BasicReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.BASIC_REFERENCE_ID) long referenceId
   ) {
-    BasicReference basicReference = basicReferenceService.getReferenceByShepardId(referenceId);
+    BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, referenceId);
     return Response.ok(new BasicReferenceIO(basicReference)).build();
   }
 
@@ -132,11 +121,7 @@ public class BasicReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId
   ) {
-    return basicReferenceService.deleteReferenceByShepardId(
-        basicReferenceId,
-        securityContext.getUserPrincipal().getName()
-      )
-      ? Response.status(Status.NO_CONTENT).build()
-      : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    basicReferenceService.deleteReference(collectionId, dataObjectId, basicReferenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

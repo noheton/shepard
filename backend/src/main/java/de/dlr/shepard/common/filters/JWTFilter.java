@@ -1,10 +1,10 @@
 package de.dlr.shepard.common.filters;
 
 import de.dlr.shepard.auth.apikey.services.ApiKeyService;
-import de.dlr.shepard.auth.security.GracePeriodUtil;
+import de.dlr.shepard.auth.security.ApiKeyLastSeenCache;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
-import de.dlr.shepard.auth.security.JwtFilterGracePeriod;
 import de.dlr.shepard.auth.security.RolesList;
 import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.util.Constants;
@@ -49,9 +49,11 @@ public class JWTFilter implements ContainerRequestFilter {
 
   private String role;
 
-  private GracePeriodUtil lastSeen;
+  private ApiKeyLastSeenCache apiKeyLastSeenCache;
 
   private ApiKeyService apiKeyService;
+
+  private AuthenticationContext authenticationContext;
 
   JWTFilter() {}
 
@@ -59,13 +61,15 @@ public class JWTFilter implements ContainerRequestFilter {
   public JWTFilter(
     PKIHelper pkiHelper,
     ApiKeyService apiKeyService,
-    JwtFilterGracePeriod jwtFilterGracePeriod,
+    ApiKeyLastSeenCache apiKeyLastSeenCache,
+    AuthenticationContext authenticationContext,
     @ConfigProperty(name = "oidc.public") String oidcPublic,
     @ConfigProperty(name = "oidc.role") Optional<String> oidcRole
   ) throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalArgumentException {
     try {
       this.apiKeyService = apiKeyService;
-      this.lastSeen = jwtFilterGracePeriod;
+      this.apiKeyLastSeenCache = apiKeyLastSeenCache;
+      this.authenticationContext = authenticationContext;
       this.role = oidcRole.orElse("");
 
       var kFactory = KeyFactory.getInstance("RSA");
@@ -138,6 +142,7 @@ public class JWTFilter implements ContainerRequestFilter {
 
     var securityContext = new JWTSecurityContext(requestContext.getSecurityContext(), principal);
     requestContext.setSecurityContext(securityContext);
+    authenticationContext.setPrincipal(principal);
   }
 
   private JWTPrincipal parseAccessToken(String header) {
@@ -224,7 +229,7 @@ public class JWTFilter implements ContainerRequestFilter {
       if (principal == null) return null;
       UUID tokenId = UUID.fromString(jws.getBody().getId());
 
-      if (lastSeen.elementIsKnown(tokenId.toString())) {
+      if (apiKeyLastSeenCache.isKeyCached(tokenId.toString())) {
         return principal;
       }
 
@@ -236,7 +241,7 @@ public class JWTFilter implements ContainerRequestFilter {
         Log.warn("Token from header is not equal to the token from database");
         return null;
       }
-      lastSeen.elementSeen(tokenId.toString());
+      apiKeyLastSeenCache.cacheKey(tokenId.toString());
     }
     return principal;
   }

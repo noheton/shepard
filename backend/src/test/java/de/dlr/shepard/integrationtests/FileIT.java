@@ -111,7 +111,7 @@ public class FileIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Container does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - File Container with id 99999 is null or deleted");
   }
 
   @Test

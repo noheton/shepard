@@ -1,16 +1,19 @@
 package de.dlr.shepard.data.timeseries.migration.influxtimeseries;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
@@ -39,13 +42,15 @@ public class InfluxTimeseriesContainerServiceTest {
   InfluxTimeseriesService timeseriesService;
 
   @InjectMock
-  UserDAO userDAO;
+  DateHelper dateHelper;
 
   @InjectMock
-  DateHelper dateHelper;
+  UserService userService;
 
   @Inject
   InfluxTimeseriesContainerService service;
+
+  private final User user = new User("Testuser");
 
   @Test
   public void getTimeseriesContainerTest_successful() {
@@ -81,15 +86,15 @@ public class InfluxTimeseriesContainerServiceTest {
     var container1 = new TimeseriesContainer(1L);
     var container2 = new TimeseriesContainer(2L);
 
-    when(dao.findAllTimeseriesContainers(null, "bob")).thenReturn(List.of(container1, container2));
+    when(dao.findAllTimeseriesContainers(null, user.getUsername())).thenReturn(List.of(container1, container2));
+    when(userService.getCurrentUser()).thenReturn(user);
 
-    var actual = service.getAllContainers(null, "bob");
+    var actual = service.getAllContainers(null);
     assertEquals(List.of(container1, container2), actual);
   }
 
   @Test
   public void createTimeseriesContainerTest() {
-    var user = new User("bob");
     var date = new Date(32);
 
     var input = new TimeseriesContainerIO() {
@@ -119,17 +124,16 @@ public class InfluxTimeseriesContainerServiceTest {
 
     when(timeseriesService.createDatabase()).thenReturn("database");
     when(dateHelper.getDate()).thenReturn(date);
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
-    var actual = service.createContainer(input, "bob");
+    var actual = service.createContainer(input);
     assertEquals(created, actual);
     verify(permissionsService).createPermissions(created, user, PermissionType.Private);
   }
 
   @Test
   public void deleteTimeseriesContainerServiceTest() {
-    var user = new User("bob");
     var date = new Date(23);
     var old = new TimeseriesContainer(1L);
     old.setDatabase("database");
@@ -143,27 +147,24 @@ public class InfluxTimeseriesContainerServiceTest {
       }
     };
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
 
-    var actual = service.deleteContainer(1L, "bob");
-    assertTrue(actual);
+    assertDoesNotThrow(() -> service.deleteContainer(1L));
     verify(timeseriesService).deleteDatabase("database");
   }
 
   @Test
   public void deleteTimeseriesContainerServiceTest_isNull() {
-    var user = new User("bob");
     var date = new Date(23);
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.findByNeo4jId(1L)).thenReturn(null);
 
-    var actual = service.deleteContainer(1L, "bob");
-    assertFalse(actual);
+    assertThrows(InvalidPathException.class, () -> service.deleteContainer(1L));
   }
 
   @Test

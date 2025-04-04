@@ -1,6 +1,5 @@
 package de.dlr.shepard.auth.users.endpoints;
 
-import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
@@ -12,11 +11,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -30,17 +26,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class UserRest {
 
-  private UserService userService;
-
-  @Context
-  private SecurityContext securityContext;
-
-  UserRest() {}
-
   @Inject
-  public UserRest(UserService userService) {
-    this.userService = userService;
-  }
+  UserService userService;
 
   @GET
   @Tag(name = Constants.USER)
@@ -51,11 +38,8 @@ public class UserRest {
     content = @Content(schema = @Schema(implementation = UserIO.class))
   )
   public Response getCurrentUser() {
-    JWTPrincipal principal = (JWTPrincipal) securityContext.getUserPrincipal();
-    User currentUser = userService.getUser(principal.getUsername());
-    return currentUser == null
-      ? Response.status(Status.NOT_FOUND).build()
-      : Response.ok(new UserIO(currentUser)).build();
+    User currentUser = userService.getCurrentUser();
+    return Response.ok(new UserIO(currentUser)).build();
   }
 
   @GET
@@ -71,6 +55,6 @@ public class UserRest {
   @Parameter(name = Constants.USERNAME)
   public Response getUser(@PathParam(Constants.USERNAME) String username) {
     User user = userService.getUser(username);
-    return user == null ? Response.status(Status.NOT_FOUND).build() : Response.ok(new UserIO(user)).build();
+    return Response.ok(new UserIO(user)).build();
   }
 }

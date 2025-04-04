@@ -9,6 +9,8 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.search.io.QueryType;
@@ -56,8 +58,13 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
   @InjectMock
   Document firstDocument;
 
+  @InjectMock
+  UserService userService;
+
   @Inject
   StructuredDataSearchService structuredDataSearcher;
+
+  private final User user = new User("Testuser");
 
   @Test
   public void getStructuredDataResponseTest() {
@@ -95,14 +102,15 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, "user1")).thenReturn(
-      List.of(sdReference)
-    );
+    when(
+      structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, user.getUsername())
+    ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
+    when(userService.getCurrentUser()).thenReturn(user);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -147,14 +155,15 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
         TraversalRules.children,
         collectionId,
         dataObjectId,
-        "user1"
+        user.getUsername()
       )
     ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
+    when(userService.getCurrentUser()).thenReturn(user);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -201,14 +210,15 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, "user1")).thenReturn(
-      List.of(sdReference)
-    );
+    when(
+      structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, dataObjectId, user.getUsername())
+    ).thenReturn(List.of(sdReference));
+    when(userService.getCurrentUser()).thenReturn(user);
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -229,11 +239,12 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
-      Collections.emptyList()
-    );
+    when(
+      structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, user.getUsername())
+    ).thenReturn(Collections.emptyList());
+    when(userService.getCurrentUser()).thenReturn(user);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -272,14 +283,15 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = {};
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, "user1")).thenReturn(
-      List.of(sdReference)
-    );
+    when(
+      structuredDataReferenceDAO.findReachableReferencesByShepardId(collectionId, dataObjectId, user.getUsername())
+    ).thenReturn(List.of(sdReference));
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(null);
+    when(userService.getCurrentUser()).thenReturn(user);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 
@@ -287,7 +299,10 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
   public void throwsExeption() {
     SearchScope[] scope = { new SearchScope(null, 1L, null) };
     SearchBody searchBody = new SearchBody(scope, null);
-    assertThrows(InvalidBodyException.class, () -> structuredDataSearcher.search(searchBody, "user1"));
+
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    assertThrows(InvalidBodyException.class, () -> structuredDataSearcher.search(searchBody));
   }
 
   @Test
@@ -325,14 +340,15 @@ public class StructuredDataSearchServiceTest extends BaseTestCase {
     BasicEntityIO[] results = { new BasicEntityIO(sdReference) };
     ResponseBody responseBody = new ResponseBody(resultTriples, results, searchBody.getSearchParams());
     // configure Mocks
-    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, "user1")).thenReturn(
+    when(structuredDataReferenceDAO.findReachableReferencesByNeo4jId(collectionId, user.getUsername())).thenReturn(
       List.of(sdReference)
     );
     when(mongoDatabase.getCollection(mongoID)).thenReturn(mongoContainer);
     when(mongoContainer.find(any(Document.class))).thenReturn(mongoQueryResult);
     when(mongoQueryResult.first()).thenReturn(firstDocument);
+    when(userService.getCurrentUser()).thenReturn(user);
     // test
-    var actual = structuredDataSearcher.search(searchBody, "user1");
+    var actual = structuredDataSearcher.search(searchBody);
     assertEquals(responseBody, actual);
   }
 }

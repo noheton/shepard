@@ -1,13 +1,14 @@
 package de.dlr.shepard.common.subscription.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.subscription.daos.SubscriptionDAO;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.subscription.io.SubscriptionIO;
@@ -16,7 +17,6 @@ import de.dlr.shepard.common.util.RequestMethod;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ public class SubscriptionServiceTest {
   SubscriptionDAO dao;
 
   @InjectMock
-  UserDAO userDAO;
+  UserService userService;
 
   @InjectMock
   DateHelper dateHelper;
@@ -40,16 +40,18 @@ public class SubscriptionServiceTest {
   @Test
   public void getSubscriptionTest() {
     var sub = new Subscription(1L);
+    var subscriptionUser = new User("bob");
+    sub.setCreatedBy(subscriptionUser);
     when(dao.findByNeo4jId(1L)).thenReturn(sub);
-    var actual = service.getSubscription(1L);
+    var actual = service.getSubscription(1L, "bob");
     assertEquals(sub, actual);
   }
 
   @Test
   public void getSubscriptionTestNull() {
-    when(dao.findByNeo4jId(1L)).thenReturn(null);
-    var actual = service.getSubscription(1L);
-    assertNull(actual);
+    when(dao.findByNeo4jId(1L)).thenThrow(InvalidPathException.class);
+
+    assertThrows(InvalidPathException.class, () -> service.getSubscription(1L, "bob"));
   }
 
   @Test
@@ -58,7 +60,7 @@ public class SubscriptionServiceTest {
     var user = new User("bob");
     user.setSubscriptions(List.of(sub));
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getUser("bob")).thenReturn(user);
     var actual = service.getAllSubscriptions("bob");
 
     assertEquals(List.of(sub), actual);
@@ -78,16 +80,19 @@ public class SubscriptionServiceTest {
 
   @Test
   public void getAllSubscriptionsTest_noUser() {
-    when(userDAO.find("bob")).thenReturn(null);
-    var actual = service.getAllSubscriptions("bob");
+    when(userService.getUser("bob")).thenThrow(InvalidPathException.class);
 
-    assertEquals(Collections.emptyList(), actual);
+    assertThrows(InvalidPathException.class, () -> service.getAllSubscriptions("bob"));
   }
 
   @Test
   public void deleteSubscriptionTest() {
+    var sub = new Subscription(1L);
+    var subscriptionUser = new User("bob");
+    sub.setCreatedBy(subscriptionUser);
+    when(dao.findByNeo4jId(1L)).thenReturn(sub);
     when(dao.deleteByNeo4jId(1L)).thenReturn(true);
-    var actual = service.deleteSubscription(1L);
+    var actual = service.deleteSubscription(1L, "bob");
 
     assertTrue(actual);
   }
@@ -129,54 +134,11 @@ public class SubscriptionServiceTest {
       }
     };
 
-    when(userDAO.find("bob")).thenReturn(user);
+    when(userService.getUser("bob")).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
 
     var actual = service.createSubscription(input, "bob");
     assertEquals(created, actual);
-  }
-
-  @Test
-  public void updateTest() {
-    var user = new User("bob");
-    var date = new Date(30L);
-
-    var input = new SubscriptionIO() {
-      {
-        setCallbackURL("newCallback");
-        setName("newMySub");
-        setRequestMethod(RequestMethod.PUT);
-        setSubscribedURL("newSubUrl");
-      }
-    };
-
-    var old = new Subscription() {
-      {
-        setCallbackURL("callback");
-        setName("MySub");
-        setRequestMethod(RequestMethod.GET);
-        setSubscribedURL("subUrl");
-        setCreatedAt(date);
-        setCreatedBy(user);
-      }
-    };
-
-    var updated = new Subscription() {
-      {
-        setCallbackURL("newCallback");
-        setName("newMySub");
-        setRequestMethod(RequestMethod.PUT);
-        setSubscribedURL("newSubUrl");
-        setCreatedAt(date);
-        setCreatedBy(user);
-      }
-    };
-
-    when(dao.findByNeo4jId(1L)).thenReturn(old);
-    when(dao.createOrUpdate(updated)).thenReturn(updated);
-
-    var actual = service.updateSubscription(1L, input);
-    assertEquals(updated, actual);
   }
 }

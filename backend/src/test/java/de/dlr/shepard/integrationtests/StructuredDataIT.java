@@ -2,6 +2,7 @@ package de.dlr.shepard.integrationtests;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -163,6 +164,41 @@ public class StructuredDataIT extends BaseTestCaseIT {
 
   @Test
   @Order(7)
+  public void getStructuredDataPayload_userHasNoPermissions_NotAllowed() {
+    given()
+      .spec(requestSpecOfOtherUser)
+      .when()
+      .get(
+        String.format(
+          "%s/%d/%s/%s",
+          containerURL,
+          container.getId(),
+          Constants.PAYLOAD,
+          payload.getStructuredData().getOid()
+        )
+      )
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+  }
+
+  @Test
+  @Order(8)
+  public void getStructuredDataPayload_nonExistingOid() throws JsonMappingException, JsonProcessingException {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, 1234321))
+      .then()
+      .statusCode(404)
+      .extract()
+      .as(ErrorResponse.class);
+    assertEquals("Could not find document with oid: 1234321", actual.getMessage());
+  }
+
+  @Test
+  @Order(9)
   public void deleteStructuredData() {
     given()
       .spec(requestSpecOfDefaultUser)
@@ -206,7 +242,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(8)
+  @Order(10)
   public void deleteContainer() {
     given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(204);
 
@@ -224,6 +260,6 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Container does not exist");
+    assertThat(actual.getMessage()).isEqualTo("ID ERROR - Structured Data Container with id 99999 is null or deleted");
   }
 }

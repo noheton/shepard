@@ -1,70 +1,75 @@
 package de.dlr.shepard.data.timeseries.services;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
-import de.dlr.shepard.auth.users.daos.UserDAO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
+import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Optional;
 
 @RequestScoped
-public class TimeseriesContainerService {
-
-  private TimeseriesContainerDAO timeseriesContainerDAO;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-  private PermissionsService permissionsService;
-  private TimeseriesService timeseriesService;
-
-  TimeseriesContainerService() {}
+public class TimeseriesContainerService extends AbstractContainerService<TimeseriesContainer, TimeseriesContainerIO> {
 
   @Inject
-  public TimeseriesContainerService(
-    TimeseriesContainerDAO timeseriesContainerDAO,
-    UserDAO userDAO,
-    DateHelper dateHelper,
-    PermissionsService permissionsService,
-    TimeseriesService timeseriesService
-  ) {
-    this.timeseriesContainerDAO = timeseriesContainerDAO;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.permissionsService = permissionsService;
-    this.timeseriesService = timeseriesService;
-  }
+  TimeseriesContainerDAO timeseriesContainerDAO;
+
+  @Inject
+  UserService userService;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  TimeseriesService timeseriesService;
 
   public List<TimeseriesContainer> getContainers() {
     return timeseriesContainerDAO.findAll().stream().filter(c -> c.isDeleted() == false).toList();
   }
 
-  public List<TimeseriesContainer> getContainers(QueryParamHelper params, String username) {
-    var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, username);
+  @Override
+  public List<TimeseriesContainer> getAllContainers(QueryParamHelper params) {
+    User user = userService.getCurrentUser();
+    var containers = timeseriesContainerDAO.findAllTimeseriesContainers(params, user.getUsername());
     return containers;
   }
 
   /**
-   * @throws NotFoundException if container is null or deleted
+   * Get Timeseries Container by Id
+   *
+   * @throws InvalidPathException if container is null or deleted
+   * @throws InvalidAuthException if user has no read permissions on container
    * @return timeseries container
    */
+  @Override
   public TimeseriesContainer getContainer(long timeseriesContainerId) {
-    Optional<TimeseriesContainer> containerOptional = this.getContainerOptional(timeseriesContainerId);
-
+    Optional<TimeseriesContainer> containerOptional = getContainerOptional(timeseriesContainerId);
     if (containerOptional.isEmpty()) {
-      Log.errorf("Timeseries Container with id %s is null or deleted", timeseriesContainerId);
-      throw new NotFoundException("Timeseries container with id " + timeseriesContainerId + " not found.");
+      String errorMsg = String.format(
+        "ID ERROR - Timeseries Container with id %s is null or deleted",
+        timeseriesContainerId
+      );
+      Log.errorf(errorMsg);
+      throw new InvalidPathException(errorMsg);
     }
-
+    assertIsAllowedToReadContainer(timeseriesContainerId);
     return containerOptional.get();
   }
 
-  public Optional<TimeseriesContainer> getContainerOptional(long timeseriesContainerId) {
+  private Optional<TimeseriesContainer> getContainerOptional(long timeseriesContainerId) {
     TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {
       return Optional.empty();
@@ -79,13 +84,15 @@ public class TimeseriesContainerService {
    * @param username of the related user
    * @return the created timeseriesContainer
    */
-  public TimeseriesContainer createContainer(String name, String username) {
-    var user = userDAO.find(username);
+  @Override
+  public TimeseriesContainer createContainer(TimeseriesContainerIO timeseriesContainerIO) {
+    User user = userService.getCurrentUser();
     var toCreate = new TimeseriesContainer();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDatabase(null); // This is not needed anymore after the migration to TSDB
-    toCreate.setName(name);
+    toCreate.setName(timeseriesContainerIO.getName());
+
     var created = timeseriesContainerDAO.createOrUpdate(toCreate);
     permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
@@ -97,14 +104,17 @@ public class TimeseriesContainerService {
    * @param timeSeriesContainerId identifies the TimeseriesContainer
    * @param username              of the related user
    */
-  public void deleteContainer(long timeSeriesContainerId, String username) {
-    var user = userDAO.find(username);
+  @Override
+  public void deleteContainer(long timeSeriesContainerId) {
     TimeseriesContainer timeseriesContainer = this.getContainer(timeSeriesContainerId);
 
+    // run this line before the DAO update, since it checks for accessibility before deletion
+    timeseriesService.deleteTimeseriesByContainerId(timeSeriesContainerId);
+
+    User user = userService.getCurrentUser();
     timeseriesContainer.setDeleted(true);
     timeseriesContainer.setUpdatedAt(dateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);
     timeseriesContainerDAO.createOrUpdate(timeseriesContainer);
-    timeseriesService.deleteTimeseriesByContainerId(timeSeriesContainerId);
   }
 }

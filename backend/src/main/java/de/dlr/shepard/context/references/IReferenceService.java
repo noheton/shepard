@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IReferenceService<T extends BasicReference, S extends BasicReferenceIO> {
-  List<T> getAllReferencesByDataObjectShepardId(long dataObjectShepardId, UUID versionUID);
+  List<T> getAllReferencesByDataObjectId(long collectionShepardId, long dataObjectShepardId, UUID versionUID);
 
-  T getReferenceByShepardId(long shepardId, UUID versionUID);
+  T getReference(long collectionShepardId, long shepardDataObjectId, long shepardId, UUID versionUID);
 
-  T createReferenceByShepardId(long DataObjectShepardId, S referenceIO, String username);
+  T createReference(long collectionShepardId, long dataObjectShepardId, S referenceIO);
 
-  boolean deleteReferenceByShepardId(long shepardId, String username);
+  void deleteReference(long collectionShepardId, long dataObjectShepardId, long shepardId);
 }

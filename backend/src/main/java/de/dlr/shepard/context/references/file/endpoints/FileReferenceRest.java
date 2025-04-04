@@ -2,6 +2,7 @@ package de.dlr.shepard.context.references.file.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.file.services.FileReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
@@ -48,17 +49,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class FileReferenceRest {
 
-  private FileReferenceService fileReferenceService;
+  @Inject
+  FileReferenceService fileReferenceService;
 
   @Context
   private SecurityContext securityContext;
-
-  FileReferenceRest() {}
-
-  @Inject
-  public FileReferenceRest(FileReferenceService fileReferenceService) {
-    this.fileReferenceService = fileReferenceService;
-  }
 
   @GET
   @Tag(name = Constants.FILE_REFERENCE)
@@ -77,7 +72,7 @@ public class FileReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var references = fileReferenceService.getAllReferencesByDataObjectShepardId(dataObjectId, versionUID);
+    var references = fileReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
     var result = new ArrayList<FileReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new FileReferenceIO(ref));
@@ -105,7 +100,7 @@ public class FileReferenceRest {
     @PathParam(Constants.FILE_REFERENCE_ID) long referenceId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ref = fileReferenceService.getReferenceByShepardId(referenceId, versionUID);
+    FileReference ref = fileReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUID);
     return Response.ok(new FileReferenceIO(ref)).build();
   }
 
@@ -129,11 +124,7 @@ public class FileReferenceRest {
       content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
     ) @Valid FileReferenceIO fileReference
   ) {
-    var ref = fileReferenceService.createReferenceByShepardId(
-      dataObjectId,
-      fileReference,
-      securityContext.getUserPrincipal().getName()
-    );
+    FileReference ref = fileReferenceService.createReference(collectionId, dataObjectId, fileReference);
     return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();
   }
 
@@ -152,11 +143,8 @@ public class FileReferenceRest {
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId
   ) {
-    var result = fileReferenceService.deleteReferenceByShepardId(
-      fileReferenceId,
-      securityContext.getUserPrincipal().getName()
-    );
-    return result ? Response.status(Status.NO_CONTENT).build() : Response.status(Status.INTERNAL_SERVER_ERROR).build();
+    fileReferenceService.deleteReference(collectionId, dataObjectId, fileReferenceId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 
   @GET
@@ -185,18 +173,11 @@ public class FileReferenceRest {
     @PathParam(Constants.OID) String oid,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var payload = fileReferenceService.getPayloadByShepardId(
-      fileReferenceId,
-      oid,
-      securityContext.getUserPrincipal().getName(),
-      versionUID
-    );
-    return payload != null
-      ? Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
-        .header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
-        .header("Content-Length", payload.getSize())
-        .build()
-      : Response.status(Status.NOT_FOUND).build();
+    var payload = fileReferenceService.getPayload(collectionId, dataObjectId, fileReferenceId, oid, versionUID);
+    return Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
+      .header("Content-Length", payload.getSize())
+      .build();
   }
 
   @GET
@@ -219,7 +200,7 @@ public class FileReferenceRest {
     @PathParam(Constants.FILE_REFERENCE_ID) long fileId,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var ret = fileReferenceService.getFilesByShepardId(fileId, versionUID);
+    var ret = fileReferenceService.getFiles(collectionId, dataObjectId, fileId, versionUID);
     return Response.ok(ret).build();
   }
 }
