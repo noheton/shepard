@@ -18,6 +18,8 @@ interface TimeseriesDataTableItem extends Timeseries {
   isSelected: boolean;
 }
 
+const maxSelectableItems = 7;
+
 const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId, timeseriesReferenceId } =
   routeParams.value as CollectionRouteParams & {
@@ -216,7 +218,8 @@ const onSelectedItemChanged = () => {
               </v-col>
               <v-col class="text-right" cols="auto">
                 <div class="pa-4">
-                  Selected items: {{ numberOfSelectedItems }} / 7
+                  Selected items: {{ numberOfSelectedItems }} /
+                  {{ maxSelectableItems }}
                 </div>
               </v-col>
               <v-col class="text-right" cols="auto">
@@ -226,7 +229,8 @@ const onSelectedItemChanged = () => {
                   color="primary"
                   prepend-icon="mdi-chart-line"
                   :disabled="
-                    numberOfSelectedItems === 0 || numberOfSelectedItems > 7
+                    numberOfSelectedItems === 0 ||
+                    numberOfSelectedItems > maxSelectableItems
                   "
                   @click="plotSelectedTimeseries"
                 >
@@ -250,7 +254,7 @@ const onSelectedItemChanged = () => {
                   v-model="item.isSelected"
                   density="compact"
                   hide-details
-                  :disabled="numberOfSelectedItems >= 7"
+                  :disabled="numberOfSelectedItems >= maxSelectableItems"
                   @update:model-value="() => onSelectedItemChanged()"
                 />
               </template>
