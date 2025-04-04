@@ -3,6 +3,7 @@ package de.dlr.shepard.context.references.timeseriesreference.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesUniqueIdBuilder;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -69,6 +70,6 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
 
   @Override
   public String getUniqueId() {
-    return String.join("-", measurement, device, location, symbolicName, field);
+    return TimeseriesUniqueIdBuilder.buildUniqueId(measurement, device, location, symbolicName, field);
   }
 }
