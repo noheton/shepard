@@ -57,7 +57,6 @@ watch(searchString, (newVal, oldVal) => {
   if (newVal === "" && autoCompleteModel.value) {
     emit("searchEnded", autoCompleteModel.value);
   } else if (newVal !== oldVal) {
-    console.log(`new val: ${newVal} , old val: ${oldVal}`);
     if (newVal !== autoCompleteModel.value?.title) emit("searchEnded", null);
   }
 });
