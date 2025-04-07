@@ -14,6 +14,8 @@ import de.dlr.shepard.context.export.ExportService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -63,6 +65,8 @@ public class CollectionRest {
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "400", description = "bad request")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -70,8 +74,8 @@ public class CollectionRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllCollections(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -97,16 +101,26 @@ public class CollectionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getCollection(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    // Do not use UUID type as query param type, since it results in a wrong HTTP error message when type is wrong
+    // instead use validation annotation and string and then create a UUID object from it
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+
     Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       collectionId,
-      versionUID
+      versionUUID
     );
     return Response.ok(new CollectionIO(collection)).build();
   }
@@ -122,9 +136,12 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @Parameter(name = Constants.COLLECTION_ID)
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response updateCollection(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = CollectionIO.class))
@@ -139,10 +156,12 @@ public class CollectionRest {
   @Subscribable
   @Tag(name = Constants.COLLECTION)
   @Operation(description = "Delete collection")
-  @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
-  public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+  public Response deleteCollection(@PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId) {
     collectionService.deleteCollection(collectionId);
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -156,12 +175,15 @@ public class CollectionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
-  public Response getCollectionPermissions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+  public Response getCollectionPermissions(
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId
+  ) {
     Permissions permissions = collectionService.getCollectionPermissions(collectionId);
-
-    if (permissions == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(new PermissionsIO(permissions)).build();
   }
 
@@ -174,10 +196,13 @@ public class CollectionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response editCollectionPermissions(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -197,9 +222,12 @@ public class CollectionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = Roles.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
-  public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+  public Response getCollectionRoles(@PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId) {
     Roles roles = collectionService.getCollectionRoles(collectionId);
     return Response.ok(roles).build();
   }
@@ -212,6 +240,7 @@ public class CollectionRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
+  @APIResponse(responseCode = "400", description = "bad request")
   public Response createCollection(
     @RequestBody(
       required = true,
@@ -235,11 +264,14 @@ public class CollectionRest {
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
-  public Response exportCollection(@PathParam(Constants.COLLECTION_ID) long collectionId) throws IOException {
+  public Response exportCollection(@PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId)
+    throws IOException {
     InputStream is = exportService.exportCollectionByShepardId(collectionId);
-
     return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"export.zip\"")
       .build();

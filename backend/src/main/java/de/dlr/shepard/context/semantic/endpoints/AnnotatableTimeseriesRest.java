@@ -7,6 +7,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -57,12 +59,15 @@ public class AnnotatableTimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.TIMESERIES_ID)
   public Response getAllAnnotations(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
   ) {
     var annotations = annotatableTimeseriesService.getAnnotations(containerId, timeseriesId);
     return Response.ok(annotations.stream().map(SemanticAnnotationIO::new).collect(Collectors.toList())).build();
@@ -80,14 +85,17 @@ public class AnnotatableTimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotationById(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long annotationId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long annotationId
   ) {
     var annotation = annotatableTimeseriesService.getAnnotationById(containerId, timeseriesId, annotationId);
     return Response.ok(new SemanticAnnotationIO(annotation)).build();
@@ -101,13 +109,16 @@ public class AnnotatableTimeseriesRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Transactional
   public Response createAnnotation(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
@@ -122,15 +133,18 @@ public class AnnotatableTimeseriesRest {
   @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(operationId = "deleteAnnotationOfTimeseries", description = "Delete annotation of timeseries.")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   @Transactional
   public Response deleteAnnotation(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long annotationId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long annotationId
   ) {
     annotatableTimeseriesService.deleteAnnotation(containerId, timeseriesId, annotationId);
     return Response.status(Status.NO_CONTENT).build();

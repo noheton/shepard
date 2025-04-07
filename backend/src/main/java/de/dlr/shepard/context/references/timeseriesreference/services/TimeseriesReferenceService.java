@@ -138,7 +138,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
    * @param collectionShepardId
    * @param dataObjectShepardId DataObject id for the reference to be created
    * @param timeseriesReference Reference object
-   * @return FileReference
+   * @return TimeseriesReference
    * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
    * @throws InvalidAuthException if user has no permission to edit referencing collection or no read permissions on referenced container
    * @throws InvalidRequestException if user provides a timeseries reference with a non-accessible container
@@ -202,7 +202,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
    *
    * @param collectionShepardId
    * @param dataObjectShepardId
-   * @param fileReferenceShepardId
+   * @param timeseriesReferenceShepardId
    * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
    * @throws InvalidAuthException if user has no permissions to edit the collection, which the reference is assigned to
    */

@@ -10,6 +10,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -55,9 +56,11 @@ public class ApiKeyRest {
       schema = @Schema(description = "The search result page", type = SchemaType.ARRAY, implementation = ApiKeyIO.class)
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.USERNAME)
-  public Response getAllApiKeys(@PathParam(Constants.USERNAME) String username) {
+  @APIResponse(description = "bad request", responseCode = "400")
+  @APIResponse(description = "not authorized", responseCode = "401")
+  @APIResponse(description = "forbidden", responseCode = "403")
+  @Parameter(name = Constants.USERNAME, required = true)
+  public Response getAllApiKeys(@PathParam(Constants.USERNAME) @NotBlank String username) {
     var apiKeys = apiKeyService.getAllApiKeys(username);
     var result = new ArrayList<ApiKeyIO>(apiKeys.size());
 
@@ -76,12 +79,14 @@ public class ApiKeyRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = ApiKeyIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.USERNAME)
-  @Parameter(name = Constants.APIKEY_UID)
+  @APIResponse(description = "bad request", responseCode = "400")
+  @APIResponse(description = "not authorized", responseCode = "401")
+  @APIResponse(description = "forbidden", responseCode = "403")
+  @Parameter(name = Constants.USERNAME, required = true)
+  @Parameter(name = Constants.APIKEY_UID, required = true)
   public Response getApiKey(
-    @PathParam(Constants.USERNAME) String username,
-    @PathParam(Constants.APIKEY_UID) String apiKeyUid
+    @PathParam(Constants.USERNAME) @NotBlank String username,
+    @PathParam(Constants.APIKEY_UID) @NotBlank @org.hibernate.validator.constraints.UUID String apiKeyUid
   ) {
     UUID uid;
     try {
@@ -103,9 +108,12 @@ public class ApiKeyRest {
     content = @Content(schema = @Schema(implementation = ApiKeyWithJWTIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.USERNAME)
+  @APIResponse(description = "bad request", responseCode = "400")
+  @APIResponse(description = "not authorized", responseCode = "401")
+  @APIResponse(description = "forbidden", responseCode = "403")
+  @Parameter(name = Constants.USERNAME, required = true)
   public Response createApiKey(
-    @PathParam(Constants.USERNAME) String username,
+    @PathParam(Constants.USERNAME) @NotBlank String username,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = ApiKeyIO.class))
@@ -121,11 +129,14 @@ public class ApiKeyRest {
   @Operation(description = "Delete api key")
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.USERNAME)
-  @Parameter(name = Constants.APIKEY_UID)
+  @APIResponse(description = "bad request", responseCode = "400")
+  @APIResponse(description = "not authorized", responseCode = "401")
+  @APIResponse(description = "forbidden", responseCode = "403")
+  @Parameter(name = Constants.USERNAME, required = true)
+  @Parameter(name = Constants.APIKEY_UID, required = true)
   public Response deleteApiKey(
-    @PathParam(Constants.USERNAME) String username,
-    @PathParam(Constants.APIKEY_UID) String apiKeyUid
+    @PathParam(Constants.USERNAME) @NotBlank String username,
+    @PathParam(Constants.APIKEY_UID) @NotBlank @org.hibernate.validator.constraints.UUID String apiKeyUid
   ) {
     UUID uid;
     try {

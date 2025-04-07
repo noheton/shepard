@@ -10,6 +10,8 @@ import de.dlr.shepard.context.references.dataobject.services.DataObjectReference
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -65,19 +67,26 @@ public class DataObjectReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllDataObjectReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     List<DataObjectReference> references = dataObjectReferenceService.getAllReferencesByDataObjectId(
       collectionId,
       dataObjectId,
-      versionUID
+      versionUUID
     );
     var result = new ArrayList<DataObjectReferenceIO>(references.size());
     for (var reference : references) {
@@ -95,22 +104,29 @@ public class DataObjectReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getDataObjectReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) @NotNull @PositiveOrZero Long dataObjectReferenceId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     DataObjectReference result = dataObjectReferenceService.getReference(
       collectionId,
       dataObjectId,
       dataObjectReferenceId,
-      versionUID
+      versionUUID
     );
     return Response.ok(new DataObjectReferenceIO(result)).build();
   }
@@ -124,12 +140,15 @@ public class DataObjectReferenceRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createDataObjectReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = DataObjectReferenceIO.class))
@@ -149,14 +168,17 @@ public class DataObjectReferenceRest {
   @Tag(name = Constants.DATAOBJECT_REFERENCE)
   @Operation(description = "Delete dataObject reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   public Response deleteDataObjectReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) @NotNull @PositiveOrZero Long dataObjectReferenceId
   ) {
     dataObjectReferenceService.deleteReference(collectionId, dataObjectId, dataObjectReferenceId);
     return Response.status(Status.NO_CONTENT).build();
@@ -171,22 +193,29 @@ public class DataObjectReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.DATAOBJECT_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getDataObjectReferencePayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) long dataObjectReferenceId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.DATAOBJECT_REFERENCE_ID) @NotNull @PositiveOrZero Long dataObjectReferenceId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     DataObject payload = dataObjectReferenceService.getPayload(
       collectionId,
       dataObjectId,
       dataObjectReferenceId,
-      versionUID
+      versionUUID
     );
     return Response.ok(new DataObjectIO(payload)).build();
   }

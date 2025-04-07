@@ -5,6 +5,7 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.ShepardException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
@@ -66,7 +67,7 @@ public class ExportService {
    * @throws IOException if building the InputStream fails
    */
   public InputStream exportCollectionByShepardId(long collectionId) throws IOException {
-    var collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
+    Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
     var builder = new ExportBuilder(collection);
     for (var dataObject : collection.getDataObjects()) {

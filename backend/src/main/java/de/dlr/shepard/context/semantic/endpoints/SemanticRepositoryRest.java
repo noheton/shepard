@@ -8,6 +8,8 @@ import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -46,7 +48,9 @@ public class SemanticRepositoryRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticRepositoryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -54,8 +58,8 @@ public class SemanticRepositoryRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllSemanticRepositories(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) SemanticRepositoryAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -81,9 +85,13 @@ public class SemanticRepositoryRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.SEMANTIC_REPOSITORY_ID)
-  public Response getSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
+  public Response getSemanticRepository(
+    @PathParam(Constants.SEMANTIC_REPOSITORY_ID) @NotNull @PositiveOrZero Long semanticRepositoryId
+  ) {
     var result = semanticRepositoryService.getRepository(semanticRepositoryId);
     return Response.ok(new SemanticRepositoryIO(result)).build();
   }
@@ -96,7 +104,9 @@ public class SemanticRepositoryRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SemanticRepositoryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response createSemanticRepository(
     @RequestBody(
       required = true,
@@ -113,9 +123,13 @@ public class SemanticRepositoryRest {
   @Tag(name = Constants.SEMANTIC_REPOSITORY)
   @Operation(description = "Delete semantic repository")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.SEMANTIC_REPOSITORY_ID)
-  public Response deleteSemanticRepository(@PathParam(Constants.SEMANTIC_REPOSITORY_ID) long semanticRepositoryId) {
+  public Response deleteSemanticRepository(
+    @PathParam(Constants.SEMANTIC_REPOSITORY_ID) @NotNull @PositiveOrZero Long semanticRepositoryId
+  ) {
     semanticRepositoryService.deleteRepository(semanticRepositoryId);
     return Response.status(Status.NO_CONTENT).build();
   }

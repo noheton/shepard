@@ -10,6 +10,8 @@ import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -62,16 +64,23 @@ public class TimeseriesReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllTimeseriesReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var references = timeseriesReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    var references = timeseriesReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUUID);
     var result = new ArrayList<TimeseriesReferenceIO>(references.size());
     for (var reference : references) {
       result.add(new TimeseriesReferenceIO(reference));
@@ -89,18 +98,25 @@ public class TimeseriesReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var result = timeseriesReferenceService.getReference(collectionId, dataObjectId, timeseriesId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    var result = timeseriesReferenceService.getReference(collectionId, dataObjectId, timeseriesId, versionUUID);
 
     return Response.ok(new TimeseriesReferenceIO(result)).build();
   }
@@ -114,12 +130,15 @@ public class TimeseriesReferenceRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
@@ -136,14 +155,17 @@ public class TimeseriesReferenceRest {
   @Tag(name = Constants.TIMESERIES_REFERENCE)
   @Operation(description = "Delete timeseries reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
   public Response deleteTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesId
   ) {
     timeseriesReferenceService.deleteReference(collectionId, dataObjectId, timeseriesId);
     return Response.status(Status.NO_CONTENT).build();
@@ -158,7 +180,10 @@ public class TimeseriesReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesWithDataPoints.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
@@ -169,9 +194,9 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.LOCATION)
   @Parameter(name = Constants.SYMBOLICNAME)
   public Response getTimeseriesPayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesReferenceId,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption,
@@ -207,7 +232,10 @@ public class TimeseriesReferenceRest {
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
@@ -218,9 +246,9 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.LOCATION)
   @Parameter(name = Constants.SYMBOLICNAME)
   public Response exportTimeseriesPayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesReferenceId,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption,

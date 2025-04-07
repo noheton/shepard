@@ -14,6 +14,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -69,7 +71,9 @@ public class SpatialDataPointRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -77,8 +81,8 @@ public class SpatialDataPointRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getSpatialDataContainers(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -101,9 +105,14 @@ public class SpatialDataPointRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SpatialDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
-  public Response getSpatialDataContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
+  public Response getSpatialDataContainer(
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
+  ) {
     var container = containerService.getContainer(containerId);
     return Response.ok(SpatialDataContainerIO.fromEntity(container)).build();
   }
@@ -132,9 +141,14 @@ public class SpatialDataPointRest {
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Deletes spatial data container and related spatial data.")
   @APIResponse(description = "ok", responseCode = "200")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
-  public Response deleteSpatialDataContainer(@PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId) {
+  public Response deleteSpatialDataContainer(
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
+  ) {
     containerService.deleteContainer(containerId);
     return Response.status(Status.OK).build();
   }
@@ -219,9 +233,12 @@ public class SpatialDataPointRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response getSpatialDataPoints(
-    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId,
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @QueryParam("geometryFilter") String geometryFilterParam,
     @QueryParam("metadataFilter") String metadataFilterParam,
     @QueryParam("measurementsFilter") String measurementsFilterParam,
@@ -253,9 +270,12 @@ public class SpatialDataPointRest {
   @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
   @Operation(description = "Adds spatial data points to a spatial data container.")
   @APIResponse(description = "OK", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response createSpatialDataPoints(
-    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) long containerId,
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))

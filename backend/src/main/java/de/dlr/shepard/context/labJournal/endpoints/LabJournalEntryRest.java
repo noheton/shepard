@@ -11,6 +11,8 @@ import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -62,9 +64,14 @@ public class LabJournalEntryRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = LabJournalEntryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.DATA_OBJECT_ID, required = true)
-  public Response getLabJournalsByCollection(@QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId) {
+  public Response getLabJournalsByCollection(
+    @QueryParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId
+  ) {
     DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
     for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(dataObject)) {
@@ -82,9 +89,14 @@ public class LabJournalEntryRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
-  @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
-  public Response getLabJournalById(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID, required = true)
+  public Response getLabJournalById(
+    @PathParam(Constants.LAB_JOURNAL_ENTRY_ID) @NotNull @PositiveOrZero Long labJournalEntryId
+  ) {
     LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
     return Response.ok(new LabJournalEntryIO(labJournalEntry)).build();
   }
@@ -104,9 +116,12 @@ public class LabJournalEntryRest {
     responseCode = "400",
     content = @Content(schema = @Schema(implementation = InvalidHtmlResponse.class))
   )
-  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.DATA_OBJECT_ID, required = true)
   public Response createLabJournal(
-    @QueryParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @QueryParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
@@ -140,9 +155,12 @@ public class LabJournalEntryRest {
     responseCode = "400",
     content = @Content(schema = @Schema(implementation = InvalidHtmlResponse.class))
   )
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
   public Response updateLabJournal(
-    @PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId,
+    @PathParam(Constants.LAB_JOURNAL_ENTRY_ID) @NotNull @PositiveOrZero Long labJournalEntryId,
     @RequestBody(
       required = true,
       content = @Content(
@@ -178,9 +196,14 @@ public class LabJournalEntryRest {
   @Tag(name = Constants.LAB_JOURNAL_ENTRY)
   @Operation(description = "Delete a lab journal")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.LAB_JOURNAL_ENTRY_ID)
-  public Response deleteLabJournal(@PathParam(Constants.LAB_JOURNAL_ENTRY_ID) long labJournalEntryId) {
+  public Response deleteLabJournal(
+    @PathParam(Constants.LAB_JOURNAL_ENTRY_ID) @NotNull @PositiveOrZero Long labJournalEntryId
+  ) {
     labJournalEntryService.deleteLabJournalEntry(labJournalEntryId);
     return Response.status(Status.NO_CONTENT).build();
   }

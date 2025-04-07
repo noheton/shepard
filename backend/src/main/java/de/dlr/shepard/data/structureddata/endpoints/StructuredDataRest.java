@@ -16,6 +16,9 @@ import de.dlr.shepard.data.structureddata.services.StructuredDataContainerServic
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -62,7 +65,9 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -70,8 +75,8 @@ public class StructuredDataRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllStructuredDataContainers(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -97,9 +102,14 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
-  public Response getStructuredDataContainer(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
+  public Response getStructuredDataContainer(
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId
+  ) {
     var result = structuredDataContainerService.getContainer(structuredDataId);
     return Response.ok(new StructuredDataContainerIO(result)).build();
   }
@@ -110,10 +120,13 @@ public class StructuredDataRest {
   @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Delete structured data container")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response deleteStructuredDataContainer(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId
   ) {
     structuredDataContainerService.deleteContainer(structuredDataId);
     return Response.status(Status.NO_CONTENT).build();
@@ -127,7 +140,10 @@ public class StructuredDataRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = StructuredDataContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response createStructuredDataContainer(
     @RequestBody(
       required = true,
@@ -148,10 +164,13 @@ public class StructuredDataRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = StructuredData.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response createStructuredData(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
@@ -170,9 +189,14 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredData.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
-  public Response getAllStructuredDatas(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
+  public Response getAllStructuredDatas(
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId
+  ) {
     var result = structuredDataContainerService.getContainer(structuredDataId).getStructuredDatas();
     return Response.ok(result).build();
   }
@@ -186,12 +210,15 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response getStructuredData(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId,
+    @PathParam(Constants.OID) @NotBlank String oid
   ) {
     var result = structuredDataContainerService.getStructuredData(structuredDataId, oid);
     return Response.ok(result).build();
@@ -203,12 +230,15 @@ public class StructuredDataRest {
   @Tag(name = Constants.STRUCTURED_DATA_CONTAINER)
   @Operation(description = "Delete structured data")
   @APIResponse(description = "ok", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response deleteStructuredData(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId,
+    @PathParam(Constants.OID) @NotBlank String oid
   ) {
     structuredDataContainerService.deleteStructuredData(structuredDataId, oid);
     return Response.status(Status.NO_CONTENT).build();
@@ -223,10 +253,13 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response getStructuredDataPermissions(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId
   ) {
     var perms = structuredDataContainerService.getContainerPermissions(structuredDataId);
     return Response.ok(new PermissionsIO(perms)).build();
@@ -241,10 +274,13 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   public Response editStructuredDataPermissions(
-    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId,
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -263,9 +299,14 @@ public class StructuredDataRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = Roles.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
-  public Response getStructuredDataRoles(@PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) long structuredDataId) {
+  public Response getStructuredDataRoles(
+    @PathParam(Constants.STRUCTURED_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long structuredDataId
+  ) {
     var roles = structuredDataContainerService.getContainerRoles(structuredDataId);
     return Response.ok(roles).build();
   }

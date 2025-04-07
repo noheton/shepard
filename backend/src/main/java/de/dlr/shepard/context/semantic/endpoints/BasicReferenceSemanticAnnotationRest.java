@@ -9,6 +9,8 @@ import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -61,7 +63,10 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Operation(operationId = "getAllReferenceAnnotations", description = "Get all semantic annotations")
   @Parameter(
     in = ParameterIn.PATH,
@@ -75,9 +80,9 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response getAllAnnotations(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long basicReferenceId
   ) {
     basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
     return getAllByShepardId(basicReferenceId);
@@ -91,7 +96,10 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Operation(operationId = "getReferenceAnnotation", description = "Get semantic annotation")
   @Parameter(
     in = ParameterIn.PATH,
@@ -106,10 +114,10 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotation(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long basicReferenceId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long semanticAnnotationId
   ) {
     BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
     assertSemanticAnnotationBelongsToEntity(basicReference, semanticAnnotationId);
@@ -123,7 +131,10 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Subscribable
   @Operation(operationId = "createReferenceAnnotation", description = "Create a new semantic annotation")
   @Parameter(
@@ -138,9 +149,9 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   )
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response createAnnotation(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long basicReferenceId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
@@ -148,14 +159,16 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   ) {
     basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
     collectionService.assertIsAllowedToEditCollection(collectionId);
-
     return createByShepardId(basicReferenceId, semanticAnnotation);
   }
 
   @DELETE
   @Tag(name = Constants.SEMANTIC_ANNOTATION)
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Path("{" + Constants.SEMANTIC_ANNOTATION_ID + "}")
   @Subscribable
   @Operation(operationId = "deleteReferenceAnnotation", description = "Delete semantic annotation")
@@ -172,10 +185,10 @@ public class BasicReferenceSemanticAnnotationRest extends SemanticAnnotationRest
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response deleteAnnotation(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId,
-    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) long semanticAnnotationId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long basicReferenceId,
+    @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long semanticAnnotationId
   ) {
     BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, basicReferenceId);
     collectionService.assertIsAllowedToEditCollection(collectionId);

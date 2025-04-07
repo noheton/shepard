@@ -8,6 +8,9 @@ import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -54,7 +57,10 @@ public class BasicReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BasicReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.QP_NAME)
@@ -63,11 +69,11 @@ public class BasicReferenceRest {
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @Positive Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicReferenceAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -93,14 +99,17 @@ public class BasicReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = BasicReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response getBasicReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long referenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long referenceId
   ) {
     BasicReference basicReference = basicReferenceService.getReference(collectionId, dataObjectId, referenceId);
     return Response.ok(new BasicReferenceIO(basicReference)).build();
@@ -112,14 +121,17 @@ public class BasicReferenceRest {
   @Tag(name = Constants.BASIC_REFERENCE)
   @Operation(description = "Delete reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.BASIC_REFERENCE_ID)
   public Response deleteBasicReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.BASIC_REFERENCE_ID) long basicReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.BASIC_REFERENCE_ID) @NotNull @PositiveOrZero Long basicReferenceId
   ) {
     basicReferenceService.deleteReference(collectionId, dataObjectId, basicReferenceId);
     return Response.status(Status.NO_CONTENT).build();

@@ -527,6 +527,26 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
+  @Order(14)
+  public void getDataObjectsTest_negativeId_BadRequest() {
+    given().spec(requestSpecOfDefaultUser).when().get(dataObjectsURL + "/-1").then().statusCode(400);
+  }
+
+  @Test
+  @Order(14)
+  public void getDataObjectsTest_wrongVersionUUIDFormat_BadRequest() {
+    // correct UUID: 00000000-0000-0000-0000-000000000000
+    // false UUID:   000000-0000-0000-0000-000000000000
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .queryParam("versionUId", "000000-0000-0000-0000-000000000000")
+      .when()
+      .get(dataObjectsURL)
+      .then()
+      .statusCode(400);
+  }
+
+  @Test
   @Order(15)
   public void putDataObjectTest_Successful() {
     dataObject.setName("DataObjectSuccessorChanged");

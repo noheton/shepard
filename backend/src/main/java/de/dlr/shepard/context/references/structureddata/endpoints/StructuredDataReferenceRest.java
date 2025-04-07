@@ -9,6 +9,9 @@ import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -64,19 +67,25 @@ public class StructuredDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllStructuredDataReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     var references = structuredDataReferenceService.getAllReferencesByDataObjectId(
       collectionId,
       dataObjectId,
-      versionUID
+      versionUUID
     );
     List<StructuredDataReferenceIO> result = new ArrayList<StructuredDataReferenceIO>(references.size());
     for (var ref : references) {
@@ -94,22 +103,29 @@ public class StructuredDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getStructuredDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long referenceId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long referenceId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     StructuredDataReference ref = structuredDataReferenceService.getReference(
       collectionId,
       dataObjectId,
       referenceId,
-      versionUID
+      versionUUID
     );
     return Response.ok(new StructuredDataReferenceIO(ref)).build();
   }
@@ -123,12 +139,14 @@ public class StructuredDataReferenceRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createStructuredDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = StructuredDataReferenceIO.class))
@@ -148,14 +166,17 @@ public class StructuredDataReferenceRest {
   @Tag(name = Constants.STRUCTURED_DATA_REFERENCE)
   @Operation(description = "Delete structuredData reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   public Response deleteStructuredDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long structuredDataReferenceId
   ) {
     structuredDataReferenceService.deleteReference(collectionId, dataObjectId, structuredDataReferenceId);
     return Response.status(Status.NO_CONTENT).build();
@@ -170,14 +191,17 @@ public class StructuredDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = StructuredDataPayload.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_REFERENCE_ID)
   public Response getStructuredDataPayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long structuredDataId
   ) {
     List<StructuredDataPayload> payload = structuredDataReferenceService.getAllPayloads(
       collectionId,
@@ -196,16 +220,19 @@ public class StructuredDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = StructuredDataPayload.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.STRUCTURED_DATA_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response getSpecificStructuredDataPayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) long structuredDataId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.STRUCTURED_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long structuredDataId,
+    @PathParam(Constants.OID) @NotBlank String oid
   ) {
     StructuredDataPayload payload = structuredDataReferenceService.getPayload(
       collectionId,

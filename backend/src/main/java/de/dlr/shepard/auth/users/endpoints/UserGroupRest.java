@@ -10,6 +10,8 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -50,7 +52,8 @@ public class UserGroupRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = UserGroupIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   public Response createUserGroup(
     @RequestBody(
       required = true,
@@ -70,10 +73,13 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = UserGroupIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response updateUserGroup(
-    @PathParam(Constants.USERGROUP_ID) Long id,
+    @PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long id,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = UserGroupIO.class))
@@ -88,9 +94,12 @@ public class UserGroupRest {
   @Tag(name = Constants.USERGROUP)
   @Operation(description = "Delete usergroup")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
-  public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
+  public Response deleteUserGroup(@PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long id) {
     userGroupService.deleteUserGroup(id);
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -104,9 +113,12 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = UserGroupIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
-  public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) Long id) {
+  public Response getUserGroup(@PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long id) {
     UserGroup ret = userGroupService.getUserGroup(id);
     return Response.ok(new UserGroupIO(ret)).build();
   }
@@ -119,14 +131,15 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = UserGroupIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllUserGroups(
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) UserGroupAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -150,9 +163,14 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
-  public Response getUserGroupPermissions(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+  public Response getUserGroupPermissions(
+    @PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long userGroupId
+  ) {
     var perms = userGroupService.getUserGroupPermissions(userGroupId);
     return Response.ok(new PermissionsIO(perms)).build();
   }
@@ -166,10 +184,13 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
   public Response editUserGroupPermissions(
-    @PathParam(Constants.USERGROUP_ID) long userGroupId,
+    @PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long userGroupId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -188,9 +209,12 @@ public class UserGroupRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = Roles.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERGROUP_ID)
-  public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) long userGroupId) {
+  public Response getUserGroupRoles(@PathParam(Constants.USERGROUP_ID) @NotNull @PositiveOrZero Long userGroupId) {
     var roles = userGroupService.getUserGroupRoles(userGroupId);
     return Response.ok(roles).build();
   }

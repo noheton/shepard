@@ -8,6 +8,9 @@ import de.dlr.shepard.common.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -38,14 +41,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class SubscriptionRest {
 
-  private SubscriptionService subscriptionService;
-
-  SubscriptionRest() {}
-
   @Inject
-  public SubscriptionRest(SubscriptionService subscriptionService) {
-    this.subscriptionService = subscriptionService;
-  }
+  SubscriptionService subscriptionService;
 
   @GET
   @Tag(name = Constants.SUBSCRIPTION)
@@ -55,8 +52,12 @@ public class SubscriptionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SubscriptionIO.class))
   )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERNAME)
-  public Response getAllSubscriptions(@PathParam(Constants.USERNAME) String username) {
+  public Response getAllSubscriptions(@PathParam(Constants.USERNAME) @NotBlank String username) {
     var subscriptions = subscriptionService.getAllSubscriptions(username);
     var result = new ArrayList<SubscriptionIO>(subscriptions.size());
     for (var sub : subscriptions) {
@@ -74,11 +75,15 @@ public class SubscriptionRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SubscriptionIO.class))
   )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERNAME)
   @Parameter(name = Constants.SUBSCRIPTION_ID)
   public Response getSubscription(
-    @PathParam(Constants.USERNAME) String username,
-    @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
+    @PathParam(Constants.USERNAME) @NotBlank String username,
+    @PathParam(Constants.SUBSCRIPTION_ID) @NotNull @PositiveOrZero Long subscriptionId
   ) {
     Subscription subscription = subscriptionService.getSubscription(subscriptionId, username);
     return Response.ok(new SubscriptionIO(subscription)).build();
@@ -97,6 +102,10 @@ public class SubscriptionRest {
       parameters = @LinkParameter(name = Constants.SUBSCRIPTION_ID, expression = "$response.body#/id")
     )
   )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Callback(
     name = "SubscriptionIO",
     operations = @CallbackOperation(
@@ -113,7 +122,7 @@ public class SubscriptionRest {
   )
   @Parameter(name = Constants.USERNAME)
   public Response createSubscription(
-    @PathParam(Constants.USERNAME) String username,
+    @PathParam(Constants.USERNAME) @NotBlank String username,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SubscriptionIO.class))
@@ -128,12 +137,15 @@ public class SubscriptionRest {
   @Tag(name = Constants.SUBSCRIPTION)
   @Operation(description = "Delete subscription")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.USERNAME)
   @Parameter(name = Constants.SUBSCRIPTION_ID)
   public Response deleteSubscription(
-    @PathParam(Constants.USERNAME) String username,
-    @PathParam(Constants.SUBSCRIPTION_ID) long subscriptionId
+    @PathParam(Constants.USERNAME) @NotBlank String username,
+    @PathParam(Constants.SUBSCRIPTION_ID) @NotNull @PositiveOrZero Long subscriptionId
   ) {
     subscriptionService.deleteSubscription(subscriptionId, username);
     return Response.status(Status.NO_CONTENT).build();

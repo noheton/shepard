@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.references.file.endpoints;
 
 import de.dlr.shepard.common.filters.Subscribable;
+import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
@@ -9,6 +10,8 @@ import de.dlr.shepard.data.file.entities.ShepardFile;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -23,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -63,16 +67,27 @@ public class FileReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllFileReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var references = fileReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    List<FileReference> references = fileReferenceService.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObjectId,
+      versionUUID
+    );
     var result = new ArrayList<FileReferenceIO>(references.size());
     for (var ref : references) {
       result.add(new FileReferenceIO(ref));
@@ -89,18 +104,25 @@ public class FileReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getFileReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long referenceId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.FILE_REFERENCE_ID) @NotNull @PositiveOrZero Long referenceId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    FileReference ref = fileReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    FileReference ref = fileReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUUID);
     return Response.ok(new FileReferenceIO(ref)).build();
   }
 
@@ -113,12 +135,15 @@ public class FileReferenceRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createFileReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
@@ -134,14 +159,17 @@ public class FileReferenceRest {
   @Tag(name = Constants.FILE_REFERENCE)
   @Operation(description = "Delete file reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   public Response deleteFileReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.FILE_REFERENCE_ID) @NotNull @PositiveOrZero Long fileReferenceId
   ) {
     fileReferenceService.deleteReference(collectionId, dataObjectId, fileReferenceId);
     return Response.status(Status.NO_CONTENT).build();
@@ -160,20 +188,33 @@ public class FileReferenceRest {
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   @Parameter(name = Constants.OID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getFilePayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long fileReferenceId,
-    @PathParam(Constants.OID) String oid,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.FILE_REFERENCE_ID) @NotNull @PositiveOrZero Long fileReferenceId,
+    @PathParam(Constants.OID) @NotNull String oid,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var payload = fileReferenceService.getPayload(collectionId, dataObjectId, fileReferenceId, oid, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    NamedInputStream payload = fileReferenceService.getPayload(
+      collectionId,
+      dataObjectId,
+      fileReferenceId,
+      oid,
+      versionUUID
+    );
     return Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"" + payload.getName() + "\"")
       .header("Content-Length", payload.getSize())
@@ -189,18 +230,25 @@ public class FileReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardFile.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.FILE_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getFiles(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.FILE_REFERENCE_ID) long fileId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.FILE_REFERENCE_ID) @NotNull @PositiveOrZero Long fileId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var ret = fileReferenceService.getFiles(collectionId, dataObjectId, fileId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+    var ret = fileReferenceService.getFiles(collectionId, dataObjectId, fileId, versionUUID);
     return Response.ok(ret).build();
   }
 }

@@ -8,6 +8,8 @@ import de.dlr.shepard.data.spatialdata.io.SpatialDataPointIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -62,16 +64,28 @@ public class SpatialDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllSpatialDataReferences(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    var references = spatialDataReferenceService.getAllReferencesByDataObjectId(collectionId, dataObjectId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+
+    var references = spatialDataReferenceService.getAllReferencesByDataObjectId(
+      collectionId,
+      dataObjectId,
+      versionUUID
+    );
     List<SpatialDataReferenceIO> result = references
       .stream()
       .map(SpatialDataReferenceIO::new)
@@ -88,22 +102,30 @@ public class SpatialDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getSpatialDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long spatialDataReferenceId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+
     var result = spatialDataReferenceService.getReference(
       collectionId,
       dataObjectId,
       spatialDataReferenceId,
-      versionUID
+      versionUUID
     );
 
     return Response.ok(new SpatialDataReferenceIO(result)).build();
@@ -118,12 +140,15 @@ public class SpatialDataReferenceRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SpatialDataReferenceIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response createSpatialDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       description = "For more examples take a look at [Get spatial data by container id](#/spatialDataContainer/getSpatialDataPoints).",
@@ -140,14 +165,17 @@ public class SpatialDataReferenceRest {
   @Tag(name = Constants.SPATIAL_DATA_REFERENCE)
   @Operation(description = "Delete spatialData reference")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
   public Response deleteSpatialDataReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long spatialDataReferenceId
   ) {
     spatialDataReferenceService.deleteReference(collectionId, dataObjectId, spatialDataReferenceId);
     return Response.status(Response.Status.NO_CONTENT).build();
@@ -162,14 +190,17 @@ public class SpatialDataReferenceRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = SpatialDataPointIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.SPATIAL_DATA_REFERENCE_ID)
   public Response getSpatialDataPayload(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) long spatialDataReferenceId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.SPATIAL_DATA_REFERENCE_ID) @NotNull @PositiveOrZero Long spatialDataReferenceId
   ) {
     return Response.ok(
       spatialDataReferenceService.getReferencePayload(collectionId, dataObjectId, spatialDataReferenceId)

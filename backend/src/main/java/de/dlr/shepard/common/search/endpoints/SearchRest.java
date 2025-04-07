@@ -23,6 +23,8 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -68,7 +70,8 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = ResponseBody.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   public Response search(
     @RequestBody(
       required = true,
@@ -88,6 +91,8 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = CollectionSearchResult.class))
   )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   @Parameter(name = Constants.QP_PAGE, description = "Pagination starts at 0")
   @Parameter(name = Constants.QP_SIZE)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
@@ -99,8 +104,8 @@ public class SearchRest {
       description = "You can search by ID, name or createdBy. Connect search parameters like this: {\"OR\":[{\"property\":\"name\",\"value\":\"ABC\",\"operator\":\"contains\"},{\"property\":\"id\",\"value\":123,\"operator\":\"contains\"}]}\"" +
       " "
     ) @Valid CollectionSearchBody collectionSearchBody,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @Positive Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicCollectionAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -130,7 +135,8 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = ContainerSearchResult.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   @Parameter(name = Constants.QP_PAGE, description = "Pagination starts at 0")
   @Parameter(name = Constants.QP_SIZE)
   @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE, description = "Defaults to 'createdAt'")
@@ -140,8 +146,8 @@ public class SearchRest {
       required = true,
       content = @Content(schema = @Schema(implementation = ContainerSearchBody.class))
     ) @Valid ContainerSearchBody containerSearchBody,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @Positive Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) BasicContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -164,7 +170,8 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = UserSearchResult.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   public Response searchUsers(
     @RequestBody(
       required = true,
@@ -184,7 +191,8 @@ public class SearchRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = UserGroupSearchResult.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
   public Response searchUserGroups(
     @RequestBody(
       required = true,

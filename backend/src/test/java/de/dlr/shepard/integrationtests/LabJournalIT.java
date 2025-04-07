@@ -10,7 +10,6 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -129,8 +128,6 @@ public class LabJournalIT extends BaseTestCaseIT {
   }
 
   @Test
-  // Disabled since this needs to be fixed in https://gitlab.com/dlr-shepard/shepard/-/issues/508
-  @Disabled
   @Order(5)
   public void getLabJournals_noQueryParam_badRequest() {
     given().spec(requestSpecOfDefaultUser).when().get(labJournalURL).then().statusCode(400);

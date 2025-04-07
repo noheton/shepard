@@ -13,6 +13,10 @@ import de.dlr.shepard.data.file.services.FileContainerService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -66,7 +70,10 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -74,8 +81,8 @@ public class FileRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllFileContainers(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @Positive Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {
@@ -100,9 +107,14 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = FileContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
-  public Response getFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+  public Response getFileContainer(
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId
+  ) {
     var result = fileContainerService.getContainer(fileContainerId);
     return Response.ok(new FileContainerIO(result)).build();
   }
@@ -115,7 +127,10 @@ public class FileRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = FileContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response createFileContainer(
     @RequestBody(
       required = true,
@@ -132,9 +147,14 @@ public class FileRest {
   @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Delete file container")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
-  public Response deleteFileContainer(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+  public Response deleteFileContainer(
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId
+  ) {
     fileContainerService.deleteContainer(fileContainerId);
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -148,9 +168,12 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ShepardFile.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
-  public Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+  public Response getAllFiles(@PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId) {
     var payload = fileContainerService.getContainer(fileContainerId).getFiles();
     return Response.ok(payload).build();
   }
@@ -168,12 +191,15 @@ public class FileRest {
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response getFile(
-    @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId,
+    @PathParam(Constants.OID) @NotBlank String oid
   ) {
     var payload = fileContainerService.getFile(fileContainerId, oid);
     return Response.ok(payload.getInputStream(), MediaType.APPLICATION_OCTET_STREAM)
@@ -188,12 +214,15 @@ public class FileRest {
   @Tag(name = Constants.FILE_CONTAINER)
   @Operation(description = "Delete file")
   @APIResponse(description = "ok", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   @Parameter(name = Constants.OID)
   public Response deleteFile(
-    @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
-    @PathParam(Constants.OID) String oid
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId,
+    @PathParam(Constants.OID) @NotBlank String oid
   ) {
     fileContainerService.deleteFile(fileContainerId, oid);
     return Response.status(Status.NO_CONTENT).build();
@@ -208,12 +237,15 @@ public class FileRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = ShepardFile.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
   @Subscribable
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response createFile(
-    @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId,
     MultipartBodyFileUpload body
   ) {
     String fileName = body.fileUpload != null ? body.fileUpload.fileName() : null;
@@ -259,9 +291,14 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
-  public Response getFilePermissions(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+  public Response getFilePermissions(
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId
+  ) {
     var perms = fileContainerService.getContainerPermissions(fileContainerId);
     return Response.ok(new PermissionsIO(perms)).build();
   }
@@ -275,10 +312,13 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
   public Response editFilePermissions(
-    @PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId,
+    @PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -297,9 +337,12 @@ public class FileRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = Roles.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.FILE_CONTAINER_ID)
-  public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) long fileContainerId) {
+  public Response getFileRoles(@PathParam(Constants.FILE_CONTAINER_ID) @NotNull @PositiveOrZero Long fileContainerId) {
     var roles = fileContainerService.getContainerRoles(fileContainerId);
     return Response.ok(roles).build();
   }

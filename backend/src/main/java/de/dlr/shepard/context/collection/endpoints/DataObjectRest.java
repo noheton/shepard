@@ -9,6 +9,9 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -54,7 +57,9 @@ public class DataObjectRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
@@ -66,17 +71,22 @@ public class DataObjectRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   @Parameter(name = Constants.VERSION_UID)
   public Response getAllDataObjects(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @Positive Integer size,
     @QueryParam(Constants.QP_PARENT_ID) Long parentId,
     @QueryParam(Constants.QP_PREDECESSOR_ID) Long predecessorId,
     @QueryParam(Constants.QP_SUCCESSOR_ID) Long successorId,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) DataObjectAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+
     var paramsWithShepardIds = new QueryParamHelper();
     if (name != null) paramsWithShepardIds = paramsWithShepardIds.withName(name);
     if (page != null && size != null) paramsWithShepardIds = paramsWithShepardIds.withPageAndSize(page, size);
@@ -85,7 +95,7 @@ public class DataObjectRest {
     if (successorId != null) paramsWithShepardIds = paramsWithShepardIds.withSuccessorId(successorId);
     if (orderBy != null) paramsWithShepardIds = paramsWithShepardIds.withOrderByAttribute(orderBy, orderDesc);
 
-    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionId, paramsWithShepardIds, versionUID);
+    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionId, paramsWithShepardIds, versionUUID);
     var result = new ArrayList<DataObjectIO>(dataObjects.size());
 
     for (var dataObject : dataObjects) {
@@ -103,16 +113,24 @@ public class DataObjectRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.VERSION_UID)
   public Response getDataObject(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
-    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId, versionUID);
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
+
+    DataObject dataObject = dataObjectService.getDataObject(collectionId, dataObjectId, versionUUID);
     return Response.ok(new DataObjectIO(dataObject)).build();
   }
 
@@ -125,10 +143,13 @@ public class DataObjectRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response createDataObject(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
@@ -148,12 +169,15 @@ public class DataObjectRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response updateDataObject(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = DataObjectIO.class))
@@ -169,12 +193,15 @@ public class DataObjectRest {
   @Tag(name = Constants.DATA_OBJECT)
   @Operation(description = "Delete dataObject")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   public Response deleteDataObject(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId
   ) {
     dataObjectService.deleteDataObject(collectionId, dataObjectId);
     return Response.status(Status.NO_CONTENT).build();
