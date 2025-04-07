@@ -6,18 +6,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 
 class PayloadReadTask {
 
-  private static int taskIdCounter = 0;
-
-  public static final PayloadReadTask poisonPill = new PayloadReadTask(
-    taskIdCounter,
-    taskIdCounter,
-    taskIdCounter,
-    null,
-    null,
-    null,
-    null,
-    true
-  );
+  public static final PayloadReadTask poisonPill = new PayloadReadTask(0, 0, 0, null, null, null, null, true);
 
   long startTimestamp;
   long endTimestamp;
@@ -25,7 +14,6 @@ class PayloadReadTask {
   TimeseriesContainer container;
   String databaseName;
   InfluxTimeseriesDataType influxTimeseriesDataType;
-  int taskId;
   int runningNumber; // running number starting with 1 for each container
   boolean isLastTask = false;
 
@@ -47,6 +35,5 @@ class PayloadReadTask {
     this.databaseName = databaseName;
     this.influxTimeseriesDataType = influxTimeseriesDataType;
     this.isLastTask = isLastTask;
-    taskId = taskIdCounter++;
   }
 }

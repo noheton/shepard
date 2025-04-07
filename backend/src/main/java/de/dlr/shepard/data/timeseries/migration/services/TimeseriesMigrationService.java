@@ -22,15 +22,17 @@ import jakarta.transaction.Transactional.TxType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -58,17 +60,26 @@ public class TimeseriesMigrationService {
   @ConfigProperty(name = "shepard.migration-mode.number-of-writer-threads", defaultValue = "4")
   int numberOfWriterThreads;
 
+  @Getter
+  @ConfigProperty(name = "shepard.migration-mode.number-of-points-before-compression", defaultValue = "20000000")
+  private int numberOfPointsBeforeCompression = 20_000_000;
+
   private final BlockingQueue<PayloadWriteTask> payloadWriteQueue;
   private final BlockingQueue<CompressionTask> compressionTasksQueue;
   private final Queue<PayloadReadTask> payloadReadQueue;
   private final ReentrantReadWriteLock readWriteLock;
+
+  @Getter
+  private final AtomicInteger insertionCount = new AtomicInteger();
 
   public Queue<PayloadReadTask> getPayloadReadQueue() {
     return payloadReadQueue;
   }
 
   public int getPayloadReadQueueSize() {
-    return payloadReadQueue.size();
+    synchronized (payloadReadQueue) {
+      return payloadReadQueue.size();
+    }
   }
 
   public BlockingQueue<CompressionTask> getCompressionTasksQueue() {
@@ -110,8 +121,8 @@ public class TimeseriesMigrationService {
 
     payloadWriteQueue = new LinkedBlockingQueue<>(numberOfWriterThreads + 1);
     compressionTasksQueue = new LinkedBlockingQueue<>();
-    payloadReadQueue = new ConcurrentLinkedQueue<>();
-    readWriteLock = new ReentrantReadWriteLock(true);
+    payloadReadQueue = new LinkedList<>();
+    readWriteLock = new ReentrantReadWriteLock();
   }
 
   public List<MigrationTaskEntity> getMigrationTasks(boolean onlyShowErrors) {
@@ -220,7 +231,14 @@ public class TimeseriesMigrationService {
     var timeseriesAvailable = influxConnector.getTimeseriesAvailable(databaseName);
     Log.infof("We found %s timeserieses for container %s", timeseriesAvailable.size(), task.getContainerId());
 
-    for (InfluxTimeseries influxTimeseries : timeseriesAvailable) {
+    for (int i = 0; i < timeseriesAvailable.size(); i++) {
+      InfluxTimeseries influxTimeseries = timeseriesAvailable.get(i);
+      Log.infof(
+        "Starting migration of timeseries %s out of %s for container %s",
+        i + 1,
+        timeseriesAvailable.size(),
+        task.getContainerId()
+      );
       var influxTimeseriesDataType = influxConnector.getTimeseriesDataType(
         databaseName,
         influxTimeseries.getMeasurement(),
@@ -425,9 +443,10 @@ public class TimeseriesMigrationService {
 
     try {
       Log.infof(
-        "Starting migration with %s reader threads and %s writer threads...",
+        "Starting migration with %s reader threads and %s writer threads, compressing each %s points ...",
         numberOfReaderThreads,
-        numberOfWriterThreads
+        numberOfWriterThreads,
+        numberOfPointsBeforeCompression
       );
       List<Future<Object>> futures = executor.invokeAll(tasks);
       for (Future<Object> future : futures) {

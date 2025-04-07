@@ -12,9 +12,6 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -51,19 +48,25 @@ class PayloadWriter implements Callable<Object> {
           );
 
           saveDataPoints(task.container, task.influxTimeseries, task.dataType, task.payload);
-          long taskStartTimeMilliseconds = task.startTimestamp / 1_000_000;
-          long taskEndTimeMilliseconds = (task.endTimestamp + 1) / 1_000_000;
 
-          LocalDate startDate = Instant.ofEpochMilli(taskStartTimeMilliseconds).atZone(ZoneOffset.UTC).toLocalDate();
-          LocalDate endDate = Instant.ofEpochMilli(taskEndTimeMilliseconds).atZone(ZoneOffset.UTC).toLocalDate();
+          migrationService.getInsertionCount().getAndAdd(task.payload.getPoints().size());
+
+          int oldval = migrationService
+            .getInsertionCount()
+            .getAndUpdate(x -> x > migrationService.getNumberOfPointsBeforeCompression() ? 0 : x);
+
+          Log.debugf(
+            "Current write counter: %s, max number: %s",
+            oldval,
+            migrationService.getNumberOfPointsBeforeCompression()
+          );
 
           // Add compression if the task occurs in between two days
-          if (!startDate.equals(endDate)) {
+          if (oldval > migrationService.getNumberOfPointsBeforeCompression()) {
             Log.infof(
-              "Adding compression task for after inserting data for container %s, timestamps: %s to %s",
+              "Adding compression task for after inserting data for container %s, number of points written: %s",
               task.container.getId(),
-              task.startTimestamp,
-              task.endTimestamp
+              oldval
             );
             migrationService.addCompressionTask();
           }

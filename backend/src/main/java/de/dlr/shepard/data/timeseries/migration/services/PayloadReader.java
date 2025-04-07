@@ -31,12 +31,15 @@ class PayloadReader implements Callable<Object> {
         synchronized (queue) { // Taking the element and looking up if there is no further element must be done atomically
           payloadReadTask = queue.poll();
           overallLastTask = queue.isEmpty();
+          if (payloadReadTask.isLastTask) {
+            Log.infof("ReaderThread was poisoned, remaining queue: %s, last: %s", queue.size(), overallLastTask);
+            break;
+          }
         }
 
-        if (payloadReadTask.isLastTask) break;
         Log.infof(
           "started PayloadReadTask: %s, from %s to %s",
-          payloadReadTask.taskId,
+          payloadReadTask.runningNumber,
           payloadReadTask.startTimestamp,
           payloadReadTask.endTimestamp
         );
