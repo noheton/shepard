@@ -207,20 +207,20 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
    * @throws InvalidAuthException if user has no permissions to edit the collection, which the reference is assigned to
    */
   @Override
-  public void deleteReference(long collectionShepardId, long dataObjectShepardId, long timeseriesShepardId) {
-    TimeseriesReference fileReference = getReference(
+  public void deleteReference(long collectionShepardId, long dataObjectShepardId, long timeseriesReferenceShepardId) {
+    TimeseriesReference timeseriesReference = getReference(
       collectionShepardId,
       dataObjectShepardId,
-      timeseriesShepardId,
+      timeseriesReferenceShepardId,
       null
     );
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
     User user = userService.getCurrentUser();
-    fileReference.setDeleted(true);
-    fileReference.setUpdatedAt(dateHelper.getDate());
-    fileReference.setUpdatedBy(user);
-    timeseriesReferenceDAO.createOrUpdate(fileReference);
+    timeseriesReference.setDeleted(true);
+    timeseriesReference.setUpdatedAt(dateHelper.getDate());
+    timeseriesReference.setUpdatedBy(user);
+    timeseriesReferenceDAO.createOrUpdate(timeseriesReference);
   }
 
   public List<TimeseriesWithDataPoints> getReferencedTimeseriesWithDataPointsList(
