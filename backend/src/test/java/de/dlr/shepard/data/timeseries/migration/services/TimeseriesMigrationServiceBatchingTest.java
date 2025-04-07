@@ -5,12 +5,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.RandomGenerator;
-import de.dlr.shepard.auth.security.AuthenticationContext;
-import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTestDataGenerator;
@@ -19,7 +15,6 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -39,27 +34,19 @@ public class TimeseriesMigrationServiceBatchingTest {
   @ConfigProperty(name = "shepard.migration-mode.timeseries-slice-duration", defaultValue = "60000000000")
   long sliceDuration;
 
+  private TimeseriesContainer container;
+
   @Inject
   TimeseriesMigrationService migrationService;
 
   @Inject
   InfluxDBConnector influxConnector;
 
-  @InjectSpy
+  @InjectMock
   TimeseriesService timeseriesService;
 
   @Inject
   TimeseriesContainerDAO timeseriesContainerDao;
-
-  @InjectMock
-  UserService userService;
-
-  @InjectMock
-  AuthenticationContext authenticationContext;
-
-  private TimeseriesContainer container;
-
-  private final User user = new User("Testuser");
 
   @BeforeEach
   public void setup() {
@@ -70,9 +57,6 @@ public class TimeseriesMigrationServiceBatchingTest {
     entity.setName(containerName);
     container = timeseriesContainerDao.createOrUpdate(entity);
     influxConnector.createDatabase(databaseName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
   }
 
   @Test
@@ -89,13 +73,13 @@ public class TimeseriesMigrationServiceBatchingTest {
     migrationService.runMigrations();
     // assert
     // The above data should be migrated on three batches, two of one DataPoint, and one of two DataPoints
-    verify(timeseriesService, times(2)).saveDataPoints(
+    verify(timeseriesService, times(2)).saveDataPointsNoChecks(
       anyLong(),
       any(),
       argThat(list -> list != null && list.size() == 1),
       any()
     );
-    verify(timeseriesService, times(1)).saveDataPoints(
+    verify(timeseriesService, times(1)).saveDataPointsNoChecks(
       anyLong(),
       any(),
       argThat(list -> list != null && list.size() == 2),
@@ -117,7 +101,7 @@ public class TimeseriesMigrationServiceBatchingTest {
     migrationService.runMigrations();
     // assert
     // The above data are inserted in one time slice, they should go all in single batch
-    verify(timeseriesService, times(1)).saveDataPoints(
+    verify(timeseriesService, times(1)).saveDataPointsNoChecks(
       anyLong(),
       any(),
       argThat(list -> list != null && list.size() == 4),
@@ -133,6 +117,6 @@ public class TimeseriesMigrationServiceBatchingTest {
     // act
     migrationService.runMigrations();
     // assert
-    verify(timeseriesService, times(0)).saveDataPoints(anyLong(), any(), any(), any());
+    verify(timeseriesService, times(0)).saveDataPointsNoChecks(anyLong(), any(), any(), any());
   }
 }

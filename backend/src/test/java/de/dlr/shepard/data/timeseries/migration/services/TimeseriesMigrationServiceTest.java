@@ -3,12 +3,8 @@ package de.dlr.shepard.data.timeseries.migration.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.RandomGenerator;
-import de.dlr.shepard.auth.security.AuthenticationContext;
-import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxDBConnector;
 import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTestDataGenerator;
@@ -22,7 +18,6 @@ import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.services.InstantHelper;
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.enterprise.context.control.ActivateRequestContext;
@@ -38,6 +33,8 @@ import org.junit.jupiter.api.TestInstance;
 @TestProfile(MigrationModeTestProfile.class)
 @ActivateRequestContext
 public class TimeseriesMigrationServiceTest {
+
+  private TimeseriesContainer container;
 
   @Inject
   TimeseriesMigrationService migrationService;
@@ -57,21 +54,9 @@ public class TimeseriesMigrationServiceTest {
   @Inject
   MigrationTaskRepository migrationTaskRepository;
 
-  @InjectMock
-  UserService userService;
-
-  @InjectMock
-  AuthenticationContext authenticationContext;
-
-  private TimeseriesContainer container;
-
-  private final User user = new User("Testuser");
-
   @BeforeEach
   public void setup() {
     this.container = createTimeseriesContainerAndInfluxDbForTesting();
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
   }
 
   @Test

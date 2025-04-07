@@ -87,7 +87,7 @@ class PayloadWriter implements Callable<Object> {
     InfluxTimeseriesDataType influxTimeseriesDataType,
     InfluxTimeseriesPayload payload
   ) {
-    timeseriesService.saveDataPoints(
+    timeseriesService.saveDataPointsNoChecks(
       container.getId(),
       mapToTimeseries(influxTimeseries),
       mapToTimeseriesDataPoints(payload.getPoints()),

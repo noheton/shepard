@@ -201,7 +201,7 @@ public class TimeseriesMigrationService {
   @Transactional(value = TxType.REQUIRES_NEW)
   @TransactionConfiguration(timeout = 6000)
   protected void deleteMigrationTaskAndTimeseries(int migrationTaskId, long containerId) {
-    timeseriesService.deleteTimeseriesByContainerId(containerId);
+    timeseriesService.deleteTimeseriesByContainerIdNoChecks(containerId);
     migrationTaskRepository.deleteById(migrationTaskId);
   }
 
@@ -220,7 +220,7 @@ public class TimeseriesMigrationService {
     setStateToRunning(task);
     Log.infof("Start with migration of container %s now.", task.getContainerId());
 
-    var container = timeseriesContainerService.getContainer(task.getContainerId());
+    var container = timeseriesContainerService.getContainerNoChecks(task.getContainerId());
 
     var databaseName = container.getDatabase();
     if (doesDatabaseExist(databaseName) == false) {

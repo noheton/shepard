@@ -92,6 +92,22 @@ public class TimeseriesService {
   }
 
   /**
+   * Deletes timeseries container by id
+   *
+   * This function is introduced to fix the issue occurring in ticket: #581.
+   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
+   *
+   * @param containerId
+   * @throws InvalidPathException if container could not be found
+   * @throws InvalidAuthException if user has no edit permissions on container
+   */
+  @Deprecated
+  @Transactional
+  public void deleteTimeseriesByContainerIdNoChecks(long containerId) {
+    this.timeseriesRepository.deleteByContainerId(containerId);
+  }
+
+  /**
    * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
    *
    * @return List of TimeseriesDataPoint
@@ -212,6 +228,61 @@ public class TimeseriesService {
     timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
 
     return timeseriesEntity;
+  }
+
+  /**
+   * Saves data points in the database.
+   * If the corresponding timeseries did not exist before, it will be persisted in the database.
+   *
+   * This function is introduced to fix the issue occurring in ticket: #581.
+   *
+   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
+   *
+   * @param timeseriesContainerId    Identifies the TimeseriesContainer
+   * @param timeseries               The timeseries identifiers
+   * @param dataPoints               Data points to be added to the timeseries
+   * @param dataType                 The data type that values in this timeseries will have
+   * @return created timeseries
+   */
+  @Deprecated
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
+  public TimeseriesEntity saveDataPointsNoChecks(
+    long timeseriesContainerId,
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    DataPointValueType dataType
+  ) {
+    TimeseriesEntity timeseriesEntity = getOrCreateTimeseriesNoChecks(timeseriesContainerId, timeseries, dataType);
+    assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
+    timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
+    return timeseriesEntity;
+  }
+
+  /**
+   * This function is introduced to fix the issue occurring in ticket: #581.
+   *
+   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
+   */
+  @Deprecated
+  private TimeseriesEntity getOrCreateTimeseriesNoChecks(
+    long containerId,
+    Timeseries timeseries,
+    DataPointValueType incomingValueType
+  ) {
+    // try to find timeseries in db
+    Optional<TimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
+    if (matchingTimeseries.isPresent()) return matchingTimeseries.get();
+    TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
+
+    // create new timeseries because it does not exist
+    TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
+    QuarkusTransaction.requiringNew()
+      .run(() -> {
+        this.timeseriesRepository.upsert(containerId, timeseriesEntity);
+      });
+    var found = this.timeseriesRepository.findTimeseries(containerId, timeseries);
+    return found.get();
   }
 
   private TimeseriesEntity getOrCreateTimeseries(
