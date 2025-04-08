@@ -1,0 +1,42 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== Validation
+
+
+==== Query and Path Parameter Validation
+
+Query and path parameters are validated using the https://jakarta.ee/specifications/bean-validation/3.0/apidocs/jakarta/validation/constraints/package-summary[Jakarta Constraints].
+These validations mostly rely on annotated constraints like: @NotNull or  @PositiveOrZero in the backend's REST classes.
+
+```Java
+ @Parameter(name = Constants.DATA_OBJECT_ID, required = true)
+ public Response getLabJournalsByCollection(
+    @QueryParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId
+  ) {[...]}
+```
+This defines the `dataObjectId` to be not null and to be a positive or zero number.
+If these constraints are violated, a HTTP 400 Bad Request message is automatically returned.
+To make the @NotNull constraint work properly, it is important to use nullable types like `Long` instead of `long` with these validation annotations.
+
+Currently, it is not possible to validate all Parameters in a meaningful way.
+For example, when a string is used instead of a numeric ID as a path parameter.
+This request: `/collections/asdf`, returns a 'HTTP 404 Not Found' error, instead of a 'HTTP 400 Bad Request' error.
+This behavior is intended by the framework itself and cannot be solved with annotations itself: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest3x/jaxrs-resources.html#d0e2052.
+It is related to a type conversion error.
+There is also no way of running this validation check in the REST method code, since the HTTP 400 error is returned before the code in the REST method can be executed.
+There are two ways of fixing this:
+
+1. Introduce custom types that run a custom conversion check, i.e., check if a conversion from `String` to `Long` is possible, which then would allow to return the proper HTTP error, since we in control of the thrown exception if the conversion fails
+2. Change the parameter types to `String`, and try to convert the `String` to the wanted parameter type in the REST method code.
+
+The second approach is implemented for the version UUIDs.
+The version UUIDs are defined as a String in the REST method like: `@org.hibernate.validator.constraints.UUID String versionUID`.
+The `@UUID` annotation forces the UUID to be a string in the format of a valid UUID.
+If that is not the case, the API returns an 'HTTP 400 Bad Request'.
+In the REST method code, this UUID string is then converted to an actual UUID object:
+```Java
+UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+}
+```

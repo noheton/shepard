@@ -145,6 +145,74 @@ public class CollectionService {
 }
 ```
 
+==== Checking Authentication in Backend Services
+
+Almost all request to the backend are checked when they try to access resources like a `Collection`.
+These checks are implemented in the service layer of the backend and can therefore be found in almost any `*Service.java` file.
+An example of one such check can be seen in the `deleteContainer` function of the `FileContainerService.java` file:
+```java
+  public void deleteContainer(long fileContainerId) {
+    FileContainer fileContainer = getContainer(fileContainerId);
+    assertIsAllowedToEditContainer(fileContainerId);
+    [...]
+    fileService.deleteFileContainer(mongoId);
+  }
+```
+
+Before the container is deleted, the existence of the `FileContainer` is checked with the `getContainer` method.
+This method throws a `NotFoundException`/`InvalidPathException` if the container could not be found.
+It should be assumed that all service layer function throw either a `NotFoundException` or a `InvalidAuthException`.
+Only some service layer functions return `null` or `Optional<>` when encountering errors.
+It is important to run the existence check before the permission check, to make sure that the object is actually there before accessing it's permissions.
+
+After this existence check, the `getContainer` method also checks that the currently requesting user has READ permissions on the object.
+If this is not the case, an `InvalidAuthException` is thrown.
+After calling the `getContainer` method, an assertion is executed to check if the user has EDIT permissions on the container (`assertIsAllowedToEditContainer`).
+If this assertion fails, an `InvalidAuthException` is thrown.
+Only when both of these checks for existence and READ/ WRITE permissions succeed, the `FileService` deletes the container.
+
+Almost all service classes implement this check in an analogous way.
+They provide a `getABC()` method, that checks for existence and READ permissions, and on success, returns the object.
+Furthermore, they have access to an assert function that checks for READ, WRITE, and MANAGE permissions.
+Often, the `getABC()` function is only utilized to check for the existence and READ permissions of the object, without actually using the returned object.
+This check structure provides a fine-grained permission and validity control on the backend service level.
+
+==== Improving Performance of Subsequent Permission Checks
+
+The described approach above, to have a permission check in almost all service layer methods, leads to the problem that many database lookups have to be done, to check the permissions object every time a resource is requested.
+Since, the service layer functions are sometimes called in a cascading style, many of these permission lookups are done.
+To prevent this, we introduced a `LastSeenCache` system.
+There are three different `LastSeenCaches`:
+
+- `ApiKeyLastSeenCache` - caching API key lookups
+- `PermissionsLastSeenCache` - caching permission lookups
+- `UserLastSeenCache` - caching user lookups
+
+Here is an example of how the `PermissionsLastSeenCache` is used in a function of the `PermissionService` to check if a user has the correct permission to access an entity:
+```Java
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    String cacheKey = String.format("%s,%s,%s", entityId, accessType.toString(), username);
+    if (permissionLastSeenCache.isKeyCached(cacheKey)) return true;
+
+    boolean isAllowed = [...]
+
+    if (isAllowed) {
+      permissionLastSeenCache.cacheKey(cacheKey);
+    }
+    return isAllowed;
+  }
+```
+
+Before running checks to determine if the user is allowed to access the entity, a fast cache-lookup is done.
+The key is constructed by creating a string from the entityId, the access type and the username.
+If the key is present, this function directly returns true.
+Else, the `isAllowed` check is run, and if the user is allowed to access the entity, this information is stored in the cache.
+
+Each cache entry is saved with a `Date` that stores the information when the cache item was added.
+After a certain amount of time, the cache entry expires and is no longer valid.
+All `LastSeenCaches` can be configured to use different values for this expiration time.
+By default it is 5 minutes.
+
 ==== Nuxtend Authentication (Using Nuxt-Auth)
 
 To be able to authenticate in the frontend and acquire a JWT token, we use link:https://auth.sidebase.io/[@sidebase/nuxt-auth] as our authentication module in the frontend.

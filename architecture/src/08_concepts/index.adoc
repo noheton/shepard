@@ -38,3 +38,5 @@ include::subscriptions.adoc[]
 include::theming.adoc[]
 
 include::session-management.adoc[]
+
+include::validation.adoc[]

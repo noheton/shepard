@@ -67,10 +67,11 @@ The exception type should be documented in the JavaDoc of the methods.
 
 We use link:https://quarkus.io/guides/rest[quarkus-rest] to define REST endpoints.
 
-For authentication and general request validation, we use filters following the link:https://quarkus.io/guides/rest#the-jakarta-rest-way[Jakarta REST way].
-The filters can be found at `filters/`.
+For authentication and general request validation, we use a combination of filters following the link:https://quarkus.io/guides/rest#the-jakarta-rest-way[Jakarta REST way] and checks in the backend services.
+The Jakarta filters can be found at `filters/`.
 In general, all requests need to be done by authenticated users.
 The `JWTFilter` and the `UserFilter` take care of validating authentication.
+The actual authentication checks, i.e., if a user is allowed to access a resource, are executed in the backend's service layer.
 
 Some endpoints should be public, for example `/healthz` and `/versionz`.
 To make this possible we use the `PublicEndpointRegistry` class.
