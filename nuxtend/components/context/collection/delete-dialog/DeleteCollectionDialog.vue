@@ -37,7 +37,7 @@ async function deleteCollection() {
   <ConfirmSafeDeleteDialog
     v-model:show-dialog="showDialog"
     title="Are you sure you want to delete this collection?"
-    prompt-text="Deleting this collection is not reversible. To reassure that you do this intentionally, please type in the collection name:"
+    prompt-text="Deleting this collection is permanent. To confirm that you want to proceed, please enter the collection name:"
     :target-name="props.collection.name"
     @confirmed="deleteCollection"
   />
