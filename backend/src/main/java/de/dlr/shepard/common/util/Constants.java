@@ -84,6 +84,8 @@ public class Constants {
   public static final String PAYLOAD = "payload";
   public static final String AVAILABLE = "available";
   public static final String IMPORT = "import";
+  public static final String METRIC = "metric";
+  public static final String METRICS = "metrics";
 
   public static final String DATAOBJECT_REFERENCE = "dataObjectReference";
   public static final String DATAOBJECT_REFERENCES = "dataObjectReferences";

@@ -83,6 +83,22 @@ public class TimeseriesDataPointRepository {
     return dataPoints;
   }
 
+  @Timed(value = "shepard.timeseries-data-point-aggregate.query")
+  public List<TimeseriesDataPoint> queryAggregationFunction(
+    int timeseriesId,
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    assertNotIntegral(queryParams.getFunction());
+    assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
+
+    var query = buildSelectAggregationFunctionQueryObject(timeseriesId, valueType, queryParams);
+
+    @SuppressWarnings("unchecked")
+    List<TimeseriesDataPoint> dataPoints = query.getResultList();
+    return dataPoints;
+  }
+
   private Query buildInsertQueryObject(
     List<TimeseriesDataPoint> entities,
     int startInclusive,
@@ -195,6 +211,53 @@ public class TimeseriesDataPointRepository {
     return query;
   }
 
+  private Query buildSelectAggregationFunctionQueryObject(
+    int timeseriesId,
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    String columnName = getColumnName(valueType);
+
+    String queryString = "";
+    if (queryParams.getFunction().isPresent()) {
+      AggregateFunction function = queryParams.getFunction().get();
+
+      queryString = "SELECT 1 as timestamp, ";
+
+      String aggregationString = "";
+      switch (function) {
+        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = String.format("%s(%s)", function.name(), columnName);
+        case MEAN -> aggregationString = String.format("AVG(%s)", columnName);
+        case LAST, FIRST -> aggregationString = String.format("%s(%s, time)", function.name(), columnName);
+        case SPREAD -> aggregationString = String.format("MAX(%s) - MIN(%s)", columnName, columnName);
+        case MEDIAN -> aggregationString = String.format("percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)", columnName);
+        case MODE -> aggregationString = String.format("mode() WITHIN GROUP (ORDER BY %s)", columnName);
+        case INTEGRAL -> {}
+      }
+
+      aggregationString += " as value ";
+
+      queryString += aggregationString;
+    } else {
+      queryString = String.format("SELECT time, %s ", columnName);
+    }
+
+    queryString += """
+    FROM timeseries_data_points
+    WHERE timeseries_id = :timeseriesId
+      AND time >= :startTimeNano
+      AND time <= :endTimeNano
+    """;
+
+    Query query = entityManager.createNativeQuery(queryString, TimeseriesDataPoint.class);
+
+    query.setParameter("timeseriesId", timeseriesId);
+    query.setParameter("startTimeNano", queryParams.getStartTime());
+    query.setParameter("endTimeNano", queryParams.getEndTime());
+
+    return query;
+  }
+
   private String getColumnName(DataPointValueType valueType) {
     return switch (valueType) {
       case Double -> "double_value";
@@ -215,12 +278,19 @@ public class TimeseriesDataPointRepository {
 
   /**
    * Throw when trying to use aggregation functions with boolean or string value types.
+   * COUNT, FIRST and LAST can be allowed for all data types.
    */
   private void assertCorrectValueTypesForAggregation(
     Optional<AggregateFunction> function,
     DataPointValueType valueType
   ) {
-    if ((valueType == DataPointValueType.Boolean || valueType == DataPointValueType.String) && (function.isPresent())) {
+    if (
+      (valueType == DataPointValueType.Boolean || valueType == DataPointValueType.String) &&
+      (function.isPresent() &&
+        function.get() != AggregateFunction.COUNT &&
+        function.get() != AggregateFunction.FIRST &&
+        function.get() != AggregateFunction.LAST)
+    ) {
       throw new InvalidRequestException(
         "Cannot execute aggregation functions on data points of type boolean or string."
       );

@@ -1,10 +1,10 @@
 package de.dlr.shepard.context.references.timeseriesreference.endpoints;
 
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
-import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
-import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import io.quarkus.logging.Log;
+import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
+import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceMetricsService;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -17,8 +17,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -36,34 +38,29 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   "/{" +
   Constants.DATA_OBJECT_ID +
   "}/" +
-  Constants.TIMESERIES_REFERENCES +
-  "/{" +
-  Constants.TIMESERIES_REFERENCE_ID +
-  "}/metrics"
+  Constants.TIMESERIES_REFERENCES
 )
 @RequestScoped
 public class TimeseriesReferenceMetricsRest {
 
-  private TimeseriesReferenceService timeseriesReferenceService;
+  private TimeseriesReferenceMetricsService timeseriesReferenceMetricsService;
 
   @Context
   private SecurityContext securityContext;
 
   @Inject
-  public TimeseriesReferenceMetricsRest(
-    TimeseriesReferenceService timeseriesReferenceService,
-    TimeseriesService timeseriesService
-  ) {
-    this.timeseriesReferenceService = timeseriesReferenceService;
+  public TimeseriesReferenceMetricsRest(TimeseriesReferenceMetricsService timeseriesReferenceMetricsService) {
+    this.timeseriesReferenceMetricsService = timeseriesReferenceMetricsService;
   }
 
   @GET
+  @Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}" + "/" + Constants.METRICS)
   @Tag(name = Constants.TIMESERIES_REFERENCE)
-  @Operation(description = "Get timeseries by id.")
+  @Operation(description = "Get timeseries reference metrics by reference id.")
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = TimeseriesIO.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = MetricsIO.class))
   )
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
@@ -88,23 +85,56 @@ public class TimeseriesReferenceMetricsRest {
     @QueryParam(Constants.FIELD) String field,
     @QueryParam(Constants.VERSION_UID) UUID versionUID
   ) {
-    var reference = timeseriesReferenceService.getReference(
-      collectionId,
-      dataObjectId,
+    Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+
+    List<MetricsIO> result = timeseriesReferenceMetricsService.getTimeseriesReferenceMetrics(
       timeseriesReferenceId,
-      versionUID
+      timeseries
     );
 
-    // Todo: Implementation for metrics will be done with #574
-    Log.infof(
-      "Measurement: %s, Device: %s, Location: %s, SymbolicName: %s, Field: %s",
-      measurement,
-      device,
-      location,
-      symbolicName,
-      field
-    );
+    return Response.ok(result).build();
+  }
 
-    return Response.ok().build();
+  @GET
+  @Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}" + "/" + Constants.METRIC)
+  @Tag(name = Constants.TIMESERIES_REFERENCE)
+  @Operation(description = "Get timeseries reference metric by id.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = MetricsIO.class))
+  )
+  @APIResponse(description = "not found", responseCode = "404")
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
+  @Parameter(name = Constants.TIMESERIES_ID)
+  @Parameter(name = Constants.MEASUREMENT)
+  @Parameter(name = Constants.DEVICE)
+  @Parameter(name = Constants.LOCATION)
+  @Parameter(name = Constants.SYMBOLICNAME)
+  @Parameter(name = Constants.FIELD)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.VERSION_UID)
+  public Response getMetricOfTimeseriesReference(
+    @PathParam(Constants.COLLECTION_ID) long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
+    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
+    @QueryParam(Constants.MEASUREMENT) String measurement,
+    @QueryParam(Constants.DEVICE) String device,
+    @QueryParam(Constants.LOCATION) String location,
+    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
+    @QueryParam(Constants.FIELD) String field,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
+    @QueryParam(Constants.VERSION_UID) UUID versionUID
+  ) {
+    Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+
+    MetricsIO result = timeseriesReferenceMetricsService
+      .getTimeseriesReferenceMetrics(timeseriesReferenceId, timeseries, List.of(function))
+      .get(0);
+
+    return Response.ok(result).build();
   }
 }
