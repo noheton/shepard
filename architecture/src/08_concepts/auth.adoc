@@ -153,7 +153,7 @@ An example of one such check can be seen in the `deleteContainer` function of th
 ```java
   public void deleteContainer(long fileContainerId) {
     FileContainer fileContainer = getContainer(fileContainerId);
-    assertIsAllowedToEditContainer(fileContainerId);
+    assertIsAllowedToDeleteContainer(fileContainerId);
     [...]
     fileService.deleteFileContainer(mongoId);
   }
@@ -161,13 +161,13 @@ An example of one such check can be seen in the `deleteContainer` function of th
 
 Before the container is deleted, the existence of the `FileContainer` is checked with the `getContainer` method.
 This method throws a `NotFoundException`/`InvalidPathException` if the container could not be found.
-It should be assumed that all service layer function throw either a `NotFoundException` or a `InvalidAuthException`.
+It should be assumed that all service layer function throw either a `NotFoundException` or an`InvalidAuthException`.
 Only some service layer functions return `null` or `Optional<>` when encountering errors.
 It is important to run the existence check before the permission check, to make sure that the object is actually there before accessing it's permissions.
 
 After this existence check, the `getContainer` method also checks that the currently requesting user has READ permissions on the object.
 If this is not the case, an `InvalidAuthException` is thrown.
-After calling the `getContainer` method, an assertion is executed to check if the user has EDIT permissions on the container (`assertIsAllowedToEditContainer`).
+After calling the `getContainer` method, an assertion (`assertIsAllowedToDeleteContainer`) is executed to check if the user has the correct permissions to delete the container.
 If this assertion fails, an `InvalidAuthException` is thrown.
 Only when both of these checks for existence and READ/ WRITE permissions succeed, the `FileService` deletes the container.
 
