@@ -13,14 +13,8 @@ import jakarta.inject.Inject;
 @RequestScoped
 public class UserSearchService {
 
-  private SearchDAO searchDAO;
-
-  UserSearchService() {}
-
   @Inject
-  public UserSearchService(SearchDAO searchDAO) {
-    this.searchDAO = searchDAO;
-  }
+  SearchDAO searchDAO;
 
   public UserSearchResult search(UserSearchBody userSearchBody) {
     String selectionQuery = Neo4jQueryBuilder.userSelectionQuery(userSearchBody.getSearchParams().getQuery());

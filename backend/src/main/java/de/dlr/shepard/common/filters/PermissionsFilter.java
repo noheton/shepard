@@ -27,17 +27,11 @@ public class PermissionsFilter implements ContainerRequestFilter {
   private static final List<String> writerMethods = List.of(HttpMethod.PUT, HttpMethod.POST, HttpMethod.DELETE);
   private static final List<String> readerMethods = List.of(HttpMethod.GET);
 
-  private PermissionLastSeenCache permissionLastSeenCache;
-
-  private PermissionsService permissionsService;
-
-  PermissionsFilter() {}
+  @Inject
+  PermissionLastSeenCache permissionLastSeenCache;
 
   @Inject
-  public PermissionsFilter(PermissionLastSeenCache permissionLastSeenCache, PermissionsService permissionsService) {
-    this.permissionLastSeenCache = permissionLastSeenCache;
-    this.permissionsService = permissionsService;
-  }
+  PermissionsService permissionsService;
 
   @Override
   public void filter(ContainerRequestContext requestContext) {

@@ -28,24 +28,14 @@ import java.util.regex.Pattern;
 @RequestScoped
 public class SubscriptionFilter implements ContainerResponseFilter {
 
-  private ExecutorFactory executorFactory;
-
-  private PermissionsService permissionsService;
-
-  private SubscriptionService subscriptionService;
-
-  SubscriptionFilter() {}
+  @Inject
+  ExecutorFactory executorFactory;
 
   @Inject
-  public SubscriptionFilter(
-    PermissionsService permissionsService,
-    SubscriptionService subscriptionService,
-    ExecutorFactory executorFactory
-  ) {
-    this.permissionsService = permissionsService;
-    this.subscriptionService = subscriptionService;
-    this.executorFactory = executorFactory;
-  }
+  PermissionsService permissionsService;
+
+  @Inject
+  SubscriptionService subscriptionService;
 
   @Override
   public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {

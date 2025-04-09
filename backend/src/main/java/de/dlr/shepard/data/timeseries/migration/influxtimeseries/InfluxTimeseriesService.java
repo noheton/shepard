@@ -15,16 +15,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @RequestScoped
 public class InfluxTimeseriesService {
 
-  private InfluxDBConnector influxConnector;
-  private InfluxCsvConverter csvConverter;
-
-  InfluxTimeseriesService() {}
+  @Inject
+  InfluxDBConnector influxConnector;
 
   @Inject
-  public InfluxTimeseriesService(InfluxDBConnector influxConnector, InfluxCsvConverter csvConverter) {
-    this.influxConnector = influxConnector;
-    this.csvConverter = csvConverter;
-  }
+  InfluxCsvConverter csvConverter;
 
   /**
    * Creates timeseries and writes them to influxDB

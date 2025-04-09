@@ -19,20 +19,13 @@ import java.util.stream.IntStream;
 @RequestScoped
 public class TimeseriesMigrationTestDataIngestionService {
 
-  private InfluxDBConnector influxConnector;
+  @Inject
+  InfluxDBConnector influxConnector;
 
+  @Inject
   TimeseriesContainerDAO timeseriesContainerDao;
 
   private int PAYLOAD_MAX_SIZE = 200000;
-
-  @Inject
-  TimeseriesMigrationTestDataIngestionService(
-    InfluxDBConnector influxConnector,
-    TimeseriesContainerDAO timeseriesContainerDao
-  ) {
-    this.influxConnector = influxConnector;
-    this.timeseriesContainerDao = timeseriesContainerDao;
-  }
 
   /**
    * @return Newly created Influx Timeseries Container

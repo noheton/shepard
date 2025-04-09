@@ -39,17 +39,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
 public class CollectionVersioningRest {
 
-  private VersionService versionService;
+  @Inject
+  VersionService versionService;
 
   @Context
   private SecurityContext securityContext;
-
-  CollectionVersioningRest() {}
-
-  @Inject
-  public CollectionVersioningRest(VersionService versionService) {
-    this.versionService = versionService;
-  }
 
   @GET
   @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)

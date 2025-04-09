@@ -11,12 +11,8 @@ import org.eclipse.microprofile.health.Readiness;
 @ApplicationScoped
 public class InfluxDBHealthCheck implements HealthCheck {
 
-  private InfluxDBConnector influxdb;
-
   @Inject
-  public InfluxDBHealthCheck(InfluxDBConnector influxdb) {
-    this.influxdb = influxdb;
-  }
+  InfluxDBConnector influxdb;
 
   @Override
   public HealthCheckResponse call() {

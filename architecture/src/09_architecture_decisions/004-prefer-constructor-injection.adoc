@@ -6,7 +6,7 @@ ifndef::imagesdir[:imagesdir: ../../images]
 [cols="h,1a"]
 |===
 |Date|19.08.2024
-|Status|Done
+|Status|Deprecated
 
 |Context|
 Quarkus supports dependency injection that we want to use.

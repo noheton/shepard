@@ -19,14 +19,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @RequestScoped
 class PayloadWriter implements Callable<Object> {
 
-  private TimeseriesMigrationService migrationService;
-  private TimeseriesService timeseriesService;
+  @Inject
+  TimeseriesMigrationService migrationService;
 
   @Inject
-  PayloadWriter(TimeseriesMigrationService migrationService, TimeseriesService timeseriesService) {
-    this.migrationService = migrationService;
-    this.timeseriesService = timeseriesService;
-  }
+  TimeseriesService timeseriesService;
 
   @Override
   public Object call() {

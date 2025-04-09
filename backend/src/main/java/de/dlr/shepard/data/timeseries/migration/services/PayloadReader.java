@@ -12,14 +12,10 @@ import org.influxdb.InfluxDBException;
 class PayloadReader implements Callable<Object> {
 
   @Inject
-  PayloadReader(TimeseriesMigrationService migrationService, InfluxTimeseriesService influxTimeseriesService) {
-    this.migrationService = migrationService;
-    this.influxTimeseriesService = influxTimeseriesService;
-  }
+  TimeseriesMigrationService migrationService;
 
-  private TimeseriesMigrationService migrationService;
-
-  private InfluxTimeseriesService influxTimeseriesService;
+  @Inject
+  InfluxTimeseriesService influxTimeseriesService;
 
   @Override
   public Object call() {

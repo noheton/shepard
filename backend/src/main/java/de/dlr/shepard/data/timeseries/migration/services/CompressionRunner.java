@@ -10,12 +10,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @RequestScoped
 public class CompressionRunner implements Callable<Object> {
 
-  private TimeseriesMigrationService migrationService;
-
   @Inject
-  CompressionRunner(TimeseriesMigrationService migrationService) {
-    this.migrationService = migrationService;
-  }
+  TimeseriesMigrationService migrationService;
 
   @Override
   public Object call() {

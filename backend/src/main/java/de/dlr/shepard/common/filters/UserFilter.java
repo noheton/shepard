@@ -26,18 +26,14 @@ import java.io.IOException;
 @ApplicationScoped
 public class UserFilter implements ContainerRequestFilter {
 
-  private UserLastSeenCache userLastSeenCache;
-  private UserService userService;
-  private UserinfoService userInfoService;
-
-  UserFilter() {}
+  @Inject
+  UserLastSeenCache userLastSeenCache;
 
   @Inject
-  public UserFilter(UserLastSeenCache userLastSeenCache, UserService userService, UserinfoService userInfoService) {
-    this.userLastSeenCache = userLastSeenCache;
-    this.userService = userService;
-    this.userInfoService = userInfoService;
-  }
+  UserService userService;
+
+  @Inject
+  UserinfoService userInfoService;
 
   @Override
   public void filter(ContainerRequestContext requestContext) throws IOException {

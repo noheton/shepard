@@ -1,0 +1,40 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-019 Prefer Member Injection
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|09.04.2025
+|Status|Done
+
+|Context|
+Quarkus supports dependency injection that we want to use.
+It supports loosely coupled components providing a better flexibility, modifiability and testability.
+In general there are two possibilities to use DI, constructor and member injection.
+
+In ADR-004, we previously aligned on using constructor injection.
+However, due to heavy refactorings in the service layer we want to question this decision and start using member injection.
+
+|Decision|
+We decided to use member injection.
+
+- When creating an instance manually we directly see the dependencies.
+- There are existing components that make use of injected configuration values and services in the constructor.
+That is not possible with member injection because the constructor is executed first. These still use constructor injection.
+- Member injection makes it easier for developers to look at code in a class file and directly have the information of which classes are injected. This is due to less lines of codes needed to make injection work. There is no need for additional constructors.
+
+|Possible Alternatives|
+Using constructor injection
+
+- Most Quarkus documentation relies on member injection.
+- Constructor injection increases the number of lines of code a class consists of.
+- Constructor injection needs an empty/ parameterless constructor.
+- Constructor injection makes it harder to refactor classes when editing/ removing injected classes, since they have to changed at two different places and the constructor has to be adapted.
+
+|Consequences|
+- Injected class members are non-private. They are still package private.
+- Convert existing constructor injections to member injections
+- Adding a new dependent service means to add the `@Inject` annotation to its member declaration
+
+|===

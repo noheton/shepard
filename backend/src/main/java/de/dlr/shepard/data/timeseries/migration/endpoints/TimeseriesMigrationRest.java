@@ -31,20 +31,11 @@ public class TimeseriesMigrationRest {
   @Context
   private SecurityContext securityContext;
 
-  private TimeseriesMigrationService migrationService;
-
-  private TimeseriesMigrationTestDataIngestionService testDataIngestionService;
-
-  TimeseriesMigrationRest() {}
+  @Inject
+  TimeseriesMigrationService migrationService;
 
   @Inject
-  TimeseriesMigrationRest(
-    TimeseriesMigrationService timeseriesMigrationService,
-    TimeseriesMigrationTestDataIngestionService testDataIngestionService
-  ) {
-    this.migrationService = timeseriesMigrationService;
-    this.testDataIngestionService = testDataIngestionService;
-  }
+  TimeseriesMigrationTestDataIngestionService testDataIngestionService;
 
   @GET
   @Path("/migrations/state")

@@ -43,15 +43,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class TimeseriesReferenceMetricsRest {
 
-  private TimeseriesReferenceMetricsService timeseriesReferenceMetricsService;
+  @Inject
+  TimeseriesReferenceMetricsService timeseriesReferenceMetricsService;
 
   @Context
   private SecurityContext securityContext;
-
-  @Inject
-  public TimeseriesReferenceMetricsRest(TimeseriesReferenceMetricsService timeseriesReferenceMetricsService) {
-    this.timeseriesReferenceMetricsService = timeseriesReferenceMetricsService;
-  }
 
   @GET
   @Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}" + "/" + Constants.METRICS)

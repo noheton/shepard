@@ -20,20 +20,14 @@ import java.util.stream.Collectors;
 @RequestScoped
 public class TimeseriesReferenceMetricsService {
 
-  private TimeseriesRepository timeseriesRepository;
-  private TimeseriesDataPointRepository timeseriesDataPointRepository;
-  private TimeseriesReferenceDAO timeseriesReferenceDAO;
+  @Inject
+  TimeseriesRepository timeseriesRepository;
 
   @Inject
-  public TimeseriesReferenceMetricsService(
-    TimeseriesDataPointRepository timeseriesDataPointRepository,
-    TimeseriesRepository timeseriesRepository,
-    TimeseriesReferenceDAO timeseriesReferenceDAO
-  ) {
-    this.timeseriesDataPointRepository = timeseriesDataPointRepository;
-    this.timeseriesRepository = timeseriesRepository;
-    this.timeseriesReferenceDAO = timeseriesReferenceDAO;
-  }
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
+
+  @Inject
+  TimeseriesReferenceDAO timeseriesReferenceDAO;
 
   public List<MetricsIO> getTimeseriesReferenceMetrics(long timeseriesReferenceId, Timeseries timeseries) {
     return getTimeseriesReferenceMetrics(

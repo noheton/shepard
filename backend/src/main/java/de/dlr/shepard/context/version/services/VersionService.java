@@ -18,28 +18,20 @@ import java.util.UUID;
 @RequestScoped
 public class VersionService {
 
-  private VersionDAO versionDAO;
-  private CollectionDAO collectionDAO;
-  private UserDAO userDAO;
-  private DateHelper dateHelper;
-  private CollectionService collectionService;
-
-  VersionService() {}
+  @Inject
+  VersionDAO versionDAO;
 
   @Inject
-  public VersionService(
-    VersionDAO versionDAO,
-    CollectionDAO collectionDAO,
-    UserDAO userDAO,
-    DateHelper dateHelper,
-    CollectionService collectionService
-  ) {
-    this.versionDAO = versionDAO;
-    this.collectionDAO = collectionDAO;
-    this.userDAO = userDAO;
-    this.dateHelper = dateHelper;
-    this.collectionService = collectionService;
-  }
+  CollectionDAO collectionDAO;
+
+  @Inject
+  UserDAO userDAO;
+
+  @Inject
+  DateHelper dateHelper;
+
+  @Inject
+  CollectionService collectionService;
 
   public List<Version> getAllVersions(long collectionId) {
     List<Version> versions = versionDAO.findAllVersions(collectionId);

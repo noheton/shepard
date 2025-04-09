@@ -24,7 +24,7 @@ import org.bson.types.ObjectId;
 public class StructuredDataService {
 
   @Inject
-  private DateHelper dateHelper;
+  DateHelper dateHelper;
 
   @Inject
   @Named("mongoDatabase")
