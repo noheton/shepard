@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SemanticAnnotation } from "@dlr-shepard/backend-client";
 
-defineProps<{ annotation: SemanticAnnotation; annotatedType: Annotated }>();
+defineProps<{ annotation: SemanticAnnotation; annotatedType?: Annotated }>();
 const showDeleteDialog = ref(false);
 </script>
 
@@ -22,12 +22,16 @@ const showDeleteDialog = ref(false);
         {{ annotation.valueName }}
       </a>
       <template #close>
-        <v-icon icon="mdi-close-circle" @click.stop="showDeleteDialog = true" />
+        <v-icon
+          v-if="annotatedType"
+          icon="mdi-close-circle"
+          @click.stop="showDeleteDialog = true"
+        />
       </template>
     </v-chip>
   </li>
   <DeleteSemanticAnnotationDialog
-    v-if="showDeleteDialog"
+    v-if="showDeleteDialog && annotatedType"
     v-model:show-dialog="showDeleteDialog"
     :annotated-element="annotatedType"
     :to-delete="annotation"

@@ -68,12 +68,12 @@ export interface GetMetricOfTimeseriesReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     timeseriesReferenceId: number;
-    measurement?: string;
-    device?: string;
-    location?: string;
-    symbolicName?: string;
-    field?: string;
-    _function?: AggregateFunction;
+    measurement: string;
+    device: string;
+    location: string;
+    symbolicName: string;
+    field: string;
+    _function: AggregateFunction;
     versionUid?: string;
 }
 
@@ -81,11 +81,11 @@ export interface GetMetricsOfTimeseriesReferenceRequest {
     collectionId: number;
     dataObjectId: number;
     timeseriesReferenceId: number;
-    measurement?: string;
-    device?: string;
-    location?: string;
-    symbolicName?: string;
-    field?: string;
+    measurement: string;
+    device: string;
+    location: string;
+    symbolicName: string;
+    field: string;
     versionUid?: string;
 }
 
@@ -397,6 +397,48 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['measurement'] == null) {
+            throw new runtime.RequiredError(
+                'measurement',
+                'Required parameter "measurement" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['device'] == null) {
+            throw new runtime.RequiredError(
+                'device',
+                'Required parameter "device" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['location'] == null) {
+            throw new runtime.RequiredError(
+                'location',
+                'Required parameter "location" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['symbolicName'] == null) {
+            throw new runtime.RequiredError(
+                'symbolicName',
+                'Required parameter "symbolicName" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['field'] == null) {
+            throw new runtime.RequiredError(
+                'field',
+                'Required parameter "field" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['_function'] == null) {
+            throw new runtime.RequiredError(
+                '_function',
+                'Required parameter "_function" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['measurement'] != null) {
@@ -481,6 +523,41 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'timeseriesReferenceId',
                 'Required parameter "timeseriesReferenceId" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['measurement'] == null) {
+            throw new runtime.RequiredError(
+                'measurement',
+                'Required parameter "measurement" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['device'] == null) {
+            throw new runtime.RequiredError(
+                'device',
+                'Required parameter "device" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['location'] == null) {
+            throw new runtime.RequiredError(
+                'location',
+                'Required parameter "location" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['symbolicName'] == null) {
+            throw new runtime.RequiredError(
+                'symbolicName',
+                'Required parameter "symbolicName" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['field'] == null) {
+            throw new runtime.RequiredError(
+                'field',
+                'Required parameter "field" was null or undefined when calling getMetricsOfTimeseriesReference().'
             );
         }
 

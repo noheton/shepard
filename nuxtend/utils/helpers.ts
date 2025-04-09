@@ -48,6 +48,12 @@ export function toDateTimeString(
   );
 }
 
+export function toFormattedDouble(num: string, decimal: number) {
+  return parseFloat(num)
+    .toFixed(decimal)
+    .replace(/\.?0+$/, "");
+}
+
 // Returns date string in format: dd.mm.yyyy, hh:MM:ss:SSSS
 export function toDateTimeStringWithMilliSeconds(date: Date) {
   const dd = String(date.getDate()).padStart(2, "0");

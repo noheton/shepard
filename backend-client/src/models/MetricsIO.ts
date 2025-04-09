@@ -31,13 +31,13 @@ export interface MetricsIO {
      * @type {AggregateFunction}
      * @memberof MetricsIO
      */
-    _function?: AggregateFunction;
+    _function: AggregateFunction;
     /**
      * 
      * @type {any}
      * @memberof MetricsIO
      */
-    value?: any | null;
+    value: any | null;
 }
 
 
@@ -46,6 +46,8 @@ export interface MetricsIO {
  * Check if a given object implements the MetricsIO interface.
  */
 export function instanceOfMetricsIO(value: object): value is MetricsIO {
+    if (!('_function' in value) || value['_function'] === undefined) return false;
+    if (!('value' in value) || value['value'] === undefined) return false;
     return true;
 }
 
@@ -59,8 +61,8 @@ export function MetricsIOFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     }
     return {
         
-        '_function': json['function'] == null ? undefined : AggregateFunctionFromJSON(json['function']),
-        'value': json['value'] == null ? undefined : json['value'],
+        '_function': AggregateFunctionFromJSON(json['function']),
+        'value': json['value'],
     };
 }
 

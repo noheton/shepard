@@ -43,11 +43,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class TimeseriesReferenceMetricsRest {
 
-  @Inject
-  TimeseriesReferenceMetricsService timeseriesReferenceMetricsService;
+  private TimeseriesReferenceMetricsService timeseriesReferenceMetricsService;
 
   @Context
   private SecurityContext securityContext;
+
+  @Inject
+  public TimeseriesReferenceMetricsRest(TimeseriesReferenceMetricsService timeseriesReferenceMetricsService) {
+    this.timeseriesReferenceMetricsService = timeseriesReferenceMetricsService;
+  }
 
   @GET
   @Path("/{" + Constants.TIMESERIES_REFERENCE_ID + "}" + "/" + Constants.METRICS)
@@ -62,18 +66,16 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
-  @Parameter(name = Constants.TIMESERIES_ID)
-  @Parameter(name = Constants.MEASUREMENT)
-  @Parameter(name = Constants.DEVICE)
-  @Parameter(name = Constants.LOCATION)
-  @Parameter(name = Constants.SYMBOLICNAME)
-  @Parameter(name = Constants.FIELD)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricsOfTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,
@@ -104,19 +106,17 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
-  @Parameter(name = Constants.TIMESERIES_ID)
-  @Parameter(name = Constants.MEASUREMENT)
-  @Parameter(name = Constants.DEVICE)
-  @Parameter(name = Constants.LOCATION)
-  @Parameter(name = Constants.SYMBOLICNAME)
-  @Parameter(name = Constants.FIELD)
-  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.FUNCTION, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricOfTimeseriesReference(
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
     @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,

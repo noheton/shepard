@@ -279,6 +279,8 @@ const onSelectedItemChanged = () => {
       :data-object-id="dataObjectId"
       :timeseries-reference-id="timeseriesReferenceId"
       :timeseries="getSelectedTimeseries()"
+      :timeseries-container-id="timeseriesContainer?.id ?? -1"
+      :timeseries-reference="timeseriesReference"
     />
   </div>
 </template>

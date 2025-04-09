@@ -141,6 +141,11 @@ export interface GetTimeseriesContainerRequest {
 
 export interface GetTimeseriesOfContainerRequest {
     timeseriesContainerId: number;
+    measurement?: string;
+    device?: string;
+    location?: string;
+    symbolicName?: string;
+    field?: string;
 }
 
 export interface GetTimeseriesPermissionsRequest {
@@ -1076,6 +1081,26 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['measurement'] != null) {
+            queryParameters['measurement'] = requestParameters['measurement'];
+        }
+
+        if (requestParameters['device'] != null) {
+            queryParameters['device'] = requestParameters['device'];
+        }
+
+        if (requestParameters['location'] != null) {
+            queryParameters['location'] = requestParameters['location'];
+        }
+
+        if (requestParameters['symbolicName'] != null) {
+            queryParameters['symbolic_name'] = requestParameters['symbolicName'];
+        }
+
+        if (requestParameters['field'] != null) {
+            queryParameters['field'] = requestParameters['field'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 

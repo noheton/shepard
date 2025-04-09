@@ -7,7 +7,7 @@ import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
 export function useFetchTimeseriesReference(
   collectionId: number,
   dataObjectId: number,
-  timeseriesId: number,
+  timeseriesReferenceId: number,
 ) {
   const timeseriesReference = ref<TimeseriesReference | undefined>(undefined);
 
@@ -31,7 +31,7 @@ export function useFetchTimeseriesReference(
       });
   }
 
-  fetchTimeseriesReference(collectionId, dataObjectId, timeseriesId);
+  fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
 
   return {
     timeseriesReference,
