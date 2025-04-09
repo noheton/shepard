@@ -60,10 +60,10 @@ In case of versioning all versions of a collection share the same permissions.
 
 The permissions of a top level entity describe who:
 
-1. owns the entity (a single user)
-2. may manage the entity (update the permissions) (a list of users)
-3. may edit/write the entity (a list of users or user groups)
-4. may read the entity (a list of users or user groups)
+1. owns the entity (a single user) - Owner Role
+2. may manage the entity (read & update the permissions) (a list of users) - Manager Role
+3. may edit/write/delete the entity (a list of users or user groups) - Writer Role
+4. may read the entity (a list of users or user groups) - Reader Role
 
 These permissions build on top of each other.
 That means:
@@ -73,7 +73,10 @@ That means:
 - the owner is allowed to perform all operations
 
 The owner is a single user.
-Entities without owner belong to everyone (backwar compatibility).
+Entities without owner belong to everyone (backwards compatibility).
+
+Usergroups allow to add multiple users into a group.
+This group can than be assigned with read or write permissions to an object, granting the whole group of users access to that object.
 
 In addition, there is a general permission type defined for each entity which can be one of `Public`, `PublicReadable` or `Private`.
 
@@ -82,6 +85,23 @@ In addition, there is a general permission type defined for each entity which ca
 `Private` means only the users explicitly granted access are allowed to interact with the entity.
 
 Newly created objects have the creator set as owner and the permissionType set to `Private`.
+Only the owner is allowed to change ownership of an object.
+
+Permissions can be applied and changed on three different levels, namely collections, containers and user groups.
+Each container has its own permission.
+
+Permissions are also applied to collections.
+All other entities related to the collection, like data objects or references, inherit the permission that is applied to the collection.
+
+Permissions also can be individually set and retrieved for each usergroup. 
+Allowing everyone in that group with manage permissions to view or change these permissions.
+
+====== Remark about Container Permissions
+
+Container provide an integral part of the shepard core system and require a special protection.
+Therefore, container can only be deleted by their owners.
+For any non-owner user neither read, write, nor manage permissions are enough to delete a container.
+Only by changing the container ownership, a different user is able to delete the container.
 
 ===== Available Endpoints
 

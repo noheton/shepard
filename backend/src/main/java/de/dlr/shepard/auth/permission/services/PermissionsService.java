@@ -117,8 +117,8 @@ public class PermissionsService {
       isAllowed = true;
     } else {
       isAllowed = switch (accessType) {
-        case Read -> userRolesOnEntity.isReader();
-        case Write -> userRolesOnEntity.isWriter();
+        case Read -> userRolesOnEntity.isReader() || userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
+        case Write -> userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
         case Manage -> userRolesOnEntity.isManager();
         case None -> false;
       };
@@ -159,14 +159,13 @@ public class PermissionsService {
     }
     var oldPermissions = old.get();
 
-    // check that only the existing user is able to change the ownership
-    // else keep old owner
     if (newPermissions.getOwner() != null && oldPermissions.getOwner() != newPermissions.getOwner()) {
-      // check that new owner actually exists
-      userService.getUser(newPermissions.getOwner().getUsername());
+      // only the existing owner is able to change the ownership
       if (isOwner(oldPermissions, userService.getCurrentUser().getUsername()) == false) {
         throw new InvalidAuthException("Action not allowed. Only Owners are allowed to change ownership.");
       }
+      // check that new owner actually exists
+      userService.getUser(newPermissions.getOwner().getUsername());
       oldPermissions.setOwner(newPermissions.getOwner());
     } else {
       oldPermissions.setOwner(oldPermissions.getOwner());

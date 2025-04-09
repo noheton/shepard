@@ -13,9 +13,11 @@ import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
+import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PermissionType;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -463,5 +465,130 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var expected = new Roles(false, true, true, true);
     var actual = permissionsService.getUserRolesOnEntity(123, "bob");
     assertEquals(expected, actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserHasReadPermissionsTriesToRead_success() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setReader(List.of(user));
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Read,
+      user.getUsername()
+    );
+    assertTrue(actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserHasWritePermissionsTriesToRead_success() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setWriter(List.of(user));
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Read,
+      user.getUsername()
+    );
+    assertTrue(actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserHasReadPermissionsTriesToWrite_forbid() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setReader(List.of(user));
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Write,
+      user.getUsername()
+    );
+    assertFalse(actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserHasManagePermissionsTriesToRead_success() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setManager(List.of(user));
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Read,
+      user.getUsername()
+    );
+    assertTrue(actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserIsOwnerTriesToWrite_success() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setOwner(user);
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Write,
+      user.getUsername()
+    );
+    assertTrue(actual);
+  }
+
+  @Test
+  public void isAccessTypeAllowedForUser_UserHasNoPermissionsTriesToRead_forbid() {
+    User user = new User("testuser");
+    var collection = new Collection(2L);
+    collection.setShepardId(4L);
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(collection);
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+
+    when(permissionsDAO.findByEntityNeo4jId(collection.getShepardId())).thenReturn(existing);
+
+    var actual = permissionsService.isAccessTypeAllowedForUser(
+      collection.getShepardId(),
+      AccessType.Read,
+      user.getUsername()
+    );
+    assertFalse(actual);
   }
 }
