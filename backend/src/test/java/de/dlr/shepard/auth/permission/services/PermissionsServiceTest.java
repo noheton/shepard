@@ -15,6 +15,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -94,14 +95,18 @@ public class PermissionsServiceTest extends BaseTestCase {
     List<UserGroup> writerGroupsList = List.of(writerGroup);
 
     var con = new FileContainer(2L);
+
     ArrayList<BasicEntity> conList = new ArrayList<BasicEntity>();
     conList.add(con);
+
     var existing = new Permissions(1L);
     existing.setEntities(conList);
+    existing.setOwner(owner);
+    con.setPermissions(existing);
 
     var perms = new PermissionsIO() {
       {
-        setOwner("owner");
+        setOwner(owner.getUsername());
         setReader(new String[] { "reader", "false" });
         setWriter(new String[] { "writer" });
         setWriterGroupIds(new long[] { 12L, -1L });
@@ -121,6 +126,7 @@ public class PermissionsServiceTest extends BaseTestCase {
       }
     };
 
+    when(userService.getCurrentUser()).thenReturn(owner);
     when(userService.getUserOptional("owner")).thenReturn(Optional.of(owner));
     when(userService.getUserOptional("reader")).thenReturn(Optional.of(reader));
     when(userService.getUserOptional("writer")).thenReturn(Optional.of(writer));
@@ -281,5 +287,86 @@ public class PermissionsServiceTest extends BaseTestCase {
     var permissions = new Permissions(2L);
     service.deletePermissions(permissions);
     verify(dao).deleteByNeo4jId(2L);
+  }
+
+  @Test
+  public void updatePermissionsByNeo4jId_changeOwnerUserIsOwner_success() {
+    var currentOwner = new User("OwnerOld");
+    var futureOwner = new User("OwnerNew");
+    var col = new Collection(2L);
+    col.setShepardId(4L);
+
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(col);
+
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setOwner(currentOwner);
+    // to be updated permissions
+    var perms = new PermissionsIO() {
+      {
+        setOwner(futureOwner.getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[0]);
+      }
+    };
+
+    var updated = new Permissions() {
+      {
+        setId(1L);
+        setEntities(colList);
+        setOwner(futureOwner);
+      }
+    };
+
+    when(userService.getUserOptional("OwnerOld")).thenReturn(Optional.of(currentOwner));
+    when(userService.getUserOptional("OwnerNew")).thenReturn(Optional.of(futureOwner));
+    when(dao.findByEntityNeo4jId(col.getShepardId())).thenReturn(existing);
+    when(dao.createOrUpdate(updated)).thenReturn(updated);
+    when(userService.getCurrentUser()).thenReturn(currentOwner);
+
+    var actual = service.updatePermissionsByNeo4jId(perms, col.getShepardId());
+    assertEquals(updated, actual);
+  }
+
+  @Test
+  public void updatePermissionsByNeo4jId_changeOwnerUserIsNotOwner_throwException() {
+    // otherUser tries to assign ownership to themselves -> exception is thrown
+    var currentOwner = new User("Owner");
+    var otherUser = new User("OtherUser");
+
+    var col = new Collection(2L);
+    col.setShepardId(4L);
+
+    ArrayList<BasicEntity> colList = new ArrayList<BasicEntity>();
+    colList.add(col);
+
+    var existing = new Permissions(1L);
+    existing.setEntities(colList);
+    existing.setOwner(currentOwner);
+
+    var perms = new PermissionsIO() {
+      {
+        setOwner(otherUser.getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[0]);
+      }
+    };
+
+    when(userService.getUserOptional("Owner")).thenReturn(Optional.of(currentOwner));
+    when(userService.getUserOptional("OtherUser")).thenReturn(Optional.of(otherUser));
+    when(dao.findByEntityNeo4jId(col.getShepardId())).thenReturn(existing);
+    when(userService.getCurrentUser()).thenReturn(otherUser);
+
+    var ex = assertThrows(InvalidAuthException.class, () ->
+      service.updatePermissionsByNeo4jId(perms, col.getShepardId())
+    );
+    assertEquals("Action not allowed. Only Owners are allowed to change ownership.", ex.getMessage());
   }
 }

@@ -90,7 +90,7 @@ public class SpatialDataContainerService
   @Override
   public void deleteContainer(long containerId) {
     SpatialDataContainer container = getContainer(containerId);
-    assertIsAllowedToEditContainer(containerId);
+    assertIsAllowedToDeleteContainer(containerId);
 
     User user = userService.getCurrentUser();
     spatialDataPointService.deleteByContainerId(containerId);

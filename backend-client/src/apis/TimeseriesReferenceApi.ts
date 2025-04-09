@@ -17,6 +17,7 @@ import * as runtime from '../runtime';
 import type {
   AggregateFunction,
   FillOption,
+  MetricsIO,
   TimeseriesReference,
   TimeseriesWithDataPoints,
 } from '../models/index';
@@ -25,6 +26,8 @@ import {
     AggregateFunctionToJSON,
     FillOptionFromJSON,
     FillOptionToJSON,
+    MetricsIOFromJSON,
+    MetricsIOToJSON,
     TimeseriesReferenceFromJSON,
     TimeseriesReferenceToJSON,
     TimeseriesWithDataPointsFromJSON,
@@ -58,6 +61,31 @@ export interface ExportTimeseriesPayloadRequest {
 export interface GetAllTimeseriesReferencesRequest {
     collectionId: number;
     dataObjectId: number;
+    versionUid?: string;
+}
+
+export interface GetMetricOfTimeseriesReferenceRequest {
+    collectionId: number;
+    dataObjectId: number;
+    timeseriesReferenceId: number;
+    measurement?: string;
+    device?: string;
+    location?: string;
+    symbolicName?: string;
+    field?: string;
+    _function?: AggregateFunction;
+    versionUid?: string;
+}
+
+export interface GetMetricsOfTimeseriesReferenceRequest {
+    collectionId: number;
+    dataObjectId: number;
+    timeseriesReferenceId: number;
+    measurement?: string;
+    device?: string;
+    location?: string;
+    symbolicName?: string;
+    field?: string;
     versionUid?: string;
 }
 
@@ -341,6 +369,176 @@ export class TimeseriesReferenceApi extends runtime.BaseAPI {
      */
     async getAllTimeseriesReferences(requestParameters: GetAllTimeseriesReferencesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<TimeseriesReference>> {
         const response = await this.getAllTimeseriesReferencesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get timeseries reference metric by id.
+     */
+    async getMetricOfTimeseriesReferenceRaw(requestParameters: GetMetricOfTimeseriesReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MetricsIO>> {
+        if (requestParameters['collectionId'] == null) {
+            throw new runtime.RequiredError(
+                'collectionId',
+                'Required parameter "collectionId" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['dataObjectId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectId',
+                'Required parameter "dataObjectId" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['timeseriesReferenceId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesReferenceId',
+                'Required parameter "timeseriesReferenceId" was null or undefined when calling getMetricOfTimeseriesReference().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['measurement'] != null) {
+            queryParameters['measurement'] = requestParameters['measurement'];
+        }
+
+        if (requestParameters['device'] != null) {
+            queryParameters['device'] = requestParameters['device'];
+        }
+
+        if (requestParameters['location'] != null) {
+            queryParameters['location'] = requestParameters['location'];
+        }
+
+        if (requestParameters['symbolicName'] != null) {
+            queryParameters['symbolic_name'] = requestParameters['symbolicName'];
+        }
+
+        if (requestParameters['field'] != null) {
+            queryParameters['field'] = requestParameters['field'];
+        }
+
+        if (requestParameters['_function'] != null) {
+            queryParameters['function'] = requestParameters['_function'];
+        }
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/collections/{collectionId}/dataObjects/{dataObjectId}/timeseriesReferences/{timeseriesReferenceId}/metric`.replace(`{${"collectionId"}}`, encodeURIComponent(String(requestParameters['collectionId']))).replace(`{${"dataObjectId"}}`, encodeURIComponent(String(requestParameters['dataObjectId']))).replace(`{${"timeseriesReferenceId"}}`, encodeURIComponent(String(requestParameters['timeseriesReferenceId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => MetricsIOFromJSON(jsonValue));
+    }
+
+    /**
+     * Get timeseries reference metric by id.
+     */
+    async getMetricOfTimeseriesReference(requestParameters: GetMetricOfTimeseriesReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MetricsIO> {
+        const response = await this.getMetricOfTimeseriesReferenceRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get timeseries reference metrics by reference id.
+     */
+    async getMetricsOfTimeseriesReferenceRaw(requestParameters: GetMetricsOfTimeseriesReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MetricsIO>>> {
+        if (requestParameters['collectionId'] == null) {
+            throw new runtime.RequiredError(
+                'collectionId',
+                'Required parameter "collectionId" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['dataObjectId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectId',
+                'Required parameter "dataObjectId" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        if (requestParameters['timeseriesReferenceId'] == null) {
+            throw new runtime.RequiredError(
+                'timeseriesReferenceId',
+                'Required parameter "timeseriesReferenceId" was null or undefined when calling getMetricsOfTimeseriesReference().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['measurement'] != null) {
+            queryParameters['measurement'] = requestParameters['measurement'];
+        }
+
+        if (requestParameters['device'] != null) {
+            queryParameters['device'] = requestParameters['device'];
+        }
+
+        if (requestParameters['location'] != null) {
+            queryParameters['location'] = requestParameters['location'];
+        }
+
+        if (requestParameters['symbolicName'] != null) {
+            queryParameters['symbolic_name'] = requestParameters['symbolicName'];
+        }
+
+        if (requestParameters['field'] != null) {
+            queryParameters['field'] = requestParameters['field'];
+        }
+
+        if (requestParameters['versionUid'] != null) {
+            queryParameters['versionUid'] = requestParameters['versionUid'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/collections/{collectionId}/dataObjects/{dataObjectId}/timeseriesReferences/{timeseriesReferenceId}/metrics`.replace(`{${"collectionId"}}`, encodeURIComponent(String(requestParameters['collectionId']))).replace(`{${"dataObjectId"}}`, encodeURIComponent(String(requestParameters['dataObjectId']))).replace(`{${"timeseriesReferenceId"}}`, encodeURIComponent(String(requestParameters['timeseriesReferenceId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(MetricsIOFromJSON));
+    }
+
+    /**
+     * Get timeseries reference metrics by reference id.
+     */
+    async getMetricsOfTimeseriesReference(requestParameters: GetMetricsOfTimeseriesReferenceRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MetricsIO>> {
+        const response = await this.getMetricsOfTimeseriesReferenceRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

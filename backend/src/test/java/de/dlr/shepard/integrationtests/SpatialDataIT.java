@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.RandomGenerator;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.JsonConverter;
+import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.spatialdata.io.FilterCondition;
 import de.dlr.shepard.data.spatialdata.io.Operator;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataContainerIO;
@@ -230,6 +233,13 @@ public class SpatialDataIT extends BaseTestCaseIT {
   }
 
   @Test
+  @Order(4)
+  public void getSpatialDataContainer_wrongPermissions_forbid() {
+    // different user tries to access container
+    given().spec(requestSpecOfOtherUser).when().get(containerURL + "/" + container.getId()).then().statusCode(403);
+  }
+
+  @Test
   @Order(5)
   public void getSpatialDataContainer_doesNotExist_notFound() {
     ErrorResponse actual = given()
@@ -265,6 +275,30 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(204);
+  }
+
+  @Test
+  @Order(6)
+  public void addSpatialDataPoints_wrongPermissions_forbid() {
+    createdDataPoints = IntStream.range(0, 10)
+      .mapToObj(index ->
+        new SpatialDataPointIO(
+          Long.valueOf(index),
+          index * 10.0,
+          index * 10.0,
+          index * 10.0,
+          Map.of("a_meta_data", "metadata_%s".formatted(index)),
+          Map.of("a_measurement", index)
+        )
+      )
+      .collect(Collectors.toList());
+    given()
+      .spec(requestSpecOfOtherUser)
+      .body(createdDataPoints)
+      .when()
+      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .then()
+      .statusCode(403);
   }
 
   @Test
@@ -388,8 +422,8 @@ public class SpatialDataIT extends BaseTestCaseIT {
     var dataPoints = given()
       .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
-      .queryParam("startTime", -1)
-      .queryParam("endTime", 5)
+      .queryParam("startTime", 0)
+      .queryParam("endTime", 4)
       .when()
       .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
       .then()
@@ -435,9 +469,161 @@ public class SpatialDataIT extends BaseTestCaseIT {
   }
 
   @Test
+  @Order(7)
+  public void getSpatialData_wrongPermissions_forbid() {
+    BoundingSphere boundingSphere = new BoundingSphere(200, 0, 0, 0);
+    String geometryFilter = JsonConverter.convertToString(boundingSphere);
+    given()
+      .spec(requestSpecOfOtherUser)
+      .queryParam("geometryFilter", geometryFilter)
+      .queryParam("skip", 2)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .then()
+      .statusCode(403);
+  }
+
+  @Test
   @Order(8)
+  public void getPermissions_success() {
+    PermissionsIO expectedPermissions = new PermissionsIO();
+    expectedPermissions.setEntityId(container.getId());
+    expectedPermissions.setOwner(defaultUser.getUser().getUsername());
+    expectedPermissions.setPermissionType(PermissionType.Private);
+    expectedPermissions.setManager(new String[] {});
+    expectedPermissions.setReader(new String[] {});
+    expectedPermissions.setWriter(new String[] {});
+
+    PermissionsIO actualPermissions = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+
+    assertEquals(expectedPermissions, actualPermissions);
+  }
+
+  @Test
+  @Order(8)
+  public void getPermissions_wrongPermissions_forbid() {
+    given()
+      .spec(requestSpecOfOtherUser)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(403);
+  }
+
+  @Test
+  @Order(8)
+  public void getRoles_success() {
+    Roles expectedRolesOwner = new Roles();
+    expectedRolesOwner.setOwner(true);
+    expectedRolesOwner.setManager(false);
+    expectedRolesOwner.setReader(false);
+    expectedRolesOwner.setWriter(false);
+
+    Roles actualRolesOwner = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.ROLES))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(Roles.class);
+
+    assertEquals(expectedRolesOwner, actualRolesOwner);
+  }
+
+  @Test
+  @Order(9)
+  public void updatePermissions_setPublicReadableAndWritePermissionsToOtherUser_success() {
+    // make container public readable, and set write permissions to OtherUser to upload data
+    PermissionsIO updatedPermissions = new PermissionsIO();
+    updatedPermissions.setEntityId(container.getId());
+    updatedPermissions.setOwner(defaultUser.getUser().getUsername());
+    updatedPermissions.setPermissionType(PermissionType.PublicReadable);
+    updatedPermissions.setManager(new String[] {});
+    updatedPermissions.setReader(new String[] {});
+    updatedPermissions.setWriter(new String[] { otherUser.getUser().getUsername() });
+
+    PermissionsIO actualPermissions = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(updatedPermissions)
+      .when()
+      .put(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+
+    assertEquals(updatedPermissions, actualPermissions);
+
+    // OtherUser can now read data from container
+    BoundingSphere boundingSphere = new BoundingSphere(200, 0, 0, 0);
+    String geometryFilter = JsonConverter.convertToString(boundingSphere);
+    given()
+      .spec(requestSpecOfOtherUser)
+      .queryParam("geometryFilter", geometryFilter)
+      .queryParam("skip", 2)
+      .when()
+      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .then()
+      .statusCode(200);
+
+    // OtherUser can now also write data to container
+    createdDataPoints = IntStream.range(0, 10)
+      .mapToObj(index ->
+        new SpatialDataPointIO(
+          Long.valueOf(index),
+          index * 10.0,
+          index * 10.0,
+          index * 10.0,
+          Map.of("a_meta_data", "metadata_%s".formatted(index)),
+          Map.of("a_measurement", index)
+        )
+      )
+      .collect(Collectors.toList());
+    given()
+      .spec(requestSpecOfOtherUser)
+      .body(createdDataPoints)
+      .when()
+      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .then()
+      .statusCode(204);
+  }
+
+  @Test
+  @Order(10)
+  public void updatePermissions_OtherUserIsNotManager_forbid() {
+    PermissionsIO updatedPermissions = new PermissionsIO();
+    updatedPermissions.setEntityId(container.getId());
+    updatedPermissions.setOwner(defaultUser.getUser().getUsername());
+    updatedPermissions.setPermissionType(PermissionType.PublicReadable);
+    updatedPermissions.setManager(new String[] {});
+    updatedPermissions.setReader(new String[] {});
+    updatedPermissions.setWriter(new String[] { otherUser.getUser().getUsername() });
+
+    given()
+      .spec(requestSpecOfOtherUser)
+      .body(updatedPermissions)
+      .when()
+      .put(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(403);
+  }
+
+  @Test
+  @Order(11)
   public void deleteContainer() {
+    // non-owner tries to delete container -> 403 forbid
+    given().spec(requestSpecOfOtherUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(403);
+    // owner tries to delete container -> 200 success
     given().spec(requestSpecOfDefaultUser).when().delete(containerURL + "/" + container.getId()).then().statusCode(200);
+    // owner tries to delete container again -> 404 not found
     given().spec(requestSpecOfDefaultUser).when().get(containerURL + "/" + container.getId()).then().statusCode(404);
   }
 }

@@ -108,8 +108,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
   public void deleteContainer(long fileContainerId) {
     User user = userService.getCurrentUser();
     FileContainer fileContainer = getContainer(fileContainerId);
-
-    assertIsAllowedToEditContainer(fileContainerId);
+    assertIsAllowedToDeleteContainer(fileContainerId);
 
     String mongoId = fileContainer.getMongoId();
     fileContainer.setDeleted(true);

@@ -5,6 +5,7 @@ const containerTypeList = new Map<string, ContainerType>();
 containerTypeList.set("File", ContainerType.File);
 containerTypeList.set("Timeseries", ContainerType.Timeseries);
 containerTypeList.set("Structured Data", ContainerType.Structureddata);
+containerTypeList.set("Spatial Data", ContainerType.Spatialdata);
 
 const currentSelected = ref<string>("File");
 

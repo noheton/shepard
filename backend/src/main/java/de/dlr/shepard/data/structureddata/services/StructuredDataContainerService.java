@@ -104,10 +104,10 @@ public class StructuredDataContainerService
    */
   @Override
   public void deleteContainer(long structuredDataId) {
-    StructuredDataContainer structuredDataContainer = getContainer(structuredDataId);
-    assertIsAllowedToEditContainer(structuredDataId);
-
     User user = userService.getCurrentUser();
+    StructuredDataContainer structuredDataContainer = getContainer(structuredDataId);
+    assertIsAllowedToDeleteContainer(structuredDataId);
+
     String mongoId = structuredDataContainer.getMongoId();
     structuredDataContainer.setDeleted(true);
     structuredDataContainer.setUpdatedAt(dateHelper.getDate());

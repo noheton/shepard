@@ -29,8 +29,8 @@ import {
 } from '../models/index';
 
 export interface CreateLabJournalRequest {
+    dataObjectId: number;
     labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
-    dataObjectId?: number;
 }
 
 export interface DeleteLabJournalRequest {
@@ -59,6 +59,13 @@ export class LabJournalEntryApi extends runtime.BaseAPI {
      * Create a lab journal in a data object
      */
     async createLabJournalRaw(requestParameters: CreateLabJournalRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LabJournalEntry>> {
+        if (requestParameters['dataObjectId'] == null) {
+            throw new runtime.RequiredError(
+                'dataObjectId',
+                'Required parameter "dataObjectId" was null or undefined when calling createLabJournal().'
+            );
+        }
+
         if (requestParameters['labJournalEntry'] == null) {
             throw new runtime.RequiredError(
                 'labJournalEntry',

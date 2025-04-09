@@ -10,6 +10,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -31,16 +32,16 @@ import org.apache.commons.lang3.StringUtils;
 public class PermissionsService {
 
   @Inject
-  private PermissionsDAO permissionsDAO;
+  PermissionsDAO permissionsDAO;
 
   @Inject
-  private UserService userService;
+  UserService userService;
 
   @Inject
-  private UserGroupService userGroupService;
+  UserGroupService userGroupService;
 
   @Inject
-  private PermissionLastSeenCache permissionLastSeenCache;
+  PermissionLastSeenCache permissionLastSeenCache;
 
   /**
    * @param entity the entity the permissions belong to
@@ -130,6 +131,18 @@ public class PermissionsService {
   }
 
   /**
+   * Checks if the current user is owner of the object specified by its entity id.
+   *
+   * @param entityId
+   * @return boolean, true if current user is owner
+   * @throws InvalidRequestException if user could not be extracted from authentication context
+   */
+  public boolean isCurrentUserOwner(long entityId) {
+    Roles roles = getUserRolesOnEntity(entityId, userService.getCurrentUser().getUsername());
+    return roles.isOwner();
+  }
+
+  /**
    * Updates the Permissions in Neo4j
    *
    * @param permissionsIo the new Permissions object
@@ -137,21 +150,33 @@ public class PermissionsService {
    * @return the updated Permissions object
    */
   public Permissions updatePermissionsByNeo4jId(PermissionsIO permissionsIo, long id) {
-    var permissions = convertPermissionsIO(permissionsIo);
+    var newPermissions = convertPermissionsIO(permissionsIo);
     Optional<Permissions> old = getPermissionsOfEntityOptional(id);
     if (old.isEmpty()) {
       // There is no old permissions object
-      permissions.setEntities(List.of(new BasicEntity(id)));
-      return permissionsDAO.createOrUpdate(permissions);
+      newPermissions.setEntities(List.of(new BasicEntity(id)));
+      return permissionsDAO.createOrUpdate(newPermissions);
     }
     var oldPermissions = old.get();
-    oldPermissions.setOwner(permissions.getOwner());
-    oldPermissions.setReader(permissions.getReader());
-    oldPermissions.setWriter(permissions.getWriter());
-    oldPermissions.setReaderGroups(permissions.getReaderGroups());
-    oldPermissions.setWriterGroups(permissions.getWriterGroups());
-    oldPermissions.setManager(permissions.getManager());
-    oldPermissions.setPermissionType(permissions.getPermissionType());
+
+    // check that only the existing user is able to change the ownership
+    // else keep old owner
+    if (newPermissions.getOwner() != null && oldPermissions.getOwner() != newPermissions.getOwner()) {
+      // check that new owner actually exists
+      userService.getUser(newPermissions.getOwner().getUsername());
+      if (isOwner(oldPermissions, userService.getCurrentUser().getUsername()) == false) {
+        throw new InvalidAuthException("Action not allowed. Only Owners are allowed to change ownership.");
+      }
+      oldPermissions.setOwner(newPermissions.getOwner());
+    } else {
+      oldPermissions.setOwner(oldPermissions.getOwner());
+    }
+    oldPermissions.setReader(newPermissions.getReader());
+    oldPermissions.setWriter(newPermissions.getWriter());
+    oldPermissions.setReaderGroups(newPermissions.getReaderGroups());
+    oldPermissions.setWriterGroups(newPermissions.getWriterGroups());
+    oldPermissions.setManager(newPermissions.getManager());
+    oldPermissions.setPermissionType(newPermissions.getPermissionType());
     var res = permissionsDAO.createOrUpdate(oldPermissions);
     return res;
   }

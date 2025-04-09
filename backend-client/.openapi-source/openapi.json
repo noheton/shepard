@@ -76,6 +76,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -84,6 +85,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -101,6 +103,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -116,6 +127,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -124,6 +136,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -148,6 +161,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -165,6 +187,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -178,6 +201,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -185,6 +209,8 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
+            "exclusiveMinimum" : true,
             "type" : "integer"
           }
         }, {
@@ -224,7 +250,7 @@
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -241,6 +267,12 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -256,6 +288,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -280,6 +313,101 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/collections/{collectionId}/dataObjects/{dataObjectId}/timeseriesReferences/{timeseriesReferenceId}/metrics" : {
+      "get" : {
+        "tags" : [ "timeseriesReference" ],
+        "description" : "Get timeseries reference metrics by reference id.",
+        "operationId" : "getMetricsOfTimeseriesReference",
+        "parameters" : [ {
+          "name" : "collectionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "dataObjectId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesReferenceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "measurement",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "device",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "location",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "symbolic_name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "field",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MetricsIO"
+                  }
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "not found"
           }
@@ -297,6 +425,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -305,13 +434,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -324,6 +454,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -340,6 +479,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -348,6 +488,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -372,6 +513,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -387,6 +537,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -395,12 +546,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -419,6 +580,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -427,13 +589,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -450,6 +613,12 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -465,6 +634,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -473,6 +643,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -497,6 +668,12 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -514,6 +691,7 @@
           "description" : "Pagination starts at 0",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -521,6 +699,8 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
+            "exclusiveMinimum" : true,
             "type" : "integer"
           }
         }, {
@@ -559,8 +739,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -631,6 +814,7 @@
           "required" : false,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -640,6 +824,7 @@
           "required" : false,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -648,6 +833,7 @@
           "required" : false,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -657,6 +843,7 @@
           "required" : false,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -665,6 +852,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -682,6 +870,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -697,6 +894,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -717,6 +915,15 @@
           "204" : {
             "description" : "OK"
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -734,6 +941,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -747,6 +955,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -763,6 +980,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -787,6 +1005,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -802,12 +1029,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -831,6 +1068,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -838,6 +1076,8 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
+            "exclusiveMinimum" : true,
             "type" : "integer"
           }
         }, {
@@ -866,6 +1106,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -897,6 +1146,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -914,6 +1172,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -927,6 +1186,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -943,6 +1211,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -983,6 +1252,12 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       },
@@ -996,12 +1271,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1025,6 +1310,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1032,6 +1318,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1063,6 +1350,12 @@
           },
           "404" : {
             "description" : "not found"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "400" : {
+            "description" : "bad request"
           }
         }
       },
@@ -1090,6 +1383,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
           }
         }
       }
@@ -1105,6 +1401,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1113,6 +1410,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1121,13 +1419,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -1143,6 +1442,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1161,6 +1469,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1174,6 +1483,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1190,12 +1508,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "200" : {
             "description" : "ok"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1214,6 +1542,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1228,6 +1557,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1246,6 +1584,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1275,6 +1614,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1299,6 +1639,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -1316,6 +1665,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1323,6 +1673,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -1330,6 +1681,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -1337,6 +1689,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -1344,6 +1697,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -1351,6 +1705,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -1359,6 +1714,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1367,6 +1723,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1399,6 +1756,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1439,11 +1805,17 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
-          },
           "400" : {
             "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
           }
         }
       }
@@ -1459,6 +1831,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1467,6 +1840,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1475,6 +1849,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1483,6 +1858,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1496,6 +1872,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1512,6 +1897,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1520,6 +1906,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1528,6 +1915,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1536,12 +1924,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1559,6 +1957,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1566,6 +1965,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1595,8 +1995,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       },
@@ -1625,8 +2028,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -1642,6 +2048,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1659,8 +2066,17 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
-            "description" : "Not found"
+            "description" : "not found"
           }
         }
       }
@@ -1675,6 +2091,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -1691,6 +2108,18 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
           }
         }
       },
@@ -1703,6 +2132,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -1734,6 +2164,18 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
           }
         },
         "callbacks" : {
@@ -1789,8 +2231,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -1806,6 +2251,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1814,6 +2260,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1822,13 +2269,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -1841,6 +2289,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1857,6 +2314,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1865,6 +2323,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -1873,12 +2332,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1897,6 +2366,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1910,6 +2380,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -1928,6 +2407,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1945,6 +2425,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -1960,6 +2449,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -1983,6 +2473,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2000,6 +2499,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2008,6 +2508,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2016,13 +2517,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -2035,6 +2537,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2051,6 +2562,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2059,6 +2571,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2067,12 +2580,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2091,6 +2614,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2106,6 +2630,15 @@
         "responses" : {
           "200" : {
             "description" : "ok"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2124,6 +2657,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2137,6 +2671,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2153,6 +2696,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2177,6 +2721,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2194,6 +2747,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2211,6 +2765,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2226,6 +2789,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2250,6 +2814,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2267,6 +2840,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2275,13 +2849,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -2298,6 +2873,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2313,6 +2897,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2321,6 +2906,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2345,6 +2931,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2367,6 +2962,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2374,6 +2970,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2402,6 +2999,12 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           },
           "404" : {
             "description" : "not found"
@@ -2433,6 +3036,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2450,6 +3062,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2458,6 +3071,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2466,13 +3080,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -2485,6 +3100,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2503,6 +3127,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2516,6 +3141,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2532,6 +3166,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2556,6 +3191,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2573,6 +3217,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2581,6 +3226,7 @@
           "required" : true,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2589,6 +3235,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2606,6 +3253,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2621,6 +3277,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2629,6 +3286,7 @@
           "required" : true,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2637,12 +3295,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2660,6 +3328,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -2668,6 +3337,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2681,6 +3351,18 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
           }
         }
       },
@@ -2693,6 +3375,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -2701,12 +3384,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2725,6 +3418,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2733,13 +3427,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -2756,6 +3451,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2771,6 +3475,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2779,6 +3484,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2803,6 +3509,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2820,6 +3535,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -2833,6 +3549,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -2856,6 +3581,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2863,6 +3589,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -2892,8 +3619,14 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       },
@@ -2922,6 +3655,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -2938,6 +3680,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -2980,8 +3723,14 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       },
@@ -2994,6 +3743,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -3020,6 +3770,15 @@
           },
           "404" : {
             "description" : "not found"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       }
@@ -3035,6 +3794,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3043,6 +3803,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3051,13 +3812,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -3070,6 +3832,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3086,6 +3857,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3094,6 +3866,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3102,12 +3875,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3126,6 +3909,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3134,6 +3918,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3142,6 +3927,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3158,6 +3944,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3176,6 +3971,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3207,6 +4003,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -3220,6 +4017,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3238,6 +4044,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3251,6 +4058,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3269,6 +4085,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3277,6 +4094,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3284,6 +4102,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -3292,6 +4111,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3305,6 +4125,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3364,6 +4193,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3372,6 +4202,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3385,6 +4216,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3392,6 +4224,8 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
+            "exclusiveMinimum" : true,
             "type" : "integer"
           }
         }, {
@@ -3421,6 +4255,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -3438,6 +4281,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3451,6 +4295,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3467,12 +4320,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3491,6 +4354,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3499,6 +4363,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3507,13 +4372,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -3526,6 +4392,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3559,8 +4434,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -3576,6 +4454,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3583,6 +4462,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -3597,6 +4477,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3613,6 +4502,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3620,12 +4510,22 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "ok"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3686,6 +4586,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3699,6 +4600,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3715,12 +4625,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3739,6 +4659,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3747,6 +4668,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3755,13 +4677,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -3774,6 +4697,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3790,6 +4722,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3798,6 +4731,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3806,12 +4740,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3830,6 +4774,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3838,13 +4783,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -3861,6 +4807,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -3876,6 +4831,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -3884,6 +4840,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3908,6 +4865,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -3925,6 +4891,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3938,6 +4905,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -3954,6 +4930,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -3978,6 +4955,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -3995,6 +4981,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4002,6 +4989,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -4009,6 +4997,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -4016,6 +5005,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -4023,6 +5013,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -4030,6 +5021,7 @@
           "in" : "query",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -4038,6 +5030,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4046,6 +5039,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4059,6 +5053,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4080,6 +5075,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4097,6 +5101,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4110,6 +5115,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4128,6 +5142,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4136,6 +5151,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4144,6 +5160,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4157,6 +5174,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4173,6 +5199,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4181,6 +5208,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4189,12 +5217,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4213,6 +5251,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4221,6 +5260,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4229,13 +5269,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -4248,6 +5289,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4264,6 +5314,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4272,6 +5323,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4280,12 +5332,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4304,6 +5366,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4312,6 +5375,7 @@
           "required" : true,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4329,8 +5393,17 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
-            "description" : "Not found"
+            "description" : "not found"
           }
         }
       }
@@ -4361,8 +5434,11 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -4383,6 +5459,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4390,6 +5467,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4418,6 +5496,12 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           },
           "404" : {
             "description" : "not found"
@@ -4463,6 +5547,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4471,6 +5556,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4479,6 +5565,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4545,6 +5632,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4562,6 +5658,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4570,13 +5667,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -4593,6 +5691,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4608,6 +5715,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4616,6 +5724,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4640,6 +5749,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4657,6 +5775,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4665,6 +5784,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4673,13 +5793,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -4692,6 +5813,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4708,6 +5838,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4716,6 +5847,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4724,12 +5856,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4752,6 +5894,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
           }
         }
       }
@@ -4767,6 +5912,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4784,6 +5930,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4799,6 +5954,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4823,6 +5979,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -4840,6 +6005,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4848,6 +6014,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4856,6 +6023,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -4872,6 +6040,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4890,6 +6067,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4898,6 +6076,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4906,13 +6085,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -4925,6 +6105,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4941,6 +6130,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4949,6 +6139,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4957,12 +6148,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -4981,6 +6182,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4989,6 +6191,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -4997,6 +6200,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5061,6 +6265,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5078,6 +6291,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5086,6 +6300,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5094,6 +6309,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5107,6 +6323,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5123,6 +6348,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5131,6 +6357,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5139,12 +6366,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5163,6 +6400,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5171,6 +6409,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5184,6 +6423,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5200,6 +6448,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5208,12 +6457,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5232,6 +6491,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5245,6 +6505,12 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           },
           "404" : {
             "description" : "not found"
@@ -5261,12 +6527,19 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           },
           "404" : {
             "description" : "not found"
@@ -5285,13 +6558,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -5304,6 +6578,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5320,6 +6603,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5344,6 +6628,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5359,12 +6652,109 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
-          "204" : {
-            "description" : "deleted"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/spatialDataContainers/{spatialDataContainerId}/permissions" : {
+      "get" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Get permissions",
+        "operationId" : "getSpatialDataPermissions",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Permissions"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Edit permissions",
+        "operationId" : "editSpatialDataPermissions",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Permissions"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Permissions"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5383,6 +6773,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5391,6 +6782,7 @@
           "required" : true,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5408,6 +6800,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5423,6 +6824,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5431,6 +6833,7 @@
           "required" : true,
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5454,6 +6857,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5516,6 +6928,7 @@
           "description" : "Pagination starts at 0",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5523,6 +6936,8 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
+            "exclusiveMinimum" : true,
             "type" : "integer"
           }
         }, {
@@ -5561,6 +6976,12 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           }
         }
       }
@@ -5576,6 +6997,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5589,6 +7011,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -5607,6 +7038,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5615,6 +7047,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5623,6 +7056,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5640,6 +7074,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5655,6 +7098,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5663,6 +7107,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5671,6 +7116,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5695,6 +7141,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5712,6 +7167,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5720,13 +7176,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -5743,6 +7200,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5758,6 +7224,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5766,6 +7233,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5790,6 +7258,56 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/spatialDataContainers/{spatialDataContainerId}/roles" : {
+      "get" : {
+        "tags" : [ "spatialDataContainer" ],
+        "description" : "Get roles",
+        "operationId" : "getSpatialDataRoles",
+        "parameters" : [ {
+          "name" : "spatialDataContainerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Roles"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5807,6 +7325,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5824,6 +7343,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5836,8 +7364,10 @@
         "parameters" : [ {
           "name" : "dataObjectId",
           "in" : "query",
+          "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5874,6 +7404,12 @@
                 }
               }
             }
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       }
@@ -5889,6 +7425,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5897,13 +7434,14 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -5920,6 +7458,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5935,6 +7482,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -5943,6 +7491,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5968,6 +7517,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -5985,6 +7543,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -5998,6 +7557,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -6014,6 +7582,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -6038,6 +7607,15 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -6055,6 +7633,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
@@ -6068,6 +7647,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -6084,12 +7672,22 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "deleted"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -6107,6 +7705,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -6114,6 +7713,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -6128,8 +7728,14 @@
               }
             }
           },
-          "404" : {
-            "description" : "not found"
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       },
@@ -6142,6 +7748,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         }, {
@@ -6149,6 +7756,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -6158,6 +7766,15 @@
           },
           "404" : {
             "description" : "not found"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           }
         }
       }
@@ -6178,6 +7795,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6185,6 +7803,7 @@
           "in" : "query",
           "schema" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6213,6 +7832,12 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
           },
           "404" : {
             "description" : "not found"
@@ -6244,6 +7869,12 @@
               }
             }
           },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
           "404" : {
             "description" : "not found"
           }
@@ -6261,6 +7892,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6268,6 +7900,7 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
@@ -6281,6 +7914,15 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -6297,6 +7939,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6304,12 +7947,22 @@
           "in" : "path",
           "required" : true,
           "schema" : {
+            "pattern" : "\\S",
             "type" : "string"
           }
         } ],
         "responses" : {
           "204" : {
             "description" : "ok"
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
           },
           "404" : {
             "description" : "not found"
@@ -6328,6 +7981,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6336,6 +7990,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6344,6 +7999,7 @@
           "required" : true,
           "schema" : {
             "format" : "int64",
+            "minimum" : 0,
             "type" : "integer"
           }
         }, {
@@ -6357,7 +8013,7 @@
           "name" : "versionUid",
           "in" : "query",
           "schema" : {
-            "$ref" : "#/components/schemas/UUID"
+            "type" : "string"
           }
         } ],
         "responses" : {
@@ -6368,6 +8024,104 @@
                 "schema" : {
                   "format" : "binary",
                   "type" : "string"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "bad request"
+          },
+          "401" : {
+            "description" : "not authorized"
+          },
+          "403" : {
+            "description" : "forbidden"
+          },
+          "404" : {
+            "description" : "not found"
+          }
+        }
+      }
+    },
+    "/collections/{collectionId}/dataObjects/{dataObjectId}/timeseriesReferences/{timeseriesReferenceId}/metric" : {
+      "get" : {
+        "tags" : [ "timeseriesReference" ],
+        "description" : "Get timeseries reference metric by id.",
+        "operationId" : "getMetricOfTimeseriesReference",
+        "parameters" : [ {
+          "name" : "collectionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "dataObjectId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "timeseriesReferenceId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "name" : "measurement",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "device",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "location",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "symbolic_name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "field",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "function",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/AggregateFunction"
+          }
+        }, {
+          "name" : "versionUid",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "ok",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MetricsIO"
                 }
               }
             }
@@ -7472,6 +9226,15 @@
           "version" : {
             "type" : "string"
           }
+        }
+      },
+      "MetricsIO" : {
+        "type" : "object",
+        "properties" : {
+          "function" : {
+            "$ref" : "#/components/schemas/AggregateFunction"
+          },
+          "value" : { }
         }
       },
       "AggregateFunction" : {

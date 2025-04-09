@@ -16,12 +16,18 @@
 import * as runtime from '../runtime';
 import type {
   ContainerAttributes,
+  Permissions,
+  Roles,
   SpatialDataContainer,
   SpatialDataPoint,
 } from '../models/index';
 import {
     ContainerAttributesFromJSON,
     ContainerAttributesToJSON,
+    PermissionsFromJSON,
+    PermissionsToJSON,
+    RolesFromJSON,
+    RolesToJSON,
     SpatialDataContainerFromJSON,
     SpatialDataContainerToJSON,
     SpatialDataPointFromJSON,
@@ -41,6 +47,11 @@ export interface DeleteSpatialDataContainerRequest {
     spatialDataContainerId: number;
 }
 
+export interface EditSpatialDataPermissionsRequest {
+    spatialDataContainerId: number;
+    permissions: Omit<Permissions, 'entityId'>;
+}
+
 export interface GetSpatialDataContainerRequest {
     spatialDataContainerId: number;
 }
@@ -53,6 +64,10 @@ export interface GetSpatialDataContainersRequest {
     orderDesc?: boolean;
 }
 
+export interface GetSpatialDataPermissionsRequest {
+    spatialDataContainerId: number;
+}
+
 export interface GetSpatialDataPointsRequest {
     spatialDataContainerId: number;
     metadataFilter?: string;
@@ -62,6 +77,10 @@ export interface GetSpatialDataPointsRequest {
     endTime?: number;
     limit?: number;
     skip?: number;
+}
+
+export interface GetSpatialDataRolesRequest {
+    spatialDataContainerId: number;
 }
 
 /**
@@ -216,6 +235,61 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     }
 
     /**
+     * Edit permissions
+     */
+    async editSpatialDataPermissionsRaw(requestParameters: EditSpatialDataPermissionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Permissions>> {
+        if (requestParameters['spatialDataContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainerId',
+                'Required parameter "spatialDataContainerId" was null or undefined when calling editSpatialDataPermissions().'
+            );
+        }
+
+        if (requestParameters['permissions'] == null) {
+            throw new runtime.RequiredError(
+                'permissions',
+                'Required parameter "permissions" was null or undefined when calling editSpatialDataPermissions().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers/{spatialDataContainerId}/permissions`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+            body: PermissionsToJSON(requestParameters['permissions']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PermissionsFromJSON(jsonValue));
+    }
+
+    /**
+     * Edit permissions
+     */
+    async editSpatialDataPermissions(requestParameters: EditSpatialDataPermissionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Permissions> {
+        const response = await this.editSpatialDataPermissionsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get spatial data container.
      */
     async getSpatialDataContainerRaw(requestParameters: GetSpatialDataContainerRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SpatialDataContainer>> {
@@ -319,6 +393,51 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
     }
 
     /**
+     * Get permissions
+     */
+    async getSpatialDataPermissionsRaw(requestParameters: GetSpatialDataPermissionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Permissions>> {
+        if (requestParameters['spatialDataContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainerId',
+                'Required parameter "spatialDataContainerId" was null or undefined when calling getSpatialDataPermissions().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers/{spatialDataContainerId}/permissions`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => PermissionsFromJSON(jsonValue));
+    }
+
+    /**
+     * Get permissions
+     */
+    async getSpatialDataPermissions(requestParameters: GetSpatialDataPermissionsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Permissions> {
+        const response = await this.getSpatialDataPermissionsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Get spatial data by container id
      */
     async getSpatialDataPointsRaw(requestParameters: GetSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SpatialDataPoint>>> {
@@ -388,6 +507,51 @@ export class SpatialDataContainerApi extends runtime.BaseAPI {
      */
     async getSpatialDataPoints(requestParameters: GetSpatialDataPointsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<SpatialDataPoint>> {
         const response = await this.getSpatialDataPointsRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get roles
+     */
+    async getSpatialDataRolesRaw(requestParameters: GetSpatialDataRolesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Roles>> {
+        if (requestParameters['spatialDataContainerId'] == null) {
+            throw new runtime.RequiredError(
+                'spatialDataContainerId',
+                'Required parameter "spatialDataContainerId" was null or undefined when calling getSpatialDataRoles().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["X-API-KEY"] = await this.configuration.apiKey("X-API-KEY"); // apikey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearer", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/spatialDataContainers/{spatialDataContainerId}/roles`.replace(`{${"spatialDataContainerId"}}`, encodeURIComponent(String(requestParameters['spatialDataContainerId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => RolesFromJSON(jsonValue));
+    }
+
+    /**
+     * Get roles
+     */
+    async getSpatialDataRoles(requestParameters: GetSpatialDataRolesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Roles> {
+        const response = await this.getSpatialDataRolesRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

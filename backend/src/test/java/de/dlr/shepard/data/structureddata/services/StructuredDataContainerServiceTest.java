@@ -169,7 +169,7 @@ public class StructuredDataContainerServiceTest {
     when(dao.createOrUpdate(expected)).thenReturn(expected);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername())).thenReturn(true);
+    when(permissionsService.isCurrentUserOwner(1L)).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteContainer(1L));
   }

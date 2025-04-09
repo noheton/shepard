@@ -113,7 +113,7 @@ public class PermissionsIT extends BaseTestCaseIT {
     var expected = new PermissionsIO() {
       {
         setEntityId(collection.getId());
-        setOwner(null);
+        setOwner(defaultUser.getUser().getUsername());
         setReader(new String[] { nameOfDefaultUser });
         setWriter(new String[] { nameOfDefaultUser });
         setReaderGroupIds(new long[] {});

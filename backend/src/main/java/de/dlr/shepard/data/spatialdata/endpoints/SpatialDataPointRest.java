@@ -1,5 +1,7 @@
 package de.dlr.shepard.data.spatialdata.endpoints;
 
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
@@ -20,15 +22,14 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +56,6 @@ public class SpatialDataPointRest {
 
   @Inject
   SpatialDataContainerService containerService;
-
-  @Context
-  private SecurityContext securityContext;
 
   //#region Container functions
   @GET
@@ -220,8 +218,8 @@ public class SpatialDataPointRest {
       ),
     }
   )
-  @Parameter(name = "startTime", required = false, description = "Start timestamp in nanoseconds, exclusive")
-  @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, exclusive")
+  @Parameter(name = "startTime", required = false, description = "Start timestamp in nanoseconds, inclusive")
+  @Parameter(name = "endTime", required = false, description = "End timestamp in nanoseconds, inclusive")
   @Parameter(name = "limit", required = false)
   @Parameter(
     name = "skip",
@@ -242,10 +240,10 @@ public class SpatialDataPointRest {
     @QueryParam("geometryFilter") String geometryFilterParam,
     @QueryParam("metadataFilter") String metadataFilterParam,
     @QueryParam("measurementsFilter") String measurementsFilterParam,
-    @QueryParam("startTime") Long startTime,
-    @QueryParam("endTime") Long endTime,
-    @QueryParam("limit") Integer limit,
-    @QueryParam("skip") Integer skip
+    @QueryParam("startTime") @PositiveOrZero Long startTime,
+    @QueryParam("endTime") @PositiveOrZero Long endTime,
+    @QueryParam("limit") @PositiveOrZero Integer limit,
+    @QueryParam("skip") @PositiveOrZero Integer skip
   ) {
     Optional<AbstractGeometryFilter> geometryFilter = SpatialDataParamParser.parseGeometryFilter(geometryFilterParam);
     Optional<Map<String, Object>> metadata = SpatialDataParamParser.parseMetadata(metadataFilterParam);
@@ -283,5 +281,72 @@ public class SpatialDataPointRest {
   ) {
     dataPointService.createSpatialDataPoints(containerId, dataPoints);
     return Response.noContent().build();
+  }
+
+  @GET
+  @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
+  @Operation(description = "Get permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
+  public Response getSpatialDataPermissions(
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
+  ) {
+    var perms = containerService.getContainerPermissions(containerId);
+    return Response.ok(new PermissionsIO(perms)).build();
+  }
+
+  @PUT
+  @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
+  @Operation(description = "Edit permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
+  public Response editSpatialDataPermissions(
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+    ) @Valid PermissionsIO permissions
+  ) {
+    var perms = containerService.updateContainerPermissions(permissions, containerId);
+    return Response.ok(new PermissionsIO(perms)).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.SPATIAL_DATA_CONTAINER_ID + "}/" + Constants.ROLES)
+  @Tag(name = Constants.SPATIAL_DATA_CONTAINER)
+  @Operation(description = "Get roles")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
+  public Response getSpatialDataRoles(
+    @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
+  ) {
+    var roles = containerService.getContainerRoles(containerId);
+    return Response.ok(roles).build();
   }
 }

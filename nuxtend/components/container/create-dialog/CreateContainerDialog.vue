@@ -4,6 +4,7 @@ import {
   type ContainerType,
 } from "@dlr-shepard/backend-client";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
+import { useCreateSpatialDataContainer } from "~/composables/data/useCreateSpatialDataContainer";
 import { useCreateStructuredDataContainer } from "~/composables/data/useCreateStructuredDataContainer";
 import { useCreateTimeseriesContainer } from "~/composables/data/useCreateTimeseriesContainer";
 
@@ -47,6 +48,15 @@ async function saveChanges() {
 
   if (containerType.value == "TIMESERIES") {
     const newTimeseriesContainer = await useCreateTimeseriesContainer(
+      containerName.value,
+      permissionType.value,
+    );
+    if (!newTimeseriesContainer) return;
+    emit("container-created", newTimeseriesContainer.id);
+    showDialog.value = false;
+  }
+  if (containerType.value == "SPATIALDATA") {
+    const newTimeseriesContainer = await useCreateSpatialDataContainer(
       containerName.value,
       permissionType.value,
     );

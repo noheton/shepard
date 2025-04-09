@@ -282,7 +282,9 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .extract()
       .as(ErrorResponse.class);
 
-    assertThat(errorResponse.getMessage()).isEqualTo("The requested action is forbidden by the permission policies");
+    assertThat(errorResponse.getMessage()).isEqualTo(
+      "The requested action is forbidden by the permission policies. User has no READ permissions."
+    );
   }
 
   @Test

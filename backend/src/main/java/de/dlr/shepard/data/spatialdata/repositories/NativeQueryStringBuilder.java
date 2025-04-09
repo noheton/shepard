@@ -48,10 +48,10 @@ public class NativeQueryStringBuilder {
     if (timestampStart == null && timestampEnd == null) return this;
     var timeQuery = new StringBuilder();
     if (timestampStart != null) {
-      timeQuery.append(String.format(" AND %s > %s", parameterName, timestampStart));
+      timeQuery.append(String.format(" AND %s >= %s", parameterName, timestampStart));
     }
     if (timestampEnd != null) {
-      timeQuery.append(String.format(" AND %s < %s", parameterName, timestampEnd));
+      timeQuery.append(String.format(" AND %s <= %s", parameterName, timestampEnd));
     }
     timeCondition = timeQuery.toString();
     return this;

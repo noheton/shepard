@@ -130,12 +130,10 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
    */
   @Override
   public void deleteContainer(long timeSeriesContainerId) {
+    User user = userService.getCurrentUser();
     TimeseriesContainer timeseriesContainer = this.getContainer(timeSeriesContainerId);
-
-    // run this line before the DAO update, since it checks for accessibility before deletion
     timeseriesService.deleteTimeseriesByContainerId(timeSeriesContainerId);
 
-    User user = userService.getCurrentUser();
     timeseriesContainer.setDeleted(true);
     timeseriesContainer.setUpdatedAt(dateHelper.getDate());
     timeseriesContainer.setUpdatedBy(user);

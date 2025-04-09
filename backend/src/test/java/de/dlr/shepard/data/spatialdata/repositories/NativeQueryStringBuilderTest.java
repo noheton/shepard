@@ -68,7 +68,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", 123l, 234l)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND time > 123 AND time < 234;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND id = 1 AND time >= 123 AND time <= 234;";
 
     assertEquals(expected, current);
   }
@@ -80,7 +80,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", 123l, null)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time > 123;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time >= 123;";
 
     assertEquals(expected, current);
   }
@@ -92,7 +92,7 @@ public class NativeQueryStringBuilderTest {
       .addTimeCondition("time", null, 234l)
       .build();
 
-    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time < 234;";
+    var expected = "SELECT * FROM table_name WHERE 1 = 1 AND time <= 234;";
 
     assertEquals(expected, current);
   }
@@ -266,7 +266,7 @@ public class NativeQueryStringBuilderTest {
       .build();
 
     var expected =
-      "SELECT * FROM table_name WHERE 1 = 1 AND cond1 = 1 AND cond2 = 2 AND time > 10 AND time < 20 AND id % 3 = 0;";
+      "SELECT * FROM table_name WHERE 1 = 1 AND cond1 = 1 AND cond2 = 2 AND time >= 10 AND time <= 20 AND id % 3 = 0;";
 
     assertEquals(expected, current1);
     assertEquals(expected, current2);

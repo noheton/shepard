@@ -87,7 +87,9 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
         authenticationContext.getCurrentUserName()
       )
     ) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+      throw new InvalidAuthException(
+        "The requested action is forbidden by the permission policies. User has no READ permissions."
+      );
     }
   }
 
@@ -99,7 +101,9 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
         authenticationContext.getCurrentUserName()
       )
     ) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+      throw new InvalidAuthException(
+        "The requested action is forbidden by the permission policies. User has no WRITE permissions."
+      );
     }
   }
 
@@ -111,7 +115,17 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
         authenticationContext.getCurrentUserName()
       )
     ) {
-      throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+      throw new InvalidAuthException(
+        "The requested action is forbidden by the permission policies. User has no MANAGE permissions."
+      );
+    }
+  }
+
+  public void assertIsAllowedToDeleteContainer(long containerId) {
+    if (!permissionsService.isCurrentUserOwner(containerId)) {
+      throw new InvalidAuthException(
+        "The requested action is forbidden by the permission policies. User is not owner."
+      );
     }
   }
 }

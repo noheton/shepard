@@ -168,9 +168,7 @@ public class FileContainerServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
-      true
-    );
+    when(permissionsService.isCurrentUserOwner(1L)).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteContainer(1L));
   }

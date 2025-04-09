@@ -37,6 +37,7 @@ export * from './HealthCheck';
 export * from './HealthResponse';
 export * from './InvalidHtmlResponse';
 export * from './LabJournalEntry';
+export * from './MetricsIO';
 export * from './Operator';
 export * from './PermissionType';
 export * from './Permissions';

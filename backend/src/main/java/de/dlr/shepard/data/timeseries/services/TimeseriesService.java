@@ -87,7 +87,7 @@ public class TimeseriesService {
   @Transactional
   public void deleteTimeseriesByContainerId(long containerId) {
     timeseriesContainerService.getContainer(containerId);
-    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToDeleteContainer(containerId);
     this.timeseriesRepository.deleteByContainerId(containerId);
   }
 
