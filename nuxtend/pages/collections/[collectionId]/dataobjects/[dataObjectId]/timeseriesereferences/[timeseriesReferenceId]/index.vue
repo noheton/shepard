@@ -254,7 +254,10 @@ const onSelectedItemChanged = () => {
                   v-model="item.isSelected"
                   density="compact"
                   hide-details
-                  :disabled="numberOfSelectedItems >= maxSelectableItems"
+                  :disabled="
+                    !item.isSelected &&
+                    numberOfSelectedItems >= maxSelectableItems
+                  "
                   @update:model-value="() => onSelectedItemChanged()"
                 />
               </template>
