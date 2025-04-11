@@ -256,7 +256,7 @@ const onSelectedItemChanged = () => {
                   hide-details
                   :disabled="
                     !item.isSelected &&
-                    numberOfSelectedItems >= maxSelectableItems
+                    numberOfSelectedItems > maxSelectableItems
                   "
                   @update:model-value="() => onSelectedItemChanged()"
                 />
