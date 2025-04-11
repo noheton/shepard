@@ -256,11 +256,12 @@ function downloadChartAsImage() {
         </div>
       </template>
       <template #text>
-        <div class="text-subtitle-1 pb-4">Timeseries</div>
+        <div class="text-subtitle-1 pb-4">Metrics</div>
 
         <div v-for="(item, index) in timeseries" :key="index">
           <div
             style="cursor: pointer; display: flex; align-items: center"
+            class="pt-1 pb-1"
             @click="toggle(index)"
           >
             <span style="width: 20px">
@@ -293,7 +294,7 @@ function downloadChartAsImage() {
                 </div>
               </v-col>
             </v-row>
-            <v-row class="pa-2">
+            <v-row class="pa-2 pb-3">
               <SemanticAnnotationChip
                 v-for="annotation in timeseriesMetrics[
                   getTimeseriesUniqueKey(item)
@@ -304,7 +305,7 @@ function downloadChartAsImage() {
             </v-row>
           </div>
         </div>
-        <div class="text-subtitle-1 pb-4">Graph</div>
+        <div class="text-subtitle-1 pb-4 pt-4">Graph</div>
         <div class="pa-4" style="background-color: white">
           <LineChart
             v-if="isLoading"
