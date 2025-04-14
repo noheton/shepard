@@ -9,6 +9,7 @@ import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import io.micrometer.core.annotation.Timed;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -248,6 +249,8 @@ public class TimeseriesDataPointRepository {
       AND time >= :startTimeNano
       AND time <= :endTimeNano
     """;
+
+    Log.info(queryString);
 
     Query query = entityManager.createNativeQuery(queryString, TimeseriesDataPoint.class);
 

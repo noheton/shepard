@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.references.timeseriesreference.services;
 
-import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -15,29 +16,39 @@ import jakarta.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RequestScoped
 public class TimeseriesReferenceMetricsService {
 
+  @Inject
   private TimeseriesRepository timeseriesRepository;
-  private TimeseriesDataPointRepository timeseriesDataPointRepository;
-  private TimeseriesReferenceDAO timeseriesReferenceDAO;
 
   @Inject
-  public TimeseriesReferenceMetricsService(
-    TimeseriesDataPointRepository timeseriesDataPointRepository,
-    TimeseriesRepository timeseriesRepository,
-    TimeseriesReferenceDAO timeseriesReferenceDAO
-  ) {
-    this.timeseriesDataPointRepository = timeseriesDataPointRepository;
-    this.timeseriesRepository = timeseriesRepository;
-    this.timeseriesReferenceDAO = timeseriesReferenceDAO;
-  }
+  private TimeseriesDataPointRepository timeseriesDataPointRepository;
 
-  public List<MetricsIO> getTimeseriesReferenceMetrics(long timeseriesReferenceId, Timeseries timeseries) {
+  @Inject
+  private TimeseriesReferenceService timeseriesReferenceService;
+
+  @Inject
+  DataObjectService dataObjectService;
+
+  @Inject
+  CollectionService collectionService;
+
+  public List<MetricsIO> getTimeseriesReferenceMetrics(
+    long collectionId,
+    long dataObjectId,
+    long timeseriesReferenceId,
+    UUID versionUID,
+    Timeseries timeseries
+  ) {
     return getTimeseriesReferenceMetrics(
+      collectionId,
+      dataObjectId,
       timeseriesReferenceId,
+      versionUID,
       timeseries,
       List.of(
         AggregateFunction.COUNT,
@@ -53,11 +64,26 @@ public class TimeseriesReferenceMetricsService {
   }
 
   public List<MetricsIO> getTimeseriesReferenceMetrics(
+    long collectionId,
+    long dataObjectId,
     long timeseriesReferenceId,
+    UUID versionUID,
     Timeseries timeseries,
     List<AggregateFunction> metrics
   ) {
-    TimeseriesReference timeseriesReference = timeseriesReferenceDAO.findByShepardId(timeseriesReferenceId);
+    dataObjectService.getDataObject(collectionId, dataObjectId, versionUID);
+    collectionService.assertIsAllowedToReadCollection(collectionId);
+
+    TimeseriesReference timeseriesReference = timeseriesReferenceService.getReference(
+      collectionId,
+      dataObjectId,
+      timeseriesReferenceId,
+      versionUID
+    );
+
+    if (
+      timeseriesReference.getTimeseriesContainer() == null || timeseriesReference.getTimeseriesContainer().isDeleted()
+    ) return Collections.emptyList();
 
     Optional<TimeseriesEntity> timeseriesEntity =
       this.timeseriesRepository.findTimeseries(timeseriesReference.getTimeseriesContainer().getId(), timeseries);

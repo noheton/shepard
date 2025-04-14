@@ -7,6 +7,8 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -73,9 +75,9 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.FIELD, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricsOfTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero long timeseriesReferenceId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,
@@ -86,7 +88,10 @@ public class TimeseriesReferenceMetricsRest {
     Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 
     List<MetricsIO> result = timeseriesReferenceMetricsService.getTimeseriesReferenceMetrics(
+      collectionId,
+      dataObjectId,
       timeseriesReferenceId,
+      versionUID,
       timeseries
     );
 
@@ -114,9 +119,9 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.FUNCTION, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricOfTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero long timeseriesReferenceId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,
@@ -128,7 +133,14 @@ public class TimeseriesReferenceMetricsRest {
     Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 
     MetricsIO result = timeseriesReferenceMetricsService
-      .getTimeseriesReferenceMetrics(timeseriesReferenceId, timeseries, List.of(function))
+      .getTimeseriesReferenceMetrics(
+        collectionId,
+        dataObjectId,
+        timeseriesReferenceId,
+        versionUID,
+        timeseries,
+        List.of(function)
+      )
       .get(0);
 
     return Response.ok(result).build();

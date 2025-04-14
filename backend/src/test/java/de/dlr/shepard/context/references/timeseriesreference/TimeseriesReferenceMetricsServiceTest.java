@@ -153,7 +153,14 @@ public class TimeseriesReferenceMetricsServiceTest {
       AggregateFunction.MEDIAN
     );
 
-    var resultList = metricsService.getTimeseriesReferenceMetrics(timeseriesReferenceId, timeseries, metrics);
+    var resultList = metricsService.getTimeseriesReferenceMetrics(
+      collectionId,
+      dataobjectId,
+      timeseriesReferenceId,
+      null,
+      timeseries,
+      metrics
+    );
     assertEquals(resultList.size(), metrics.size());
     assertThat(resultList).contains(new MetricsIO(AggregateFunction.FIRST, 22.1));
     assertThat(resultList).contains(new MetricsIO(AggregateFunction.LAST, 22.2));
@@ -177,7 +184,10 @@ public class TimeseriesReferenceMetricsServiceTest {
     );
 
     var resultList = metricsService.getTimeseriesReferenceMetrics(
+      collectionId,
+      dataobjectId,
       stringTimeseriesReferenceId,
+      null,
       stringTimeseries,
       metrics
     );
@@ -204,7 +214,10 @@ public class TimeseriesReferenceMetricsServiceTest {
     );
 
     var resultList = metricsService.getTimeseriesReferenceMetrics(
+      collectionId,
+      dataobjectId,
       booleanTimeseriesReferenceId,
+      null,
       booleanTimeseries,
       metrics
     );
