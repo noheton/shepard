@@ -18,7 +18,7 @@ interface TimeseriesDataTableItem extends Timeseries {
   isSelected: boolean;
 }
 
-const maxSelectableItems = 7;
+const MaxSelectableItems = 7;
 
 const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId, timeseriesReferenceId } =
@@ -41,7 +41,7 @@ const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog = ref<boolean>(false);
 const showTimeseriesReferenceDialog = ref<boolean>(false);
-const headers = ref([
+const headers = [
   {
     title: "Select",
     key: "isSelected",
@@ -53,7 +53,7 @@ const headers = ref([
   { title: "Location", key: "location", sortable: true },
   { title: "Symbolic Name", key: "symbolicName", sortable: true },
   { title: "Field", key: "field", sortable: true },
-]);
+];
 
 watch(timeseriesReference, () => {
   if (timeseriesReference.value) {
@@ -219,7 +219,7 @@ const onSelectedItemChanged = () => {
               <v-col class="text-right" cols="auto">
                 <div class="pa-4">
                   Selected items: {{ numberOfSelectedItems }} /
-                  {{ maxSelectableItems }}
+                  {{ MaxSelectableItems }}
                 </div>
               </v-col>
               <v-col class="text-right" cols="auto">
@@ -230,7 +230,7 @@ const onSelectedItemChanged = () => {
                   prepend-icon="mdi-chart-line"
                   :disabled="
                     numberOfSelectedItems === 0 ||
-                    numberOfSelectedItems > maxSelectableItems
+                    numberOfSelectedItems > MaxSelectableItems
                   "
                   @click="plotSelectedTimeseries"
                 >
@@ -247,7 +247,6 @@ const onSelectedItemChanged = () => {
               }"
               :headers="headers"
               :items="timeseriesDataTableItems"
-              item-value="measurement"
             >
               <template #[`item.isSelected`]="{ item }">
                 <v-checkbox
@@ -256,7 +255,7 @@ const onSelectedItemChanged = () => {
                   hide-details
                   :disabled="
                     !item.isSelected &&
-                    numberOfSelectedItems >= maxSelectableItems
+                    numberOfSelectedItems >= MaxSelectableItems
                   "
                   @update:model-value="() => onSelectedItemChanged()"
                 />

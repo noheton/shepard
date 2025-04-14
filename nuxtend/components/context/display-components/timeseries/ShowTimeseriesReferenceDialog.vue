@@ -264,14 +264,14 @@ function downloadChartAsImage() {
             class="pt-1 pb-1"
             @click="toggle(index)"
           >
-            <span style="width: 20px">
-              {{ expanded[index] ? "▼" : "▶" }}
-            </span>
-            <strong>
-              {{
-                `${item.device} - ${item.field} - ${item.location} - ${item.measurement} - ${item.symbolicName}`
-              }}
-            </strong>
+            <v-icon
+              :icon="expanded[index] ? 'mdi-chevron-down' : 'mdi-chevron-right'"
+              class="mr-2"
+            />
+
+            {{
+              `${item.device} - ${item.field} - ${item.location} - ${item.measurement} - ${item.symbolicName}`
+            }}
           </div>
           <div v-if="expanded[index]" style="margin-left: 20px">
             <v-row no-gutters>
