@@ -1,7 +1,7 @@
 .build_typescript: &build_typescript
   stage: build
   image:
-    name: openapitools/openapi-generator-cli:v7.10.0
+    name: openapitools/openapi-generator-cli:v7.12.0
     entrypoint: [""]
   needs: [build_backend, get_version]
   script:
