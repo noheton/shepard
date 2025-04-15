@@ -9,7 +9,7 @@
   "author": "",
   "license": "",
   "devDependencies": {
-    "@types/k6": "0.54.2",
+    "@types/k6": "0.57.1",
     "core-js": "3.39.0",
     "rimraf": "6.0.1",
     "ts-loader": "9.5.1",
