@@ -34,6 +34,7 @@ public class URIReferenceIOTest {
     obj.setUpdatedBy(updateUser);
     obj.setDataObject(dataObject);
     obj.setUri("http://abc.de");
+    obj.setRelationship("test");
 
     var converted = new URIReferenceIO(obj);
     assertEquals(obj.getShepardId(), converted.getId());
@@ -44,5 +45,6 @@ public class URIReferenceIOTest {
     assertEquals("claus", converted.getUpdatedBy());
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
     assertEquals(obj.getUri(), converted.getUri());
+    assertEquals(obj.getRelationship(), converted.getRelationship());
   }
 }

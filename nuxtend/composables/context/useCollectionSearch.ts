@@ -1,17 +1,16 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 
-export interface DataObjectSearchResult {
-  dataObjectName: string;
-  dataObjectId: number;
+export interface CollectionSearchResult {
+  collectionName: string;
+  collectionId: number;
 }
 
-export function useDataObjectSearch(
-  collectionId: number,
+export function useCollectionSearch(
   searchString: Ref<string | undefined>,
   onSearchDone?: () => void,
 ) {
   const isLoading = ref<boolean>(false);
-  const dataObjectSearchResults = ref<DataObjectSearchResult[]>([]);
+  const collectionSearchResults = ref<CollectionSearchResult[]>([]);
 
   const searchDone = (callbackFn?: () => void) => {
     isLoading.value = false;
@@ -20,10 +19,7 @@ export function useDataObjectSearch(
     }
   };
 
-  async function searchDataObjectsByQuery(
-    collectionIdParam: number,
-    query: string,
-  ) {
+  async function searchCollectionsByQuery(query: string) {
     if (isLoading.value === true) return;
 
     isLoading.value = true;
@@ -38,35 +34,26 @@ export function useDataObjectSearch(
 
     const searchResponse = await createApiInstance(SearchApi).search({
       searchBody: {
-        searchParams: { query: searchStringParam, queryType: "DataObject" },
-        scopes: [{ collectionId: collectionIdParam, traversalRules: [] }],
+        searchParams: { query: searchStringParam, queryType: "Collection" },
+        scopes: [{ traversalRules: [] }],
       },
     });
 
     if (searchResponse.results) {
       searchResponse.results.forEach(result => {
         if (
-          !dataObjectSearchResults.value.some(
-            existingResult => existingResult.dataObjectId === result.id,
+          !collectionSearchResults.value.some(
+            existingResult => existingResult.collectionId === result.id,
           )
         ) {
-          dataObjectSearchResults.value.push({
-            dataObjectId: result.id,
-            dataObjectName: result.name,
+          collectionSearchResults.value.push({
+            collectionId: result.id,
+            collectionName: result.name,
           });
         }
       });
     }
     searchDone(onSearchDone);
-  }
-
-  function createSearchQueryFromString(query: string): string {
-    const searchStringParam = {
-      property: "name",
-      operator: "contains",
-      value: query,
-    };
-    return JSON.stringify(searchStringParam);
   }
 
   function createSearchQueryFromId(searchId: number): string {
@@ -78,29 +65,34 @@ export function useDataObjectSearch(
     return JSON.stringify(searchStringParam);
   }
 
+  function createSearchQueryFromString(query: string): string {
+    const searchStringParam = {
+      property: "name",
+      operator: "contains",
+      value: query,
+    };
+    return JSON.stringify(searchStringParam);
+  }
+
   function isIntegerString(value: string): boolean {
     const integerRegex = /^[+-]?\d+$/;
     return integerRegex.test(value);
   }
 
   function resetResultList() {
-    dataObjectSearchResults.value = [];
+    collectionSearchResults.value = [];
   }
 
-  const startSearch = (collectionIdParam?: number) => {
+  const startSearch = () => {
     if (!searchString.value) {
       resetResultList();
       return;
     }
-
-    // use either start search param, or the initial collectionId, since collection Id might have maybe changed outside
-    const currCollectionId = collectionIdParam ?? collectionId;
-
-    searchDataObjectsByQuery(currCollectionId, searchString.value);
+    searchCollectionsByQuery(searchString.value);
   };
 
   return {
-    dataObjectSearchResults,
+    collectionSearchResults,
     startSearch,
     isLoading,
     resetResultList,

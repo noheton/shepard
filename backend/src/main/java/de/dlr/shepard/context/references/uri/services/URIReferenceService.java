@@ -124,6 +124,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
     toCreate.setDataObject(dataObject);
     toCreate.setName(uriReference.getName());
     toCreate.setUri(uriReference.getUri());
+    toCreate.setRelationship(uriReference.getRelationship());
 
     var created = uRIReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());

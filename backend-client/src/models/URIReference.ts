@@ -73,6 +73,12 @@ export interface URIReference {
      * @memberof URIReference
      */
     uri: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof URIReference
+     */
+    relationship?: string | null;
 }
 
 /**
@@ -108,6 +114,7 @@ export function URIReferenceFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'dataObjectId': json['dataObjectId'] == null ? undefined : json['dataObjectId'],
         'type': json['type'] == null ? undefined : json['type'],
         'uri': json['uri'],
+        'relationship': json['relationship'] == null ? undefined : json['relationship'],
     };
 }
 
@@ -119,6 +126,7 @@ export function URIReferenceToJSON(value?: Omit<URIReference, 'id'|'createdAt'|'
         
         'name': value['name'],
         'uri': value['uri'],
+        'relationship': value['relationship'],
     };
 }
 

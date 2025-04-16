@@ -47,6 +47,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
     var toCreate = new URIReferenceIO();
     toCreate.setName("URIReferenceDummy");
     toCreate.setUri("http://MyAwesomeUrl.com");
+    toCreate.setRelationship("test-relationship");
 
     var actual = given()
       .spec(requestSpecOfDefaultUser)
@@ -66,6 +67,7 @@ public class URIReferenceIT extends BaseTestCaseIT {
     assertThat(actual.getName()).isEqualTo("URIReferenceDummy");
     assertThat(actual.getUri()).isEqualTo("http://MyAwesomeUrl.com");
     assertThat(actual.getType()).isEqualTo("URIReference");
+    assertThat(actual.getRelationship()).isEqualTo("test-relationship");
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
   }

@@ -124,12 +124,12 @@ const showValueRepoNameTooltip = ref(true);
               content-class="text-body-3"
               :class="`${showPropertyIRITooltip ? '' : 'hideOnClick'}`"
             >
-              <template #activator="{ props }">
+              <template #activator="{ props: semanticProps }">
                 <NameInput
                   v-model:name="propertyIri"
                   label="IRI"
                   autofocus
-                  v-bind="props"
+                  v-bind="semanticProps"
                   @focus="showPropertyIRITooltip = false"
                   @blur="showPropertyIRITooltip = true"
                 />
@@ -152,9 +152,9 @@ const showValueRepoNameTooltip = ref(true);
               content-class="text-body-3"
               :class="`${showPropertyRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
-              <template #activator="{ props }">
+              <template #activator="{ props: semanticProps }">
                 <v-autocomplete
-                  v-bind="props"
+                  v-bind="semanticProps"
                   v-model="propertyRepository"
                   :items="repositories.map(mapToAutocompleteItem)"
                   label="Repository Name or ID..."
@@ -189,11 +189,11 @@ const showValueRepoNameTooltip = ref(true);
               content-class="text-body-3"
               :class="`${showValueIRITooltip ? '' : 'hideOnClick'}`"
             >
-              <template #activator="{ props }">
+              <template #activator="{ props: semanticProps }">
                 <NameInput
                   v-model:name="valueIri"
                   label="IRI"
-                  v-bind="props"
+                  v-bind="semanticProps"
                   @focus="showValueIRITooltip = false"
                   @blur="showValueIRITooltip = true"
                 />
@@ -216,9 +216,9 @@ const showValueRepoNameTooltip = ref(true);
               content-class="text-body-3"
               :class="`${showValueRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
-              <template #activator="{ props }">
+              <template #activator="{ props: semanticProps }">
                 <v-autocomplete
-                  v-bind="props"
+                  v-bind="semanticProps"
                   v-model="valueRepository"
                   :items="repositories.map(mapToAutocompleteItem)"
                   label="Repository Name or ID..."

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
+import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import {
   collectionsPath,
   dataObjectsPathFragment,
@@ -29,6 +30,7 @@ const {
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
 const showAddAnnotationDialog = ref(false);
+const showAddRelationshipDialog = ref(false);
 </script>
 
 <template>
@@ -164,6 +166,19 @@ const showAddAnnotationDialog = ref(false);
                       isAllowedToEditCollection ?? false
                     "
                   />
+                  <template v-if="isAllowedToEditCollection" #append>
+                    <ExpansionPanelTitleButton
+                      text="Add"
+                      icon="mdi-plus-circle"
+                      @click="() => (showAddRelationshipDialog = true)"
+                    />
+                    <AddRelationshipDialog
+                      v-if="showAddRelationshipDialog"
+                      v-model:show-dialog="showAddRelationshipDialog"
+                      :collection-id="collectionId"
+                      :data-object-id="dataObjectId"
+                    />
+                  </template>
                 </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>

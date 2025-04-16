@@ -11,6 +11,12 @@ const parentId = defineModel<number | null>("parentId", {
     input-label="Parent"
     :initial-data-object-id="parentId"
     :collection-id="collectionId"
-    @search-ended="id => (parentId = id)"
+    @search-ended="
+      value => {
+        if (value) {
+          parentId = value.id;
+        }
+      }
+    "
   />
 </template>

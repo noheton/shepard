@@ -9,14 +9,18 @@ interface AutoCompleteItem {
 
 interface DataObjectAutocompleteProps {
   collectionId: number;
-  initialDataObjectId: number | null;
+  initialDataObjectId?: number | null;
   inputLabel: string;
+  isDisabled?: boolean;
 }
 
 const props = defineProps<DataObjectAutocompleteProps>();
 const emit = defineEmits<{
-  (e: "searchEnded", value: number | null): void;
+  (e: "searchEnded", value: { id: number; name: string } | null): void;
 }>();
+defineExpose({
+  clearInput,
+});
 
 const autoCompleteModel = ref<AutoCompleteItem | undefined>(undefined);
 const searchString = ref<string | undefined>(undefined);
@@ -34,13 +38,16 @@ const { isPending, start } = useTimeoutFn(() => {
   if (!searchString.value) {
     hideNoDataMessage.value = true;
   }
-  startSearch();
+  startSearch(props.collectionId);
 }, 350);
 
 const onSelection = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem && selectedItem.value) {
     autoCompleteModel.value = selectedItem;
-    emit("searchEnded", selectedItem.value.dataObjectId);
+    emit("searchEnded", {
+      id: selectedItem.value.dataObjectId,
+      name: selectedItem.value.dataObjectName,
+    });
   } else {
     searchString.value = undefined;
     autoCompleteModel.value = undefined;
@@ -81,6 +88,10 @@ function mapToSearchResultAutoCompleteItem(
     value: searchResult,
   };
 }
+
+function clearInput() {
+  autoCompleteModel.value = undefined;
+}
 </script>
 
 <template>
@@ -90,6 +101,7 @@ function mapToSearchResultAutoCompleteItem(
     :loading="isLoading"
     :hide-no-data="hideNoDataMessage"
     :label="props.inputLabel"
+    :disabled="props.isDisabled"
     density="comfortable"
     variant="outlined"
     no-data-text="No Search Results"

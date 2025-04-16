@@ -14,6 +14,8 @@ public class URIReference extends BasicReference {
 
   private String uri;
 
+  private String relationship;
+
   /**
    * For testing purposes only
    *

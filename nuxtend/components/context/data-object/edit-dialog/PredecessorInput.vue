@@ -20,8 +20,8 @@ const predecessorIds = defineModel<number[]>("predecessorIds", {
         :initial-data-object-id="predecessorDO ?? undefined"
         :collection-id="collectionId"
         @search-ended="
-          (id: number | null) => {
-            const newValue = id ?? -1;
+          value => {
+            const newValue = value?.id ?? -1;
             predecessorIds[index] = newValue;
           }
         "

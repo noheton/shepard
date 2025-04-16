@@ -59,7 +59,8 @@ public class DataObjectService {
    * @param collectionShepardId identifies the Collection
    * @param dataObject          to be stored
    * @return the stored DataObject with the auto generated id
-   * @throws InvalidPathException if collection with collectionShepardId does not exist
+   * @throws InvalidPathException if collection with collectionShepardId does not
+   *                              exist
    */
   public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) {
     Collection collection = collectionService.getCollection(collectionShepardId);
@@ -94,20 +95,23 @@ public class DataObjectService {
    * @param shepardId identifies the searched dataObject
    * @return the DataObject with the given id
    * @throws InvalidPathException if the DataObject cannot be found
-   * @throws InvalidAuthException if user does not have read permissions on the data object's collection
+   * @throws InvalidAuthException if user does not have read permissions on the
+   *                              data object's collection
    */
   public DataObject getDataObject(long shepardId) {
     return getDataObject(shepardId, null);
   }
 
   /**
-   *  Get DataObject
+   * Get DataObject
    *
-   * @param shepardId identifies the searched dataObject
+   * @param shepardId  identifies the searched dataObject
    * @param versionUID the dataobject's version UUID
    * @return an Optional containing the DataObject with the given id
-   * @throws InvalidPathException if DataObject (with version UUID) cannot be found
-   * @throws InvalidAuthException if user does not have read permissions on the data object's collection
+   * @throws InvalidPathException if DataObject (with version UUID) cannot be
+   *                              found
+   * @throws InvalidAuthException if user does not have read permissions on the
+   *                              data object's collection
    */
   public DataObject getDataObject(long shepardId, UUID versionUID) {
     DataObject ret;
@@ -159,10 +163,12 @@ public class DataObjectService {
    * Get DataObject
    *
    * @param collectionShepardId collection's shepardId
-   * @param shepardId identifies the searched dataObject
+   * @param shepardId           identifies the searched dataObject
    * @return the DataObject with the given id
-   * @throws InvalidPathException if dataobject or collection cannot be found or the dataobject does not match the collection
-   * @throws InvalidAuthException if user does not have read permissions on the collection
+   * @throws InvalidPathException if dataobject or collection cannot be found or
+   *                              the dataobject does not match the collection
+   * @throws InvalidAuthException if user does not have read permissions on the
+   *                              collection
    */
   public DataObject getDataObject(long collectionShepardId, long shepardId) {
     return getDataObject(collectionShepardId, shepardId, null);
@@ -172,18 +178,22 @@ public class DataObjectService {
    * Get DataObject
    *
    * @param collectionShepardId collection's shepardId
-   * @param shepardId identifies the searched dataObject
-   * @param versionUID the DataObject's version UUID
+   * @param shepardId           identifies the searched dataObject
+   * @param versionUID          the DataObject's version UUID
    * @return the DataObject with the given id
-   * @throws InvalidPathException if DataObject or collection cannot be found or the DataObject does not match the collection
-   * @throws InvalidAuthException if user does not have read permissions on the collection
+   * @throws InvalidPathException if DataObject or collection cannot be found or
+   *                              the DataObject does not match the collection
+   * @throws InvalidAuthException if user does not have read permissions on the
+   *                              collection
    */
   public DataObject getDataObject(long shepardCollectionId, long shepardId, UUID versionUID) {
     collectionService.getCollection(shepardCollectionId);
 
     DataObject dataObject;
     try {
-      // This may throw a 403 if the data object is in a different collection for which the user does not have permissions -> handle that exception specifically
+      // This may throw a 403 if the data object is in a different collection for
+      // which the user does not have permissions -> handle that exception
+      // specifically
       dataObject = getDataObject(shepardId, versionUID);
     } catch (InvalidAuthException ex) {
       throw new InvalidPathException("ID ERROR - There is no association between collection and dataObject");
@@ -200,10 +210,12 @@ public class DataObjectService {
    *
    * @param collectionShepardId  identifies the collection
    * @param paramsWithShepardIds encapsulates possible parameters
-   * @param versionUID identifies the version
+   * @param versionUID           identifies the version
    * @return a List of DataObjects
-   * @throws InvalidPathException if collection with collectionShepardId does not exist
-   * @throws InvalidAuthException if user does not have read permissions on the collection
+   * @throws InvalidPathException if collection with collectionShepardId does not
+   *                              exist
+   * @throws InvalidAuthException if user does not have read permissions on the
+   *                              collection
    */
   public List<DataObject> getAllDataObjectsByShepardIds(
     long collectionShepardId,
@@ -221,12 +233,15 @@ public class DataObjectService {
    * Updates a DataObject with new attributes. Hereby only not null attributes
    * will replace the old attributes.
    *
-   * @param collectionShepardId ShepardId of the collection the dataobject is assigned to
+   * @param collectionShepardId ShepardId of the collection the dataobject is
+   *                            assigned to
    * @param dataObjectShepardId Identifies the dataObject
    * @param dataObject          DataObject entity for updating.
    * @return updated DataObject.
-   * @throws InvalidPathException if dataobject cannot be found or collection with collectionShepardId does not exist
-   * @throws InvalidAuthException if user does not have read or write permissions on the collection
+   * @throws InvalidPathException if dataobject cannot be found or collection with
+   *                              collectionShepardId does not exist
+   * @throws InvalidAuthException if user does not have read or write permissions
+   *                              on the collection
    */
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
@@ -273,11 +288,14 @@ public class DataObjectService {
   /**
    * set the deleted flag for the DataObject
    *
-   * @param collectionShepardId ShepardId of the collection the dataobject is assigned to
+   * @param collectionShepardId ShepardId of the collection the dataobject is
+   *                            assigned to
    * @param dataObjectShepardId identifies the DataObject to be deleted
    * @return a boolean to identify if the DataObject was successfully removed
-   * @throws InvalidPathException if dataobject cannot be found or collection with collectionShepardId does not exist
-   * @throws InvalidAuthException if user does not have read or write permissions on the collection
+   * @throws InvalidPathException if dataobject cannot be found or collection with
+   *                              collectionShepardId does not exist
+   * @throws InvalidAuthException if user does not have read or write permissions
+   *                              on the collection
    */
   public void deleteDataObject(long collectionShepardId, long dataObjectShepardId) {
     getDataObject(collectionShepardId, dataObjectShepardId);

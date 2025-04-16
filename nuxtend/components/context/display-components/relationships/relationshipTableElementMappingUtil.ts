@@ -33,9 +33,6 @@ export function mapRelatedEntityToRelationshipTableElement(
 function mapRelationshipType(
   entity: RelatedEntity,
 ): RelationshipTableElement["relationship"] {
-  if (instanceOfURIReference(entity)) {
-    return undefined;
-  }
   if (instanceOfDataObject(entity)) {
     return entity.type;
   }

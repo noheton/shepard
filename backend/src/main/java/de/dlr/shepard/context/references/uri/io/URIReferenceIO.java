@@ -18,8 +18,12 @@ public class URIReferenceIO extends BasicReferenceIO {
   @Schema(required = true)
   private String uri;
 
+  @Schema(nullable = true)
+  private String relationship;
+
   public URIReferenceIO(URIReference ref) {
     super(ref);
     this.uri = ref.getUri();
+    this.relationship = ref.getRelationship();
   }
 }
