@@ -27,7 +27,7 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
     :title="`Edit &quot;${collection.name}&quot;`"
@@ -65,5 +65,5 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
         </v-row>
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>

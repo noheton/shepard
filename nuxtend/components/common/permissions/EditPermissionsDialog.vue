@@ -174,7 +174,7 @@ watch(selectedMember, newMember => {
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
     :max-width="950"
@@ -283,5 +283,5 @@ watch(selectedMember, newMember => {
         </v-row>
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>

@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { FileReferenceApi } from "@dlr-shepard/backend-client";
+import ActionButton from "~/components/common/data-table/ActionButton.vue";
+import type {
+  FileType,
+  ShepardFileDataTableItem,
+} from "~/components/context/display-components/file-references/ShepardFileDataTableItem";
+import { mapShepardFilesToDataTableItems } from "~/components/context/display-components/file-references/shepardFileMappingUtil";
 import { useFetchFileReference } from "~/composables/context/useFetchFileReference";
 
 definePageMeta({ layout: "collection" });
@@ -17,6 +23,10 @@ const { collectionId, dataObjectId, fileReferenceId } =
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
+const showFileContentViewerDialog = ref<boolean>(false);
+const fileDataTableItems = ref<ShepardFileDataTableItem[]>([]);
+const selectedOid = ref<string>("");
+const selectedFileType = ref<FileType>("unknown");
 
 const { collection } = useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
@@ -27,10 +37,15 @@ const { fileReference, files } = useFetchFileReference(
 );
 
 const headers = ref([
-  { title: "Name", key: "filename", sortable: true },
+  { title: "Name", key: "name", sortable: true },
   { title: "Oid", key: "oid", sortable: true },
   { title: "Created at", key: "createdAt", sortable: true },
+  { title: "", key: "actions" },
 ]);
+
+watch(files, () => {
+  fileDataTableItems.value = mapShepardFilesToDataTableItems(files.value);
+});
 
 function onAnnotate() {
   showAddAnnotationDialog.value = true;
@@ -61,6 +76,30 @@ function deleteFileReference() {
         showDeleteDialog.value = false;
       });
   }
+}
+
+function onShowFileContentDialog(params: { oid: string; fileType: FileType }) {
+  selectedOid.value = params.oid;
+  selectedFileType.value = params.fileType;
+  showFileContentViewerDialog.value = true;
+}
+
+function onDownloadFile(params: { filename: string; oid: string }) {
+  const filename = sanitizeFilename(params.filename);
+
+  createApiInstance(FileReferenceApi)
+    .getFilePayload({
+      collectionId,
+      dataObjectId,
+      fileReferenceId,
+      oid: params.oid,
+    })
+    .then(response => {
+      downloadFile(response, filename);
+    })
+    .catch(e => {
+      handleError(e, "downloading file");
+    });
 }
 </script>
 
@@ -109,9 +148,11 @@ function deleteFileReference() {
                   name: `File Reference “${fileReference.name}”`,
                   type: 'File',
                   container: {
-                    title: 'unknown name',
+                    title:
+                      fileReference.referencedContainerName ?? 'unknown name',
                     id: fileReference.fileContainerId,
                     path: containersPath + fileReference.fileContainerId,
+                    availability: fileReference.referencedContainerAvailability,
                   },
                 }"
                 id-label="ID"
@@ -141,10 +182,48 @@ function deleteFileReference() {
                   class: 'text-textbody1',
                 }"
                 :headers="headers"
-                :items="files"
+                :items="fileDataTableItems"
               >
+                <template
+                  #[`item.name`]="{
+                    value,
+                  }: {
+                    value: ShepardFileDataTableItem['name'];
+                  }"
+                >
+                  {{ value.filename }}
+                  <span
+                    v-if="value.availability !== 'available'"
+                    class="text-error"
+                  >
+                    ({{ value.availability }})
+                  </span>
+                </template>
                 <template #[`item.createdAt`]="{ value }: { value: Date }">
                   {{ toShortDateString(value) }}
+                </template>
+                <template
+                  #[`item.actions`]="{
+                    value,
+                  }: {
+                    value: ShepardFileDataTableItem['actions'];
+                  }"
+                >
+                  <ActionContainer>
+                    <ActionButton
+                      v-if="value.download.enabled"
+                      icon="mdi-tray-arrow-down"
+                      @click="() => onDownloadFile(value.download)"
+                    />
+                    <ActionButton
+                      v-if="
+                        value.showDetails.enabled &&
+                        value.showDetails.fileType !== 'unknown'
+                      "
+                      icon="mdi-eye"
+                      @click="() => onShowFileContentDialog(value.showDetails)"
+                    />
+                  </ActionContainer>
                 </template>
                 <template #bottom>
                   <v-divider :thickness="8" color="divider2" opacity="1" />
@@ -168,6 +247,15 @@ function deleteFileReference() {
       :collection-id="collectionId"
       :data-object-id="dataObjectId"
       :reference-id="fileReferenceId"
+    />
+    <FileContentViewerDialog
+      v-if="showFileContentViewerDialog"
+      v-model:show-dialog="showFileContentViewerDialog"
+      :collection-id="collectionId"
+      :data-object-id="dataObjectId"
+      :file-reference-id="fileReferenceId"
+      :oid="selectedOid"
+      :file-type="selectedFileType"
     />
   </div>
 </template>

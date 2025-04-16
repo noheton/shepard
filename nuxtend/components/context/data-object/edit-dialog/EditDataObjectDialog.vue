@@ -30,7 +30,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-model:show-dialog="showDialog"
     :title="`Edit &quot;${dataObjectName}&quot;`"
     :loading="loading"
@@ -84,5 +84,5 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
         </v-row>
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>

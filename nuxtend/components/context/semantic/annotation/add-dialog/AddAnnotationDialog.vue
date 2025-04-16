@@ -98,7 +98,7 @@ const showValueRepoNameTooltip = ref(true);
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
     title="Create New Semantic Annotation"
@@ -241,7 +241,7 @@ const showValueRepoNameTooltip = ref(true);
         </v-row>
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>
 
 <style lang="css" scoped>

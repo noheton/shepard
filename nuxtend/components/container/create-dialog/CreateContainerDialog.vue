@@ -69,7 +69,7 @@ async function saveChanges() {
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-model:show-dialog="showDialog"
     :submit-disabled="!isValid"
     title="Create Container"
@@ -104,5 +104,5 @@ async function saveChanges() {
         </v-row>
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-interface DialogProps {
+interface FormDialogProps {
   title: string;
   loading?: boolean;
   submitDisabled: boolean;
@@ -7,7 +7,7 @@ interface DialogProps {
   saveButtonText?: string;
 }
 
-const props = defineProps<DialogProps>();
+const props = defineProps<FormDialogProps>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
