@@ -10,6 +10,8 @@
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/**/misc.xml
+.idea/**/remote-targets.xml
 
 # Generated files
 .idea/**/contentModel.xml

@@ -1,7 +1,11 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   PermissionType,
   type ContainerType,
+  type FileContainer,
+  type TimeseriesContainer,
+  type StructuredDataContainer,
+  type SpatialDataContainer,
 } from "@dlr-shepard/backend-client";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateSpatialDataContainer } from "~/composables/data/useCreateSpatialDataContainer";
@@ -13,7 +17,7 @@ const showDialog = defineModel<boolean>("showDialog", {
   default: false,
 });
 const emit = defineEmits<{
-  (e: "container-created", value: number): void;
+  (e: "container-created", value: number, type: ContainerType): void;
 }>();
 
 const permissionType = ref<PermissionType>(PermissionType.Private);
@@ -21,57 +25,54 @@ const containerType = ref<ContainerType>("FILE");
 const containerName = ref<string>("");
 
 const isValid = ref(true);
-const form = useTemplateRef("form");
+useTemplateRef("form");
 
 async function saveChanges() {
   if (isValid.value === false) return;
 
+  let newContainer:
+    | FileContainer
+    | TimeseriesContainer
+    | StructuredDataContainer
+    | SpatialDataContainer
+    | undefined = undefined;
+
   if (containerType.value == "FILE") {
-    const newFileContainer = await useCreateFileContainer(
+    newContainer = await useCreateFileContainer(
       containerName.value,
       permissionType.value,
     );
-    if (!newFileContainer) return;
-    emit("container-created", newFileContainer.id);
-    showDialog.value = false;
   }
-
   if (containerType.value == "STRUCTUREDDATA") {
-    const newStructuredDataContainer = await useCreateStructuredDataContainer(
+    newContainer = await useCreateStructuredDataContainer(
       containerName.value,
       permissionType.value,
     );
-    if (!newStructuredDataContainer) return;
-    emit("container-created", newStructuredDataContainer.id);
-    showDialog.value = false;
   }
-
   if (containerType.value == "TIMESERIES") {
-    const newTimeseriesContainer = await useCreateTimeseriesContainer(
+    newContainer = await useCreateTimeseriesContainer(
       containerName.value,
       permissionType.value,
     );
-    if (!newTimeseriesContainer) return;
-    emit("container-created", newTimeseriesContainer.id);
-    showDialog.value = false;
   }
   if (containerType.value == "SPATIALDATA") {
-    const newTimeseriesContainer = await useCreateSpatialDataContainer(
+    newContainer = await useCreateSpatialDataContainer(
       containerName.value,
       permissionType.value,
     );
-    if (!newTimeseriesContainer) return;
-    emit("container-created", newTimeseriesContainer.id);
-    showDialog.value = false;
   }
+
+  if (!newContainer) return;
+  emit("container-created", newContainer.id, newContainer.type);
+  showDialog.value = false;
 }
 </script>
 
 <template>
   <Dialog
     v-model:show-dialog="showDialog"
-    title="Create Container"
     :submit-disabled="!isValid"
+    title="Create Container"
     @submit="saveChanges"
   >
     <template #form>

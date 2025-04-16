@@ -1,31 +1,53 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   instanceOfUser,
   instanceOfUserGroup,
   PermissionType,
+  type ResponseError,
   type User,
+  type Permissions,
 } from "@dlr-shepard/backend-client";
-import { useEditCollectionPermissions } from "../../../composables/common/permissions/useEditCollectionPermissions";
-import type { Member } from "../../../composables/common/permissions/useMemberSearch";
+import type { Member } from "~/composables/common/permissions/useMemberSearch";
 import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
 import { UserRole } from "./UserRole";
+import type { ShepardObjectAccessor } from "~/composables/shepardObjectAccessor";
+import {
+  handleShepardObjectUpdate,
+  onShepardObjectUpdated,
+} from "~/utils/resourceUpdateBus";
 
-interface EditPermissionsDialogProps {
-  collectionId: number;
-  isOwner?: boolean;
-}
+const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
+const shepardObjectAccessor = props.shepardObjectAccessor;
 
 export interface MemberPermissions {
   member: Member;
   roleList: UserRole[];
 }
 
-const props = defineProps<EditPermissionsDialogProps>();
-
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
+
+if (!shepardObjectAccessor.permissions.value)
+  await shepardObjectAccessor.fetchPermissions();
+
+if (!shepardObjectAccessor.roles.value)
+  await shepardObjectAccessor.fetchRoles();
+
+if (!shepardObjectAccessor.owner.value)
+  await shepardObjectAccessor.fetchOwner();
+
+onShepardObjectUpdated(() => {
+  shepardObjectAccessor.fetchPermissions();
+  shepardObjectAccessor.fetchRoles();
+  shepardObjectAccessor.fetchOwner();
+});
+
+const owner = shepardObjectAccessor.owner;
+const isOwner = shepardObjectAccessor.roles.value!.owner;
+
+const shepardObjectPermissions = shepardObjectAccessor.permissions;
 
 const isValid = ref(true);
 const isOwnerInputValid = ref(true);
@@ -33,33 +55,22 @@ const isOwnerInputValid = ref(true);
 const selectedAdditionalUserRole = ref<UserRole | undefined>(undefined);
 
 const memberPermissionsList = ref<MemberPermissions[] | undefined>(undefined);
-
+const updatedPermissions = ref<Permissions>();
 const selectedMember = ref<Member | undefined>(undefined);
-
 const filteredRoles = ref<UserRole[]>([]);
 
-const { collectionPermissions, owner } = useFetchCollectionPermissions(
-  props.collectionId,
-);
+updatedPermissions.value = shepardObjectPermissions.value;
+memberPermissionsList.value = await mapPermissions(updatedPermissions.value);
 
-const { updatedPermissions, saveChanges } = useEditCollectionPermissions(
-  props.collectionId,
-  () => (showDialog.value = false),
-  isValid,
-);
-
-watch(
-  collectionPermissions,
-  async () => {
-    if (collectionPermissions.value) {
-      updatedPermissions.value = collectionPermissions.value;
-      memberPermissionsList.value = await mapPermissions(
-        updatedPermissions.value,
-      );
-    }
-  },
-  { once: true },
-);
+async function saveChanges() {
+  try {
+    await shepardObjectAccessor.updatePermissions(updatedPermissions.value!);
+    showDialog.value = false;
+    handleShepardObjectUpdate();
+  } catch (error) {
+    handleError(error as ResponseError, "updating permissions");
+  }
+}
 
 const onOwnerChange = (updatedOwner: User | null) => {
   if (!updatedOwner) {
@@ -156,7 +167,7 @@ const onSubmit = () => {
 watch(selectedMember, newMember => {
   if (newMember && !instanceOfUser(newMember))
     filteredRoles.value = Object.values(UserRole).filter(
-      role => role !== "Manager",
+      role => role !== UserRole.manager,
     );
   else filteredRoles.value = Object.values(UserRole);
 });
@@ -166,14 +177,14 @@ watch(selectedMember, newMember => {
   <Dialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
-    title="Manage Permissions"
     :max-width="950"
     :submit-disabled="!(isValid && isOwnerInputValid)"
+    title="Manage Permissions"
     @submit="onSubmit"
   >
     <template #form>
       <v-form
-        v-if="collectionPermissions"
+        v-if="shepardObjectPermissions"
         ref="form"
         v-model="isValid"
         validate-on="invalid-input eager"
@@ -191,10 +202,10 @@ watch(selectedMember, newMember => {
         <v-row>
           <v-col>
             <v-select
-              :model-value="collectionPermissions.permissionType"
-              label="Permission Type"
-              density="compact"
+              v-model="shepardObjectPermissions.permissionType"
               :items="Object.values(PermissionType)"
+              density="compact"
+              label="Permission Type"
               variant="outlined"
               @update:model-value="onPermissionTypeChange"
             />
@@ -202,15 +213,15 @@ watch(selectedMember, newMember => {
           <v-col>
             <OwnerAutocompleteInput
               v-if="owner"
-              :model-value="owner"
               :is-owner="isOwner"
+              :model-value="owner"
               @owner-change="onOwnerChange"
             />
           </v-col>
         </v-row>
         <v-divider
-          opacity="100"
           class="text-divider1 mb-6 mt-2"
+          opacity="100"
           thickness="1px"
         />
         <v-row>
@@ -239,20 +250,20 @@ watch(selectedMember, newMember => {
             <v-select
               v-model="selectedAdditionalUserRole"
               :items="filteredRoles"
-              label="User or group role"
-              variant="outlined"
-              density="compact"
               color="primary"
-              require
+              density="compact"
               hide-details
+              label="User or group role"
+              require
+              variant="outlined"
             />
           </v-col>
-          <v-col style="max-width: fit-content" class="d-flex align-center">
+          <v-col class="d-flex align-center" style="max-width: fit-content">
             <v-btn
-              prepend-icon="mdi-plus-circle"
               color="primary"
-              variant="flat"
               height="40px"
+              prepend-icon="mdi-plus-circle"
+              variant="flat"
               @click="onAddPermission"
             >
               ADD

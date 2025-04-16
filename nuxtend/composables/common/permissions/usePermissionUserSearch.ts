@@ -4,7 +4,7 @@ import {
   type User,
 } from "@dlr-shepard/backend-client";
 
-export function useCollectionPermissionUserSearch(
+export function usePermissionUserSearch(
   searchString: Ref<string | undefined>,
   onSearchDone: () => void,
 ) {

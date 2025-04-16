@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   instanceOfUser,
   instanceOfUserGroup,
@@ -59,6 +59,14 @@ const headers = [
   },
 ];
 
+function sortRoles(a: UserRole, b: UserRole): number {
+  const roleOrder: { [role in UserRole]: number } = {};
+  roleOrder[UserRole.reader] = 0;
+  roleOrder[UserRole.writer] = 1;
+  roleOrder[UserRole.manager] = 2;
+  return roleOrder[a]! - roleOrder[b]!;
+}
+
 function deleteUserPermissions(deletedMember: MemberPermissions) {
   memberPermissionsList.value = memberPermissionsList.value.filter(
     memberPermissions => {
@@ -77,6 +85,7 @@ function deleteUserPermissions(deletedMember: MemberPermissions) {
     },
   );
 }
+
 function deleteRole(role: UserRole, entry: MemberPermissions) {
   // On deleting roles, implied roles are deleted automatically as well.
   if (role === UserRole.reader) {
@@ -117,15 +126,15 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
 
 <template>
   <DataTable
-    :headers="headers"
-    :items="memberPermissionsList"
-    :sort-by="[{ key: PermissionAttributes.Name, order: 'asc' }]"
-    hide-default-footer
-    fixed-header
-    style="max-height: 400px"
     :header-props="{
       class: 'bg-divider2 text-textbody1',
     }"
+    :headers="headers"
+    :items="memberPermissionsList"
+    :sort-by="[{ key: PermissionAttributes.Name, order: 'asc' }]"
+    fixed-header
+    hide-default-footer
+    style="max-height: 400px"
   >
     <template #[`item.type`]="{ item }: { item: MemberPermissions }">
       <v-icon
@@ -145,16 +154,16 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
     </template>
     <template #[`item.roleList`]="{ item }: { item: MemberPermissions }">
       <v-chip
-        v-for="(role, key) in item.roleList"
+        v-for="(role, key) in item.roleList.sort(sortRoles)"
         :key="key"
-        size="small"
-        border="sm"
         :class="[
           { 'manager-chip': role === UserRole.manager },
           { 'writer-chip': role === UserRole.writer },
           { 'reader-chip': role === UserRole.reader },
         ]"
+        border="sm"
         closable
+        size="small"
       >
         <div class="text-body2-medium">
           {{ role }}
@@ -171,9 +180,9 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
     </template>
     <template #[`item.actions`]="{ item }: { item: MemberPermissions }">
       <v-btn
+        color="primary"
         icon="mdi-delete-outline"
         variant="plain"
-        color="primary"
         @click="deleteUserPermissions(item)"
       />
     </template>
@@ -190,45 +199,56 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
 
 :deep(.v-chip.manager-chip) {
   border-color: rgb(var(--v-theme-green-stroke)) !important;
+
   .v-chip__underlay {
     opacity: 1;
     z-index: -1;
     background-color: rgb(var(--v-theme-green-background));
     color: rgb(var(--v-theme-green-background));
   }
+
   .v-chip__content {
     color: rgb(var(--v-theme-green-stroke));
   }
+
   .v-chip__close {
     color: rgb(var(--v-theme-green-stroke));
   }
 }
+
 :deep(.v-chip.reader-chip) {
   border-color: rgb(var(--v-theme-orange-stroke)) !important;
+
   .v-chip__underlay {
     opacity: 1;
     z-index: -1;
     background-color: rgb(var(--v-theme-orange-background));
     color: rgb(var(--v-theme-orange-background));
   }
+
   .v-chip__content {
     color: rgb(var(--v-theme-orange-stroke));
   }
+
   .v-chip__close {
     color: rgb(var(--v-theme-orange-stroke));
   }
 }
+
 :deep(.v-chip.writer-chip) {
   border-color: rgb(var(--v-theme-violet-stroke)) !important;
+
   .v-chip__underlay {
     opacity: 1;
     z-index: -1;
     background-color: rgb(var(--v-theme-violet-background));
     color: rgb(var(--v-theme-violet-background));
   }
+
   .v-chip__content {
     color: rgb(var(--v-theme-violet-stroke));
   }
+
   .v-chip__close {
     color: rgb(var(--v-theme-violet-stroke));
   }
@@ -236,6 +256,7 @@ function deleteRole(role: UserRole, entry: MemberPermissions) {
 
 :deep(.v-data-table__tr:hover) {
   background-color: rgb(var(--v-theme-focus1));
+
   .v-btn {
     visibility: visible !important;
   }

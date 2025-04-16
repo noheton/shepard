@@ -11,6 +11,27 @@ export const onCollectionUpdated = (listener: () => void) => {
   onUnmounted(stopListening);
 };
 
+const shepardObjectBus = useEventBus("shepard-object-updated");
+
+export const handleShepardObjectUpdate = () => {
+  shepardObjectBus.emit("shepard-object-updated");
+};
+
+export const onShepardObjectUpdated = (listener: () => void) => {
+  const stopListening = shepardObjectBus.on(listener);
+  onUnmounted(stopListening);
+};
+
+const containerBus = useEventBus("container-updated");
+
+export const handleContainerUpdate = () => {
+  containerBus.emit("container-updated");
+};
+
+export const onContainerUpdated = (listener: () => void) => {
+  const stopListening = containerBus.on(listener);
+  onUnmounted(stopListening);
+};
 const dataObjectBus = useEventBus("data-object-updated");
 
 export const handleDataObjectUpdate = () => {

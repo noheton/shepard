@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   BasicContainerAttributes,
   type BasicContainer,
@@ -8,6 +8,7 @@ import {
   type ContainerFilterType,
 } from "./containerTypeFilter";
 import { useContainerListQueryParams } from "./useContainerListQueryParams";
+import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 
 defineProps<{
   itemsPerPage: number;
@@ -18,6 +19,7 @@ defineProps<{
 
 const router = useRouter();
 const { queryParams } = useContainerListQueryParams();
+
 const headers = [
   {
     title: "ID",
@@ -93,34 +95,53 @@ function onPageChange(page: number) {
 
 <template>
   <DataTable
-    :sort-by="queryParams.sortBy ? [queryParams.sortBy] : []"
-    :header-props="{
-      class: 'text-subtitle-2 text-textbody1',
-    }"
     :cell-props="{
       class: 'text-textbody1',
+    }"
+    :header-props="{
+      class: 'text-subtitle-2 text-textbody1',
     }"
     :headers="headers"
     :items="serverItems"
     :items-per-page="itemsPerPage"
     :loading="loading"
+    :sort-by="queryParams.sortBy ? [queryParams.sortBy] : []"
+    hover
     @update:sort-by="onSortBy"
   >
-    <template #[`item.id`]="{ value }: { value: ContainerFilterType }">
-      {{ value }}
-    </template>
-    <template #[`item.type`]="{ value }: { value: ContainerFilterType }">
-      {{ ContainerTypeName[value] }}
-    </template>
-
-    <template #[`item.createdAt`]="{ value }: { value: Date }">
-      {{ toShortDateString(value) }}
+    <template #item="rowProps">
+      <v-data-table-row
+        v-bind="rowProps"
+        @click="
+          router.push(
+            containersPath +
+              containerTypeUrlPathSegmentMappings[
+                rowProps.item.type as ContainerFilterType
+              ] +
+              rowProps.item.id,
+          )
+        "
+      >
+        <template #[`item.id`]>
+          {{ rowProps.item.id }}
+        </template>
+        <template #[`item.name`]>
+          {{ rowProps.item.name }}
+        </template>
+        <template #[`item.type`]>
+          {{ ContainerTypeName[rowProps.item.type as ContainerFilterType] }}
+        </template>
+        <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
+        <template #[`item.createdAt`]>
+          {{ toShortDateString(rowProps.item.createdAt) }}
+        </template>
+      </v-data-table-row>
     </template>
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />
       <v-pagination
-        :model-value="queryParams.page ?? 1"
         :length="pageCount"
+        :model-value="queryParams.page ?? 1"
         :total-visible="6"
         @update:model-value="onPageChange"
       />
@@ -128,7 +149,7 @@ function onPageChange(page: number) {
   </DataTable>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));

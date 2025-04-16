@@ -5,6 +5,7 @@ import {
   type ResponseError,
 } from "@dlr-shepard/backend-client";
 import type { ContextMenuItem } from "~/components/common/ContextMenu.vue";
+import { CollectionAccessor } from "~/composables/shepardObjectAccessor";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;
@@ -13,6 +14,7 @@ interface CollectionSidebarHeaderProps {
   isAllowedToEditPermissions?: boolean;
   isOwner?: boolean;
 }
+
 const props = defineProps<CollectionSidebarHeaderProps>();
 const showContextMenuButton = ref<boolean>(false);
 const showEditDialog = ref(false);
@@ -83,12 +85,12 @@ const exportCollection = () => {
     Collection
   </div>
   <v-card
+    :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
+    :to="collectionsPath + `${collection?.id}`"
     flat
     hover
     rounded="0"
     style="min-height: 40px; max-height: 40px"
-    :to="collectionsPath + `${collection?.id}`"
-    :class="`d-flex ${isFocused ? 'sidebar-item-focused' : 'sidebar-item'}`"
   >
     <v-card-item class="w-100">
       <template v-if="!!collection">
@@ -141,8 +143,7 @@ const exportCollection = () => {
             <EditPermissionsDialog
               v-if="showEditPermissionsDialog"
               v-model:show-dialog="showEditPermissionsDialog"
-              :collection-id="collection.id"
-              :is-owner="isOwner"
+              :shepard-object-accessor="new CollectionAccessor(collection.id)"
             />
           </div>
         </div>

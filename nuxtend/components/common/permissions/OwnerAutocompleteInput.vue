@@ -1,6 +1,6 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { User } from "@dlr-shepard/backend-client";
-import { useCollectionPermissionUserSearch } from "~/composables/common/permissions/useCollectionPermissionUserSearch";
+import { usePermissionUserSearch } from "~/composables/common/permissions/usePermissionUserSearch";
 import AutocompleteInput, {
   type AutoCompleteItem,
 } from "../AutocompleteInput.vue";
@@ -17,10 +17,12 @@ const searchString = ref<string | undefined>(undefined);
 
 const searchDone = ref<boolean>(false);
 
-const { ownerSearchResults, isLoading, startSearch } =
-  useCollectionPermissionUserSearch(searchString, () => {
+const { ownerSearchResults, isLoading, startSearch } = usePermissionUserSearch(
+  searchString,
+  () => {
     searchDone.value = true;
-  });
+  },
+);
 
 const mapToAutocompleteItem = (user: User): AutoCompleteItem => ({
   title: `${user.firstName} ${user.lastName}`,
@@ -41,15 +43,15 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
 
 <template>
   <AutocompleteInput
-    v-model:search-string="searchString"
     v-model:search-done="searchDone"
-    label="Owner"
-    density="compact"
-    :model-value="ownerModel"
+    v-model:search-string="searchString"
     :is-disabled="!isOwner"
     :is-loading="isLoading"
     :item-list="ownerSearchResults.map(mapToAutocompleteItem)"
+    :model-value="ownerModel"
     :start-search="startSearch"
+    density="compact"
+    label="Owner"
     @search-ended="onSelect"
   />
 </template>
