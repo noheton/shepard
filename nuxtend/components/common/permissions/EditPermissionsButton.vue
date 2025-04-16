@@ -24,6 +24,9 @@ defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
       :shepard-object-accessor="shepardObjectAccessor"
       @update-success="emit('update-success')"
     />
+    <v-tooltip activator="parent" location="top">
+      Permission Management
+    </v-tooltip>
   </v-btn>
 </template>
 

@@ -14,6 +14,7 @@ const emit = defineEmits(["delete"]);
     @click="showDialog = true"
   >
     <v-icon>mdi-delete-outline</v-icon>
+    <v-tooltip activator="parent" location="top">Delete Container</v-tooltip>
   </v-btn>
   <ConfirmDeleteDialog
     v-if="showDialog"
