@@ -1,5 +1,5 @@
 "upload-docker-timescale-migration":
-  image: docker:27.4
+  image: docker:28.0
   stage: upload
   services:
     - name: docker:dind
