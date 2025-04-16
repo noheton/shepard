@@ -6,7 +6,7 @@ const emit = defineEmits(["delete"]);
 <template>
   <v-btn
     class="mx-2"
-    color="treeview"
+    color="primary"
     icon
     rounded="lg"
     size="small"

@@ -10,7 +10,7 @@ defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
 <template>
   <v-btn
     class="mx-2"
-    color="treeview"
+    color="primary"
     icon
     rounded="lg"
     size="small"
