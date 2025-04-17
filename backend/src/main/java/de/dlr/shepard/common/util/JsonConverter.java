@@ -24,4 +24,14 @@ public final class JsonConverter {
       throw new RuntimeException(e);
     }
   }
+
+  public static <T> T convertToObject(String jsonString, Class<T> clazz) {
+    try {
+      if (jsonString == null) return null;
+      return new ObjectMapper().readValue(jsonString, clazz);
+    } catch (Exception e) {
+      Log.errorf("Error while converting JSON string to metadata object. %s", e);
+      throw new RuntimeException(e);
+    }
+  }
 }

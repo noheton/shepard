@@ -41,7 +41,7 @@ public class TimeseriesMigrationRest {
   @Path("/migrations/state")
   @Tag(
     name = "timeseries migration",
-    description = "This endpoint is only temporarily available. It is related to the migration of timeseries data from InfluxDB to TimescaleDB."
+    description = "This endpoint is only temporarily available. It is related to the migration of timeseries data from InfluxDB to TimescaleDB. The total amount of points added is datasetSize * numberOfDifferentTimeseries."
   )
   @Operation(
     description = "This endpoint is used to retrieve the current state of all data migrations that are currently running or already finished."
@@ -64,6 +64,7 @@ public class TimeseriesMigrationRest {
   @Parameter(name = "databaseName", required = true)
   @Parameter(name = "datasetSize", required = true)
   @Parameter(name = "dataPointValueType", required = true)
+  @Parameter(name = "numberOfDifferentTimeseries")
   @Operation(
     description = "Creates new database in influxdb, generate and insert random data to it to be use later in testing the migration."
   )
@@ -73,13 +74,18 @@ public class TimeseriesMigrationRest {
   public Response ingestData(
     @QueryParam("databaseName") String databaseName,
     @QueryParam("datasetSize") int datasetSize,
-    @QueryParam("dataPointValueType") DataPointValueType dataPointValueType
+    @QueryParam("dataPointValueType") DataPointValueType dataPointValueType,
+    @QueryParam("numberOfDifferentTimeseries") int numberOfDifferentTimeseries
   ) {
+    if (numberOfDifferentTimeseries <= 0) {
+      numberOfDifferentTimeseries = 1;
+    }
     testDataIngestionService.ingestTestData(
       databaseName,
       datasetSize,
       securityContext.getUserPrincipal().getName(),
-      dataPointValueType
+      dataPointValueType,
+      numberOfDifferentTimeseries
     );
     return Response.ok().build();
   }

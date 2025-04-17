@@ -6,7 +6,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.concurrent.Callable;
-import org.influxdb.InfluxDBException;
 
 @RequestScoped
 class PayloadReader implements Callable<Object> {
@@ -24,7 +23,8 @@ class PayloadReader implements Callable<Object> {
       while (true) {
         var queue = migrationService.getPayloadReadQueue();
         PayloadReadTask payloadReadTask;
-        synchronized (queue) { // Taking the element and looking up if there is no further element must be done atomically
+        synchronized (queue) { // Taking the element and looking up if there is no further element must be done
+          // atomically
           payloadReadTask = queue.poll();
           overallLastTask = queue.isEmpty();
           if (payloadReadTask.isLastTask) {
@@ -64,9 +64,8 @@ class PayloadReader implements Callable<Object> {
       }
     } catch (InterruptedException e) {
       // Cancel the task
+      Log.errorf("Exception from reader task: " + e.getMessage());
       Thread.currentThread().interrupt();
-    } catch (InfluxDBException e) {
-      throw e;
     } finally {
       // To ensure adding them once!
       if (overallLastTask) migrationService.addWriterPoisonPills();

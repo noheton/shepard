@@ -68,7 +68,8 @@ public class TimeseriesMigrationTestDataIngestionServiceTest {
       databaseName,
       5000,
       userName,
-      DataPointValueType.Boolean
+      DataPointValueType.Boolean,
+      1
     );
 
     // assert
@@ -110,7 +111,8 @@ public class TimeseriesMigrationTestDataIngestionServiceTest {
       databaseName,
       5000,
       userName,
-      DataPointValueType.String
+      DataPointValueType.String,
+      1
     );
 
     // assert
@@ -151,7 +153,8 @@ public class TimeseriesMigrationTestDataIngestionServiceTest {
       databaseName,
       5000,
       userName,
-      DataPointValueType.Double
+      DataPointValueType.Double,
+      1
     );
 
     // assert

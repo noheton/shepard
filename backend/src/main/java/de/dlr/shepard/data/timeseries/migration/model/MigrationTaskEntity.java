@@ -51,6 +51,13 @@ public class MigrationTaskEntity {
   @Convert(converter = StringListConverter.class)
   private List<String> errors = new ArrayList<String>();
 
+  // json representation of a timeseries
+  private String timeseries;
+
+  // influx database name
+  @Column(name = "database_name")
+  private String databaseName;
+
   public MigrationTaskEntity(long containerId) {
     this.containerId = containerId;
   }

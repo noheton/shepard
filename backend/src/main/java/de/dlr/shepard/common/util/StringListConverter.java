@@ -21,6 +21,6 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
   public List<String> convertToEntityAttribute(String string) {
     return (string == null || string.isBlank())
       ? new ArrayList<String>()
-      : Arrays.asList(string.split(Pattern.quote(SPLIT_CHAR)));
+      : new ArrayList<String>(Arrays.asList(string.split(Pattern.quote(SPLIT_CHAR))));
   }
 }

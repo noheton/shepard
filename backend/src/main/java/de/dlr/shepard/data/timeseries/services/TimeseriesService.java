@@ -20,6 +20,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,8 @@ public class TimeseriesService {
   /**
    * Returns a list of timeseries objects that are in the given database.
    *
-   * Returns an empty list if the timeseries container is not accessible (cannot be found or wrong permissions).
+   * Returns an empty list if the timeseries container is not accessible (cannot
+   * be found or wrong permissions).
    *
    * @param containerId of the given timeseries container
    * @return a list of timeseries entities
@@ -58,8 +60,10 @@ public class TimeseriesService {
    * @param containerId timeseries container id
    * @param id
    * @return TimeseriesEntity
-   * @throws InvalidPathException if container with containerId or the timeseries are not accessible
-   * @throws InvalidAuthException if user has no read permissions on the timeseries container
+   * @throws InvalidPathException if container with containerId or the timeseries
+   *                              are not accessible
+   * @throws InvalidAuthException if user has no read permissions on the
+   *                              timeseries container
    */
   public TimeseriesEntity getTimeseriesById(long containerId, int id) {
     timeseriesContainerService.getContainer(containerId);
@@ -92,23 +96,8 @@ public class TimeseriesService {
   }
 
   /**
-   * Deletes timeseries container by id
-   *
-   * This function is introduced to fix the issue occurring in ticket: #581.
-   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
-   *
-   * @param containerId
-   * @throws InvalidPathException if container could not be found
-   * @throws InvalidAuthException if user has no edit permissions on container
-   */
-  @Deprecated
-  @Transactional
-  public void deleteTimeseriesByContainerIdNoChecks(long containerId) {
-    this.timeseriesRepository.deleteByContainerId(containerId);
-  }
-
-  /**
-   * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
    *
    * @return List of TimeseriesDataPoint
    * @throws InvalidPathException if container is null or deleted
@@ -125,12 +114,16 @@ public class TimeseriesService {
   }
 
   /**
-   * Retrieve a list of DataPoints for a time-interval with options to grouping/ time slicing, filling and aggregating.
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
    *
-   * This function does not check if the container specified by containerId is accessible.
-   * We add <code>@ActivateRequestContext</code> in order to call this method in a parallel stream.
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
    * The container check relies on an active request context.
-   * However, the 'ActivateRequestContext' annotation does not allow for a container check.
+   * However, the 'ActivateRequestContext' annotation does not allow for a
+   * container check.
    *
    * @param containerId
    * @param timeseries
@@ -178,11 +171,12 @@ public class TimeseriesService {
 
   /**
    * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in the database.
+   * If the corresponding timeseries did not exist before, it will be persisted in
+   * the database.
    *
-   * @param timeseriesContainerId    Identifies the TimeseriesContainer
-   * @param timeseries               The timeseries identifiers
-   * @param dataPoints               Data points to be added to the timeseries
+   * @param timeseriesContainerId Identifies the TimeseriesContainer
+   * @param timeseries            The timeseries identifiers
+   * @param dataPoints            Data points to be added to the timeseries
    * @return created timeseries
    */
   public TimeseriesEntity saveDataPoints(
@@ -202,12 +196,14 @@ public class TimeseriesService {
 
   /**
    * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in the database.
+   * If the corresponding timeseries did not exist before, it will be persisted in
+   * the database.
    *
-   * @param timeseriesContainerId    Identifies the TimeseriesContainer
-   * @param timeseries               The timeseries identifiers
-   * @param dataPoints               Data points to be added to the timeseries
-   * @param dataType                 The data type that values in this timeseries will have
+   * @param timeseriesContainerId Identifies the TimeseriesContainer
+   * @param timeseries            The timeseries identifiers
+   * @param dataPoints            Data points to be added to the timeseries
+   * @param dataType              The data type that values in this timeseries
+   *                              will have
    * @return created timeseries
    */
   @Transactional(Transactional.TxType.REQUIRES_NEW)
@@ -232,16 +228,19 @@ public class TimeseriesService {
 
   /**
    * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in the database.
+   * If the corresponding timeseries did not exist before, it will be persisted in
+   * the database.
    *
    * This function is introduced to fix the issue occurring in ticket: #581.
    *
-   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
+   * TODO: This function should only be used for the timeseries migration, and
+   * should be deleted in the future!
    *
-   * @param timeseriesContainerId    Identifies the TimeseriesContainer
-   * @param timeseries               The timeseries identifiers
-   * @param dataPoints               Data points to be added to the timeseries
-   * @param dataType                 The data type that values in this timeseries will have
+   * @param timeseriesContainerId Identifies the TimeseriesContainer
+   * @param timeseries            The timeseries identifiers
+   * @param dataPoints            Data points to be added to the timeseries
+   * @param dataType              The data type that values in this timeseries
+   *                              will have
    * @return created timeseries
    */
   @Deprecated
@@ -255,14 +254,34 @@ public class TimeseriesService {
   ) {
     TimeseriesEntity timeseriesEntity = getOrCreateTimeseriesNoChecks(timeseriesContainerId, timeseries, dataType);
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
-    timeseriesDataPointRepository.insertManyDataPoints(dataPoints, timeseriesEntity);
+    try {
+      timeseriesDataPointRepository.insertManyDataPointsWithCopyCommand(dataPoints, timeseriesEntity);
+    } catch (SQLException e) {
+      // COPY command cannot handle duplicates (conflict on timeseries_id and time column)
+      // We are going to use the normal batch insertion instead.
+      Log.warnf("SQLException during copy insert (expected): %s ", e.getMessage());
+      Log.warn("We are going to repeat the operation with batch insert.");
+      return repeatSaveDataPointsWithBatchInsert(dataPoints, timeseriesEntity);
+    }
+    return timeseriesEntity;
+  }
+
+  @Deprecated
+  @Transactional(Transactional.TxType.REQUIRES_NEW)
+  @TransactionConfiguration(timeout = 6000)
+  public TimeseriesEntity repeatSaveDataPointsWithBatchInsert(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity
+  ) {
+    timeseriesDataPointRepository.insertManyDataPoints(entities, timeseriesEntity);
     return timeseriesEntity;
   }
 
   /**
    * This function is introduced to fix the issue occurring in ticket: #581.
    *
-   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
+   * TODO: This function should only be used for the timeseries migration, and
+   * should be deleted in the future!
    */
   @Deprecated
   private TimeseriesEntity getOrCreateTimeseriesNoChecks(

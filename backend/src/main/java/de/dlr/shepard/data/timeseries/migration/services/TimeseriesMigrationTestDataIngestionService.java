@@ -34,12 +34,13 @@ public class TimeseriesMigrationTestDataIngestionService {
     String databaseName,
     int datasetSize,
     String userName,
-    DataPointValueType dataPointValueType
+    DataPointValueType dataPointValueType,
+    int numberOfDifferentTimeseries
   ) {
     if (influxConnector.databaseExist(databaseName)) {
       throw new ShepardProcessingException("Database already exists: " + databaseName);
     }
-    Log.infof("ingestTestData started, size: %s, databaseName: %s", datasetSize, databaseName);
+    Log.infof("ingestTestData databaseName: %s, size: %s, starting...", databaseName, datasetSize);
     var containerName = String.format("Container-%d", System.currentTimeMillis());
     TimeseriesContainer entity = new TimeseriesContainer();
     entity.setDatabase(databaseName);
@@ -48,30 +49,40 @@ public class TimeseriesMigrationTestDataIngestionService {
     timeseriesContainerDao.createOrUpdate(entity);
     influxConnector.createDatabase(databaseName);
 
-    int remainingDataSize = datasetSize;
-    long timeOffset = 0;
-    while (remainingDataSize > 0) {
-      Log.infof("ingestTestData, remaining: %s", remainingDataSize);
-      int payloadSize = Math.min(PAYLOAD_MAX_SIZE, remainingDataSize);
-      InfluxTimeseriesPayload payload = getRandomPayload(dataPointValueType, payloadSize, timeOffset);
-      influxConnector.saveTimeseriesPayload(databaseName, payload);
-      remainingDataSize -= payloadSize;
-      timeOffset += payloadSize;
+    for (int i = 1; i <= numberOfDifferentTimeseries; i++) {
+      String symbolicName = String.format("symbolicName-%d", i);
+      int remainingDataSize = datasetSize;
+      long timeOffset = 0;
+      while (remainingDataSize > 0) {
+        Log.infof(
+          "ingestTestData databaseName: %s, symbolicName: %s, remaining: %s",
+          databaseName,
+          symbolicName,
+          remainingDataSize
+        );
+        int payloadSize = Math.min(PAYLOAD_MAX_SIZE, remainingDataSize);
+        InfluxTimeseriesPayload payload = getRandomPayload(dataPointValueType, symbolicName, payloadSize, timeOffset);
+        influxConnector.saveTimeseriesPayload(databaseName, payload);
+        remainingDataSize -= payloadSize;
+        timeOffset += payloadSize;
+      }
+      Log.infof("ingestTestData databaseName: %s, symbolicName: %s, finished!", databaseName, symbolicName);
     }
-    Log.infof("ingestTestData finished, databaseName: %s", databaseName);
+    Log.infof("ingestTestData databaseName: %s, finished!", databaseName);
     return entity;
   }
 
   private InfluxTimeseriesPayload getRandomPayload(
     DataPointValueType dataPointValueType,
+    String symbolicName,
     int payloadSize,
     long timeOffset
   ) {
-    InfluxTimeseries timeseries = new InfluxTimeseries("measurement", "device", "location", "symbolicName", "field");
+    InfluxTimeseries timeseries = new InfluxTimeseries("measurement", "device", "location", symbolicName, "field");
     List<InfluxPoint> points = new ArrayList<>();
 
     IntStream.range(0, payloadSize).forEach(i -> {
-      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 100_000_000)); // one data point per 100 milliseconds
+      points.add(getRandomInfluxPoint(dataPointValueType, (timeOffset + i) * 100_000_000)); // one data point per 100
     });
     InfluxTimeseriesPayload payload = new InfluxTimeseriesPayload(timeseries, points);
     return payload;

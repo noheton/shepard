@@ -249,9 +249,7 @@ public class TimeseriesMigrationServiceTest {
   public void runMigrations_migrateDatabaseWithoutAnyData_shouldNotFail() {
     // arrange
     influxConnector.deleteDatabase(this.container.getDatabase());
-
-    var payload = new InfluxTestDataGenerator().buildPayload();
-    influxConnector.saveTimeseriesPayload(container.getDatabase(), payload);
+    influxConnector.createDatabase(this.container.getDatabase());
 
     // act
     migrationService.runMigrations();
