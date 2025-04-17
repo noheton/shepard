@@ -26,7 +26,7 @@ const { collectionSearchResults, startSearch, isLoading } = useCollectionSearch(
 );
 
 const { isPending, start } = useTimeoutFn(() => {
-  if (!searchString.value) {
+  if (searchString.value.trim() === "") {
     hideNoDataMessage.value = true;
   }
   startSearch();
