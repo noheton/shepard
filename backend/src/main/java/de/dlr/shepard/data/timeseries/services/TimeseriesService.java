@@ -20,6 +20,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +56,7 @@ public class TimeseriesService {
   }
 
   /**
-   * Returns a timeseries by id
+   * Returns a timeseries entity by id
    *
    * @param containerId timeseries container id
    * @param id
@@ -79,6 +80,36 @@ public class TimeseriesService {
       throw new InvalidPathException(errorMsg);
     }
     return timeseries;
+  }
+
+  /**
+   * Returns a timeseries entity
+   *
+   * @param containerId timeseries container id
+   * @param timeseries
+   * @return TimeseriesEntity
+   * @throws NotFoundException if the timeseries is not found
+   * @throws InvalidPathException if container with containerId is not accessible
+   * @throws InvalidAuthException if user has no read permissions on the timeseries container
+   */
+  public TimeseriesEntity getTimeseries(long containerId, Timeseries timeseries) {
+    timeseriesContainerService.getContainer(containerId);
+
+    var timeseriesEntity = timeseriesRepository.findTimeseries(containerId, timeseries);
+    if (timeseriesEntity.isEmpty()) {
+      String errorMsg = String.format(
+        "Timeseries (%s, %s, %s, %s, %s) in container %s is null or deleted",
+        timeseries.getMeasurement(),
+        timeseries.getDevice(),
+        timeseries.getLocation(),
+        timeseries.getSymbolicName(),
+        timeseries.getField(),
+        containerId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+    return timeseriesEntity.get();
   }
 
   /**

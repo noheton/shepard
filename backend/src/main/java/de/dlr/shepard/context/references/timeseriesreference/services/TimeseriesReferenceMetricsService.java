@@ -1,6 +1,5 @@
 package de.dlr.shepard.context.references.timeseriesreference.services;
 
-import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -11,11 +10,12 @@ import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
+import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.util.Collections;
+import jakarta.ws.rs.NotFoundException;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,19 +23,19 @@ import java.util.stream.Collectors;
 public class TimeseriesReferenceMetricsService {
 
   @Inject
-  private TimeseriesRepository timeseriesRepository;
+  TimeseriesRepository timeseriesRepository;
 
   @Inject
-  private TimeseriesDataPointRepository timeseriesDataPointRepository;
+  TimeseriesService timeseriesService;
 
   @Inject
-  private TimeseriesReferenceService timeseriesReferenceService;
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
+
+  @Inject
+  TimeseriesReferenceService timeseriesReferenceService;
 
   @Inject
   DataObjectService dataObjectService;
-
-  @Inject
-  CollectionService collectionService;
 
   public List<MetricsIO> getTimeseriesReferenceMetrics(
     long collectionId,
@@ -72,7 +72,6 @@ public class TimeseriesReferenceMetricsService {
     List<AggregateFunction> metrics
   ) {
     dataObjectService.getDataObject(collectionId, dataObjectId, versionUID);
-    collectionService.assertIsAllowedToReadCollection(collectionId);
 
     TimeseriesReference timeseriesReference = timeseriesReferenceService.getReference(
       collectionId,
@@ -83,17 +82,40 @@ public class TimeseriesReferenceMetricsService {
 
     if (
       timeseriesReference.getTimeseriesContainer() == null || timeseriesReference.getTimeseriesContainer().isDeleted()
-    ) return Collections.emptyList();
+    ) {
+      String errorMsg = String.format(
+        "Referenced TimeseriesContainer is not set or deleted in TimeseriesReference with id %s",
+        timeseriesReferenceId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
 
-    Optional<TimeseriesEntity> timeseriesEntity =
-      this.timeseriesRepository.findTimeseries(timeseriesReference.getTimeseriesContainer().getId(), timeseries);
+    TimeseriesEntity timeseriesEntity;
 
-    if (timeseriesEntity.isEmpty()) return Collections.emptyList();
-    int timeseriesId = timeseriesEntity.get().getId();
+    try {
+      timeseriesEntity = timeseriesService.getTimeseries(
+        timeseriesReference.getTimeseriesContainer().getId(),
+        timeseries
+      );
+    } catch (NotFoundException e) {
+      String errorMsg = String.format(
+        "Timeseries (%s, %s, %s, %s, %s) in the referenced TimeseriesContainer under TimeseriesReference with id %s",
+        timeseries.getMeasurement(),
+        timeseries.getDevice(),
+        timeseries.getLocation(),
+        timeseries.getSymbolicName(),
+        timeseries.getField(),
+        timeseriesReferenceId
+      );
+      Log.error(errorMsg);
+      throw new NotFoundException(errorMsg);
+    }
+
     return metrics
       .stream()
       .map(metric -> {
-        DataPointValueType valueType = timeseriesEntity.get().getValueType();
+        DataPointValueType valueType = timeseriesEntity.getValueType();
         TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
           timeseriesReference.getStart(),
           timeseriesReference.getEnd(),
@@ -107,7 +129,7 @@ public class TimeseriesReferenceMetricsService {
           (metric != AggregateFunction.COUNT && metric != AggregateFunction.FIRST && metric != AggregateFunction.LAST)
         ) return new MetricsIO(metric, "N/A");
         var dataPoints =
-          this.timeseriesDataPointRepository.queryAggregationFunction(timeseriesId, valueType, queryParams);
+          this.timeseriesDataPointRepository.queryAggregationFunction(timeseriesEntity.getId(), valueType, queryParams);
         return new MetricsIO(metric, dataPoints.get(0).getValue());
       })
       .collect(Collectors.toList());

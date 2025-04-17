@@ -21,6 +21,7 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.List;
@@ -291,6 +292,29 @@ public class TimeseriesServiceTest {
 
     assertThrowsExactly(InvalidPathException.class, () -> {
       this.timeseriesService.getTimeseriesById(1234L, nonExistingTimeseriesId);
+    });
+  }
+
+  @Test
+  public void getTimeseries_timeseriesDoesNotExist_throwsNotFoundException() {
+    Timeseries nonExistingTimeseries = new Timeseries(
+      "nonExisting",
+      "nonExisting",
+      "nonExisting",
+      "nonExisting",
+      "nonExisting"
+    );
+
+    User user = new User("Testuser");
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+    var container = timeseriesContainerService.createContainer(containerIO);
+
+    assertThrowsExactly(NotFoundException.class, () -> {
+      this.timeseriesService.getTimeseries(container.getId(), nonExistingTimeseries);
     });
   }
 

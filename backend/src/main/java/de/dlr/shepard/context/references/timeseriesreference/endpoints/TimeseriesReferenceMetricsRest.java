@@ -75,23 +75,27 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.FIELD, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricsOfTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesReferenceId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,
     @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
     @QueryParam(Constants.FIELD) String field,
-    @QueryParam(Constants.VERSION_UID) UUID versionUID
+    @QueryParam(Constants.VERSION_UID) @org.hibernate.validator.constraints.UUID String versionUID
   ) {
+    UUID versionUUID = null;
+    if (versionUID != null) {
+      versionUUID = UUID.fromString(versionUID);
+    }
     Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
 
     List<MetricsIO> result = timeseriesReferenceMetricsService.getTimeseriesReferenceMetrics(
       collectionId,
       dataObjectId,
       timeseriesReferenceId,
-      versionUID,
+      versionUUID,
       timeseries
     );
 
@@ -119,9 +123,9 @@ public class TimeseriesReferenceMetricsRest {
   @Parameter(name = Constants.FUNCTION, required = true)
   @Parameter(name = Constants.VERSION_UID)
   public Response getMetricOfTimeseriesReference(
-    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero long collectionId,
-    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero long dataObjectId,
-    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero long timeseriesReferenceId,
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @PathParam(Constants.TIMESERIES_REFERENCE_ID) @NotNull @PositiveOrZero Long timeseriesReferenceId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,

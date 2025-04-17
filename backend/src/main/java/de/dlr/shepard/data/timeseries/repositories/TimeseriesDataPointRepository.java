@@ -325,8 +325,6 @@ public class TimeseriesDataPointRepository {
       AND time <= :endTimeNano
     """;
 
-    Log.info(queryString);
-
     Query query = entityManager.createNativeQuery(queryString, TimeseriesDataPoint.class);
 
     query.setParameter("timeseriesId", timeseriesId);
