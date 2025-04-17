@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ContainerType } from "@dlr-shepard/backend-client";
 import MetadataColumn from "./MetadataColumn.vue";
 import MetadataContainerField from "./MetadataContainerField.vue";
 import MetadataField from "./MetadataTextField.vue";
@@ -16,7 +17,7 @@ interface TitleAndMetadataDisplayProps {
     container?: {
       title: string;
       id: number;
-      path: string;
+      type: ContainerType;
       availability?: "available" | "deleted" | "forbidden" | "error";
     };
   };
@@ -59,7 +60,7 @@ defineProps<TitleAndMetadataDisplayProps>();
           :container-name="entity.container.title"
           :container-id="entity.container.id"
           :availability="entity.container.availability ?? 'available'"
-          :container-path="entity.container.path"
+          :container-type="entity.container.type"
         />
       </MetadataColumn>
 

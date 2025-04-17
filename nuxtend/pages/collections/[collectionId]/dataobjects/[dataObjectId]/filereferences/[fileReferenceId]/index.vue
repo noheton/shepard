@@ -151,7 +151,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                     title:
                       fileReference.referencedContainerName ?? 'unknown name',
                     id: fileReference.fileContainerId,
-                    path: containersPath + fileReference.fileContainerId,
+                    type: 'FILE',
                     availability: fileReference.referencedContainerAvailability,
                   },
                 }"

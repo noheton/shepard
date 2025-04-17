@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import type { ContainerType } from "@dlr-shepard/backend-client";
+
 export interface MetadataContainerFieldProps {
   containerName: string;
   containerId: number;
-  containerPath: string;
+  containerType: ContainerType;
   availability: "available" | "deleted" | "forbidden" | "error";
 }
 
-defineProps<MetadataContainerFieldProps>();
+const props = defineProps<MetadataContainerFieldProps>();
+
+const containerPath = buildContainerPath(
+  props.containerType,
+  props.containerId,
+);
 </script>
 
 <template>
@@ -18,7 +25,8 @@ defineProps<MetadataContainerFieldProps>();
       </span>
     </div>
     <div class="d-flex flex-column">
-      <a class="text-no-wrap" :href="containerPath" target="_blank">
+      <div v-if="isDeleted(containerId)">{{ containerName }}</div>
+      <a v-else class="text-no-wrap" :href="containerPath" target="_blank">
         {{ containerName }}
       </a>
       <span class="text-no-wrap">(ID: {{ containerId }})</span>

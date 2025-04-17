@@ -191,7 +191,7 @@ const onSelectedItemChanged = () => {
                   container: {
                     title: timeseriesContainer.name,
                     id: timeseriesContainer.id,
-                    path: containersPath + timeseriesContainer.id,
+                    type: 'TIMESERIES',
                   },
                 }"
                 id-label="ID"
