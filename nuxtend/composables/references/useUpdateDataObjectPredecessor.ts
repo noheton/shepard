@@ -1,6 +1,6 @@
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
 
-export function useUpdateDataObjectPredecessor(
+export function useUpdateDataObjectRelationship(
   collectionId: number,
   onSuccess: () => void,
   isLoading?: Ref<boolean>,
@@ -68,6 +68,20 @@ export function useUpdateDataObjectPredecessor(
   }
 
   /**
+   * Adds a successor to a data object.
+   *
+   * There is no way of actually adding a successor, however we can add the current dataobject as a predecessor of the to-be-set successor.
+   * @param dataobjectId
+   * @param newSuccessorDataObjectId
+   */
+  async function addSuccessor(
+    dataobjectId: number,
+    newSuccessorDataObjectId: number,
+  ) {
+    addPredecessor(newSuccessorDataObjectId, dataobjectId);
+  }
+
+  /**
    * Removes a single Data Object id from the predecessor list of an dataobject.
    *
    * @param dataobjectId id of the dataobject the relationship is going out
@@ -131,9 +145,18 @@ export function useUpdateDataObjectPredecessor(
     loading.value = false;
   }
 
+  async function deleteSuccessor(
+    dataobjectId: number,
+    toBeDeletedSuccessorId: number,
+  ) {
+    deletePredecessor(toBeDeletedSuccessorId, dataobjectId);
+  }
+
   return {
     addPredecessor,
+    addSuccessor,
     deletePredecessor,
+    deleteSuccessor,
     loading,
   };
 }

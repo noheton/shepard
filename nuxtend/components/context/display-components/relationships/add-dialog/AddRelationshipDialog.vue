@@ -2,7 +2,7 @@
 import RelationshipInput from "~/components/context/input-components/relationship/RelationshipInput.vue";
 
 import { useCreateReferences } from "~/composables/references/useCreateReferences";
-import { useUpdateDataObjectPredecessor } from "~/composables/references/useUpdateDataObjectPredecessor";
+import { useUpdateDataObjectRelationship } from "~/composables/references/useUpdateDataObjectPredecessor";
 import {
   CustomRelationshipType,
   isValidCollectionReference,
@@ -22,10 +22,11 @@ const showDialog = defineModel<boolean>("showDialog", {
 const relationshipModel = ref<ReferenceData>();
 const isValid = ref<boolean>(false);
 
-const { addPredecessor, loading } = useUpdateDataObjectPredecessor(
-  props.collectionId,
-  () => (showDialog.value = false),
-);
+const { addPredecessor, addSuccessor, loading } =
+  useUpdateDataObjectRelationship(
+    props.collectionId,
+    () => (showDialog.value = false),
+  );
 
 const { addCollectionReference, addDataObjectReference, addUriReference } =
   useCreateReferences(
@@ -66,9 +67,9 @@ const onSubmit = () => {
   }
 
   if (relationshipModel.value.type === RelationshipType.SUCCESSOR) {
-    addPredecessor(
-      relationshipModel.value.relatedDataObjectId,
+    addSuccessor(
       props.dataObjectId,
+      relationshipModel.value.relatedDataObjectId,
     );
   }
 
@@ -99,7 +100,7 @@ const onSubmit = () => {
 </script>
 
 <template>
-  <Dialog
+  <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
     title="Add New Relationship"
@@ -117,5 +118,5 @@ const onSubmit = () => {
         />
       </v-form>
     </template>
-  </Dialog>
+  </FormDialog>
 </template>

@@ -6,7 +6,7 @@ export interface CollectionSearchResult {
 }
 
 export function useCollectionSearch(
-  searchString: Ref<string | undefined>,
+  searchString: Ref<string>,
   onSearchDone?: () => void,
 ) {
   const isLoading = ref<boolean>(false);
@@ -84,11 +84,13 @@ export function useCollectionSearch(
   }
 
   const startSearch = () => {
-    if (!searchString.value) {
+    const trimmedSearchString = searchString.value.trim();
+    if (trimmedSearchString === "") {
       resetResultList();
       return;
     }
-    searchCollectionsByQuery(searchString.value);
+
+    searchCollectionsByQuery(trimmedSearchString);
   };
 
   return {

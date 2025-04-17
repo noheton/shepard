@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useDeleteReferences } from "~/composables/references/useDeleteReferences";
-import { useUpdateDataObjectPredecessor } from "~/composables/references/useUpdateDataObjectPredecessor";
+import { useUpdateDataObjectRelationship } from "~/composables/references/useUpdateDataObjectPredecessor";
 import type { RelationshipTableElement } from "../relationshipTableElement";
 
 interface DeleteRelationshipDialogProps {
@@ -24,7 +24,7 @@ const {
   showDialog.value = false;
 });
 
-const { deletePredecessor } = useUpdateDataObjectPredecessor(
+const { deletePredecessor, deleteSuccessor } = useUpdateDataObjectRelationship(
   props.collectionId,
   () => {
     showDialog.value = false;
@@ -53,7 +53,7 @@ async function deleteRelationship() {
     }
     case "Data Object": {
       if (props.tableElement.relationship === "Successor") {
-        deletePredecessor(referenceId, props.dataObjectId);
+        deleteSuccessor(props.dataObjectId, referenceId);
       } else if (props.tableElement.relationship === "Predecessor") {
         deletePredecessor(props.dataObjectId, referenceId);
       } else {

@@ -10,17 +10,6 @@ const collectionModel = defineModel<CollectionReferenceData>({
   <div>
     <v-row class="text-textbody1 text-subtitle-2">Choose Collection</v-row>
     <v-row class="pt-5">
-      <v-text-field
-        v-model:model-value="collectionModel.relationshipName"
-        label="Custom Relationship Type"
-        variant="outlined"
-        density="compact"
-        color="primary"
-        hide-details
-      />
-    </v-row>
-
-    <v-row class="pt-3">
       <CollectionAutocomplete
         class="w-100"
         @search-ended="
@@ -40,6 +29,16 @@ const collectionModel = defineModel<CollectionReferenceData>({
         color="primary"
         hide-details
         required
+      />
+    </v-row>
+    <v-row class="pt-3">
+      <v-text-field
+        v-model:model-value="collectionModel.relationshipName"
+        label="Custom Relationship Type"
+        variant="outlined"
+        density="compact"
+        color="primary"
+        hide-details
       />
     </v-row>
   </div>

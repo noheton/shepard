@@ -14,7 +14,7 @@ const emit = defineEmits<{
   (e: "searchEnded", value: { id: number; name: string } | null): void;
 }>();
 
-const searchString = ref<string | undefined>(undefined);
+const searchString = ref<string>("");
 const autoCompleteModel = ref<AutoCompleteItem | undefined>(undefined);
 const hideNoDataMessage = ref<boolean>(true);
 
@@ -40,7 +40,7 @@ const onSelection = (selectedItem: AutoCompleteItem | null) => {
       name: selectedItem.value.collectionName,
     });
   } else {
-    searchString.value = undefined;
+    searchString.value = "";
     autoCompleteModel.value = undefined;
     emit("searchEnded", null);
   }

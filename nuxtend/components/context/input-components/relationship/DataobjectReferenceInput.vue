@@ -16,17 +16,6 @@ const dataObjectSearchField =
   <div>
     <v-row class="text-textbody1 text-subtitle-2">Choose Data Object</v-row>
     <v-row class="pt-5">
-      <v-text-field
-        v-model:model-value="dataObjectModel.relationshipName"
-        label="Custom Relationship Type"
-        variant="outlined"
-        density="compact"
-        color="primary"
-        hide-details
-      />
-    </v-row>
-
-    <v-row class="pt-4">
       <CollectionAutocomplete
         class="w-100"
         @search-ended="
@@ -42,8 +31,7 @@ const dataObjectSearchField =
         "
       />
     </v-row>
-
-    <v-row class="pt-4">
+    <v-row class="pt-3">
       <DataObjectAutocomplete
         ref="dataObjectSearchField"
         input-label="Data Object ID or Name...*"
@@ -57,7 +45,7 @@ const dataObjectSearchField =
         "
       />
     </v-row>
-    <v-row class="pt-4">
+    <v-row class="pt-3">
       <v-text-field
         v-model:model-value="dataObjectModel.referenceName"
         label="Name...*"
@@ -66,6 +54,16 @@ const dataObjectSearchField =
         color="primary"
         hide-details
         required
+      />
+    </v-row>
+    <v-row class="pt-3">
+      <v-text-field
+        v-model:model-value="dataObjectModel.relationshipName"
+        label="Custom Relationship Type"
+        variant="outlined"
+        density="compact"
+        color="primary"
+        hide-details
       />
     </v-row>
   </div>
