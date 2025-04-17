@@ -18,7 +18,7 @@ export const mapShepardFileToDataTableItem = (
   createdAt: file.createdAt ?? new Date(0),
   actions: {
     download: {
-      enabled: file.oid ? true : false,
+      enabled: mapDownloadEnabled(file),
       filename: file.filename ?? "",
       oid: file.oid ?? "",
     },
@@ -54,5 +54,9 @@ export const mapShepardFilenameToFileType = (filename: string) => {
 };
 
 export const mapShowDetailsEnabled = (file: FileMeta) => {
+  return file.oid && file.availability === "available" ? true : false;
+};
+
+export const mapDownloadEnabled = (file: FileMeta) => {
   return file.oid && file.availability === "available" ? true : false;
 };
