@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.dlr.shepard.ErrorResponse;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.users.io.UserGroupIO;
@@ -27,6 +28,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   private static CollectionIO collection;
   private static CollectionIO collection1;
   private static CollectionIO collection2;
+  private static CollectionIO collection3;
   private static String collectionsURL;
   private static String permissionsURL;
   private static String userGroupURL;
@@ -68,6 +70,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .build();
     collection1 = createCollection("PermissionsTestCollection1", user1);
     collection2 = createCollection("PermissionsTestCollection2", user2);
+    collection3 = createCollection("PermissionsTestCollection3", user1);
     userGroupURL = "/" + Constants.USERGROUPS;
   }
 
@@ -119,6 +122,181 @@ public class PermissionsIT extends BaseTestCaseIT {
         setReaderGroupIds(new long[] {});
         setWriterGroupIds(new long[] {});
         setManager(new String[] { nameOfDefaultUser });
+      }
+    };
+
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Order(2)
+  public void updatePermissions_NonOwnerGetsManagerPermissions_success() {
+    var User2Username = user2.getUser().getUsername();
+    var permissions = new PermissionsIO() {
+      {
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setManager(new String[] { User2Username });
+      }
+    };
+
+    var actual = given()
+      .spec(requestSpecification1)
+      .body(permissions)
+      .when()
+      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+    var expected = new PermissionsIO() {
+      {
+        setEntityId(collection3.getId());
+        setOwner(user1.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[] { User2Username });
+      }
+    };
+
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Order(3)
+  public void updatePermissions_NonOwnerChangesPermissionTypeWithOwnerInformation_success() {
+    // This tests the bug described in #591
+    var permissions = new PermissionsIO() {
+      {
+        setOwner(user1.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.Public);
+      }
+    };
+
+    var actual = given()
+      .spec(requestSpecification2)
+      .body(permissions)
+      .when()
+      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+    var expected = new PermissionsIO() {
+      {
+        setEntityId(collection3.getId());
+        setOwner(user1.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.Public);
+      }
+    };
+
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Order(3)
+  public void updatePermissions_NonOwnerChangesPermissionTypeWithoutOwnerInformation_success() {
+    var permissions = new PermissionsIO() {
+      {
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.PublicReadable);
+      }
+    };
+
+    var actual = given()
+      .spec(requestSpecification2)
+      .body(permissions)
+      .when()
+      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+    var expected = new PermissionsIO() {
+      {
+        setEntityId(collection3.getId());
+        setOwner(user1.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.PublicReadable);
+      }
+    };
+
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Order(3)
+  public void updatePermissions_NonOwnerWithManagerRoleTriesToChangeOwnership_forbid() {
+    var permissions = new PermissionsIO() {
+      {
+        setOwner(user2.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.Private);
+      }
+    };
+
+    var response = given()
+      .spec(requestSpecification2)
+      .body(permissions)
+      .when()
+      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(403)
+      .extract()
+      .as(ErrorResponse.class);
+    assertThat(response.getMessage()).isEqualTo("Action not allowed. Only Owners are allowed to change ownership.");
+  }
+
+  @Test
+  @Order(3)
+  public void updatePermissions_OwnerTriesToChangeOwnership_success() {
+    var permissions = new PermissionsIO() {
+      {
+        setOwner(user2.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.Private);
+      }
+    };
+
+    var actual = given()
+      .spec(requestSpecification1)
+      .body(permissions)
+      .when()
+      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(PermissionsIO.class);
+    var expected = new PermissionsIO() {
+      {
+        setEntityId(collection3.getId());
+        setOwner(user2.getUser().getUsername());
+        setReader(new String[] {});
+        setWriter(new String[] {});
+        setReaderGroupIds(new long[] {});
+        setWriterGroupIds(new long[] {});
+        setManager(new String[] { user2.getUser().getUsername() });
+        setPermissionType(PermissionType.Private);
       }
     };
 

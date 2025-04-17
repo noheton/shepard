@@ -159,17 +159,20 @@ public class PermissionsService {
     }
     var oldPermissions = old.get();
 
-    if (newPermissions.getOwner() != null && oldPermissions.getOwner() != newPermissions.getOwner()) {
-      // only the existing owner is able to change the ownership
-      if (isOwner(oldPermissions, userService.getCurrentUser().getUsername()) == false) {
+    if (
+      newPermissions.getOwner() == null ||
+      newPermissions.getOwner().getUniqueId().equals(oldPermissions.getOwner().getUniqueId())
+    ) {
+      oldPermissions.setOwner(oldPermissions.getOwner());
+    } else {
+      if (!isOwner(oldPermissions, userService.getCurrentUser().getUsername())) {
         throw new InvalidAuthException("Action not allowed. Only Owners are allowed to change ownership.");
       }
       // check that new owner actually exists
       userService.getUser(newPermissions.getOwner().getUsername());
       oldPermissions.setOwner(newPermissions.getOwner());
-    } else {
-      oldPermissions.setOwner(oldPermissions.getOwner());
     }
+
     oldPermissions.setReader(newPermissions.getReader());
     oldPermissions.setWriter(newPermissions.getWriter());
     oldPermissions.setReaderGroups(newPermissions.getReaderGroups());
