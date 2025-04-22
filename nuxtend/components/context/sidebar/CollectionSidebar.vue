@@ -250,6 +250,10 @@ const createDataObjectDialogOpened = ref<boolean>(false);
       width: 24px;
       height: 24px;
     }
+
+    .v-treeview-item__level {
+      display: none;
+    }
   }
 
   :deep(.mdi-chevron-down) {
