@@ -4,7 +4,6 @@ import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
-import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -25,6 +24,9 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -85,7 +87,10 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -117,9 +122,14 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response getTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public Response getTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
     var container = timeseriesContainerService.getContainer(timeseriesContainerId);
     return Response.ok(TimeseriesContainerIOMapper.map(container)).build();
   }
@@ -132,7 +142,10 @@ public class TimeseriesRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Transactional
   public Response createTimeseriesContainer(
     @RequestBody(
@@ -150,9 +163,14 @@ public class TimeseriesRest {
   @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Delete timeseries container")
   @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response deleteTimeseriesContainer(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public Response deleteTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
     timeseriesContainerService.deleteContainer(timeseriesContainerId);
     return Response.status(Status.NO_CONTENT).build();
   }
@@ -167,11 +185,13 @@ public class TimeseriesRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = Timeseries.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
-  @APIResponse(description = "bad request", responseCode = "400")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response createTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long containerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
@@ -198,8 +218,14 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
   )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Response getTimeseriesAvailable(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public Response getTimeseriesAvailable(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
     List<TimeseriesEntity> timeseriesEntityList;
 
     try {
@@ -225,7 +251,10 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
   )
-  @APIResponse(responseCode = "404", description = "Not found")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.MEASUREMENT)
   @Parameter(name = Constants.DEVICE)
@@ -233,7 +262,7 @@ public class TimeseriesRest {
   @Parameter(name = Constants.SYMBOLICNAME)
   @Parameter(name = Constants.FIELD)
   public Response getTimeseriesOfContainer(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @QueryParam(Constants.MEASUREMENT) String measurement,
     @QueryParam(Constants.DEVICE) String device,
     @QueryParam(Constants.LOCATION) String location,
@@ -265,11 +294,14 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
   )
-  @APIResponse(responseCode = "404", description = "Not found")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesById(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
-    @PathParam(Constants.TIMESERIES_ID) int timeseriesId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
   ) {
     var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
     return Response.ok(new TimeseriesIO(timeseries)).build();
@@ -284,7 +316,10 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.MEASUREMENT, required = true)
   @Parameter(name = Constants.LOCATION, required = true)
@@ -297,25 +332,19 @@ public class TimeseriesRest {
   @Parameter(name = Constants.GROUP_BY)
   @Parameter(name = Constants.FILLOPTION)
   public Response getTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
-    @QueryParam(Constants.MEASUREMENT) String measurement,
-    @QueryParam(Constants.LOCATION) String location,
-    @QueryParam(Constants.DEVICE) String device,
-    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
-    @QueryParam(Constants.FIELD) String field,
-    @QueryParam(Constants.START) long start,
-    @QueryParam(Constants.END) long end,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
   ) throws Exception {
-    if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
-      throw new InvalidRequestException(
-        "Some query params are missing. Make sure that 'measurement', 'location', 'device', 'symbolicName' and 'field' are set."
-      );
-    }
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
-
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
       end,
@@ -341,7 +370,10 @@ public class TimeseriesRest {
       schema = @Schema(type = SchemaType.STRING, format = "binary")
     )
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   @Parameter(name = Constants.MEASUREMENT, required = true)
   @Parameter(name = Constants.LOCATION, required = true)
@@ -354,22 +386,18 @@ public class TimeseriesRest {
   @Parameter(name = Constants.GROUP_BY)
   @Parameter(name = Constants.FILLOPTION)
   public Response exportTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
-    @QueryParam(Constants.MEASUREMENT) String measurement,
-    @QueryParam(Constants.LOCATION) String location,
-    @QueryParam(Constants.DEVICE) String device,
-    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
-    @QueryParam(Constants.FIELD) String field,
-    @QueryParam(Constants.START) long start,
-    @QueryParam(Constants.END) long end,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
   ) throws IOException {
-    if (measurement == null || location == null || device == null || symbolicName == null || field == null) {
-      throw new InvalidRequestException("Some query params are missing");
-    }
-
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
@@ -391,11 +419,14 @@ public class TimeseriesRest {
   @Tag(name = Constants.TIMESERIES_CONTAINER)
   @Operation(description = "Import timeseries payload")
   @APIResponse(description = "ok", responseCode = "200")
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Subscribable
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response importTimeseries(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     MultipartBodyFileUpload body
   ) throws IOException {
     String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
@@ -417,10 +448,13 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public PermissionsIO getTimeseriesPermissions(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
   ) {
     var permissions = permissionsService.getPermissionsOfEntity(timeseriesContainerId);
     return new PermissionsIO(permissions);
@@ -435,10 +469,13 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = PermissionsIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public PermissionsIO editTimeseriesPermissions(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
@@ -458,9 +495,14 @@ public class TimeseriesRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = Roles.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
-  public Roles getTimeseriesRoles(@PathParam(Constants.TIMESERIES_CONTAINER_ID) long timeseriesContainerId) {
+  public Roles getTimeseriesRoles(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
     var roles = permissionsService.getUserRolesOnEntity(
       timeseriesContainerId,
       securityContext.getUserPrincipal().getName()

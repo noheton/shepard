@@ -107,6 +107,20 @@ public class TimeseriesIT extends BaseTestCaseIT {
   }
 
   @Test
+  public void getTimeseriesContainer_doesNotExistNegativeId_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(containerURL + "/-1")
+      .then()
+      .statusCode(400)
+      .extract();
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getTimeseriesContainer.timeseriesContainerId\",\"message\":\"must be greater than or equal to 0\"}]}"
+    );
+  }
+
+  @Test
   @Order(4)
   public void createTimeseries() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
@@ -184,6 +198,72 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .as(TimeseriesWithDataPoints.class);
 
     assertThat(actual).isEqualTo(payload);
+  }
+
+  @Test
+  @Order(6)
+  public void getTimeseries_startNotSet_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .queryParams(
+        Map.of(
+          Constants.MEASUREMENT,
+          "temperature",
+          Constants.LOCATION,
+          "location",
+          Constants.DEVICE,
+          "device",
+          Constants.SYMBOLICNAME,
+          "symbolicName",
+          Constants.FIELD,
+          "field",
+          Constants.END,
+          end
+        )
+      )
+      .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
+      .then()
+      .statusCode(400)
+      .extract();
+
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getTimeseries.start\",\"message\":\"must not be null\"}]}"
+    );
+  }
+
+  @Test
+  @Order(6)
+  public void getTimeseries_measurementIsBlank_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .queryParams(
+        Map.of(
+          Constants.MEASUREMENT,
+          "   ",
+          Constants.LOCATION,
+          "location",
+          Constants.DEVICE,
+          "device",
+          Constants.SYMBOLICNAME,
+          "symbolicName",
+          Constants.FIELD,
+          "field",
+          Constants.START,
+          start,
+          Constants.END,
+          end
+        )
+      )
+      .get(containerURL + "/" + container.getId() + "/" + Constants.PAYLOAD)
+      .then()
+      .statusCode(400)
+      .extract();
+
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getTimeseries.measurement\",\"message\":\"must not be blank\"}]}"
+    );
   }
 
   @Test

@@ -16,10 +16,10 @@
     "url": "/collections/{collectionId}",
     "methods": ["GET", "PUT"],
     "validPathParams": { "collectionId": "<collection_id>" },
-    "invalidPathParams": { "collectionId": "abc" },
+    "invalidPathParams": { "collectionId": "-1" },
     "notFoundPathParams": { "collectionId": "999999999" },
     "expectedStatusCodes": {
-      "GET": { "valid": 200, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 },
+      "GET": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 },
       "PUT": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
     },
     "requestBody": { "name": "coll name" },
@@ -29,10 +29,10 @@
     "url": "/collections/{collectionId}/permissions",
     "methods": ["GET", "PUT"],
     "validPathParams": { "collectionId": "<collection_id>" },
-    "invalidPathParams": { "collectionId": "abc" },
+    "invalidPathParams": { "collectionId": "-1" },
     "notFoundPathParams": { "collectionId": "999999999" },
     "expectedStatusCodes": {
-      "GET": { "valid": 200, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 },
+      "GET": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 },
       "PUT": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
     },
     "requestBody": {
@@ -50,10 +50,10 @@
     "url": "/collections/{collectionId}/roles",
     "methods": ["GET"],
     "validPathParams": { "collectionId": "<collection_id>" },
-    "invalidPathParams": { "collectionId": "abc" },
+    "invalidPathParams": { "collectionId": "-1" },
     "notFoundPathParams": { "collectionId": "999999999" },
     "expectedStatusCodes": {
-      "GET": { "valid": 200, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
+      "GET": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
     },
     "requestBody": {},
     "invalidRequestBody": {}
@@ -62,10 +62,10 @@
     "url": "/collections/{collectionId}/export",
     "methods": ["GET"],
     "validPathParams": { "collectionId": "<collection_id>" },
-    "invalidPathParams": { "collectionId": "abc" },
+    "invalidPathParams": { "collectionId": "-1" },
     "notFoundPathParams": { "collectionId": "999999999" },
     "expectedStatusCodes": {
-      "GET": { "valid": 200, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
+      "GET": { "valid": 200, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
     },
     "requestBody": {},
     "invalidRequestBody": {}
@@ -74,10 +74,10 @@
     "url": "/collections/{collectionId}",
     "methods": ["DELETE"],
     "validPathParams": { "collectionId": "<collection_id>" },
-    "invalidPathParams": { "collectionId": "abc" },
+    "invalidPathParams": { "collectionId": "-1" },
     "notFoundPathParams": { "collectionId": "999999999" },
     "expectedStatusCodes": {
-      "DELETE": { "valid": 204, "invalid": 403, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
+      "DELETE": { "valid": 204, "invalid": 400, "unauthorized": 403, "unauthenticated": 401, "notFound": 404 }
     },
     "requestBody": {},
     "invalidRequestBody": {}

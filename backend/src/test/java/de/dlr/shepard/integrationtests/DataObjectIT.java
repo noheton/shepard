@@ -976,6 +976,20 @@ public class DataObjectIT extends BaseTestCaseIT {
   }
 
   @Test
+  public void getDataObject_doesNotExistNegativeId_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(dataObjectsURL + "/-1")
+      .then()
+      .statusCode(400)
+      .extract();
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getDataObject.dataObjectId\",\"message\":\"must be greater than or equal to 0\"}]}"
+    );
+  }
+
+  @Test
   public void getDataObject_privateCollection_forbidden() {
     // This is a test implementation for the Bug described in #475
     CollectionIO privateCollection = createCollection("private collection", otherUser);

@@ -171,6 +171,21 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
+  @Order(8)
+  public void getCollectionTest_doesNotExistNegativeId_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(collectionsURL + "/-1")
+      .then()
+      .statusCode(400)
+      .extract();
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getCollection.collectionId\",\"message\":\"must be greater than or equal to 0\"}]}"
+    );
+  }
+
+  @Test
   @Order(9)
   public void getCollectionTest_privateCollection_forbidden() {
     RequestSpecification otherUserRequestSpecification = new RequestSpecBuilder()

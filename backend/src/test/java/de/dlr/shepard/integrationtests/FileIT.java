@@ -115,6 +115,20 @@ public class FileIT extends BaseTestCaseIT {
   }
 
   @Test
+  public void getFileContainer_doesNotExistNegativeId_badRequest() {
+    var actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(containerURL + "/-1")
+      .then()
+      .statusCode(400)
+      .extract();
+    assertThat(actual.body().asString()).isEqualTo(
+      "{\"title\":\"Constraint Violation\",\"status\":400,\"violations\":[{\"field\":\"getFileContainer.fileContainerId\",\"message\":\"must be greater than or equal to 0\"}]}"
+    );
+  }
+
+  @Test
   @Order(4)
   public void uploadFile() throws URISyntaxException, NoSuchAlgorithmException, FileNotFoundException, IOException {
     var newFile = new File(getClass().getClassLoader().getResource("test.txt").toURI());

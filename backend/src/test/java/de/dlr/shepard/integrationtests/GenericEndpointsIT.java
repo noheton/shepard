@@ -61,6 +61,7 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
   @MethodSource("getEndpoints")
   public void testEndpoints(EndpointTestCase testCase) {
     for (String method : testCase.getMethods()) {
+      testUnauthorizedAccess(testCase, method);
       if (method.equals("POST") || method.equals("PUT")) {
         testValidRequestsWithBody(testCase, method);
         testInvalidRequestsWithInvalidBody(testCase, method);
@@ -69,7 +70,6 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         testInvalidPathParams(testCase, method);
       }
       testNotFound(testCase, method);
-      testUnauthorizedAccess(testCase, method);
       testUnauthenticatedAccess(testCase, method);
     }
   }
@@ -171,11 +171,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}",
         List.of("GET", "PUT"),
         Map.of("collectionId", Long.toString(collection.getId())),
-        Map.of("collectionId", "abc"),
+        Map.of("collectionId", "-1"),
         Map.of("collectionId", "999999999"),
         Map.of(
           "GET",
-          Map.of("valid", 200, "invalid", 403, "unauthorized", 403, "unauthenticated", 401, "notFound", 404),
+          Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404),
           "PUT",
           Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
@@ -186,11 +186,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}/permissions",
         List.of("GET", "PUT"),
         Map.of("collectionId", Long.toString(collection.getId())),
-        Map.of("collectionId", "abc"),
+        Map.of("collectionId", "-1"),
         Map.of("collectionId", "999999999"),
         Map.of(
           "GET",
-          Map.of("valid", 200, "invalid", 403, "unauthorized", 403, "unauthenticated", 401, "notFound", 404),
+          Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404),
           "PUT",
           Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
@@ -216,11 +216,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}/roles",
         List.of("GET"),
         Map.of("collectionId", Long.toString(collection.getId())),
-        Map.of("collectionId", "abc"),
+        Map.of("collectionId", "-1"),
         Map.of("collectionId", "999999999"),
         Map.of(
           "GET",
-          Map.of("valid", 200, "invalid", 403, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
+          Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
         Map.of(),
         Map.of()
@@ -229,11 +229,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}/export",
         List.of("GET"),
         Map.of("collectionId", Long.toString(collection.getId())),
-        Map.of("collectionId", "abc"),
+        Map.of("collectionId", "-1"),
         Map.of("collectionId", "999999999"),
         Map.of(
           "GET",
-          Map.of("valid", 200, "invalid", 403, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
+          Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
         Map.of(),
         Map.of()
@@ -242,11 +242,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}/dataObjects/{dataObjectId}",
         List.of("GET"),
         Map.of("collectionId", Long.toString(collection.getId()), "dataObjectId", Long.toString(dataObject.getId())),
-        Map.of("collectionId", Long.toString(collection.getId()), "dataObjectId", "abc"),
+        Map.of("collectionId", Long.toString(collection.getId()), "dataObjectId", "-1"),
         Map.of("collectionId", Long.toString(collection.getId()), "dataObjectId", "9999999"),
         Map.of(
           "GET",
-          Map.of("valid", 200, "invalid", 404, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
+          Map.of("valid", 200, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
         Map.of("name", "coll name"),
         Map.of()
@@ -255,11 +255,11 @@ public class GenericEndpointsIT extends BaseTestCaseIT {
         "/collections/{collectionId}",
         List.of("DELETE"),
         Map.of("collectionId", Long.toString(collection.getId())),
-        Map.of("collectionId", "abc"),
+        Map.of("collectionId", "-1"),
         Map.of("collectionId", "999999999"),
         Map.of(
           "DELETE",
-          Map.of("valid", 204, "invalid", 403, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
+          Map.of("valid", 204, "invalid", 400, "unauthorized", 403, "unauthenticated", 401, "notFound", 404)
         ),
         Map.of(),
         Map.of()
