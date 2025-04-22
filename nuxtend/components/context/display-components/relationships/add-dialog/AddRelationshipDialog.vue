@@ -73,27 +73,39 @@ const onSubmit = () => {
     );
   }
 
-  // Due to the 'isValid' check, we can assert these values as non-null ('!')
-  if (relationshipModel.value.type === CustomRelationshipType.COLLECTION) {
+  if (
+    relationshipModel.value.type === CustomRelationshipType.COLLECTION &&
+    relationshipModel.value.referenceName &&
+    relationshipModel.value.referencedCollectionId
+  ) {
     addCollectionReference(
-      relationshipModel.value.referencedCollectionId!,
-      relationshipModel.value.referenceName!,
+      relationshipModel.value.referencedCollectionId,
+      relationshipModel.value.referenceName,
       relationshipModel.value.relationshipName,
     );
   }
 
-  if (relationshipModel.value.type === CustomRelationshipType.DATA_OBJECT) {
+  if (
+    relationshipModel.value.type === CustomRelationshipType.DATA_OBJECT &&
+    relationshipModel.value.referencedDataObjectId &&
+    relationshipModel.value.referenceName
+  ) {
     addDataObjectReference(
-      relationshipModel.value.referencedDataObjectId!,
-      relationshipModel.value.referenceName!,
+      relationshipModel.value.referencedDataObjectId,
+      relationshipModel.value.referenceName,
       relationshipModel.value.relationshipName,
     );
   }
 
-  if (relationshipModel.value.type === CustomRelationshipType.URI) {
+  if (
+    relationshipModel.value.type === CustomRelationshipType.URI &&
+    relationshipModel.value.referenceURI &&
+    relationshipModel.value.referenceName
+  ) {
     addUriReference(
-      relationshipModel.value.referenceURI!,
-      relationshipModel.value.referenceName!,
+      relationshipModel.value.referenceURI,
+      relationshipModel.value.referenceName,
+      relationshipModel.value.relationshipName,
     );
   }
 };
