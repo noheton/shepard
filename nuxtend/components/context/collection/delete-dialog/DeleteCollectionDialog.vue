@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   type Collection,
   CollectionApi,
@@ -26,7 +26,7 @@ async function deleteCollection() {
 
     showDialog.value = false;
     emitSuccess(`Successfully deleted collection "${props.collection.name}"`);
-    router.push(collectionsPath);
+    await router.push(collectionsPath);
   } catch (error) {
     handleError(error as ResponseError, "deleteCollection");
   }
@@ -36,9 +36,8 @@ async function deleteCollection() {
 <template>
   <ConfirmSafeDeleteDialog
     v-model:show-dialog="showDialog"
-    title="Are you sure you want to delete this collection?"
-    prompt-text="Deleting this collection is permanent. To confirm that you want to proceed, please enter the collection name:"
     :target-name="props.collection.name"
+    entity-type="collection"
     @confirmed="deleteCollection"
   />
 </template>

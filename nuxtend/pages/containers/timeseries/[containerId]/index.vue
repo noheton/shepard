@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { TimeseriesContainerAccessor } from "~/composables/shepardObjectAccessor";
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
+import DeleteContainerButton from "~/components/container/DeleteContainerButton.vue";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
@@ -30,7 +31,7 @@ onContainerUpdated(() => {
                 to: containersPath,
               },
               {
-                title: container.timeseries.value!.name,
+                title: container.timeseries.value.name,
                 to: containersPath + urlSegment + containerId,
               },
             ]"
@@ -40,9 +41,9 @@ onContainerUpdated(() => {
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <ContainerTitleAndMetadataDisplay
-                :id="container.timeseries.value!.id"
+                :id="container.timeseries.value.id"
                 :n-items="container.measurements.value.length"
-                :name="container.timeseries.value!.name"
+                :name="container.timeseries.value.name"
                 :type-label="'Timeseries Container'"
               >
                 <template #buttons>
@@ -50,8 +51,9 @@ onContainerUpdated(() => {
                     v-if="container.isAllowedToEditPermissions.value"
                     :shepard-object-accessor="container"
                   />
-                  <DeleteButton
+                  <DeleteContainerButton
                     v-if="container.isAllowedToEditData.value"
+                    :entity-name="container.timeseries.value.name"
                     @delete="container.delete()"
                   />
                 </template>

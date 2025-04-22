@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+defineProps<{ entityName: string }>();
 const showDialog = ref(false);
 const emit = defineEmits(["delete"]);
 </script>
@@ -16,9 +17,11 @@ const emit = defineEmits(["delete"]);
     <v-icon>mdi-delete-outline</v-icon>
     <v-tooltip activator="parent" location="top">Delete Container</v-tooltip>
   </v-btn>
-  <ConfirmDeleteDialog
+  <ConfirmSafeDeleteDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
+    :target-name="entityName"
+    entityType="container"
     @confirmed="emit('delete')"
   />
 </template>

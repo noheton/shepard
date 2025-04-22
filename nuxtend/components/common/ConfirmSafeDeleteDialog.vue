@@ -1,11 +1,14 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 interface ConfirmSafeDeleteDialog {
-  title: string;
-  promptText: string;
+  entityType: string;
   targetName: string;
 }
 
 const props = defineProps<ConfirmSafeDeleteDialog>();
+
+const title = `Are you sure you want to delete this ${props.entityType}?`;
+const promptText = `Deleting this ${props.entityType} is permanent. To confirm that you want to proceed, please enter the ${props.entityType} name:`;
+const label = `Enter ${props.entityType} name`;
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -39,9 +42,9 @@ onMounted(() => {
             {{ title }}
           </div>
           <v-btn
-            variant="plain"
             density="compact"
             icon="mdi-close"
+            variant="plain"
             @click="showDialog = false"
           />
         </div>
@@ -57,26 +60,26 @@ onMounted(() => {
             <v-text-field
               id="delete-confirm-input"
               v-model:model-value="inputName"
-              label="Enter collection name"
-              variant="outlined"
-              density="compact"
-              require
-              color="primary"
-              hide-details
+              :label="label"
               autocomplete="off"
+              color="primary"
+              density="compact"
+              hide-details
+              require
+              variant="outlined"
               @keypress="namesMatch"
             />
           </v-col>
         </v-row>
       </v-card-text>
       <template #actions>
-        <v-btn variant="flat" color="treeview" @click="showDialog = false">
+        <v-btn color="treeview" variant="flat" @click="showDialog = false">
           Cancel
         </v-btn>
         <v-btn
-          variant="flat"
-          color="error"
           :disabled="!namesMatch()"
+          color="error"
+          variant="flat"
           @click="emit('confirmed')"
         >
           Delete
