@@ -106,6 +106,9 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 |@vue/eslint-config-typescript<14
 |Has peer dependency to current version of eslint
 
+|eslint-plugin-vue<10
+|Has conflicting peer dependency from `@vue/eslint-config-typescript@13.0.0` which is also in this list
+
 |jjwt<0.12
 |v0.12.x introduces a series of breaking changes in preparation for v1.0. It is recommended to stay on v0.11 until v1.0 is finished to fix all changes at once.
 

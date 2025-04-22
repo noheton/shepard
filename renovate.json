@@ -150,6 +150,11 @@
       "allowedVersions": "<10"
     },
     {
+      "matchPackageNames": ["eslint-plugin-vue"],
+      "matchManagers": ["npm"],
+      "allowedVersions": "<10"
+    },
+    {
       "matchPackageNames": ["org.neo4j:neo4j-ogm{/,}**"],
       "matchManagers": ["maven"],
       "allowedVersions": "<4"
