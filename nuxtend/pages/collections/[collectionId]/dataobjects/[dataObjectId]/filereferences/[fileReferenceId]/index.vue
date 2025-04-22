@@ -220,7 +220,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                         value.showDetails.enabled &&
                         value.showDetails.fileType !== 'unknown'
                       "
-                      icon="mdi-eye"
+                      icon="mdi-eye-outline"
                       @click="() => onShowFileContentDialog(value.showDetails)"
                     />
                   </ActionContainer>

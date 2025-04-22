@@ -11,7 +11,8 @@ const emit = defineEmits(["click"]);
     class="data-table-actions"
     density="compact"
     :icon="icon"
-    variant="flat"
+    variant="text"
+    color="primary"
     @click="emit('click')"
   />
 </template>

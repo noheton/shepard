@@ -71,7 +71,7 @@ defineProps<TitleAndMetadataDisplayProps>();
           class="mx-2"
           variant="flat"
           color="treeview"
-          icon="mdi-delete"
+          icon="mdi-delete-outline"
           @click="onDelete"
         />
         <v-btn
@@ -80,7 +80,7 @@ defineProps<TitleAndMetadataDisplayProps>();
           class="mx-2"
           variant="flat"
           color="treeview"
-          icon="mid-download"
+          icon="mdi-tray-arrow-down"
           @click="onDownload(entity.name)"
         />
         <v-btn
@@ -89,7 +89,7 @@ defineProps<TitleAndMetadataDisplayProps>();
           class="mx-2"
           variant="flat"
           color="treeview"
-          icon="mdi-tag"
+          icon="mdi-tag-outline"
           @click="onAnnotate"
         />
       </v-col>

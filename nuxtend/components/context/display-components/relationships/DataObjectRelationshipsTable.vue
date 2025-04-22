@@ -158,26 +158,20 @@ const headers = [
         value: RelationshipTableElement['actions'];
       }"
     >
-      <div class="d-flex flex-row justify-space-between w-100">
-        <v-btn
+      <ActionContainer>
+        <ActionButton
           v-if="isAllowedToEditCollection && value.annotatable"
-          class="relationship-actions text-primary"
+          class="relationship-actions"
           icon="mdi-tag-outline"
-          density="compact"
-          variant="flat"
           @click="() => openAddAnnotationDialog(value.elementId)"
         />
-        <v-spacer v-else />
-
-        <v-btn
+        <ActionButton
           v-if="isAllowedToEditCollection"
-          class="relationship-actions text-primary"
+          class="relationship-actions"
           icon="mdi-delete-outline"
-          density="compact"
-          variant="flat"
           @click="() => openDeleteRelationshipDialog(value.elementId)"
         />
-      </div>
+      </ActionContainer>
     </template>
     <template #bottom>
       <div class="bottom-border" />

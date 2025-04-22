@@ -100,24 +100,20 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     <template
       #[`item.actions`]="{ value }: { value: DataTableElement['actions'] }"
     >
-      <div class="data-table-row-actions d-flex ga-2">
-        <v-btn
+      <ActionContainer>
+        <ActionButton
           v-if="value.showDetails.enabled"
           icon="mdi-eye-outline"
-          density="compact"
-          variant="flat"
           @click="
             () => showDetails(value.showDetails.pathFragment, value.elementId)
           "
         />
-        <v-btn
+        <ActionButton
           v-if="isAllowedToEditCollection"
           icon="mdi-tag-outline"
-          density="compact"
-          variant="flat"
           @click="() => openAddAnnotationDialog(value.elementId)"
         />
-      </div>
+      </ActionContainer>
     </template>
     <template #bottom>
       <v-divider :thickness="8" color="divider2" opacity="1" />
