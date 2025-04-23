@@ -145,6 +145,20 @@ const showAddRelationshipDialog = ref(false);
                   title="Data References"
                   :count="dataReferences.length"
                 >
+                  <template v-if="isAllowedToEditCollection" #append>
+                    <ExpansionPanelTitleButton
+                      text="Add data reference"
+                      icon="mdi-plus-circle"
+                      @click="() => (showCreateDataReferenceDialog = true)"
+                    />
+                    <CreateDataReferenceDialog
+                      v-if="showCreateDataReferenceDialog"
+                      v-model:show-dialog="showCreateDataReferenceDialog"
+                      :collection-id="collection.id"
+                      :data-object-id="dataObject.id"
+                    />
+                  </template>
+
                   <DataObjectDataReferencesTable
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
