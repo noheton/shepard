@@ -62,7 +62,13 @@ export abstract class ShepardObjectAccessor {
   }
 }
 
-export class TimeseriesContainerAccessor extends ShepardObjectAccessor {
+abstract class ContainerAccessor extends ShepardObjectAccessor {
+  isAllowedToDelete: ComputedRef<boolean> = computed(() => {
+    return !!this.roles.value?.owner;
+  });
+}
+
+export class TimeseriesContainerAccessor extends ContainerAccessor {
   api = createApiInstance(TimeseriesContainerApi);
   measurements = ref<TimeseriesEntity[]>([]);
   timeseries = ref<TimeseriesContainer>();

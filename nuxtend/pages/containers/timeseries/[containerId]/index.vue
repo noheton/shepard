@@ -52,7 +52,7 @@ onContainerUpdated(() => {
                     :shepard-object-accessor="container"
                   />
                   <DeleteContainerButton
-                    v-if="container.isAllowedToEditData.value"
+                    v-if="container.isAllowedToDelete.value"
                     :entity-name="container.timeseries.value.name"
                     @delete="container.delete()"
                   />
