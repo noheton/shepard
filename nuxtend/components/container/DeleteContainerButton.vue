@@ -21,7 +21,7 @@ const emit = defineEmits(["delete"]);
     v-if="showDialog"
     v-model:show-dialog="showDialog"
     :target-name="entityName"
-    entityType="container"
+    entity-type="container"
     @confirmed="emit('delete')"
   />
 </template>

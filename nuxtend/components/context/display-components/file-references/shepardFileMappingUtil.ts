@@ -1,3 +1,4 @@
+import type { CodeType } from "~/components/common/editor/editorTypes";
 import type { ShepardFileDataTableItem } from "./ShepardFileDataTableItem";
 import type { FileMeta } from "./fileReferenceTypes";
 
@@ -26,6 +27,7 @@ export const mapShepardFileToDataTableItem = (
       enabled: mapShowDetailsEnabled(file),
       oid: file.oid ?? "",
       fileType: mapShepardFilenameToFileType(file.filename ?? ""),
+      fileName: file.filename ?? "",
     },
   },
 });
@@ -51,6 +53,36 @@ export const mapShepardFilenameToFileType = (filename: string) => {
     return "image";
   }
   return "unknown";
+};
+
+/**
+ * Map filename to code type that can be used for syntax highlighting by RichTextEditor
+ * @param filename string
+ * @returns string
+ */
+export const mapFileNameToCodeType = (filename: string): CodeType => {
+  const extension = filename.split(".").pop()?.toLowerCase();
+
+  switch (extension) {
+    case "txt": {
+      return "plaintext";
+    }
+    case "yml": {
+      return "yaml";
+    }
+    case "json": {
+      return "json";
+    }
+    case "md": {
+      return "markdown";
+    }
+    case "toml": {
+      return "toml";
+    }
+    default: {
+      return "plaintext";
+    }
+  }
 };
 
 export const mapShowDetailsEnabled = (file: FileMeta) => {

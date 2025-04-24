@@ -11,6 +11,7 @@ export type ShepardFileDataTableItem = {
       enabled: boolean;
       oid: string;
       fileType: FileType;
+      fileName: string;
     };
     download: {
       enabled: boolean;

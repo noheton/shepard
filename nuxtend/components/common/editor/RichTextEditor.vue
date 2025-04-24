@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Link from "@tiptap/extension-link";
 import Table from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
@@ -9,28 +10,38 @@ import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
 import type { Editor } from "@tiptap/vue-3";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
+import "assets/styles/highlightjs.scss";
+import { all, createLowlight } from "lowlight";
 import { defineProps, type ShallowRef } from "vue";
+import { useTheme } from "vuetify";
+import type { CodeType } from "./editorTypes";
 
 interface RichTextEditorProps {
   isEditable: boolean;
   isPreviewCollapsed?: boolean;
   autofocus?: boolean;
+  codeType?: CodeType;
 }
 
 const props = defineProps<RichTextEditorProps>();
 
 const model = defineModel<string>();
 
+const theme = useTheme();
+
 const editorClassObject = computed(() => ({
   "editor-is-editable": props.isEditable,
   "editor-not-editable": !props.isEditable,
   "preview-is-collapsed": !!props.isPreviewCollapsed,
+  "highlightjs-dark-mode": theme.global.current.value.dark,
+  "highlightjs-light-mode": !theme.global.current.value.dark,
 }));
 
 const editor: ShallowRef<Editor | undefined> = useEditor({
   content: model.value,
   extensions: [
     StarterKit.configure({
+      codeBlock: false,
       heading: {
         levels: [3],
       },
@@ -47,6 +58,9 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
     }),
     Table.configure({
       resizable: true,
+    }),
+    CodeBlockLowlight.configure({
+      lowlight: createLowlight(all),
     }),
     TableRow,
     TableHeader,
@@ -68,7 +82,15 @@ watch(model, newContent => {
       return;
     }
     if (newContent) {
-      editor.value?.commands.setContent(newContent, false);
+      console.info(props.codeType);
+      if (props.codeType) {
+        editor.value?.commands.setContent(
+          `<pre><code class="language-${props.codeType}">${newContent}</code></pre>`,
+          false,
+        );
+      } else {
+        editor.value?.commands.setContent(newContent, false);
+      }
     }
   }
 });
@@ -118,6 +140,14 @@ watch(
   max-height: 6lh;
   mask-image: linear-gradient(to bottom, white, transparent);
   overflow: hidden;
+}
+
+:deep(.highlightjs-light-mode) > div > pre > code {
+  background-color: unset;
+}
+
+:deep(.highlightjs-dark-mode) > div > pre > code {
+  background-color: unset;
 }
 
 :deep(.tiptap) {

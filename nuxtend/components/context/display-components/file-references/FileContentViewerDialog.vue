@@ -7,6 +7,7 @@ interface FileContentViewerDialogProps {
   fileReferenceId: number;
   oid: string;
   fileType: FileType;
+  fileName: string;
 }
 defineProps<FileContentViewerDialogProps>();
 
@@ -32,5 +33,6 @@ const showDialog = defineModel<boolean>("showDialog", {
     :data-object-id="dataObjectId"
     :file-reference-id="fileReferenceId"
     :oid="oid"
+    :file-name="fileName"
   />
 </template>

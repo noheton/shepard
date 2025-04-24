@@ -27,6 +27,7 @@ const showFileContentViewerDialog = ref<boolean>(false);
 const fileDataTableItems = ref<ShepardFileDataTableItem[]>([]);
 const selectedOid = ref<string>("");
 const selectedFileType = ref<FileType>("unknown");
+const selectedFileName = ref<string>("");
 
 const { collection } = useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
@@ -78,9 +79,14 @@ function deleteFileReference() {
   }
 }
 
-function onShowFileContentDialog(params: { oid: string; fileType: FileType }) {
+function onShowFileContentDialog(params: {
+  oid: string;
+  fileType: FileType;
+  fileName: string;
+}) {
   selectedOid.value = params.oid;
   selectedFileType.value = params.fileType;
+  selectedFileName.value = params.fileName;
   showFileContentViewerDialog.value = true;
 }
 
@@ -256,6 +262,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
       :file-reference-id="fileReferenceId"
       :oid="selectedOid"
       :file-type="selectedFileType"
+      :file-name="selectedFileName"
     />
   </div>
 </template>
