@@ -60,9 +60,9 @@ test_backend:
       variables:
         INFLUXDB_ADMIN_USER: influx
         INFLUXDB_ADMIN_PASSWORD: shepard
-    - name: timescale/timescaledb:latest-pg16
+    - name: timescale/timescaledb:2.18.1-pg16
       alias: timescaledb
-    - name: postgis/postgis:17-3.5
+    - name: postgis/postgis:16-3.5
       alias: postgis
   before_script:
     - cd backend
