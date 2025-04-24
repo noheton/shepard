@@ -90,7 +90,7 @@ watch(
               1e9;
             const frequency =
               parseFloat(timeseriesReferenceMetrics.COUNT) / timeSpanInSeconds;
-            timeseriesReferenceMetrics.FREQUENCY = `${toFormattedDouble(frequency.toString(), 2)} HZ`;
+            timeseriesReferenceMetrics.FREQUENCY = `${toFormattedDouble(frequency.toString(), 9)} Hz`;
           }
 
           const timeseries = await useFetchTimeseries(
