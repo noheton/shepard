@@ -5,7 +5,6 @@ import type {
   TimeseriesContainer,
 } from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
-import { useFetchTimeSeriesContainer } from "~/composables/context/useFetchTimeseriesContainer";
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
 
 definePageMeta({ layout: "collection" });
@@ -65,25 +64,6 @@ watch(timeseriesReference, () => {
   }
 });
 
-// Could't find better solution other than watch
-watch(
-  () => timeseriesReference.value,
-  async newReference => {
-    if (newReference) {
-      const data = useFetchTimeSeriesContainer(
-        newReference.timeseriesContainerId,
-      );
-
-      watch(
-        () => data.timeseriesContainer.value,
-        async newReference => {
-          timeseriesContainer.value = newReference;
-        },
-      );
-    }
-  },
-);
-
 const getSelectedTimeseries = () => {
   return timeseriesDataTableItems.value.filter(item => item.isSelected);
 };
@@ -140,14 +120,7 @@ const onSelectedItemChanged = () => {
 <template>
   <div style="max-width: 1000px">
     <v-container fluid class="pa-0 fill-height" max-width="1000px">
-      <v-row
-        v-if="
-          !!timeseriesReference &&
-          !!collection &&
-          !!dataObject &&
-          !!timeseriesContainer
-        "
-      >
+      <v-row v-if="!!timeseriesReference && !!collection && !!dataObject">
         <v-col cols="12">
           <Breadcrumbs
             :items="[
@@ -189,9 +162,13 @@ const onSelectedItemChanged = () => {
                   name: `Timeseries Reference “${timeseriesReference.name}”`,
                   type: 'Timeseries',
                   container: {
-                    title: timeseriesContainer.name,
-                    id: timeseriesContainer.id,
+                    title:
+                      timeseriesReference.referencedContainerName ??
+                      'unknown name',
+                    id: timeseriesReference.timeseriesContainerId,
                     type: 'TIMESERIES',
+                    availability:
+                      timeseriesReference.referencedContainerAvailability,
                   },
                 }"
                 id-label="ID"

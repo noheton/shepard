@@ -2,16 +2,25 @@ import type {
   ResponseError,
   TimeseriesReference,
 } from "@dlr-shepard/backend-client";
-import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
+import {
+  TimeseriesContainerApi,
+  TimeseriesReferenceApi,
+} from "@dlr-shepard/backend-client";
+import type { ReferencedContainerMeta } from "~/components/context/display-components/data-references/dataReference";
+
+type TimeseriesReferenceWithContainerMeta = TimeseriesReference &
+  ReferencedContainerMeta;
 
 export function useFetchTimeseriesReference(
   collectionId: number,
   dataObjectId: number,
   timeseriesReferenceId: number,
 ) {
-  const timeseriesReference = ref<TimeseriesReference | undefined>(undefined);
+  const timeseriesReference = ref<
+    TimeseriesReferenceWithContainerMeta | undefined
+  >(undefined);
 
-  function fetchTimeseriesReference(
+  async function fetchTimeseriesReference(
     collectionId: number,
     dataObjectId: number,
     timeseriesReferenceId: number,
@@ -22,14 +31,46 @@ export function useFetchTimeseriesReference(
         dataObjectId,
         timeseriesReferenceId,
       })
-      .then(response => {
-        timeseriesReference.value = response;
+      .then(async response => {
+        const timeseriesRefMeta = await fetchTimeseriesContainerMeta(
+          response.timeseriesContainerId,
+        );
+        if (timeseriesRefMeta.referencedContainerAvailability !== "available") {
+          response.timeseries = [];
+        }
+        timeseriesReference.value = {
+          ...response,
+          ...timeseriesRefMeta,
+        };
       })
       .catch(e => {
         timeseriesReference.value = undefined;
         handleError(e as ResponseError, "fetching timeseriesReference");
       });
   }
+
+  async function fetchTimeseriesContainerMeta(
+    containerId: number,
+  ): Promise<ReferencedContainerMeta> {
+    if (isDeleted(containerId))
+      return { referencedContainerAvailability: "deleted" };
+    return createApiInstance(TimeseriesContainerApi)
+      .getTimeseriesContainer({ timeseriesContainerId: containerId })
+      .then((response): ReferencedContainerMeta => {
+        return {
+          referencedContainerName: response.name,
+          referencedContainerAvailability: "available",
+        };
+      })
+      .catch((error: ResponseError) => {
+        if (error.response.status === 403)
+          return { referencedContainerAvailability: "forbidden" };
+        handleError(error, "fetchTimeseriesContainerName");
+        return { referencedContainerAvailability: "error" };
+      });
+  }
+
+  watch(timeseriesReference, () => {});
 
   fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
 
