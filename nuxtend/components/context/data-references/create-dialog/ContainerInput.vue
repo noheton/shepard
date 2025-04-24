@@ -11,7 +11,7 @@ const emit = defineEmits<{
 }>();
 
 function searchEnded(id: number | null, type: ContainerType | null) {
-  if (!id || !type) return; // gibt es einen Container der die ID 0 haben kann? Der könnte jetzt nicht ausgewählt werden!
+  if (!id || !type) return;
   containerId.value = id;
   emit("searchEnded", id, type);
 }
