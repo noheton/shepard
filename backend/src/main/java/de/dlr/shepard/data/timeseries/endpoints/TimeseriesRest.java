@@ -98,8 +98,8 @@ public class TimeseriesRest {
   @Parameter(name = Constants.QP_ORDER_DESC)
   public Response getAllTimeseriesContainers(
     @QueryParam(Constants.QP_NAME) String name,
-    @QueryParam(Constants.QP_PAGE) Integer page,
-    @QueryParam(Constants.QP_SIZE) Integer size,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
     @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
     @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
   ) {

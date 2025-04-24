@@ -301,6 +301,13 @@ function downloadChartAsImage() {
                 ]?.annotations"
                 :key="annotation.id"
                 :annotation="annotation"
+                :annotated-type="
+                  new AnnotatedReference(
+                    collectionId,
+                    dataObjectId,
+                    props.timeseriesReferenceId,
+                  )
+                "
               />
             </v-row>
           </div>
