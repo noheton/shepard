@@ -112,7 +112,7 @@ services:
       - influxdata
 
   timescaledb:
-    image: timescale/timescaledb:2.19.3-pg16
+    image: timescale/timescaledb:2.18.1-pg16
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}

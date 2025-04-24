@@ -46,7 +46,7 @@ services:
       - mongodb
 
   timescaledb:
-    image: timescale/timescaledb:2.19.3-pg16
+    image: timescale/timescaledb:2.18.1-pg16
     networks:
       - shepard
     ports:
@@ -62,7 +62,7 @@ services:
       - ../infrastructure/docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
 
   postgis:
-    image: postgis/postgis:17-3.5
+    image: postgis/postgis:16-3.5
     container_name: postgis
     environment:
       POSTGRES_DB: ${POSTGRES_DB-postgres}
