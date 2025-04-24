@@ -29,6 +29,7 @@ const {
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
+const showCreateDataReferenceDialog = ref(false);
 const showAddAnnotationDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
 </script>
@@ -152,7 +153,6 @@ const showAddRelationshipDialog = ref(false);
                       @click="() => (showCreateDataReferenceDialog = true)"
                     />
                     <CreateDataReferenceDialog
-                      v-if="showCreateDataReferenceDialog"
                       v-model:show-dialog="showCreateDataReferenceDialog"
                       :collection-id="collection.id"
                       :data-object-id="dataObject.id"

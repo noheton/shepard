@@ -165,51 +165,49 @@ function getFileOidList(oid: string[]) {
 </script>
 
 <template>
-  <v-form ref="form" v-model="isValid">
-    <Dialog
-      v-model:show-dialog="showDialog"
-      title="Create Data Reference"
-      :submit-disabled="!isValid"
-      @submit="createFileReference"
-    >
-      <template #form>
-        <v-form ref="form" v-model="isValid">
-          <v-row class="pt-9 pb-1">
-            <v-col>
-              <NameInput v-model:name="dataReferenceName" />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <ContainerInput
-                v-model:container-id="dataReferenceContainerId"
-                :collection-id="collectionId"
-                @search-ended="getContainerById"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col class="pt-1">
-              <MandatoryFieldHint />
-            </v-col>
-          </v-row>
-          <v-row v-if="containerChosen">
-            <v-col class="pt-9 pb-1">
-              <div class="text-subtitle-1">Select Data</div>
-            </v-col>
-          </v-row>
-          <v-row v-if="containerChosen">
-            <v-col class="pt-1">
-              <FileTable
-                v-if="displayItems"
-                :items="displayItems"
-                :loading="loading"
-                @sended-oid-list="getFileOidList"
-              />
-            </v-col>
-          </v-row>
-        </v-form>
-      </template>
-    </Dialog>
-  </v-form>
+  <FormDialog
+    v-model:show-dialog="showDialog"
+    title="Create Data Reference"
+    :submit-disabled="!isValid"
+    @submit="createFileReference"
+  >
+    <template #form>
+      <v-form ref="form" v-model="isValid">
+        <v-row class="pt-9 pb-1">
+          <v-col>
+            <NameInput v-model:name="dataReferenceName" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <ContainerInput
+              v-model:container-id="dataReferenceContainerId"
+              :collection-id="collectionId"
+              @search-ended="getContainerById"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="pt-1">
+            <MandatoryFieldHint />
+          </v-col>
+        </v-row>
+        <v-row v-if="containerChosen">
+          <v-col class="pt-9 pb-1">
+            <div class="text-subtitle-1">Select Data</div>
+          </v-col>
+        </v-row>
+        <v-row v-if="containerChosen">
+          <v-col class="pt-1">
+            <FileTable
+              v-if="displayItems"
+              :items="displayItems"
+              :loading="loading"
+              @sended-oid-list="getFileOidList"
+            />
+          </v-col>
+        </v-row>
+      </v-form>
+    </template>
+  </FormDialog>
 </template>
