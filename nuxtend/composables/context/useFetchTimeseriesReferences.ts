@@ -70,8 +70,6 @@ export function useFetchTimeseriesReference(
       });
   }
 
-  watch(timeseriesReference, () => {});
-
   fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
 
   return {
