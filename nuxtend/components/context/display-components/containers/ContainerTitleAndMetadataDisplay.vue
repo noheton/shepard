@@ -3,7 +3,7 @@ interface ContainerTitleAndMetadataDisplayProps {
   id: number;
   name: string;
   typeLabel: string;
-  nItems: number;
+  nItems?: number;
   database?: string;
 }
 
@@ -26,7 +26,7 @@ defineProps<ContainerTitleAndMetadataDisplayProps>();
         <strong>Container ID:</strong>
         {{ id }}
       </v-col>
-      <v-col>
+      <v-col v-if="nItems !== undefined">
         <strong>Number of items:</strong>
         {{ nItems }}
       </v-col>
