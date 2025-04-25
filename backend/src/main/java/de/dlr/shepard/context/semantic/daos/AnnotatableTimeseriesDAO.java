@@ -6,19 +6,19 @@ import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Optional;
 import org.neo4j.ogm.cypher.ComparisonOperator;
 import org.neo4j.ogm.cypher.Filter;
 
 @RequestScoped
 public class AnnotatableTimeseriesDAO extends GenericDAO<AnnotatableTimeseries> {
 
-  public AnnotatableTimeseries findByTimeseries(long containerId, int timeseriesId) {
+  public Optional<AnnotatableTimeseries> findByTimeseries(long containerId, int timeseriesId) {
     var containerFilter = new Filter("containerId", ComparisonOperator.EQUALS, containerId);
     var timeseriesFilter = new Filter("timeseriesId", ComparisonOperator.EQUALS, timeseriesId);
     return this.session.loadAll(AnnotatableTimeseries.class, containerFilter.and(timeseriesFilter), 2)
       .stream()
-      .findFirst()
-      .orElse(null);
+      .findFirst();
   }
 
   public SemanticAnnotation getAnnotationById(long annotationId) {

@@ -1,10 +1,7 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
-import {
-  collectionsPath,
-  dataObjectsPathFragment,
-} from "../../../../../utils/constants";
+import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
@@ -30,13 +27,12 @@ const {
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
-const showAddAnnotationDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
 </script>
 
 <template>
   <div style="max-width: 1000px">
-    <v-container fluid class="pa-0 fill-height" max-width="1000px">
+    <v-container class="pa-0 fill-height" fluid max-width="1000px">
       <v-row
         v-if="
           !!collection && !!dataObject && !!dataReferences && !!relatedEntities
@@ -66,7 +62,7 @@ const showAddRelationshipDialog = ref(false);
           />
         </v-col>
         <v-col cols="12">
-          <v-container fluid class="pa-0" max-width="1000px">
+          <v-container class="pa-0" fluid max-width="1000px">
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="dataObject"
@@ -79,8 +75,8 @@ const showAddRelationshipDialog = ref(false);
                   <DescriptionDisplay :entity="dataObject" />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Edit"
                       icon="mdi-pencil-outline"
+                      text="Edit"
                       @click="() => (showDescriptionEditDialog = true)"
                     />
                     <EditDataObjectDescriptionDialog
@@ -93,16 +89,10 @@ const showAddRelationshipDialog = ref(false);
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Semantic Annotations">
                   <template v-if="isAllowedToEditCollection" #append>
-                    <ExpansionPanelTitleButton
-                      text="Add"
-                      icon="mdi-plus-circle"
-                      @click="() => (showAddAnnotationDialog = true)"
-                    />
-                    <AddAnnotationDialog
-                      v-if="showAddAnnotationDialog"
-                      v-model:show-dialog="showAddAnnotationDialog"
-                      :collection-id="collection.id"
-                      :data-object-id="dataObject.id"
+                    <AddAnnotationButton
+                      :annotated="
+                        new AnnotatedDataObject(collectionId, dataObjectId)
+                      "
                     />
                   </template>
                   <SemanticAnnotationList
@@ -112,14 +102,14 @@ const showAddRelationshipDialog = ref(false);
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  title="Attributes"
                   :count="Object.keys(dataObject.attributes ?? {}).length"
+                  title="Attributes"
                 >
                   <AttributesDisplay :entity="dataObject" />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Add/Edit"
                       icon="mdi-plus-circle"
+                      text="Add/Edit"
                       @click="() => (showAttributeEditDialog = true)"
                     />
                     <EditDataObjectAttributesDialog
@@ -131,8 +121,8 @@ const showAddRelationshipDialog = ref(false);
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  title="Lab Journal"
                   :count="numberOfLabJournalEntries"
+                  title="Lab Journal"
                 >
                   <div class="pt-4">
                     <DataObjectLabJournalEntryList
@@ -143,13 +133,13 @@ const showAddRelationshipDialog = ref(false);
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  title="Data References"
                   :count="dataReferences.length"
+                  title="Data References"
                 >
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Add data reference"
                       icon="mdi-plus-circle"
+                      text="Add data reference"
                       @click="() => (showCreateDataReferenceDialog = true)"
                     />
                     <CreateDataReferenceDialog
@@ -169,21 +159,21 @@ const showAddRelationshipDialog = ref(false);
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  title="Relationships"
                   :count="relatedEntities.length"
+                  title="Relationships"
                 >
                   <DataObjectRelationshipsTable
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"
-                    :related-entities="relatedEntities"
                     :is-allowed-to-edit-collection="
                       isAllowedToEditCollection ?? false
                     "
+                    :related-entities="relatedEntities"
                   />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Add"
                       icon="mdi-plus-circle"
+                      text="Add"
                       @click="() => (showAddRelationshipDialog = true)"
                     />
                     <AddRelationshipDialog

@@ -39,9 +39,8 @@ const showDeleteDialog = ref(false);
 
 <style lang="scss" scoped>
 li {
-  display: inline-flex;
-  margin-right: 16px;
-  margin-bottom: 8px;
+  list-style-type: none;
+  display: flex;
 }
 .semantic-key {
   border-top-right-radius: 0 !important;

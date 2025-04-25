@@ -1,5 +1,5 @@
-<script setup lang="ts">
-import { collectionsPath } from "../../../utils/constants";
+<script lang="ts" setup>
+import { collectionsPath } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
@@ -17,12 +17,11 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
-const showAddAnnotationDialog = ref(false);
 </script>
 
 <template>
   <div style="max-width: 1000px">
-    <v-container fluid class="pa-0 fill-height">
+    <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
         <v-col cols="12">
           <Breadcrumbs
@@ -39,7 +38,7 @@ const showAddAnnotationDialog = ref(false);
           />
         </v-col>
         <v-col cols="12">
-          <v-container fluid class="pa-0">
+          <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="collection"
@@ -52,8 +51,8 @@ const showAddAnnotationDialog = ref(false);
                   <DescriptionDisplay :entity="collection" />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Edit"
                       icon="mdi-pencil-outline"
+                      text="Edit"
                       @click="() => (showDescriptionEditDialog = true)"
                     />
                     <EditCollectionDescriptionDialog
@@ -65,15 +64,8 @@ const showAddAnnotationDialog = ref(false);
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Semantic Annotations">
                   <template v-if="isAllowedToEditCollection" #append>
-                    <ExpansionPanelTitleButton
-                      text="Add"
-                      icon="mdi-plus-circle"
-                      @click="() => (showAddAnnotationDialog = true)"
-                    />
-                    <AddAnnotationDialog
-                      v-if="showAddAnnotationDialog"
-                      v-model:show-dialog="showAddAnnotationDialog"
-                      :collection-id="collection.id"
+                    <AddAnnotationButton
+                      :annotated="new AnnotatedCollection(collectionId)"
                     />
                   </template>
                   <SemanticAnnotationList
@@ -82,14 +74,14 @@ const showAddAnnotationDialog = ref(false);
                 </ExpansionPanelItem>
 
                 <ExpansionPanelItem
-                  title="Attributes"
                   :count="Object.keys(collection.attributes ?? {}).length"
+                  title="Attributes"
                 >
                   <AttributesDisplay :entity="collection" />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
-                      text="Add/Edit"
                       icon="mdi-plus-circle"
+                      text="Add/Edit"
                       @click="() => (showAttributeEditDialog = true)"
                     />
                     <EditCollectionAttributesDialog
@@ -100,8 +92,8 @@ const showAddAnnotationDialog = ref(false);
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  title="Lab Journal"
                   :count="numberOfLabJournalEntries"
+                  title="Lab Journal"
                 >
                   <div class="pt-4">
                     <CollectionLabJournalEntryList

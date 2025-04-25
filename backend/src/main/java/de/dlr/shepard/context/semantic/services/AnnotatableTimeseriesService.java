@@ -1,17 +1,16 @@
 package de.dlr.shepard.context.semantic.services;
 
-import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.context.semantic.daos.AnnotatableTimeseriesDAO;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RequestScoped
 public class AnnotatableTimeseriesService {
@@ -32,10 +31,9 @@ public class AnnotatableTimeseriesService {
     timeseriesService.getTimeseriesById(containerId, timeseriesId);
     timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
-    var annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
-    if (annotatableTimeseries == null) {
-      annotatableTimeseries = new AnnotatableTimeseries(containerId, timeseriesId, new ArrayList<>());
-    }
+    var annotatableTimeseries = dao
+      .findByTimeseries(containerId, timeseriesId)
+      .orElse(new AnnotatableTimeseries(containerId, timeseriesId, new ArrayList<>()));
 
     var propertyRepository = dao.getSemanticRepositoryById(annotationIO.getPropertyRepositoryId());
     var valueRepository = dao.getSemanticRepositoryById(annotationIO.getValueRepositoryId());
@@ -66,17 +64,12 @@ public class AnnotatableTimeseriesService {
   public List<SemanticAnnotation> getAnnotations(long containerId, int timeseriesId) {
     timeseriesService.getTimeseriesById(containerId, timeseriesId);
 
-    AnnotatableTimeseries annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
-    if (annotatableTimeseries == null) {
-      String errorMsg = String.format(
-        "ID ERROR - Could not find semantic annotation with Id %s in container %s",
-        timeseriesId,
-        containerId
-      );
-      Log.error(errorMsg);
-      throw new InvalidPathException(errorMsg);
+    Optional<AnnotatableTimeseries> annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
+    if (annotatableTimeseries.isPresent()) {
+      return annotatableTimeseries.get().getAnnotations();
+    } else {
+      return new ArrayList<>();
     }
-    return annotatableTimeseries.getAnnotations();
   }
 
   public SemanticAnnotation getAnnotationById(long containerId, int timeseriesId, long annotationId) {

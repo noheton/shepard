@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { compareNullableStrings } from "./compareNullableStrings";
 import type { RelatedEntity } from "./relatedEntity";
 import type { RelationshipTableElement } from "./relationshipTableElement";
@@ -10,6 +10,7 @@ interface DataObjectRelationshipsTable {
   relatedEntities: RelatedEntity[];
   isAllowedToEditCollection: boolean;
 }
+
 const props = defineProps<DataObjectRelationshipsTable>();
 
 const selectedReferenceId = ref<number | undefined>(0);
@@ -105,10 +106,10 @@ const headers = [
   <EmptyListIcon v-if="tableItems.length === 0" label="No relationships yet" />
   <DataTable
     v-else
-    items-per-page="-1"
-    :items="tableItems"
     :headers="headers"
+    :items="tableItems"
     hover
+    items-per-page="-1"
   >
     <template
       #[`item.relationship`]="{
@@ -181,9 +182,13 @@ const headers = [
   <AddAnnotationDialog
     v-if="showAddAnnotationDialog"
     v-model:show-dialog="showAddAnnotationDialog"
-    :collection-id="props.collectionId"
-    :data-object-id="props.dataObjectId"
-    :reference-id="selectedReferenceId"
+    :annotated="
+      new AnnotatedReference(
+        props.collectionId,
+        props.dataObjectId,
+        selectedReferenceId!,
+      )
+    "
   />
 
   <DeleteRelationshipDialog
@@ -194,7 +199,7 @@ const headers = [
   />
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .v-table {
   :deep(tbody) > tr > td:first-of-type {
     background-color: rgb(var(--v-theme-divider2));

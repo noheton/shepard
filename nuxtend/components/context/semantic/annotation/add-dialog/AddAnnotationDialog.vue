@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type {
   ResponseError,
   SemanticAnnotation,
@@ -7,15 +7,9 @@ import type {
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
 import NameInput from "~/components/context/input-components/NameInput.vue";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
-import {
-  addSemanticAnnotation,
-  type AddSemanticAnnotationArgs,
-} from "../addSemanticAnnotation";
 
 interface AddAnnotationDialogProps {
-  collectionId: number;
-  dataObjectId?: number;
-  referenceId?: number;
+  annotated: Annotated;
 }
 
 const props = defineProps<AddAnnotationDialogProps>();
@@ -69,16 +63,13 @@ const mapToAutocompleteItem = (
 const onSubmit = async () => {
   processing.value = true;
   try {
-    const args: AddSemanticAnnotationArgs = {
-      ...props,
-      annotation: {
-        propertyRepositoryId: propertyRepository.value?.id ?? 0,
-        propertyIRI: propertyIri.value,
-        valueRepositoryId: valueRepository.value?.id ?? 0,
-        valueIRI: valueIri.value,
-      },
+    const annotationToAdd = {
+      propertyRepositoryId: propertyRepository.value?.id ?? 0,
+      propertyIRI: propertyIri.value,
+      valueRepositoryId: valueRepository.value?.id ?? 0,
+      valueIRI: valueIri.value,
     };
-    const annotation = await addSemanticAnnotation(args);
+    const annotation = await props.annotated.addAnnotation(annotationToAdd);
     showDialog.value = false;
     emitSuccess(
       `Successfully added semantic annotation "${formatSemanticAnnotation(annotation.propertyName, annotation.valueName)}".`,
@@ -101,11 +92,11 @@ const showValueRepoNameTooltip = ref(true);
   <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
-    title="Create New Semantic Annotation"
-    save-button-text="Add"
+    :loading="processing"
     :max-width="600"
     :submit-disabled="!isValid"
-    :loading="processing"
+    save-button-text="Add"
+    title="Create New Semantic Annotation"
     @submit="onSubmit"
   >
     <template #form>
@@ -116,22 +107,22 @@ const showValueRepoNameTooltip = ref(true);
         <v-row>
           <v-col class="pb-0">
             <v-tooltip
+              :class="`${showPropertyIRITooltip ? '' : 'hideOnClick'}`"
+              :open-on-focus="false"
+              content-class="text-body-3"
               location="bottom right"
+              max-width="500"
               open-delay="750"
               open-on-hover
-              :open-on-focus="false"
-              max-width="500"
-              content-class="text-body-3"
-              :class="`${showPropertyIRITooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props: semanticProps }">
                 <NameInput
                   v-model:name="propertyIri"
-                  label="IRI"
                   autofocus
+                  label="IRI"
                   v-bind="semanticProps"
-                  @focus="showPropertyIRITooltip = false"
                   @blur="showPropertyIRITooltip = true"
+                  @focus="showPropertyIRITooltip = false"
                 />
               </template>
               <div>
@@ -144,27 +135,27 @@ const showValueRepoNameTooltip = ref(true);
         <v-row>
           <v-col class="pb-0">
             <v-tooltip
+              :class="`${showPropertyRepoNameTooltip ? '' : 'hideOnClick'}`"
+              :open-on-focus="false"
+              content-class="text-body-3"
               location="bottom right"
+              max-width="500"
               open-delay="750"
               open-on-hover
-              :open-on-focus="false"
-              max-width="500"
-              content-class="text-body-3"
-              :class="`${showPropertyRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props: semanticProps }">
                 <v-autocomplete
-                  v-bind="semanticProps"
                   v-model="propertyRepository"
                   :items="repositories.map(mapToAutocompleteItem)"
-                  label="Repository Name or ID..."
-                  placeholder="select a repository"
-                  no-data-text="No repositories found"
                   color="primary"
-                  variant="outlined"
                   density="compact"
-                  @focus="showPropertyRepoNameTooltip = false"
+                  label="Repository Name or ID..."
+                  no-data-text="No repositories found"
+                  placeholder="select a repository"
+                  v-bind="semanticProps"
+                  variant="outlined"
                   @blur="showPropertyRepoNameTooltip = true"
+                  @focus="showPropertyRepoNameTooltip = false"
                 />
               </template>
               <div>
@@ -181,21 +172,21 @@ const showValueRepoNameTooltip = ref(true);
         <v-row>
           <v-col class="pb-0">
             <v-tooltip
+              :class="`${showValueIRITooltip ? '' : 'hideOnClick'}`"
+              :open-on-focus="false"
+              content-class="text-body-3"
               location="bottom right"
+              max-width="500"
               open-delay="750"
               open-on-hover
-              :open-on-focus="false"
-              max-width="500"
-              content-class="text-body-3"
-              :class="`${showValueIRITooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props: semanticProps }">
                 <NameInput
                   v-model:name="valueIri"
                   label="IRI"
                   v-bind="semanticProps"
-                  @focus="showValueIRITooltip = false"
                   @blur="showValueIRITooltip = true"
+                  @focus="showValueIRITooltip = false"
                 />
               </template>
               <div>
@@ -208,27 +199,27 @@ const showValueRepoNameTooltip = ref(true);
         <v-row>
           <v-col class="pb-0">
             <v-tooltip
+              :class="`${showValueRepoNameTooltip ? '' : 'hideOnClick'}`"
+              :open-on-focus="false"
+              content-class="text-body-3"
               location="bottom right"
+              max-width="500"
               open-delay="750"
               open-on-hover
-              :open-on-focus="false"
-              max-width="500"
-              content-class="text-body-3"
-              :class="`${showValueRepoNameTooltip ? '' : 'hideOnClick'}`"
             >
               <template #activator="{ props: semanticProps }">
                 <v-autocomplete
-                  v-bind="semanticProps"
                   v-model="valueRepository"
                   :items="repositories.map(mapToAutocompleteItem)"
-                  label="Repository Name or ID..."
-                  density="compact"
-                  variant="outlined"
-                  no-data-text="No repositories found"
                   color="primary"
+                  density="compact"
+                  label="Repository Name or ID..."
+                  no-data-text="No repositories found"
                   placeholder="select a repository"
-                  @focus="showValueRepoNameTooltip = false"
+                  v-bind="semanticProps"
+                  variant="outlined"
                   @blur="showValueRepoNameTooltip = true"
+                  @focus="showValueRepoNameTooltip = false"
                 />
               </template>
               <div>

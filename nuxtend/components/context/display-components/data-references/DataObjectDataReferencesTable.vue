@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import DataObjectDataMetaCell from "./DataObjectDataMetaCell.vue";
 import type { DataReference } from "./dataReference";
 import type { DataTableElement } from "./dataTableElement";
@@ -10,6 +10,7 @@ interface DataObjectDataReferencesTableProps {
   dataReferences: Array<DataReference>;
   isAllowedToEditCollection: boolean;
 }
+
 const props = defineProps<DataObjectDataReferencesTableProps>();
 const router = useRouter();
 
@@ -124,13 +125,17 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
   <AddAnnotationDialog
     v-if="showAddAnnotationDialog"
     v-model:show-dialog="showAddAnnotationDialog"
-    :collection-id="props.collectionId"
-    :data-object-id="props.dataObjectId"
-    :reference-id="selectedReferenceId"
+    :annotated="
+      new AnnotatedReference(
+        props.collectionId,
+        props.dataObjectId,
+        selectedReferenceId,
+      )
+    "
   />
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));

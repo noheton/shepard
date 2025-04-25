@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 @QuarkusTest
@@ -64,6 +63,9 @@ public class AnnotatableTimeseriesServiceTest {
   private SemanticRepository semanticRepository;
   private final String iri = "http://purl.obolibrary.org/obo/uo.owl";
 
+  private final int nonExistingTimeseriesId = 9999999;
+  private final long nonExistingAnnotationId = 9999999L;
+
   @BeforeAll
   @Transactional
   public void setup() {
@@ -77,9 +79,6 @@ public class AnnotatableTimeseriesServiceTest {
     semanticRepository.setType(SemanticRepositoryType.SPARQL);
     semanticRepositoryDao.createOrUpdate(semanticRepository);
 
-    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), ArgumentMatchers.anyInt())).thenReturn(
-      null
-    );
     Mockito.when(userService.getCurrentUser()).thenReturn(user);
     Mockito.when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
   }
@@ -87,6 +86,9 @@ public class AnnotatableTimeseriesServiceTest {
   @BeforeEach
   public void setupEach() {
     Mockito.when(semanticAnnotationService.validateTerm(semanticRepository, iri)).thenReturn("prop", "value");
+    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), eq(nonExistingTimeseriesId))).thenThrow(
+      new InvalidPathException()
+    );
   }
 
   @AfterAll
@@ -114,12 +116,7 @@ public class AnnotatableTimeseriesServiceTest {
 
   @Test
   public void createAnnotation_TimeseriesIdDoesNotExist_throwNotFoundException() {
-    int nonExistingTimeseriesId = 9999999;
-    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), ArgumentMatchers.anyInt())).thenThrow(
-      NotFoundException.class
-    );
-
-    assertThrows(NotFoundException.class, () ->
+    assertThrows(InvalidPathException.class, () ->
       service.createAnnotation(container.getId(), nonExistingTimeseriesId, null)
     );
   }
@@ -151,9 +148,7 @@ public class AnnotatableTimeseriesServiceTest {
   }
 
   @Test
-  public void getAnnotations_TimeseriesDoesNotExist_throwsNotFoundException() {
-    int nonExistingTimeseriesId = 9999999;
-
+  public void getAnnotations_TimeseriesDoesNotExist_throwsInvalidPathException() {
     assertThrows(InvalidPathException.class, () -> service.getAnnotations(container.getId(), nonExistingTimeseriesId));
   }
 
@@ -167,7 +162,6 @@ public class AnnotatableTimeseriesServiceTest {
     annotationIO.setValueIRI(iri);
 
     var storedEntity = service.createAnnotation(container.getId(), timeseriesId, annotationIO);
-
     service.clearSession();
     var actual = service.getAnnotationById(container.getId(), timeseriesId, storedEntity.getId());
 
@@ -182,11 +176,10 @@ public class AnnotatableTimeseriesServiceTest {
 
   @Test
   public void getAnnotationById_AnnotationDoesNotExist_throwsNotFoundException() {
-    long nonExistingId = 9999999L;
     var timeseriesId = 5;
 
     assertThrows(NotFoundException.class, () ->
-      service.getAnnotationById(container.getId(), timeseriesId, nonExistingId)
+      service.getAnnotationById(container.getId(), timeseriesId, nonExistingAnnotationId)
     );
   }
 
@@ -208,5 +201,12 @@ public class AnnotatableTimeseriesServiceTest {
     assertThrows(NotFoundException.class, () ->
       service.getAnnotationById(container.getId(), timeseriesId, storedEntity.getId())
     );
+  }
+
+  @Test
+  public void getAnnotations_TimeseriesWithoutAnnotations_returnsEmptyList() {
+    int timeseriesId = 6;
+    var actual = service.getAnnotations(container.getId(), timeseriesId);
+    assertEquals(0, actual.size());
   }
 }

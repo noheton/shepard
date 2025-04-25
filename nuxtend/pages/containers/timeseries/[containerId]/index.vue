@@ -64,6 +64,9 @@ onContainerUpdated(() => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
-    <TimeseriesMeasurementsTable :measurements="container.measurements.value" />
+    <TimeseriesMeasurementsTable
+      :is-allowed-to-edit-data="container.isAllowedToEditData.value"
+      :measurements="container.measurements.value"
+    />
   </div>
 </template>

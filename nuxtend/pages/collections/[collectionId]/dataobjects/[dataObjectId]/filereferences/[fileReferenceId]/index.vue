@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { FileReferenceApi } from "@dlr-shepard/backend-client";
 import ActionButton from "~/components/common/data-table/ActionButton.vue";
 import type {
@@ -111,7 +111,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
 
 <template>
   <div style="max-width: 1000px">
-    <v-container fluid class="pa-0 fill-height" max-width="1000px">
+    <v-container class="pa-0 fill-height" fluid max-width="1000px">
       <v-row v-if="!!collection && !!dataObject && !!fileReference">
         <v-col cols="12">
           <Breadcrumbs
@@ -146,7 +146,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
           />
         </v-col>
         <v-col cols="12">
-          <v-container fluid class="pa-0">
+          <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="{
@@ -161,9 +161,9 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                     availability: fileReference.referencedContainerAvailability,
                   },
                 }"
-                id-label="ID"
-                :on-delete="onDelete"
                 :on-annotate="onAnnotate"
+                :on-delete="onDelete"
+                id-label="ID"
               />
             </v-row>
             <v-row align="center" justify="space-between">
@@ -181,11 +181,11 @@ function onDownloadFile(params: { filename: string; oid: string }) {
             </v-row>
             <v-row>
               <DataTable
-                :header-props="{
-                  class: 'text-subtitle-2 text-textbody1',
-                }"
                 :cell-props="{
                   class: 'text-textbody1',
+                }"
+                :header-props="{
+                  class: 'text-subtitle-2 text-textbody1',
                 }"
                 :headers="headers"
                 :items="fileDataTableItems"
@@ -250,9 +250,9 @@ function onDownloadFile(params: { filename: string; oid: string }) {
     <AddAnnotationDialog
       v-if="showAddAnnotationDialog"
       v-model:show-dialog="showAddAnnotationDialog"
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
-      :reference-id="fileReferenceId"
+      :annotated="
+        new AnnotatedReference(collectionId, dataObjectId, fileReferenceId)
+      "
     />
     <FileContentViewerDialog
       v-if="showFileContentViewerDialog"
@@ -260,14 +260,14 @@ function onDownloadFile(params: { filename: string; oid: string }) {
       :collection-id="collectionId"
       :data-object-id="dataObjectId"
       :file-reference-id="fileReferenceId"
-      :oid="selectedOid"
       :file-type="selectedFileType"
       :file-name="selectedFileName"
+      :oid="selectedOid"
     />
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));
