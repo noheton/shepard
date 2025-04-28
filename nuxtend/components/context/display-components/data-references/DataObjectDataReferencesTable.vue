@@ -85,6 +85,7 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
       <DataObjectDataMetaCell :meta="value" />
       <SemanticAnnotationList
+        :can-delete="isAllowedToEditCollection"
         :annotated="
           new AnnotatedReference(collectionId, dataObjectId, value.id)
         "

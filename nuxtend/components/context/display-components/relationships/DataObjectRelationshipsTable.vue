@@ -135,6 +135,7 @@ const headers = [
       <TypeCell :value="value.type" />
       <SemanticAnnotationList
         v-if="value.annotatable"
+        :can-delete="isAllowedToEditCollection"
         :annotated="
           new AnnotatedReference(collectionId, dataObjectId, value.referenceId)
         "

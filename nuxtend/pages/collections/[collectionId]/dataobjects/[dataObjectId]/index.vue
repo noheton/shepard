@@ -99,6 +99,7 @@ const showAddRelationshipDialog = ref(false);
                     :annotated="
                       new AnnotatedDataObject(collection.id, dataObject.id)
                     "
+                    :can-delete="!!isAllowedToEditCollection"
                   />
                 </ExpansionPanelItem>
                 <ExpansionPanelItem

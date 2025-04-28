@@ -26,7 +26,8 @@ const { collectionId, dataObjectId, timeseriesReferenceId } =
     timeseriesReferenceId: number;
   };
 
-const { collection } = useFetchCollection(collectionId);
+const { collection, isAllowedToEditCollection } =
+  useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 
 const { timeseriesReference } = useFetchTimeseriesReference(
@@ -260,6 +261,7 @@ const onSelectedItemChanged = () => {
       :timeseries="getSelectedTimeseries()"
       :timeseries-container-id="timeseriesContainer?.id ?? -1"
       :timeseries-reference="timeseriesReference"
+      :isAllowedToEditCollection="isAllowedToEditCollection"
     />
   </div>
 </template>

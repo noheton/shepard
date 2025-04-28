@@ -25,6 +25,7 @@ interface ShowTimeseriesReferenceDialogProps {
   timeseriesContainerId: number;
   timeseries: Timeseries[];
   timeseriesReference?: TimeseriesReference;
+  isAllowedToEditCollection?: boolean;
 }
 
 const props = defineProps<ShowTimeseriesReferenceDialogProps>();
@@ -300,6 +301,7 @@ function downloadChartAsImage() {
                   getTimeseriesUniqueKey(item)
                 ]?.annotations"
                 :key="annotation.id"
+                :can-delete="!!isAllowedToEditCollection"
                 :annotation="annotation"
                 :annotated-type="
                   new AnnotatedReference(

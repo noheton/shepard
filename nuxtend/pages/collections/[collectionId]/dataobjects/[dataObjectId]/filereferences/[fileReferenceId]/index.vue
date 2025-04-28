@@ -29,7 +29,8 @@ const selectedOid = ref<string>("");
 const selectedFileType = ref<FileType>("unknown");
 const selectedFileName = ref<string>("");
 
-const { collection } = useFetchCollection(collectionId);
+const { collection, isAllowedToEditCollection } =
+  useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 const { fileReference, files } = useFetchFileReference(
   collectionId,
@@ -176,6 +177,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                       fileReferenceId,
                     )
                   "
+                  :can-delete="!!isAllowedToEditCollection"
                 />
               </v-col>
             </v-row>
