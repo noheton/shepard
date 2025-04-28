@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SpatialDataContainerAccessor } from "#imports";
+import { SpatialDataContainerAccessor } from "~/composables/container/SpatialDataContainerAccessor";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;

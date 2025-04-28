@@ -3,18 +3,18 @@ import {
   instanceOfUser,
   instanceOfUserGroup,
   PermissionType,
+  type Permissions,
   type ResponseError,
   type User,
-  type Permissions,
 } from "@dlr-shepard/backend-client";
 import type { Member } from "~/composables/common/permissions/useMemberSearch";
-import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
-import { UserRole } from "./UserRole";
 import type { ShepardObjectAccessor } from "~/composables/shepardObjectAccessor";
 import {
   handleShepardObjectUpdate,
   onShepardObjectUpdated,
 } from "~/utils/resourceUpdateBus";
+import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
+import { UserRole } from "./UserRole";
 
 const props = defineProps<{ shepardObjectAccessor: ShepardObjectAccessor }>();
 const shepardObjectAccessor = props.shepardObjectAccessor;

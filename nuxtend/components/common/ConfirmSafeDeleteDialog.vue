@@ -80,7 +80,12 @@ onMounted(() => {
           :disabled="!namesMatch()"
           color="error"
           variant="flat"
-          @click="emit('confirmed')"
+          @click="
+            () => {
+              emit('confirmed');
+              showDialog = false;
+            }
+          "
         >
           Delete
         </v-btn>
