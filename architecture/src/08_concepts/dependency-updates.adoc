@@ -114,4 +114,16 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 
 |junit-jupiter<5.11
 |Not possible atm because parametrized tests in combination with CsvSource do not work any longer. We will wait for the next version.
+
+|@vueuse/core<12 (old frontend)
+|v12 drops support for Vue v2
+
+|vite<6 (old frontend)
+|Peer dependency to @vueuse/core v12 (reason in the line above)
+
+|versions-maven-plugin<2.18
+|Maven report fails to generate in pipeline job
+
+|license-maven-plugin<2.5
+|Maven report fails to generate in pipeline job
 |===
