@@ -67,6 +67,7 @@ export const mapFileNameToCodeType = (filename: string): CodeType => {
     case "txt": {
       return "plaintext";
     }
+    case "yaml":
     case "yml": {
       return "yaml";
     }

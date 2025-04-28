@@ -142,12 +142,17 @@ watch(
   overflow: hidden;
 }
 
+// code style for file previews
 :deep(.highlightjs-light-mode) > div > pre > code {
   background-color: unset;
+  padding: unset;
+  border-radius: unset;
 }
 
 :deep(.highlightjs-dark-mode) > div > pre > code {
   background-color: unset;
+  padding: unset;
+  border-radius: unset;
 }
 
 :deep(.tiptap) {
