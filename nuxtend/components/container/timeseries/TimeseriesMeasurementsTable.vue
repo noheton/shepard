@@ -123,6 +123,16 @@ const columns = ref([
   border-bottom: 0 !important;
 }
 
+// set hover styling on row if its expanded part is hovered
+:deep(tr:where(tr:has(+ tr.expanded:hover))) {
+  background-color: rgba(var(--v-border-color), var(--v-hover-opacity));
+}
+
+// set hover styling on expanded row if "parent" is hovered
+:deep(tr:hover + tr.expanded) {
+  background-color: rgba(var(--v-border-color), var(--v-hover-opacity));
+}
+
 strong {
   display: block;
   font-weight: 500;
