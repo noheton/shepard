@@ -24,7 +24,8 @@ const showStructuredDataContentViewerDialog = ref<boolean>(false);
 const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
 const selectedPayload = ref<string>("");
 
-const { collection } = useFetchCollection(collectionId);
+const { collection, isAllowedToEditCollection } =
+  useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 const { structuredDataReference, structuredData } =
   useFetchStructuredDataReference(
@@ -145,6 +146,7 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
             <v-row align="center" justify="space-between">
               <v-col>
                 <SemanticAnnotationList
+                  :can-delete="!!isAllowedToEditCollection"
                   :annotated="
                     new AnnotatedReference(
                       collection.id,
