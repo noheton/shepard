@@ -19,6 +19,7 @@ export function useCollectionRouteParams() {
     dataObjectId: initialParams.dataObjectId,
     timeseriesReferenceId: initialParams.timeseriesReferenceId,
     fileReferenceId: initialParams.fileReferenceId,
+    structuredDataReferenceId: initialParams.structuredDataReferenceId,
   });
 
   watch(

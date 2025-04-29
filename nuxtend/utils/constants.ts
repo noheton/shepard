@@ -3,6 +3,8 @@ export const containersPath = "/containers/";
 export const dataObjectsPathFragment = "/dataobjects/";
 export const timeseriesReferencePathFragment = "/timeseriesereferences/";
 export const fileReferencesPathFragment = "/filereferences/";
+export const structuredDataReferencesPathFragment =
+  "/structureddatareferences/";
 
 export const fileContainerPath = containersPath + "files/";
 export const structureddataContainerPath = containersPath + "structureddata/";

@@ -45,4 +45,11 @@ defineProps<{
   >
     Files: {{ meta.fileCount }}
   </div>
+  <div
+    v-if="meta.payloadCount"
+    class="text-textbody2 text-body-2"
+    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
+  >
+    Payloads: {{ meta.payloadCount }}
+  </div>
 </template>
