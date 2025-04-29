@@ -144,6 +144,7 @@ const showAddRelationshipDialog = ref(false);
                       @click="() => (showCreateDataReferenceDialog = true)"
                     />
                     <CreateDataReferenceDialog
+                      v-if="showCreateDataReferenceDialog"
                       v-model:show-dialog="showCreateDataReferenceDialog"
                       :collection-id="collection.id"
                       :data-object-id="dataObject.id"

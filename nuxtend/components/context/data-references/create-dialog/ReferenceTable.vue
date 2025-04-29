@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DisplayItems } from "./CreateDataReferenceDialog.vue";
+import type { DisplayItem } from "./CreateDataReferenceDialog.vue";
 
 const props = defineProps<{
-  items: DisplayItems[];
+  items: DisplayItem[];
   loading: boolean;
 }>();
 const emit = defineEmits<{
@@ -18,7 +18,7 @@ const headers = [
   },
   {
     title: "Created at",
-    key: "displayCreatedAt",
+    key: "createdAt",
     width: "40%",
   },
 ];
