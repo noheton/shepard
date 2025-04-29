@@ -82,7 +82,6 @@ watch(model, newContent => {
       return;
     }
     if (newContent) {
-      console.info(props.codeType);
       if (props.codeType) {
         editor.value?.commands.setContent(
           `<pre><code class="language-${props.codeType}">${newContent}</code></pre>`,
