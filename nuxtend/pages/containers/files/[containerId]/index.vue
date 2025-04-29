@@ -47,14 +47,6 @@ const deleteFile = (file: ShepardFile) => {
                 :type-label="'File Container'"
               >
                 <template #buttons>
-                  <v-btn
-                    rounded="lg"
-                    variant="flat"
-                    color="primary"
-                    prepend-icon="mdi-tray-arrow-up"
-                  >
-                    upload file
-                  </v-btn>
                   <EditPermissionsButton
                     v-if="containerAccessor.isAllowedToEditPermissions.value"
                     :shepard-object-accessor="containerAccessor"
