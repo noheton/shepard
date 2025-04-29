@@ -38,8 +38,13 @@ def cli():
     default=False,
     help="If this flag is set, the script performs a hotfix release.",
 )
+@click.option(
+    "--since-release",
+    help="Release since which changelog should be created. " +
+         "Must be part of the 20 latest releases!",
+)
 @click.argument("token_file", type=click.File("r"))
-def release(hotfix_release, token_file):
+def release(hotfix_release, token_file, since_release):
     """Create a gitlab release for a given project."""
     click.confirm(
         "The next steps create a new release for shepard.\n"
@@ -53,7 +58,7 @@ def release(hotfix_release, token_file):
     isHotfixRelease = bool(hotfix_release)
     project = get_project(GITLAB_INSTANCE, token, PROJECT_ID)
     user_id = get_user_id(GITLAB_INSTANCE, token)
-    tag, notes = get_release_details(project, isHotfixRelease)
+    tag, notes = get_release_details(project, isHotfixRelease, since_release)
     title = prompt_title(tag)
     prompt_confirm(title, tag, notes)
     create_release(project, title, tag, notes)

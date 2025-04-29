@@ -136,17 +136,31 @@ def get_user_id(gitlab_instance: str, token: str) -> int:
         raise click.ClickException("Could not fetch current user") from ex
 
 
-def _get_latest_release(project: Project) -> tuple[str, str]:
+def _get_latest_release(project: Project, since_release: str) -> tuple[str, str]:
     """Get latests release date and tag.
     ---
     Returns:
     Tuple[str, str] : date, tag
     """
-    releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
-    if not releases:
-        return ("2001-01-01T00:00:00.000Z", "0.0.0")
+
+    if not since_release:
+        releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
+        if not releases:
+            raise Exception(
+                "No past release could be found! " +
+                "For this script to work there needs to be an exising release!"
+            )
+        release = releases[0]
     else:
-        return (releases[0].released_at, releases[0].tag_name)
+        try:
+            release = project.releases.get(since_release)
+        except Exception as e:
+            raise Exception(
+                f"Release {since_release} could not be found! " +
+                "Maybe the release does not exist or it is misspelled?"
+            ) from e
+
+    return release.released_at, release.tag_name
 
 
 def _get_current_milestone(project: Project) -> ProjectMilestone:
@@ -237,11 +251,16 @@ def _generate_release_notes(
     return release_notes
 
 
-def get_release_details(project: Project, isHotfixRelease: bool) -> tuple[str, str]:
-    latest_release_date, latest_release_tag = _get_latest_release(project)
+def get_release_details(
+    project: Project, isHotfixRelease: bool, since_release: str
+) -> tuple[str, str]:
+    latest_release_date, latest_release_tag = _get_latest_release(
+        project, since_release
+    )
 
     breaking_changes: list[MergeRequest] = []
     other_changes: list[MergeRequest] = []
+
     if isHotfixRelease:
         mr_iids: list[int] = prompt_mr_iids()
         breaking_changes, _dependencies, other_changes = __get_mrs_by_id(
