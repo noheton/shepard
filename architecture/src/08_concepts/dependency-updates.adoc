@@ -94,8 +94,7 @@ Since we want to move to timescaleDB anyways, we disregard any new updates that 
 |@vue/tsconfig<2
 |not compatible with vue v2
 
-|vue-tsc<2.0.24
-|
+
 
 |eslint<9
 |`--ext` option is not supported and the current eslintrc file structure is not supported anymore.

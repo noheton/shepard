@@ -149,11 +149,6 @@
       "allowedVersions": "<0.2"
     },
     {
-      "matchPackageNames": ["vue-tsc"],
-      "matchManagers": ["npm"],
-      "allowedVersions": "<2.0.24"
-    },
-    {
       "matchPackageNames": ["prettier-plugin-organize-imports"],
       "matchManagers": ["npm"],
       "allowedVersions": "<4.0.0"
