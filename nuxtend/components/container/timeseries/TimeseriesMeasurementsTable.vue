@@ -49,7 +49,7 @@ const columns = ref([
     show-expand
   >
     <template #[`expanded-row`]="{ item }">
-      <tr>
+      <tr class="expanded">
         <td :colspan="columns.length">
           <v-table>
             <tbody>
@@ -117,6 +117,10 @@ const columns = ref([
   .annotation-list {
     width: 100%;
   }
+}
+
+:deep(tr:has(+ tr.expanded) > td) {
+  border-bottom: 0 !important;
 }
 
 strong {
