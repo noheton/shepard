@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   icon: string;
+  color?: string;
 }>();
 
 const emit = defineEmits(["click"]);
@@ -12,7 +13,7 @@ const emit = defineEmits(["click"]);
     density="compact"
     :icon="icon"
     variant="text"
-    color="primary"
+    :color="color ?? 'primary'"
     @click="emit('click')"
   />
 </template>

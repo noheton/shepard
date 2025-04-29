@@ -70,6 +70,7 @@ const showDescriptionEditDialog = ref(false);
                   </template>
                   <SemanticAnnotationList
                     :annotated="new AnnotatedCollection(collection.id)"
+                    :can-delete="!!isAllowedToEditCollection"
                   />
                 </ExpansionPanelItem>
 

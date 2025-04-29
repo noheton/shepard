@@ -72,6 +72,7 @@ const columns = ref([
                 <td class="annotation-list">
                   <SemanticAnnotationList
                     :annotated="new AnnotatedTimeseries(item)"
+                    :can-delete="isAllowedToEditData"
                     @annotations="
                       annotations => (item.annotations.value = annotations)
                     "

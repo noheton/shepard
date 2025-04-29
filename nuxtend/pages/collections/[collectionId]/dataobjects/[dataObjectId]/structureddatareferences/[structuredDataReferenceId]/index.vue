@@ -1,42 +1,37 @@
 <script lang="ts" setup>
-import { FileReferenceApi } from "@dlr-shepard/backend-client";
+import { StructuredDataReferenceApi } from "@dlr-shepard/backend-client";
 import ActionButton from "~/components/common/data-table/ActionButton.vue";
-import type {
-  FileType,
-  ShepardFileDataTableItem,
-} from "~/components/context/display-components/file-references/ShepardFileDataTableItem";
-import { mapShepardFilesToDataTableItems } from "~/components/context/display-components/file-references/shepardFileMappingUtil";
-import { useFetchFileReference } from "~/composables/context/useFetchFileReference";
+import type { StructuredDataDataTableItem } from "~/components/context/display-components/structured-data-references/structuredDataDataTableItem";
+import { mapStructuredDataListToDataTableItems } from "~/components/context/display-components/structured-data-references/structuredDataMappingUtil";
+import { useFetchStructuredDataReference } from "~/composables/context/useFetchStructuredDataReference";
 
 definePageMeta({ layout: "collection" });
 
 useHead({
-  title: "File Reference  | shepard",
+  title: "Structured Data Reference  | shepard",
 });
 
 const { routeParams } = useCollectionRouteParams();
-const { collectionId, dataObjectId, fileReferenceId } =
+const { collectionId, dataObjectId, structuredDataReferenceId } =
   routeParams.value as CollectionRouteParams & {
     dataObjectId: number;
-    fileReferenceId: number;
+    structuredDataReferenceId: number;
   };
 
 const showDeleteDialog = ref<boolean>(false);
 const showAddAnnotationDialog = ref<boolean>(false);
-const showFileContentViewerDialog = ref<boolean>(false);
-const fileDataTableItems = ref<ShepardFileDataTableItem[]>([]);
-const selectedOid = ref<string>("");
-const selectedFileType = ref<FileType>("unknown");
-const selectedFileName = ref<string>("");
+const showStructuredDataContentViewerDialog = ref<boolean>(false);
+const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
+const selectedPayload = ref<string>("");
 
-const { collection, isAllowedToEditCollection } =
-  useFetchCollection(collectionId);
+const { collection } = useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
-const { fileReference, files } = useFetchFileReference(
-  collectionId,
-  dataObjectId,
-  fileReferenceId,
-);
+const { structuredDataReference, structuredData } =
+  useFetchStructuredDataReference(
+    collectionId,
+    dataObjectId,
+    structuredDataReferenceId,
+  );
 
 const headers = ref([
   { title: "Name", key: "name", sortable: true },
@@ -45,8 +40,10 @@ const headers = ref([
   { title: "", key: "actions" },
 ]);
 
-watch(files, () => {
-  fileDataTableItems.value = mapShepardFilesToDataTableItems(files.value);
+watch(structuredData, () => {
+  structuredDataDataTableItems.value = mapStructuredDataListToDataTableItems(
+    structuredData.value,
+  );
 });
 
 function onAnnotate() {
@@ -57,13 +54,13 @@ function onDelete() {
   showDeleteDialog.value = true;
 }
 
-function deleteFileReference() {
-  if (fileReference.value) {
-    createApiInstance(FileReferenceApi)
-      .deleteFileReference({
+function deleteStructuredDataReference() {
+  if (structuredDataReference.value) {
+    createApiInstance(StructuredDataReferenceApi)
+      .deleteStructuredDataReference({
         collectionId,
         dataObjectId,
-        fileReferenceId: fileReference.value.id,
+        structuredDataReferenceId: structuredDataReference.value.id,
       })
       .then(() => {
         navigateTo(
@@ -74,46 +71,22 @@ function deleteFileReference() {
         );
       })
       .catch(error => {
-        handleError(error, "deleteFileReference");
+        handleError(error, "deleteStructuredDataReference");
         showDeleteDialog.value = false;
       });
   }
 }
 
-function onShowFileContentDialog(params: {
-  oid: string;
-  fileType: FileType;
-  fileName: string;
-}) {
-  selectedOid.value = params.oid;
-  selectedFileType.value = params.fileType;
-  selectedFileName.value = params.fileName;
-  showFileContentViewerDialog.value = true;
-}
-
-function onDownloadFile(params: { filename: string; oid: string }) {
-  const filename = sanitizeFilename(params.filename);
-
-  createApiInstance(FileReferenceApi)
-    .getFilePayload({
-      collectionId,
-      dataObjectId,
-      fileReferenceId,
-      oid: params.oid,
-    })
-    .then(response => {
-      downloadFile(response, filename);
-    })
-    .catch(e => {
-      handleError(e, "downloading file");
-    });
+function onShowStructuredDataContentDialog(structuredDataPayload: string) {
+  selectedPayload.value = structuredDataPayload;
+  showStructuredDataContentViewerDialog.value = true;
 }
 </script>
 
 <template>
   <div style="max-width: 1000px">
     <v-container class="pa-0 fill-height" fluid max-width="1000px">
-      <v-row v-if="!!collection && !!dataObject && !!fileReference">
+      <v-row v-if="!!collection && !!dataObject && !!structuredDataReference">
         <v-col cols="12">
           <Breadcrumbs
             :items="[
@@ -134,14 +107,14 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                   dataObjectId,
               },
               {
-                title: `File Reference '${fileReference?.name}'`,
+                title: `Structured Data Reference '${structuredDataReference?.name}'`,
                 to:
                   collectionsPath +
                   collectionId +
                   dataObjectsPathFragment +
                   dataObjectId +
-                  fileReferencesPathFragment +
-                  fileReferenceId,
+                  structuredDataReferencesPathFragment +
+                  structuredDataReferenceId,
               },
             ]"
           />
@@ -151,15 +124,17 @@ function onDownloadFile(params: { filename: string; oid: string }) {
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="{
-                  ...fileReference,
-                  name: `File Reference “${fileReference.name}”`,
-                  type: 'File',
+                  ...structuredDataReference,
+                  name: `Structured Data Reference “${structuredDataReference.name}”`,
+                  type: 'Structured Data',
                   container: {
                     title:
-                      fileReference.referencedContainerName ?? 'unknown name',
-                    id: fileReference.fileContainerId,
-                    type: 'FILE',
-                    availability: fileReference.referencedContainerAvailability,
+                      structuredDataReference.referencedContainerName ??
+                      'unknown name',
+                    id: structuredDataReference.structuredDataContainerId,
+                    type: 'STRUCTUREDDATA',
+                    availability:
+                      structuredDataReference.referencedContainerAvailability,
                   },
                 }"
                 :on-annotate="onAnnotate"
@@ -174,10 +149,9 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                     new AnnotatedReference(
                       collection.id,
                       dataObjectId,
-                      fileReferenceId,
+                      structuredDataReferenceId,
                     )
                   "
-                  :can-delete="!!isAllowedToEditCollection"
                 />
               </v-col>
             </v-row>
@@ -190,16 +164,16 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                   class: 'text-subtitle-2 text-textbody1',
                 }"
                 :headers="headers"
-                :items="fileDataTableItems"
+                :items="structuredDataDataTableItems"
               >
                 <template
                   #[`item.name`]="{
                     value,
                   }: {
-                    value: ShepardFileDataTableItem['name'];
+                    value: StructuredDataDataTableItem['name'];
                   }"
                 >
-                  {{ value.filename }}
+                  {{ value.structuredDataName }}
                   <span
                     v-if="value.availability !== 'available'"
                     class="text-error"
@@ -214,22 +188,19 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                   #[`item.actions`]="{
                     value,
                   }: {
-                    value: ShepardFileDataTableItem['actions'];
+                    value: StructuredDataDataTableItem['actions'];
                   }"
                 >
                   <ActionContainer>
                     <ActionButton
-                      v-if="value.download.enabled"
-                      icon="mdi-tray-arrow-down"
-                      @click="() => onDownloadFile(value.download)"
-                    />
-                    <ActionButton
-                      v-if="
-                        value.showDetails.enabled &&
-                        value.showDetails.fileType !== 'unknown'
-                      "
+                      v-if="value.showPayload.enabled"
                       icon="mdi-eye-outline"
-                      @click="() => onShowFileContentDialog(value.showDetails)"
+                      @click="
+                        () =>
+                          onShowStructuredDataContentDialog(
+                            value.showPayload.payload,
+                          )
+                      "
                     />
                   </ActionContainer>
                 </template>
@@ -247,24 +218,23 @@ function onDownloadFile(params: { filename: string; oid: string }) {
     <ConfirmDeleteDialog
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
-      @confirmed="deleteFileReference"
+      @confirmed="deleteStructuredDataReference"
     />
     <AddAnnotationDialog
       v-if="showAddAnnotationDialog"
       v-model:show-dialog="showAddAnnotationDialog"
       :annotated="
-        new AnnotatedReference(collectionId, dataObjectId, fileReferenceId)
+        new AnnotatedReference(
+          collectionId,
+          dataObjectId,
+          structuredDataReferenceId,
+        )
       "
     />
-    <FileContentViewerDialog
-      v-if="showFileContentViewerDialog"
-      v-model:show-dialog="showFileContentViewerDialog"
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
-      :file-reference-id="fileReferenceId"
-      :file-type="selectedFileType"
-      :file-name="selectedFileName"
-      :oid="selectedOid"
+    <StructuredDataViewerDialog
+      v-if="showStructuredDataContentViewerDialog"
+      v-model:show-dialog="showStructuredDataContentViewerDialog"
+      :structured-data-payload="selectedPayload"
     />
   </div>
 </template>

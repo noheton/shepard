@@ -4,6 +4,7 @@ import type { SemanticAnnotation } from "@dlr-shepard/backend-client";
 defineProps<{
   annotation: SemanticAnnotation;
   annotatedType: Annotated;
+  canDelete: boolean;
 }>();
 const showDeleteDialog = ref(false);
 </script>
@@ -24,7 +25,7 @@ const showDeleteDialog = ref(false);
       <a target="_blank" :href="annotation.valueIRI">
         {{ annotation.valueName }}
       </a>
-      <template #close>
+      <template v-if="canDelete" #close>
         <v-icon icon="mdi-close-circle" @click.stop="showDeleteDialog = true" />
       </template>
     </v-chip>

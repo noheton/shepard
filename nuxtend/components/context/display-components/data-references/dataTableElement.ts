@@ -8,6 +8,7 @@ export type DataTableElement = {
     containerId: number;
     interval?: string;
     fileCount?: number;
+    payloadCount?: number;
   } & ReferencedContainerMeta;
   created: {
     createdBy: string;

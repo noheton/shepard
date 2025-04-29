@@ -74,6 +74,15 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
   injectCSS: true,
 });
 
+onMounted(() => {
+  if (props.codeType && editor.value) {
+    editor.value.commands.setContent(
+      `<pre><code class="language-${props.codeType}">${model.value}</code></pre>`,
+      false,
+    );
+  }
+});
+
 watch(model, newContent => {
   if (editor.value) {
     const isSame = editor.value.getHTML() === newContent;
@@ -82,7 +91,6 @@ watch(model, newContent => {
       return;
     }
     if (newContent) {
-      console.info(props.codeType);
       if (props.codeType) {
         editor.value?.commands.setContent(
           `<pre><code class="language-${props.codeType}">${newContent}</code></pre>`,

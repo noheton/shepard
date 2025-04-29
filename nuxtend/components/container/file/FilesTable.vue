@@ -1,0 +1,83 @@
+<script lang="ts" setup>
+import type { ShepardFile } from "@dlr-shepard/backend-client";
+import { useClipboard } from "@vueuse/core";
+
+defineProps<{
+  files: ShepardFile[];
+  isAllowedToEdit: boolean;
+  loading: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: "download-file" | "delete-file", value: ShepardFile): void;
+}>();
+
+const headers = [
+  { title: "Name", key: "filename", sortable: true, width: "40%" },
+  { title: "Oid", key: "oid", sortable: true, width: "30%" },
+  { title: "Created at", key: "createdAt", sortable: true },
+  {
+    title: "",
+    value: "actions",
+  },
+];
+const { copy } = useClipboard();
+const copyOid = (oid: string | undefined) => {
+  if (oid) {
+    copy(oid);
+    emitSuccess(`Copied "${oid}"`);
+  }
+};
+</script>
+
+<template>
+  <DataTable
+    :cell-props="{
+      class: 'text-textbody1',
+    }"
+    :header-props="{
+      class: 'text-subtitle-2 text-textbody1',
+    }"
+    :headers="headers"
+    :items="files"
+    :loading="loading"
+    hover
+  >
+    <template #[`item.oid`]="{ item }: { item: ShepardFile }">
+      {{ item.oid }}
+      <ActionButton
+        icon="mdi-content-copy"
+        color="medium-emphasis"
+        @click="() => copyOid(item.oid)"
+      />
+    </template>
+    <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
+      {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
+    </template>
+    <template #[`item.actions`]="{ item }: { item: ShepardFile }">
+      <ActionContainer>
+        <ActionButton
+          icon="mdi-tray-arrow-down"
+          @click="() => emit('download-file', item)"
+        />
+        <ActionButton
+          v-if="isAllowedToEdit"
+          icon="mdi-delete-outline"
+          @click="() => emit('delete-file', item)"
+        />
+      </ActionContainer>
+    </template>
+    <template #bottom>
+      <v-divider :thickness="8" color="divider2" opacity="1" />
+      <v-pagination :total-visible="6" />
+    </template>
+  </DataTable>
+</template>
+
+<style lang="scss" scoped>
+.v-table {
+  :deep(thead) > tr > th {
+    background-color: rgb(var(--v-theme-divider2));
+  }
+}
+</style>

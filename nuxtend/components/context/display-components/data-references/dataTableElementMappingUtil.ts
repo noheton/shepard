@@ -1,5 +1,6 @@
 import {
   instanceOfFileReference,
+  instanceOfStructuredDataReference,
   instanceOfTimeseriesReference,
 } from "@dlr-shepard/backend-client";
 import type { DataReference, ReferencedContainerMeta } from "./dataReference";
@@ -18,7 +19,9 @@ export const mapDataReferenceToDataTableElement = (
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";
   if (instanceOfFileReference(ref)) return "File";
-  return "Structured Data";
+  if (instanceOfStructuredDataReference(ref)) return "Structured Data";
+
+  throw Error("Cannot map ref type: Unknown reference type.");
 };
 
 const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
@@ -37,11 +40,15 @@ const mapContainerMetaData = (ref: DataReference): DataTableElement["meta"] => {
       ...mapNameAndAvailability(ref),
       fileCount: ref.fileOids.length,
     };
-  return {
-    id: ref.id,
-    containerId: ref.structuredDataContainerId,
-    ...mapNameAndAvailability(ref),
-  };
+  if (instanceOfStructuredDataReference(ref))
+    return {
+      id: ref.id,
+      containerId: ref.structuredDataContainerId,
+      ...mapNameAndAvailability(ref),
+      payloadCount: ref.structuredDataOids.length,
+    };
+
+  throw Error("Cannot map container meta data: Unknown reference type.");
 };
 
 const mapNameAndAvailability = (
@@ -68,6 +75,12 @@ function buildShowDetailsArgs(ref: DataReference): {
   }
   if (refType === "File") {
     return { enabled: true, pathFragment: fileReferencesPathFragment };
+  }
+  if (refType === "Structured Data") {
+    return {
+      enabled: true,
+      pathFragment: structuredDataReferencesPathFragment,
+    };
   }
   return {
     enabled: false,

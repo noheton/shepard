@@ -8,7 +8,7 @@ const emit = defineEmits<{
   (e: "annotations", value: SemanticAnnotation[]): void;
 }>();
 
-const props = defineProps<{ annotated: Annotated }>();
+const props = defineProps<{ annotated: Annotated; canDelete: boolean }>();
 
 const annotations = ref<SemanticAnnotation[]>([]);
 
@@ -33,6 +33,7 @@ onAnnotationsUpdated(fetchSemanticAnnotations);
       :key="annotation.id"
       :annotated-type="annotated"
       :annotation="annotation"
+      :can-delete="canDelete"
     />
   </ul>
 </template>

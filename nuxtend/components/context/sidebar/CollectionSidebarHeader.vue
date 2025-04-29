@@ -5,7 +5,7 @@ import {
   type ResponseError,
 } from "@dlr-shepard/backend-client";
 import type { ContextMenuItem } from "~/components/common/ContextMenu.vue";
-import { CollectionAccessor } from "~/composables/shepardObjectAccessor";
+import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;

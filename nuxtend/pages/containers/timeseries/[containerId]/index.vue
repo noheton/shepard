@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { TimeseriesContainerAccessor } from "~/composables/shepardObjectAccessor";
-import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 import DeleteContainerButton from "~/components/container/DeleteContainerButton.vue";
+import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesContainerAccessor";
+import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
@@ -11,17 +11,11 @@ const container = new TimeseriesContainerAccessor(containerId);
 container.fetchData();
 container.fetchMeasurementsTable();
 container.fetchRoles();
-
-onContainerUpdated(() => {
-  container.fetchData();
-  container.fetchMeasurementsTable();
-  container.fetchRoles();
-});
 </script>
 
 <template>
   <div style="max-width: 1200px; margin: auto">
-    <v-container class="pa-0 fill-height" fluid>
+    <v-container fluid>
       <v-row v-if="!!container.timeseries.value" no-gutters>
         <v-col cols="12">
           <Breadcrumbs
@@ -63,10 +57,10 @@ onContainerUpdated(() => {
         </v-col>
       </v-row>
       <CenteredLoadingSpinner v-else />
+      <TimeseriesMeasurementsTable
+        :is-allowed-to-edit-data="container.isAllowedToEditData.value"
+        :measurements="container.measurements.value"
+      />
     </v-container>
-    <TimeseriesMeasurementsTable
-      :is-allowed-to-edit-data="container.isAllowedToEditData.value"
-      :measurements="container.measurements.value"
-    />
   </div>
 </template>
