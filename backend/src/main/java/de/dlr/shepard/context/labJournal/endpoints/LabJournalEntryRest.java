@@ -58,7 +58,7 @@ public class LabJournalEntryRest {
   @GET
   @Path("/")
   @Tag(name = Constants.LAB_JOURNAL_ENTRY)
-  @Operation(description = "Get all lab journals in a data object sorted by their creation date")
+  @Operation(description = "Get all lab journals in a data object sorted by their creation date (newest first)")
   @APIResponse(
     description = "ok",
     responseCode = "200",
