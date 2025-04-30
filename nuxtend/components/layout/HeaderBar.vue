@@ -1,7 +1,7 @@
 <template>
   <v-app-bar class="border-b-sm bg-canvas">
     <v-app-bar-title>
-      <v-btn to="/">
+      <v-btn to="/" style="border-bottom: unset">
         <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />
       </v-btn>
       <v-btn
@@ -27,6 +27,18 @@
         }"
       >
         Containers
+      </v-btn>
+      <v-btn
+        to="/configuration/semanticrepositories"
+        :style="{
+          fontSize: '16px',
+          fontWeight: 400,
+          fontStyle: 'normal',
+          lineHeight: '26px',
+          textTransform: 'none',
+        }"
+      >
+        Configuration
       </v-btn>
     </v-app-bar-title>
     <template #append>
@@ -63,3 +75,19 @@ const toggleTheme = () => {
   localStorage.setItem("colorScheme", theme.global.name.value);
 };
 </script>
+
+<style lang="scss" scoped>
+.v-btn {
+  height: 64px; // toolbar height
+  border-bottom: 3px solid transparent;
+}
+
+.v-btn--active {
+  border-bottom: 3px solid rgb(var(--v-theme-primary));
+  border-radius: 0px;
+
+  :deep(.v-btn__overlay) {
+    opacity: 0;
+  }
+}
+</style>
