@@ -9,10 +9,7 @@ defineProps<{
 <template>
   <div>ID: {{ meta.id }}</div>
 
-  <div
-    class="text-textbody2 text-body-2"
-    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
-  >
+  <div class="text-textbody2 text-body-2 meta-information">
     <template v-if="meta.referencedContainerAvailability === 'available'">
       Container: {{ meta.referencedContainerName }} (ID: {{ meta.containerId }})
     </template>
@@ -31,25 +28,26 @@ defineProps<{
       (ID: {{ meta.containerId }})
     </template>
   </div>
-  <div
-    v-if="meta.interval"
-    class="text-textbody2 text-body-2"
-    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
-  >
+  <div v-if="meta.interval" class="text-textbody2 text-body-2 meta-information">
     Interval: {{ meta.interval }}
   </div>
   <div
     v-if="meta.fileCount"
-    class="text-textbody2 text-body-2"
-    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
+    class="text-textbody2 text-body-2 meta-information"
   >
     Files: {{ meta.fileCount }}
   </div>
   <div
     v-if="meta.payloadCount"
-    class="text-textbody2 text-body-2"
-    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
+    class="text-textbody2 text-body-2 meta-information"
   >
     Payloads: {{ meta.payloadCount }}
   </div>
 </template>
+
+<style lang="scss" scoped>
+.meta-information {
+  font-size: 0.75rem !important;
+  line-height: 16px;
+}
+</style>
