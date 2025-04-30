@@ -60,7 +60,7 @@ public class LabJournalEntryService {
     return labJournalEntries
       .stream()
       .filter(labJournalEntry -> !labJournalEntry.isDeleted())
-      .sorted(Comparator.comparing(LabJournalEntry::getCreatedAt))
+      .sorted(Comparator.comparing(LabJournalEntry::getCreatedAt).reversed())
       .collect(Collectors.toList());
   }
 

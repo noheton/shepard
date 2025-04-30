@@ -18,6 +18,8 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,14 +70,16 @@ public class LabJournalTest {
 
   @Test
   public void getLabJournalEntries_forInsertedLabJournals_returnsAll() throws InterruptedException {
-    List<LabJournalEntry> created = List.of(
-      labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 1"),
-      labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 2"),
-      labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 3"),
-      labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 4")
-    );
+    List<LabJournalEntry> created = new ArrayList<>();
+    created.add(labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 1"));
+    created.add(labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 2"));
+    created.add(labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 3"));
+    created.add(labJournalEntryService.createLabJournalEntry(dataObject.getId(), "content 4"));
+
     dataObject = dataObjectService.getDataObject(dataObject.getId());
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
+
+    Collections.reverse(created);
     assertEquals(created, actual);
   }
 

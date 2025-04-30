@@ -20,20 +20,25 @@ async function fetchLabJournalEntries(dataObjectIds: number[]) {
   if (dataObjectIds.length === 0) {
     entries.value = [];
   }
-  dataObjectIds.forEach(dataObjectId => {
+
+  const promiseList = dataObjectIds.map(dataObjectId =>
     createApiInstance(LabJournalEntryApi)
       .getLabJournalsByCollection({ dataObjectId })
-      .then(response => {
-        if (entries.value === undefined) {
-          entries.value = [];
-        }
-        entries.value = entries.value.concat(response);
-        emit("numberOfEntriesChanged", entries.value?.length);
-      })
       .catch(error => {
-        handleError(error, "getLabJournalsByCollection");
-      });
-  });
+        handleError(error, "getLabJournals");
+        return null;
+      }),
+  );
+
+  try {
+    const results = await Promise.all(promiseList);
+    entries.value = results
+      .filter(response => response !== null)
+      .flat()
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  } catch (error) {
+    handleError(error, "getLabJournals");
+  }
 }
 
 async function fetchRoles() {
@@ -54,14 +59,6 @@ async function onLabJournalDeleted(deletedLabjournalIndex: number) {
   }
 }
 
-const sortedLabJournalEntries = computed(() => {
-  if (entries.value) {
-    const labJournalEntries = entries.value;
-    return labJournalEntries.sort((a, b) => a.dataObjectId - b.dataObjectId);
-  }
-  return undefined;
-});
-
 fetchLabJournalEntries(Array.from(props.dataObjectMap.keys()));
 fetchRoles();
 </script>
@@ -69,7 +66,7 @@ fetchRoles();
 <template>
   <div v-if="entries != undefined">
     <LabJournalEntry
-      v-for="(entry, index) in sortedLabJournalEntries"
+      v-for="(entry, index) in entries"
       :key="'lab-journal-' + entry.id"
       :lab-journal="entry"
       :user-roles="userRoles"
