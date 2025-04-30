@@ -1,0 +1,112 @@
+import {
+  StructuredDataContainerApi,
+  type Permissions,
+  type ResponseError,
+  type StructuredData,
+  type StructuredDataContainer,
+} from "@dlr-shepard/backend-client";
+import { ContainerAccessor } from "../shepardObjectAccessor";
+
+export class StructuredDataContainerAccessor extends ContainerAccessor {
+  api = createApiInstance(StructuredDataContainerApi);
+  container = ref<StructuredDataContainer>();
+  items = ref<StructuredData[]>([]);
+  loading = ref<boolean>(true);
+
+  override async delete(): Promise<void> {
+    try {
+      await this.api.deleteStructuredDataContainer({
+        structuredDataContainerId: this.id,
+      });
+      emitSuccess(
+        `Successfully deleted container "${this.container.value?.name}"`,
+      );
+      await useRouter().push(containersPath);
+    } catch (e) {
+      handleError(e as ResponseError, "deleting structured data container");
+      throw e;
+    }
+  }
+
+  async deleteItem(oid: string): Promise<void> {
+    try {
+      await this.api.deleteStructuredData({
+        structuredDataContainerId: this.id,
+        oid,
+      });
+      emitSuccess(`Successfully deleted item "${oid}"`);
+      handleContainerUpdate();
+    } catch (e) {
+      handleError(e as ResponseError, "deleting structured data item");
+      throw e;
+    }
+  }
+
+  override async fetchData(): Promise<void> {
+    try {
+      this.container.value = await this.api.getStructuredDataContainer({
+        structuredDataContainerId: this.id,
+      });
+    } catch (e) {
+      handleError(e as ResponseError, "fetching structured data container");
+      throw e;
+    }
+  }
+
+  async fetchItems() {
+    this.loading.value = true;
+    try {
+      this.items.value = await this.api.getAllStructuredDatas({
+        structuredDataContainerId: this.id,
+      });
+    } catch (e) {
+      handleError(
+        e as ResponseError,
+        "fetching structured data container items",
+      );
+      throw e;
+    } finally {
+      this.loading.value = false;
+    }
+  }
+
+  override async fetchRoles(): Promise<void> {
+    try {
+      this.roles.value = await this.api.getStructuredDataRoles({
+        structuredDataContainerId: this.id,
+      });
+    } catch (e) {
+      handleError(e as ResponseError, "fetching roles");
+      throw e;
+    }
+  }
+
+  override async fetchPermissions(): Promise<void> {
+    try {
+      this.permissions.value = await this.api.getStructuredDataPermissions({
+        structuredDataContainerId: this.id,
+      });
+    } catch (e) {
+      handleError(e as ResponseError, "fetching permissions");
+      throw e;
+    }
+  }
+
+  override async updatePermissions(
+    updatedPermissions: Permissions,
+  ): Promise<void> {
+    try {
+      await this.api.editStructuredDataPermissions({
+        structuredDataContainerId: this.id,
+        permissions: updatedPermissions,
+      });
+      emitSuccess(
+        `Successfully updated permissions for structured data container: ${this.id}`,
+      );
+      handleContainerUpdate();
+    } catch (e) {
+      handleError(e as ResponseError, "updating permissions");
+      throw e;
+    }
+  }
+}

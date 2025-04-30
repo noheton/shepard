@@ -75,7 +75,7 @@ const deleteFile = (file: ShepardFile) => {
       v-if="showFileDeleteConfirmDialog && fileToDelete?.filename"
       v-model:show-dialog="showFileDeleteConfirmDialog"
       :target-name="fileToDelete?.filename"
-      entityType="file"
+      entity-type="file"
       @confirmed="containerAccessor.deleteFile(fileToDelete)"
     />
   </div>
