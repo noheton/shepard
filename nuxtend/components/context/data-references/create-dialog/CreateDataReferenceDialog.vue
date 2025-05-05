@@ -34,7 +34,7 @@ const chosenContainerType = ref<ContainerType | null>(null);
 
 async function createDataReference() {
   if (!dataReferenceContainerId.value) return;
-  if (chosenContainerType.value == ContainerType.File && fileRef.value) {
+  if (chosenContainerType.value === ContainerType.File && fileRef.value) {
     createApiInstance(FileReferenceApi)
       .createFileReference({
         collectionId: props.collectionId,
@@ -62,7 +62,7 @@ async function createDataReference() {
         handleError(error, "createDataReference");
       });
   } else if (
-    chosenContainerType.value == ContainerType.Structureddata &&
+    chosenContainerType.value === ContainerType.Structureddata &&
     fileRef.value
   ) {
     createApiInstance(StructuredDataReferenceApi)
@@ -92,7 +92,7 @@ async function createDataReference() {
         handleError(error, "createDataReference");
       });
   } else if (
-    chosenContainerType.value == ContainerType.Timeseries &&
+    chosenContainerType.value === ContainerType.Timeseries &&
     timeseriesRef.value
   ) {
     createApiInstance(TimeseriesReferenceApi)
@@ -138,10 +138,10 @@ function getContainerById(containerId: number, containerType: ContainerType) {
   if (containerType === ContainerType.Timeseries) {
     getAllTimeseries(containerId);
   }
-  if (containerType == ContainerType.Structureddata) {
+  if (containerType === ContainerType.Structureddata) {
     getAllStructuredDatas(containerId);
   }
-  if (containerType == ContainerType.Spatialdata) {
+  if (containerType === ContainerType.Spatialdata) {
     console.log("not implemented yet " + containerType);
   }
 }
