@@ -222,6 +222,7 @@ function getDataOidList(oid: string[]) {
     :max-width="800"
     title="Create Data Reference"
     :submit-disabled="!isValid"
+    save-button-text="Add"
     @submit="createDataReference"
   >
     <template #form>
