@@ -11,7 +11,7 @@ import {
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
 import { toShortDateString } from "~/utils/helpers";
-import type { FileRef, StructuredDataRef, TimeseriesRef } from "./DataRef";
+import type { FileRef, TimeseriesRef } from "./DataRef";
 const props = defineProps<{ collectionId: number; dataObjectId: number }>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -24,7 +24,6 @@ const router = useRouter();
 const dataReferenceName = ref<string>("");
 const dataReferenceContainerId = ref<number | undefined>(undefined);
 const fileRef = ref<FileRef | undefined>(undefined);
-const structuredDataRef = ref<StructuredDataRef | undefined>(undefined);
 const timeseriesRef = ref<TimeseriesRef | undefined>(undefined);
 
 const loading = ref<boolean>(false);
@@ -64,14 +63,14 @@ async function createDataReference() {
       });
   } else if (
     chosenContainerType.value == ContainerType.Structureddata &&
-    structuredDataRef.value
+    fileRef.value
   ) {
     createApiInstance(StructuredDataReferenceApi)
       .createStructuredDataReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         structuredDataReference: {
-          ...structuredDataRef.value,
+          structuredDataOids: fileRef.value.fileOids,
           name: dataReferenceName.value,
           structuredDataContainerId: dataReferenceContainerId.value,
         },
@@ -245,7 +244,10 @@ function getAllStructuredDatas(containerId: number) {
         <v-row v-if="dataReferenceContainerId">
           <v-col class="pt-1">
             <FileReferencePicker
-              v-if="chosenContainerType === ContainerType.File"
+              v-if="
+                chosenContainerType === ContainerType.File ||
+                chosenContainerType === ContainerType.Structureddata
+              "
               v-model:file-reference="fileRef"
               :items="fileList"
               :loading="loading"
