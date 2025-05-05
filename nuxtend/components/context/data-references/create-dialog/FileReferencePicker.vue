@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import type { DisplayItem } from "./CreateDataReferenceDialog.vue";
+import type { fileItem } from "./CreateDataReferenceDialog.vue";
+import type { FileRef } from "./DataRef";
 
 const props = defineProps<{
-  items: DisplayItem[];
+  items: fileItem[] | undefined;
   loading: boolean;
 }>();
-const emit = defineEmits<{
-  (e: "sendedOidList", oid: string[]): void;
-}>();
+
+const fileReference = defineModel<FileRef | undefined>("fileReference", {
+  required: true,
+});
 
 const selected = ref<string[]>([]);
 const headers = [
@@ -24,7 +26,7 @@ const headers = [
 ];
 
 function selectionChanged() {
-  emit("sendedOidList", selected.value);
+  fileReference.value = { fileOids: selected.value };
 }
 </script>
 
@@ -39,6 +41,7 @@ function selectionChanged() {
     }"
     :headers="headers"
     :items="props.items"
+    :loading="loading"
     item-value="oid"
     hover
     hide-default-footer

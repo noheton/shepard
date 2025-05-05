@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import {
+  ContainerType,
   FileContainerApi,
   FileReferenceApi,
-  SpatialDataContainerApi,
   StructuredDataContainerApi,
-  TimeseriesContainerApi,
-  type ContainerType,
-  type ResponseError,
   StructuredDataReferenceApi,
+  TimeseriesContainerApi,
+  TimeseriesReferenceApi,
+  type ResponseError,
+  type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
 import { toShortDateString } from "~/utils/helpers";
-
+import type { FileRef, StructuredDataRef, TimeseriesRef } from "./DataRef";
 const props = defineProps<{ collectionId: number; dataObjectId: number }>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -21,31 +22,28 @@ const emit = defineEmits(["data-reference-created"]);
 const router = useRouter();
 
 const dataReferenceName = ref<string>("");
-const dataReferenceContainerId = ref<number | null>(null);
-const dataOids = ref<Array<string>>([""]);
+const dataReferenceContainerId = ref<number | undefined>(undefined);
+const fileRef = ref<FileRef | undefined>(undefined);
+const structuredDataRef = ref<StructuredDataRef | undefined>(undefined);
+const timeseriesRef = ref<TimeseriesRef | undefined>(undefined);
+
 const loading = ref<boolean>(false);
 
 const isValid = ref<boolean>(true);
-const containerChosen = ref<boolean>(false);
 
 const chosenContainerType = ref<ContainerType | null>(null);
 
-watch(dataReferenceContainerId, () => {
-  if (dataReferenceContainerId.value) containerChosen.value = true;
-  if (!dataReferenceContainerId.value) containerChosen.value = false;
-});
-
 async function createDataReference() {
   if (!dataReferenceContainerId.value) return;
-  if (chosenContainerType.value == "FILE") {
+  if (chosenContainerType.value == ContainerType.File && fileRef.value) {
     createApiInstance(FileReferenceApi)
       .createFileReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         fileReference: {
+          ...fileRef.value,
           name: dataReferenceName.value,
           fileContainerId: dataReferenceContainerId.value,
-          fileOids: dataOids.value,
         },
       })
       .then(response => {
@@ -64,15 +62,18 @@ async function createDataReference() {
       .catch(error => {
         handleError(error, "createDataReference");
       });
-  } else if (chosenContainerType.value == "STRUCTUREDDATA") {
+  } else if (
+    chosenContainerType.value == ContainerType.Structureddata &&
+    structuredDataRef.value
+  ) {
     createApiInstance(StructuredDataReferenceApi)
       .createStructuredDataReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         structuredDataReference: {
+          ...structuredDataRef.value,
           name: dataReferenceName.value,
           structuredDataContainerId: dataReferenceContainerId.value,
-          structuredDataOids: dataOids.value,
         },
       })
       .then(response => {
@@ -91,6 +92,36 @@ async function createDataReference() {
       .catch(error => {
         handleError(error, "createDataReference");
       });
+  } else if (
+    chosenContainerType.value == ContainerType.Timeseries &&
+    timeseriesRef.value
+  ) {
+    createApiInstance(TimeseriesReferenceApi)
+      .createTimeseriesReference({
+        collectionId: props.collectionId,
+        dataObjectId: props.dataObjectId,
+        timeseriesReference: {
+          ...timeseriesRef.value,
+          name: dataReferenceName.value,
+          timeseriesContainerId: dataReferenceContainerId.value,
+        },
+      })
+      .then(response => {
+        emitSuccess(`Successfully created data reference "${response.name}"`);
+        emit("data-reference-created");
+        router.push(
+          collectionsPath +
+            props.collectionId +
+            dataObjectsPathFragment +
+            props.dataObjectId +
+            timeseriesReferencePathFragment +
+            response.id,
+        );
+        showDialog.value = false;
+      })
+      .catch(error => {
+        handleError(error, "createDataReference");
+      });
   }
 }
 
@@ -99,99 +130,66 @@ const timeseriesContainerApi = createApiInstance(TimeseriesContainerApi);
 const structuredDataContainerApi = createApiInstance(
   StructuredDataContainerApi,
 );
-const spatialDataContainerApi = createApiInstance(SpatialDataContainerApi);
 
 function getContainerById(containerId: number, containerType: ContainerType) {
-  displayItems.value = [];
-  chosenContainerType.value = null;
-
-  if (containerType == "FILE") {
-    fileContainerApi
-      .getFileContainer({
-        fileContainerId: containerId,
-      })
-      .then(response => {
-        getAllFiles(response.id);
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "getting file container");
-      });
+  chosenContainerType.value = containerType;
+  if (containerType === ContainerType.File) {
+    getAllFiles(containerId);
   }
-  if (containerType == "TIMESERIES") {
-    timeseriesContainerApi
-      .getTimeseriesContainer({
-        timeseriesContainerId: containerId,
-      })
-      .then(response => {
-        console.log("not implemented yet" + response.type);
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "get timeseries container");
-      });
+  if (containerType === ContainerType.Timeseries) {
+    getAllTimeseries(containerId);
   }
-  if (containerType == "STRUCTUREDDATA") {
-    structuredDataContainerApi
-      .getStructuredDataContainer({
-        structuredDataContainerId: containerId,
-      })
-      .then(response => {
-        getAllStructuredDatas(response.id);
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "getting structured data container");
-      });
+  if (containerType == ContainerType.Structureddata) {
+    getAllStructuredDatas(containerId);
   }
-  if (containerType == "SPATIALDATA") {
-    spatialDataContainerApi
-      .getSpatialDataContainer({
-        spatialDataContainerId: containerId,
-      })
-      .then(response => {
-        console.log("not implemented yet" + response.type);
-      })
-      .catch(e => {
-        handleError(e as ResponseError, "getting spatial data container");
-      });
+  if (containerType == ContainerType.Spatialdata) {
+    console.log("not implemented yet " + containerType);
   }
 }
 
-export interface DisplayItem {
+export interface fileItem {
   oid?: string;
   filename: string;
   createdAt: string;
 }
 
-class DisplayItemImpl implements DisplayItem {
-  oid?: string;
-  filename: string;
-  createdAt: string;
+export type TimeseriesRefItem = Omit<TimeseriesEntity, "containerId">;
 
-  constructor(oid: string | undefined, filename: string, createdAt: string) {
-    this.oid = oid;
-    this.filename = filename;
-    this.createdAt = createdAt;
-  }
-}
+const fileList = ref<fileItem[] | undefined>(undefined);
+const timeseriesList = ref<TimeseriesRefItem[] | undefined>(undefined);
 
-const displayItems = ref<DisplayItem[]>();
 function getAllFiles(containerId: number) {
+  loading.value = true;
   fileContainerApi
     .getAllFiles({
       fileContainerId: containerId,
     })
     .then(response => {
-      chosenContainerType.value = "FILE";
-      displayItems.value = response.map(d => {
-        return new DisplayItemImpl(
-          d.oid,
-          d.filename ?? "",
-          toShortDateString(d.createdAt ?? null) ?? "",
-        );
-      });
+      fileList.value = response.map(file => ({
+        oid: file.oid,
+        filename: file.filename ?? "",
+        createdAt: toShortDateString(file.createdAt ?? null) ?? "",
+      }));
     })
     .catch(e => {
       handleError(e as ResponseError, "getting all Files");
-    });
+    })
+    .finally(() => (loading.value = false));
+}
+
+function getAllTimeseries(containerId: number) {
+  loading.value = true;
+  timeseriesContainerApi
+    .getTimeseriesOfContainer({
+      timeseriesContainerId: containerId,
+    })
+    .then(response => {
+      timeseriesList.value = response;
+    })
+    .catch(e => {
+      handleError(e as ResponseError, "getting all Files");
+    })
+    .finally(() => (loading.value = false));
 }
 
 function getAllStructuredDatas(containerId: number) {
@@ -200,22 +198,15 @@ function getAllStructuredDatas(containerId: number) {
       structuredDataContainerId: containerId,
     })
     .then(response => {
-      chosenContainerType.value = "STRUCTUREDDATA";
-      displayItems.value = response.map(d => {
-        return new DisplayItemImpl(
-          d.oid,
-          d.name ?? "",
-          toShortDateString(d.createdAt ?? null) ?? "",
-        );
-      });
+      fileList.value = response.map(d => ({
+        oid: d.oid,
+        filename: d.name ?? "",
+        createdAt: toShortDateString(d.createdAt ?? null) ?? "",
+      }));
     })
     .catch(e => {
       handleError(e as ResponseError, "getting all structured datas");
     });
-}
-
-function getDataOidList(oid: string[]) {
-  dataOids.value = oid;
 }
 </script>
 
@@ -224,7 +215,7 @@ function getDataOidList(oid: string[]) {
     v-model:show-dialog="showDialog"
     :max-width="800"
     title="Create Data Reference"
-    :submit-disabled="!isValid"
+    :submit-disabled="!isValid || !dataReferenceContainerId"
     save-button-text="Add"
     @submit="createDataReference"
   >
@@ -241,28 +232,35 @@ function getDataOidList(oid: string[]) {
               v-model:container-id="dataReferenceContainerId"
               :collection-id="collectionId"
               @container-selected="getContainerById"
-              @selection-cleared="dataReferenceContainerId = null"
+              @selection-cleared="dataReferenceContainerId = undefined"
+            />
+          </v-col>
+        </v-row>
+
+        <v-row v-if="dataReferenceContainerId">
+          <v-col class="pb-5">
+            <div class="text-subtitle-1">Select Data</div>
+          </v-col>
+        </v-row>
+        <v-row v-if="dataReferenceContainerId">
+          <v-col class="pt-1">
+            <FileReferencePicker
+              v-if="chosenContainerType === ContainerType.File"
+              v-model:file-reference="fileRef"
+              :items="fileList"
+              :loading="loading"
+            />
+            <TimeseriesReferencePicker
+              v-if="chosenContainerType === ContainerType.Timeseries"
+              v-model:timeseries-reference="timeseriesRef"
+              :items="timeseriesList"
+              :loading="loading"
             />
           </v-col>
         </v-row>
         <v-row>
           <v-col class="pt-1">
             <MandatoryFieldHint />
-          </v-col>
-        </v-row>
-        <v-row v-if="containerChosen">
-          <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-1">Select Data</div>
-          </v-col>
-        </v-row>
-        <v-row v-if="containerChosen">
-          <v-col class="pt-1">
-            <ReferenceTable
-              v-if="displayItems"
-              :items="displayItems"
-              :loading="loading"
-              @sended-oid-list="getDataOidList"
-            />
           </v-col>
         </v-row>
       </v-form>

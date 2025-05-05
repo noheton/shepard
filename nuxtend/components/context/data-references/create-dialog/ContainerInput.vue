@@ -8,7 +8,7 @@ import {
 
 defineProps<{ collectionId: number }>();
 
-const containerId = defineModel<number | null>("containerId", {
+const containerId = defineModel<number | undefined>("containerId", {
   required: true,
 });
 
