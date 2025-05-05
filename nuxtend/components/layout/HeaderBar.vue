@@ -89,6 +89,11 @@ const toggleTheme = () => {
 </script>
 
 <style lang="scss" scoped>
+:deep(.v-btn--icon) {
+  aspect-ratio: 1/1;
+  width: fit-content;
+}
+
 .v-btn {
   height: 64px; // toolbar height
   border-bottom: 3px solid transparent;

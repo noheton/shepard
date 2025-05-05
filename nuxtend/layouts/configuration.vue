@@ -17,11 +17,12 @@
 
 <style lang="scss" scoped>
 .v-container {
-  background-color: rgb(var(--v-theme-divider2));
+  background-color: rgb(var(--v-theme-treeview));
 
   .v-container {
     background-color: rgb(var(--v-theme-canvas));
     height: 100%;
+    border-radius: 4px;
   }
 }
 </style>
