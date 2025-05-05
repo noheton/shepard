@@ -13,7 +13,8 @@ const containerId = defineModel<number | null>("containerId", {
 });
 
 const emit = defineEmits<{
-  (e: "searchEnded", id: number, type: ContainerType): void;
+  (e: "containerSelected", id: number, type: ContainerType): void;
+  (e: "selectionCleared"): void;
 }>();
 
 const searchString = ref<string | undefined>(undefined);
@@ -41,7 +42,9 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
     const container = selectedItem.value as MyContainerSearchResult;
     containerId.value = container.containerId;
-    emit("searchEnded", container.containerId, container.containerType);
+    emit("containerSelected", container.containerId, container.containerType);
+  } else {
+    emit("selectionCleared");
   }
 };
 </script>

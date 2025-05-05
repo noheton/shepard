@@ -237,7 +237,8 @@ function getDataOidList(oid: string[]) {
             <ContainerInput
               v-model:container-id="dataReferenceContainerId"
               :collection-id="collectionId"
-              @search-ended="getContainerById"
+              @container-selected="getContainerById"
+              @selection-cleared="containerChosen = false"
             />
           </v-col>
         </v-row>
