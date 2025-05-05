@@ -102,6 +102,9 @@ const structuredDataContainerApi = createApiInstance(
 const spatialDataContainerApi = createApiInstance(SpatialDataContainerApi);
 
 function getContainerById(containerId: number, containerType: ContainerType) {
+  displayItems.value = [];
+  chosenContainerType.value = null;
+
   if (containerType == "FILE") {
     fileContainerApi
       .getFileContainer({
@@ -238,7 +241,7 @@ function getDataOidList(oid: string[]) {
               v-model:container-id="dataReferenceContainerId"
               :collection-id="collectionId"
               @container-selected="getContainerById"
-              @selection-cleared="containerChosen = false"
+              @selection-cleared="dataReferenceContainerId = null"
             />
           </v-col>
         </v-row>
