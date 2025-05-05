@@ -29,7 +29,7 @@
         Containers
       </v-btn>
       <v-btn
-        to="/configuration/semanticrepositories"
+        :to="{ path: '/configuration', hash: '#semanticrepositories' }"
         :style="{
           fontSize: '16px',
           fontWeight: 400,
@@ -43,7 +43,7 @@
     </v-app-bar-title>
     <template #append>
       <v-btn
-        to="/about"
+        :to="{ path: '/about', hash: '#version' }"
         :style="{
           fontSize: '16px',
           fontWeight: 400,

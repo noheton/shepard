@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import type { SemanticRepository } from "@dlr-shepard/backend-client";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
-
-definePageMeta({ layout: "configuration" });
-useHead({
-  title: "Semantic Repositories | shepard",
-});
+import { ConfigurationFragments } from "./configurationMenuItems";
 
 const headers = [
   { title: "ID", key: "id", sortable: true, width: "20%" },
@@ -22,7 +18,10 @@ const { repositories: repositoryList, isLoading } =
 </script>
 
 <template>
-  <div class="d-flex flex-column">
+  <div
+    :id="ConfigurationFragments.SEMANTIC_REPOSITORIES"
+    class="d-flex flex-column"
+  >
     <div class="d-flex align-center ga-4">
       <h4 class="text-h4">Semantic Repositories</h4>
       <Tooltip>
@@ -75,5 +74,3 @@ const { repositories: repositoryList, isLoading } =
     </DataTable>
   </div>
 </template>
-
-<style lang="scss" scoped></style>
