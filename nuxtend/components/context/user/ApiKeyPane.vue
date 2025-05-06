@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { type ApiKey, ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
-import {
-  toDateTimeString,
-  toShortDateString,
-  toShortDateTimeString,
-} from "nuxtend/utils/helpers";
+import { toShortDateTimeString } from "nuxtend/utils/helpers";
 import AddApiKeyButton from "~/components/context/user/AddApiKeyButton.vue";
 import DeleteApiKeyButton from "~/components/context/user/DeleteApiKeyButton.vue";
 
@@ -31,7 +27,8 @@ updateApiKeys();
     <h4 class="text-h4">Api Keys</h4>
     <AddApiKeyButton :username="user.username" @created="updateApiKeys" />
   </div>
-  <v-table hover>
+  <div v-if="apiKeys?.length == 0">No Api Keys found.</div>
+  <v-table v-else hover>
     <thead>
       <tr>
         <th>Name</th>
