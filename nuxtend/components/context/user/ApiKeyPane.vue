@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { type ApiKey, ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
+import { ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
 import { toShortDateString } from "nuxtend/utils/helpers";
+import AddApiKeyButton from "~/components/context/user/AddApiKeyButton.vue";
 
 const apikeyApi = createApiInstance(ApikeyApi);
 const userApi = createApiInstance(UserApi);
-const showCreateDialog = ref(false);
-const newKeyName = ref("");
 
 const user = await userApi.getCurrentUser();
-const apiKeys = ref(await apikeyApi.getAllApiKeys({ username: user.username }));
+const apiKeys = ref(await fetchApiKeys());
 
+function fetchApiKeys() {
+  return apikeyApi.getAllApiKeys({ username: user.username });
+}
+
+async function updateApiKeys() {
+  apiKeys.value = await fetchApiKeys();
+}
 </script>
 
 <template>
@@ -30,11 +36,7 @@ const apiKeys = ref(await apikeyApi.getAllApiKeys({ username: user.username }));
       </tr>
     </tbody>
   </v-table>
-    <template #prepend>
-      <v-icon color="canvas" icon="mdi-plus-circle" />
-    </template>
-    Add Api Key
-  </v-btn>
+  <AddApiKeyButton :username="user.username" @created="updateApiKeys" />
 </template>
 
 <style scoped lang="scss"></style>
