@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { ConfigurationFragments } from "~/components/context/configuration/configurationMenuItems";
+import {
+  ConfigurationFragments,
+  ConfigurationMenuEntries,
+} from "~/components/context/configuration/configurationMenuItems";
+
+useHead({
+  title: "Configuration | shepard",
+});
 
 const { routeFragment } = useRouteFragment();
 </script>
 
 <template>
-  <ConfigurationLayout>
+  <PaneLayout header="Configuration" :menu-entries="ConfigurationMenuEntries">
     <SemanticRepositoryPane
       v-if="routeFragment === ConfigurationFragments.SEMANTIC_REPOSITORIES"
     />
-  </ConfigurationLayout>
+  </PaneLayout>
 </template>

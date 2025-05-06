@@ -1,4 +1,4 @@
-import type { MenuEntry } from "~/components/common/navMenu/menuListTypes";
+import type { MenuEntry } from "~/components/common/pane-menu/menuListTypes";
 
 export enum ConfigurationFragments {
   SEMANTIC_REPOSITORIES = "semanticrepositories",

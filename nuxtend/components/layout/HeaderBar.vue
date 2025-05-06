@@ -4,56 +4,23 @@
       <v-btn to="/" style="border-bottom: unset">
         <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />
       </v-btn>
+      <v-btn class="nav-item" to="/collections">Collections</v-btn>
+      <v-btn class="nav-item" to="/containers">Containers</v-btn>
       <v-btn
-        to="/collections"
-        :style="{
-          fontSize: '16px',
-          fontWeight: 400,
-          fontStyle: 'normal',
-          lineHeight: '26px',
-          textTransform: 'none',
-        }"
-      >
-        Collections
-      </v-btn>
-      <v-btn
-        to="/containers"
-        :style="{
-          fontSize: '16px',
-          fontWeight: 400,
-          fontStyle: 'normal',
-          lineHeight: '26px',
-          textTransform: 'none',
-        }"
-      >
-        Containers
-      </v-btn>
-      <v-btn
+        class="nav-item"
         :to="{ path: '/configuration', hash: '#semanticrepositories' }"
-        :style="{
-          fontSize: '16px',
-          fontWeight: 400,
-          fontStyle: 'normal',
-          lineHeight: '26px',
-          textTransform: 'none',
-        }"
       >
         Configuration
       </v-btn>
     </v-app-bar-title>
     <template #append>
-      <v-btn
-        :to="{ path: '/about', hash: '#version' }"
-        :style="{
-          fontSize: '16px',
-          fontWeight: 400,
-          fontStyle: 'normal',
-          lineHeight: '26px',
-          textTransform: 'none',
-        }"
-      >
+      <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item">
         About
       </v-btn>
+      <v-btn
+        icon="mdi-account-outline"
+        :to="{ path: '/user', hash: '#profile' }"
+      />
       <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
       <v-btn :prepend-icon="authIcon" @click="handleAuth()">
         {{ isSignedIn ? "Sign Out" : "Sign In" }}
@@ -106,5 +73,12 @@ const toggleTheme = () => {
   :deep(.v-btn__overlay) {
     opacity: 0;
   }
+}
+.nav-item {
+  font-size: 16px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 26px;
+  text-transform: none;
 }
 </style>

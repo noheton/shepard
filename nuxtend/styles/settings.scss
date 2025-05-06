@@ -112,5 +112,7 @@
   $button-card-actions-margin: 12px,
 
   // tooltip overrides
-  $tooltip-background-color: rgb(var(--v-theme-textbody1))
+  $tooltip-background-color: rgb(var(--v-theme-textbody1)),
+  // table overrides
+  $table-background: inherit
 );

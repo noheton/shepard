@@ -1,4 +1,4 @@
-import type { MenuEntry } from "../../common/navMenu/menuListTypes";
+import type { MenuEntry } from "~/components/common/pane-menu/menuListTypes";
 
 export enum AboutFragments {
   VERSION = "version",

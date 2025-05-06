@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { AboutMenuEntries } from "./aboutMenuItems";
+import type { MenuListProps } from "~/components/common/pane-menu/MenuList.vue";
 
-useHead({
-  title: "About | shepard",
-});
+defineProps<MenuListProps>();
 </script>
 
 <template>
   <NuxtLayout name="pane">
     <template #menu>
-      <MenuList :menu-entries="AboutMenuEntries" header="About" />
+      <MenuList :menu-entries="menuEntries" :header="header" />
     </template>
     <template #content>
       <slot />

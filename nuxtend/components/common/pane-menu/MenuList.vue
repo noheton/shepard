@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { MenuEntry } from "./menuListTypes";
 
-interface MenuListProps {
+export interface MenuListProps {
   header: string;
   menuEntries: MenuEntry[];
 }
