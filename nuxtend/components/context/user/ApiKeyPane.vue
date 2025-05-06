@@ -19,8 +19,11 @@ async function updateApiKeys() {
 }
 </script>
 
-<template>
-  <h4 class="text-h4">Api Keys</h4>
+<template class="wrapper">
+  <div class="top-row">
+    <h4 class="text-h4">Api Keys</h4>
+    <AddApiKeyButton :username="user.username" @created="updateApiKeys" />
+  </div>
   <v-table hover>
     <thead>
       <tr>
@@ -45,7 +48,6 @@ async function updateApiKeys() {
       </tr>
     </tbody>
   </v-table>
-  <AddApiKeyButton :username="user.username" @created="updateApiKeys" />
 </template>
 
 <style scoped lang="scss">
@@ -57,5 +59,10 @@ td {
 }
 .action-column {
   text-align: center;
+}
+.top-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }
 </style>
