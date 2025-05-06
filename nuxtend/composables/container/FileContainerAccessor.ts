@@ -80,6 +80,18 @@ export class FileContainerAccessor extends ContainerAccessor {
         });
     }
   }
+
+  async uploadFile(file: File) {
+    return this.api
+      .createFile({ fileContainerId: this.id, file })
+      .then(() => {
+        return Promise.resolve();
+      })
+      .finally(() => {
+        this.fetchFiles();
+      });
+  }
+
   async deleteFile(file: ShepardFile) {
     if (file.oid) {
       try {
