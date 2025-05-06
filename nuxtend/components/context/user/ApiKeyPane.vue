@@ -68,5 +68,30 @@ td {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
+  margin-bottom: 16px;
+}
+.v-table {
+  background-color: unset;
+
+  :deep(thead) > tr > th {
+    background-color: rgb(var(--v-theme-divider2));
+  }
+
+  :deep(td) {
+    padding: 8px 24px !important;
+  }
+
+  :deep(tr):hover {
+    background-color: rgb(var(--v-theme-focus1));
+  }
+
+  :deep(th) {
+    font-size: 16px;
+    padding: 8px 24px !important;
+  }
+
+  :deep(.mdi) {
+    margin-left: 0.2em;
+  }
 }
 </style>
