@@ -7,15 +7,17 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;
 
 const container = new StructuredDataContainerAccessor(containerId);
-container.fetchData();
-container.fetchItems();
-container.fetchRoles();
-container.fetchPermissions();
 
 onContainerUpdated(() => {
+  loadAllData();
+});
+
+const loadAllData = () => {
   container.fetchData();
   container.fetchItems();
-});
+  container.fetchRoles();
+  container.fetchPermissions();
+};
 
 const itemToDelete = ref<StructuredData | undefined>(undefined);
 const showFileDeleteConfirmDialog = ref<boolean>(false);
@@ -24,6 +26,8 @@ const deleteItem = (item: StructuredData) => {
   itemToDelete.value = item;
   showFileDeleteConfirmDialog.value = true;
 };
+
+loadAllData();
 </script>
 
 <template>

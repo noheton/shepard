@@ -11,12 +11,12 @@ const emit = defineEmits<{
   (e: "delete-item", value: StructuredData): void;
 }>();
 
-const headers = ref([
+const headers = [
   { title: "Name", key: "name", sortable: true },
   { title: "Oid", key: "oid", sortable: false },
   { title: "Created at", key: "createdAt", sortable: true },
   { title: "", value: "actions", sortable: false },
-]);
+];
 
 const sortBy = ref([{ key: "name", order: "asc" }]);
 </script>
