@@ -135,19 +135,3 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
     "
   />
 </template>
-
-<style lang="scss" scoped>
-.v-table {
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
-  }
-}
-
-tr .data-table-row-actions {
-  visibility: hidden;
-}
-
-tr:hover .data-table-row-actions {
-  visibility: visible;
-}
-</style>

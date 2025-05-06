@@ -100,10 +100,6 @@ const columns = ref([
 <style lang="scss" scoped>
 .v-table {
   background-color: inherit;
-
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
-  }
 }
 
 .semantic-row {

@@ -123,9 +123,6 @@ function onPageChange(page: number) {
 
 <style scoped lang="scss">
 .v-table {
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
-  }
   :deep(.word-wrap-anywhere) {
     word-wrap: anywhere;
   }

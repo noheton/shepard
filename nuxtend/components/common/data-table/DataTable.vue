@@ -16,6 +16,11 @@ defineSlots();
 <style scoped lang="scss">
 .v-table {
   background-color: unset;
+
+  :deep(thead) > tr > th {
+    background-color: rgb(var(--v-theme-divider2));
+  }
+
   :deep(td) {
     padding: 8px 24px !important;
   }

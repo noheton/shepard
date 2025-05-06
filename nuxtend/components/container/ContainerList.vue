@@ -3,12 +3,12 @@ import {
   BasicContainerAttributes,
   type BasicContainer,
 } from "@dlr-shepard/backend-client";
+import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 import {
   ContainerTypeName,
   type ContainerFilterType,
 } from "./containerTypeFilter";
 import { useContainerListQueryParams } from "./useContainerListQueryParams";
-import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 
 defineProps<{
   itemsPerPage: number;
@@ -151,10 +151,6 @@ function onPageChange(page: number) {
 
 <style lang="scss" scoped>
 .v-table {
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
-  }
-
   :deep(.word-wrap-anywhere) {
     word-wrap: anywhere;
   }

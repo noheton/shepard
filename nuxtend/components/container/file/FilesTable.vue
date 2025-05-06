@@ -75,11 +75,3 @@ const deleteFile = (file: ShepardFile) => {
     />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.v-table {
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
-  }
-}
-</style>
