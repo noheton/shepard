@@ -5,6 +5,7 @@ interface FormDialogProps {
   submitDisabled: boolean;
   maxWidth?: number;
   saveButtonText?: string;
+  closeOnSubmit?: boolean;
 }
 
 const props = defineProps<FormDialogProps>();
@@ -13,6 +14,13 @@ const showDialog = defineModel<boolean>("showDialog", {
   default: false,
 });
 const emit = defineEmits(["submit"]);
+
+function handleSubmit() {
+  if (props.closeOnSubmit) {
+    showDialog.value = false;
+  }
+  emit("submit");
+}
 </script>
 
 <template>
@@ -44,7 +52,7 @@ const emit = defineEmits(["submit"]);
               color="primary"
               variant="flat"
               class="ml-4"
-              @click="emit('submit')"
+              @click="handleSubmit"
             >
               {{ props.saveButtonText ?? "Save Changes" }}
             </v-btn>
