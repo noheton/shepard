@@ -14,6 +14,7 @@ const { routeFragment } = useRouteFragment();
 <template>
   <PaneLayout header="User" :menu-entries="UserMenuEntries">
     <ProfilePane v-if="routeFragment === UserFragments.PROFILE" />
+    <ApiKeyPane v-if="routeFragment === UserFragments.API_KEYS" />
   </PaneLayout>
 </template>
 
