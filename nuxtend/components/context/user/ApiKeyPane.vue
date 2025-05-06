@@ -41,7 +41,7 @@ updateApiKeys();
       </tr>
     </thead>
     <tbody>
-      <tr v-for="apiKey in apiKeys" :key="apiKey.createdAt.getTime()">
+      <tr v-for="apiKey in apiKeys" :key="apiKey.uid">
         <td>{{ apiKey.name }}</td>
         <td class="uid-column">{{ apiKey.uid }}</td>
         <td>{{ toShortDateTimeString(apiKey.createdAt) }}</td>
