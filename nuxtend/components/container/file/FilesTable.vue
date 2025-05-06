@@ -44,12 +44,17 @@ const copyOid = (oid: string | undefined) => {
     hover
   >
     <template #[`item.oid`]="{ item }: { item: ShepardFile }">
-      {{ item.oid }}
-      <ActionButton
-        icon="mdi-content-copy"
-        color="medium-emphasis"
-        @click="() => copyOid(item.oid)"
-      />
+      <div class="file-oid">
+        {{ item.oid }}
+        <v-btn
+          class="oid-copy-icn"
+          icon="mdi-content-copy"
+          density="compact"
+          variant="text"
+          color="medium-emphasis"
+          @click="() => copyOid(item.oid)"
+        />
+      </div>
     </template>
     <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
       {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
@@ -78,6 +83,16 @@ const copyOid = (oid: string | undefined) => {
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));
+  }
+}
+
+.file-oid {
+  width: fit-content;
+  .oid-copy-icn {
+    visibility: hidden;
+  }
+  &:hover .oid-copy-icn {
+    visibility: visible;
   }
 }
 </style>
