@@ -2,6 +2,7 @@
 import { ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
 import { toShortDateString } from "nuxtend/utils/helpers";
 import AddApiKeyButton from "~/components/context/user/AddApiKeyButton.vue";
+import DeleteApiKeyButton from "~/components/context/user/DeleteApiKeyButton.vue";
 
 const apikeyApi = createApiInstance(ApikeyApi);
 const userApi = createApiInstance(UserApi);
@@ -26,6 +27,7 @@ async function updateApiKeys() {
         <td>Name</td>
         <td>Uid</td>
         <td>Created At</td>
+        <td />
       </tr>
     </thead>
     <tbody>
@@ -33,6 +35,13 @@ async function updateApiKeys() {
         <td>{{ apiKey.name }}</td>
         <td>{{ apiKey.uid }}</td>
         <td>{{ toShortDateString(apiKey.createdAt) }}</td>
+        <td>
+          <DeleteApiKeyButton
+            :username="user.username"
+            :apikey-uid="apiKey.uid"
+            @deleted="updateApiKeys"
+          />
+        </td>
       </tr>
     </tbody>
   </v-table>
