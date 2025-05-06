@@ -33,9 +33,9 @@ async function updateApiKeys() {
     <tbody>
       <tr v-for="apiKey in apiKeys" :key="apiKey.createdAt.getMilliseconds()">
         <td>{{ apiKey.name }}</td>
-        <td>{{ apiKey.uid }}</td>
+        <td class="uid-column">{{ apiKey.uid }}</td>
         <td>{{ toShortDateString(apiKey.createdAt) }}</td>
-        <td>
+        <td class="action-column">
           <DeleteApiKeyButton
             :username="user.username"
             :apikey-uid="apiKey.uid"
@@ -48,4 +48,14 @@ async function updateApiKeys() {
   <AddApiKeyButton :username="user.username" @created="updateApiKeys" />
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+td {
+  white-space: nowrap;
+}
+.uid-column {
+  width: 100%;
+}
+.action-column {
+  text-align: center;
+}
+</style>
