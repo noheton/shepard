@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
-import { toShortDateString } from "nuxtend/utils/helpers";
+import { type ApiKey, ApikeyApi, UserApi } from "@dlr-shepard/backend-client";
+import {
+  toDateTimeString,
+  toShortDateString,
+  toShortDateTimeString,
+} from "nuxtend/utils/helpers";
 import AddApiKeyButton from "~/components/context/user/AddApiKeyButton.vue";
 import DeleteApiKeyButton from "~/components/context/user/DeleteApiKeyButton.vue";
 
@@ -8,7 +12,7 @@ const apikeyApi = createApiInstance(ApikeyApi);
 const userApi = createApiInstance(UserApi);
 
 const user = await userApi.getCurrentUser();
-const apiKeys = ref(await fetchApiKeys());
+const apiKeys = ref<ApiKey[]>();
 
 function fetchApiKeys() {
   return apikeyApi.getAllApiKeys({ username: user.username });
@@ -16,7 +20,10 @@ function fetchApiKeys() {
 
 async function updateApiKeys() {
   apiKeys.value = await fetchApiKeys();
+  apiKeys.value.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
+
+updateApiKeys();
 </script>
 
 <template class="wrapper">
@@ -34,10 +41,10 @@ async function updateApiKeys() {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="apiKey in apiKeys" :key="apiKey.createdAt.getMilliseconds()">
+      <tr v-for="apiKey in apiKeys" :key="apiKey.createdAt.getTime()">
         <td>{{ apiKey.name }}</td>
         <td class="uid-column">{{ apiKey.uid }}</td>
-        <td>{{ toShortDateString(apiKey.createdAt) }}</td>
+        <td>{{ toShortDateTimeString(apiKey.createdAt) }}</td>
         <td class="action-column">
           <DeleteApiKeyButton
             :username="user.username"
