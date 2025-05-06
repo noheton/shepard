@@ -20,61 +20,66 @@ const headers = [
     value: "actions",
   },
 ];
+
+const fileToDelete = ref<ShepardFile | undefined>(undefined);
+const showFileDeleteConfirmDialog = ref<boolean>(false);
+
+const deleteFile = (file: ShepardFile) => {
+  fileToDelete.value = file;
+  showFileDeleteConfirmDialog.value = true;
+};
 </script>
 
 <template>
-  <DataTable
-    :cell-props="{
-      class: 'text-textbody1',
-    }"
-    :header-props="{
-      class: 'text-subtitle-2 text-textbody1',
-    }"
-    :headers="headers"
-    :items="files"
-    :loading="loading"
-    hover
-  >
-    <template #[`item.oid`]="{ item }: { item: ShepardFile }">
-      <CopyTextButton :text="item.oid" />
-    </template>
-    <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
-      {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
-    </template>
-    <template #[`item.actions`]="{ item }: { item: ShepardFile }">
-      <ActionContainer>
-        <ActionButton
-          icon="mdi-tray-arrow-down"
-          @click="() => emit('download-file', item)"
-        />
-        <ActionButton
-          v-if="isAllowedToEdit"
-          icon="mdi-delete-outline"
-          @click="() => emit('delete-file', item)"
-        />
-      </ActionContainer>
-    </template>
-    <template #bottom>
-      <v-divider :thickness="8" color="divider2" opacity="1" />
-      <v-pagination :total-visible="6" />
-    </template>
-  </DataTable>
+  <div>
+    <DataTable
+      :cell-props="{
+        class: 'text-textbody1',
+      }"
+      :header-props="{
+        class: 'text-subtitle-2 text-textbody1',
+      }"
+      :headers="headers"
+      :items="files"
+      :loading="loading"
+      hover
+    >
+      <template #[`item.oid`]="{ item }: { item: ShepardFile }">
+        <CopyTextButton :text="item.oid" />
+      </template>
+      <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
+        {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
+      </template>
+      <template #[`item.actions`]="{ item }: { item: ShepardFile }">
+        <ActionContainer>
+          <ActionButton
+            icon="mdi-tray-arrow-down"
+            @click="() => emit('download-file', item)"
+          />
+          <ActionButton
+            v-if="isAllowedToEdit"
+            icon="mdi-delete-outline"
+            @click="deleteFile(item)"
+          />
+        </ActionContainer>
+      </template>
+      <template #bottom>
+        <v-divider :thickness="8" color="divider2" opacity="1" />
+        <v-pagination :total-visible="6" />
+      </template>
+    </DataTable>
+    <ConfirmDeleteDialog
+      v-if="showFileDeleteConfirmDialog && fileToDelete?.filename"
+      v-model:show-dialog="showFileDeleteConfirmDialog"
+      @confirmed="emit('delete-file', fileToDelete)"
+    />
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .v-table {
   :deep(thead) > tr > th {
     background-color: rgb(var(--v-theme-divider2));
-  }
-}
-
-.file-oid {
-  width: fit-content;
-  .oid-copy-icn {
-    visibility: hidden;
-  }
-  &:hover .oid-copy-icn {
-    visibility: visible;
   }
 }
 </style>
