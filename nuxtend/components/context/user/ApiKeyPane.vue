@@ -24,10 +24,10 @@ async function updateApiKeys() {
   <v-table hover>
     <thead>
       <tr>
-        <td>Name</td>
-        <td>Uid</td>
-        <td>Created At</td>
-        <td />
+        <th>Name</th>
+        <th>Uid</th>
+        <th>Created At</th>
+        <th />
       </tr>
     </thead>
     <tbody>
