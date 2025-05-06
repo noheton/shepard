@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import type { ShepardFile } from "@dlr-shepard/backend-client";
-import { useClipboard } from "@vueuse/core";
 
 defineProps<{
   files: ShepardFile[];
@@ -21,13 +20,6 @@ const headers = [
     value: "actions",
   },
 ];
-const { copy } = useClipboard();
-const copyOid = (oid: string | undefined) => {
-  if (oid) {
-    copy(oid);
-    emitSuccess(`Copied "${oid}"`);
-  }
-};
 </script>
 
 <template>
@@ -44,17 +36,7 @@ const copyOid = (oid: string | undefined) => {
     hover
   >
     <template #[`item.oid`]="{ item }: { item: ShepardFile }">
-      <div class="file-oid">
-        {{ item.oid }}
-        <v-btn
-          class="oid-copy-icn"
-          icon="mdi-content-copy"
-          density="compact"
-          variant="text"
-          color="medium-emphasis"
-          @click="() => copyOid(item.oid)"
-        />
-      </div>
+      <CopyTextButton :text="item.oid" />
     </template>
     <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
       {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { StructuredData } from "@dlr-shepard/backend-client";
-import { useClipboard } from "@vueuse/core";
 
 defineProps<{
   items: StructuredData[];
@@ -20,14 +19,6 @@ const headers = ref([
 ]);
 
 const sortBy = ref([{ key: "name", order: "asc" }]);
-
-const { copy } = useClipboard();
-const copyOid = (oid: string | undefined) => {
-  if (oid) {
-    copy(oid);
-    emitSuccess(`Copied "${oid}"`);
-  }
-};
 </script>
 
 <template>
@@ -45,12 +36,7 @@ const copyOid = (oid: string | undefined) => {
     hover
   >
     <template #[`item.oid`]="{ item }: { item: StructuredData }">
-      {{ item.oid }}
-      <ActionButton
-        icon="mdi-content-copy"
-        color="medium-emphasis"
-        @click="() => copyOid(item.oid)"
-      />
+      <CopyTextButton :text="item.oid" />
     </template>
     <template #[`item.createdAt`]="{ item }: { item: StructuredData }">
       {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
