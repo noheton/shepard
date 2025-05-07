@@ -94,6 +94,9 @@ async function deleteTimeseriesReference() {
       emitSuccess(
         `Successfully deleted timeseries reference "${timeseriesReference.value?.name}"`,
       );
+      navigateTo(
+        collectionsPath + collectionId + dataObjectsPathFragment + dataObjectId,
+      );
     })
     .catch(e => {
       handleError(e as ResponseError, "deleting timeseries reference");
