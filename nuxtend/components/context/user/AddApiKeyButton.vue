@@ -1,25 +1,10 @@
 <script setup lang="ts">
-import { ApikeyApi, type ResponseError } from "@dlr-shepard/backend-client";
 import AddApiKeyDialog from "~/components/context/user/AddApiKeyDialog.vue";
 
-const props = defineProps<{ username: string }>();
+defineProps<{ username: string }>();
 
 const showCreateDialog = ref(false);
-const apikeyApi = createApiInstance(ApikeyApi);
 const emit = defineEmits(["created"]);
-
-async function createApiKey(name: string) {
-  try {
-    await apikeyApi.createApiKey({
-      username: props.username,
-      apiKey: { name: name },
-    });
-    emit("created");
-    emitSuccess(`Successfully created api key ${name}!`);
-  } catch (e) {
-    handleError(e as ResponseError, "creating api key");
-  }
-}
 </script>
 
 <template>
@@ -31,7 +16,8 @@ async function createApiKey(name: string) {
   <AddApiKeyDialog
     v-if="showCreateDialog"
     v-model:show-dialog="showCreateDialog"
-    @submit="createApiKey"
+    :username="username"
+    @submit="emit('created')"
   />
 </template>
 
