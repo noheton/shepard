@@ -3,6 +3,7 @@ import {
   UserFragments,
   UserMenuEntries,
 } from "~/components/context/user/userMenuItems";
+import SubscriptionsPane from "~/components/context/user/SubscriptionsPane.vue";
 
 useHead({
   title: "User | shepard",
@@ -15,6 +16,7 @@ const { routeFragment } = useRouteFragment();
   <PaneLayout header="User" :menu-entries="UserMenuEntries">
     <ProfilePane v-if="routeFragment === UserFragments.PROFILE" />
     <ApiKeyPane v-if="routeFragment === UserFragments.API_KEYS" />
+    <SubscriptionsPane v-if="routeFragment === UserFragments.SUBSCRIPTIONS" />
   </PaneLayout>
 </template>
 
