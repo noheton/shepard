@@ -7,7 +7,7 @@ const time = defineModel<string>("time", {
 });
 const rules = {
   time: (value: string): boolean | string => {
-    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.d+)?$/;
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d+)?$/;
     return timeRegex.test(value) || "Invalid time format. Use HH:mm:ss.###";
   },
 };
