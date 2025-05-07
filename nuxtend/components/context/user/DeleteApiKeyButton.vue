@@ -17,6 +17,7 @@ async function deleteApiKey() {
       apikeyUid: props.apikeyUid,
     });
     emit("deleted");
+    emitSuccess(`Successfully deleted api key!`);
   } catch (e) {
     handleError(e as ResponseError, "deleting api key");
   }

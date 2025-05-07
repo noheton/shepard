@@ -20,6 +20,7 @@ async function deleteSubscription() {
       subscriptionId: props.subscriptionId,
     });
     emit("deleted");
+    emitSuccess(`Successfully deleted subscription!`);
   } catch (e) {
     handleError(e as ResponseError, "deleting subscription");
   }

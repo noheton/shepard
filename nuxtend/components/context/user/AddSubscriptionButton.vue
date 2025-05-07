@@ -29,6 +29,7 @@ async function createSubscription(
       },
     });
     emit("created");
+    emitSuccess(`Successfully created subscription ${name}!`);
   } catch (e) {
     handleError(e as ResponseError, "creating subscription");
   }

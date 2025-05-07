@@ -15,6 +15,7 @@ async function createApiKey(name: string) {
       apiKey: { name: name },
     });
     emit("created");
+    emitSuccess(`Successfully created api key ${name}!`);
   } catch (e) {
     handleError(e as ResponseError, "creating api key");
   }
