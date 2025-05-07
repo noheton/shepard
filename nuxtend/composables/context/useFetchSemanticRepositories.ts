@@ -24,5 +24,7 @@ export function useFetchSemanticRepositories() {
 
   fetchSemanticRepositories();
 
+  onSemanticRepositoriesUpdated(fetchSemanticRepositories);
+
   return { repositories, isLoading };
 }

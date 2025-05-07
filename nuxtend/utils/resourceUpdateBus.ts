@@ -53,3 +53,14 @@ export const onAnnotationsUpdated = (listener: () => void) => {
   const stopListening = annotationBus.on(listener);
   onUnmounted(stopListening);
 };
+
+const semanticRepositoryBus = useEventBus("semantic-repositories-changed");
+
+export const handleSemanticRepositoryListUpdate = () => {
+  semanticRepositoryBus.emit("semantic-repositories-changed");
+};
+
+export const onSemanticRepositoriesUpdated = (listener: () => void) => {
+  const stopListening = semanticRepositoryBus.on(listener);
+  onUnmounted(stopListening);
+};
