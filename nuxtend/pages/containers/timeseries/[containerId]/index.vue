@@ -8,9 +8,18 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 
 const container = new TimeseriesContainerAccessor(containerId);
-container.fetchData();
-container.fetchMeasurementsTable();
-container.fetchRoles();
+
+const fetchData = () => {
+  container.fetchData();
+  container.fetchMeasurementsTable();
+  container.fetchRoles();
+};
+
+onContainerUpdated(() => {
+  fetchData();
+});
+
+fetchData();
 </script>
 
 <template>

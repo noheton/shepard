@@ -6,15 +6,22 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;
 
 const containerAccessor = new FileContainerAccessor(containerId);
-containerAccessor.fetchData();
-containerAccessor.fetchFiles();
-containerAccessor.fetchRoles();
+const fetchData = () => {
+  containerAccessor.fetchData();
+  containerAccessor.fetchFiles();
+  containerAccessor.fetchRoles();
+};
+
+onContainerUpdated(() => {
+  fetchData();
+});
 
 const showFileUploadDialog = ref<boolean>(false);
 
 const uploadFile = async (file: File) => {
   return containerAccessor.uploadFile(file);
 };
+fetchData();
 </script>
 <template>
   <v-container fluid style="max-width: 1200px; margin: auto">

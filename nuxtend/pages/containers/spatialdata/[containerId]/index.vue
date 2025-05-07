@@ -6,13 +6,15 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.SPATIALDATA;
 
 const container = new SpatialDataContainerAccessor(containerId);
-container.fetchData();
-container.fetchRoles();
-
-onContainerUpdated(() => {
+const fetchData = () => {
   container.fetchData();
   container.fetchRoles();
+};
+
+onContainerUpdated(() => {
+  fetchData();
 });
+fetchData();
 </script>
 <template>
   <div style="max-width: 1200px; margin: auto">
