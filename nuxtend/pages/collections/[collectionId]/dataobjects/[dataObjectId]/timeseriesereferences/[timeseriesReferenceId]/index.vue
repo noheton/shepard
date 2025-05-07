@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import type {
-  ResponseError,
-  Timeseries,
-  TimeseriesContainer,
-} from "@dlr-shepard/backend-client";
+import type { ResponseError, Timeseries } from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
 
@@ -36,7 +32,6 @@ const { timeseriesReference } = useFetchTimeseriesReference(
   timeseriesReferenceId,
 );
 
-const timeseriesContainer = ref<TimeseriesContainer | undefined>(undefined);
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog = ref<boolean>(false);
@@ -253,15 +248,18 @@ const onSelectedItemChanged = () => {
       @confirmed="deleteTimeseriesReference"
     />
     <ShowTimeseriesReferenceDialog
-      v-if="showTimeseriesReferenceDialog"
+      v-if="
+        showTimeseriesReferenceDialog &&
+        timeseriesReference?.timeseriesContainerId
+      "
       v-model:show-dialog="showTimeseriesReferenceDialog"
       :collection-id="collectionId"
       :data-object-id="dataObjectId"
       :timeseries-reference-id="timeseriesReferenceId"
       :timeseries="getSelectedTimeseries()"
-      :timeseries-container-id="timeseriesContainer?.id ?? -1"
+      :timeseries-container-id="timeseriesReference?.timeseriesContainerId"
       :timeseries-reference="timeseriesReference"
-      :isAllowedToEditCollection="isAllowedToEditCollection"
+      :is-allowed-to-edit-collection="isAllowedToEditCollection"
     />
   </div>
 </template>
