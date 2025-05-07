@@ -214,7 +214,12 @@ function getAllStructuredDatas(containerId: number) {
     v-model:show-dialog="showDialog"
     :max-width="800"
     title="Create Data Reference"
-    :submit-disabled="!isValid || !dataReferenceContainerId"
+    :submit-disabled="
+      !isValid ||
+      !dataReferenceContainerId ||
+      (!(fileRef && fileRef?.fileOids.length > 0) &&
+        !(timeseriesRef && timeseriesRef?.timeseries.length > 0))
+    "
     save-button-text="Add"
     @submit="createDataReference"
   >
