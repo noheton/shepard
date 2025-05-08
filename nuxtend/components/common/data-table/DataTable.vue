@@ -18,7 +18,7 @@ defineSlots();
   background-color: unset;
 
   :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
+    background-color: rgb(var(--v-theme-divider2)) !important;
   }
 
   :deep(td) {

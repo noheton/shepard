@@ -90,6 +90,8 @@ watch([endDate, endTime], () => {
   <v-row>
     <v-data-table
       v-model="selectedTimeseriesList"
+      sort-desc-icon="mdi-triangle-small-down"
+      sort-asc-icon="mdi-triangle-small-up"
       density="compact"
       :headers="headers"
       :items="items"
@@ -130,12 +132,18 @@ watch([endDate, endTime], () => {
 
 <style scoped lang="scss">
 .v-table {
+  background-color: unset;
+
   :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2));
+    background-color: rgb(var(--v-theme-divider2)) !important;
   }
 
-  :deep(.word-wrap-anywhere) {
-    word-wrap: anywhere;
+  :deep(tr):hover {
+    background-color: rgb(var(--v-theme-focus1));
+  }
+
+  :deep(.mdi) {
+    margin-left: 0.2em;
   }
 }
 </style>
