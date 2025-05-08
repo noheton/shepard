@@ -7,7 +7,7 @@ export function useFetchUserGroups() {
   async function fetchUserGroups() {
     isLoading.value = true;
     createApiInstance(UserGroupApi)
-      .getAllUserGroups({ orderBy: "createdAt", orderDesc: false })
+      .getAllUserGroups({ orderDesc: false })
       .then(response => {
         userGroups.value = response;
         isLoading.value = false;
