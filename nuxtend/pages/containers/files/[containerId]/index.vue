@@ -16,8 +16,6 @@ onContainerUpdated(() => {
   fetchData();
 });
 
-const showFileUploadDialog = ref<boolean>(false);
-
 const uploadFile = async (file: File) => {
   return containerAccessor.uploadFile(file);
 };
@@ -50,15 +48,10 @@ fetchData();
               :type-label="'File Container'"
             >
               <template #buttons>
-                <v-btn
+                <UploadFilesButton
                   v-if="containerAccessor.isAllowedToEditData.value"
-                  color="primary"
-                  variant="flat"
-                  prepend-icon="mdi-plus-circle"
-                  @click="showFileUploadDialog = true"
-                >
-                  Add File
-                </v-btn>
+                  :upload-file="uploadFile"
+                />
                 <EditPermissionsButton
                   v-if="containerAccessor.isAllowedToEditPermissions.value"
                   :shepard-object-accessor="containerAccessor"
@@ -81,12 +74,6 @@ fetchData();
       :loading="containerAccessor.loading.value"
       @delete-file="file => containerAccessor.deleteFile(file)"
       @download-file="file => containerAccessor.downloadFile(file)"
-    />
-    <FileUploadDialog
-      v-if="showFileUploadDialog"
-      v-model:show-dialog="showFileUploadDialog"
-      :upload-file="uploadFile"
-      :accessor="containerAccessor"
     />
   </v-container>
 </template>

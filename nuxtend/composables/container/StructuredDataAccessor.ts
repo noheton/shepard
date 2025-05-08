@@ -49,7 +49,6 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching structured data container");
-      throw e;
     }
   }
 
@@ -64,7 +63,6 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
         e as ResponseError,
         "fetching structured data container items",
       );
-      throw e;
     } finally {
       this.loading.value = false;
     }
@@ -77,7 +75,6 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching roles");
-      throw e;
     }
   }
 
@@ -108,5 +105,15 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
       handleError(e as ResponseError, "updating permissions");
       throw e;
     }
+  }
+
+  async uploadItem(name: string, content: string): Promise<void> {
+    await this.api.createStructuredData({
+      structuredDataContainerId: this.id,
+      structuredDataPayload: {
+        structuredData: { name: name },
+        payload: content,
+      },
+    });
   }
 }

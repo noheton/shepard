@@ -2,15 +2,22 @@
 const errorAlert = defineModel({ type: Boolean, default: false });
 
 const error = ref<
-  { situation: string; exception: string; message: string } | undefined
+  { situation: string; exception?: string; message: string } | undefined
 >(undefined);
 
 onError(e => {
-  error.value = {
-    exception: e.error.exception,
-    message: e.error.message,
-    situation: e.situation,
-  };
+  if (isString(e.error)) {
+    error.value = {
+      message: e.error,
+      situation: e.situation,
+    };
+  } else {
+    error.value = {
+      exception: e.error.exception,
+      message: e.error.message,
+      situation: e.situation,
+    };
+  }
   errorAlert.value = true;
 });
 </script>

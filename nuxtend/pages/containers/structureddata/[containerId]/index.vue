@@ -26,6 +26,23 @@ const deleteItem = (item: StructuredData) => {
   showFileDeleteConfirmDialog.value = true;
 };
 
+const uploadFile = async (file: File): Promise<void> => {
+  const content = await file.text();
+  const json = JSON.parse(content);
+  if (json && typeof json === "object") {
+    await container.uploadItem(file.name, content);
+  } else {
+    throw new Error("Invalid JSON");
+  }
+};
+
+const filterFiles = (files: File[]) => {
+  return files.filter(file => {
+    const fileName = file.name.toLowerCase();
+    return fileName.endsWith(".json");
+  });
+};
+
 fetchData();
 </script>
 
@@ -57,15 +74,15 @@ fetchData();
                 :type-label="'Structured Data Container'"
               >
                 <template #buttons>
-                  <!-- <v-btn
+                  <UploadFilesButton
                     v-if="container.isAllowedToEditData.value"
-                    rounded="lg"
-                    variant="flat"
-                    color="primary"
-                    prepend-icon="mdi-plus-circle"
-                  >
-                    Add File
-                  </v-btn> -->
+                    accept="application/json"
+                    button-text="Upload JSON"
+                    dialog-title="Upload JSON"
+                    :filter="filterFiles"
+                    :upload-file="uploadFile"
+                    @upload-finished="() => fetchData()"
+                  />
                   <EditPermissionsButton
                     v-if="container.isAllowedToEditPermissions.value"
                     :shepard-object-accessor="container"

@@ -1,16 +1,18 @@
 <script setup lang="ts">
 interface FileUploadDialogProps {
+  accept: string;
+  filter: (files: File[]) => File[];
+  maxWidth: number;
+  multiple: boolean;
+  title: string;
   uploadFile: (file: File) => Promise<void>;
-  maxWidth?: number;
-  multiple?: boolean;
-  title?: string;
 }
 
-const props = withDefaults(defineProps<FileUploadDialogProps>(), {
-  multiple: true,
-  maxWidth: 800,
-  title: "File Upload",
-});
+const props = defineProps<FileUploadDialogProps>();
+
+const emits = defineEmits<{
+  (e: "uploadFinished"): void;
+}>();
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -18,37 +20,47 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 const files = ref<File | File[] | undefined>(undefined);
-const isUploadButtonDisabled = ref<boolean>(true);
 const uploading = ref<boolean>(false);
-
-// Disable Upload button if no file is selected
-watch(files, () => {
-  isUploadButtonDisabled.value =
+const successCount = ref<number>(0);
+const errorCount = ref<number>(0);
+const isUploadButtonDisabled = computed(() => {
+  return (
     files.value === undefined ||
-    (Array.isArray(files.value) && files.value.length === 0);
+    (Array.isArray(files.value) && files.value.length === 0)
+  );
 });
+
+const filterFiles = (selectedFiles: File[]): void => {
+  files.value = props.filter(selectedFiles);
+};
+
+const uploadFile = async (file: File) => {
+  try {
+    await props.uploadFile(file);
+    successCount.value += 1;
+  } catch {
+    errorCount.value += 1;
+  }
+};
 
 const uploadFiles = async () => {
   uploading.value = true;
   if (files.value === undefined) return;
   if (files.value instanceof File) files.value = [files.value];
   if (Array.isArray(files.value)) {
-    await Promise.all(files.value.map(file => props.uploadFile(file)))
-      .then(() => {
-        emitSuccess("All files uploaded successfully");
-        showDialog.value = false;
-      })
-      .catch(_ => {
-        handleError(
-          new Error(
-            "At least one file upload failed. Please check the file list.",
-          ),
-          "uploading files",
-        );
-      })
-      .finally(() => {
-        uploading.value = false;
-      });
+    await Promise.all(files.value.map(uploadFile));
+    if (errorCount.value === 0)
+      emitSuccess(`${successCount.value} file(s) uploaded successfully.`);
+    else {
+      const numberOfFiles = (files.value as Array<File>).length;
+      handleError(
+        `${successCount.value} of ${numberOfFiles} files uploaded successfully.`,
+        "uploading files",
+      );
+    }
+    emits("uploadFinished");
+    uploading.value = false;
+    showDialog.value = false;
   }
 };
 </script>
@@ -68,20 +80,20 @@ const uploadFiles = async () => {
         </div>
       </template>
       <template #text>
-        <slot name="text" />
-      </template>
-      <div class="px-6">
         <v-file-upload
           v-model:model-value="files"
+          :accept="accept"
+          class="mt-4 mb-8"
+          clearable
           density="compact"
           icon="mdi-folder-upload-outline"
           :multiple="multiple"
-          clearable
           show-size
-          color="canvas"
           title="Drag and drop files here (or click to browse)"
+          @update:model-value="filterFiles"
         />
-      </div>
+      </template>
+
       <template #actions>
         <slot name="actions">
           <!-- Default if no slot content for actions is provided -->
@@ -100,11 +112,7 @@ const uploadFiles = async () => {
                 variant="flat"
                 class="ml-4"
                 :disabled="isUploadButtonDisabled"
-                @click="
-                  () => {
-                    uploadFiles();
-                  }
-                "
+                @click="uploadFiles"
               >
                 Upload
               </v-btn>

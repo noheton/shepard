@@ -2,7 +2,7 @@ import type { ResponseError } from "@dlr-shepard/backend-client";
 import { useEventBus, type EventBusKey } from "@vueuse/core";
 import log from "loglevel";
 
-const errorKey: EventBusKey<{ error: ErrorType; situation: string }> =
+const errorKey: EventBusKey<{ error: ErrorType | string; situation: string }> =
   Symbol("error-key");
 
 const errorBus = useEventBus(errorKey);
@@ -13,7 +13,11 @@ export type ErrorType = {
   message: string;
 };
 
-function isErrorType(error: object): error is ErrorType {
+export function isString(error: unknown): error is string {
+  return typeof error === "string";
+}
+
+export function isErrorType(error: object): error is ErrorType {
   return "status" in error && "exception" in error && "message" in error;
 }
 
@@ -32,49 +36,47 @@ function isResponseError(error: unknown): error is ResponseError {
   return error !== null && typeof error === "object" && "response" in error;
 }
 
-async function parseResponseError(error: unknown): Promise<ErrorType> {
-  if (isResponseError(error)) {
-    const result = await error.response.body?.getReader().read();
-    if (result?.value) {
-      const errorString = new TextDecoder().decode(result.value);
-      let errorObject: ErrorType;
-      if (isJsonString(errorString) && isErrorType(JSON.parse(errorString))) {
-        errorObject = JSON.parse(errorString);
-      } else {
-        errorObject = {
-          status: error.response.status,
-          exception: error.response.statusText,
-          message: "",
-        };
-      }
-      return errorObject;
+async function parseResponseError(error: ResponseError): Promise<ErrorType> {
+  let errorObject: ErrorType = {
+    status: error.response.status,
+    exception: error.response.statusText,
+    message: "",
+  };
+
+  const result = await error.response.body?.getReader().read();
+  if (result?.value) {
+    const errorString = new TextDecoder().decode(result.value);
+
+    if (isJsonString(errorString) && isErrorType(JSON.parse(errorString))) {
+      errorObject = JSON.parse(errorString);
     }
   }
-  return {
-    status: 400,
-    exception: "Invalid request",
-    message: JSON.stringify(error),
-  };
+  return errorObject;
 }
 
 export function handleError(e: unknown, situation: string) {
-  parseResponseError(e).then(parsedError => {
-    log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
-    errorBus.emit({
-      situation: situation,
-      error: parsedError,
+  if (isString(e)) {
+    errorBus.emit({ error: e, situation });
+  } else if (isResponseError(e)) {
+    parseResponseError(e).then(parsedError => {
+      log.error(
+        "Error while " + situation + ": " + JSON.stringify(parsedError),
+      );
+      errorBus.emit({
+        situation: situation,
+        error: parsedError,
+      });
     });
-  });
-}
-
-export function logError(e: unknown, situation: string) {
-  parseResponseError(e).then(parsedError => {
-    log.error("Error while " + situation + ": " + JSON.stringify(parsedError));
-  });
+  } else {
+    errorBus.emit({
+      error: "Unknown error",
+      situation: situation,
+    });
+  }
 }
 
 export const onError = (
-  listener: (e: { error: ErrorType; situation: string }) => void,
+  listener: (e: { error: ErrorType | string; situation: string }) => void,
 ) => {
   errorBus.on(listener);
 };
