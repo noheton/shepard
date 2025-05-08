@@ -4,6 +4,7 @@ import {
   type SemanticRepository,
 } from "@dlr-shepard/backend-client";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
+import { handleSemanticRepositoryListUpdate } from "~/utils/resourceUpdateBus";
 import { ConfigurationFragments } from "./configurationMenuItems";
 
 const showCreateDialog = ref(false);

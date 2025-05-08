@@ -2,6 +2,7 @@ import {
   SemanticRepositoryApi,
   type SemanticRepository,
 } from "@dlr-shepard/backend-client";
+import { onSemanticRepositoriesUpdated } from "~/utils/resourceUpdateBus";
 
 export function useFetchSemanticRepositories() {
   const repositories = ref<SemanticRepository[]>([]);
