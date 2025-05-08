@@ -16,5 +16,8 @@ const { routeFragment } = useRouteFragment();
     <SemanticRepositoryPane
       v-if="routeFragment === ConfigurationFragments.SEMANTIC_REPOSITORIES"
     />
+    <UserGroupsPane
+      v-else-if="routeFragment === ConfigurationFragments.USER_GROUPS"
+    />
   </PaneLayout>
 </template>
