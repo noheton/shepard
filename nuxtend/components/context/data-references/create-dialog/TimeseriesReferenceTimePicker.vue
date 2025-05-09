@@ -28,6 +28,7 @@ function format(date: Date) {
       label="Date"
       variant="outlined"
       :display-format="format"
+      bg-color="canvas"
       placeholder="YYYY-MM-DD"
       append-inner-icon="mdi-calendar-edit-outline"
       prepend-icon=""
