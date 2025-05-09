@@ -38,6 +38,10 @@ async function createUserGroup() {
     .then(searchResults => {
       if (searchResults.results && searchResults.results.length > 0) {
         titleError.value = true;
+        handleError(
+          `User group name "${userGroupTitle.value}" already exists`,
+          "creating user group",
+        );
         return;
       }
       createApiInstance(UserGroupApi)
@@ -68,7 +72,7 @@ async function createUserGroup() {
             });
         })
         .catch(error => {
-          handleError(error, "createUserGroup");
+          handleError(error, "creating user group");
         });
     });
 }
