@@ -64,3 +64,14 @@ export const onSemanticRepositoriesUpdated = (listener: () => void) => {
   const stopListening = semanticRepositoryBus.on(listener);
   onUnmounted(stopListening);
 };
+
+const userGroupBus = useEventBus("user-group-changed");
+
+export const handleUserGroupListUpdate = () => {
+  userGroupBus.emit("user-group-changed");
+};
+
+export const onUserGroupUpdated = (listener: () => void) => {
+  const stopListening = userGroupBus.on(listener);
+  onUnmounted(stopListening);
+};

@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { useFetchUserGroups } from "~/composables/context/useFetchUserGroups";
 import { ConfigurationFragments } from "./configurationMenuItems";
+import UserGroupDetailView from "./UserGroupDetailView.vue";
+import UserGroupList from "./UserGroupList.vue";
 
-const { userGroups, isLoading } = useFetchUserGroups();
+const selectedUserGroupId = ref<number | undefined>(undefined);
 </script>
 
 <template>
   <div :id="ConfigurationFragments.USER_GROUPS" class="d-flex flex-column">
-    <div class="d-flex align-center ga-4">
-      <h4 class="text-h4">User Groups</h4>
-    </div>
-
-    <UserGroupsTable :user-groups="userGroups" :loading="isLoading" />
+    <UserGroupList
+      v-if="!selectedUserGroupId"
+      @select-user-group="
+        (userGroupId: number) => (selectedUserGroupId = userGroupId)
+      "
+    />
+    <UserGroupDetailView
+      v-else
+      :user-group-id="selectedUserGroupId"
+      @back="selectedUserGroupId = undefined"
+    />
   </div>
 </template>

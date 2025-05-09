@@ -21,5 +21,7 @@ export function useFetchUserGroups() {
 
   fetchUserGroups();
 
+  onUserGroupUpdated(fetchUserGroups);
+
   return { userGroups, isLoading };
 }

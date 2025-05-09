@@ -6,6 +6,10 @@ defineProps<{
   loading: boolean;
 }>();
 
+const emit = defineEmits<{
+  (e: "select-user-group", userGroupId: number): void;
+}>();
+
 const headers = [
   { title: "ID", key: "id", sortable: true, width: "20%" },
   { title: "Name", key: "name", sortable: true, width: "40%" },
@@ -34,21 +38,32 @@ const headers = [
     :hide-default-footer="true"
     hover
   >
-    <template #[`item.id`]="{ item }: { item: UserGroup }">
-      <span class="text-textbody">#{{ item.id }}</span>
-    </template>
-    <template #[`item.name`]="{ item }: { item: UserGroup }">
-      <span class="text-textbody">{{ item.name }}</span>
-    </template>
-    <template #[`item.createdAt`]="{ item }: { item: UserGroup }">
-      <div class="d-flex flex-column">
-        <span class="text-textbody">
-          {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
-        </span>
-        <span v-if="item.createdBy" class="text-textbody2">
-          by {{ item.createdBy }}
-        </span>
-      </div>
+    <template #item="rowProps">
+      <v-data-table-row
+        v-bind="rowProps"
+        @click="emit('select-user-group', rowProps.item.id)"
+      >
+        <template #[`item.id`]>
+          <span class="text-textbody">#{{ rowProps.item.id }}</span>
+        </template>
+        <template #[`item.name`]>
+          <span class="text-textbody">{{ rowProps.item.name }}</span>
+        </template>
+        <template #[`item.createdAt`]>
+          <div class="d-flex flex-column">
+            <span class="text-textbody">
+              {{
+                rowProps.item.createdAt
+                  ? toShortDateString(rowProps.item.createdAt)
+                  : "-"
+              }}
+            </span>
+            <span v-if="rowProps.item.createdBy" class="text-textbody2">
+              by {{ rowProps.item.createdBy }}
+            </span>
+          </div>
+        </template>
+      </v-data-table-row>
     </template>
   </DataTable>
 </template>
