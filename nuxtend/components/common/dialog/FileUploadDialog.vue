@@ -69,7 +69,7 @@ const uploadFiles = async () => {
   <v-dialog v-model="showDialog" persistent :max-width="maxWidth">
     <v-card color="canvas" :loading="uploading">
       <template #title>
-        <div class="d-flex justify-space-between align-baseline">
+        <div class="pb-4 d-flex justify-space-between align-baseline">
           <div class="text-h4 text-wrap">{{ title }}</div>
           <v-btn
             variant="plain"
@@ -80,10 +80,15 @@ const uploadFiles = async () => {
         </div>
       </template>
       <template #text>
+        <div
+          v-if="$slots.info"
+          class="mb-4 pa-4 bg-divider2 rounded text-body-1"
+        >
+          <slot name="info" />
+        </div>
         <v-file-upload
           v-model:model-value="files"
           :accept="accept"
-          class="mt-4 mb-8"
           clearable
           density="compact"
           icon="mdi-folder-upload-outline"

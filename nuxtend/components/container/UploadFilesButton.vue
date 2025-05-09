@@ -42,5 +42,9 @@ withDefaults(defineProps<UploadFilesButtonProps>(), {
     :title="dialogTitle"
     :upload-file="uploadFile"
     @upload-finished="emits('upload-finished')"
-  />
+  >
+    <template v-if="$slots.info" #info>
+      <slot name="info" />
+    </template>
+  </FileUploadDialog>
 </template>

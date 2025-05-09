@@ -11,7 +11,8 @@ import { ContainerAccessor } from "../shepardObjectAccessor";
 export class TimeseriesContainerAccessor extends ContainerAccessor {
   api = createApiInstance(TimeseriesContainerApi);
   measurements = ref<TimeseriesEntity[]>([]);
-  timeseries = ref<TimeseriesContainer>();
+  container = ref<TimeseriesContainer>();
+  loading = ref<boolean>(true);
 
   async delete() {
     try {
@@ -19,7 +20,7 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
         timeseriesContainerId: this.id,
       });
       emitSuccess(
-        `Successfully deleted container "${this.timeseries.value?.name}"`,
+        `Successfully deleted container "${this.container.value?.name}"`,
       );
       await useRouter().push(containersPath);
     } catch (e) {
@@ -28,36 +29,27 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
     }
   }
 
-  async fetchRoles() {
-    try {
-      this.roles.value = await this.api.getTimeseriesRoles({
-        timeseriesContainerId: this.id,
-      });
-    } catch (e) {
-      handleError(e as ResponseError, "fetching roles");
-      throw e;
-    }
-  }
-
   async fetchData() {
     try {
-      this.timeseries.value = await this.api.getTimeseriesContainer({
+      this.container.value = await this.api.getTimeseriesContainer({
         timeseriesContainerId: this.id,
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching timeseries container");
-      throw e;
     }
   }
 
-  async fetchMeasurementsTable() {
+  async fetchMeasurements() {
     try {
+      this.loading.value = true;
       this.measurements.value = await this.api.getTimeseriesOfContainer({
         timeseriesContainerId: this.id,
       });
     } catch (e) {
       handleError(e as ResponseError, "fetching files");
       throw e;
+    } finally {
+      this.loading.value = false;
     }
   }
 
@@ -69,6 +61,16 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
       throw e;
+    }
+  }
+
+  async fetchRoles() {
+    try {
+      this.roles.value = await this.api.getTimeseriesRoles({
+        timeseriesContainerId: this.id,
+      });
+    } catch (e) {
+      handleError(e as ResponseError, "fetching roles");
     }
   }
 
@@ -86,5 +88,12 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
       handleError(e as ResponseError, "updating permissions");
       throw e;
     }
+  }
+
+  async uploadMeasurements(file: File) {
+    await this.api.importTimeseries({
+      timeseriesContainerId: this.id,
+      file,
+    });
   }
 }
