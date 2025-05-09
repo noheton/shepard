@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { vMaska } from "maska/vue";
 import { useDate } from "vuetify";
 
 const date = defineModel<string>("date", {
@@ -23,6 +24,7 @@ function format(date: Date) {
   <v-col class="pa-0 pr-2">
     <v-date-input
       v-model="date"
+      v-maska="'####-##-##'"
       label="Date"
       variant="outlined"
       :display-format="format"
@@ -36,6 +38,7 @@ function format(date: Date) {
   <v-col class="pa-0">
     <v-text-field
       v-model="time"
+      v-maska="'##:##:##.###'"
       required
       density="compact"
       :rules="[rules.time]"
