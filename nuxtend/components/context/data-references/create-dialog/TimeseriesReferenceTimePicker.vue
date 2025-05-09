@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useDate } from "vuetify";
+
 const date = defineModel<string>("date", {
   required: true,
 });
@@ -11,6 +13,11 @@ const rules = {
     return timeRegex.test(value) || "Invalid time format. Use HH:mm:ss.###";
   },
 };
+
+const adapter = useDate();
+function format(date: Date) {
+  return adapter.toISO(date);
+}
 </script>
 <template>
   <v-col class="pa-0 pr-2">
@@ -18,13 +25,14 @@ const rules = {
       v-model="date"
       label="Date"
       variant="outlined"
+      :display-format="format"
+      placeholder="YYYY-MM-DD"
       append-inner-icon="mdi-calendar-edit-outline"
       prepend-icon=""
       density="compact"
       required
     />
   </v-col>
-
   <v-col class="pa-0">
     <v-text-field
       v-model="time"
