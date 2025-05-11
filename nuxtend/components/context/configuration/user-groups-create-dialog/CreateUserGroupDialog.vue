@@ -119,7 +119,13 @@ const validationRules = [
         </v-row>
         <v-row>
           <v-col>
-            <PermissionTypeInput v-model:permission-type="permissionType" />
+            <PermissionTypeInput
+              v-model:permission-type="permissionType"
+              :limited-permission-set="[
+                PermissionType.Private,
+                PermissionType.PublicReadable,
+              ]"
+            />
           </v-col>
         </v-row>
       </v-form>

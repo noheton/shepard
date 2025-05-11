@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { PermissionType } from "@dlr-shepard/backend-client";
 
+defineProps<{ limitedPermissionSet?: PermissionType[] }>();
+
 const permissionType = defineModel<PermissionType>("permissionType", {
   required: true,
 });
@@ -9,7 +11,7 @@ const permissionType = defineModel<PermissionType>("permissionType", {
 <template>
   <v-select
     v-model:model-value="permissionType"
-    :items="Object.values(PermissionType)"
+    :items="limitedPermissionSet ?? Object.values(PermissionType)"
     label="Permissions*"
     variant="outlined"
     density="compact"
