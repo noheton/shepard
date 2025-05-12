@@ -100,7 +100,7 @@ const validationRules = [
             <v-text-field
               v-model:model-value="userGroupTitle"
               :rules="validationRules"
-              label="Title*"
+              label="Group Name"
               variant="outlined"
               density="compact"
               require
@@ -125,8 +125,12 @@ const validationRules = [
                 PermissionType.Private,
                 PermissionType.PublicReadable,
               ]"
+              no-required-hint
             />
           </v-col>
+        </v-row>
+        <v-row>
+          <v-col><MandatoryFieldHint /></v-col>
         </v-row>
       </v-form>
     </template>
