@@ -132,6 +132,7 @@ const uploadFiles = async () => {
 <style lang="scss" scoped>
 :deep(.v-file-upload) {
   border-color: rgb(var(--v-theme-medium-emphasis)) !important;
+  background-color: rgb(var(--v-theme-canvas));
 }
 
 :deep(.v-file-upload-title) {
