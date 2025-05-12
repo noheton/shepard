@@ -63,7 +63,7 @@ fetchData();
                 <template #buttons>
                   <UploadFilesButton
                     v-if="container.isAllowedToEditData.value"
-                    accept="application/csv"
+                    accept=".csv"
                     button-text="Upload CSV"
                     dialog-title="Upload CSV"
                     :filter="filterFiles"
