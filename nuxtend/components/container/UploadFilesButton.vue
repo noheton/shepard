@@ -35,7 +35,7 @@ withDefaults(defineProps<UploadFilesButtonProps>(), {
   <FileUploadDialog
     v-if="showFileUploadDialog"
     v-model:show-dialog="showFileUploadDialog"
-    accept=".json"
+    :accept="accept"
     :filter="filter"
     :max-width="maxWidth"
     :multiple="multiple"
