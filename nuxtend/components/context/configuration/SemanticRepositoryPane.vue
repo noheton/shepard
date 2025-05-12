@@ -3,15 +3,16 @@ import {
   SemanticRepositoryApi,
   type SemanticRepository,
 } from "@dlr-shepard/backend-client";
+import { ConfigurationFragments } from "~/components/context/configuration/configurationMenuItems";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
 import { handleSemanticRepositoryListUpdate } from "~/utils/resourceUpdateBus";
-import { ConfigurationFragments } from "./configurationMenuItems";
 
 const showCreateDialog = ref(false);
 
 const headers = [
   { title: "ID", key: "id", sortable: true, width: "20%" },
-  { title: "Name", key: "name", sortable: true, width: "40%" },
+  { title: "Name", key: "name", sortable: true },
+  { title: "URL", key: "url", sortable: true },
   { title: "Created at", key: "createdAt", sortable: true },
   {
     title: "",
@@ -110,6 +111,9 @@ async function onDelete() {
       </template>
       <template #[`item.id`]="{ item }: { item: SemanticRepository }">
         <span class="text-textbody">#{{ item.id }}</span>
+      </template>
+      <template #[`item.url`]="{ item }: { item: SemanticRepository }">
+        <TextLink :text="item.endpoint" :to="item.endpoint" target="_blank" />
       </template>
       <template #[`item.createdAt`]="{ item }: { item: SemanticRepository }">
         <div class="d-flex flex-column">
