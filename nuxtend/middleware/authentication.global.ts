@@ -1,7 +1,7 @@
 import publicEndpoints from "./publicEndpoints";
 
-export default defineNuxtRouteMiddleware(to => {
-  const { status, signIn, data } = useAuth();
+export default defineNuxtRouteMiddleware(async to => {
+  const { status, signIn, data, getSession } = useAuth();
 
   // don't allow signed in users with a valid session to access the signIn page
   if (
@@ -27,6 +27,10 @@ export default defineNuxtRouteMiddleware(to => {
     });
     redirectCookie.value = to.fullPath;
   }
+
+  //to refresh the session even when the user stays inactive for long
+  //only results in a call to the OIDC provider if the token is expired
+  await getSession();
 
   // this handles the case that the user has an authenticated session, but the session contains an error
   if (data.value?.error) {

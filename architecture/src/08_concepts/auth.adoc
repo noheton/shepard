@@ -93,7 +93,7 @@ Each container has its own permission.
 Permissions are also applied to collections.
 All other entities related to the collection, like data objects or references, inherit the permission that is applied to the collection.
 
-Permissions also can be individually set and retrieved for each usergroup. 
+Permissions also can be individually set and retrieved for each usergroup.
 Allowing everyone in that group with manage permissions to view or change these permissions.
 
 ====== Remark about Container Permissions
@@ -312,7 +312,7 @@ After this setup we should be able to authenticate using the specified OIDC prov
 
 To handle token and session refresh we can use the `jwt()` and `session()` callbacks to control the behavior in the same `NuxtAuthHandler`.
 
-The `jwt()` callback handles three different scenarios:
+The `jwt()` callback handles four different scenarios:
 
 1. The user initially signed in by clicking on the `Sign In` button. Then, the `jwt()` function retrieves a `token` and an `account` object. Whereas the received `token` object looks like this:
 +
@@ -351,6 +351,7 @@ interface JWT {
   accessToken: string;
   idToken: string;
   refreshToken: string;
+  refreshTokenExpiresAt?: number;
   error?: "RefreshTokenError";
   userId: string;
 }
@@ -362,7 +363,24 @@ interface JWT {
 Date.now() < (token.expiresAt * 1000 - REFRESH_INTERVAL * 2)
 ```
 
-3. The third scenario occurs when the condition of scenario 2 is false. This implies that the access token needs to be refreshed by providing the current access token and the current refresh token to the OIDC provider.
+3. The third scenario occurs when the refresh token is invalid.
++
+The `refresh_token` could be not found or expired.
++
+In this scenario we check for the expiry set in scenario 1 or 4 with `refreshTokenExpiresAt`.
++
+```typescript
+!token.refreshToken ||
+(token.refreshTokenExpiresAt && Date.now() >= token.refreshTokenExpiresAt * 1000)
+```
++
+This is usually the case when the app is unused for a long time and the session is not being refreshed, therefore the `refresh_token` is not invalid.
++
+If the `refresh_token` is invalid, an error is assigned to the token to trigger a user sign in.
+
+4. The fourth scenario occurs when the access token should and could be refreshed.
++
+This implies that the access token needs to be refreshed by providing the current access token and the current refresh token to the OIDC provider.
 In this scenario we utilize the `token` object that was initialized in the first scenario, which is extended by the Nuxt auth with a couple of fields, like `iat` or `exp`. The `token` object that is used in this scenario looks like this:
 +
 ```typescript
@@ -394,4 +412,9 @@ This defines a list of endpoints that do not require a logged in user, i.e., the
 
 As long as the user stays on the page and has a network connection to the OIDC provider, the user session is refreshed infinitely.
 When the user closes the browser or tab of the frontend, the session cannot be refreshed and the access token expires.
-In this case an error message should be shown (Invalid Authentication), which requires the user to either reload the page, click on the sign-in button or redirect to a different protected page to trigger the sign-in that creates a new user session.
+
+In this case the user should be redirected to the sign in page to give credentials and create a new session.
+
+In the case of the user being away for a long time or letting the computer into sleep mode, the session is not refreshed anymore, therefore any operations that do not result in either reloading the page or navigating to new page would result in an error (Invalid Authentication).
+
+This requires the user to either reload the page or redirect to a different protected page to trigger the sign-in.
