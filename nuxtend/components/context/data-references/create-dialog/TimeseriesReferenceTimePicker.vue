@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { vMaska } from "maska/vue";
-import { useDate } from "vuetify";
 
 const date = defineModel<string>("date", {
   required: true,
@@ -8,37 +7,83 @@ const date = defineModel<string>("date", {
 const time = defineModel<string>("time", {
   required: true,
 });
+
+const showDatePicker = ref(false);
+const datePicker = ref<string>();
+const dateInput = ref<string>();
+const timeInput = ref<string>();
+
 const rules = {
   time: (value: string): boolean | string => {
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d+)?$/;
     return timeRegex.test(value) || "Invalid time format. Use HH:mm:ss.###";
   },
+  date: (value: string): boolean | string => {
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return dateRegex.test(value) || "Invalid date format. Use YYYY-MM-DD";
+  },
 };
+watch(dateInput, () => {
+  if (dateInput.value) {
+    datePicker.value = dateInput.value;
+    if (rules.date(dateInput.value)) date.value = dateInput.value;
+  }
+});
+watch(timeInput, () => {
+  if (timeInput.value && rules.time(timeInput.value))
+    time.value = timeInput.value;
+});
 
-const adapter = useDate();
-function format(date: Date) {
-  return adapter.toISO(date);
+function formatDate(value: string) {
+  // If it's a Date object or can be parsed as one, format it
+  try {
+    const dateObj = new Date(value);
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  } catch {
+    // If parsing fails, return empty string
+    return "";
+  }
+}
+
+function handleDateSelection(selectedDate: string) {
+  dateInput.value = formatDate(selectedDate);
+  showDatePicker.value = false;
 }
 </script>
 <template>
   <v-col class="pa-0 pr-2">
-    <v-date-input
-      v-model="date"
+    <v-text-field
+      v-model="dateInput"
       v-maska="'####-##-##'"
       label="Date"
       variant="outlined"
-      :display-format="format"
       bg-color="canvas"
       placeholder="YYYY-MM-DD"
       append-inner-icon="mdi-calendar-edit-outline"
       prepend-icon=""
       density="compact"
       required
-    />
+    >
+      <v-menu
+        v-model="showDatePicker"
+        :close-on-content-click="false"
+        transition="scale-transition"
+        min-width="auto"
+        activator="parent"
+      >
+        <v-date-picker
+          :model-value="datePicker"
+          @update:model-value="handleDateSelection"
+        />
+      </v-menu>
+    </v-text-field>
   </v-col>
   <v-col class="pa-0">
     <v-text-field
-      v-model="time"
+      v-model="timeInput"
       v-maska="'##:##:##.###'"
       required
       density="compact"

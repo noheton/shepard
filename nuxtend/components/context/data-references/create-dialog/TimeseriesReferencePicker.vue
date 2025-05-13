@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { useDate } from "vuetify";
 import type { TimeseriesRefItem } from "./CreateDataReferenceDialog.vue";
 import type { TimeseriesRef } from "./DataRef";
 import TimeseriesReferenceTimePicker from "./TimeseriesReferenceTimePicker.vue";
-
-const adapter = useDate();
 
 const { items, loading } = defineProps<{
   items: TimeseriesRefItem[] | undefined;
@@ -58,7 +55,7 @@ watch(selectedTimeseriesList, () => {
 watch([startDate, startTime], () => {
   if (!!startDate.value && !!startTime.value) {
     const formattedStart =
-      Date.parse(adapter.toISO(startDate.value) + " " + startTime.value) * 1e6;
+      Date.parse(startDate.value + " " + startTime.value) * 1e6;
     if (timeseriesReference.value?.start !== undefined)
       timeseriesReference.value.start = formattedStart;
     else
@@ -71,8 +68,7 @@ watch([startDate, startTime], () => {
 });
 watch([endDate, endTime], () => {
   if (!!endDate.value && !!endTime.value) {
-    const formattedEnd =
-      Date.parse(adapter.toISO(endDate.value) + " " + endTime.value) * 1e6;
+    const formattedEnd = Date.parse(endDate.value + " " + endTime.value) * 1e6;
 
     if (timeseriesReference.value?.end !== undefined)
       timeseriesReference.value.end = formattedEnd;
