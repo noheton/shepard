@@ -12,7 +12,7 @@ const showCreateDialog = ref(false);
 const headers = [
   { title: "ID", key: "id", sortable: true, width: "20%" },
   { title: "Name", key: "name", sortable: true },
-  { title: "URL", key: "url", sortable: true },
+  { title: "URL", key: "endpoint", sortable: true },
   { title: "Created at", key: "createdAt", sortable: true },
   {
     title: "",
