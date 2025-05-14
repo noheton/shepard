@@ -19,11 +19,13 @@ const headers = [
 ];
 
 const sortBy = ref([{ key: "name", order: "asc" }]);
+const itemsPerPage = 10;
 </script>
 
 <template>
   <DataTable
     v-model:sort-by="sortBy"
+    :items-per-page="itemsPerPage"
     :cell-props="{
       class: 'text-textbody1',
     }"
@@ -31,7 +33,7 @@ const sortBy = ref([{ key: "name", order: "asc" }]);
       class: 'text-subtitle-2 text-textbody1',
     }"
     :headers="headers"
-    :items="items"
+    :items-for-pagination="items"
     :loading="loading"
     hover
   >
@@ -49,10 +51,6 @@ const sortBy = ref([{ key: "name", order: "asc" }]);
           @click="() => emit('delete-item', item)"
         />
       </ActionContainer>
-    </template>
-    <template #bottom>
-      <v-divider :thickness="8" color="divider2" opacity="1" />
-      <v-pagination :total-visible="6" />
     </template>
   </DataTable>
 </template>

@@ -114,6 +114,8 @@ const onDownload = (name: string) => {
 const onSelectedItemChanged = () => {
   numberOfSelectedItems.value = getSelectedTimeseries().length;
 };
+
+const itemsPerPage = 10;
 </script>
 
 <template>
@@ -215,6 +217,7 @@ const onSelectedItemChanged = () => {
               </v-col>
             </v-row>
             <DataTable
+              :items-per-page="itemsPerPage"
               :header-props="{
                 class: 'text-subtitle-2 text-textbody1',
               }"
@@ -222,7 +225,7 @@ const onSelectedItemChanged = () => {
                 class: 'text-textbody1',
               }"
               :headers="headers"
-              :items="timeseriesDataTableItems"
+              :items-for-pagination="timeseriesDataTableItems"
             >
               <template #[`item.isSelected`]="{ item }">
                 <v-checkbox

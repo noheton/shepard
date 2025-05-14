@@ -45,6 +45,8 @@ const headers = ref([
   { title: "", key: "actions" },
 ]);
 
+const itemsPerPage = 10;
+
 watch(files, () => {
   fileDataTableItems.value = mapShepardFilesToDataTableItems(files.value);
 });
@@ -183,6 +185,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
             </v-row>
             <v-row>
               <DataTable
+                :items-per-page="itemsPerPage"
                 :cell-props="{
                   class: 'text-textbody1',
                 }"
@@ -190,7 +193,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                   class: 'text-subtitle-2 text-textbody1',
                 }"
                 :headers="headers"
-                :items="fileDataTableItems"
+                :items-for-pagination="fileDataTableItems"
               >
                 <template
                   #[`item.name`]="{
@@ -232,10 +235,6 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                       @click="() => onShowFileContentDialog(value.showDetails)"
                     />
                   </ActionContainer>
-                </template>
-                <template #bottom>
-                  <v-divider :thickness="8" color="divider2" opacity="1" />
-                  <v-pagination :total-visible="10" />
                 </template>
               </DataTable>
             </v-row>

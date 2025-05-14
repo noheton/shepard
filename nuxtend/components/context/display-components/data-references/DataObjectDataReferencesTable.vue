@@ -66,19 +66,15 @@ const headers = [
   },
 ];
 
-const page = ref<number>(1);
 const itemsPerPage = 10;
-
-const pageCount = Math.ceil(tableItems.length / itemsPerPage);
 </script>
 
 <template>
   <EmptyListIcon v-if="tableItems.length === 0" label="No data yet" />
   <DataTable
     v-else
-    v-model:page="page"
     :headers="headers"
-    :items="tableItems"
+    :items-for-pagination="tableItems"
     :items-per-page="itemsPerPage"
     hover
   >
@@ -116,10 +112,6 @@ const pageCount = Math.ceil(tableItems.length / itemsPerPage);
           @click="() => openAddAnnotationDialog(value.elementId)"
         />
       </ActionContainer>
-    </template>
-    <template #bottom>
-      <v-divider :thickness="8" color="divider2" opacity="1" />
-      <v-pagination v-model="page" :length="pageCount" />
     </template>
   </DataTable>
 

@@ -33,6 +33,7 @@ const deleteFile = (file: ShepardFile) => {
 <template>
   <div>
     <DataTable
+      :items-per-page="10"
       :cell-props="{
         class: 'text-textbody1',
       }"
@@ -40,7 +41,7 @@ const deleteFile = (file: ShepardFile) => {
         class: 'text-subtitle-2 text-textbody1',
       }"
       :headers="headers"
-      :items="files"
+      :items-for-pagination="files"
       :loading="loading"
       hover
     >
@@ -62,10 +63,6 @@ const deleteFile = (file: ShepardFile) => {
             @click="deleteFile(item)"
           />
         </ActionContainer>
-      </template>
-      <template #bottom>
-        <v-divider :thickness="8" color="divider2" opacity="1" />
-        <v-pagination :total-visible="6" />
       </template>
     </DataTable>
     <ConfirmDeleteDialog

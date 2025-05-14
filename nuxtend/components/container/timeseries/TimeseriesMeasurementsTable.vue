@@ -32,10 +32,13 @@ const columns = ref([
   { title: "Symbolic Name", key: "symbolicName", sortable: true },
   { title: "Field", key: "field", sortable: true },
 ]);
+
+const itemsPerPage = 10;
 </script>
 
 <template>
   <DataTable
+    :items-per-page="itemsPerPage"
     :cell-props="{
       class: 'text-textbody1',
     }"
@@ -43,7 +46,7 @@ const columns = ref([
       class: 'text-subtitle-2 text-textbody1',
     }"
     :headers="columns"
-    :items="am"
+    :items-for-pagination="am"
     hover
     item-value="id"
     show-expand
@@ -89,10 +92,6 @@ const columns = ref([
           </v-table>
         </td>
       </tr>
-    </template>
-    <template #bottom>
-      <v-divider :thickness="8" color="divider2" opacity="1" />
-      <v-pagination :total-visible="6" />
     </template>
   </DataTable>
 </template>

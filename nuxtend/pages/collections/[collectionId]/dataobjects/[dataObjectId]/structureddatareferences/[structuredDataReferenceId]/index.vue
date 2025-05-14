@@ -82,6 +82,8 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
   selectedPayload.value = structuredDataPayload;
   showStructuredDataContentViewerDialog.value = true;
 }
+
+const itemsPerPage = 10;
 </script>
 
 <template>
@@ -159,6 +161,7 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
             </v-row>
             <v-row>
               <DataTable
+                :items-per-page="itemsPerPage"
                 :cell-props="{
                   class: 'text-textbody1',
                 }"
@@ -166,7 +169,7 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
                   class: 'text-subtitle-2 text-textbody1',
                 }"
                 :headers="headers"
-                :items="structuredDataDataTableItems"
+                :items-for-pagination="structuredDataDataTableItems"
               >
                 <template
                   #[`item.name`]="{
@@ -205,10 +208,6 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
                       "
                     />
                   </ActionContainer>
-                </template>
-                <template #bottom>
-                  <v-divider :thickness="8" color="divider2" opacity="1" />
-                  <v-pagination :total-visible="10" />
                 </template>
               </DataTable>
             </v-row>
