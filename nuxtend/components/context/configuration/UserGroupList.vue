@@ -16,32 +16,26 @@ const handleUserGroupCreated = (userGroupId: number) => {
 </script>
 
 <template>
-  <div class="d-flex align-center ga-4">
-    <h4 class="text-h4">User Groups</h4>
-  </div>
-
-  <div class="d-flex justify-end pt-8">
-    <v-btn
-      class="bg-primary text-canvas"
-      variant="flat"
-      :style="{ marginTop: '3px' }"
-      @click="showCreateDialog = true"
-    >
-      <template #prepend>
-        <v-icon icon="mdi-plus-circle" color="canvas" />
-      </template>
-      Add User Group
-    </v-btn>
-    <CreateUserGroupDialog
-      v-if="showCreateDialog"
-      v-model:show-dialog="showCreateDialog"
-      @user-group-created="handleUserGroupCreated"
-    />
-  </div>
-
-  <UserGroupsTable
-    :user-groups="userGroups"
-    :loading="isLoading"
-    @select-user-group="userGroupId => emit('select-user-group', userGroupId)"
-  />
+  <ConfigurationPane
+    title="User Groups"
+    add-button-text="Add User Group"
+    @show-create-dialog="showCreateDialog = true"
+  >
+    <template #create-dialog>
+      <CreateUserGroupDialog
+        v-if="showCreateDialog"
+        v-model:show-dialog="showCreateDialog"
+        @user-group-created="handleUserGroupCreated"
+      />
+    </template>
+    <template #table>
+      <UserGroupsTable
+        :user-groups="userGroups"
+        :loading="isLoading"
+        @select-user-group="
+          userGroupId => emit('select-user-group', userGroupId)
+        "
+      />
+    </template>
+  </ConfigurationPane>
 </template>
