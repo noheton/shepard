@@ -81,7 +81,7 @@ fetchData();
                     dialog-title="Upload JSON"
                     :filter="filterFiles"
                     :upload-file="uploadFile"
-                    @upload-finished="() => fetchData()"
+                    @upload-finished="fetchData"
                   />
                   <EditPermissionsButton
                     v-if="container.isAllowedToEditPermissions.value"

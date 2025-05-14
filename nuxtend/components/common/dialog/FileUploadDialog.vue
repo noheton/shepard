@@ -10,9 +10,7 @@ interface FileUploadDialogProps {
 
 const props = defineProps<FileUploadDialogProps>();
 
-const emits = defineEmits<{
-  (e: "uploadFinished"): void;
-}>();
+const emits = defineEmits(["uploadFinished"]);
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,

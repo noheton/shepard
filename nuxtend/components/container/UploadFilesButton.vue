@@ -9,9 +9,7 @@ export interface UploadFilesButtonProps {
   uploadFile: (file: File) => Promise<void>;
 }
 
-const emits = defineEmits<{
-  (e: "upload-finished"): void;
-}>();
+const emits = defineEmits(["upload-finished"]);
 
 const showFileUploadDialog = ref<boolean>(false);
 withDefaults(defineProps<UploadFilesButtonProps>(), {
