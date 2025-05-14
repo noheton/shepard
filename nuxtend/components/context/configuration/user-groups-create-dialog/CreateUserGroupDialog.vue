@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import {
-  PermissionType,
-  SearchApi,
-  UserGroupApi,
-} from "@dlr-shepard/backend-client";
+import { PermissionType } from "@dlr-shepard/backend-client";
+import { createUserGroup } from "~/composables/context/useCreateUserGroup";
 
 const isValid = ref(true);
 const userGroupTitle = ref<string>("");
@@ -19,70 +16,31 @@ const emit = defineEmits<{
   (e: "user-group-created", userGroupId: number): void;
 }>();
 
-const userGroupSearchStringParam = (name: string) =>
-  JSON.stringify({
-    property: "name",
-    value: name,
-    operator: "eq",
-  });
-
-async function createUserGroup() {
-  await createApiInstance(SearchApi)
-    .searchUserGroups({
-      userSearchBody: {
-        searchParams: {
-          query: userGroupSearchStringParam(userGroupTitle.value),
-        },
-      },
-    })
-    .then(searchResults => {
-      if (searchResults.results && searchResults.results.length > 0) {
-        titleError.value = true;
-        handleError(
-          `User group name "${userGroupTitle.value}" already exists`,
-          "creating user group",
-        );
-        return;
-      }
-      createApiInstance(UserGroupApi)
-        .createUserGroup({
-          userGroup: {
-            name: userGroupTitle.value,
-            usernames: [],
-          },
-        })
-        .then(response => {
-          const createdUserGroup = response;
-          createApiInstance(UserGroupApi)
-            .editUserGroupPermissions({
-              userGroupId: createdUserGroup.id,
-              permissions: {
-                permissionType: permissionType.value,
-                reader: [],
-                writer: [],
-                manager: [],
-              },
-            })
-            .then(_ => {
-              emitSuccess(
-                `Successfully created user group "${createdUserGroup.name}"`,
-              );
-              emit("user-group-created", createdUserGroup.id);
-              showDialog.value = false;
-            });
-        })
-        .catch(error => {
-          handleError(error, "creating user group");
-        });
-    });
-}
-
 const validationRules = [
   (value: unknown) => {
     if (value) return true;
     return `Title is required.`;
   },
 ];
+
+async function onSubmit() {
+  await createUserGroup(userGroupTitle.value, permissionType.value).then(
+    response => {
+      if (!response) {
+        titleError.value = true;
+        return;
+      }
+      emit("user-group-created", response.id);
+      showDialog.value = false;
+    },
+  );
+}
+
+function updateErrorState() {
+  if (titleError.value === true) {
+    titleError.value = false;
+  }
+}
 </script>
 <template>
   <FormDialog
@@ -91,7 +49,7 @@ const validationRules = [
     title="Create User Group"
     :submit-disabled="!isValid"
     save-button-text="Add"
-    @submit="createUserGroup"
+    @submit="onSubmit"
   >
     <template #form>
       <v-form ref="form" v-model="isValid">
@@ -107,13 +65,7 @@ const validationRules = [
               color="primary"
               :error="titleError"
               hide-details
-              @update:model-value="
-                () => {
-                  if (titleError === true) {
-                    titleError = false;
-                  }
-                }
-              "
+              @update:model-value="updateErrorState"
             />
           </v-col>
         </v-row>
