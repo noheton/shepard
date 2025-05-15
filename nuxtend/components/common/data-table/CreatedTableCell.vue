@@ -2,6 +2,7 @@
 defineProps<{
   createdAt: Date;
   createdBy: string;
+  biggerFont?: boolean;
 }>();
 </script>
 
@@ -11,7 +12,10 @@ defineProps<{
   </div>
   <div
     class="text-textbody2 text-body-2"
-    :style="{ fontSize: '0.75rem !important', lineHeight: '16px' }"
+    :style="{
+      fontSize: biggerFont ? '' : '0.75rem !important',
+      lineHeight: '16px',
+    }"
   >
     by {{ createdBy }}
   </div>

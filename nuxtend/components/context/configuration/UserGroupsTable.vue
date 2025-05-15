@@ -50,18 +50,11 @@ const headers = [
           <span class="text-textbody">{{ rowProps.item.name }}</span>
         </template>
         <template #[`item.createdAt`]>
-          <div class="d-flex flex-column">
-            <span class="text-textbody">
-              {{
-                rowProps.item.createdAt
-                  ? toShortDateString(rowProps.item.createdAt)
-                  : "-"
-              }}
-            </span>
-            <span v-if="rowProps.item.createdBy" class="text-textbody2">
-              by {{ rowProps.item.createdBy }}
-            </span>
-          </div>
+          <CreatedTableCell
+            :created-at="rowProps.item.createdAt"
+            :created-by="rowProps.item.createdBy"
+            :biggerFont="true"
+          />
         </template>
       </v-data-table-row>
     </template>
