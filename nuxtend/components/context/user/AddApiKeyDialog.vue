@@ -4,6 +4,7 @@ import {
   type ApiKeyWithJWT,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -21,7 +22,7 @@ const currentStep = ref(1);
 const steps = ["Create Api Key", "View Api key"];
 const createButtonDisabled = computed(() => !newKeyName.value);
 
-const apikeyApi = createApiInstance(ApikeyApi);
+const apikeyApi = useShepardApi(ApikeyApi);
 
 const createdKey = ref<ApiKeyWithJWT>();
 const dialogDisabled = ref(false);
@@ -29,7 +30,7 @@ const dialogDisabled = ref(false);
 async function createApiKey() {
   try {
     dialogDisabled.value = true;
-    createdKey.value = await apikeyApi.createApiKey({
+    createdKey.value = await apikeyApi.value.createApiKey({
       username: props.username,
       apiKey: { name: newKeyName.value },
     });

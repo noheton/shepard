@@ -9,6 +9,7 @@ import type {
   FileMeta,
   FileReferenceWithContainerMeta,
 } from "~/components/context/display-components/file-references/fileReferenceTypes";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchFileReference(
   collectionId: number,
@@ -21,8 +22,8 @@ export function useFetchFileReference(
   const files = ref<FileMeta[]>([]);
 
   async function fetchFileReference() {
-    createApiInstance(FileReferenceApi)
-      .getFileReference({
+    useShepardApi(FileReferenceApi)
+      .value.getFileReference({
         collectionId,
         dataObjectId,
         fileReferenceId,
@@ -47,8 +48,8 @@ export function useFetchFileReference(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(FileContainerApi)
-      .getFileContainer({ fileContainerId: containerId })
+    return useShepardApi(FileContainerApi)
+      .value.getFileContainer({ fileContainerId: containerId })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,
@@ -64,8 +65,8 @@ export function useFetchFileReference(
   }
 
   async function fetchReferencedFiles(): Promise<ShepardFile[]> {
-    return createApiInstance(FileReferenceApi)
-      .getFiles({
+    return useShepardApi(FileReferenceApi)
+      .value.getFiles({
         collectionId,
         dataObjectId,
         fileReferenceId,
@@ -79,8 +80,8 @@ export function useFetchFileReference(
   async function fetchExistingFilesInContainer(
     fileContainerId: number,
   ): Promise<ShepardFile[]> {
-    return createApiInstance(FileContainerApi)
-      .getAllFiles({ fileContainerId })
+    return useShepardApi(FileContainerApi)
+      .value.getAllFiles({ fileContainerId })
       .catch(error => {
         handleError(error, "getFiles");
         return [];

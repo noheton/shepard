@@ -1,4 +1,5 @@
 import { type UserGroup, UserGroupApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchUserGroups() {
   const userGroups = ref<UserGroup[]>([]);
@@ -6,8 +7,8 @@ export function useFetchUserGroups() {
 
   async function fetchUserGroups() {
     isLoading.value = true;
-    createApiInstance(UserGroupApi)
-      .getAllUserGroups({ orderDesc: false })
+    useShepardApi(UserGroupApi)
+      .value.getAllUserGroups({ orderDesc: false })
       .then(response => {
         userGroups.value = response;
         isLoading.value = false;

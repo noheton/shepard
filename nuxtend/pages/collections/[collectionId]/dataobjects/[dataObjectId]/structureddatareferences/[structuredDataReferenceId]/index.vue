@@ -3,6 +3,7 @@ import { StructuredDataReferenceApi } from "@dlr-shepard/backend-client";
 import ActionButton from "~/components/common/data-table/ActionButton.vue";
 import type { StructuredDataDataTableItem } from "~/components/context/display-components/structured-data-references/structuredDataDataTableItem";
 import { mapStructuredDataListToDataTableItems } from "~/components/context/display-components/structured-data-references/structuredDataMappingUtil";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchStructuredDataReference } from "~/composables/context/useFetchStructuredDataReference";
 
 definePageMeta({ layout: "collection" });
@@ -57,8 +58,8 @@ function onDelete() {
 
 function deleteStructuredDataReference() {
   if (structuredDataReference.value) {
-    createApiInstance(StructuredDataReferenceApi)
-      .deleteStructuredDataReference({
+    useShepardApi(StructuredDataReferenceApi)
+      .value.deleteStructuredDataReference({
         collectionId,
         dataObjectId,
         structuredDataReferenceId: structuredDataReference.value.id,

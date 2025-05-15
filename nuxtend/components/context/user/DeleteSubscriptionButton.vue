@@ -3,6 +3,7 @@ import {
   type ResponseError,
   SubscriptionApi,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{
   username: string;
@@ -11,11 +12,11 @@ const props = defineProps<{
 const showDeleteDialog = ref(false);
 const emit = defineEmits(["deleted"]);
 
-const subscriptionApi = createApiInstance(SubscriptionApi);
+const subscriptionApi = useShepardApi(SubscriptionApi);
 
 async function deleteSubscription() {
   try {
-    await subscriptionApi.deleteSubscription({
+    await subscriptionApi.value.deleteSubscription({
       username: props.username,
       subscriptionId: props.subscriptionId,
     });

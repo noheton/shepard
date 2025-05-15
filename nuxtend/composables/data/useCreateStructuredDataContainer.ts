@@ -2,14 +2,15 @@ import {
   StructuredDataContainerApi,
   type PermissionType,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export async function useCreateStructuredDataContainer(
   structuredDataContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = createApiInstance(StructuredDataContainerApi);
+  const api = useShepardApi(StructuredDataContainerApi);
 
-  const newStructuredDataContainer = await api
+  const newStructuredDataContainer = await api.value
     .createStructuredDataContainer({
       structuredDataContainer: { name: structuredDataContainerName },
     })
@@ -22,7 +23,7 @@ export async function useCreateStructuredDataContainer(
     });
   if (!newStructuredDataContainer) return;
 
-  const currentPermissions = await api
+  const currentPermissions = await api.value
     .getStructuredDataPermissions({
       structuredDataContainerId: newStructuredDataContainer.id,
     })
@@ -35,7 +36,7 @@ export async function useCreateStructuredDataContainer(
     });
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await api
+  const permissionsUpdateSuccess = await api.value
     .editStructuredDataPermissions({
       structuredDataContainerId: newStructuredDataContainer.id,
       permissions: {

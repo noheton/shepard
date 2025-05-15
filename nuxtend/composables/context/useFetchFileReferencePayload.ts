@@ -2,6 +2,7 @@ import {
   FileReferenceApi,
   type ShepardFile,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchFileReferencePayload(
   collectionId: number,
@@ -11,8 +12,8 @@ export function useFetchFileReferencePayload(
   const files = ref<ShepardFile[]>([]);
 
   function fetchFiles() {
-    createApiInstance(FileReferenceApi)
-      .getFiles({
+    useShepardApi(FileReferenceApi)
+      .value.getFiles({
         collectionId,
         dataObjectId,
         fileReferenceId,

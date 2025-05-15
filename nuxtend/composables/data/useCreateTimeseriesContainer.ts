@@ -2,14 +2,15 @@ import {
   TimeseriesContainerApi,
   type PermissionType,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export async function useCreateTimeseriesContainer(
   timeseriesContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = createApiInstance(TimeseriesContainerApi);
+  const api = useShepardApi(TimeseriesContainerApi);
 
-  const newTimeseriesContainer = await api
+  const newTimeseriesContainer = await api.value
     .createTimeseriesContainer({
       timeseriesContainer: { name: timeseriesContainerName },
     })
@@ -22,7 +23,7 @@ export async function useCreateTimeseriesContainer(
     });
   if (!newTimeseriesContainer) return;
 
-  const currentPermissions = await api
+  const currentPermissions = await api.value
     .getTimeseriesPermissions({
       timeseriesContainerId: newTimeseriesContainer.id,
     })
@@ -35,7 +36,7 @@ export async function useCreateTimeseriesContainer(
     });
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await api
+  const permissionsUpdateSuccess = await api.value
     .editTimeseriesPermissions({
       timeseriesContainerId: newTimeseriesContainer.id,
       permissions: {

@@ -1,4 +1,5 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export interface DataObjectSearchResult {
   dataObjectName: string;
@@ -36,7 +37,7 @@ export function useDataObjectSearch(
       searchStringParam = createSearchQueryFromString(query);
     }
 
-    const searchResponse = await createApiInstance(SearchApi).search({
+    const searchResponse = await useShepardApi(SearchApi).value.search({
       searchBody: {
         searchParams: { query: searchStringParam, queryType: "DataObject" },
         scopes: [{ collectionId: collectionIdParam, traversalRules: [] }],

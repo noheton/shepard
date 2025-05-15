@@ -5,6 +5,7 @@ import {
   type LabJournalEntry,
   type Roles,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface DataObjectLabJournalEntryListProps {
   collectionId: number;
@@ -18,8 +19,8 @@ const userRoles = ref<Roles | undefined>(undefined);
 
 async function fetchLabJournalEntries(dataObjectId: number | undefined) {
   if (dataObjectId) {
-    createApiInstance(LabJournalEntryApi)
-      .getLabJournalsByCollection({ dataObjectId })
+    useShepardApi(LabJournalEntryApi)
+      .value.getLabJournalsByCollection({ dataObjectId })
       .then(response => {
         entries.value = response;
         emit("numberOfEntriesChanged", entries.value.length);
@@ -31,8 +32,8 @@ async function fetchLabJournalEntries(dataObjectId: number | undefined) {
 }
 
 async function fetchRoles() {
-  createApiInstance(CollectionApi)
-    .getCollectionRoles({ collectionId: props.collectionId })
+  useShepardApi(CollectionApi)
+    .value.getCollectionRoles({ collectionId: props.collectionId })
     .then(response => {
       userRoles.value = response;
     })

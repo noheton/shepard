@@ -2,14 +2,15 @@ import {
   FileContainerApi,
   type PermissionType,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export async function useCreateFileContainer(
   fileContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = createApiInstance(FileContainerApi);
+  const api = useShepardApi(FileContainerApi);
 
-  const newFileContainer = await api
+  const newFileContainer = await api.value
     .createFileContainer({
       fileContainer: { name: fileContainerName },
     })
@@ -22,7 +23,7 @@ export async function useCreateFileContainer(
     });
   if (!newFileContainer) return;
 
-  const currentPermissions = await api
+  const currentPermissions = await api.value
     .getFilePermissions({ fileContainerId: newFileContainer.id })
     .then(response => {
       return response;
@@ -33,7 +34,7 @@ export async function useCreateFileContainer(
     });
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await api
+  const permissionsUpdateSuccess = await api.value
     .editFilePermissions({
       fileContainerId: newFileContainer.id,
       permissions: {

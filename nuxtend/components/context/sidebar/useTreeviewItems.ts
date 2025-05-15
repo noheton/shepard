@@ -1,6 +1,9 @@
 import { DataObjectApi, ResponseError } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
+
+const dataObjectApi = useShepardApi(DataObjectApi);
 
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
@@ -8,7 +11,7 @@ export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
 
   async function fetchTreeviewItems(collectionId: number) {
-    await createApiInstance(DataObjectApi)
+    await dataObjectApi.value
       .getAllDataObjects({ collectionId, parentId: -1 })
       .then(response => {
         // initial load of dataobject from a collection - no parents possible
@@ -200,7 +203,7 @@ async function fetchTreeviewItem(
   dataObjectId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem | undefined> {
-  return createApiInstance(DataObjectApi)
+  return dataObjectApi.value
     .getDataObject({
       collectionId,
       dataObjectId,
@@ -219,7 +222,7 @@ async function fetchChildrenOfItem(
   parentId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem[] | undefined> {
-  return createApiInstance(DataObjectApi)
+  return dataObjectApi.value
     .getAllDataObjects({
       parentId,
       collectionId,

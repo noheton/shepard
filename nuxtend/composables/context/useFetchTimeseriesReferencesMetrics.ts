@@ -1,5 +1,6 @@
 import type { ResponseError } from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export type Metrics = {
   MIN: string;
@@ -23,8 +24,8 @@ export async function useFetchTimeseriesReferenceMetrics(
   symbolicName: string,
   field: string,
 ): Promise<Metrics | undefined> {
-  const metrics = await createApiInstance(TimeseriesReferenceApi)
-    .getMetricsOfTimeseriesReference({
+  const metrics = await useShepardApi(TimeseriesReferenceApi)
+    .value.getMetricsOfTimeseriesReference({
       collectionId,
       dataObjectId,
       timeseriesReferenceId,

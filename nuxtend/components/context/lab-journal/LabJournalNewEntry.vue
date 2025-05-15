@@ -5,6 +5,7 @@ import {
   type LabJournalEntry,
 } from "@dlr-shepard/backend-client";
 import RichTextEditor from "~/components/common/editor/RichTextEditor.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const dataObjectId = defineModel<number>({
   required: true,
@@ -28,8 +29,8 @@ async function resetNewLabJournalEntry() {
 
 async function saveNewLabJournalEntry() {
   if (newLabJournalEntryModel.value) {
-    createApiInstance(LabJournalEntryApi)
-      .createLabJournal({
+    useShepardApi(LabJournalEntryApi)
+      .value.createLabJournal({
         labJournalEntry: newLabJournalEntryModel.value,
         dataObjectId: dataObjectId.value,
       })

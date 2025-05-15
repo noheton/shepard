@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import ConfirmDeleteDialog from "~/components/common/ConfirmDeleteDialog.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{
   collectionId: number;
@@ -21,8 +22,8 @@ const showDeleteDialog = ref(false);
 const showContextMenuButton = ref<boolean>(false);
 
 async function deleteItem() {
-  const deletionSuccessful = await createApiInstance(DataObjectApi)
-    .deleteDataObject({
+  const deletionSuccessful = await useShepardApi(DataObjectApi)
+    .value.deleteDataObject({
       collectionId: props.collectionId,
       dataObjectId: props.dataObjectId,
     })

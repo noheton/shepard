@@ -20,13 +20,14 @@ import type {
   RelatedEntity,
   Successor,
 } from "~/components/context/display-components/relationships/relatedEntity";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   const relatedEntities = ref<RelatedEntity[] | undefined>(undefined);
 
   async function fetchURIReferences(): Promise<URIReference[]> {
-    return createApiInstance(UriReferenceApi)
-      .getAllUriReferences({ collectionId, dataObjectId })
+    return useShepardApi(UriReferenceApi)
+      .value.getAllUriReferences({ collectionId, dataObjectId })
       .catch(error => {
         handleError(error, "fetchURIReferences");
         return [];
@@ -36,8 +37,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   async function fetchDataObjectReferences(): Promise<
     DataObjectReferenceWithPayload[]
   > {
-    const dataObjectReferences = await createApiInstance(DataObjectReferenceApi)
-      .getAllDataObjectReferences({ collectionId, dataObjectId })
+    const dataObjectReferences = await useShepardApi(DataObjectReferenceApi)
+      .value.getAllDataObjectReferences({ collectionId, dataObjectId })
       .catch(error => handleError(error, "fetchDataObjectReferences"));
 
     if (!dataObjectReferences) return [];
@@ -57,8 +58,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   }
 
   async function fetchCollectionReferences(): Promise<CollectionReference[]> {
-    return createApiInstance(CollectionReferenceApi)
-      .getAllCollectionReferences({ collectionId, dataObjectId })
+    return useShepardApi(CollectionReferenceApi)
+      .value.getAllCollectionReferences({ collectionId, dataObjectId })
       .catch(error => {
         handleError(error, "fetchCollectionReferences");
         return [];
@@ -69,8 +70,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
     reference: DataObjectReference,
   ): Promise<DataObjectReferencePayload | undefined> {
     if (isDeleted(reference.id)) return;
-    const dataObject = await createApiInstance(DataObjectReferenceApi)
-      .getDataObjectReferencePayload({
+    const dataObject = await useShepardApi(DataObjectReferenceApi)
+      .value.getDataObjectReferencePayload({
         collectionId,
         dataObjectId,
         dataObjectReferenceId: reference.id,
@@ -80,8 +81,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
         handleError(error, "fetchDataObjectReferencePayload");
       });
     if (!dataObject) return;
-    const collection = await createApiInstance(CollectionApi)
-      .getCollection({ collectionId: dataObject.collectionId })
+    const collection = await useShepardApi(CollectionApi)
+      .value.getCollection({ collectionId: dataObject.collectionId })
       .catch((error: ResponseError) => {
         if (error.response.status === 403) return;
         handleError(error, "fetchDataObjectReferencePayload");
@@ -91,8 +92,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   }
 
   async function fetchPredecessors(): Promise<Predecessor[]> {
-    const predecessors: DataObject[] = await createApiInstance(DataObjectApi)
-      .getAllDataObjects({
+    const predecessors: DataObject[] = await useShepardApi(DataObjectApi)
+      .value.getAllDataObjects({
         collectionId,
         successorId: dataObjectId,
       })
@@ -105,8 +106,8 @@ export function useRelatedEntities(collectionId: number, dataObjectId: number) {
   }
 
   async function fetchSuccessors(): Promise<Successor[]> {
-    const successors: DataObject[] = await createApiInstance(DataObjectApi)
-      .getAllDataObjects({
+    const successors: DataObject[] = await useShepardApi(DataObjectApi)
+      .value.getAllDataObjects({
         collectionId,
         predecessorId: dataObjectId,
       })

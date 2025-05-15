@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { VersionzApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { AboutFragments } from "./aboutMenuItems";
 
 const backendURL = useRuntimeConfig().public.backendApiUrl;
 const applicationVersion = ref<string>();
 
 async function fetchApplicationVersion() {
-  createApiInstance(VersionzApi)
-    .getShepardVersion()
+  useShepardApi(VersionzApi)
+    .value.getShepardVersion()
     .then(result => {
       applicationVersion.value = result.version;
     })

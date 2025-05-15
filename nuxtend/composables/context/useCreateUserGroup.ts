@@ -3,6 +3,7 @@ import {
   SearchApi,
   UserGroupApi,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 const userGroupSearchStringParam = (name: string) =>
   JSON.stringify({
@@ -16,13 +17,15 @@ export async function createUserGroup(
   permissionType: PermissionType,
 ) {
   try {
-    const searchResults = await createApiInstance(SearchApi).searchUserGroups({
-      userSearchBody: {
-        searchParams: {
-          query: userGroupSearchStringParam(userGroupName),
+    const searchResults = await useShepardApi(SearchApi).value.searchUserGroups(
+      {
+        userSearchBody: {
+          searchParams: {
+            query: userGroupSearchStringParam(userGroupName),
+          },
         },
       },
-    });
+    );
 
     if (searchResults.results && searchResults.results.length > 0) {
       handleError(
@@ -32,15 +35,15 @@ export async function createUserGroup(
       return null;
     }
 
-    const createdUserGroup = await createApiInstance(
-      UserGroupApi,
-    ).createUserGroup({
+    const userGroupApi = useShepardApi(UserGroupApi);
+
+    const createdUserGroup = await userGroupApi.value.createUserGroup({
       userGroup: {
         name: userGroupName,
         usernames: [],
       },
     });
-    await createApiInstance(UserGroupApi).editUserGroupPermissions({
+    await userGroupApi.value.editUserGroupPermissions({
       userGroupId: createdUserGroup.id,
       permissions: {
         permissionType: permissionType,

@@ -3,13 +3,14 @@ import type {
   TimeseriesContainer,
 } from "@dlr-shepard/backend-client";
 import { TimeseriesContainerApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchTimeSeriesContainer(timeseriesContainerId: number) {
   const timeseriesContainer = ref<TimeseriesContainer | undefined>(undefined);
 
   function fetchTimeseriesContainer(timeseriesContainerId: number) {
-    createApiInstance(TimeseriesContainerApi)
-      .getTimeseriesContainer({ timeseriesContainerId })
+    useShepardApi(TimeseriesContainerApi)
+      .value.getTimeseriesContainer({ timeseriesContainerId })
       .then(response => {
         timeseriesContainer.value = response;
       })

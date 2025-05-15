@@ -5,16 +5,17 @@ import {
   type Permissions,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 import { ShepardObjectAccessor } from "../shepardObjectAccessor";
 
 export class CollectionAccessor extends ShepardObjectAccessor {
-  api = createApiInstance(CollectionApi);
+  api = useShepardApi(CollectionApi);
   collection = ref<Collection>();
 
   async delete() {
     try {
       if (!this.collection.value) await this.fetchData();
-      await this.api.deleteCollection({ collectionId: this.id });
+      await this.api.value.deleteCollection({ collectionId: this.id });
       emitSuccess(
         `Successfully deleted collection "${this.collection.value!.name}"`,
       );
@@ -26,7 +27,7 @@ export class CollectionAccessor extends ShepardObjectAccessor {
 
   async fetchData() {
     try {
-      this.collection.value = await this.api.getCollection({
+      this.collection.value = await this.api.value.getCollection({
         collectionId: this.id,
       });
     } catch (error) {
@@ -36,7 +37,7 @@ export class CollectionAccessor extends ShepardObjectAccessor {
 
   async fetchPermissions() {
     try {
-      this.permissions.value = await this.api.getCollectionPermissions({
+      this.permissions.value = await this.api.value.getCollectionPermissions({
         collectionId: this.id,
       });
     } catch (error) {
@@ -46,7 +47,7 @@ export class CollectionAccessor extends ShepardObjectAccessor {
 
   async fetchRoles() {
     try {
-      this.roles.value = await this.api.getCollectionRoles({
+      this.roles.value = await this.api.value.getCollectionRoles({
         collectionId: this.id,
       });
     } catch (error) {
@@ -56,7 +57,7 @@ export class CollectionAccessor extends ShepardObjectAccessor {
 
   async updatePermissions(updatedPermissions: Permissions) {
     try {
-      await this.api.editCollectionPermissions({
+      await this.api.value.editCollectionPermissions({
         collectionId: this.id,
         permissions: updatedPermissions,
       });

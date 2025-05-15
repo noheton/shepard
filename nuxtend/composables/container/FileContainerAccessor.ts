@@ -6,17 +6,18 @@ import {
   type ResponseError,
   type ShepardFile,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 
 export class FileContainerAccessor extends ContainerAccessor {
-  api = createApiInstance(FileContainerApi);
+  api = useShepardApi(FileContainerApi);
   fileContainer = ref<FileContainer>();
   files = ref<ShepardFile[]>([]);
   loading = ref<boolean>(true);
 
   async delete() {
     try {
-      await this.api.deleteFileContainer({
+      await this.api.value.deleteFileContainer({
         fileContainerId: this.id,
       });
       emitSuccess(
@@ -31,7 +32,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
   async fetchRoles() {
     try {
-      this.roles.value = await this.api.getFileRoles({
+      this.roles.value = await this.api.value.getFileRoles({
         fileContainerId: this.id,
       });
     } catch (e) {
@@ -42,7 +43,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
   async fetchData() {
     try {
-      this.fileContainer.value = await this.api.getFileContainer({
+      this.fileContainer.value = await this.api.value.getFileContainer({
         fileContainerId: this.id,
       });
     } catch (e) {
@@ -54,7 +55,7 @@ export class FileContainerAccessor extends ContainerAccessor {
   async fetchFiles() {
     this.loading.value = true;
     try {
-      this.files.value = await this.api.getAllFiles({
+      this.files.value = await this.api.value.getAllFiles({
         fileContainerId: this.id,
       });
     } catch (e) {
@@ -67,7 +68,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
   async downloadFile(file: ShepardFile) {
     if (file.oid && file.filename) {
-      this.api
+      this.api.value
         .getFile({
           fileContainerId: this.id,
           oid: file.oid,
@@ -82,7 +83,7 @@ export class FileContainerAccessor extends ContainerAccessor {
   }
 
   async uploadFile(file: File) {
-    return this.api
+    return this.api.value
       .createFile({ fileContainerId: this.id, file })
       .then(() => {
         return Promise.resolve();
@@ -95,7 +96,7 @@ export class FileContainerAccessor extends ContainerAccessor {
   async deleteFile(file: ShepardFile) {
     if (file.oid) {
       try {
-        await this.api.deleteFile({
+        await this.api.value.deleteFile({
           fileContainerId: this.id,
           oid: file.oid,
         });
@@ -111,7 +112,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
   async fetchPermissions() {
     try {
-      this.permissions.value = await this.api.getFilePermissions({
+      this.permissions.value = await this.api.value.getFilePermissions({
         fileContainerId: this.id,
       });
     } catch (e) {
@@ -122,7 +123,7 @@ export class FileContainerAccessor extends ContainerAccessor {
 
   async updatePermissions(updatedPermissions: Permissions) {
     try {
-      await this.api.editFilePermissions({
+      await this.api.value.editFilePermissions({
         fileContainerId: this.id,
         permissions: updatedPermissions,
       });

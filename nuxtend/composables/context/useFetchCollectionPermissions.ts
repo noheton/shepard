@@ -5,6 +5,7 @@ import type {
   User,
 } from "@dlr-shepard/backend-client";
 import { CollectionApi, UserApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchCollectionPermissions(collectionId: number) {
   const collectionPermissions = ref<Permissions | undefined>(undefined);
@@ -12,8 +13,8 @@ export function useFetchCollectionPermissions(collectionId: number) {
   const permissionType = ref<PermissionType | undefined>(undefined);
 
   async function fetchCollectionPermissions(collectionId: number) {
-    await createApiInstance(CollectionApi)
-      .getCollectionPermissions({ collectionId })
+    await useShepardApi(CollectionApi)
+      .value.getCollectionPermissions({ collectionId })
       .then(response => {
         collectionPermissions.value = response;
         getUserDetails(response.owner);
@@ -28,7 +29,9 @@ export function useFetchCollectionPermissions(collectionId: number) {
 
   async function getUserDetails(username: string | undefined) {
     if (!username) return;
-    const userDetails = await createApiInstance(UserApi).getUser({ username });
+    const userDetails = await useShepardApi(UserApi).value.getUser({
+      username,
+    });
     if (userDetails) {
       owner.value = userDetails;
     }

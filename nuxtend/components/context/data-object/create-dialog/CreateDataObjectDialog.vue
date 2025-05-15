@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
 
 interface CreateDataObjectDialogProps {
@@ -32,8 +33,8 @@ async function createDataObject() {
   if (dataObjectToSave === undefined) return;
   if (isValid.value === false) return;
 
-  createApiInstance(DataObjectApi)
-    .createDataObject({
+  useShepardApi(DataObjectApi)
+    .value.createDataObject({
       collectionId: props.collectionId,
       dataObject: {
         ...dataObjectToSave,

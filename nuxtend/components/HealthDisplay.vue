@@ -4,13 +4,14 @@ import type {
   ResponseError,
 } from "@dlr-shepard/backend-client";
 import { HealthzApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const health = ref<HealthResponse | undefined>();
 const healthy = ref<boolean | undefined>();
 
 function fetchHealthz() {
-  createApiInstance(HealthzApi)
-    .getServerHealth()
+  useShepardApi(HealthzApi)
+    .value.getServerHealth()
     .then(response => {
       health.value = response;
       healthy.value = true;

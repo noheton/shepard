@@ -1,4 +1,5 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export interface CollectionSearchResult {
   collectionName: string;
@@ -32,7 +33,7 @@ export function useCollectionSearch(
       searchStringParam = createSearchQueryFromString(query);
     }
 
-    const searchResponse = await createApiInstance(SearchApi).search({
+    const searchResponse = await useShepardApi(SearchApi).value.search({
       searchBody: {
         searchParams: { query: searchStringParam, queryType: "Collection" },
         scopes: [{ traversalRules: [] }],

@@ -5,6 +5,7 @@ import type {
 } from "@dlr-shepard/backend-client";
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import type { CollectionRouteParams } from "~/utils/collectionRouteParams";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchCollection(collectionId: number) {
   const lastUsedId = ref<number>(collectionId);
@@ -23,7 +24,8 @@ export function useFetchCollection(collectionId: number) {
 
   function fetchCollection(collectionId: number) {
     lastUsedId.value = collectionId;
-    createApiInstance(CollectionApi)
+    const collectionApi = useShepardApi(CollectionApi);
+    collectionApi.value
       .getCollection({ collectionId })
       .then(response => {
         collection.value = response;
@@ -32,7 +34,7 @@ export function useFetchCollection(collectionId: number) {
         collection.value = undefined;
         handleError(e as ResponseError, "fetching collection");
       });
-    createApiInstance(CollectionApi)
+    collectionApi.value
       .getCollectionRoles({ collectionId })
       .then(response => {
         collectionRoles.value = response;

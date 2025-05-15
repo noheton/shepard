@@ -3,6 +3,7 @@ import {
   type SemanticRepository,
 } from "@dlr-shepard/backend-client";
 import { onSemanticRepositoriesUpdated } from "~/utils/resourceUpdateBus";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchSemanticRepositories() {
   const repositories = ref<SemanticRepository[]>([]);
@@ -10,8 +11,8 @@ export function useFetchSemanticRepositories() {
 
   async function fetchSemanticRepositories() {
     isLoading.value = true;
-    createApiInstance(SemanticRepositoryApi)
-      .getAllSemanticRepositories({ orderBy: "name", orderDesc: false })
+    useShepardApi(SemanticRepositoryApi)
+      .value.getAllSemanticRepositories({ orderBy: "name", orderDesc: false })
       .then(response => {
         repositories.value = response;
         isLoading.value = false;

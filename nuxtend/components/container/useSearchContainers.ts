@@ -5,6 +5,7 @@ import type {
 } from "@dlr-shepard/backend-client";
 import { ContainerType, SearchApi } from "@dlr-shepard/backend-client";
 import type { ContainerFilterType } from "~/components/container/containerTypeFilter";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useContainerListQueryParams } from "./useContainerListQueryParams";
 
 export function useSearchContainers(itemsPerPage: number) {
@@ -29,8 +30,8 @@ export function useSearchContainers(itemsPerPage: number) {
           orderDesc: sortByAttributes.order === "desc",
         }
       : null;
-    createApiInstance(SearchApi)
-      .searchContainers({
+    useShepardApi(SearchApi)
+      .value.searchContainers({
         containerSearchBody: {
           searchParams: {
             query: searchQuery,

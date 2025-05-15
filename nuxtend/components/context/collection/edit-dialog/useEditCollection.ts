@@ -1,4 +1,5 @@
 import { CollectionApi, type Collection } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type {
   UpdatedCollection,
   UpdatedPermissions,
@@ -17,10 +18,12 @@ export function useEditCollection(
   });
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
 
+  const collectionApi = useShepardApi(CollectionApi);
+
   async function saveChanges() {
     if (isValid.value === false) return;
 
-    const collectionUpdateSuccess = await createApiInstance(CollectionApi)
+    const collectionUpdateSuccess = await collectionApi.value
       .updateCollection({
         collectionId: collection.id,
         collection: updatedCollection.value,
@@ -35,7 +38,7 @@ export function useEditCollection(
     if (!collectionUpdateSuccess) return;
 
     if (isAllowedToEditPermissions && updatedPermissions.value) {
-      const permissionsUpdateSuccess = await createApiInstance(CollectionApi)
+      const permissionsUpdateSuccess = await collectionApi.value
         .editCollectionPermissions({
           collectionId: collection.id,
           permissions: updatedPermissions.value,

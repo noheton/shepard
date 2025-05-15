@@ -4,10 +4,9 @@ import {
   type SemanticAnnotation,
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "./common/api/useShepardApi";
 
-function api() {
-  return createApiInstance(SemanticAnnotationApi);
-}
+const semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
 
 export type AnnotationToAdd = Omit<
   SemanticAnnotation,
@@ -29,21 +28,23 @@ export class AnnotatedCollection implements Annotated {
     this.collectionId = collectionId;
   }
 
+  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
+
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return api().getAllCollectionAnnotations({
+    return semanticAnnotationApi.value.getAllCollectionAnnotations({
       collectionId: this.collectionId,
     });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return api().deleteCollectionAnnotation({
+    return semanticAnnotationApi.value.deleteCollectionAnnotation({
       collectionId: this.collectionId,
       semanticAnnotationId: annotationId,
     });
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return api().createCollectionAnnotation({
+    return semanticAnnotationApi.value.createCollectionAnnotation({
       collectionId: this.collectionId,
       semanticAnnotation: annotation,
     });
@@ -60,14 +61,14 @@ export class AnnotatedDataObject implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return api().getAllDataObjectAnnotations({
+    return semanticAnnotationApi.value.getAllDataObjectAnnotations({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
     });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return api().deleteDataObjectAnnotation({
+    return semanticAnnotationApi.value.deleteDataObjectAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       semanticAnnotationId: annotationId,
@@ -75,7 +76,7 @@ export class AnnotatedDataObject implements Annotated {
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return api().createDataObjectAnnotation({
+    return semanticAnnotationApi.value.createDataObjectAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       semanticAnnotation: annotation,
@@ -95,7 +96,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return api().getAllReferenceAnnotations({
+    return semanticAnnotationApi.value.getAllReferenceAnnotations({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,
@@ -103,7 +104,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return api().deleteReferenceAnnotation({
+    return semanticAnnotationApi.value.deleteReferenceAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,
@@ -112,7 +113,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return api().createReferenceAnnotation({
+    return semanticAnnotationApi.value.createReferenceAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,
@@ -122,7 +123,7 @@ export class AnnotatedReference implements Annotated {
 }
 
 export class AnnotatedTimeseries implements Annotated {
-  api = createApiInstance(TimeseriesContainerApi);
+  api = useShepardApi(TimeseriesContainerApi);
   entity: TimeseriesEntity;
 
   constructor(entity: TimeseriesEntity) {
@@ -135,7 +136,7 @@ export class AnnotatedTimeseries implements Annotated {
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return this.api.deleteAnnotationOfTimeseries({
+    return this.api.value.deleteAnnotationOfTimeseries({
       timeseriesContainerId: this.entity.containerId!,
       timeseriesId: this.entity.id!,
       semanticAnnotationId: annotationId,
@@ -143,14 +144,14 @@ export class AnnotatedTimeseries implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return this.api.getAllAnnotationsOfTimeseries({
+    return this.api.value.getAllAnnotationsOfTimeseries({
       timeseriesContainerId: this.entity.containerId!,
       timeseriesId: this.entity.id!,
     });
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return this.api.createAnnotationForTimeseries({
+    return this.api.value.createAnnotationForTimeseries({
       timeseriesContainerId: this.entity.containerId!,
       timeseriesId: this.entity.id!,
       semanticAnnotation: annotation,

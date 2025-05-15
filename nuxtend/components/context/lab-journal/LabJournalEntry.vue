@@ -6,6 +6,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { computed } from "vue";
 import RichTextEditor from "~/components/common/editor/RichTextEditor.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface LabJournalEntryProps {
   labJournal: LabJournalEntry;
@@ -34,8 +35,10 @@ async function startEditing(event: Event) {
   isExpanded.value = true;
 }
 
+const labJournalApi = useShepardApi(LabJournalEntryApi);
+
 async function cancelEditing() {
-  createApiInstance(LabJournalEntryApi)
+  labJournalApi.value
     .getLabJournalById({ labJournalEntryId: model.value.id })
     .then(response => {
       model.value = response;
@@ -48,7 +51,7 @@ async function cancelEditing() {
 }
 
 async function saveChanges() {
-  createApiInstance(LabJournalEntryApi)
+  labJournalApi.value
     .updateLabJournal({
       labJournalEntryId: model.value.id,
       updateLabJournalRequest: {
@@ -66,7 +69,7 @@ async function saveChanges() {
 }
 
 async function deleteEntry() {
-  createApiInstance(LabJournalEntryApi)
+  labJournalApi.value
     .deleteLabJournal({ labJournalEntryId: model.value.id })
     .then(_ => {
       emit("deleted");

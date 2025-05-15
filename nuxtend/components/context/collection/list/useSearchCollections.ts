@@ -1,9 +1,10 @@
-import type {
-  BasicCollectionAttributes,
-  Collection,
-  ResponseError,
+import {
+  SearchApi,
+  type BasicCollectionAttributes,
+  type Collection,
+  type ResponseError,
 } from "@dlr-shepard/backend-client";
-import { SearchApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
 
 export function useSearchCollections(itemsPerPage: number) {
@@ -13,6 +14,8 @@ export function useSearchCollections(itemsPerPage: number) {
   const searchResultHint = ref<string | undefined>(undefined);
 
   const { queryParams } = useCollectionListQueryParams();
+
+  const searchApi = useShepardApi(SearchApi);
 
   /**
    * @param page Page to retrieve. Is 1-based.
@@ -30,7 +33,7 @@ export function useSearchCollections(itemsPerPage: number) {
           orderDesc: sortByAttributes.order === "desc",
         }
       : null;
-    createApiInstance(SearchApi)
+    searchApi.value
       .searchCollections({
         collectionSearchBody: { searchParams: { query } },
         page: page - 1,

@@ -10,6 +10,7 @@ import {
   type ResponseError,
   type TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { toShortDateString } from "~/utils/helpers";
 import type { FileRef, TimeseriesRef } from "./DataRef";
 const props = defineProps<{ collectionId: number; dataObjectId: number }>();
@@ -35,8 +36,8 @@ const chosenContainerType = ref<ContainerType | null>(null);
 async function createDataReference() {
   if (!dataReferenceContainerId.value) return;
   if (chosenContainerType.value === ContainerType.File && fileRef.value) {
-    createApiInstance(FileReferenceApi)
-      .createFileReference({
+    useShepardApi(FileReferenceApi)
+      .value.createFileReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         fileReference: {
@@ -65,8 +66,8 @@ async function createDataReference() {
     chosenContainerType.value === ContainerType.Structureddata &&
     fileRef.value
   ) {
-    createApiInstance(StructuredDataReferenceApi)
-      .createStructuredDataReference({
+    useShepardApi(StructuredDataReferenceApi)
+      .value.createStructuredDataReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         structuredDataReference: {
@@ -95,8 +96,8 @@ async function createDataReference() {
     chosenContainerType.value === ContainerType.Timeseries &&
     timeseriesRef.value
   ) {
-    createApiInstance(TimeseriesReferenceApi)
-      .createTimeseriesReference({
+    useShepardApi(TimeseriesReferenceApi)
+      .value.createTimeseriesReference({
         collectionId: props.collectionId,
         dataObjectId: props.dataObjectId,
         timeseriesReference: {
@@ -123,12 +124,6 @@ async function createDataReference() {
       });
   }
 }
-
-const fileContainerApi = createApiInstance(FileContainerApi);
-const timeseriesContainerApi = createApiInstance(TimeseriesContainerApi);
-const structuredDataContainerApi = createApiInstance(
-  StructuredDataContainerApi,
-);
 
 function getContainerById(containerId: number, containerType: ContainerType) {
   chosenContainerType.value = containerType;
@@ -159,8 +154,8 @@ const timeseriesList = ref<TimeseriesRefItem[] | undefined>(undefined);
 
 function getAllFiles(containerId: number) {
   loading.value = true;
-  fileContainerApi
-    .getAllFiles({
+  useShepardApi(FileContainerApi)
+    .value.getAllFiles({
       fileContainerId: containerId,
     })
     .then(response => {
@@ -178,8 +173,8 @@ function getAllFiles(containerId: number) {
 
 function getAllTimeseries(containerId: number) {
   loading.value = true;
-  timeseriesContainerApi
-    .getTimeseriesOfContainer({
+  useShepardApi(TimeseriesContainerApi)
+    .value.getTimeseriesOfContainer({
       timeseriesContainerId: containerId,
     })
     .then(response => {
@@ -192,8 +187,8 @@ function getAllTimeseries(containerId: number) {
 }
 
 function getAllStructuredDatas(containerId: number) {
-  structuredDataContainerApi
-    .getAllStructuredDatas({
+  useShepardApi(StructuredDataContainerApi)
+    .value.getAllStructuredDatas({
       structuredDataContainerId: containerId,
     })
     .then(response => {

@@ -2,6 +2,7 @@ import {
   SemanticAnnotationApi,
   type SemanticAnnotation,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 export type SemanticAnnotationCreateArgs = Omit<
   SemanticAnnotation,
@@ -63,9 +64,9 @@ export async function createAnnotationForCollection(
   collectionId: number,
   annotation: SemanticAnnotationCreateArgs,
 ) {
-  return await createApiInstance(
+  return await useShepardApi(
     SemanticAnnotationApi,
-  ).createCollectionAnnotation({
+  ).value.createCollectionAnnotation({
     collectionId: collectionId,
     semanticAnnotation: {
       propertyRepositoryId: annotation.propertyRepositoryId,
@@ -81,9 +82,9 @@ export async function createAnnotationForDataObject(
   dataObjectId: number,
   annotation: SemanticAnnotationCreateArgs,
 ) {
-  return await createApiInstance(
+  return await useShepardApi(
     SemanticAnnotationApi,
-  ).createDataObjectAnnotation({
+  ).value.createDataObjectAnnotation({
     collectionId: collectionId,
     dataObjectId: dataObjectId,
     semanticAnnotation: {
@@ -101,9 +102,9 @@ export async function createAnnotationForReference(
   referenceId: number,
   annotation: SemanticAnnotationCreateArgs,
 ) {
-  return await createApiInstance(
+  return await useShepardApi(
     SemanticAnnotationApi,
-  ).createReferenceAnnotation({
+  ).value.createReferenceAnnotation({
     collectionId: collectionId,
     dataObjectId: dataObjectId,
     referenceId: referenceId,

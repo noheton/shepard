@@ -3,6 +3,7 @@ import {
   SemanticRepositoryApi,
   SemanticRepositoryType,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const isValid = ref(true);
 const showDialog = defineModel<boolean>("showDialog", {
@@ -17,8 +18,8 @@ const semanticRepositoryType = ref<SemanticRepositoryType>(
 const emit = defineEmits(["semantic-repository-created"]);
 
 async function createSemanticRepository() {
-  createApiInstance(SemanticRepositoryApi)
-    .createSemanticRepository({
+  useShepardApi(SemanticRepositoryApi)
+    .value.createSemanticRepository({
       semanticRepository: {
         name: semanticRepositoryName.value,
         type: semanticRepositoryType.value,

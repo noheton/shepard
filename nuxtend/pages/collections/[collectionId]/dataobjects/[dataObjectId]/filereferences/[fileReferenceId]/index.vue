@@ -6,6 +6,7 @@ import type {
   ShepardFileDataTableItem,
 } from "~/components/context/display-components/file-references/ShepardFileDataTableItem";
 import { mapShepardFilesToDataTableItems } from "~/components/context/display-components/file-references/shepardFileMappingUtil";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchFileReference } from "~/composables/context/useFetchFileReference";
 
 definePageMeta({ layout: "collection" });
@@ -61,8 +62,8 @@ function onDelete() {
 
 function deleteFileReference() {
   if (fileReference.value) {
-    createApiInstance(FileReferenceApi)
-      .deleteFileReference({
+    useShepardApi(FileReferenceApi)
+      .value.deleteFileReference({
         collectionId,
         dataObjectId,
         fileReferenceId: fileReference.value.id,
@@ -96,8 +97,8 @@ function onShowFileContentDialog(params: {
 function onDownloadFile(params: { filename: string; oid: string }) {
   const filename = sanitizeFilename(params.filename);
 
-  createApiInstance(FileReferenceApi)
-    .getFilePayload({
+  useShepardApi(FileReferenceApi)
+    .value.getFilePayload({
       collectionId,
       dataObjectId,
       fileReferenceId,

@@ -3,6 +3,7 @@ import {
   SearchApi,
   type User,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../api/useShepardApi";
 
 export function usePermissionUserSearch(
   searchString: Ref<string | undefined>,
@@ -18,8 +19,8 @@ export function usePermissionUserSearch(
 
     const searchStringParam = buildUserQueryString(query);
 
-    const searchResponse = await createApiInstance(SearchApi)
-      .searchUsers({
+    const searchResponse = await useShepardApi(SearchApi)
+      .value.searchUsers({
         userSearchBody: {
           searchParams: {
             query: searchStringParam,

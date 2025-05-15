@@ -5,11 +5,12 @@ import {
   SubscriptionApi,
 } from "@dlr-shepard/backend-client";
 import AddSubscriptionDialog from "~/components/context/user/AddSubscriptionDialog.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{ username: string }>();
 
 const showCreateDialog = ref(false);
-const subscriptionApi = createApiInstance(SubscriptionApi);
+const subscriptionApi = useShepardApi(SubscriptionApi);
 const emit = defineEmits(["created"]);
 
 async function createSubscription(
@@ -19,7 +20,7 @@ async function createSubscription(
   requestMethod: RequestMethod,
 ) {
   try {
-    await subscriptionApi.createSubscription({
+    await subscriptionApi.value.createSubscription({
       username: props.username,
       subscription: {
         name: name,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { FileReferenceApi } from "@dlr-shepard/backend-client";
 import InformationDialog from "~/components/common/dialog/InformationDialog.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapFileNameToCodeType } from "./shepardFileMappingUtil";
 
 interface TextViewerDialogProps {
@@ -20,8 +21,8 @@ const showDialog = defineModel<boolean>("showDialog", {
 const textContent = ref<string>("");
 
 function loadTextFile() {
-  createApiInstance(FileReferenceApi)
-    .getFilePayload({
+  useShepardApi(FileReferenceApi)
+    .value.getFilePayload({
       collectionId: props.collectionId,
       dataObjectId: props.dataObjectId,
       fileReferenceId: props.fileReferenceId,

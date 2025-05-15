@@ -7,6 +7,7 @@ import {
   TimeseriesReferenceApi,
 } from "@dlr-shepard/backend-client";
 import type { ReferencedContainerMeta } from "~/components/context/display-components/data-references/dataReference";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 type TimeseriesReferenceWithContainerMeta = TimeseriesReference &
   ReferencedContainerMeta;
@@ -25,8 +26,8 @@ export function useFetchTimeseriesReference(
     dataObjectId: number,
     timeseriesReferenceId: number,
   ) {
-    createApiInstance(TimeseriesReferenceApi)
-      .getTimeseriesReference({
+    useShepardApi(TimeseriesReferenceApi)
+      .value.getTimeseriesReference({
         collectionId,
         dataObjectId,
         timeseriesReferenceId,
@@ -54,8 +55,8 @@ export function useFetchTimeseriesReference(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(TimeseriesContainerApi)
-      .getTimeseriesContainer({ timeseriesContainerId: containerId })
+    return useShepardApi(TimeseriesContainerApi)
+      .value.getTimeseriesContainer({ timeseriesContainerId: containerId })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,

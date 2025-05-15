@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ResponseError, Timeseries } from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
 
 definePageMeta({ layout: "collection" });
@@ -69,8 +70,8 @@ const plotSelectedTimeseries = () => {
 };
 
 const downloadTimeseries = (filename: string) => {
-  createApiInstance(TimeseriesReferenceApi)
-    .exportTimeseriesPayload({
+  useShepardApi(TimeseriesReferenceApi)
+    .value.exportTimeseriesPayload({
       collectionId,
       dataObjectId,
       timeseriesReferenceId,
@@ -84,8 +85,8 @@ const downloadTimeseries = (filename: string) => {
 };
 
 async function deleteTimeseriesReference() {
-  await createApiInstance(TimeseriesReferenceApi)
-    .deleteTimeseriesReference({
+  await useShepardApi(TimeseriesReferenceApi)
+    .value.deleteTimeseriesReference({
       collectionId,
       dataObjectId,
       timeseriesReferenceId,

@@ -3,6 +3,7 @@ import {
   DataObjectReferenceApi,
   UriReferenceApi,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useCreateReferences(
   collectionId: number,
@@ -23,8 +24,8 @@ export function useCreateReferences(
       relationship = "URI";
     }
 
-    createApiInstance(UriReferenceApi)
-      .createUriReference({
+    useShepardApi(UriReferenceApi)
+      .value.createUriReference({
         collectionId,
         dataObjectId,
         uRIReference: {
@@ -55,8 +56,8 @@ export function useCreateReferences(
       relationship = "Collection";
     }
 
-    createApiInstance(CollectionReferenceApi)
-      .createCollectionReference({
+    useShepardApi(CollectionReferenceApi)
+      .value.createCollectionReference({
         collectionId,
         dataObjectId,
         collectionReference: {
@@ -87,8 +88,8 @@ export function useCreateReferences(
       relationship = "Data Object";
     }
 
-    createApiInstance(DataObjectReferenceApi)
-      .createDataObjectReference({
+    useShepardApi(DataObjectReferenceApi)
+      .value.createDataObjectReference({
         collectionId,
         dataObjectId,
         dataObjectReference: {

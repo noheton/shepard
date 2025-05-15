@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { FileReferenceApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface ImageViewerDialogProps {
   collectionId: number;
@@ -15,8 +16,8 @@ const showDialog = defineModel<boolean>("showDialog", {
 });
 
 function loadImageFile() {
-  createApiInstance(FileReferenceApi)
-    .getFilePayload({
+  useShepardApi(FileReferenceApi)
+    .value.getFilePayload({
       collectionId: props.collectionId,
       dataObjectId: props.dataObjectId,
       fileReferenceId: props.fileReferenceId,

@@ -3,6 +3,7 @@ import {
   DataObjectReferenceApi,
   UriReferenceApi,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useDeleteReferences(
   collectionId: number,
@@ -15,8 +16,8 @@ export function useDeleteReferences(
   async function deleteUriReference(uriReferenceId: number) {
     loading.value = true;
 
-    createApiInstance(UriReferenceApi)
-      .deleteUriReference({
+    useShepardApi(UriReferenceApi)
+      .value.deleteUriReference({
         collectionId,
         dataObjectId,
         uriReferenceId,
@@ -35,8 +36,8 @@ export function useDeleteReferences(
   async function deleteCollectionReference(collectionReferenceId: number) {
     loading.value = true;
 
-    createApiInstance(CollectionReferenceApi)
-      .deleteCollectionReference({
+    useShepardApi(CollectionReferenceApi)
+      .value.deleteCollectionReference({
         collectionId,
         dataObjectId,
         collectionReferenceId,
@@ -55,8 +56,8 @@ export function useDeleteReferences(
   async function deleteDataObjectReference(dataObjectReferenceId: number) {
     loading.value = true;
 
-    createApiInstance(DataObjectReferenceApi)
-      .deleteDataObjectReference({
+    useShepardApi(DataObjectReferenceApi)
+      .value.deleteDataObjectReference({
         collectionId,
         dataObjectId,
         dataObjectReferenceId,

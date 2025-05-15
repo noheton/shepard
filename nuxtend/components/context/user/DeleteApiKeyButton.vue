@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ApikeyApi, type ResponseError } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{
   username: string;
@@ -8,11 +9,11 @@ const props = defineProps<{
 const showDeleteDialog = ref(false);
 const emit = defineEmits(["deleted"]);
 
-const apikeyApi = createApiInstance(ApikeyApi);
+const apikeyApi = useShepardApi(ApikeyApi);
 
 async function deleteApiKey() {
   try {
-    await apikeyApi.deleteApiKey({
+    await apikeyApi.value.deleteApiKey({
       username: props.username,
       apikeyUid: props.apikeyUid,
     });

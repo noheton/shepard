@@ -4,15 +4,16 @@ import {
   type ResponseError,
   type SpatialDataContainer,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 
 export class SpatialDataContainerAccessor extends ContainerAccessor {
-  api = createApiInstance(SpatialDataContainerApi);
+  api = useShepardApi(SpatialDataContainerApi);
   spatialData = ref<SpatialDataContainer>();
 
   async delete() {
     try {
-      await this.api.deleteSpatialDataContainer({
+      await this.api.value.deleteSpatialDataContainer({
         spatialDataContainerId: this.id,
       });
       emitSuccess(
@@ -27,7 +28,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
 
   async fetchRoles() {
     try {
-      this.roles.value = await this.api.getSpatialDataRoles({
+      this.roles.value = await this.api.value.getSpatialDataRoles({
         spatialDataContainerId: this.id,
       });
     } catch (e) {
@@ -38,7 +39,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
 
   async fetchData() {
     try {
-      this.spatialData.value = await this.api.getSpatialDataContainer({
+      this.spatialData.value = await this.api.value.getSpatialDataContainer({
         spatialDataContainerId: this.id,
       });
     } catch (e) {
@@ -49,7 +50,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
 
   async fetchPermissions() {
     try {
-      this.permissions.value = await this.api.getSpatialDataPermissions({
+      this.permissions.value = await this.api.value.getSpatialDataPermissions({
         spatialDataContainerId: this.id,
       });
     } catch (e) {
@@ -60,7 +61,7 @@ export class SpatialDataContainerAccessor extends ContainerAccessor {
 
   async updatePermissions(updatedPermissions: Permissions) {
     try {
-      await this.api.editSpatialDataPermissions({
+      await this.api.value.editSpatialDataPermissions({
         spatialDataContainerId: this.id,
         permissions: updatedPermissions,
       });

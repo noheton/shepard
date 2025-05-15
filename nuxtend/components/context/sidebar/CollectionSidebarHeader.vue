@@ -5,6 +5,7 @@ import {
   type ResponseError,
 } from "@dlr-shepard/backend-client";
 import type { ContextMenuItem } from "~/components/common/ContextMenu.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 
 interface CollectionSidebarHeaderProps {
@@ -66,8 +67,8 @@ const exportCollection = () => {
     "Export is being generated. Download will start automatically when it's ready.",
   );
 
-  createApiInstance(CollectionApi)
-    .exportCollection({ collectionId: props.collection.id })
+  useShepardApi(CollectionApi)
+    .value.exportCollection({ collectionId: props.collection.id })
     .then(response => {
       downloadFile(response, filename);
     })

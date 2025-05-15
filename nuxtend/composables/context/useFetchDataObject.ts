@@ -1,4 +1,5 @@
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 // The DataObject domain model defines the description to be nullable.
 // In the frontend we handle that here to be sure that it is an empty string
@@ -13,8 +14,8 @@ export function useFetchDataObject(collectionId: number, dataObjectId: number) {
   const dataObject = ref<DataObjectSanitized | undefined>(undefined);
 
   function fetchDataObject() {
-    createApiInstance(DataObjectApi)
-      .getDataObject({
+    useShepardApi(DataObjectApi)
+      .value.getDataObject({
         collectionId: collectionId,
         dataObjectId: dataObjectId,
       })

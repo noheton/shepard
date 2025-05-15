@@ -1,4 +1,5 @@
 import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { UpdatedDataObject } from "./updatedDataObject";
 
 export function useEditDataObject(
@@ -28,8 +29,8 @@ export function useEditDataObject(
     if (dataObjectToSave === undefined) return;
     if (isValid.value === false) return;
 
-    createApiInstance(DataObjectApi)
-      .updateDataObject({
+    useShepardApi(DataObjectApi)
+      .value.updateDataObject({
         collectionId: collectionId,
         dataObjectId: dataObjectId,
         dataObject: {

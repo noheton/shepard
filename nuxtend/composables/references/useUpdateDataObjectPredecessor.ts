@@ -1,4 +1,5 @@
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useUpdateDataObjectRelationship(
   collectionId: number,
@@ -14,8 +15,9 @@ export function useUpdateDataObjectRelationship(
     loading.value = true;
 
     let dataObject: DataObject | undefined = undefined;
+    const dataObjectApi = useShepardApi(DataObjectApi);
     try {
-      dataObject = await createApiInstance(DataObjectApi).getDataObject({
+      dataObject = await dataObjectApi.value.getDataObject({
         collectionId: collectionId,
         dataObjectId: dataobjectId,
       });
@@ -44,7 +46,7 @@ export function useUpdateDataObjectRelationship(
 
     dataObject.predecessorIds.push(newPredecessorDataObjectId);
 
-    createApiInstance(DataObjectApi)
+    dataObjectApi.value
       .updateDataObject({
         collectionId: collectionId,
         dataObjectId: dataobjectId,
@@ -94,8 +96,9 @@ export function useUpdateDataObjectRelationship(
     loading.value = true;
 
     let dataObject: DataObject | undefined = undefined;
+    const dataObjectApi = useShepardApi(DataObjectApi);
     try {
-      dataObject = await createApiInstance(DataObjectApi).getDataObject({
+      dataObject = await dataObjectApi.value.getDataObject({
         collectionId: collectionId,
         dataObjectId: dataobjectId,
       });
@@ -122,7 +125,7 @@ export function useUpdateDataObjectRelationship(
       id => id !== toBeDeletedPredecessorId,
     );
 
-    createApiInstance(DataObjectApi)
+    dataObjectApi.value
       .updateDataObject({
         collectionId: collectionId,
         dataObjectId: dataobjectId,

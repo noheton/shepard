@@ -1,4 +1,5 @@
 import { UserApi, type User } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchUserProfile() {
   const user = ref<User>();
@@ -6,8 +7,8 @@ export function useFetchUserProfile() {
 
   function fetchUserProfile() {
     isLoading.value = true;
-    createApiInstance(UserApi)
-      .getCurrentUser()
+    useShepardApi(UserApi)
+      .value.getCurrentUser()
       .then(response => {
         user.value = response;
         isLoading.value = false;

@@ -5,17 +5,18 @@ import {
   type StructuredData,
   type StructuredDataContainer,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 
 export class StructuredDataContainerAccessor extends ContainerAccessor {
-  api = createApiInstance(StructuredDataContainerApi);
+  api = useShepardApi(StructuredDataContainerApi);
   container = ref<StructuredDataContainer>();
   items = ref<StructuredData[]>([]);
   loading = ref<boolean>(true);
 
   override async delete(): Promise<void> {
     try {
-      await this.api.deleteStructuredDataContainer({
+      await this.api.value.deleteStructuredDataContainer({
         structuredDataContainerId: this.id,
       });
       emitSuccess(
@@ -30,7 +31,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
 
   async deleteItem(oid: string): Promise<void> {
     try {
-      await this.api.deleteStructuredData({
+      await this.api.value.deleteStructuredData({
         structuredDataContainerId: this.id,
         oid,
       });
@@ -44,7 +45,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
 
   override async fetchData(): Promise<void> {
     try {
-      this.container.value = await this.api.getStructuredDataContainer({
+      this.container.value = await this.api.value.getStructuredDataContainer({
         structuredDataContainerId: this.id,
       });
     } catch (e) {
@@ -55,7 +56,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   async fetchItems() {
     this.loading.value = true;
     try {
-      this.items.value = await this.api.getAllStructuredDatas({
+      this.items.value = await this.api.value.getAllStructuredDatas({
         structuredDataContainerId: this.id,
       });
     } catch (e) {
@@ -70,7 +71,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
 
   override async fetchRoles(): Promise<void> {
     try {
-      this.roles.value = await this.api.getStructuredDataRoles({
+      this.roles.value = await this.api.value.getStructuredDataRoles({
         structuredDataContainerId: this.id,
       });
     } catch (e) {
@@ -80,9 +81,10 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
 
   override async fetchPermissions(): Promise<void> {
     try {
-      this.permissions.value = await this.api.getStructuredDataPermissions({
-        structuredDataContainerId: this.id,
-      });
+      this.permissions.value =
+        await this.api.value.getStructuredDataPermissions({
+          structuredDataContainerId: this.id,
+        });
     } catch (e) {
       handleError(e as ResponseError, "fetching permissions");
       throw e;
@@ -93,7 +95,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
     updatedPermissions: Permissions,
   ): Promise<void> {
     try {
-      await this.api.editStructuredDataPermissions({
+      await this.api.value.editStructuredDataPermissions({
         structuredDataContainerId: this.id,
         permissions: updatedPermissions,
       });
@@ -108,7 +110,7 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   }
 
   async uploadItem(name: string, content: string): Promise<void> {
-    await this.api.createStructuredData({
+    await this.api.value.createStructuredData({
       structuredDataContainerId: this.id,
       structuredDataPayload: {
         structuredData: { name: name },

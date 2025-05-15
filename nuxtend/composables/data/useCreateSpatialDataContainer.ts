@@ -2,14 +2,15 @@ import {
   SpatialDataContainerApi,
   type PermissionType,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export async function useCreateSpatialDataContainer(
   fileContainerName: string,
   permissionType: PermissionType,
 ) {
-  const api = createApiInstance(SpatialDataContainerApi);
+  const api = useShepardApi(SpatialDataContainerApi);
 
-  const newSpatialDataContainer = await api
+  const newSpatialDataContainer = await api.value
     .createSpatialDataContainer({
       spatialDataContainer: { name: fileContainerName },
     })
@@ -22,7 +23,7 @@ export async function useCreateSpatialDataContainer(
     });
   if (!newSpatialDataContainer) return;
 
-  const currentPermissions = await api
+  const currentPermissions = await api.value
     .getSpatialDataPermissions({
       spatialDataContainerId: newSpatialDataContainer.id,
     })
@@ -35,7 +36,7 @@ export async function useCreateSpatialDataContainer(
     });
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await api
+  const permissionsUpdateSuccess = await api.value
     .editSpatialDataPermissions({
       spatialDataContainerId: newSpatialDataContainer.id,
       permissions: {

@@ -6,6 +6,7 @@ import {
   UserApi,
 } from "@dlr-shepard/backend-client";
 import type { Ref } from "vue";
+import { useShepardApi } from "./common/api/useShepardApi";
 
 export abstract class ShepardObjectAccessor {
   id: number;
@@ -34,6 +35,8 @@ export abstract class ShepardObjectAccessor {
 
   abstract fetchRoles(): Promise<void>;
 
+  // add getApi method
+
   abstract fetchPermissions(): Promise<void>;
 
   abstract updatePermissions(updatedPermissions: Permissions): Promise<void>;
@@ -44,7 +47,7 @@ export abstract class ShepardObjectAccessor {
         await this.fetchPermissions();
       }
       const ownerName = this.permissions.value!.owner!;
-      const ownerValue = await createApiInstance(UserApi).getUser({
+      const ownerValue = await useShepardApi(UserApi).value.getUser({
         username: ownerName,
       });
       this.owner = ref(ownerValue);

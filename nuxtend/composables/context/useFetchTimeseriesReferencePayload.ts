@@ -2,6 +2,7 @@ import {
   TimeseriesReferenceApi,
   type TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchTimeseriesPayload(
   collectionId: number,
@@ -16,8 +17,8 @@ export function useFetchTimeseriesPayload(
     dataObjectId: number,
     timeseriesReferenceId: number,
   ) {
-    createApiInstance(TimeseriesReferenceApi)
-      .getTimeseriesPayload({
+    useShepardApi(TimeseriesReferenceApi)
+      .value.getTimeseriesPayload({
         collectionId: collectionId,
         dataObjectId: dataObjectId,
         timeseriesReferenceId: timeseriesReferenceId,

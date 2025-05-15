@@ -19,6 +19,7 @@ import type {
   DataReferenceWithoutContainerName,
   ReferencedContainerMeta,
 } from "~/components/context/display-components/data-references/dataReference";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useDataReferencesByDataObject(
   collectionId: number,
@@ -27,8 +28,8 @@ export function useDataReferencesByDataObject(
   const dataReferences = ref<Array<DataReference> | undefined>(undefined);
 
   async function fetchTimeseriesReferences(): Promise<TimeseriesReference[]> {
-    return createApiInstance(TimeseriesReferenceApi)
-      .getAllTimeseriesReferences({
+    return useShepardApi(TimeseriesReferenceApi)
+      .value.getAllTimeseriesReferences({
         collectionId,
         dataObjectId,
       })
@@ -39,8 +40,8 @@ export function useDataReferencesByDataObject(
   }
 
   async function fetchFileReferences(): Promise<FileReference[]> {
-    return createApiInstance(FileReferenceApi)
-      .getAllFileReferences({
+    return useShepardApi(FileReferenceApi)
+      .value.getAllFileReferences({
         collectionId,
         dataObjectId,
       })
@@ -53,8 +54,8 @@ export function useDataReferencesByDataObject(
   async function fetchStructuredDataReferences(): Promise<
     StructuredDataReference[]
   > {
-    return createApiInstance(StructuredDataReferenceApi)
-      .getAllStructuredDataReferences({
+    return useShepardApi(StructuredDataReferenceApi)
+      .value.getAllStructuredDataReferences({
         collectionId,
         dataObjectId,
       })
@@ -69,8 +70,8 @@ export function useDataReferencesByDataObject(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(TimeseriesContainerApi)
-      .getTimeseriesContainer({ timeseriesContainerId: containerId })
+    return useShepardApi(TimeseriesContainerApi)
+      .value.getTimeseriesContainer({ timeseriesContainerId: containerId })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,
@@ -90,8 +91,8 @@ export function useDataReferencesByDataObject(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(FileContainerApi)
-      .getFileContainer({ fileContainerId: containerId })
+    return useShepardApi(FileContainerApi)
+      .value.getFileContainer({ fileContainerId: containerId })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,
@@ -111,8 +112,10 @@ export function useDataReferencesByDataObject(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(StructuredDataContainerApi)
-      .getStructuredDataContainer({ structuredDataContainerId: containerId })
+    return useShepardApi(StructuredDataContainerApi)
+      .value.getStructuredDataContainer({
+        structuredDataContainerId: containerId,
+      })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,

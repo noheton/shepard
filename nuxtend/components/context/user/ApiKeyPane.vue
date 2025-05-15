@@ -8,15 +8,16 @@ import {
 import { toShortDateTimeString } from "nuxtend/utils/helpers";
 import AddApiKeyButton from "~/components/context/user/AddApiKeyButton.vue";
 import DeleteApiKeyButton from "~/components/context/user/DeleteApiKeyButton.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
-const apikeyApi = createApiInstance(ApikeyApi);
-const userApi = createApiInstance(UserApi);
+const apikeyApi = useShepardApi(ApikeyApi);
+const userApi = useShepardApi(UserApi);
 
-const user = await userApi.getCurrentUser();
+const user = await userApi.value.getCurrentUser();
 const apiKeys = ref<ApiKey[]>();
 
 function fetchApiKeys() {
-  return apikeyApi.getAllApiKeys({ username: user.username });
+  return apikeyApi.value.getAllApiKeys({ username: user.username });
 }
 
 async function updateApiKeys() {

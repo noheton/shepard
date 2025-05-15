@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
 import { useTimeoutFn } from "@vueuse/core";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface AutoCompleteItem {
   title?: string;
@@ -74,7 +75,7 @@ onMounted(async () => {
 });
 
 async function getDataObjectById(dataObjectId: number): Promise<DataObject> {
-  return await createApiInstance(DataObjectApi).getDataObject({
+  return await useShepardApi(DataObjectApi).value.getDataObject({
     collectionId: props.collectionId,
     dataObjectId,
   });

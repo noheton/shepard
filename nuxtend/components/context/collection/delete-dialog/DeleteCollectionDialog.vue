@@ -4,6 +4,7 @@ import {
   CollectionApi,
   type ResponseError,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface CollectionDeleteDialogProps {
   collection: Collection;
@@ -20,7 +21,7 @@ const router = useRouter();
 
 async function deleteCollection() {
   try {
-    await createApiInstance(CollectionApi).deleteCollection({
+    await useShepardApi(CollectionApi).value.deleteCollection({
       collectionId: props.collection.id,
     });
 

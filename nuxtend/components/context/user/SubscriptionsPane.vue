@@ -5,17 +5,20 @@ import {
   SubscriptionApi,
   UserApi,
 } from "@dlr-shepard/backend-client";
-import DeleteSubscriptionButton from "~/components/context/user/DeleteSubscriptionButton.vue";
 import AddSubscriptionButton from "~/components/context/user/AddSubscriptionButton.vue";
+import DeleteSubscriptionButton from "~/components/context/user/DeleteSubscriptionButton.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
-const subscriptionsApi = createApiInstance(SubscriptionApi);
-const userApi = createApiInstance(UserApi);
+const subscriptionsApi = useShepardApi(SubscriptionApi);
+const userApi = useShepardApi(UserApi);
 
-const user = await userApi.getCurrentUser();
+const user = await userApi.value.getCurrentUser();
 const subscriptions = ref<Subscription[]>();
 
 function fetchSubscriptions() {
-  return subscriptionsApi.getAllSubscriptions({ username: user.username });
+  return subscriptionsApi.value.getAllSubscriptions({
+    username: user.username,
+  });
 }
 
 async function updateSubscriptions() {

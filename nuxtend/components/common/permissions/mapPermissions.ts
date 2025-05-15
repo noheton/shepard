@@ -8,6 +8,7 @@ import {
   type UserGroup,
 } from "@dlr-shepard/backend-client";
 import type { UpdatedPermissions } from "~/components/context/collection/edit-dialog/collectionEditTypes";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { MemberPermissions } from "./EditPermissionsDialog.vue";
 import { UserRole } from "./UserRole";
 
@@ -95,13 +96,13 @@ async function mapPermissionRoleUserGroups(
 }
 
 async function fetchUser(username: string) {
-  const user = await createApiInstance(UserApi).getUser({
+  const user = await useShepardApi(UserApi).value.getUser({
     username,
   });
   return user;
 }
 async function fetchUserGroup(groupId: number) {
-  const userGroup = await createApiInstance(UserGroupApi).getUserGroup({
+  const userGroup = await useShepardApi(UserGroupApi).value.getUserGroup({
     userGroupId: groupId,
   });
   return userGroup;

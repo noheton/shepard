@@ -4,6 +4,7 @@ import {
   type SemanticRepository,
 } from "@dlr-shepard/backend-client";
 import { ConfigurationFragments } from "~/components/context/configuration/configurationMenuItems";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
 import { handleSemanticRepositoryListUpdate } from "~/utils/resourceUpdateBus";
 
@@ -35,8 +36,8 @@ const deleteSemanticRepository = (semanticRepository: SemanticRepository) => {
 
 async function onDelete() {
   if (!semanticRepositoryToDelete.value) return;
-  createApiInstance(SemanticRepositoryApi)
-    .deleteSemanticRepository({
+  useShepardApi(SemanticRepositoryApi)
+    .value.deleteSemanticRepository({
       semanticRepositoryId: semanticRepositoryToDelete.value.id,
     })
     .then(_ => {

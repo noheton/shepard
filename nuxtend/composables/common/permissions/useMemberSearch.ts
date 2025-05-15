@@ -4,6 +4,7 @@ import {
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../api/useShepardApi";
 
 export type Member = User | UserGroup;
 
@@ -22,8 +23,10 @@ export function useMemberSearch(
     const userSearchStringParam = buildUserQueryString(query);
     const userGroupSearchStringParam = buildUserGroupQueryString(query);
 
-    const userSearchResponse = await createApiInstance(SearchApi)
-      .searchUsers({
+    const searchApi = useShepardApi(SearchApi);
+
+    const userSearchResponse = await useShepardApi(SearchApi)
+      .value.searchUsers({
         userSearchBody: {
           searchParams: {
             query: userSearchStringParam,
@@ -34,7 +37,7 @@ export function useMemberSearch(
         handleError(e as ResponseError, "searching for users.");
         return undefined;
       });
-    const userGroupSearchResponse = await createApiInstance(SearchApi)
+    const userGroupSearchResponse = await searchApi.value
       .searchUserGroups({
         userSearchBody: {
           searchParams: {

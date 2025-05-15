@@ -1,5 +1,6 @@
 import type { ResponseError } from "@dlr-shepard/backend-client";
 import { TimeseriesContainerApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export async function useFetchTimeseries(
   timeseriesContainerId: number,
@@ -9,8 +10,8 @@ export async function useFetchTimeseries(
   symbolicName: string,
   field: string,
 ) {
-  const timeseries = await createApiInstance(TimeseriesContainerApi)
-    .getTimeseriesOfContainer({
+  const timeseries = await useShepardApi(TimeseriesContainerApi)
+    .value.getTimeseriesOfContainer({
       timeseriesContainerId,
       measurement,
       device,

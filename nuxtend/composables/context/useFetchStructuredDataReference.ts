@@ -10,6 +10,7 @@ import type {
   StructuredDataMeta,
   StructuredDataReferenceWithContainerMeta,
 } from "~/components/context/display-components/structured-data-references/structuredDataReferenceTypes";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export function useFetchStructuredDataReference(
   collectionId: number,
@@ -22,8 +23,8 @@ export function useFetchStructuredDataReference(
   const structuredData = ref<StructuredDataMeta[]>([]);
 
   async function fetchStructuredDataReference() {
-    createApiInstance(StructuredDataReferenceApi)
-      .getStructuredDataReference({
+    useShepardApi(StructuredDataReferenceApi)
+      .value.getStructuredDataReference({
         collectionId,
         dataObjectId,
         structuredDataReferenceId,
@@ -49,8 +50,10 @@ export function useFetchStructuredDataReference(
   ): Promise<ReferencedContainerMeta> {
     if (isDeleted(containerId))
       return { referencedContainerAvailability: "deleted" };
-    return createApiInstance(StructuredDataContainerApi)
-      .getStructuredDataContainer({ structuredDataContainerId: containerId })
+    return useShepardApi(StructuredDataContainerApi)
+      .value.getStructuredDataContainer({
+        structuredDataContainerId: containerId,
+      })
       .then((response): ReferencedContainerMeta => {
         return {
           referencedContainerName: response.name,
@@ -68,8 +71,8 @@ export function useFetchStructuredDataReference(
   async function fetchReferencedStructuredDataPayload(): Promise<
     StructuredDataPayload[]
   > {
-    return createApiInstance(StructuredDataReferenceApi)
-      .getStructuredDataPayload({
+    return useShepardApi(StructuredDataReferenceApi)
+      .value.getStructuredDataPayload({
         collectionId,
         dataObjectId,
         structuredDataReferenceId,
@@ -83,8 +86,8 @@ export function useFetchStructuredDataReference(
   async function fetchExistingStructuredDataInContainer(
     structuredDataContainerId: number,
   ): Promise<StructuredData[]> {
-    return createApiInstance(StructuredDataContainerApi)
-      .getAllStructuredDatas({ structuredDataContainerId })
+    return useShepardApi(StructuredDataContainerApi)
+      .value.getAllStructuredDatas({ structuredDataContainerId })
       .catch(error => {
         handleError(error, "getStructuredDatas");
         return [];

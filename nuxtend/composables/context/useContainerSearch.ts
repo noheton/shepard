@@ -1,4 +1,5 @@
 import { type ContainerType, SearchApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "../common/api/useShepardApi";
 
 export interface MyContainerSearchResult {
   containerName: string;
@@ -32,7 +33,9 @@ export function useContainerSearch(
       searchStringParam = createSearchQueryFromString(query);
     }
 
-    const searchResponse = await createApiInstance(SearchApi).searchContainers({
+    const searchResponse = await useShepardApi(
+      SearchApi,
+    ).value.searchContainers({
       containerSearchBody: {
         searchParams: { query: searchStringParam, queryType: "BASIC" },
       },

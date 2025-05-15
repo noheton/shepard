@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CollectionApi, PermissionType } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { CollectionToCreate } from "./collectionToCreate";
 
 const showDialog = defineModel<boolean>("showDialog", {
@@ -23,8 +24,9 @@ watch(collectionToCreate, () => form.value?.validate(), { deep: true });
 
 async function saveChanges() {
   if (isValid.value === false) return;
+  const collectionApi = useShepardApi(CollectionApi);
 
-  const collectionId = await createApiInstance(CollectionApi)
+  const collectionId = await collectionApi.value
     .createCollection({
       collection: collectionToCreate.value,
     })
@@ -37,7 +39,7 @@ async function saveChanges() {
     });
   if (!collectionId) return;
 
-  const currentPermissions = await createApiInstance(CollectionApi)
+  const currentPermissions = await collectionApi.value
     .getCollectionPermissions({ collectionId })
     .catch(error => {
       handleError(error, "getPermissions");
@@ -46,7 +48,7 @@ async function saveChanges() {
 
   if (!currentPermissions) return;
 
-  const permissionsUpdateSuccess = await createApiInstance(CollectionApi)
+  const permissionsUpdateSuccess = await collectionApi.value
     .editCollectionPermissions({
       collectionId: collectionId,
       permissions: {
