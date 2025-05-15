@@ -8,7 +8,13 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "delete-item", value: StructuredData): void;
+  (
+    e:
+      | "delete-item"
+      | "show-structured-data-content-dialog"
+      | "download-structured-data",
+    value: StructuredData,
+  ): void;
 }>();
 
 const headers = [
@@ -45,6 +51,14 @@ const itemsPerPage = 10;
     </template>
     <template #[`item.actions`]="{ item }: { item: StructuredData }">
       <ActionContainer>
+        <ActionButton
+          icon="mdi-eye-outline"
+          @click="() => emit('show-structured-data-content-dialog', item)"
+        />
+        <ActionButton
+          icon="mdi-tray-arrow-down"
+          @click="() => emit('download-structured-data', item)"
+        />
         <ActionButton
           v-if="isAllowedToEdit"
           icon="mdi-delete-outline"

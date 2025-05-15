@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { StructuredData } from "@dlr-shepard/backend-client";
+import {
+  StructuredDataContainerApi,
+  type StructuredData,
+} from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { StructuredDataContainerAccessor } from "~/composables/container/StructuredDataAccessor";
 
 const { routeParams } = useContainerRouteParams();
@@ -20,6 +24,8 @@ const fetchData = () => {
 
 const itemToDelete = ref<StructuredData | undefined>(undefined);
 const showFileDeleteConfirmDialog = ref<boolean>(false);
+const showStructuredDataContentViewerDialog = ref<boolean>(false);
+const selectedPayload = ref<string>("");
 
 const deleteItem = (item: StructuredData) => {
   itemToDelete.value = item;
@@ -42,6 +48,42 @@ const filterFiles = (files: File[]) => {
     return fileName.endsWith(".json");
   });
 };
+
+function onShowStructuredDataContentDialog(structuredData: StructuredData) {
+  if (structuredData.oid) {
+    useShepardApi(StructuredDataContainerApi)
+      .value.getStructuredData({
+        oid: structuredData.oid,
+        structuredDataContainerId: containerId,
+      })
+      .then(response => {
+        if (response.payload) {
+          selectedPayload.value = response.payload;
+          showStructuredDataContentViewerDialog.value = true;
+        }
+      })
+      .catch(error => {
+        handleError(error, "fetchStructuredData");
+      });
+  }
+}
+
+function onDownload(structuredData: StructuredData) {
+  if (structuredData.oid) {
+    useShepardApi(StructuredDataContainerApi)
+      .value.getStructuredData({
+        oid: structuredData.oid,
+        structuredDataContainerId: containerId,
+      })
+      .then(response => {
+        const blob = structuredDataToBlob(response);
+        downloadFile(blob, structuredData.name ?? "");
+      })
+      .catch(error => {
+        handleError(error, "downloadStructuredData");
+      });
+  }
+}
 
 fetchData();
 </script>
@@ -104,6 +146,10 @@ fetchData();
         :items="container.items.value"
         :loading="container.loading.value"
         @delete-item="item => deleteItem(item)"
+        @show-structured-data-content-dialog="
+          structuredData => onShowStructuredDataContentDialog(structuredData)
+        "
+        @download-structured-data="structuredData => onDownload(structuredData)"
       />
     </v-container>
     <ConfirmDeleteDialog
@@ -112,6 +158,11 @@ fetchData();
       "
       v-model:show-dialog="showFileDeleteConfirmDialog"
       @confirmed="container.deleteItem(itemToDelete.oid)"
+    />
+    <StructuredDataViewerDialog
+      v-if="showStructuredDataContentViewerDialog"
+      v-model:show-dialog="showStructuredDataContentViewerDialog"
+      :structured-data-payload="selectedPayload"
     />
   </div>
 </template>
