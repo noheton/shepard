@@ -16,11 +16,27 @@ const timeInput = ref<string>();
 const rules = {
   time: (value: string): boolean | string => {
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d+)?$/;
-    return timeRegex.test(value) || "Invalid time format. Use HH:mm:ss.###";
+    return timeRegex.test(value) || "Invalid time format. Use HH:mm:ss.msec";
   },
   date: (value: string): boolean | string => {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    return dateRegex.test(value) || "Invalid date format. Use YYYY-MM-DD";
+    if (!dateRegex.test(value)) {
+      return "Invalid date format. Use YYYY-MM-DD";
+    }
+
+    const date = new Date(value);
+    const [year, month, day] = value.split("-").map(Number);
+
+    if (
+      isNaN(date.getTime()) ||
+      date.getFullYear() !== year ||
+      date.getMonth() + 1 !== month ||
+      date.getDate() !== day
+    ) {
+      return "Invalid calendar date";
+    }
+
+    return true;
   },
 };
 watch(dateInput, () => {
@@ -35,7 +51,6 @@ watch(timeInput, () => {
 });
 
 function formatDate(value: string) {
-  // If it's a Date object or can be parsed as one, format it
   try {
     const dateObj = new Date(value);
     const year = dateObj.getFullYear();
@@ -43,7 +58,6 @@ function formatDate(value: string) {
     const day = String(dateObj.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   } catch {
-    // If parsing fails, return empty string
     return "";
   }
 }
@@ -51,6 +65,11 @@ function formatDate(value: string) {
 function handleDateSelection(selectedDate: string) {
   dateInput.value = formatDate(selectedDate);
   showDatePicker.value = false;
+}
+function handleDateBlur() {
+  nextTick(() => {
+    showDatePicker.value = false;
+  });
 }
 </script>
 <template>
@@ -65,7 +84,10 @@ function handleDateSelection(selectedDate: string) {
       append-inner-icon="mdi-calendar-edit-outline"
       prepend-icon=""
       density="compact"
+      :rules="[rules.date]"
       required
+      @keydown.enter="showDatePicker = false"
+      @blur="handleDateBlur"
     >
       <v-menu
         v-model="showDatePicker"
