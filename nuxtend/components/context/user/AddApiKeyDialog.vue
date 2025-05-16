@@ -42,11 +42,6 @@ async function createApiKey() {
     dialogDisabled.value = false;
   }
 }
-
-function copyToClipboard() {
-  navigator.clipboard.writeText(createdKey.value!.jwt);
-  emitSuccess(`Copied api key to clipboard!`);
-}
 </script>
 
 <template>
@@ -69,23 +64,26 @@ function copyToClipboard() {
           flat
         >
           <template #[`item.1`]>
-            <NameInput class="mt-8" v-model:name="newKeyName" />
+            <NameInput v-model:name="newKeyName" class="mt-8" />
           </template>
 
           <template #[`item.2`]>
-            <div>
+            <p>
               Api key has been created. Note that for security reasons the api
               key will not be accessible later on so note it down!
-            </div>
-            <div class="mt-6 api-key">
-              <code>
-                {{ createdKey!.jwt }}
-              </code>
-            </div>
+            </p>
+            <code v-if="createdKey" class="mt-6 api-key">
+              {{ createdKey.jwt }}
+              <ClipboardButton
+                class="clipboard-button"
+                :text="createdKey.jwt"
+                success-message="Copied api key to clipboard!"
+              />
+            </code>
           </template>
           <v-spacer />
           <template #actions>
-            <div class="d-flex px-6 mt-12">
+            <div class="d-flex px-6">
               <v-spacer />
               <v-btn
                 v-if="currentStep === 1"
@@ -107,16 +105,6 @@ function copyToClipboard() {
                 Create
               </v-btn>
               <div v-else>
-                <v-btn
-                  class="mr-4"
-                  prepend-icon="mdi-clipboard-multiple-outline"
-                  variant="flat"
-                  color="primary"
-                  @click="copyToClipboard"
-                >
-                  <template #prepend><v-icon /></template>
-                  Clipboard
-                </v-btn>
                 <v-btn
                   color="primary"
                   variant="flat"
@@ -169,7 +157,22 @@ function copyToClipboard() {
   }
 }
 
-.api-key {
+code {
+  display: block;
+  padding: 8px;
   background-color: rgb(var(--v-theme-divider2));
+
+  .clipboard-button {
+    visibility: hidden;
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  &:hover {
+    .clipboard-button {
+      visibility: visible;
+    }
+  }
 }
 </style>

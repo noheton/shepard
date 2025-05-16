@@ -17,7 +17,7 @@ const emit = defineEmits(["created"]);
     v-if="showCreateDialog"
     v-model:show-dialog="showCreateDialog"
     :username="username"
-    @submit="emit('created')"
+    @created="emit('created')"
   />
 </template>
 

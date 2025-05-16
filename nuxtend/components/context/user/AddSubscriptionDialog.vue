@@ -40,7 +40,7 @@ const isValid = computed(() => {
     @submit="emit('submit', name, callbackUrl, subscribedUrl, requestMethod)"
   >
     <template #form>
-      <div class="wrapper">
+      <div class="wrapper mt-8">
         <SimpleInput v-model:input-string="name" label="Name" />
         <SimpleInput v-model:input-string="callbackUrl" label="Callback URL" />
         <SimpleInput
