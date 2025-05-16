@@ -35,8 +35,6 @@ export abstract class ShepardObjectAccessor {
 
   abstract fetchRoles(): Promise<void>;
 
-  // add getApi method
-
   abstract fetchPermissions(): Promise<void>;
 
   abstract updatePermissions(updatedPermissions: Permissions): Promise<void>;

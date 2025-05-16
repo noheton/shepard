@@ -6,8 +6,6 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "./common/api/useShepardApi";
 
-const semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
-
 export type AnnotationToAdd = Omit<
   SemanticAnnotation,
   "id" | "name" | "propertyName" | "valueName"
@@ -23,28 +21,27 @@ export interface Annotated {
 
 export class AnnotatedCollection implements Annotated {
   collectionId: number;
+  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
 
   constructor(collectionId: number) {
     this.collectionId = collectionId;
   }
 
-  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
-
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return semanticAnnotationApi.value.getAllCollectionAnnotations({
+    return this.semanticAnnotationApi.value.getAllCollectionAnnotations({
       collectionId: this.collectionId,
     });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return semanticAnnotationApi.value.deleteCollectionAnnotation({
+    return this.semanticAnnotationApi.value.deleteCollectionAnnotation({
       collectionId: this.collectionId,
       semanticAnnotationId: annotationId,
     });
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return semanticAnnotationApi.value.createCollectionAnnotation({
+    return this.semanticAnnotationApi.value.createCollectionAnnotation({
       collectionId: this.collectionId,
       semanticAnnotation: annotation,
     });
@@ -54,6 +51,7 @@ export class AnnotatedCollection implements Annotated {
 export class AnnotatedDataObject implements Annotated {
   collectionId: number;
   dataObjectId: number;
+  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
 
   constructor(collectionId: number, dataObjectId: number) {
     this.collectionId = collectionId;
@@ -61,14 +59,14 @@ export class AnnotatedDataObject implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return semanticAnnotationApi.value.getAllDataObjectAnnotations({
+    return this.semanticAnnotationApi.value.getAllDataObjectAnnotations({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
     });
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return semanticAnnotationApi.value.deleteDataObjectAnnotation({
+    return this.semanticAnnotationApi.value.deleteDataObjectAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       semanticAnnotationId: annotationId,
@@ -76,7 +74,7 @@ export class AnnotatedDataObject implements Annotated {
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return semanticAnnotationApi.value.createDataObjectAnnotation({
+    return this.semanticAnnotationApi.value.createDataObjectAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       semanticAnnotation: annotation,
@@ -88,6 +86,7 @@ export class AnnotatedReference implements Annotated {
   collectionId: number;
   dataObjectId: number;
   referenceId: number;
+  semanticAnnotationApi = useShepardApi(SemanticAnnotationApi);
 
   constructor(collectionId: number, dataobjectId: number, referenceId: number) {
     this.collectionId = collectionId;
@@ -96,7 +95,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   fetchAnnotations(): Promise<SemanticAnnotation[]> {
-    return semanticAnnotationApi.value.getAllReferenceAnnotations({
+    return this.semanticAnnotationApi.value.getAllReferenceAnnotations({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,
@@ -104,7 +103,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   deleteAnnotation(annotationId: number): Promise<void> {
-    return semanticAnnotationApi.value.deleteReferenceAnnotation({
+    return this.semanticAnnotationApi.value.deleteReferenceAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,
@@ -113,7 +112,7 @@ export class AnnotatedReference implements Annotated {
   }
 
   addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
-    return semanticAnnotationApi.value.createReferenceAnnotation({
+    return this.semanticAnnotationApi.value.createReferenceAnnotation({
       collectionId: this.collectionId,
       dataObjectId: this.dataObjectId,
       referenceId: this.referenceId,

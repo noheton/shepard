@@ -3,9 +3,8 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { mapToTreeviewItem, type TreeviewItem } from "./treeviewItem";
 import { useOpenedItems } from "./useOpenedItems";
 
-const dataObjectApi = useShepardApi(DataObjectApi);
-
 export const useTreeviewItems = (routeParams: Ref<CollectionRouteParams>) => {
+  const dataObjectApi = useShepardApi(DataObjectApi);
   const treeviewItems = ref<TreeviewItem[] | undefined>(undefined);
   const loading = ref<boolean>(true);
   const { openedTreeviewItems, addOpen, collapseItem } = useOpenedItems();
@@ -203,8 +202,8 @@ async function fetchTreeviewItem(
   dataObjectId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem | undefined> {
-  return dataObjectApi.value
-    .getDataObject({
+  return useShepardApi(DataObjectApi)
+    .value.getDataObject({
       collectionId,
       dataObjectId,
     })
@@ -222,8 +221,8 @@ async function fetchChildrenOfItem(
   parentId: number,
   parentItem?: TreeviewItem,
 ): Promise<TreeviewItem[] | undefined> {
-  return dataObjectApi.value
-    .getAllDataObjects({
+  return useShepardApi(DataObjectApi)
+    .value.getAllDataObjects({
       parentId,
       collectionId,
     })
