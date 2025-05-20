@@ -81,6 +81,7 @@ const itemsPerPage = 10;
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
       <DataObjectDataMetaCell :meta="value" />
       <SemanticAnnotationList
+        :key="value.id"
         :can-delete="isAllowedToEditCollection"
         :annotated="
           new AnnotatedReference(collectionId, dataObjectId, value.id)
