@@ -66,11 +66,6 @@ function handleDateSelection(selectedDate: string) {
   dateInput.value = formatDate(selectedDate);
   showDatePicker.value = false;
 }
-function handleDateBlur() {
-  nextTick(() => {
-    showDatePicker.value = false;
-  });
-}
 </script>
 <template>
   <v-col class="pa-0 pr-2">
@@ -81,26 +76,28 @@ function handleDateBlur() {
       variant="outlined"
       bg-color="canvas"
       placeholder="YYYY-MM-DD"
-      append-inner-icon="mdi-calendar-edit-outline"
       prepend-icon=""
       density="compact"
       :rules="[rules.date]"
       required
       @keydown.enter="showDatePicker = false"
-      @blur="handleDateBlur"
     >
-      <v-menu
-        v-model="showDatePicker"
-        :close-on-content-click="false"
-        transition="scale-transition"
-        min-width="auto"
-        activator="parent"
-      >
-        <v-date-picker
-          :model-value="datePicker"
-          @update:model-value="handleDateSelection"
-        />
-      </v-menu>
+      <template #append-inner>
+        <v-icon icon="mdi-calendar-edit-outline" />
+        <v-menu
+          v-model="showDatePicker"
+          :close-on-content-click="false"
+          :close-on-back="true"
+          transition="scale-transition"
+          min-width="auto"
+          activator="parent"
+        >
+          <v-date-picker
+            :model-value="datePicker"
+            @update:model-value="handleDateSelection"
+          />
+        </v-menu>
+      </template>
     </v-text-field>
   </v-col>
   <v-col class="pa-0">
