@@ -23,6 +23,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -98,6 +99,7 @@ public class FileReferenceDAOQuarkusTest {
   }
 
   @Test
+  @Order(1)
   @Transactional
   public void findByDataObjectNeo4jIdTest() {
     List<FileReference> actualFileReferences = fileReferenceDAO.findByDataObjectNeo4jId(dataObject1.getId());
@@ -107,6 +109,7 @@ public class FileReferenceDAOQuarkusTest {
   }
 
   @Test
+  @Order(2)
   @Transactional
   public void findNothingByDataObjectNeo4jIdTest() {
     List<FileReference> actualFileReferences = fileReferenceDAO.findByDataObjectNeo4jId(dataObject2.getId());
@@ -114,6 +117,7 @@ public class FileReferenceDAOQuarkusTest {
   }
 
   @Test
+  @Order(3)
   @Transactional
   public void findByDataObjectShepardIdTest() {
     List<FileReference> actualFileReferences = fileReferenceDAO.findByDataObjectNeo4jId(dataObject1.getShepardId());
@@ -123,6 +127,7 @@ public class FileReferenceDAOQuarkusTest {
   }
 
   @Test
+  @Order(4)
   @Transactional
   public void findNothingByDataObjectShepardIdTest() {
     List<FileReference> actualFileReferences = fileReferenceDAO.findByDataObjectNeo4jId(dataObject2.getShepardId());
