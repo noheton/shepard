@@ -25,5 +25,3 @@ const emit = defineEmits(["delete"]);
     @confirmed="emit('delete')"
   />
 </template>
-
-<style lang="scss" scoped></style>

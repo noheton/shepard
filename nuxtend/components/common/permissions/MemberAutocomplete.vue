@@ -9,12 +9,14 @@ import {
   type Member,
 } from "../../../composables/common/permissions/useMemberSearch";
 import type { AutoCompleteItem } from "../AutocompleteInput.vue";
-
 const emit = defineEmits<{
   (e: "memberSelect", value: Member): void;
 }>();
 
 const model = defineModel<Member>();
+defineSlots();
+
+defineProps<{ label: string }>();
 
 const searchString = ref<string | undefined>(undefined);
 const searchDone = ref<boolean>(false);
@@ -50,11 +52,15 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
     v-model:search-string="searchString"
     v-model:search-done="searchDone"
     :model-value="model ? mapToAutocompleteItem(model) : undefined"
-    label="User or group id"
+    :label="label"
     density="compact"
     :is-loading="isLoading"
     :item-list="searchResults.map(mapToAutocompleteItem)"
     :start-search="startSearch"
     @search-ended="onSelect"
-  />
+  >
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot :name="slot" v-bind="scope" />
+    </template>
+  </AutocompleteInput>
 </template>

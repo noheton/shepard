@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   title: string;
-  addButtonText: string;
+  addButtonText?: string;
   showTooltip?: boolean;
 }>();
 defineEmits<{
@@ -15,8 +15,11 @@ defineEmits<{
       <slot name="tooltip-content" />
     </Tooltip>
   </div>
+  <v-row no-gutters class="flex-nowrap">
+    <slot name="metadata" />
+  </v-row>
 
-  <div class="d-flex justify-end pt-8">
+  <div v-if="addButtonText" class="d-flex justify-end pt-8">
     <v-btn
       class="bg-primary text-canvas"
       variant="flat"

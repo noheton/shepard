@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { useTimeoutFn } from "@vueuse/core";
-
 export interface AutoCompleteItem {
   title?: string;
   value?: object;
 }
 
-const { startSearch } = defineProps<{
-  isDisabled?: boolean;
-  isLoading?: boolean;
-  density?: "default" | "comfortable" | "compact";
-  label: string;
-  itemList: AutoCompleteItem[];
-  startSearch: () => void;
-}>();
+defineSlots();
+const { startSearch } = withDefaults(
+  defineProps<{
+    isDisabled?: boolean;
+    isLoading?: boolean;
+    density?: "default" | "comfortable" | "compact";
+    label: string;
+    itemList: AutoCompleteItem[];
+    startSearch: () => void;
+  }>(),
+  {
+    density: "default",
+  },
+);
 
 const emit = defineEmits<{
   (e: "searchEnded", value: object | null): void;
@@ -70,6 +75,7 @@ watch(autoCompleteModel, newVal => {
 
 <template>
   <v-autocomplete
+    ref="autocompleteRef"
     :label="label"
     :model-value="autoCompleteModel"
     :items="itemList"
@@ -85,5 +91,9 @@ watch(autoCompleteModel, newVal => {
     :custom-filter="() => true"
     @update:search="onSearch"
     @update:model-value="onSelection"
-  />
+  >
+    <template v-for="(_, slot) of $slots" #[slot]="scope">
+      <slot :name="slot" v-bind="scope" />
+    </template>
+  </v-autocomplete>
 </template>

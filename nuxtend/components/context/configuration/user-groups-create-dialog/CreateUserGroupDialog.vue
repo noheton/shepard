@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PermissionType } from "@dlr-shepard/backend-client";
+import { PermissionType, type UserGroup } from "@dlr-shepard/backend-client";
 import { createUserGroup } from "~/composables/context/useCreateUserGroup";
 
 const isValid = ref(true);
@@ -13,7 +13,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 const titleError = ref<boolean>(false);
 
 const emit = defineEmits<{
-  (e: "user-group-created", userGroupId: number): void;
+  (e: "user-group-created", userGroupId: UserGroup): void;
 }>();
 
 const validationRules = [
@@ -30,7 +30,7 @@ async function onSubmit() {
         titleError.value = true;
         return;
       }
-      emit("user-group-created", response.id);
+      emit("user-group-created", response);
       showDialog.value = false;
     },
   );

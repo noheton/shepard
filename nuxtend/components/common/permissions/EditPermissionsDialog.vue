@@ -60,7 +60,7 @@ const selectedMember = ref<Member | undefined>(undefined);
 const filteredRoles = ref<UserRole[]>([]);
 
 updatedPermissions.value = shepardObjectPermissions.value;
-memberPermissionsList.value = await mapPermissions(updatedPermissions.value);
+await mapPermissions(updatedPermissions.value, memberPermissionsList);
 
 async function saveChanges() {
   try {
@@ -239,6 +239,7 @@ watch(selectedMember, newMember => {
           <v-col>
             <MemberAutocomplete
               :model-value="selectedMember"
+              label="User or group id"
               @member-select="
                 (selectedAdditionalMember: Member) => {
                   selectedMember = selectedAdditionalMember;

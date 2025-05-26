@@ -14,8 +14,10 @@ import { UserRole } from "./UserRole";
 
 export async function mapPermissions(
   permissions: UpdatedPermissions,
-): Promise<MemberPermissions[]> {
-  const memberPermissions: MemberPermissions[] = [];
+  memberPermissionsList: Ref<MemberPermissions[] | undefined>,
+) {
+  const memberPermissions: MemberPermissions[] =
+    memberPermissionsList.value || [];
   await mapPermissionRoleUsers(
     permissions?.manager,
     UserRole.manager,
@@ -42,7 +44,7 @@ export async function mapPermissions(
     memberPermissions,
   );
 
-  return memberPermissions;
+  memberPermissionsList.value = memberPermissions;
 }
 
 async function mapPermissionRoleUsers(

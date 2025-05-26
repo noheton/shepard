@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "select-user-group", userGroupId: number): void;
+  (e: "select-user-group", userGroup: UserGroup): void;
 }>();
 
 const headers = [
@@ -41,7 +41,7 @@ const headers = [
     <template #item="rowProps">
       <v-data-table-row
         v-bind="rowProps"
-        @click="emit('select-user-group', rowProps.item.id)"
+        @click="emit('select-user-group', rowProps.item)"
       >
         <template #[`item.id`]>
           <span class="text-textbody">#{{ rowProps.item.id }}</span>
@@ -53,7 +53,7 @@ const headers = [
           <CreatedTableCell
             :created-at="rowProps.item.createdAt"
             :created-by="rowProps.item.createdBy"
-            :biggerFont="true"
+            :bigger-font="true"
           />
         </template>
       </v-data-table-row>

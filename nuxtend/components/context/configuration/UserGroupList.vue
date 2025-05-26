@@ -1,17 +1,18 @@
 <script setup lang="ts">
+import type { UserGroup } from "@dlr-shepard/backend-client";
 import { useFetchUserGroups } from "~/composables/context/useFetchUserGroups";
 
 const { userGroups, isLoading } = useFetchUserGroups();
 
 const emit = defineEmits<{
-  (e: "select-user-group", userGroupId: number): void;
+  (e: "select-user-group", userGroup: UserGroup): void;
 }>();
 
 const showCreateDialog = ref<boolean>(false);
 
-const handleUserGroupCreated = (userGroupId: number) => {
+const handleUserGroupCreated = (userGroup: UserGroup) => {
   handleUserGroupListUpdate();
-  emit("select-user-group", userGroupId);
+  emit("select-user-group", userGroup);
 };
 </script>
 
@@ -32,9 +33,7 @@ const handleUserGroupCreated = (userGroupId: number) => {
       <UserGroupsTable
         :user-groups="userGroups"
         :loading="isLoading"
-        @select-user-group="
-          userGroupId => emit('select-user-group', userGroupId)
-        "
+        @select-user-group="userGroup => emit('select-user-group', userGroup)"
       />
     </template>
   </ConfigurationPane>

@@ -5,9 +5,13 @@ export interface ContextMenuItem {
   icon: string;
 }
 
-defineProps<{
-  items: ContextMenuItem[];
-}>();
+withDefaults(
+  defineProps<{
+    items: ContextMenuItem[];
+    selectorIcon?: string;
+  }>(),
+  { selectorIcon: "mdi-dots-horizontal" },
+);
 
 const emit = defineEmits<{
   (e: "expansion-state-changed", value: boolean): void;
@@ -18,7 +22,7 @@ const emit = defineEmits<{
   <v-menu class="pa-0">
     <template #activator="{ props: activatorProps }">
       <v-btn
-        icon="mdi-dots-horizontal"
+        :icon="selectorIcon"
         v-bind="activatorProps"
         variant="plain"
         density="compact"
