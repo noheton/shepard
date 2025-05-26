@@ -241,6 +241,8 @@ public class CollectionRest {
     content = @Content(schema = @Schema(implementation = CollectionIO.class))
   )
   @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
   public Response createCollection(
     @RequestBody(
       required = true,

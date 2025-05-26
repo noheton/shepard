@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.Date;
 import java.util.List;
@@ -20,6 +21,7 @@ public class FileContainerTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      .withPrefabValues(Collection.class, new Collection(3L), new Collection(4L))
       .verify();
   }
 

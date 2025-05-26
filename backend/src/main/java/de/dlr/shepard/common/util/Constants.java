@@ -162,6 +162,7 @@ public class Constants {
   public static final String STRUCTUREDDATA_IN_CONTAINER = "structureddata_in_container";
   public static final String HAS_PAYLOAD = "has_payload";
   public static final String HAS_LABJOURNAL_ENTRY = "has_labjournalentry";
+  public static final String HAS_DEFAULT_FILE_CONTAINER = "has_default_file_container";
 
   // Influx
   public static final String MEASUREMENT = "measurement";

@@ -8,6 +8,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
+import de.dlr.shepard.data.file.io.FileContainerIO;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -143,5 +144,25 @@ public class BaseTestCaseIT {
       .extract()
       .as(DataObjectReferenceIO.class);
     return created;
+  }
+
+  protected static FileContainerIO createFileContainer(String containerName) {
+    return createFileContainer(containerName, defaultUser);
+  }
+
+  protected static FileContainerIO createFileContainer(String name, UserWithApiKey user) {
+    FileContainerIO fileContainerIO = new FileContainerIO();
+    fileContainerIO.setName(name);
+
+    var fileContainer = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(fileContainerIO)
+      .when()
+      .post("/" + Constants.FILE_CONTAINERS)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(FileContainerIO.class);
+    return fileContainer;
   }
 }

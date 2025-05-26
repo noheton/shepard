@@ -204,7 +204,7 @@ export class LabJournalEntryApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get all lab journals in a data object
+     * Get all lab journals in a data object sorted by their creation date (newest first)
      */
     async getLabJournalsByCollectionRaw(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<LabJournalEntry>>> {
         if (requestParameters['dataObjectId'] == null) {
@@ -245,7 +245,7 @@ export class LabJournalEntryApi extends runtime.BaseAPI {
     }
 
     /**
-     * Get all lab journals in a data object
+     * Get all lab journals in a data object sorted by their creation date (newest first)
      */
     async getLabJournalsByCollection(requestParameters: GetLabJournalsByCollectionRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<LabJournalEntry>> {
         const response = await this.getLabJournalsByCollectionRaw(requestParameters, initOverrides);

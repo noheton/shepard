@@ -30,6 +30,7 @@ export interface IngestDataRequest {
     databaseName: string;
     datasetSize: number;
     dataPointValueType: DataPointValueType;
+    numberOfDifferentTimeseries?: number;
 }
 
 /**
@@ -115,6 +116,10 @@ export class TimeseriesMigrationApi extends runtime.BaseAPI {
 
         if (requestParameters['dataPointValueType'] != null) {
             queryParameters['dataPointValueType'] = requestParameters['dataPointValueType'];
+        }
+
+        if (requestParameters['numberOfDifferentTimeseries'] != null) {
+            queryParameters['numberOfDifferentTimeseries'] = requestParameters['numberOfDifferentTimeseries'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

@@ -12,7 +12,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.version.io.VersionIO;
-import io.quarkus.logging.Log;
+import de.dlr.shepard.data.file.io.FileContainerIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -30,16 +30,19 @@ public class CollectionIT extends BaseTestCaseIT {
 
   private static String collectionsURL;
   private static CollectionIO collection;
+  private static CollectionIO collectionWithDefaultFileContainer;
   private static VersionIO firstVersion;
   private static VersionIO secondVersion;
   private static String name;
   private static long VersionizedCollectionShepardId;
   private static String VersionizedCollectionName;
   private static String newVersionizedCollectionName;
+  private static FileContainerIO defaultFileContainerIO;
 
   @BeforeAll
   public static void setUp() {
     collectionsURL = "/" + Constants.COLLECTIONS;
+    defaultFileContainerIO = createFileContainer("DefaultFileContainer");
   }
 
   @Test
@@ -70,6 +73,66 @@ public class CollectionIT extends BaseTestCaseIT {
     assertThat(actual.getDataObjectIds()).isEmpty();
     assertThat(actual.getUpdatedAt()).isNull();
     assertThat(actual.getUpdatedBy()).isNull();
+    assertThat(actual.getDefaultFileContainerId()).isNull();
+  }
+
+  @Test
+  @Order(1)
+  public void postCollectionTest_withDefaultContainer_SuccessDefaultFileContainerExists() {
+    var payload = new CollectionIO();
+    name = "CollectionDummy2" + System.currentTimeMillis();
+    payload.setName(name);
+    payload.setDescription("My Description");
+    payload.setAttributes(Map.of("a", "1", "b", "2"));
+    payload.setDefaultFileContainerId(defaultFileContainerIO.getId());
+
+    CollectionIO actual = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(payload)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+    collectionWithDefaultFileContainer = actual;
+
+    assertThat(actual.getId()).isNotNull();
+    assertThat(actual.getAttributes()).isEqualTo(Map.of("a", "1", "b", "2"));
+    assertThat(actual.getDescription()).isEqualTo("My Description");
+    assertThat(actual.getCreatedAt()).isNotNull();
+    assertThat(actual.getCreatedBy()).isEqualTo(nameOfDefaultUser);
+    assertThat(actual.getName()).isEqualTo(name);
+    assertThat(actual.getDataObjectIds()).isEmpty();
+    assertThat(actual.getUpdatedAt()).isNull();
+    assertThat(actual.getUpdatedBy()).isNull();
+    assertThat(actual.getDefaultFileContainerId()).isEqualTo(defaultFileContainerIO.getId());
+  }
+
+  @Test
+  @Order(1)
+  public void postCollectionTest_withDefaultContainer_FailureDefaultFileContainerDoesNotExist() {
+    var payload = new CollectionIO();
+    name = "CollectionDummy" + System.currentTimeMillis();
+    payload.setName(name);
+    payload.setDescription("My Description");
+    payload.setAttributes(Map.of("a", "1", "b", "2"));
+    payload.setDefaultFileContainerId(9999999L);
+
+    given().spec(requestSpecOfDefaultUser).body(payload).when().post(collectionsURL).then().statusCode(404);
+  }
+
+  @Test
+  @Order(1)
+  public void postCollectionTest_withDefaultContainer_FailureUserHasNoReadPermissionsOnDefaultFileContainer() {
+    var payload = new CollectionIO();
+    name = "CollectionDummy" + System.currentTimeMillis();
+    payload.setName(name);
+    payload.setDescription("My Description");
+    payload.setAttributes(Map.of("a", "1", "b", "2"));
+    payload.setDefaultFileContainerId(defaultFileContainerIO.getId());
+
+    given().spec(requestSpecOfOtherUser).body(payload).when().post(collectionsURL).then().statusCode(403);
   }
 
   @Test
@@ -109,6 +172,7 @@ public class CollectionIT extends BaseTestCaseIT {
       .as(CollectionIO.class);
 
     assertThat(actual).isEqualTo(collection);
+    assertThat(actual.getDefaultFileContainerId()).isEqualTo(null);
   }
 
   @Test
@@ -234,9 +298,6 @@ public class CollectionIT extends BaseTestCaseIT {
       .extract()
       .as(CollectionIO.class);
 
-    Log.warn(collection);
-    Log.warn(actualResponse);
-
     assertThat(actualResponse.getUpdatedAt()).isNotNull();
     assertThat(actualResponse.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
     assertThat(actualResponse)
@@ -247,6 +308,94 @@ public class CollectionIT extends BaseTestCaseIT {
 
   @Test
   @Order(12)
+  public void putCollectionTest_withDefaultContainer_SuccessDefaultFileContainerExists() {
+    // add default FileContainer to collection without filecontainer
+    name = "CollectionDummyChanged" + System.currentTimeMillis();
+    collection.setName(name);
+    collection.setDefaultFileContainerId(defaultFileContainerIO.getId());
+
+    CollectionIO actualResponse = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(collection)
+      .when()
+      .put(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    assertThat(actualResponse.getUpdatedAt()).isNotNull();
+    assertThat(actualResponse.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
+    assertThat(actualResponse)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt")
+      .isEqualTo(collection);
+    assertThat(actualResponse.getDefaultFileContainerId()).isEqualTo(defaultFileContainerIO.getId());
+    collection = actualResponse;
+  }
+
+  @Test
+  @Order(12)
+  public void putCollectionTest_unsetDefaultContainer_Success() {
+    name = "CollectionDummyChanged" + System.currentTimeMillis();
+    collection.setName(name);
+    collection.setDefaultFileContainerId(null);
+
+    CollectionIO actualResponse = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(collection)
+      .when()
+      .put(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    assertThat(actualResponse.getUpdatedAt()).isNotNull();
+    assertThat(actualResponse.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
+    assertThat(actualResponse)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt")
+      .isEqualTo(collection);
+    assertThat(actualResponse.getDefaultFileContainerId()).isNull();
+    collection = actualResponse;
+  }
+
+  @Test
+  @Order(12)
+  public void putCollectionTest_withDefaultContainer_FailureDefaultFileContainerDoesNotExist() {
+    name = "CollectionDummyChanged" + System.currentTimeMillis();
+    collection.setName(name);
+    collection.setDefaultFileContainerId(9999L);
+
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .body(collection)
+      .when()
+      .put(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(404);
+  }
+
+  @Test
+  @Order(12)
+  public void putCollectionTest_withDefaultContainer_FailureUserHasNoReadPermissionsOnDefaultFileContainer() {
+    // add default FileContainer to collection without filecontainer
+    name = "CollectionDummyChanged" + System.currentTimeMillis();
+    collection.setName(name);
+    collection.setDefaultFileContainerId(defaultFileContainerIO.getId());
+
+    given()
+      .spec(requestSpecOfOtherUser)
+      .body(collection)
+      .when()
+      .put(collectionsURL + "/" + collection.getId())
+      .then()
+      .statusCode(403);
+  }
+
+  @Test
+  @Order(13)
   public void deleteCollectionTest_Successful() {
     given()
       .spec(requestSpecOfDefaultUser)
@@ -255,10 +404,18 @@ public class CollectionIT extends BaseTestCaseIT {
       .then()
       .statusCode(204);
     given().spec(requestSpecOfDefaultUser).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
+
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .delete(collectionsURL + "/" + collectionWithDefaultFileContainer.getId())
+      .then()
+      .statusCode(204);
+    given().spec(requestSpecOfDefaultUser).when().get(collectionsURL + "/" + collection.getId()).then().statusCode(404);
   }
 
   @Test
-  @Order(13)
+  @Order(14)
   public void getinitialHEADVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       var payload = new CollectionIO();
@@ -291,7 +448,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(14)
+  @Order(15)
   public void createNewVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO newVersion = new VersionIO();
@@ -312,7 +469,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(15)
+  @Order(16)
   public void createSecondVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO newVersion = new VersionIO();
@@ -333,7 +490,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(16)
+  @Order(17)
   public void getAllVersions() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO[] versions = given()
@@ -363,7 +520,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(17)
+  @Order(18)
   public void modifyHEADCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO newVersionizedCollection = new CollectionIO();
@@ -384,7 +541,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(18)
+  @Order(19)
   public void retrieveModifiedHEADCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
@@ -400,7 +557,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(19)
+  @Order(20)
   public void retrieveSecondVersion() {
     if (VersioningFeatureToggle.isEnabled()) {
       VersionIO actual = given()
@@ -416,7 +573,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(20)
+  @Order(21)
   public void retrieveSecondVersionOfCollection() {
     if (VersioningFeatureToggle.isEnabled()) {
       CollectionIO actual = given()
@@ -433,7 +590,7 @@ public class CollectionIT extends BaseTestCaseIT {
   }
 
   @Test
-  @Order(21)
+  @Order(22)
   public void updateCollection_deleteAttribute_successfullyDeleteAttribute() {
     // Arrange
     CollectionIO collectionIO = new CollectionIO();

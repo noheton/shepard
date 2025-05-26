@@ -5,6 +5,7 @@ import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
+import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -28,6 +29,9 @@ public class Collection extends AbstractDataObject {
 
   @Relationship(type = Constants.HAS_PERMISSIONS)
   private Permissions permissions;
+
+  @Relationship(type = Constants.HAS_DEFAULT_FILE_CONTAINER)
+  private FileContainer fileContainer;
 
   /**
    * For testing purposes only
@@ -55,6 +59,7 @@ public class Collection extends AbstractDataObject {
     result = prime * result + HasId.hashcodeHelper(incoming);
     result = prime * result + HasId.hashcodeHelper(permissions);
     result = prime * result + HasId.hashcodeHelper(version);
+    result = prime * result + HasId.hashcodeHelper(fileContainer);
     return result;
   }
 
@@ -68,7 +73,8 @@ public class Collection extends AbstractDataObject {
       HasId.areEqualSetsByUniqueId(dataObjects, other.dataObjects) &&
       HasId.areEqualSetsByUniqueId(incoming, other.incoming) &&
       HasId.equalsHelper(permissions, other.permissions) &&
-      HasId.equalsHelper(version, other.version)
+      HasId.equalsHelper(version, other.version) &&
+      HasId.equalsHelper(fileContainer, other.fileContainer)
     );
   }
 }

@@ -79,6 +79,12 @@ export interface Collection {
      * @memberof Collection
      */
     readonly incomingIds: Array<number>;
+    /**
+     * 
+     * @type {number}
+     * @memberof Collection
+     */
+    defaultFileContainerId?: number | null;
 }
 
 /**
@@ -116,6 +122,7 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'dataObjectIds': json['dataObjectIds'],
         'incomingIds': json['incomingIds'],
+        'defaultFileContainerId': json['defaultFileContainerId'] == null ? undefined : json['defaultFileContainerId'],
     };
 }
 
@@ -128,6 +135,7 @@ export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'crea
         'name': value['name'],
         'description': value['description'],
         'attributes': value['attributes'],
+        'defaultFileContainerId': value['defaultFileContainerId'],
     };
 }
 

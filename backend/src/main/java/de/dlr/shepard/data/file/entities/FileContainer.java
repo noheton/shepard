@@ -2,6 +2,7 @@ package de.dlr.shepard.data.file.entities;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.collection.entities.Collection;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -9,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
@@ -20,6 +22,9 @@ public class FileContainer extends BasicContainer {
 
   @Relationship(type = Constants.FILE_IN_CONTAINER)
   private List<ShepardFile> files = new ArrayList<>();
+
+  @Relationship(type = Constants.HAS_DEFAULT_FILE_CONTAINER, direction = Direction.INCOMING)
+  private List<Collection> collectionList = new ArrayList<>();
 
   /**
    * For testing purposes only

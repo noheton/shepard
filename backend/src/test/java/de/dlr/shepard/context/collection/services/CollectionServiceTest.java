@@ -25,6 +25,8 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.references.basicreference.daos.BasicReferenceDAO;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.file.services.FileContainerService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
@@ -58,6 +60,9 @@ public class CollectionServiceTest {
 
   @InjectMock
   DateHelper dateHelper;
+
+  @InjectMock
+  FileContainerService fileContainerService;
 
   @Inject
   CollectionService service;
@@ -260,6 +265,68 @@ public class CollectionServiceTest {
   }
 
   @Test
+  public void updateCollectionByShepardId_setDefaultFileContainer() {
+    User user = new User("bob");
+    Date date = new Date(23);
+    User updateUser = new User("claus");
+    Date updateDate = new Date(43);
+    FileContainer fileContainer = new FileContainer(151L);
+
+    CollectionIO input = new CollectionIO() {
+      {
+        setId(1L);
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setDefaultFileContainerId(151L);
+      }
+    };
+    Collection old = new Collection() {
+      {
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setId(15L);
+        setShepardId(input.getId());
+        setFileContainer(null);
+      }
+    };
+    var updated = new Collection() {
+      {
+        setAttributes(Map.of("1", "2", "c", "d"));
+        setDescription("Desc");
+        setName("Name");
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setUpdatedAt(updateDate);
+        setUpdatedBy(updateUser);
+        setId(old.getId());
+        setShepardId(old.getShepardId());
+        setFileContainer(fileContainer);
+      }
+    };
+
+    when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
+    when(userService.getCurrentUser()).thenReturn(updateUser);
+    when(dateHelper.getDate()).thenReturn(updateDate);
+    when(dao.createOrUpdate(updated)).thenReturn(updated);
+    when(authenticationContext.getCurrentUserName()).thenReturn(updateUser.getUsername());
+    when(fileContainerService.getContainer(fileContainer.getId())).thenReturn(fileContainer);
+
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+    ).thenReturn(true);
+    when(
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+    ).thenReturn(true);
+
+    var actual = service.updateCollectionByShepardId(old.getShepardId(), input);
+    assertEquals(updated, actual);
+  }
+
+  @Test
   public void deleteCollectionByShepardIdTest() {
     User user = new User("bob");
     Date date = new Date(23);
@@ -316,6 +383,7 @@ public class CollectionServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob")).thenReturn(true);
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     assertEquals(ret, result);
+    assertEquals(null, result.getFileContainer());
   }
 
   @Test

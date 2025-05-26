@@ -8,6 +8,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ public class FileReferenceTest extends BaseTestCase {
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      .withPrefabValues(FileContainer.class, new FileContainer(2L), new FileContainer(3L))
       .verify();
   }
 

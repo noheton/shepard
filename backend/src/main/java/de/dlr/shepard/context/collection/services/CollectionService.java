@@ -19,6 +19,8 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.file.services.FileContainerService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
@@ -46,11 +48,16 @@ public class CollectionService {
   @Inject
   AuthenticationContext authenticationContext;
 
+  @Inject
+  FileContainerService fileContainerService;
+
   /**
    * Creates a Collection and stores it in Neo4J
    *
    * @param collection to be stored
    * @return the created collection
+   * @throws InvalidPathException if default FileContainer is specified, but the FileContainer cannot be found
+   * @throws InvalidAuthException if default FileContainer is specified, but user has no read permission on FileContainer
    */
   public Collection createCollection(CollectionIO collection) {
     Date date = dateHelper.getDate();
@@ -62,6 +69,14 @@ public class CollectionService {
     toCreate.setCreatedAt(date);
     toCreate.setDescription(collection.getDescription());
     toCreate.setName(collection.getName());
+
+    if (collection.getDefaultFileContainerId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
+      toCreate.setFileContainer(fileContainer);
+    } else {
+      toCreate.setFileContainer(null);
+    }
+
     var createdCollection = collectionDAO.createOrUpdate(toCreate);
 
     Version nullVersion = new Version(Constants.HEAD, Constants.HEAD_VERSION, date, user);
@@ -164,6 +179,7 @@ public class CollectionService {
     }
     assertIsAllowedToReadCollection(shepardId);
     cutDeleted(ret);
+
     return ret;
   }
 
@@ -176,6 +192,8 @@ public class CollectionService {
    * @return updated Collection
    * @throws InvalidPathException if no collection could be found by shepardId
    * @throws InvalidAuthException if the user does not have permissions to read or edit the collection
+   * @throws InvalidPathException if default FileContainer is specified, but the FileContainer cannot be found
+   * @throws InvalidAuthException if default FileContainer is specified, but user has no read permission on FileContainer
    */
   public Collection updateCollectionByShepardId(long shepardId, CollectionIO collection) {
     Collection old = getCollectionWithDataObjectsAndIncomingReferences(shepardId);
@@ -186,6 +204,13 @@ public class CollectionService {
     old.setAttributes(collection.getAttributes());
     old.setDescription(collection.getDescription());
     old.setName(collection.getName());
+
+    if (collection.getDefaultFileContainerId() != null) {
+      FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
+      old.setFileContainer(fileContainer);
+    } else {
+      old.setFileContainer(null);
+    }
 
     Collection updated = collectionDAO.createOrUpdate(old);
     cutDeleted(updated);

@@ -8,6 +8,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
+import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.List;
 import java.util.UUID;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -25,6 +26,7 @@ public class CollectionTest extends BaseTestCase {
       .withPrefabValues(CollectionReference.class, new CollectionReference(1L), new CollectionReference(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(Version.class, new Version(new UUID(1L, 2L)), new Version(new UUID(3L, 4L)))
+      .withPrefabValues(FileContainer.class, new FileContainer(1L), new FileContainer(2L))
       .verify();
   }
 

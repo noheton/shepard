@@ -74,6 +74,12 @@ export interface FileContainer {
      * @memberof FileContainer
      */
     readonly oid: string;
+    /**
+     * 
+     * @type {Array<number>}
+     * @memberof FileContainer
+     */
+    readonly defaultCollectionIdList?: Array<number> | null;
 }
 
 
@@ -111,10 +117,11 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
         'name': json['name'],
         'type': ContainerTypeFromJSON(json['type']),
         'oid': json['oid'],
+        'defaultCollectionIdList': json['defaultCollectionIdList'] == null ? undefined : json['defaultCollectionIdList'],
     };
 }
 
-export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'> | null): any {
+export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'defaultCollectionIdList'> | null): any {
     if (value == null) {
         return value;
     }

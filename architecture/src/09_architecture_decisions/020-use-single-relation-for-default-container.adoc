@@ -1,0 +1,54 @@
+ifndef::imagesdir[:imagesdir: ../../images]
+
+=== ADR-020 Use Single Relation To Represent Default File Container in Collections
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|26.05.2025
+|Status|Done
+
+|Context|
+
+Collections in shepard should contain a default file container.
+The goal is to provide users a starting point in the frontend to upload files, i.e., in the lab journal.
+This feature is directed towards frontend usage.
+A data structure in the backend is needed to enable tracking which collection is linked to which file container.
+
+When creating or updating a collection it should be possible to define a default file container.
+Only an already existing file container should be used as a default file container.
+When a new collection is created, no default file container should be automatically created in the backend.
+For now, no syncing of permissions rights between the collection or file container is needed.
+The user creating the relation between the collection and the container need to at least have write permissions on the collection and read permissions on the container.
+
+|Decision|
+We decided to implement this feature by adding a new neo4j relation between collections and file containers.
+
+This relation is named `HAS_DEFAULT_FILE_CONTAINER`.
+It is a `n:1` relation from a collection node to a file container node.
+One file container can be the default file container of multiple collections, but every collection can only have exactly one default file container at a time.
+
+By traversing this relation from the collection, it is possible to find the default container.
+Vice versa, by traversing the relations from the default file container, it is possible to find all collections that are associated to this file container.
+
+It is possible to remove or change a collection's default file container.
+It is not possible to remove this relation by updating the file container.
+
+Backend implementation of this approach is straight forward and can be realized by relying on the neo4j ogm library.
+
+Integration of other collection related features, i.e. a templating feature, is possible in a similar way by adding new relations from this collection object.
+
+|Possible Alternatives|
+
+. Metadata Object
+    * create metadata neo4j object, that stores all kind of different metadata of a collection. This object is connected via a relation to the collection object.
+    * allows to abstract structural metadata information like template information, default containers ..., from the neo4j collection object
+    * introduces a lot of overhead in queries and in backend implementation, since it requires creating a completely new neo4j entity
+        * when querying all information about a collection, the user has to retrieve the data stored in the collection object AND from its related metadata object, resulting in more queries
+. Store Information as properties in neo4j collection node
+    * straight forward approach, small implementation efforts
+    * only one-way information
+        * no way to query associated collection node from container node, since information is only stored in the collection node
+        * would require adding new properties to container nodes too
+        * collection and container properties need to be kept in sync manually
+|===

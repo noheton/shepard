@@ -21,6 +21,7 @@ import jakarta.ws.rs.InternalServerErrorException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestScoped
 public class FileContainerService extends AbstractContainerService<FileContainer, FileContainerIO> {
@@ -79,6 +80,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       throw new InvalidPathException(errorMsg);
     }
     assertIsAllowedToReadContainer(id);
+    fileContainer.setCollectionList(fileContainer.getCollectionList().stream().filter(d -> !d.isDeleted()).toList());
     return fileContainer;
   }
 
@@ -93,7 +95,20 @@ public class FileContainerService extends AbstractContainerService<FileContainer
   public List<FileContainer> getAllContainers(QueryParamHelper params) {
     User user = userService.getCurrentUser();
     List<FileContainer> containers = fileContainerDAO.findAllFileContainers(params, user.getUsername());
+
+    // this mapping is done because 'findAllFileContainers' does not return all relations of a container
+    // therefore the returned list of collection ids is ALWAYS empty, even though the container might be set as the default container by a collection
+    // this can lead to confusion
+    // by nullifying the collection id list, it is not included in the API response
+    containers = containers.stream().map(this::nullifyEmptyCollectionIdList).collect(Collectors.toList());
     return containers;
+  }
+
+  private FileContainer nullifyEmptyCollectionIdList(FileContainer fileContainer) {
+    if (fileContainer.getCollectionList().isEmpty()) {
+      fileContainer.setCollectionList(null);
+    }
+    return fileContainer;
   }
 
   /**
