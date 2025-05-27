@@ -10,6 +10,7 @@ export interface MyContainerSearchResult {
 export function useContainerSearch(
   searchString: Ref<string | undefined>,
   onSearchDone?: () => void,
+  containerType?: ContainerType,
 ) {
   const isLoading = ref<boolean>(false);
   const containerSearchResults = ref<MyContainerSearchResult[]>([]);
@@ -37,7 +38,10 @@ export function useContainerSearch(
       SearchApi,
     ).value.searchContainers({
       containerSearchBody: {
-        searchParams: { query: searchStringParam, queryType: "BASIC" },
+        searchParams: {
+          query: searchStringParam,
+          queryType: containerType ?? "BASIC",
+        },
       },
     });
 

@@ -53,6 +53,7 @@ const { containerSearchResults, startSearch, isLoading } = useContainerSearch(
   () => {
     searchDone.value = true;
   },
+  props.containerType,
 );
 
 function mapToSearchResultAutoCompleteItem(
