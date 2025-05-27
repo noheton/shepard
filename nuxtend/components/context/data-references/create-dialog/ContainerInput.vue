@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import type { ContainerType } from "@dlr-shepard/backend-client";
+import { ContainerType } from "@dlr-shepard/backend-client";
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
+import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
 import {
   useContainerSearch,
   type MyContainerSearchResult,
 } from "~/composables/context/useContainerSearch";
 
-defineProps<{ collectionId: number }>();
+const props = defineProps<{
+  collectionId: number;
+  isRequired?: boolean;
+  containerType?: ContainerType;
+}>();
 
 const containerId = defineModel<number | undefined>("containerId", {
   required: true,
@@ -21,6 +26,27 @@ const searchString = ref<string | undefined>(undefined);
 const searchDone = ref<boolean>(false);
 
 const autoCompleteModel = ref<AutoCompleteItem | undefined>(undefined);
+
+// Pre-fill input field with already set file container
+if (
+  containerId.value &&
+  props.containerType &&
+  props.containerType === ContainerType.File
+) {
+  const containerAccessor = new FileContainerAccessor(containerId.value);
+  await containerAccessor.fetchData();
+
+  if (containerAccessor.fileContainer.value) {
+    autoCompleteModel.value = {
+      title: `${containerAccessor.fileContainer.value.name} (ID: ${containerAccessor.fileContainer.value.id}) (Type: ${containerAccessor.fileContainer.value.type})`,
+      value: {
+        containerName: containerAccessor.fileContainer.value.name,
+        containerId: containerAccessor.fileContainer.value.id,
+        containerType: ContainerType.File,
+      },
+    };
+  }
+}
 
 const { containerSearchResults, startSearch, isLoading } = useContainerSearch(
   searchString,
@@ -56,7 +82,7 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
         v-model:search-string="searchString"
         v-model:search-done="searchDone"
         :model-value="autoCompleteModel"
-        label="Container Name or ID..."
+        :label="`Container Name or ID...${isRequired ? `*` : ``}`"
         density="compact"
         :is-loading="isLoading"
         :item-list="

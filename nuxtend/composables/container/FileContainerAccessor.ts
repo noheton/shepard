@@ -85,8 +85,8 @@ export class FileContainerAccessor extends ContainerAccessor {
   async uploadFile(file: File) {
     return this.api.value
       .createFile({ fileContainerId: this.id, file })
-      .then(() => {
-        return Promise.resolve();
+      .then(shepardFile => {
+        return Promise.resolve(shepardFile);
       })
       .finally(() => {
         this.fetchFiles();

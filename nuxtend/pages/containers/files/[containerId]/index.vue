@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ShepardFile } from "@dlr-shepard/backend-client";
 import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
 
 const { routeParams } = useContainerRouteParams();
@@ -16,7 +17,7 @@ onContainerUpdated(() => {
   fetchData();
 });
 
-const uploadFile = async (file: File) => {
+const uploadFile = async (file: File): Promise<ShepardFile> => {
   return containerAccessor.uploadFile(file);
 };
 fetchData();
@@ -50,7 +51,11 @@ fetchData();
               <template #buttons>
                 <UploadFilesButton
                   v-if="containerAccessor.isAllowedToEditData.value"
-                  :upload-file="uploadFile"
+                  :upload-file="
+                    async file => {
+                      uploadFile(file);
+                    }
+                  "
                 />
                 <EditPermissionsButton
                   v-if="containerAccessor.isAllowedToEditPermissions.value"

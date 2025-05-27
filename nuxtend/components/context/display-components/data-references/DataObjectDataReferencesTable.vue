@@ -33,8 +33,8 @@ function showDetails(pathFragment: string, id: number) {
   router.push(route);
 }
 
-const tableItems: Array<DataTableElement> = props.dataReferences.map(
-  mapDataReferenceToDataTableElement,
+const tableItems = computed(() =>
+  props.dataReferences.map(mapDataReferenceToDataTableElement),
 );
 
 const headers = [

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
+import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
@@ -150,7 +151,10 @@ const showAddRelationshipDialog = ref(false);
                       :data-object-id="dataObject.id"
                     />
                   </template>
-
+                  <DataObjectFileUpload
+                    :collection-id="collectionId"
+                    :dataobject-id="dataObjectId"
+                  />
                   <DataObjectDataReferencesTable
                     :collection-id="collectionId"
                     :data-object-id="dataObjectId"

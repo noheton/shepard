@@ -69,4 +69,19 @@ export class CollectionAccessor extends ShepardObjectAccessor {
       handleError(error as ResponseError, "updating permissions");
     }
   }
+
+  async updateCollection(updatedCollection: Collection) {
+    try {
+      await this.api.value.updateCollection({
+        collectionId: this.id,
+        collection: {
+          ...updatedCollection,
+        },
+      });
+      emitSuccess(`Successfully updated collection with ID: ${this.id}`);
+      handleCollectionUpdate();
+    } catch (error) {
+      handleError(error as ResponseError, "updating collection");
+    }
+  }
 }
