@@ -1,24 +1,50 @@
 <script setup lang="ts">
-const containerIconSrc = new URL(
-  "../../../assets/container_icon.svg",
-  import.meta.url,
-).href;
-const collectionIconSrc = new URL(
-  "../../../assets/collection_icon.svg",
-  import.meta.url,
-).href;
-const dataObjectIconSrc = new URL(
-  "../../../assets/data_object_icon.svg",
-  import.meta.url,
-).href;
-const dataReferenceIconSrc = new URL(
-  "../../../assets/data_reference_icon.svg",
-  import.meta.url,
-).href;
-const dataObjectRelationshipIconSrc = new URL(
-  "../../../assets/data_object_relationship_icon.svg",
-  import.meta.url,
-).href;
+import { useTheme } from "vuetify";
+
+const theme = useTheme();
+const isDarkMode = computed(() => theme.global.current.value.dark);
+
+const containerIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL("../../../assets/container_icon_dark.svg", import.meta.url).href
+    : new URL("../../../assets/container_icon.svg", import.meta.url).href;
+});
+const collectionIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL("../../../assets/collection_icon_dark.svg", import.meta.url).href
+    : new URL("../../../assets/collection_icon.svg", import.meta.url).href;
+});
+const dataObjectIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL("../../../assets/data_object_icon_dark.svg", import.meta.url).href
+    : new URL("../../../assets/data_object_icon.svg", import.meta.url).href;
+});
+const dataReferenceIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL("../../../assets/data_reference_icon_dark.svg", import.meta.url)
+        .href
+    : new URL("../../../assets/data_reference_icon.svg", import.meta.url).href;
+});
+const dataObjectRelationshipIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL(
+        "../../../assets/data_object_relationship_icon_dark.svg",
+        import.meta.url,
+      ).href
+    : new URL(
+        "../../../assets/data_object_relationship_icon.svg",
+        import.meta.url,
+      ).href;
+});
+const shepardExplainedIconSrc = computed(() => {
+  return isDarkMode.value
+    ? new URL(
+        "../../../assets/shepard_explained_icon_dark.svg",
+        import.meta.url,
+      ).href
+    : new URL("../../../assets/shepard_explained_icon.svg", import.meta.url)
+        .href;
+});
 </script>
 <template>
   <div>
@@ -65,7 +91,7 @@ const dataObjectRelationshipIconSrc = new URL(
       </div>
       <v-img
         class="mt-8 mb-8"
-        src="../../../assets/shepard_explained_icon.svg"
+        :src="shepardExplainedIconSrc"
         width="100"
         height="100"
       />

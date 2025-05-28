@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useTheme } from "vuetify";
+
 const props = defineProps<{
   title: string;
   iconType: "collection" | "container";
@@ -8,14 +10,23 @@ const props = defineProps<{
   buttonLink: string;
 }>();
 
-const iconSrcMap: Record<string, string> = {
-  collection: new URL("../../../assets/collection_icon.svg", import.meta.url)
-    .href,
-  container: new URL("../../../assets/container_icon.svg", import.meta.url)
-    .href,
-};
+const theme = useTheme();
+const isDarkMode = computed(() => theme.global.current.value.dark);
 
-const iconSrc = iconSrcMap[props.iconType];
+const iconSrc = computed(() => {
+  if (props.iconType === "collection") {
+    return isDarkMode.value
+      ? new URL("../../../assets/collection_icon_dark.svg", import.meta.url)
+          .href
+      : new URL("../../../assets/collection_icon.svg", import.meta.url).href;
+  }
+  if (props.iconType === "container") {
+    return isDarkMode.value
+      ? new URL("../../../assets/container_icon_dark.svg", import.meta.url).href
+      : new URL("../../../assets/container_icon.svg", import.meta.url).href;
+  }
+  return "";
+});
 </script>
 
 <template>
