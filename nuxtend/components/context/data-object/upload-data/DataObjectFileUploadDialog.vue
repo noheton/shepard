@@ -38,7 +38,6 @@ const { addFileReference } = useCreateFileReference(
 const collectionAccessor = new CollectionAccessor(props.collectionId);
 try {
   await collectionAccessor.fetchData();
-  await collectionAccessor.fetchPermissions();
 } catch {
   handleError("Could not initialize collection values", "file upload");
 }
@@ -50,11 +49,6 @@ const newFileContainerName = ref<string>("");
 const newFileContainerPermissionType = ref<PermissionType>(
   PermissionType.Private,
 );
-
-if (collectionAccessor.permissions.value) {
-  newFileContainerPermissionType.value =
-    collectionAccessor.permissions.value.permissionType;
-}
 
 const newReferenceName = ref<string>("");
 const isFileContainerDefault = ref<boolean>(false);

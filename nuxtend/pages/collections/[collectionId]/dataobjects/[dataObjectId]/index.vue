@@ -152,6 +152,7 @@ const showAddRelationshipDialog = ref(false);
                     />
                   </template>
                   <DataObjectFileUpload
+                    v-if="isAllowedToEditCollection"
                     :collection-id="collectionId"
                     :dataobject-id="dataObjectId"
                   />
