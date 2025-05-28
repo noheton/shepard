@@ -41,7 +41,6 @@ const itemsPerPage = 10;
     :headers="headers"
     :items-for-pagination="items"
     :loading="loading"
-    hover
   >
     <template #[`item.oid`]="{ item }: { item: StructuredData }">
       <CopyTextButton :text="item.oid" />

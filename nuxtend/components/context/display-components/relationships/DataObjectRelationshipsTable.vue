@@ -104,7 +104,7 @@ const headers = [
 
 <template>
   <EmptyListIcon v-if="tableItems.length === 0" label="No relationships yet" />
-  <DataTable v-else :headers="headers" :items="tableItems" hover>
+  <DataTable v-else :headers="headers" :items="tableItems">
     <template
       #[`item.relationship`]="{
         value,

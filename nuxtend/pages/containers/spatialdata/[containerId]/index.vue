@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { SpatialDataContainerAccessor } from "~/composables/container/SpatialDataContainerAccessor";
 
+useHead({
+  title: "Spatial Data Container | shepard",
+});
+
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.SPATIALDATA;

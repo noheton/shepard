@@ -43,7 +43,6 @@ function selectionChanged() {
     :items="props.items"
     :loading="loading"
     item-value="oid"
-    hover
     hide-default-footer
     show-select
     @update:model-value="() => selectionChanged()"

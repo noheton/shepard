@@ -45,7 +45,6 @@ function updateErrorState() {
 <template>
   <FormDialog
     v-model:show-dialog="showDialog"
-    :max-width="800"
     title="Create User Group"
     :submit-disabled="!isValid"
     save-button-text="Add"
@@ -53,12 +52,12 @@ function updateErrorState() {
   >
     <template #form>
       <v-form ref="form" v-model="isValid">
-        <v-row class="pt-9 pb-1">
-          <v-col>
+        <v-row class="pt-9">
+          <v-col class="pb-1">
             <v-text-field
               v-model:model-value="userGroupTitle"
               :rules="validationRules"
-              label="Group Name"
+              label="Group Name*"
               variant="outlined"
               density="compact"
               require
@@ -77,7 +76,6 @@ function updateErrorState() {
                 PermissionType.Private,
                 PermissionType.PublicReadable,
               ]"
-              no-required-hint
             />
           </v-col>
         </v-row>

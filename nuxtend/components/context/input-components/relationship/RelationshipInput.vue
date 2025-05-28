@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Select from "~/components/common/Select.vue";
 import {
   CustomRelationshipType,
   RelationshipType,
@@ -112,7 +113,7 @@ watch(relationshipType, newType => {
   </div>
   <div v-else>
     <v-row class="pt-10 pb-3">
-      <v-select
+      <Select
         v-model:model-value="customRelationshipType"
         label="Add Relationship To...*"
         density="compact"

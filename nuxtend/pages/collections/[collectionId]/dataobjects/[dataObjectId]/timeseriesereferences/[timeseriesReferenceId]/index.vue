@@ -183,13 +183,13 @@ const itemsPerPage = 10;
                 <div class="pa-4">
                   Interval:
                   {{
-                    toDateTimeStringWithMilliSeconds(
+                    toShortDateTimeString(
                       parseDateFromNanos(timeseriesReference.start),
                     )
                   }}
                   -
                   {{
-                    toDateTimeStringWithMilliSeconds(
+                    toShortDateTimeString(
                       parseDateFromNanos(timeseriesReference.end),
                     )
                   }}

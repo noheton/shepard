@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Select from "../common/Select.vue";
 import {
   ContainerFilterTypes,
   ContainerTypeName,
@@ -35,15 +36,11 @@ function onSelectUpdate() {
 </script>
 
 <template>
-  <v-select
+  <Select
     v-model="selectedFilter"
     width="273px"
     clearable
     placeholder="Select container type"
-    :list-props="{
-      density: 'compact',
-      bgColor: 'canvas',
-    }"
     :items="filters"
     color="primary"
     density="compact"
@@ -58,7 +55,7 @@ function onSelectUpdate() {
         style="opacity: 1"
       />
     </template>
-  </v-select>
+  </Select>
 </template>
 
 <style scoped lang="scss">

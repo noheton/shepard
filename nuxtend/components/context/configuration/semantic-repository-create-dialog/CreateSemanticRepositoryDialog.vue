@@ -42,7 +42,6 @@ async function createSemanticRepository() {
 <template>
   <FormDialog
     v-model:show-dialog="showDialog"
-    :max-width="800"
     title="Create Semantic Repository"
     :submit-disabled="!isValid"
     save-button-text="Save"
@@ -50,13 +49,13 @@ async function createSemanticRepository() {
   >
     <template #form>
       <v-form ref="form" v-model="isValid">
-        <v-row class="pt-9 pb-1">
-          <v-col>
+        <v-row class="pt-9">
+          <v-col class="pb-1">
             <NameInput v-model:name="semanticRepositoryName" />
           </v-col>
         </v-row>
         <v-row>
-          <v-col>
+          <v-col class="pb-1">
             <SemanticRepositoryTypeSelect
               v-model:semantic-repository-type="semanticRepositoryType"
             />
@@ -65,6 +64,11 @@ async function createSemanticRepository() {
         <v-row>
           <v-col>
             <EndpointInput v-model:endpoint="endpoint" />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <MandatoryFieldHint />
           </v-col>
         </v-row>
       </v-form>

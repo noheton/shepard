@@ -123,7 +123,7 @@ async function createDataObject() {
             <div class="text-subtitle-1">Attributes</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col cols="12">
             <AttributesInput
               v-model:attributes="dataObjectToCreate.attributes"

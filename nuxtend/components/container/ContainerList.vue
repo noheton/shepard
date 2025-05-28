@@ -106,7 +106,6 @@ function onPageChange(page: number) {
     :items-per-page="itemsPerPage"
     :loading="loading"
     :sort-by="queryParams.sortBy ? [queryParams.sortBy] : []"
-    hover
     @update:sort-by="onSortBy"
   >
     <template #item="rowProps">

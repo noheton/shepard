@@ -81,11 +81,10 @@ async function onConfirmDeleteUserGroup() {
   </v-btn>
   <ConfigurationPane :title="userGroup.name">
     <template #metadata>
-      <v-col>
-        <MetadataColumn>
-          <MetadataTextField label="ID" :text="userGroup.id.toString()" />
-        </MetadataColumn>
-      </v-col>
+      <MetadataColumn>
+        <MetadataTextField label="ID" :text="userGroup.id.toString()" />
+      </MetadataColumn>
+
       <v-col v-if="isAllowedToEditOwnership" class="text-right">
         <v-btn
           class="ml-3"
@@ -150,7 +149,6 @@ async function onConfirmDeleteUserGroup() {
           :loading="loading"
           :items-per-page="-1"
           :hide-default-footer="true"
-          hover
         >
           <template
             #[`item.name`]="{ item }: { item: UserGroupMemberPermissions }"

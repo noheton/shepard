@@ -13,6 +13,7 @@ import {
   handleShepardObjectUpdate,
   onShepardObjectUpdated,
 } from "~/utils/resourceUpdateBus";
+import Select from "../Select.vue";
 import { mapMemberPermissions, mapPermissions } from "./mapPermissions";
 import { UserRole } from "./UserRole";
 
@@ -201,7 +202,7 @@ watch(selectedMember, newMember => {
         </v-row>
         <v-row>
           <v-col>
-            <v-select
+            <Select
               v-model="shepardObjectPermissions.permissionType"
               :items="Object.values(PermissionType)"
               density="compact"
@@ -248,7 +249,7 @@ watch(selectedMember, newMember => {
             />
           </v-col>
           <v-col>
-            <v-select
+            <Select
               v-model="selectedAdditionalUserRole"
               :items="filteredRoles"
               color="primary"

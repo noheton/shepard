@@ -23,7 +23,7 @@ const am: Ref<AnnotatedTimeseries[]> = computed(() =>
   }),
 );
 
-const columns = ref([
+const headers = [
   { key: "data-table-expand" },
   { title: "ID", key: "id", sortable: true },
   { title: "Measurement", key: "measurement", sortable: true },
@@ -31,7 +31,7 @@ const columns = ref([
   { title: "Location", key: "location", sortable: true },
   { title: "Symbolic Name", key: "symbolicName", sortable: true },
   { title: "Field", key: "field", sortable: true },
-]);
+];
 
 const itemsPerPage = 10;
 </script>
@@ -45,15 +45,14 @@ const itemsPerPage = 10;
     :header-props="{
       class: 'text-subtitle-2 text-textbody1',
     }"
-    :headers="columns"
+    :headers="headers"
     :items-for-pagination="am"
-    hover
     item-value="id"
     show-expand
   >
     <template #[`expanded-row`]="{ item }">
       <tr class="expanded">
-        <td :colspan="columns.length">
+        <td :colspan="headers.length">
           <v-table>
             <tbody>
               <tr class="semantic-row">
@@ -120,12 +119,12 @@ const itemsPerPage = 10;
 
 // set hover styling on row if its expanded part is hovered
 :deep(tr:where(tr:has(+ tr.expanded:hover))) {
-  background-color: rgba(var(--v-border-color), var(--v-hover-opacity));
+  background-color: rgb(var(--v-theme-focus1));
 }
 
 // set hover styling on expanded row if "parent" is hovered
 :deep(tr:hover + tr.expanded) {
-  background-color: rgba(var(--v-border-color), var(--v-hover-opacity));
+  background-color: rgb(var(--v-theme-focus1));
 }
 
 strong {

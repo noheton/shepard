@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PermissionType } from "@dlr-shepard/backend-client";
+import Select from "~/components/common/Select.vue";
 
 defineProps<{
   limitedPermissionSet?: PermissionType[];
@@ -12,7 +13,7 @@ const permissionType = defineModel<PermissionType>("permissionType", {
 </script>
 
 <template>
-  <v-select
+  <Select
     v-model:model-value="permissionType"
     :items="limitedPermissionSet ?? Object.values(PermissionType)"
     :label="`Permissions${noRequiredHint ? '' : '*'}`"
@@ -39,5 +40,5 @@ const permissionType = defineModel<PermissionType>("permissionType", {
           : item.value
       }}
     </template>
-  </v-select>
+  </Select>
 </template>

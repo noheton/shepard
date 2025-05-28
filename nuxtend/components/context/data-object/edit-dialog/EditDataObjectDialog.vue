@@ -44,7 +44,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
             <div class="text-subtitle-1">Properties</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col class="pb-0">
             <NameInput v-model:name="updatedDataObject.name" />
           </v-col>
@@ -66,7 +66,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
             <div class="text-subtitle-1">Relationships</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col class="pb-2">
             <ParentInput
               v-model:parent-id="updatedDataObject.parentId"

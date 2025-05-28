@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RequestMethod } from "@dlr-shepard/backend-client";
+import Select from "~/components/common/Select.vue";
 import SimpleInput from "~/components/context/input-components/SimpleInput.vue";
 
 const showDialog = defineModel<boolean>("showDialog", {
@@ -47,7 +48,7 @@ const isValid = computed(() => {
           v-model:input-string="subscribedUrl"
           label="Subscribed URL"
         />
-        <v-select
+        <Select
           v-model:model-value="requestMethod"
           label="Request method*"
           :items="Object.entries(RequestMethod)"

@@ -43,7 +43,6 @@ const deleteFile = (file: ShepardFile) => {
       :headers="headers"
       :items-for-pagination="files"
       :loading="loading"
-      hover
     >
       <template #[`item.oid`]="{ item }: { item: ShepardFile }">
         <CopyTextButton :text="item.oid" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ContainerType } from "@dlr-shepard/backend-client";
+import Select from "~/components/common/Select.vue";
 
 const containerTypeList = new Map<string, ContainerType>();
 containerTypeList.set("File", ContainerType.File);
@@ -22,7 +23,7 @@ function updateContainerType() {
 </script>
 
 <template>
-  <v-select
+  <Select
     v-model:model-value="currentSelected"
     :items="Array.from(containerTypeList.keys())"
     label="Container*"
@@ -42,5 +43,5 @@ function updateContainerType() {
     <template #selection="{ item }">
       {{ item.value === ContainerType.File ? "File" : item.value }}
     </template>
-  </v-select>
+  </Select>
 </template>

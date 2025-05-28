@@ -76,7 +76,6 @@ const itemsPerPage = 10;
     :headers="headers"
     :items-for-pagination="tableItems"
     :items-per-page="itemsPerPage"
-    hover
   >
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
       <DataObjectDataMetaCell :meta="value" />

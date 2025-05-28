@@ -97,7 +97,6 @@ async function onDelete() {
           :loading="isLoading"
           :items-per-page="-1"
           :hide-default-footer="true"
-          hover
         >
           <template #[`item.name`]="{ item }: { item: SemanticRepository }">
             <span class="text-textbody">{{ item.name }}</span>

@@ -2,6 +2,10 @@
 import type { ShepardFile } from "@dlr-shepard/backend-client";
 import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
 
+useHead({
+  title: "File Container | shepard",
+});
+
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;

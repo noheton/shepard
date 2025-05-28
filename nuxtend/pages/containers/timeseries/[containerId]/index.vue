@@ -3,6 +3,10 @@ import DeleteContainerButton from "~/components/container/DeleteContainerButton.
 import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesContainerAccessor";
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 
+useHead({
+  title: "Timeseries Container | shepard",
+});
+
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;

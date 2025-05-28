@@ -6,6 +6,10 @@ import {
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { StructuredDataContainerAccessor } from "~/composables/container/StructuredDataAccessor";
 
+useHead({
+  title: "Structured Data Container | shepard",
+});
+
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;

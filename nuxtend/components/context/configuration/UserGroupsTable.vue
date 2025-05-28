@@ -36,7 +36,6 @@ const headers = [
     :loading="loading"
     :items-per-page="-1"
     :hide-default-footer="true"
-    hover
   >
     <template #item="rowProps">
       <v-data-table-row

@@ -92,7 +92,6 @@ function onPageChange(page: number) {
     :items="serverItems"
     :items-per-page="itemsPerPage"
     :loading="loading"
-    hover
     @update:sort-by="onSortBy"
   >
     <template #item="rowProps">

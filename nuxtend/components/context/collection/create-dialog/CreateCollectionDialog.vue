@@ -117,7 +117,7 @@ async function saveChanges() {
             <div class="text-subtitle-1">Additional Information</div>
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mt-1">
           <v-col>
             <AttributesInput
               v-model:attributes="collectionToCreate.attributes"
