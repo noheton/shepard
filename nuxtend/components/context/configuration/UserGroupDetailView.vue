@@ -4,7 +4,10 @@ import {
   type User,
   type UserGroup,
 } from "@dlr-shepard/backend-client";
-import type { Member } from "~/composables/common/permissions/useMemberSearch";
+import {
+  SearchType,
+  type Member,
+} from "~/composables/common/permissions/useMemberSearch";
 import {
   useHandleUserGroupMembers,
   UserGroupMemberRole,
@@ -114,6 +117,7 @@ async function onConfirmDeleteUserGroup() {
           <MemberAutocomplete
             :model-value="selectedMember"
             label="Search for User Name..."
+            :search-type="SearchType.USER"
             @member-select="onMemberSelect"
           >
             <template #item="{ props }">

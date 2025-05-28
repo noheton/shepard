@@ -5,6 +5,7 @@ import {
   type UserGroup,
 } from "@dlr-shepard/backend-client";
 import {
+  SearchType,
   useMemberSearch,
   type Member,
 } from "../../../composables/common/permissions/useMemberSearch";
@@ -16,8 +17,13 @@ const emit = defineEmits<{
 const model = defineModel<Member>();
 defineSlots();
 
-defineProps<{ label: string }>();
-
+const { searchType } = withDefaults(
+  defineProps<{
+    label: string;
+    searchType?: SearchType;
+  }>(),
+  { searchType: SearchType.MEMBER },
+);
 const searchString = ref<string | undefined>(undefined);
 const searchDone = ref<boolean>(false);
 
@@ -26,6 +32,7 @@ const { searchResults, isLoading, startSearch } = useMemberSearch(
   () => {
     searchDone.value = true;
   },
+  searchType,
 );
 
 const mapToAutocompleteItem = (member: Member): AutoCompleteItem => {
