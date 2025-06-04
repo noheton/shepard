@@ -5,6 +5,7 @@ import ac.simons.neo4j.migrations.core.MigrationsConfig;
 import ac.simons.neo4j.migrations.core.MigrationsConfig.VersionSortOrder;
 import ac.simons.neo4j.migrations.core.MigrationsException;
 import io.quarkus.logging.Log;
+import jakarta.annotation.Nullable;
 import java.nio.file.Paths;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.driver.AuthTokens;
@@ -14,10 +15,14 @@ import org.neo4j.driver.exceptions.ServiceUnavailableException;
 
 public class MigrationsRunner {
 
-  private Migrations migrations;
-  private Driver driver;
+  private final Migrations migrations;
+  private final Driver driver;
 
   public MigrationsRunner() {
+    this(null);
+  }
+
+  public MigrationsRunner(@Nullable String targetVersion) {
     String username = ConfigProvider.getConfig().getValue("neo4j.username", String.class);
     String password = ConfigProvider.getConfig().getValue("neo4j.password", String.class);
     String host = "neo4j://" + ConfigProvider.getConfig().getValue("neo4j.host", String.class);
@@ -35,6 +40,7 @@ public class MigrationsRunner {
       .withPackagesToScan("de.dlr.shepard.common.neo4j.migrations")
       .withLocationsToScan("file://" + locationsToScan)
       .withVersionSortOrder(VersionSortOrder.SEMANTIC)
+      .withTarget(targetVersion)
       .build();
 
     migrations = new Migrations(config, driver);

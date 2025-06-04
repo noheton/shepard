@@ -54,6 +54,7 @@
     <opencsv.version>5.10</opencsv.version>
     <restassured.version>5.5.1</restassured.version>
     <apache.commons.version>3.17.0</apache.commons.version>
+    <neo4j-cypher-dsl.version>2024.7.0</neo4j-cypher-dsl.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -231,6 +232,11 @@
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-bolt-driver</artifactId>
       <version>${neo4j-ogm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-cypher-dsl</artifactId>
+      <version>${neo4j-cypher-dsl.version}</version>
     </dependency>
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
