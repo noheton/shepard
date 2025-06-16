@@ -1,13 +1,15 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { Editor } from "@tiptap/vue-3";
 import { ref } from "vue";
 
 interface RichTextEditorToolbarProps {
   editor: Editor;
   isToolbarShown: boolean;
+  addImageButton?: boolean;
 }
 
 const props = defineProps<RichTextEditorToolbarProps>();
+const emit = defineEmits(["add-image"]);
 
 const boldState = ref<number | null>(null);
 const italicState = ref<number | null>(null);
@@ -181,48 +183,46 @@ const alignmentMenuEntries = [
     <!-- Marker Controls (bold, italic, ...)-->
     <RichTextEditorToolbarButton
       v-model="boldState"
-      icon="mdi-format-bold"
-      tooltip-text="Bold"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleBold().run();
         }
       "
+      icon="mdi-format-bold"
+      tooltip-text="Bold"
     />
     <RichTextEditorToolbarButton
       v-model="italicState"
-      icon="mdi-format-italic"
-      tooltip-text="Italic"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleItalic().run();
         }
       "
+      icon="mdi-format-italic"
+      tooltip-text="Italic"
     />
     <RichTextEditorToolbarButton
       v-model="underlineState"
-      icon="mdi-format-underline"
-      tooltip-text="Underline"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleUnderline().run();
         }
       "
+      icon="mdi-format-underline"
+      tooltip-text="Underline"
     />
     <RichTextEditorToolbarButton
       v-model="codeState"
-      icon="mdi-code-tags"
-      tooltip-text="Code"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleCode().run();
         }
       "
+      icon="mdi-code-tags"
+      tooltip-text="Code"
     />
     <RichTextEditorToolbarButton
       v-model="headingState"
-      btn-text="Heading"
-      tooltip-text="Heading"
       :on-click="
         () => {
           return props.editor
@@ -232,73 +232,83 @@ const alignmentMenuEntries = [
             .run();
         }
       "
+      btn-text="Heading"
+      tooltip-text="Heading"
     />
 
     <v-divider vertical />
     <!-- Text Alignment Menu-->
     <RichTextEditorToolbarMenu
       :base-icon="alignmentMenuIcon"
+      :menu-entries="alignmentMenuEntries"
+      :num-of-menu-cols="1"
       menu-icon-size="small"
       tooltip-text="Alignment"
-      :num-of-menu-cols="1"
-      :menu-entries="alignmentMenuEntries"
     />
 
     <v-divider vertical />
     <!-- Link Controls (set link, unlink)-->
     <RichTextEditorToolbarButton
       v-model="linkState"
-      icon="mdi-link"
-      tooltip-text="Set Link"
       :on-click="
         () => {
           return setLink(editor);
         }
       "
+      icon="mdi-link"
+      tooltip-text="Set Link"
     />
     <RichTextEditorToolbarButton
       :disabled="linkState === null"
       :is-toggling-disabled="true"
-      icon="mdi-link-off"
-      tooltip-text="Unset Link"
       :on-click="
         () => {
           return props.editor.chain().focus().unsetLink().run();
         }
       "
+      icon="mdi-link-off"
+      tooltip-text="Unset Link"
     />
 
     <v-divider vertical />
     <!-- List Controls-->
     <RichTextEditorToolbarButton
       v-model="bulletListState"
-      icon="mdi-format-list-bulleted"
-      tooltip-text="Bullet List"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleBulletList().run();
         }
       "
+      icon="mdi-format-list-bulleted"
+      tooltip-text="Bullet List"
     />
     <RichTextEditorToolbarButton
       v-model="orderedListState"
-      icon="mdi-format-list-numbered"
-      tooltip-text="Numbered List"
       :on-click="
         () => {
           return props.editor.chain().focus().toggleOrderedList().run();
         }
       "
+      icon="mdi-format-list-numbered"
+      tooltip-text="Numbered List"
     />
 
     <v-divider vertical />
     <!-- Table Menu-->
     <RichTextEditorToolbarMenu
+      :menu-entries="tableMenuEntries"
+      :num-of-menu-cols="2"
       base-icon="mdi-table"
       menu-icon-size="small"
       tooltip-text="Table"
-      :num-of-menu-cols="2"
-      :menu-entries="tableMenuEntries"
+    />
+    <v-divider v-if="addImageButton" vertical />
+    <RichTextEditorToolbarButton
+      v-if="addImageButton"
+      :is-toggling-disabled="true"
+      icon="mdi-image-plus-outline"
+      tooltip-text="Image"
+      @click="emit('add-image')"
     />
   </v-container>
 </template>

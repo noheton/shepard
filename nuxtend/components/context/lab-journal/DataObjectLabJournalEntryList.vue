@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   CollectionApi,
   LabJournalEntryApi,
@@ -9,7 +9,7 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface DataObjectLabJournalEntryListProps {
   collectionId: number;
-  dataObjectId: number | undefined;
+  dataObjectId: number;
 }
 
 const props = defineProps<DataObjectLabJournalEntryListProps>();
@@ -67,15 +67,18 @@ fetchRoles();
 <template>
   <LabJournalNewEntry
     v-if="!!dataObjectId && isAllowedToCreate()"
-    :model-value="dataObjectId"
+    :collection-id="collectionId"
+    :data-object-id="dataObjectId"
     @new-lab-journal-saved="
       savedLabjournal => appendNewLabJournalEntry(savedLabjournal)
     "
   />
   <div v-if="!!entries">
-    <LabJournalEntry
+    <LabJournalExistingEntry
       v-for="(entry, index) in entries"
-      :key="'lab-journal-' + entry.id"
+      :key="entry.id"
+      :collection-id="collectionId"
+      :data-object-id="dataObjectId"
       :lab-journal="entry"
       :user-roles="userRoles"
       @deleted="onLabJournalDeleted(index)"

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 interface RichTextEditorToolbarButtonProps {
   btnText?: string;
   tooltipText: string;
@@ -15,7 +15,7 @@ interface RichTextEditorToolbarButtonProps {
     | "plain"
     | undefined;
   toggleColor?: string;
-  onClick: (() => boolean) | undefined;
+  onClick: (() => void) | undefined;
 }
 
 const toggle = defineModel<number | null>();
@@ -34,16 +34,16 @@ watch(toggle, (newVal, _) => {
     <template #activator="{ props: tooltipProps }">
       <v-btn-toggle
         v-model="toggle"
-        v-bind="tooltipProps"
+        :color="props.toggleColor ?? 'primary'"
         :density="props.density ?? 'compact'"
         :disabled="props.disabled"
         :variant="props.variant ?? 'plain'"
-        :color="props.toggleColor ?? 'primary'"
+        v-bind="tooltipProps"
       >
         <v-btn
-          class="pa-0"
           :icon="props.icon"
           :text="props.btnText"
+          class="pa-0"
           @click="props.onClick"
         />
       </v-btn-toggle>
@@ -51,4 +51,4 @@ watch(toggle, (newVal, _) => {
   </v-tooltip>
 </template>
 
-<style scoped lang="scss"></style>
+<style lang="scss" scoped></style>

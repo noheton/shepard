@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   ContainerType,
   PermissionType,
@@ -9,24 +9,29 @@ import { FileContainerAccessor } from "~/composables/container/FileContainerAcce
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateFileReference } from "~/composables/references/useCreateFileReference";
-import { currentDateShortForm } from "~/utils/helpers";
-import type { FileRef } from "../../data-references/create-dialog/DataRef";
+import type { FileRef } from "~/components/context/data-references/create-dialog/DataRef";
 
 interface FileUploadDialogProps {
   collectionId: number;
   dataobjectId: number;
+  createReference: boolean;
+  accept?: string;
 }
 
-const props = defineProps<FileUploadDialogProps>();
-const emits = defineEmits(["uploadFinished"]);
+const props = withDefaults(defineProps<FileUploadDialogProps>(), {
+  accept: "*",
+});
+const emit = defineEmits<{
+  (e: "files-uploaded", files: ShepardFile[], containerId: number): void;
+}>();
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
 
-const files = defineModel<File | File[] | undefined>("files", {
+const files = defineModel<File[]>("files", {
   required: false,
-  default: undefined,
+  default: [],
 });
 
 const { addFileReference } = useCreateFileReference(
@@ -56,12 +61,11 @@ const isCreatingNewFileContainer = ref<boolean>(false);
 
 const uploading = ref<boolean>(false);
 const successCount = ref<number>(0);
-const errorCount = ref<number>(0);
 const isUploadButtonDisabled = computed(() => {
   return (
     files.value === undefined ||
     (Array.isArray(files.value) && files.value.length === 0) ||
-    !newReferenceName.value ||
+    (props.createReference && !newReferenceName.value) ||
     (isCreatingNewFileContainer.value === false &&
       fileContainerId.value === undefined) ||
     (isCreatingNewFileContainer.value === true && !newFileContainerName.value)
@@ -133,45 +137,32 @@ async function updateDefaultFileContainer() {
   }
 }
 
-async function uploadFile(file: File): Promise<ShepardFile | undefined> {
+async function uploadFile(file: File): Promise<ShepardFile> {
   if (!fileContainerId.value) {
-    errorCount.value += 1;
-    return;
+    throw new Error("File container needs to be set!");
   }
   if (!containerAccessor) {
     containerAccessor = new FileContainerAccessor(fileContainerId.value);
   }
-  try {
-    const uploadedShepardFile = await containerAccessor.uploadFile(file);
-    successCount.value += 1;
-    return uploadedShepardFile;
-  } catch {
-    errorCount.value += 1;
-  }
+  const uploadedShepardFile = await containerAccessor.uploadFile(file);
+  successCount.value += 1;
+  return uploadedShepardFile;
 }
 
-async function handleFileUpload(): Promise<
-  (ShepardFile | undefined)[] | undefined
-> {
-  if (files.value === undefined) return;
-  if (files.value instanceof File) files.value = [files.value];
-  if (Array.isArray(files.value)) {
-    try {
-      return await Promise.all(files.value.map(uploadFile));
-    } catch {
-      handleError("Could not upload files", "uploading files");
-    }
-
-    if (errorCount.value === 0)
-      emitSuccess(`${successCount.value} file(s) uploaded successfully.`);
-    else {
-      const numberOfFiles = (files.value as Array<File>).length;
-      handleError(
-        `Error: only ${successCount.value} of ${numberOfFiles} files uploaded successfully.`,
-        "uploading files",
-      );
-    }
+async function handleFileUpload(): Promise<ShepardFile[]> {
+  if (files.value.length === 0) throw new Error("No files selected!");
+  let uploadedFiles: ShepardFile[] = [];
+  try {
+    uploadedFiles = await Promise.all(files.value.map(uploadFile));
+    emitSuccess(`${successCount.value} file(s) uploaded successfully.`);
+  } catch {
+    const numberOfFiles = (files.value as Array<File>).length;
+    handleError(
+      `Error: only ${successCount.value} of ${numberOfFiles} files uploaded successfully.`,
+      "uploading files",
+    );
   }
+  return uploadedFiles;
 }
 
 async function handleUserSubmit() {
@@ -180,15 +171,19 @@ async function handleUserSubmit() {
   try {
     await createNewFileContainer();
     const uploadedFiles = await handleFileUpload();
-    if (uploadedFiles) {
+    if (!uploadedFiles || !uploadedFiles.values()) {
+      throw Error("Error in file upload");
+    }
+
+    if (props.createReference) {
       await createFileReferences(uploadedFiles);
     }
     await updateDefaultFileContainer();
+    emit("files-uploaded", uploadedFiles, fileContainerId.value!);
   } catch {
     handleError("Could not upload files", "file upload");
   }
 
-  emits("uploadFinished");
   uploading.value = false;
   showDialog.value = false;
 }
@@ -217,8 +212,8 @@ watch(
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent :max-width="900">
-    <v-card color="canvas" :loading="uploading">
+  <v-dialog v-model="showDialog" :max-width="900" persistent>
+    <v-card :loading="uploading" color="canvas">
       <template #title>
         <div class="mb-8 text-h4 text-wrap">Upload Files</div>
       </template>
@@ -226,7 +221,7 @@ watch(
         <div class="d-flex flex-column ga-4">
           <v-file-upload
             v-model:model-value="files"
-            :accept="true"
+            :accept="accept"
             :multiple="true"
             class="mb-6"
             clearable
@@ -243,10 +238,10 @@ watch(
               </span>
               <v-switch
                 v-model:model-value="isCreatingNewFileContainer"
+                color="primary"
                 density="compact"
                 flat
                 hide-details
-                color="primary"
                 label="Create new file container"
               />
             </div>
@@ -254,8 +249,8 @@ watch(
               v-if="!isCreatingNewFileContainer"
               v-model:container-id="fileContainerId"
               :collection-id="collectionId"
-              :is-required="true"
               :container-type="ContainerType.File"
+              :is-required="true"
               @container-selected="
                 (id, _) => {
                   fileContainerId = id;
@@ -286,7 +281,7 @@ watch(
             />
           </div>
 
-          <div class="d-flex flex-column ga-2">
+          <div v-if="createReference" class="d-flex flex-column ga-2">
             <div class="d-flex ga-2 align-center">
               <span class="text-textbody text-subtitle-2">Reference Name</span>
               <Tooltip>
@@ -319,10 +314,10 @@ watch(
                 Cancel
               </v-btn>
               <v-btn
+                :disabled="isUploadButtonDisabled"
+                class="ml-4"
                 color="primary"
                 variant="flat"
-                class="ml-4"
-                :disabled="isUploadButtonDisabled"
                 @click="handleUserSubmit"
               >
                 Upload

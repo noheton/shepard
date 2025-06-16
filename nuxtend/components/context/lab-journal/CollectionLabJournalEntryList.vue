@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   CollectionApi,
   LabJournalEntryApi,
@@ -6,6 +6,7 @@ import {
   type Roles,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import LabJournalExistingEntry from "~/components/context/lab-journal/LabJournalExistingEntry.vue";
 
 interface CollectionLabJournalEntryListProps {
   collectionId: number;
@@ -66,15 +67,14 @@ fetchRoles();
 
 <template>
   <div v-if="entries != undefined">
-    <LabJournalEntry
+    <LabJournalExistingEntry
       v-for="(entry, index) in entries"
       :key="'lab-journal-' + entry.id"
+      :collection-id="collectionId"
+      :data-object-id="entry.dataObjectId"
+      :data-object-name="props.dataObjectMap.get(entry.dataObjectId)!"
       :lab-journal="entry"
       :user-roles="userRoles"
-      :data-object-link="{
-        dataObjectId: entry.dataObjectId,
-        dataObjectName: props.dataObjectMap.get(entry.dataObjectId)!,
-      }"
       @deleted="onLabJournalDeleted(index)"
     />
     <EmptyListIcon

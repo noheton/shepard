@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Link from "@tiptap/extension-link";
 import Table from "@tiptap/extension-table";
@@ -8,6 +8,7 @@ import TableRow from "@tiptap/extension-table-row";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import type { Editor } from "@tiptap/vue-3";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import "assets/styles/highlightjs.scss";
@@ -21,9 +22,14 @@ interface RichTextEditorProps {
   isPreviewCollapsed?: boolean;
   autofocus?: boolean;
   codeType?: CodeType;
+  canAddImage?: boolean;
 }
 
 const props = defineProps<RichTextEditorProps>();
+const emit = defineEmits<{
+  (e: "add-image"): void;
+  (e: "editor-created", value: Editor): void;
+}>();
 
 const model = defineModel<string>();
 
@@ -65,6 +71,7 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
     TableRow,
     TableHeader,
     TableCell,
+    Image,
   ],
   editable: props.isEditable,
   autofocus: props.autofocus ?? false,
@@ -75,6 +82,9 @@ const editor: ShallowRef<Editor | undefined> = useEditor({
 });
 
 onMounted(() => {
+  if (editor.value) {
+    emit("editor-created", editor.value);
+  }
   if (props.codeType && editor.value) {
     editor.value.commands.setContent(
       `<pre><code class="language-${props.codeType}">${model.value}</code></pre>`,
@@ -120,17 +130,20 @@ watch(
   <div class="d-flex flex-column flex-nowrap ga-1 w-100">
     <RichTextEditorToolbar
       v-if="editor"
+      :add-image-button="canAddImage"
       :editor="editor"
       :is-toolbar-shown="isEditable"
+      @add-image="emit('add-image')"
     />
-    <editor-content :editor="editor" :class="editorClassObject" />
+    <editor-content :class="editorClassObject" :editor="editor" />
   </div>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .editor-is-editable {
   border: 1px solid rgb(var(--v-theme-divider1));
   border-radius: 4px;
+
   :deep(.tiptap) {
     min-height: 6lh;
     padding: 8px;
@@ -139,6 +152,7 @@ watch(
 
 .editor-not-editable {
   border: none;
+
   :deep(.tiptap) {
     padding: 0px;
   }
@@ -241,6 +255,7 @@ watch(
   ul {
     padding: 0 1rem;
     margin: 0.1rem 1rem 0.1rem 0.4rem;
+
     li p {
       margin-bottom: 0.1rem;
     }

@@ -1,15 +1,15 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   LabJournalEntryApi,
   type CreateLabJournalRequest,
   type LabJournalEntry,
 } from "@dlr-shepard/backend-client";
-import RichTextEditor from "~/components/common/editor/RichTextEditor.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
-const dataObjectId = defineModel<number>({
-  required: true,
-});
+const props = defineProps<{
+  collectionId: number;
+  dataObjectId: number;
+}>();
 
 const emit = defineEmits<{
   newLabJournalSaved: [value: LabJournalEntry];
@@ -32,7 +32,7 @@ async function saveNewLabJournalEntry() {
     useShepardApi(LabJournalEntryApi)
       .value.createLabJournal({
         labJournalEntry: newLabJournalEntryModel.value,
-        dataObjectId: dataObjectId.value,
+        dataObjectId: props.dataObjectId,
       })
       .then(response => {
         resetNewLabJournalEntry();
@@ -49,29 +49,28 @@ async function saveNewLabJournalEntry() {
   <v-textarea
     v-if="!isCreatingNew"
     id="newLabJournalEntryArea"
-    variant="outlined"
-    label="New entry"
-    bg-color="divider2"
-    base-color="divider1"
     :no-resize="true"
+    base-color="divider1"
+    bg-color="divider2"
     density="compact"
+    label="New entry"
     rows="1"
+    variant="outlined"
     @update:focused="isCreatingNew = true"
   />
   <div v-if="!!isCreatingNew" id="labJournalNewEntry">
-    <div class="mx-4">
-      <RichTextEditor
-        v-model="newLabJournalEntryModel.journalContent"
-        :is-editable="true"
-        :autofocus="true"
-      />
-    </div>
+    <LabJournalEntry
+      v-model:journal-content="newLabJournalEntryModel.journalContent"
+      :collection-id="collectionId"
+      :data-object-id="dataObjectId"
+      :is-editing="true"
+    />
 
     <div id="newEntryControlButtons">
-      <v-btn variant="flat" color="treeview" @click="resetNewLabJournalEntry">
+      <v-btn color="treeview" variant="flat" @click="resetNewLabJournalEntry">
         Cancel
       </v-btn>
-      <v-btn variant="flat" color="primary" @click="saveNewLabJournalEntry">
+      <v-btn color="primary" variant="flat" @click="saveNewLabJournalEntry">
         Save
       </v-btn>
     </div>

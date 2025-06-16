@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 interface FileUploadDialogProps {
   collectionId: number;
   dataobjectId: number;
@@ -8,19 +8,19 @@ const props = defineProps<FileUploadDialogProps>();
 
 const showDataObjectFileUploadDialog = ref<boolean>(false);
 
-const files = ref<File | File[] | undefined>(undefined);
+const files = ref<File[]>();
 </script>
 
 <template>
   <v-file-upload
     v-model:model-value="files"
-    class="my-4"
     :accept="true"
-    clearable
-    icon="mdi-folder-upload-outline"
     :multiple="true"
-    show-size
+    class="my-4"
+    clearable
     density="compact"
+    icon="mdi-folder-upload-outline"
+    show-size
     title="Drag and drop files here or click to upload"
     @click.stop.prevent.self="showDataObjectFileUploadDialog = true"
     @update:model-value="showDataObjectFileUploadDialog = true"
@@ -30,11 +30,12 @@ const files = ref<File | File[] | undefined>(undefined);
   </v-file-upload>
   <DataObjectFileUploadDialog
     v-if="showDataObjectFileUploadDialog"
-    v-model:show-dialog="showDataObjectFileUploadDialog"
     v-model:files="files"
-    :initial-files="files"
+    v-model:show-dialog="showDataObjectFileUploadDialog"
     :collection-id="props.collectionId"
+    :create-reference="true"
     :dataobject-id="props.dataobjectId"
+    :initial-files="files"
     @upload-finished="files = undefined"
   />
 </template>
