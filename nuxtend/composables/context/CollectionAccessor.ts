@@ -42,6 +42,7 @@ export class CollectionAccessor extends ShepardObjectAccessor {
       });
     } catch (error) {
       handleError(error as ResponseError, "fetching permissions");
+      throw error;
     }
   }
 

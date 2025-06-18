@@ -50,7 +50,7 @@ export abstract class ShepardObjectAccessor {
       });
       this.owner = ref(ownerValue);
     } catch (error) {
-      handleError(error as ResponseError, "fetching user");
+      handleError(error as ResponseError, "fetching owner");
       throw error;
     }
   }

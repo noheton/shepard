@@ -11,6 +11,7 @@ import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -44,8 +45,8 @@ public class PermissionsService {
   PermissionLastSeenCache permissionLastSeenCache;
 
   /**
-   * @param entity the entity the permissions belong to
-   * @param user the user creating the permissions
+   * @param entity         the entity the permissions belong to
+   * @param user           the user creating the permissions
    * @param permissionType the initial permission type
    * @return the newly created permissions
    */
@@ -55,7 +56,7 @@ public class PermissionsService {
 
   /**
    * Searches for permissions in Neo4j.
-   *
+   * <p>
    * This function does NOT perform a check if the user is allowed to query the permissions of an entity.
    *
    * @param entityId identifies the entity that the permissions object belongs to
@@ -72,12 +73,12 @@ public class PermissionsService {
 
   /**
    * Searches for permissions in Neo4j.
-   *
+   * <p>
    * This function does perform a check if the user is allowed to query the permissions of an entity.
    *
    * @param entityId identifies the entity that the permissions object belongs to
    * @return Permissions with matching entity
-   * @throws NotFoundException if permission could not be found
+   * @throws NotFoundException    if permission could not be found
    * @throws InvalidAuthException if user has to rights to read permissions
    */
   public Permissions getPermissionsOfEntity(long entityId) {
@@ -150,14 +151,10 @@ public class PermissionsService {
    * @return the updated Permissions object
    */
   public Permissions updatePermissionsByNeo4jId(PermissionsIO permissionsIo, long id) {
+    Permissions oldPermissions = getPermissionsOfEntityOptional(id).orElseThrow(() ->
+      new ShepardProcessingException("Entity has no permissions attached and they cannot be updated!")
+    );
     var newPermissions = convertPermissionsIO(permissionsIo);
-    Optional<Permissions> old = getPermissionsOfEntityOptional(id);
-    if (old.isEmpty()) {
-      // There is no old permissions object
-      newPermissions.setEntities(List.of(new BasicEntity(id)));
-      return permissionsDAO.createOrUpdate(newPermissions);
-    }
-    var oldPermissions = old.get();
 
     if (
       newPermissions.getOwner() == null ||
@@ -189,6 +186,7 @@ public class PermissionsService {
 
   /**
    * Checks if the request is allowed based on access type and user name. The check is performed by checking the path segments, and request body.
+   *
    * @param requestContext
    * @param accessType
    * @param userName

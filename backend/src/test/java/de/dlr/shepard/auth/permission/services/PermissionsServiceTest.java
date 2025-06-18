@@ -16,6 +16,7 @@ import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
+import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -25,11 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 public class PermissionsServiceTest extends BaseTestCase {
+
+  private final User user = new User("testuser");
 
   @Mock
   private UserService userService;
@@ -45,8 +49,6 @@ public class PermissionsServiceTest extends BaseTestCase {
 
   @InjectMocks
   private PermissionsService service;
-
-  private final User user = new User("testuser");
 
   @Test
   public void createPermissions_callsDAO() {
@@ -191,8 +193,8 @@ public class PermissionsServiceTest extends BaseTestCase {
     when(dao.findByEntityNeo4jId(2L)).thenReturn(null);
     when(dao.createOrUpdate(toCreate)).thenReturn(updated);
 
-    var actual = service.updatePermissionsByNeo4jId(perms, 2L);
-    assertEquals(updated, actual);
+    Assertions.assertThrowsExactly(ShepardProcessingException.class, () -> service.updatePermissionsByNeo4jId(perms, 2L)
+    );
   }
 
   @Test
