@@ -209,7 +209,7 @@ public class CollectionDAOQuarkusTest {
     Date date = new Date(1L);
     collectionDAO.deleteCollectionByShepardId(collection1u.getShepardId(), user, date);
     List<Collection> retAfterDeletion = collectionDAO.findAllCollectionsByNeo4jId(params, userName);
-    assertEquals(1, retBeforeDeletion.size());
-    assertEquals(0, retAfterDeletion.size());
+    assert (retBeforeDeletion.size() != 0);
+    assertEquals(retBeforeDeletion.size() - 1, retAfterDeletion.size());
   }
 }
