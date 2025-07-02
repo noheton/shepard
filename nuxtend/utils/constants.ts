@@ -1,5 +1,6 @@
 export const collectionsPath = "/collections/";
 export const containersPath = "/containers/";
+export const searchPath = "/search";
 export const dataObjectsPathFragment = "/dataobjects/";
 export const timeseriesReferencePathFragment = "/timeseriesereferences/";
 export const fileReferencesPathFragment = "/filereferences/";

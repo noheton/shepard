@@ -1,7 +1,7 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 
-export interface CollectionSearchResult {
+export interface MyCollectionSearchResult {
   collectionName: string;
   collectionId: number;
 }
@@ -11,7 +11,7 @@ export function useCollectionSearch(
   onSearchDone?: () => void,
 ) {
   const isLoading = ref<boolean>(false);
-  const collectionSearchResults = ref<CollectionSearchResult[]>([]);
+  const collectionSearchResults = ref<MyCollectionSearchResult[]>([]);
 
   const searchDone = (callbackFn?: () => void) => {
     isLoading.value = false;

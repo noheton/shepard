@@ -2,12 +2,12 @@
 import { useTimeoutFn } from "@vueuse/core";
 import {
   useCollectionSearch,
-  type CollectionSearchResult,
+  type MyCollectionSearchResult,
 } from "~/composables/context/useCollectionSearch";
 
 interface AutoCompleteItem {
   title?: string;
-  value?: CollectionSearchResult;
+  value?: MyCollectionSearchResult;
 }
 
 const emit = defineEmits<{
@@ -54,7 +54,7 @@ const onSearch = async (search: string) => {
 };
 
 function mapToSearchResultAutoCompleteItem(
-  searchResult: CollectionSearchResult,
+  searchResult: MyCollectionSearchResult,
 ): AutoCompleteItem {
   return {
     title: `${searchResult.collectionName} (ID: ${searchResult.collectionId})`,
