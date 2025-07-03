@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { TraversalRules } from "@dlr-shepard/backend-client";
 import { QueryType } from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
@@ -150,11 +150,34 @@ onMounted(() => {
   useTitle("Search | shepard");
   getAllQueryParam();
 });
+const queryType = ref<QueryType>(QueryType.Collection);
+const selectedTraversalRules = ref<TraversalRules[]>([]);
+const collectionId = ref<number | undefined>(undefined);
+const dataObjectId = ref<number | undefined>(undefined);
+const searchQuery = ref<string>();
 </script>
 
 <template>
   <div style="max-width: 1200px; margin: auto">
-    <v-container width="100%" fluid>
+    <v-container fluid width="100%">
+      <v-row>
+        <v-col class="py-14" cols="12">
+          <div class="d-flex align-baseline">
+            <h1 class="text-h1 text-textbody1 pr-4">Advanced Search</h1>
+          </div>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col class="font-weight-bold">Query</v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <QueryTypeInput v-model:query-type="queryType" />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col class="font-weight-bold">Additional Search Criteria:</v-col>
+      </v-row>
       <v-row>
         <v-col cols="12">
           <v-row>
@@ -220,6 +243,9 @@ onMounted(() => {
           <CenteredLoadingSpinner v-if="loading" />
           test
         </v-col>
+      </v-row>
+      <v-row>
+        <CustomJsonEditor v-model:search-query="searchQuery" />
       </v-row>
     </v-container>
   </div>
