@@ -20,46 +20,42 @@ const emit = defineEmits<{
 
 <template>
   <v-row class="text-textbody1 text-subtitle-2 pl-1">
-    <v-col cols="2">Traversal Rules:</v-col>
+    <v-col cols="3">Traversal Rules:</v-col>
     <v-col cols="3">
-      <v-container fluid>
-        <ul>
-          <li>
-            <v-checkbox
-              v-model="selectedTraversalRules[0]"
-              label="Children"
-              :value="TraversalRules.Children"
-            />
-          </li>
-          <li>
-            <v-checkbox
-              v-model="selectedTraversalRules[1]"
-              label="Parents"
-              :value="TraversalRules.Parents"
-            />
-          </li>
-          <li>
-            <v-checkbox
-              v-model="selectedTraversalRules[2]"
-              label="Predecessors"
-              :value="TraversalRules.Predecessors"
-            />
-          </li>
-          <li>
-            <v-checkbox
-              v-model="selectedTraversalRules[3]"
-              label="Successors"
-              :value="TraversalRules.Successors"
-            />
-          </li>
-        </ul>
-      </v-container>
+      <v-checkbox
+        v-model="selectedTraversalRules[0]"
+        density="compact"
+        hide-details
+        label="Children"
+        :value="TraversalRules.Children"
+      />
+      <v-checkbox
+        v-model="selectedTraversalRules[1]"
+        density="compact"
+        hide-details
+        label="Parents"
+        :value="TraversalRules.Parents"
+      />
+      <v-checkbox
+        v-model="selectedTraversalRules[2]"
+        density="compact"
+        hide-details
+        label="Predecessors"
+        :value="TraversalRules.Predecessors"
+      />
+      <v-checkbox
+        v-model="selectedTraversalRules[3]"
+        density="compact"
+        hide-details
+        label="Successors"
+        :value="TraversalRules.Successors"
+      />
     </v-col>
   </v-row>
 </template>
 
 <style scoped lang="scss">
-li {
-  list-style-type: none;
+.v-col-3 {
+  max-width: 19%;
 }
 </style>
