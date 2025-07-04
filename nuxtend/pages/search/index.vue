@@ -8,22 +8,26 @@ import { useDataObjectAdvancedSearch } from "~/components/context/Search/context
 import { useReferenceAdvancedSearch } from "~/components/context/Search/context/useReferenceAdvancedSearch";
 import { useStructuredDataAdvancedSearch } from "~/components/context/Search/context/useStructuredDataAdvancedSearch";
 
-const initialJson = JSON.stringify({
-  OR: [
-    {
-      property: "name",
-      operator: "contains",
-      value: "My",
-    },
-    {
-      NOT: {
-        property: "id",
-        operator: "gt",
-        value: 12,
+const initialJson = JSON.stringify(
+  {
+    OR: [
+      {
+        property: "name",
+        operator: "contains",
+        value: "My",
       },
-    },
-  ],
-});
+      {
+        NOT: {
+          property: "id",
+          operator: "gt",
+          value: 12,
+        },
+      },
+    ],
+  },
+  null,
+  4,
+);
 
 const jsonQuery = ref<string>(initialJson);
 const selectedQueryType = ref<string>("");
@@ -150,11 +154,6 @@ onMounted(() => {
   useTitle("Search | shepard");
   getAllQueryParam();
 });
-const queryType = ref<QueryType>(QueryType.Collection);
-const selectedTraversalRules = ref<TraversalRules[]>([]);
-const collectionId = ref<number | undefined>(undefined);
-const dataObjectId = ref<number | undefined>(undefined);
-const searchQuery = ref<string>();
 </script>
 
 <template>
@@ -181,7 +180,7 @@ const searchQuery = ref<string>();
       <v-row>
         <v-col cols="12">
           <v-row>
-            <v-col cols="6" class="py-14">
+            <v-col class="py-14" cols="6">
               <div class="d-flex align-baseline">
                 <h1 class="text-h1 text-textbody1 pr-4">Advanced Search</h1>
               </div>
@@ -245,7 +244,7 @@ const searchQuery = ref<string>();
         </v-col>
       </v-row>
       <v-row>
-        <CustomJsonEditor v-model:search-query="searchQuery" />
+        <CustomJsonEditor v-model:search-query="jsonQuery" />
       </v-row>
     </v-container>
   </div>
