@@ -1,7 +1,5 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { RequestMethod } from "@dlr-shepard/backend-client";
-import Select from "~/components/common/Select.vue";
-import SimpleInput from "~/components/context/input-components/SimpleInput.vue";
 
 const showDialog = defineModel<boolean>("showDialog", {
   required: true,
@@ -34,10 +32,10 @@ const isValid = computed(() => {
   <FormDialog
     v-if="showDialog"
     v-model:show-dialog="showDialog"
-    title="Create Subscription"
+    :close-on-submit="true"
     :submit-disabled="!isValid"
     save-button-text="Create"
-    :close-on-submit="true"
+    title="Create Subscription"
     @submit="emit('submit', name, callbackUrl, subscribedUrl, requestMethod)"
   >
     <template #form>
@@ -50,10 +48,10 @@ const isValid = computed(() => {
         />
         <Select
           v-model:model-value="requestMethod"
-          label="Request method*"
           :items="Object.entries(RequestMethod)"
-          item-title="1"
           density="compact"
+          item-title="1"
+          label="Request method*"
           variant="outlined"
         />
       </div>
@@ -61,7 +59,7 @@ const isValid = computed(() => {
   </FormDialog>
 </template>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .wrapper {
   display: flex;
   flex-direction: column;

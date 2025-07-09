@@ -1,6 +1,5 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { DataObjectApi } from "@dlr-shepard/backend-client";
-import ConfirmDeleteDialog from "~/components/common/ConfirmDeleteDialog.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{
@@ -66,11 +65,11 @@ async function deleteItem() {
         @expansion-state-changed="e => (showContextMenuButton = e)"
       />
       <v-btn
+        color="primary"
+        density="compact"
         icon="mdi-plus"
         v-bind="props"
         variant="plain"
-        density="compact"
-        color="primary"
         @click.prevent.stop="showCreateDialog = true"
       />
     </div>

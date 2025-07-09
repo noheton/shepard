@@ -3,7 +3,7 @@ import type {
   SemanticAnnotation,
   TimeseriesEntity,
 } from "@dlr-shepard/backend-client";
-import AddAnnotationButton from "~/components/common/AddAnnotationButton.vue";
+import AddAnnotationButton from "~/components/common/button/AddAnnotationButton.vue";
 
 interface AnnotatedTimeseries extends TimeseriesEntity {
   annotations: Ref<SemanticAnnotation[] | null>;
@@ -38,7 +38,6 @@ const itemsPerPage = 10;
 
 <template>
   <DataTable
-    :items-per-page="itemsPerPage"
     :cell-props="{
       class: 'text-textbody1',
     }"
@@ -47,6 +46,7 @@ const itemsPerPage = 10;
     }"
     :headers="headers"
     :items-for-pagination="am"
+    :items-per-page="itemsPerPage"
     item-value="id"
     show-expand
   >
