@@ -92,9 +92,10 @@ export function isNumeric(text: string): boolean {
 }
 
 export function getQueryParam(key: string) {
-  const urlSearchParams = new URLSearchParams(window.location.search);
+  const urlSearchParams = useRequestURL().searchParams;
   return urlSearchParams.get(key);
 }
+
 export function setQueryParam(key: string, value: string) {
   const urlSearchParams = new URLSearchParams(window.location.search);
   urlSearchParams.set(key, value);

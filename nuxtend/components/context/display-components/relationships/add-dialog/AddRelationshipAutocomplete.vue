@@ -20,10 +20,10 @@ const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
   },
 );
 
-const model = defineModel<DataObjectSearchResult>();
+const model = defineModel<MyDataObjectSearchResult>();
 
 const mapToAutocompleteItem = (
-  dataObject: DataObjectSearchResult,
+  dataObject: MyDataObjectSearchResult,
 ): AutoCompleteItem => ({
   title: `${dataObject.dataObjectName} (ID: ${dataObject.dataObjectId})`,
   value: dataObject,
@@ -33,7 +33,7 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
     emit(
       "relationshipSelect",
-      (selectedItem.value as DataObjectSearchResult).dataObjectId,
+      (selectedItem.value as MyDataObjectSearchResult).dataObjectId,
     );
   }
 };

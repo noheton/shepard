@@ -11,9 +11,13 @@ export interface DataObjectSanitized extends DataObject {
 }
 
 export function useFetchDataObject(collectionId: number, dataObjectId: number) {
+  console.log("useFetchDataObject");
+  const isLoading = ref<boolean>(false);
   const dataObject = ref<DataObjectSanitized | undefined>(undefined);
 
   function fetchDataObject() {
+    console.log("FetchDataObject");
+    isLoading.value = true;
     useShepardApi(DataObjectApi)
       .value.getDataObject({
         collectionId: collectionId,
@@ -28,12 +32,13 @@ export function useFetchDataObject(collectionId: number, dataObjectId: number) {
       .catch(error => {
         dataObject.value = undefined;
         handleError(error, "getDataObject");
-      });
+      })
+      .finally(() => (isLoading.value = false));
   }
 
   fetchDataObject();
 
   onDataObjectUpdated(fetchDataObject);
 
-  return { dataObject };
+  return { dataObject, isLoading };
 }

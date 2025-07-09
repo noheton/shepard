@@ -12,6 +12,7 @@
       >
         Configuration
       </v-btn>
+      <v-btn class="nav-item" to="/search">Advanced Search</v-btn>
     </v-app-bar-title>
     <template #append>
       <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item">

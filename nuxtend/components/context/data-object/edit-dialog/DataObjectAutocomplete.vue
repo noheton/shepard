@@ -5,7 +5,7 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface AutoCompleteItem {
   title?: string;
-  value?: DataObjectSearchResult;
+  value?: MyDataObjectSearchResult;
 }
 
 interface DataObjectAutocompleteProps {
@@ -82,7 +82,7 @@ async function getDataObjectById(dataObjectId: number): Promise<DataObject> {
 }
 
 function mapToSearchResultAutoCompleteItem(
-  searchResult: DataObjectSearchResult,
+  searchResult: MyDataObjectSearchResult,
 ): AutoCompleteItem {
   return {
     title: `${searchResult.dataObjectName} (ID: ${searchResult.dataObjectId})`,
