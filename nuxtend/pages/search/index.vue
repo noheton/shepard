@@ -77,6 +77,10 @@ const searchDisabled = computed(
     !isJsonQueryValid.value,
 );
 
+watch(selectedCollectionId, (_, __) => {
+  selectedDataObjectId.value = undefined;
+});
+
 const loadingSearchResults = ref(false);
 const searchResults = ref<SearchResult[]>([]);
 
