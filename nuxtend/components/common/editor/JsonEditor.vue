@@ -14,11 +14,9 @@ const json = defineModel<string>("json", {
 function handleMenu(menuButtons: MenuButton[]) {
   return menuButtons
     .filter(v => v.text !== "table" && v.type === "button")
-    .filter(v => v.icon?.iconName !== "filter")
-    .map(v => {
-      if (v.text == "tree") v.className += " jse-last";
-      return v;
-    });
+    .filter(v => v.text !== "text" && v.type === "button")
+    .filter(v => v.text !== "tree" && v.type === "button")
+    .filter(v => v.icon?.iconName !== "filter");
 }
 </script>
 
