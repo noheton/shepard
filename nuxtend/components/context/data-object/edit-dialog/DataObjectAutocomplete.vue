@@ -1,11 +1,11 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { DataObjectApi, type DataObject } from "@dlr-shepard/backend-client";
 import { useTimeoutFn } from "@vueuse/core";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 interface AutoCompleteItem {
   title?: string;
-  value?: MyDataObjectSearchResult;
+  value?: DataObjectSearchResult;
 }
 
 interface DataObjectAutocompleteProps {
@@ -82,7 +82,7 @@ async function getDataObjectById(dataObjectId: number): Promise<DataObject> {
 }
 
 function mapToSearchResultAutoCompleteItem(
-  searchResult: MyDataObjectSearchResult,
+  searchResult: DataObjectSearchResult,
 ): AutoCompleteItem {
   return {
     title: `${searchResult.dataObjectName} (ID: ${searchResult.dataObjectId})`,
@@ -97,19 +97,19 @@ function clearInput() {
 
 <template>
   <v-autocomplete
-    :model-value="autoCompleteModel"
-    :items="dataObjectSearchResults.map(mapToSearchResultAutoCompleteItem)"
-    :loading="isLoading"
-    :hide-no-data="hideNoDataMessage"
-    :label="props.inputLabel"
     :disabled="props.isDisabled"
-    density="comfortable"
-    variant="outlined"
-    no-data-text="No Search Results"
+    :hide-no-data="hideNoDataMessage"
+    :items="dataObjectSearchResults.map(mapToSearchResultAutoCompleteItem)"
+    :label="props.inputLabel"
+    :loading="isLoading"
+    :model-value="autoCompleteModel"
     clearable
     color="primary"
-    return-object
+    density="comfortable"
     hide-details
+    no-data-text="No Search Results"
+    return-object
+    variant="outlined"
     @update:model-value="onSelection"
     @update:search="onSearch"
   />

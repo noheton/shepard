@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
 
 const emit = defineEmits<{
@@ -20,10 +20,10 @@ const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
   },
 );
 
-const model = defineModel<MyDataObjectSearchResult>();
+const model = defineModel<DataObjectSearchResult>();
 
 const mapToAutocompleteItem = (
-  dataObject: MyDataObjectSearchResult,
+  dataObject: DataObjectSearchResult,
 ): AutoCompleteItem => ({
   title: `${dataObject.dataObjectName} (ID: ${dataObject.dataObjectId})`,
   value: dataObject,
@@ -33,7 +33,7 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
     emit(
       "relationshipSelect",
-      (selectedItem.value as MyDataObjectSearchResult).dataObjectId,
+      (selectedItem.value as DataObjectSearchResult).dataObjectId,
     );
   }
 };
@@ -41,14 +41,14 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
 
 <template>
   <AutocompleteInput
-    v-model:search-string="searchString"
     v-model:search-done="searchDone"
-    :model-value="model ? mapToAutocompleteItem(model) : undefined"
-    label="Predecessor Name or ID..."
-    density="compact"
+    v-model:search-string="searchString"
     :is-loading="isLoading"
     :item-list="dataObjectSearchResults.map(mapToAutocompleteItem)"
+    :model-value="model ? mapToAutocompleteItem(model) : undefined"
     :start-search="startSearch"
+    density="compact"
+    label="Predecessor Name or ID..."
     @search-ended="onSelect"
   />
 </template>

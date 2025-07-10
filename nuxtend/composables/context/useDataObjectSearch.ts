@@ -1,7 +1,7 @@
 import { SearchApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 
-export interface MyDataObjectSearchResult {
+export interface DataObjectSearchResult {
   dataObjectName: string;
   dataObjectId: number;
 }
@@ -12,7 +12,7 @@ export function useDataObjectSearch(
   onSearchDone?: () => void,
 ) {
   const isLoading = ref<boolean>(false);
-  const dataObjectSearchResults = ref<MyDataObjectSearchResult[]>([]);
+  const dataObjectSearchResults = ref<DataObjectSearchResult[]>([]);
 
   const searchDone = (callbackFn?: () => void) => {
     isLoading.value = false;

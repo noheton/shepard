@@ -33,7 +33,7 @@ const { dataObjectSearchResults, isLoading, startSearch } = useDataObjectSearch(
 );
 
 function mapToSearchResultAutoCompleteItem(
-  searchResult: MyDataObjectSearchResult,
+  searchResult: DataObjectSearchResult,
 ): AutoCompleteItem {
   return {
     title: `${searchResult.dataObjectName} (ID: ${searchResult.dataObjectId})`,
@@ -43,7 +43,7 @@ function mapToSearchResultAutoCompleteItem(
 
 const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
-    const dataObject = selectedItem.value as MyDataObjectSearchResult;
+    const dataObject = selectedItem.value as DataObjectSearchResult;
     dataObjectId.value = dataObject.dataObjectId;
     emit("dataObjectSelected", dataObject.dataObjectId);
   } else {
