@@ -11,8 +11,6 @@ const dataObjectId = defineModel<number | undefined>("dataObjectId", {
   required: true,
 });
 
-const currentCollectionId = ref<number>(props.collectionId);
-
 const emit = defineEmits<{
   (e: "dataObjectSelected", id: number): void;
   (e: "selectionCleared"): void;
@@ -55,8 +53,8 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
 <template>
   <DisplayDataObjectInput
     v-if="collectionId && dataObjectId && inputFromQueryParam"
-    v-model:collection-id="currentCollectionId"
-    v-model:data-object-id="dataObjectId"
+    :collection-id="collectionId"
+    :data-object-id="dataObjectId"
     density="compact"
     @clicked="inputFromQueryParam = false"
   />

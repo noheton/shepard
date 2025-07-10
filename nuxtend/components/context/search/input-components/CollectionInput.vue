@@ -56,7 +56,7 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
 <template>
   <DisplayCollectionInput
     v-if="collectionId && inputFromQueryParam"
-    v-model:collection-id="collectionId"
+    :collection-id="collectionId"
     density="compact"
     @clicked="inputFromQueryParam = false"
   />
