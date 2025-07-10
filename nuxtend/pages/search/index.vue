@@ -149,7 +149,7 @@ function setAllQueryParam() {
     setQueryParam("collectionId", String(selectedCollectionId.value));
   if (selectedDataObjectId.value)
     setQueryParam("dataObjectId", String(selectedDataObjectId.value));
-  if (selectedTraversalRules.value.length > 0)
+  if (showTraversalRulesInput.value)
     setQueryParam(
       "traversalRules",
       JSON.stringify(selectedTraversalRules.value),
