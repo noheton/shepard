@@ -6,7 +6,7 @@ import {
   type TraversalRules,
 } from "@dlr-shepard/backend-client";
 import { useTitle } from "@vueuse/core";
-import type { SearchResult } from "~/components/context/Search/context/SearchResultList.vue";
+import type { SearchResult } from "~/components/context/search/context/SearchResultList.vue";
 import {
   search,
   SearchCollectionRequest,
@@ -16,8 +16,8 @@ import {
   SearchStructuredContainerRequest,
   SearchStructuredRequest,
   SearchTimeseriesContainerRequest,
-} from "~/components/context/Search/context/searchService";
-import type { QueryContainerType } from "~/components/context/Search/input-components/QueryTypeInput.vue";
+} from "~/components/context/search/context/searchService";
+import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
 
 const initialJson = JSON.stringify(
   {
