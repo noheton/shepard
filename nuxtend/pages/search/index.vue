@@ -20,6 +20,7 @@ import {
 import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
 import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
 import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
+import { clearQueryParams } from "~/utils/helpers";
 
 const initialJson = JSON.stringify(
   {
@@ -79,14 +80,14 @@ const searchDisabled = computed(
     !isJsonQueryValid.value,
 );
 
-watch(selectedCollectionId, (_, __) => {
-  selectedDataObjectId.value = undefined;
-});
-
 const loadingSearchResults = ref(false);
 const searchResults = ref<SearchResult[]>([]);
 
 const showJsonEditor = ref<boolean>(false);
+
+watch(selectedCollectionId, () => {
+  selectedDataObjectId.value = undefined;
+});
 
 function reset() {
   jsonQuery.value = initialJson;
@@ -146,6 +147,7 @@ function handleSearch() {
 }
 
 function setAllQueryParam() {
+  clearQueryParams();
   setQueryParam("queryType", String(selectedQueryType.value));
   if (selectedCollectionId.value)
     setQueryParam("collectionId", String(selectedCollectionId.value));
@@ -292,7 +294,6 @@ getAllQueryParam();
                 <CollectionPrefillableInput
                   v-model:collection-id="selectedCollectionId"
                   :is-required="selectedQueryType === QueryType.StructuredData"
-                  @selection-cleared="selectedCollectionId = undefined"
                 />
               </v-col>
             </v-row>

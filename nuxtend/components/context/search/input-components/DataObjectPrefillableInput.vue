@@ -12,7 +12,7 @@ const dataObjectId = defineModel<number | undefined>("dataObjectId", {
   required: true,
 });
 
-const searchString = ref<string>("");
+const searchString = ref<string | undefined>();
 const searchDone = ref<boolean>(false);
 
 const selectedItem = ref<AutoCompleteItem | undefined>(undefined);
@@ -29,17 +29,23 @@ function reset() {
   dataObjectId.value = undefined;
   selectedItem.value = undefined;
   dataObjectSearchResults.value = [];
+  searchString.value = undefined;
+  searchDone.value = false;
 }
 
-watch(props, (newProps, oldProps) => {
-  if (newProps.collectionId !== oldProps.collectionId) {
-    reset();
+watch(dataObjectId, () => {
+  if (dataObjectId.value === undefined) reset();
+});
+
+watch(selectedItem, () => {
+  if (selectedItem.value) {
+    const res = selectedItem.value?.value as DataObjectSearchResult;
+    dataObjectId.value = res.dataObjectId;
   }
 });
 
-const fetchIsLoading = ref(false);
 if (dataObjectId.value) {
-  fetchIsLoading.value = true;
+  isLoading.value = true;
   try {
     const dataObject = await useShepardApi(DataObjectApi).value.getDataObject({
       collectionId: props.collectionId,
@@ -52,7 +58,7 @@ if (dataObjectId.value) {
   } catch (error) {
     handleError(error, "fetching data object from url parameters");
   }
-  fetchIsLoading.value = false;
+  isLoading.value = false;
 }
 
 function mapToSearchResultAutoCompleteItem(
@@ -64,27 +70,26 @@ function mapToSearchResultAutoCompleteItem(
   };
 }
 
-const onSelect = (selectedItem: AutoCompleteItem | null) => {
-  if (selectedItem?.value) {
-    const dataObject = selectedItem.value as DataObjectSearchResult;
-    dataObjectId.value = dataObject.dataObjectId;
-  } else {
-    reset();
-  }
-};
+const itemList = computed(() =>
+  dataObjectSearchResults.value.map(mapToSearchResultAutoCompleteItem),
+);
+
+watch(searchString, (newValue, _) => {
+  if (!newValue) reset();
+});
 </script>
 
 <template>
   <AutocompleteInput
+    v-model="selectedItem"
     v-model:search-done="searchDone"
     v-model:search-string="searchString"
-    :is-loading="isLoading || fetchIsLoading"
-    :item-list="dataObjectSearchResults.map(mapToSearchResultAutoCompleteItem)"
+    :is-loading="isLoading"
+    :item-list="itemList"
     :label="`Data Object Name or ID...${props.isRequired ? `*` : ``}`"
-    :model-value="selectedItem"
-    :start-search="startSearch"
+    :start-search="() => startSearch(collectionId)"
     clearable
     density="compact"
-    @search-ended="onSelect"
+    @click:clear="reset"
   />
 </template>

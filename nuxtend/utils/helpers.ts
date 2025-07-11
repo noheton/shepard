@@ -102,11 +102,17 @@ export function setQueryParam(key: string, value: string) {
   const resolved = window.location.href.split("?")[0];
   history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
 }
+
 export function removeQueryParam(key: string) {
   const urlSearchParams = new URLSearchParams(window.location.search);
   urlSearchParams.delete(key);
   const resolved = window.location.href.split("?")[0];
   history.replaceState({}, "", resolved + "?" + urlSearchParams.toString());
+}
+
+export function clearQueryParams() {
+  const resolved = window.location.href.split("?")[0];
+  history.replaceState({}, "", resolved + "?");
 }
 
 export function formatSemanticAnnotation(
@@ -120,6 +126,7 @@ export interface PermissionOption {
   value: PermissionType;
   text: string;
 }
+
 export const permissionOptions: PermissionOption[] = [
   {
     value: PermissionType.Private,
@@ -140,6 +147,7 @@ export interface SemanticRepositoryOption {
   text: string;
   disabled?: boolean;
 }
+
 export const semanticRepositoryOptions: SemanticRepositoryOption[] = [
   {
     value: SemanticRepositoryType.Sparql,
@@ -156,11 +164,13 @@ export const semanticRepositoryOptions: SemanticRepositoryOption[] = [
     disabled: true,
   },
 ];
+
 export interface FilterOptions {
   perPage: number;
   orderBy: string;
   descending: boolean;
 }
+
 export interface FilterChangedData {
   currentPage: number;
   perPage: number;
