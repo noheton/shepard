@@ -4,27 +4,21 @@ import {
   useCollectionSearch,
   type MyCollectionSearchResult,
 } from "~/composables/context/useCollectionSearch";
-import DisplayCollectionInput from "./DisplayCollectionInput.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { CollectionApi } from "@dlr-shepard/backend-client";
 
 const props = defineProps<{
   isRequired?: boolean;
-  dataFromQueryParam?: boolean;
 }>();
 
 const collectionId = defineModel<number | undefined>("collectionId", {
   required: true,
 });
 
-const emit = defineEmits<{
-  (e: "collectionSelected", id: number): void;
-  (e: "selectionCleared"): void;
-}>();
-
 const searchString = ref<string>("");
 const searchDone = ref<boolean>(false);
-const inputFromQueryParam = ref<boolean>(props.dataFromQueryParam);
 
-const autoCompleteModel = ref<AutoCompleteItem | undefined>(undefined);
+const selectedItem = ref<AutoCompleteItem | undefined>(undefined);
 
 const { collectionSearchResults, startSearch, isLoading } = useCollectionSearch(
   searchString,
@@ -32,6 +26,29 @@ const { collectionSearchResults, startSearch, isLoading } = useCollectionSearch(
     searchDone.value = true;
   },
 );
+
+function reset() {
+  selectedItem.value = undefined;
+  collectionId.value = undefined;
+  collectionSearchResults.value = [];
+}
+
+const isFetchLoading = ref(false);
+if (collectionId.value) {
+  isFetchLoading.value = true;
+  try {
+    const collection = await useShepardApi(CollectionApi).value.getCollection({
+      collectionId: collectionId.value,
+    });
+    selectedItem.value = mapToSearchResultAutoCompleteItem({
+      collectionId: collection.id,
+      collectionName: collection.name,
+    });
+  } catch (e) {
+    handleError(e, "fetching collection from url parameters");
+  }
+  isFetchLoading.value = false;
+}
 
 function mapToSearchResultAutoCompleteItem(
   searchResult: MyCollectionSearchResult,
@@ -46,29 +63,20 @@ const onSelect = (selectedItem: AutoCompleteItem | null) => {
   if (selectedItem?.value) {
     const collection = selectedItem.value as MyCollectionSearchResult;
     collectionId.value = collection.collectionId;
-    emit("collectionSelected", collection.collectionId);
   } else {
-    emit("selectionCleared");
+    reset();
   }
 };
 </script>
 
 <template>
-  <DisplayCollectionInput
-    v-if="collectionId && inputFromQueryParam"
-    :collection-id="collectionId"
-    density="compact"
-    @clicked="inputFromQueryParam = false"
-  />
-
   <AutocompleteInput
-    v-else
     v-model:search-done="searchDone"
     v-model:search-string="searchString"
-    :is-loading="isLoading"
+    :is-loading="isLoading || isFetchLoading"
     :item-list="collectionSearchResults.map(mapToSearchResultAutoCompleteItem)"
     :label="`Collection Name or ID...${props.isRequired ? `*` : ``}`"
-    :model-value="autoCompleteModel"
+    :model-value="selectedItem"
     :start-search="startSearch"
     clearable
     density="compact"

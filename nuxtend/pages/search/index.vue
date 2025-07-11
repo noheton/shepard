@@ -18,6 +18,8 @@ import {
   SearchTimeseriesContainerRequest,
 } from "~/components/context/search/context/searchService";
 import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
+import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
+import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
 
 const initialJson = JSON.stringify(
   {
@@ -177,8 +179,6 @@ function string2queryType(str: string): QueryContainerType {
   throw new Error(`Query type ${str} not supported!`);
 }
 
-const dataFromQueryParam = ref<boolean>(false);
-
 function getAllQueryParam() {
   const params = useRequestURL().searchParams;
 
@@ -208,7 +208,6 @@ function getAllQueryParam() {
     traversalRules ||
     searchQuery
   ) {
-    dataFromQueryParam.value = true;
     if (isJsonQueryValid.value) handleSearch();
   }
 }
@@ -290,9 +289,8 @@ getAllQueryParam();
             </v-row>
             <v-row v-if="showCollectionInput">
               <v-col>
-                <CollectionInput
+                <CollectionPrefillableInput
                   v-model:collection-id="selectedCollectionId"
-                  :data-from-query-param="dataFromQueryParam"
                   :is-required="selectedQueryType === QueryType.StructuredData"
                   @selection-cleared="selectedCollectionId = undefined"
                 />
@@ -300,11 +298,9 @@ getAllQueryParam();
             </v-row>
             <v-row v-if="showDataObjectInput && selectedCollectionId">
               <v-col>
-                <DataObjectInput
+                <DataObjectPrefillableInput
                   v-model:data-object-id="selectedDataObjectId"
                   :collection-id="selectedCollectionId"
-                  :data-from-query-param="dataFromQueryParam"
-                  @selection-cleared="selectedDataObjectId = undefined"
                 />
               </v-col>
             </v-row>
