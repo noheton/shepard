@@ -224,8 +224,11 @@ function removeAllQueryParams() {
   ].forEach(qp => removeQueryParam(qp));
 }
 
-useTitle("Search | shepard");
 getAllQueryParam();
+
+useHead({
+  title: "Search | shepard",
+});
 </script>
 
 <template>
