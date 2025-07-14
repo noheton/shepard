@@ -69,7 +69,7 @@ async function onDelete() {
         <p>
           A semantic repository provides terms from ontologies (i.e. an ontology
           SPARQL endpoint).
-          <br >
+          <br />
           These terms are used for semantic annotations to build up semantic
           knowledge in Shepard.
         </p>

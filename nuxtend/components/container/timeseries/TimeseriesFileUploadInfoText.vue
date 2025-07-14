@@ -5,9 +5,9 @@
     <p class="font-weight-bold">
       DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE
     </p>
-    <br >
+    <br />
     <p>TIMESTAMP is nanoseconds since epoch.</p>
-    <br >
+    <br />
     <p>For example:</p>
     <p>DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE</p>
     <p>MyDev,value,MyLoc,MyMeas,MySymname,1708339761809582900,0.0</p>
