@@ -16,9 +16,9 @@ import {
   SearchStructuredRequest,
   SearchTimeseriesContainerRequest,
 } from "~/components/context/search/context/searchService";
-import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
-import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
 import CollectionPrefillableInput from "~/components/context/search/input-components/CollectionPrefillableInput.vue";
+import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
+import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
 import { clearQueryParams } from "~/utils/helpers";
 
 const initialJson = JSON.stringify(

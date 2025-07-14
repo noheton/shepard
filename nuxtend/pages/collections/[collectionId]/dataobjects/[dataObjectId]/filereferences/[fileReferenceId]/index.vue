@@ -125,7 +125,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                 to: collectionsPath,
               },
               {
-                title: `Collection '${collection.name}'`,
+                title: `'${collection.name}'`,
                 to: collectionsPath + collection.id,
               },
               {
@@ -137,7 +137,7 @@ function onDownloadFile(params: { filename: string; oid: string }) {
                   dataObjectId,
               },
               {
-                title: `File Reference '${fileReference?.name}'`,
+                title: `'${fileReference?.name}'`,
                 to:
                   collectionsPath +
                   collectionId +
