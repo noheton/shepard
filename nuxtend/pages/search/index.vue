@@ -5,7 +5,6 @@ import {
   type SearchScope,
   type TraversalRules,
 } from "@dlr-shepard/backend-client";
-import { useTitle } from "@vueuse/core";
 import type { SearchResult } from "~/components/context/search/context/SearchResultList.vue";
 import {
   search,
