@@ -14,7 +14,7 @@ const queryType = defineModel<QueryContainerType>("queryType", {
 const queryTypeUnifiedSearch = [
   { value: QueryType.Collection, text: "Collection" },
   { value: QueryType.DataObject, text: "Data Object" },
-  { value: QueryType.Reference, text: "File or Timeseries Reference" },
+  { value: QueryType.Reference, text: "References & Relationships" },
   { value: QueryType.StructuredData, text: "Structured Data Reference" },
   { value: ContainerType.File, text: "File Container" },
   { value: ContainerType.Structureddata, text: "Structured Data Container" },
