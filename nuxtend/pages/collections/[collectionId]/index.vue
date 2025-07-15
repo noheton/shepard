@@ -31,7 +31,7 @@ const showDescriptionEditDialog = ref(false);
                 to: collectionsPath,
               },
               {
-                title: `'${collection.name}'`,
+                title: `${collection.name}`,
                 to: collectionsPath + routeParams.collectionId,
               },
             ]"

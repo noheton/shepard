@@ -99,7 +99,7 @@ const itemsPerPage = 10;
                 to: collectionsPath,
               },
               {
-                title: `'${collection.name}'`,
+                title: `${collection.name}`,
                 to: collectionsPath + collection.id,
               },
               {
@@ -111,7 +111,7 @@ const itemsPerPage = 10;
                   dataObjectId,
               },
               {
-                title: `'${structuredDataReference?.name}'`,
+                title: `${structuredDataReference?.name}`,
                 to:
                   collectionsPath +
                   collectionId +

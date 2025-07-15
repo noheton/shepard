@@ -131,7 +131,7 @@ const itemsPerPage = 10;
                 to: collectionsPath,
               },
               {
-                title: `'${collection.name}'`,
+                title: `${collection.name}`,
                 to: collectionsPath + collection.id,
               },
               {
