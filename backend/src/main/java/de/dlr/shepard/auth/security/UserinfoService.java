@@ -6,10 +6,13 @@ import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import java.net.URI;
+import java.net.URISyntaxException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -47,18 +50,23 @@ public class UserinfoService {
 
   private static final String WELL_KNOWN_PATH = ".well-known/openid-configuration";
 
-  private final String oidcConfidurationUrl;
+  private final URI oidcConfigurationURI;
   private String userinfoEndpoint;
 
-  private Client client = ClientBuilder.newClient();
+  private final Client client = ClientBuilder.newClient();
 
   public UserinfoService() {
     String oidcAuthority = ConfigProvider.getConfig().getValue("oidc.authority", String.class);
-    this.oidcConfidurationUrl = String.format("%s/%s", oidcAuthority, WELL_KNOWN_PATH);
+    try {
+      URI base = new URI(oidcAuthority + "/").normalize();
+      oidcConfigurationURI = base.resolve(WELL_KNOWN_PATH);
+    } catch (URISyntaxException e) {
+      throw new ShepardProcessingException(e.getMessage());
+    }
   }
 
   protected void init() {
-    var openIdConfiguration = getOpenIdConfiguration(oidcConfidurationUrl);
+    var openIdConfiguration = getOpenIdConfiguration();
     if (openIdConfiguration == null) {
       throw new ShepardProcessingException("Could not fetch openid configuration");
     }
@@ -77,14 +85,14 @@ public class UserinfoService {
     return userinfo;
   }
 
-  private OpenIdConfiguration getOpenIdConfiguration(String uri) {
-    var request = client.target(uri).request(MediaType.APPLICATION_JSON).buildGet();
+  private OpenIdConfiguration getOpenIdConfiguration() {
+    var request = client.target(oidcConfigurationURI).request(MediaType.APPLICATION_JSON).buildGet();
 
     OpenIdConfiguration response;
     try {
       response = request.invoke(OpenIdConfiguration.class);
-    } catch (ProcessingException e) {
-      Log.errorf("Request was unsuccessful: %s", e.getMessage());
+    } catch (ProcessingException | WebApplicationException e) {
+      Log.errorf("Request was unsuccessful: URI: %s, Error: %s", oidcConfigurationURI.toString(), e.getMessage());
       return null;
     }
     return response;
@@ -100,8 +108,8 @@ public class UserinfoService {
     Userinfo response;
     try {
       response = request.invoke(Userinfo.class);
-    } catch (ProcessingException e) {
-      Log.errorf("Request was unsuccessful: %s", e.getMessage());
+    } catch (ProcessingException | WebApplicationException e) {
+      Log.errorf("Request was unsuccessful: URI: %s, Error: %s", uri, e.getMessage());
       return null;
     }
     return response;

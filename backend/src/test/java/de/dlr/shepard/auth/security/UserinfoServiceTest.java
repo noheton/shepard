@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.exceptions.ShepardProcessingException;
+import io.vertx.core.cli.Argument;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
@@ -18,12 +20,20 @@ import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
+import java.net.URI;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -46,20 +56,37 @@ public class UserinfoServiceTest extends BaseTestCase {
   private UserinfoService service;
 
   @Captor
+  private ArgumentCaptor<URI> uriCaptor;
+
+  @Captor
   private ArgumentCaptor<String> urlCaptor;
 
   @Captor
   private ArgumentCaptor<String> headerCaptor;
 
+  private static MockedStatic<ConfigProvider> mockConfigProvider;
+
+  @BeforeAll
+  public static void mockConfigProvider() {
+    Config config = mock(Config.class);
+    mockConfigProvider = Mockito.mockStatic(ConfigProvider.class);
+    mockConfigProvider.when(ConfigProvider::getConfig).thenReturn(config);
+    when(config.getValue("oidc.authority", String.class)).thenReturn("https://my.oidc.provider.com/realm/");
+  }
+
+  @AfterAll
+  public static void removeMockConfigProvider() {
+    mockConfigProvider.close();
+  }
+
   @BeforeEach
   public void prepareSpy() throws IllegalAccessException {
-    var oidcConfidurationUrl = "https://my.oidc.provider.com/realm/.well-known/openid-configuration";
-    FieldUtils.writeField(service, "oidcConfidurationUrl", oidcConfidurationUrl, true);
     FieldUtils.writeField(service, "client", client, true);
   }
 
   @BeforeEach
   public void setUpClient() throws IllegalAccessException {
+    doReturn(target).when(client).target(uriCaptor.capture());
     doReturn(target).when(client).target(urlCaptor.capture());
     when(target.request(MediaType.APPLICATION_JSON)).thenReturn(builder);
     doReturn(builder).when(builder).header(eq(HttpHeaders.AUTHORIZATION), headerCaptor.capture());
@@ -72,7 +99,6 @@ public class UserinfoServiceTest extends BaseTestCase {
 
     FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
     when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
-
     var actual = service.fetchUserinfo("Bearer myToken");
     assertEquals(userinfo, actual);
     assertEquals("https://userinfo.endpoint/userinfo", urlCaptor.getValue());
@@ -116,7 +142,10 @@ public class UserinfoServiceTest extends BaseTestCase {
     when(invocation.invoke(OpenIdConfiguration.class)).thenReturn(conf);
 
     service.init();
-    assertEquals("https://my.oidc.provider.com/realm/.well-known/openid-configuration", urlCaptor.getValue());
+    assertEquals(
+      URI.create("https://my.oidc.provider.com/realm/.well-known/openid-configuration"),
+      uriCaptor.getValue()
+    );
     assertTrue(headerCaptor.getAllValues().isEmpty());
   }
 
