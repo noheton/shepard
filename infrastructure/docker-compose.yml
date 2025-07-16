@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/dlr-shepard/shepard/backend:latest
+    image: registry.gitlab.com/dlr-shepard/shepard/backend:5.0.0
     restart: unless-stopped
     environment:
       JAVA_OPTS: "-Xms2G -Xmx2G"
@@ -17,6 +17,9 @@ services:
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://timescaledb:5432/${POSTGRES_DB}
       QUARKUS_DATASOURCE_USERNAME: ${POSTGRES_SHEPARD_USER}
       QUARKUS_DATASOURCE_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
+      QUARKUS_DATASOURCE_SPATIAL_JDBC_URL: jdbc:postgresql://postgis:5432/${POSTGRES_DB}
+      QUARKUS_DATASOURCE_SPATIAL_USERNAME: ${POSTGRES_SHEPARD_USER}
+      QUARKUS_DATASOURCE_SPATIAL_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
       SHEPARD_MIGRATION_MODE_ENABLED: ${SHEPARD_MIGRATION_MODE_ENABLED}
       SHEPARD_SPATIAL_DATA_ENABLED: ${SHEPARD_SPATIAL_DATA_ENABLED}
     volumes:
@@ -25,18 +28,34 @@ services:
     depends_on:
       - neo4j
       - mongodb
-      - influxdb
       - timescaledb
     networks:
       - shepard
 
-  frontend:
-    image: registry.gitlab.com/dlr-shepard/shepard/frontend:latest
+  frontend-old:
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.0.0
     environment:
       VUE_APP_BACKEND: ${BACKEND_URL}shepard/api
       VUE_APP_OIDC_AUTHORITY: ${OIDC_AUTHORITY}
       VUE_APP_CLIENT_ID: ${CLIENT_ID}
     restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - frontend
+    profiles:
+      - frontend-old
+
+  frontend:
+    image: registry.gitlab.com/dlr-shepard/shepard/nuxtend:5.0.0
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api
+      AUTH_ORIGIN: ${FRONTEND_URL}api/auth
+      NUXT_AUTH_SECRET: ${FRONTEND_AUTH_SECRET}
+      NUXT_OIDC_CLIENT_ID: ${CLIENT_ID}
+      NUXT_OIDC_ISSUER: ${OIDC_AUTHORITY}
+      SESSION_REFRESH_INTERVAL: ${SESSION_REFRESH_INTERVAL}
     depends_on:
       - backend
     networks:
@@ -68,7 +87,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
       MONGO_USERNAME: ${MONGO_USERNAME}
-      MONGO_PASSWORD: ${MONGO_PW}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - /opt/shepard/mongodb/db:/data/db
       - /opt/shepard/mongodb/configdb:/data/configdb
@@ -110,6 +129,8 @@ services:
     networks:
       - shepard
       - influxdata
+    profiles:
+      - influxdb
 
   timescaledb:
     image: timescale/timescaledb:2.18.1-pg16
@@ -127,6 +148,27 @@ services:
     networks:
       - shepard
 
+  postgis:
+    image: postgis/postgis:16-3.5
+    container_name: postgis
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
+    shm_size: "6GB"
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
+      - /opt/shepard/postgis/db:/var/lib/postgresql/data
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles:
+      - spatial
+
   chronograf:
     image: chronograf:1.9-alpine
     environment:
@@ -140,6 +182,8 @@ services:
       - influxdb
     networks:
       - influxdata
+    profiles:
+      - influxdb
 
   caddy:
     image: caddy:2
@@ -161,7 +205,7 @@ services:
       - frontend
 
   timescale-migration-preparation:
-    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:dev
+    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:5.0.0
     volumes:
       - ./log:/app/log
     env_file:
@@ -174,8 +218,40 @@ services:
     profiles:
       - timescale-migration-preparation
 
+  prometheus:
+    image: prom/prometheus:v3.3.0
+    command:
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+      - --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - shepard
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:11.3.0-security-01
+    networks:
+      - shepard
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=true
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
 networks:
   shepard:
   mongo:
   influxdata:
   frontend:
+
+volumes:
+  grafana-storage: {}

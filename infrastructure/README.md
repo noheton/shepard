@@ -106,30 +106,42 @@ cp .env.example .env
 ### 7. Set passwords and configuration in the `.env` file
 
 - All variables except `OIDC_ROLE` must be set!
-- URLs have to end with a trailing slash
+- **URLs have to end with a trailing slash**
 - The database passwords can be changed arbitrarily at the beginning
 - TimescaleDB and PostGIS are extensions of PostgreSQL.
   Theoretically they can be stored in the same database but it is recommended to use separate instances.
 
-| Variable                 | Description                                                                                               | Example                                                                                           |
-| ------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| BACKEND_URL              | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
-| NEO4J_PW                 | initial Neo4j password                                                                                    |                                                                                                   |
-| MONGO_ROOT_USERNAME      | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
-| MONGO_ROOT_PASSWORD      | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
-| MONGO_DATABASE           | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
-| MONGO_USERNAME           | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
-| MONGO_PASSWORD           | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |                                                                                                   |
-| POSTGRES_DB              | Database name                                                                                             | postgres                                                                                          |
-| POSTGRES_USER            | Username for the postgres admin account                                                                   | postgres                                                                                          |
-| POSTGRES_PASSWORD        | Password for the postgres admin account                                                                   | password                                                                                          |
-| POSTGRES_SHEPARD_USER    | Username for the shepard user account                                                                     | shepard                                                                                           |
-| POSTGRES_SHEPARD_USER_PW | Password for the shepard user account                                                                     | shepard_secret                                                                                    |
-| OIDC_AUTHORITY           | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
-| OIDC_PUBLIC              | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
-| OIDC_ROLE                | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID                | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
-| INFLUX_PW                | initial InfluxDB password (Only needed until timeseries data is successfully migrated)                    |                                                                                                   |
+| Variable                       | Description                                                                                               | Example                                                                                           |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL                    | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW                       | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_ROOT_USERNAME            | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
+| MONGO_ROOT_PASSWORD            | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
+| MONGO_DATABASE                 | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
+| MONGO_USERNAME                 | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
+| MONGO_PASSWORD                 | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |                                                                                                   |
+| POSTGRES_DB                    | Database name                                                                                             | postgres                                                                                          |
+| POSTGRES_USER                  | Username for the postgres admin account                                                                   | postgres                                                                                          |
+| POSTGRES_PASSWORD              | Password for the postgres admin account                                                                   | password                                                                                          |
+| POSTGRES_SHEPARD_USER          | Username for the shepard user account                                                                     | shepard                                                                                           |
+| POSTGRES_SHEPARD_USER_PW       | Password for the shepard user account                                                                     | shepard_secret                                                                                    |
+| OIDC_AUTHORITY                 | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC                    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE                      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID                      | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| INFLUX_PW                      | initial InfluxDB password (Only needed until timeseries data is successfully migrated)                    |                                                                                                   |
+| FRONTEND_URL                   | URL of the frontend with trailing slash                                                                   | `https://frontend.shepard.example.com/`                                                           |
+| FRONTEND_AUTH_SECRET           | A random secret string                                                                                    |
+| SESSION_REFRESH_INTERVAL       | frontend session refresh interval in ms (defaults to 30secs)                                              | 30000                                                                                             |
+| SHEPARD_MIGRATION_MODE_ENABLED | set to `true` to trigger the one-time migration from InfluxDB to TimescaleDB.                             | `true`                                                                                            |
+| SHEPARD_SPATIAL_DATA_ENABLED   | Enable experimental spatial data feature. Requires postgis                                                | `false`                                                                                           |
+| COMPOSE_PROFILES               | Select the docker compose profiles that are active                                                        | Default: empty                                                                                    |
+
+> **_NOTE:_** The `FRONTEND_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`
+>
+> ```bash
+> $ openssl rand -base64 32
+> ```
 
 ## Restrict access to users with specific roles
 
@@ -152,7 +164,31 @@ Some OpenID Connect identity providers such as [Keycloak](https://www.keycloak.o
 
 The shepard backend can be configured to allow only users with a specific role. To do so, the optional `OIDC_ROLE` variable in `.env` can be set to the given role. From the next restart, users without this role will no longer be able to access shepard.
 
+## Profiles in `docker-compose.yml`
+
+Different (experimental) features can be activated using profiles.
+The default profile contains all containers that are necessary for sheapard in default configuration.
+
+Additionally, the following profiles are defined:
+
+| Profile                         | Feature                                                                                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| influxdb                        | Enable InfluxDB and Chronograph, only necessary for migration to TimescaleDB.                                                                |
+| spatial                         | Enable postgis to enable experimental spatial data feature. The feature itself must be activated using the environment variables (see above) |
+| monitoring                      | Enable the monitoring feature (see below).                                                                                                   |
+| timescale-migration-preparation | Only used for the migration process, see migration documentation for more information                                                        |
+| frontend-old                    | Enable old (legacy) frontend.                                                                                                                |
+
+Profiles can either be selected on CLI, e.g.
+
+`docker compose --profile spatial --profile monitoring up`
+
+or by setting the `COMPOSE_PROFILES` environment variable (e.g. in `.env`).
+Multiple profiles must be comma-separated.
+
 ## Restrict public access to Chronograph
+
+_This section only refers to old installations still using InfluxDB. By default, chronograph is no longer activated._
 
 Chronograf by default is publicly accessible! You can configure it with OAuth or simply with a password and username. More information can be found [here](https://docs.influxdata.com/chronograf/v1/administration/managing-security/).
 
@@ -167,6 +203,8 @@ See https://gitlab.com/dlr-shepard/shepard/-/merge_requests/389#migration-instru
 ## Start
 
 Make sure that all requested resources are available. In particular, check the free memory, since the shepard backend and the databases will use a lot of it. You can adjust the maximum amount of used memory in `docker-compose.yml`.
+If you are using experimental features, make sure that all profiles are selected accordingly.
+Profiles must be set for every `docker compose` command, therefore it is recommended to use the `COMPOSE_PROFILES` environment variable.
 
 ```bash
 docker compose pull
@@ -185,8 +223,7 @@ You will receive a JSON document with the current values.
 
 ### Setup Prometheus
 
-We provide a `docker-compose-monitoring.yml` file in the infrastructure folder.
-That contains two images, prometheus and grafana.
+The `monitoring` profile contains all required containers for setting up Prometheus.
 
 The configuration file for prometheus is located in `infrastructure/prometheus/prometheus.yml`.
 In general the configuration should be correct.
@@ -199,13 +236,13 @@ Otherwise you have to adapt it.
 
 ### Setup Grafana
 
-#### Adapt caddyfile
+#### Adapt Caddyfile
 
 Grafana is used for visualization.
 In order to access Grafana, you have to configure it in the caddyfile.
 Make a copy of an existing section and do the following changes:
 
-```json
+```txt
 https://grafana.shepard.example.com {
 	reverse_proxy grafana:3000
   ...
@@ -219,31 +256,10 @@ Make sure to replace _shepard.example.com_ with the correct hostname of your sys
 You have to provide username and password for using Grafana.
 They have to be configured in the .env file.
 
-```json
+```txt
 GRAFANA_ADMIN_USERNAME=grafana
 GRAFANA_ADMIN_PASSWORD=secure_password
 ```
-
-#### Adapt network name in docker compose file
-
-Prometheus needs access to the shepard backend, so we have to use the same network name.
-You can get a list of used network names by docker with the following command:
-
-```shell
-docker network ls
-```
-
-Pick the network name that contains the keyword 'shepard'.
-Copy that name and paste it into the `docker-compose-monitoring.yml` file in the networks section:
-
-```json
-networks:
-  shepard_network
-    name: _your_network_name_here
-    external: true
-```
-
-Now you should be able to start the docker files with `docker compose up`.
 
 #### First steps with Grafana
 
@@ -266,55 +282,17 @@ In order to visualize them with Grafana, you have to add a connection to prometh
 
 ## Experimental features
 
-There is a `docker-compose-exp.yml` file that holds a deployment setup with experimental extensions.
-To be able to try those extensions, the deployment should be run using this file instead.
-
-### Standalone Nuxt frontend (v2.0.0)
-
-- Adapt the proxy config by adding the subdomain mapping the the Caddy file.
-
-```
-https://nuxtend.hostname_placeholder_do_not_change {
-	reverse_proxy nuxtend:3000
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-```
-
-- Add the new link the index page
-
-```html
-<a href="https://nuxtend.hostname_placeholder_do_not_change/"> https://nuxtend.hostname_placeholder_do_not_change/ </a>
-```
-
-- Add the experimental environment variables in `.env`
-
-```
-FRONTEND_URL='Frontend URL' # (should end with '/')
-FRONTEND_AUTH_SECRET='Frontend auth secret'
-```
-
-> **_NOTE:_** The `FRONTEND_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`
->
-> ```bash
-> $ openssl rand -base64 32
-> ```
-
-### TimescaleDB
-
-There is an experimental database to store the timeseries data used as replacement for InfluxDB.
-This database will be experimental until the migration from InfluxDB is completely layed down.
-Running this database requires changes to directory permissions like mentioned in [here](#4-create-necessary-directories)
+There are profiles in `docker-compose.yml` that enable experimental extensions.
 
 ### Spatial Data
 
-The experimental docker compose file also contains a docker container with PostGIS which is an extension for PostgreSQL.
+The experimental docker compose profile contains a docker container with PostGIS which is an extension for PostgreSQL.
 In order to make use of this experimental feature, the administrator has to activate it via environment variables or configuration properties.
 
 As environment variable:
 
 ```bash
-SHEPARD_SPATIAL_DATA_ENABLED: true
+SHEPARD_SPATIAL_DATA_ENABLED="true"
 ```
 
 As configuration property:
@@ -326,11 +304,9 @@ shepard.spatial-data.enabled = true
 That enables the REST endpoints for spatial data.
 Otherwise those endpoints return 404 and cannot be used.
 
-### Run the experimental docker compose file
+### Use the experimental spatial profile
 
-```bash
-docker compose -f .\docker-compose-exp.yml up -d
-```
+Set `COMPOSE_PROFILES` variable to `spatial`.
 
 ## Update
 
