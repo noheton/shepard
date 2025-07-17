@@ -1,21 +1,8 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.web.json",
-  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  // https://nuxt.com/docs/guide/concepts/typescript
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "ignoreDeprecations": "5.0"
-  },
-
-  "references": [
-    {
-      "path": "./tsconfig.config.json"
-    }
-  ],
-
-  "vueCompilerOptions": {
-    "target": 2.7
+    "module": "esnext",
+    "types": ["node"]
   }
 }

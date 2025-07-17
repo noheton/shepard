@@ -1,7 +1,7 @@
 spec:
   inputs:
     image_name:
-      options: ["backend", "frontend", "nuxtend"]
+      options: ["backend", "frontend"]
 ---
 "upload-docker-$[[ inputs.image_name ]]":
   image: docker:28.1

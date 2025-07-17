@@ -33,7 +33,7 @@ services:
       - shepard
 
   frontend-old:
-    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.0.0
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:4.0.0
     environment:
       VUE_APP_BACKEND: ${BACKEND_URL}shepard/api
       VUE_APP_OIDC_AUTHORITY: ${OIDC_AUTHORITY}
@@ -47,7 +47,7 @@ services:
       - frontend-old
 
   frontend:
-    image: registry.gitlab.com/dlr-shepard/shepard/nuxtend:5.0.0
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.0.0
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api

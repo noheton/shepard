@@ -6,13 +6,9 @@
 .m2
 .venv
 
-# Generated frontend code
-frontend/src/generated/*
-frontend/dist/*
-
 # Generated nuxtend code
-nuxtend/.nuxt/*
-nuxtend/.output/*
+frontend/.nuxt/*
+frontend/.output/*
 
 # Generated backend-client
 backend-client/*

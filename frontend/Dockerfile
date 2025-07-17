@@ -1,11 +1,9 @@
-FROM nginx:1.27-alpine
+FROM node:22-slim
 
-EXPOSE 80
+WORKDIR /app
 
-COPY ./nginx/nginx.conf /etc/nginx/conf.d/default.conf
-COPY entrypoint.sh /usr/share/nginx/
-COPY dist /usr/share/nginx/html
-RUN chmod +x /usr/share/nginx/entrypoint.sh
+EXPOSE 3000
 
-ENTRYPOINT ["/usr/share/nginx/entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+COPY .output .
+
+CMD [ "node", "server/index.mjs" ]

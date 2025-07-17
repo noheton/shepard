@@ -2,11 +2,11 @@
   "name": "shepard",
   "private": true,
   "workspaces": [
-    "nuxtend"
+    "frontend"
   ],
   "scripts": {
     "start:dev": "concurrently -n backend,frontend --handle-input \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:frontend": "npm run dev --workspace=nuxtend",
+    "start:frontend": "npm run dev --workspace=frontend",
     "start:backend": "cd backend && ./mvnw quarkus:dev",
     "start:all": "cd backend && docker compose --profile monitoring --profile frontend up -d",
     "format": "prettier . --write",
