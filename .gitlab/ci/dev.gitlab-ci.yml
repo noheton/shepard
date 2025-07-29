@@ -12,6 +12,7 @@ include:
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
   - local: .gitlab/ci/jobs/build-backend.yml
+  - local: .gitlab/ci/jobs/unrequire-attributes-for-python.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
   - local: .gitlab/ci/jobs/test-backend.yml
   - local: .gitlab/ci/jobs/coverage.yml

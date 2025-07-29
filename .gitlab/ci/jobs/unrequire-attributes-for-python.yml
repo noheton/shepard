@@ -1,0 +1,11 @@
+unrequire_attributes_for_python:
+  stage: build
+  image: python:3.13-slim
+  script:
+    - python3 scripts/shepard_scripts/scripts/patch_openapi_for_python.py backend/target/openapi/openapi.json backend/target/openapi/openapi_no_required.json
+  needs: [build_backend]
+
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - backend/target/openapi

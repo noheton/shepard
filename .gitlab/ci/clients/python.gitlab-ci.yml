@@ -3,9 +3,9 @@
   image:
     name: openapitools/openapi-generator-cli:v7.12.0
     entrypoint: [""]
-  needs: [build_backend, get_version]
+  needs: [build_backend, get_version, unrequire_attributes_for_python]
   script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi_no_required.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
   artifacts:
     expire_in: 2 days
     paths:
