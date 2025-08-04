@@ -67,7 +67,7 @@ public class SemanticRepositoryServiceTest {
   }
 
   @Test
-  public void getAllRepositoriesTest_pagination() {
+  public void getAllRepositoryByName() {
     QueryParamHelper params = new QueryParamHelper();
     params = params.withName("name");
     var expected = List.of(new SemanticRepository(1L));
