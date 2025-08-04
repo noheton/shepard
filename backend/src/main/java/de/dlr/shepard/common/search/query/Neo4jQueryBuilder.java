@@ -33,7 +33,8 @@ public class Neo4jQueryBuilder {
     "valueIRI",
     "propertyIRI",
     "createdAt",
-    "updatedAt"
+    "updatedAt",
+    "hasAnnotation"
   );
 
   private static final List<String> IdProperties = List.of(
@@ -144,7 +145,9 @@ public class Neo4jQueryBuilder {
     // search for createdAt/updatedAt
     if (property.equals("createdAt") || property.equals("updatedAt")) return atPart(node, variable);
     // for SemanticAnnotationIRIs
-    if (property.equals("valueIRI") || property.equals("propertyIRI")) return iRIPart(node, variable);
+    if (property.equals("valueIRI") || property.equals("propertyIRI")) return IRIPart(node, variable);
+    // for SemanticAnnotations
+    if (property.equals("hasAnnotation")) return hasAnnotationPart(node, variable);
     return null;
   }
 
@@ -191,12 +194,24 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String iRIPart(JsonNode node, String variable) {
+  private static String IRIPart(JsonNode node, String variable) {
     String ret = "(";
     String iriType = node.get(Constants.OP_PROPERTY).textValue();
     ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem." + iriType + " ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE);
+    ret = ret + ")})";
+    return ret;
+  }
+
+  private static String hasAnnotationPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_PROPERTY).textValue();
+    String propertyName = annotation.split(":")[0];
+    String valueName = annotation.split(":")[1];
+    String ret = "(";
+    ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " " + propertyName + " AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " " + valueName;
     ret = ret + ")})";
     return ret;
   }
@@ -269,6 +284,7 @@ public class Neo4jQueryBuilder {
       case Constants.JSON_LE -> "<=";
       case Constants.JSON_IN -> "IN";
       case Constants.JSON_NE -> "<>";
+      case Constants.JSON_REGMATCH -> "=~";
       default -> throw new ShepardParserException("unknown comparison operator " + operator);
     };
   }

@@ -189,6 +189,7 @@ public class Constants {
   public static final String JSON_XOR = "XOR";
   public static final String JSON_EQ = "eq";
   public static final String JSON_CONTAINS = "contains";
+  public static final String JSON_REGMATCH = "regmatch";
   public static final String JSON_GT = "gt";
   public static final String JSON_LT = "lt";
   public static final String JSON_GE = "ge";
