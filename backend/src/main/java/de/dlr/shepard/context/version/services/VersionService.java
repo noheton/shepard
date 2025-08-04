@@ -50,7 +50,6 @@ public class VersionService {
 
   private Collection copyCollectionForVersioning(Collection collection, Date createdAt, User createdBy) {
     Collection collectionCopy = new Collection();
-    collectionCopy.setAnnotations(collection.getAnnotations());
     collectionCopy.setAttributes(collection.getAttributes());
     collectionCopy.setDescription(collection.getDescription());
     collectionCopy.setName(collection.getName());
@@ -98,6 +97,7 @@ public class VersionService {
     versionDAO.copyStructuredDataReferences(HEADVersionUID, createdVersionUID);
     versionDAO.copyTimeseriesReferences(HEADVersionUID, createdVersionUID);
     versionDAO.copyURIReferences(HEADVersionUID, createdVersionUID);
+    versionDAO.addAnnotations(HEADVersionUID, createdVersionUID);
     return createdVersion;
   }
 }

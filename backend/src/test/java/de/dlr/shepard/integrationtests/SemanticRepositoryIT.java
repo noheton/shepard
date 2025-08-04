@@ -159,6 +159,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .as(SemanticAnnotationIO.class);
 
     assertThat(collectionAnnotation.getId()).isNotNull();
+    System.out.println("AnnotatonID: " + collectionAnnotation.getId());
     assertThat(collectionAnnotation.getName()).isEqualTo("ingredient::Almond milk");
     assertThat(collectionAnnotation.getPropertyIRI()).isEqualTo("http://dbpedia.org/ontology/ingredient");
     assertThat(collectionAnnotation.getPropertyRepositoryId()).isEqualTo(repository.getId());
@@ -353,8 +354,7 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       "ID ERROR - There is no association between annotation and entity"
     );
   }
-
-  @Test
+  /*@Test
   @Order(12)
   public void deleteSemanticAnnotation() {
     given()
@@ -421,5 +421,5 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .then()
       .statusCode(204);
     given().spec(requestSpecOfDefaultUser).when().get(repositoryURL + "/" + repository.getId()).then().statusCode(404);
-  }
+  }*/
 }

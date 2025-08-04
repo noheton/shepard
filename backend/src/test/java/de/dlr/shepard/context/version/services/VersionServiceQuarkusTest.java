@@ -28,6 +28,13 @@ import de.dlr.shepard.context.references.structureddata.services.StructuredDataR
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
+import de.dlr.shepard.context.semantic.SemanticRepositoryType;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticRepository;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.semantic.io.SemanticRepositoryIO;
+import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
+import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.context.version.io.VersionIO;
@@ -43,6 +50,8 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.integrationtests.WireMockResource;
+import io.quarkus.test.common.WithTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -53,6 +62,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
+@WithTestResource(WireMockResource.class)
 public class VersionServiceQuarkusTest {
 
   @Inject
@@ -69,6 +79,12 @@ public class VersionServiceQuarkusTest {
 
   @Inject
   StructuredDataContainerService structuredDataContainerService;
+
+  @Inject
+  SemanticRepositoryService semanticRepositoryService;
+
+  @Inject
+  SemanticAnnotationService semanticAnnotationService;
 
   @Inject
   FileContainerService fileContainerService;
@@ -561,5 +577,73 @@ public class VersionServiceQuarkusTest {
     );
     assertTrue(hasExactlyOneVersion(collection1DataObject1ToCollection2DataObject1.getId()));
     assertTrue(hasExactlyOneVersion(collection1DataObject1ToCollection2DataObject1Version1.getId()));
+  }
+
+  @Test
+  @Transactional
+  public void createVersionWithSemanticAnnotations() {
+    Collection collectionAnnotated = createCollection("annotated collection");
+    DataObject dataObjectAnnotated = createDataObject("DOAnnotated", collectionAnnotated, null, null);
+    StructuredDataReference referenceAnnotated = createStructuredDataReference(
+      collectionAnnotated.getShepardId(),
+      "FRAnnotated",
+      dataObjectAnnotated
+    );
+    SemanticRepositoryIO repToCreate = new SemanticRepositoryIO();
+    repToCreate.setName("SemanticRepository");
+    repToCreate.setType(SemanticRepositoryType.SPARQL);
+    repToCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
+    SemanticRepository repository = semanticRepositoryService.createRepository(repToCreate);
+    SemanticAnnotationIO AnnoToCreate = new SemanticAnnotationIO();
+    AnnoToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
+    AnnoToCreate.setPropertyRepositoryId(repository.getId());
+    AnnoToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
+    AnnoToCreate.setValueRepositoryId(repository.getId());
+    SemanticAnnotation DOAnnotation = semanticAnnotationService.createAnnotationByShepardId(
+      dataObjectAnnotated.getShepardId(),
+      AnnoToCreate
+    );
+    SemanticAnnotation collectionAnnotation = semanticAnnotationService.createAnnotationByShepardId(
+      collectionAnnotated.getShepardId(),
+      AnnoToCreate
+    );
+    SemanticAnnotation referenceAnnotation1 = semanticAnnotationService.createAnnotationByShepardId(
+      referenceAnnotated.getShepardId(),
+      AnnoToCreate
+    );
+    SemanticAnnotation referenceAnnotation2 = semanticAnnotationService.createAnnotationByShepardId(
+      referenceAnnotated.getShepardId(),
+      AnnoToCreate
+    );
+    Version Version1 = createVersion("annotationTestVersion", collectionAnnotated);
+    Collection collectionVersionized = collectionService.getCollection(
+      collectionAnnotated.getShepardId(),
+      Version1.getUid()
+    );
+    List<SemanticAnnotation> versionizedCollectionAnnotations = semanticAnnotationService.getAllAnnotationsByNeo4jId(
+      collectionVersionized.getId()
+    );
+    assertEquals(1, versionizedCollectionAnnotations.size());
+    assertEquals(collectionAnnotation, versionizedCollectionAnnotations.get(0));
+    DataObject DOVersionized = dataObjectService.getDataObject(dataObjectAnnotated.getShepardId(), Version1.getUid());
+    List<SemanticAnnotation> versionizedDOAnnotations = semanticAnnotationService.getAllAnnotationsByNeo4jId(
+      DOVersionized.getId()
+    );
+    assertEquals(1, versionizedDOAnnotations.size());
+    assertEquals(DOAnnotation, versionizedDOAnnotations.get(0));
+    StructuredDataReference referenceVersionized = structuredDataReferenceService.getReference(
+      collectionAnnotated.getShepardId(),
+      dataObjectAnnotated.getShepardId(),
+      referenceAnnotated.getShepardId(),
+      Version1.getUid()
+    );
+    List<SemanticAnnotation> versionizedReferenceAnnotations = semanticAnnotationService.getAllAnnotationsByNeo4jId(
+      referenceVersionized.getId()
+    );
+    assertEquals(2, versionizedReferenceAnnotations.size());
+    HashSet<SemanticAnnotation> expectedAnnotations = new HashSet<SemanticAnnotation>();
+    expectedAnnotations.add(referenceAnnotation1);
+    expectedAnnotations.add(referenceAnnotation2);
+    assertEquals(expectedAnnotations, new HashSet<SemanticAnnotation>(versionizedReferenceAnnotations));
   }
 }

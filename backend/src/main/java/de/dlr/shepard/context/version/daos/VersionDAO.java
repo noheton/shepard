@@ -326,6 +326,22 @@ public class VersionDAO extends GenericDAO<Version> {
     return true;
   }
 
+  public boolean addAnnotations(UUID sourceVersionUID, UUID targetVersionUID) {
+    HashMap<String, Object> params = new HashMap<String, Object>();
+    params.put("sourceVersionUID", sourceVersionUID);
+    params.put("targetVersionUID", targetVersionUID);
+    String query =
+      """
+      MATCH (v_source:Version)<-[:has_version]-(sourceEntity)-[:has_annotation]->(a:SemanticAnnotation),
+      (v_target:Version)<-[:has_version]-(targetEntity)
+      WHERE v_source.uid = $sourceVersionUID AND v_target.uid = $targetVersionUID
+      AND sourceEntity.shepardId = targetEntity.shepardId
+      CREATE (targetEntity)-[:has_annotation]->(a)
+      """;
+    runQuery(query, params);
+    return true;
+  }
+
   public void removeHasPredecessor(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
