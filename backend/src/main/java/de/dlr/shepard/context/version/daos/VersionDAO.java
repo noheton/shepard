@@ -93,12 +93,11 @@ public class VersionDAO extends GenericDAO<Version> {
     runQuery(query, params);
   }
 
-  public boolean copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyDataObjectsWithParentsAndPredecessors(UUID sourceVersionUID, UUID targetVersionUID) {
     copyDataObjects(sourceVersionUID, targetVersionUID);
     copyChildRelations(sourceVersionUID, targetVersionUID);
     copySuccessorRelations(sourceVersionUID, targetVersionUID);
     copyDataObjectCreatedByRelations(sourceVersionUID, targetVersionUID);
-    return true;
   }
 
   private void copyDataObjectCreatedByRelations(UUID sourceVersionUID, UUID targetVersionUID) {
@@ -157,10 +156,9 @@ public class VersionDAO extends GenericDAO<Version> {
     runQuery(query, params);
   }
 
-  public boolean copyDataObjectReferences(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyDataObjectReferences(UUID sourceVersionUID, UUID targetVersionUID) {
     copyInternalDataObjectReferences(sourceVersionUID, targetVersionUID);
     copyExternalDataObjectReferences(sourceVersionUID, targetVersionUID);
-    return true;
   }
 
   public void copyCollectionReferences(UUID sourceVersionUID, UUID targetVersionUID) {
@@ -230,7 +228,7 @@ public class VersionDAO extends GenericDAO<Version> {
     runQuery(query, params);
   }
 
-  public boolean copyFileReferences(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyFileReferences(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
@@ -251,10 +249,9 @@ public class VersionDAO extends GenericDAO<Version> {
     CREATE (fr_target)-[:has_payload]->(sf)
     """;
     runQuery(query, params);
-    return true;
   }
 
-  public boolean copyStructuredDataReferences(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyStructuredDataReferences(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
@@ -278,10 +275,9 @@ public class VersionDAO extends GenericDAO<Version> {
     CREATE (sdr_target)-[:has_payload]->(sd)
     """;
     runQuery(query, params);
-    return true;
   }
 
-  public boolean copyTimeseriesReferences(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyTimeseriesReferences(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
@@ -305,10 +301,9 @@ public class VersionDAO extends GenericDAO<Version> {
     CREATE (tsr_target)-[:has_payload]->(ts)
     """;
     runQuery(query, params);
-    return true;
   }
 
-  public boolean copyURIReferences(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void copyURIReferences(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
@@ -323,10 +318,9 @@ public class VersionDAO extends GenericDAO<Version> {
       SET ur_target=ur_source
       """;
     runQuery(query, params);
-    return true;
   }
 
-  public boolean addAnnotations(UUID sourceVersionUID, UUID targetVersionUID) {
+  public void addAnnotations(UUID sourceVersionUID, UUID targetVersionUID) {
     HashMap<String, Object> params = new HashMap<String, Object>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
@@ -339,7 +333,6 @@ public class VersionDAO extends GenericDAO<Version> {
       CREATE (targetEntity)-[:has_annotation]->(a)
       """;
     runQuery(query, params);
-    return true;
   }
 
   public void removeHasPredecessor(UUID sourceVersionUID, UUID targetVersionUID) {

@@ -196,7 +196,7 @@ public class SemanticRepositoryServiceQuarkusTest {
 
   @Test
   @Transactional
-  public void createRepositoryHealtchecheckFailed() {
+  public void createRepositoryHealthCheckFailed() {
     SemanticRepositoryIO repMalformedURL = new SemanticRepositoryIO();
     repMalformedURL.setName("repMalformedURL");
     repMalformedURL.setType(SemanticRepositoryType.SPARQL);
