@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 @RequestScoped
 public class TimeseriesService {
@@ -39,6 +40,10 @@ public class TimeseriesService {
 
   @Inject
   TimeseriesContainerService timeseriesContainerService;
+
+  Boolean autoConvertIntToDouble = ConfigProvider.getConfig()
+    .getOptionalValue("shepard.autoconvert-int", Boolean.class)
+    .orElse(false);
 
   /**
    * Returns a list of timeseries objects that are in the given database.
@@ -361,7 +366,7 @@ public class TimeseriesService {
     return found.get();
   }
 
-  private static void assertDataPointsMatchTimeseriesValueType(
+  private void assertDataPointsMatchTimeseriesValueType(
     TimeseriesEntity timeseriesEntity,
     List<TimeseriesDataPoint> dataPoints
   ) {
@@ -373,10 +378,14 @@ public class TimeseriesService {
     }
   }
 
-  private static void assertValueTypeMatchesTimeseries(
-    TimeseriesEntity timeseries,
-    DataPointValueType incomingValueType
-  ) {
+  private void assertValueTypeMatchesTimeseries(TimeseriesEntity timeseries, DataPointValueType incomingValueType) {
+    // If auto-conversion is enabled, allow transformation from Integer to Double
+    if (
+      autoConvertIntToDouble &&
+      incomingValueType == DataPointValueType.Integer &&
+      timeseries.getValueType() == DataPointValueType.Double
+    ) return;
+
     if (timeseries.getValueType() != incomingValueType) throw new InvalidBodyException(
       "Timeseries already exists for data type %s but new data points are of type %s",
       timeseries.getValueType(),
