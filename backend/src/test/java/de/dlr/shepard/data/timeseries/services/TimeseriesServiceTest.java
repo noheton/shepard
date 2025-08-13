@@ -2,6 +2,7 @@ package de.dlr.shepard.data.timeseries.services;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -179,7 +180,7 @@ public class TimeseriesServiceTest {
     assertNotNull(actual);
     assertEquals(1, actual.size());
     TimeseriesDataPoint actualPoint = actual.get(0);
-    assertTrue(actualPoint.getValue() instanceof Integer, "DataPoint value must be an integer");
+    assertInstanceOf(Long.class, actualPoint.getValue(), "DataPoint value must be a long");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
 

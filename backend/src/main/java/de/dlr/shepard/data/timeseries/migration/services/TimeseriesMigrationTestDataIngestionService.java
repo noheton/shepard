@@ -95,7 +95,7 @@ public class TimeseriesMigrationTestDataIngestionService {
       case String:
         return new InfluxPoint(timestamp, String.format("String-%d", System.currentTimeMillis() * 1_000_000));
       case Integer:
-        return new InfluxPoint(timestamp, new Random().nextInt());
+        return new InfluxPoint(timestamp, new Random().nextLong());
       case Double:
         return new InfluxPoint(timestamp, new Random().nextDouble());
     }
