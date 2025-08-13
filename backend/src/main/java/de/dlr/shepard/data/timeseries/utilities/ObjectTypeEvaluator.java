@@ -14,7 +14,7 @@ public class ObjectTypeEvaluator {
     if (value instanceof Boolean) return Optional.of(DataPointValueType.Boolean);
     if (value instanceof Double) return Optional.of(DataPointValueType.Double);
     if (value instanceof String) return Optional.of(DataPointValueType.String);
-    if (value instanceof Integer) return Optional.of(DataPointValueType.Integer);
+    if (value instanceof Long || value instanceof Integer) return Optional.of(DataPointValueType.Integer);
     return Optional.empty();
   }
 }
