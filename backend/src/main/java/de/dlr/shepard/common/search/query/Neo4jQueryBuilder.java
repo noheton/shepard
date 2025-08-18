@@ -34,7 +34,8 @@ public class Neo4jQueryBuilder {
     "propertyIRI",
     "createdAt",
     "updatedAt",
-    "hasAnnotation"
+    "hasAnnotation",
+    "hasPayloadAnnotation"
   );
 
   private static final List<String> IdProperties = List.of(
@@ -148,6 +149,8 @@ public class Neo4jQueryBuilder {
     if (property.equals("valueIRI") || property.equals("propertyIRI")) return IRIPart(node, variable);
     // for SemanticAnnotations
     if (property.equals("hasAnnotation")) return hasAnnotationPart(node, variable);
+    // for SemanticAnnotations of payloads
+    if (property.equals("hasPayloadAnnotation")) return hasPayloadAnnotationPart(node, variable);
     return null;
   }
 
@@ -209,7 +212,24 @@ public class Neo4jQueryBuilder {
     String propertyName = annotation.split(":")[0];
     String valueName = annotation.split(":")[1];
     String ret = "(";
-    ret = ret + "EXISTS {MATCH (" + variable + ") - [] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " " + propertyName + " AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " " + valueName;
+    ret = ret + ")})";
+    return ret;
+  }
+
+  private static String hasPayloadAnnotationPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_PROPERTY).textValue();
+    String propertyName = annotation.split(":")[0];
+    String valueName = annotation.split(":")[1];
+    String ret = "(";
+    ret =
+      ret +
+      "EXISTS {MATCH (" +
+      variable +
+      ") - [:has_payload] -> (pl) - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " " + propertyName + " AND ";
     ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " " + valueName;
     ret = ret + ")})";
