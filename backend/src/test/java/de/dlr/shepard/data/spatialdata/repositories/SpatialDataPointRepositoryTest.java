@@ -42,7 +42,11 @@ public class SpatialDataPointRepositoryTest {
   private ArrayList<Long> containerIdsForCleanup = new ArrayList<Long>();
 
   private long generateManagedContainerId() {
-    var id = (long) (Math.random() * 1_000);
+    var id = 0L;
+    do {
+      id = (long) (Math.random() * 1_000);
+    } while (containerIdsForCleanup.contains(id));
+
     containerIdsForCleanup.add(id);
     return id;
   }
