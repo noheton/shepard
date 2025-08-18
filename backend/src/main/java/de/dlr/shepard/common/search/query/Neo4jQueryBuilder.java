@@ -319,6 +319,20 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
+  private static String containerReferencePayloadAnnotationMatchPart() {
+    String ret =
+      "MATCH (" +
+      Constants.BASICCONTAINER_IN_QUERY +
+      ":Container)<-[:is_in_container]-(" +
+      Constants.REFERENCE_IN_QUERY +
+      ":BasicReference)-[:has_payload]->(" +
+      Constants.PAYLOAD_IN_QUERY +
+      ")-[:has_annotation]->(" +
+      Constants.ANNOTATION_IN_QUERY +
+      ":SemanticAnnotation)";
+    return ret;
+  }
+
   private static String collectionNeo4jIdWherePart(Long collectionId) {
     String ret = "(id(" + Constants.COLLECTION_IN_QUERY + ") = " + collectionId + ")";
     return ret;
