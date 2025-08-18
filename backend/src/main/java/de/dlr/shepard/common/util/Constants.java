@@ -133,14 +133,6 @@ public class Constants {
   public static final String QP_ORDER_BY_ATTRIBUTE = "orderBy";
   public static final String QP_ORDER_DESC = "orderDesc";
 
-  public static final String FILECONTAINER_IN_QUERY = "fc";
-  public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
-  public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
-  public static final String BASICCONTAINER_IN_QUERY = "bc";
-  public static final String SPATIALDATACONTAINER_IN_QUERY = "spdc";
-  public static final String USER_IN_QUERY = "user";
-  public static final String USERGROUP_IN_QUERY = "userGroup";
-
   // Relationships
   public static final String HAS_DATAOBJECT = "has_dataobject";
   public static final String HAS_REFERENCE = "has_reference";
@@ -183,6 +175,15 @@ public class Constants {
   public static final String COLLECTION_IN_QUERY = "col";
   public static final String DATAOBJECT_IN_QUERY = "do";
   public static final String REFERENCE_IN_QUERY = "br";
+  public static final String FILECONTAINER_IN_QUERY = "fc";
+  public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
+  public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
+  public static final String BASICCONTAINER_IN_QUERY = "bc";
+  public static final String SPATIALDATACONTAINER_IN_QUERY = "spdc";
+  public static final String USER_IN_QUERY = "user";
+  public static final String USERGROUP_IN_QUERY = "userGroup";
+  public static final String PAYLOAD_IN_QUERY = "pl";
+  public static final String ANNOTATION_IN_QUERY = "sem";
   public static final String JSON_AND = "AND";
   public static final String JSON_OR = "OR";
   public static final String JSON_NOT = "NOT";
