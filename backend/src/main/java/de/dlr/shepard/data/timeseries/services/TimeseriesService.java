@@ -41,6 +41,12 @@ public class TimeseriesService {
   @Inject
   TimeseriesContainerService timeseriesContainerService;
 
+  /**
+   * Flag to determine whether integer values received should be automatically converted to double if the
+   * timeseries they are supposed to be inserted is of type double.
+   * This flag is not injected using @ConfigProperty because that would make testing much more complicated.
+   * These properties are set upon startup and cannot be changed within a single test.
+   */
   Boolean autoConvertIntToDouble = ConfigProvider.getConfig()
     .getOptionalValue("shepard.autoconvert-int", Boolean.class)
     .orElse(false);
