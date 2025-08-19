@@ -26,7 +26,9 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response.Status;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.Config;
@@ -300,6 +302,25 @@ public class TimeseriesServiceTest {
       assertDoesNotThrow(() -> {
         this.timeseriesService.saveDataPoints(container.getId(), timeseries, otherDataPoints);
       });
+
+      var queryParams = new TimeseriesDataPointsQueryParams(
+        0,
+        Instant.now().toEpochMilli() * 1_000_000,
+        null,
+        null,
+        null
+      );
+      var storedPoints = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
+
+      assertEquals(2, storedPoints.size());
+
+      var storedValues = storedPoints.stream().map(TimeseriesDataPoint::getValue).toList();
+
+      storedValues.forEach(item -> assertInstanceOf(Double.class, item));
+
+      List<Double> expectedValues = Arrays.asList(22.3, 20.0);
+
+      assertTrue(storedValues.containsAll(expectedValues));
     }
   }
 
