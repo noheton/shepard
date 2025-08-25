@@ -5,7 +5,7 @@
     entrypoint: [""]
   needs: [build_backend, get_version]
   script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o clients/java/client -p=apiPackage=de.dlr.shepard.client.java.api,modelPackage=de.dlr.shepard.client.java.model,artifactId=shepard-client,groupId=de.dlr.shepard.client.java,parentGroupId=de.dlr.shepard.client.java,parentArtifactId=de.dlr.shepard.client.java,parentVersion=1.0.0-SNAPSHOT,artifactVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o clients/java/client -c clients/java/config.yaml -p=artifactVersion=${VERSION_NUMBER}
   artifacts:
     expire_in: 2 days
     paths:
