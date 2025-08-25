@@ -14,7 +14,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
-import kotlin.NotImplementedError;
 import org.locationtech.jts.geom.Coordinate;
 
 @RequestScoped
@@ -78,7 +77,7 @@ public class SpatialDataPointService {
           spatialDataQueryParams
         );
       }
-      case ORIENTED_BOUNDING_BOX -> throw new NotImplementedError("not implemented");
+      case ORIENTED_BOUNDING_BOX -> throw new UnsupportedOperationException("not implemented");
       default -> throw new Error("Unknown geometry filter type");
     }
   }

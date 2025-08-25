@@ -1,12 +1,9 @@
 package de.dlr.shepard;
 
-import de.dlr.shepard.common.configuration.feature.toggles.MigrationModeToggle;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.IConnector;
 import de.dlr.shepard.common.util.PKIHelper;
-import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxDBConnector;
-import de.dlr.shepard.data.timeseries.migration.services.TimeseriesMigrationInitService;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
@@ -14,16 +11,9 @@ import io.quarkus.runtime.Shutdown;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.enterprise.context.control.ActivateRequestContext;
-import jakarta.inject.Inject;
 
 @QuarkusMain
 public class ShepardMain implements QuarkusApplication {
-
-  @Inject
-  TimeseriesMigrationInitService migrationInitService;
-
-  @Inject
-  InfluxDBConnector influxdb;
 
   private static IConnector neo4j = NeoConnector.getInstance();
 
@@ -44,16 +34,11 @@ public class ShepardMain implements QuarkusApplication {
     Log.info("Initialize databases");
     neo4j.connect();
     Log.info("Connection established to neo4j database.");
-    if (MigrationModeToggle.isActive()) {
-      influxdb.connect();
-    }
-    Log.info(("Connection established to influx database."));
   }
 
   @Override
   @ActivateRequestContext
   public int run(String... args) throws Exception {
-    migrationInitService.orchestrateMigrations();
     Quarkus.waitForExit();
     return 0;
   }
@@ -61,6 +46,5 @@ public class ShepardMain implements QuarkusApplication {
   @Shutdown
   void shutdown() {
     neo4j.disconnect();
-    influxdb.disconnect();
   }
 }

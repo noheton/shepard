@@ -55,11 +55,6 @@ test_backend:
         MONGO_INITDB_ROOT_USERNAME: mongo
         MONGO_INITDB_ROOT_PASSWORD: shepard
         MONGO_INITDB_DATABASE: test
-    - name: influxdb:1.8
-      alias: influxdb
-      variables:
-        INFLUXDB_ADMIN_USER: influx
-        INFLUXDB_ADMIN_PASSWORD: shepard
     - name: timescale/timescaledb:2.18.1-pg16
       alias: timescaledb
     - name: postgis/postgis:16-3.5

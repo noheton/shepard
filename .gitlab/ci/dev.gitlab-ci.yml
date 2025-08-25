@@ -32,4 +32,3 @@ include:
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: backend
-  - local: .gitlab/ci/jobs/upload-docker-timescale-migration.yml
