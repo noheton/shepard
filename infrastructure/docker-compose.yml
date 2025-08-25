@@ -113,25 +113,6 @@ services:
     networks:
       - mongo
 
-  influxdb:
-    image: influxdb:1.8-alpine
-    environment:
-      IFLUXDB_ADMIN_ENABLED: "true"
-      INFLUXDB_HTTP_AUTH_ENABLED: "true"
-      INFLUXDB_ADMIN_USER: admin
-      INFLUXDB_ADMIN_PASSWORD: ${INFLUX_PW}
-      INFLUXDB_LOGGING_LEVEL: warn
-      INFLUXDB_HTTP_LOG_ENABLED: "false"
-      INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
-    volumes:
-      - /opt/shepard/influxdb:/var/lib/influxdb
-    restart: unless-stopped
-    networks:
-      - shepard
-      - influxdata
-    profiles:
-      - influxdb
-
   timescaledb:
     image: timescale/timescaledb:2.18.1-pg16
     environment:
@@ -168,22 +149,6 @@ services:
     restart: unless-stopped
     profiles:
       - spatial
-
-  chronograf:
-    image: chronograf:1.9-alpine
-    environment:
-      INFLUXDB_URL: http://influxdb:8086
-      INFLUXDB_USERNAME: admin
-      INFLUXDB_PASSWORD: ${INFLUX_PW}
-    volumes:
-      - /opt/shepard/chronograf:/var/lib/chronograf
-    restart: unless-stopped
-    depends_on:
-      - influxdb
-    networks:
-      - influxdata
-    profiles:
-      - influxdb
 
   caddy:
     image: caddy:2

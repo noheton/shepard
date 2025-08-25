@@ -28,4 +28,3 @@ include:
   - local: .gitlab/ci/jobs/upload-docker.yml
     inputs:
       image_name: frontend
-  - local: .gitlab/ci/jobs/upload-docker-timescale-migration.yml
