@@ -147,8 +147,8 @@ def _get_latest_release(project: Project, since_release: str) -> tuple[str, str]
         releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
         if not releases:
             raise Exception(
-                "No past release could be found! " +
-                "For this script to work there needs to be an exising release!"
+                "No past release could be found! "
+                + "For this script to work there needs to be an exising release!"
             )
         release = releases[0]
     else:
@@ -156,8 +156,8 @@ def _get_latest_release(project: Project, since_release: str) -> tuple[str, str]
             release = project.releases.get(since_release)
         except Exception as e:
             raise Exception(
-                f"Release {since_release} could not be found! " +
-                "Maybe the release does not exist or it is misspelled?"
+                f"Release {since_release} could not be found! "
+                + "Maybe the release does not exist or it is misspelled?"
             ) from e
 
     return release.released_at, release.tag_name
