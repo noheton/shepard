@@ -22,6 +22,7 @@ services:
       QUARKUS_DATASOURCE_SPATIAL_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
       SHEPARD_MIGRATION_MODE_ENABLED: ${SHEPARD_MIGRATION_MODE_ENABLED}
       SHEPARD_SPATIAL_DATA_ENABLED: ${SHEPARD_SPATIAL_DATA_ENABLED}
+      SHEPARD_AUTOCONVERT_INT: ${SHEPARD_AUTOCONVERT_INT}
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
       - /opt/shepard/backend/config:/home/jboss/.shepard
