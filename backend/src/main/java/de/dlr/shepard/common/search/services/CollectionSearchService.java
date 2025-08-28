@@ -41,6 +41,7 @@ public class CollectionSearchService {
       user.getUsername(),
       new SortingHelper(orderBy, orderDesc)
     );
+    System.out.println("neo4jSelection: " + neo4jSelectionQuery);
     List<Collection> resultList = searchDAO.findCollections(
       neo4jSelectionQuery,
       pagination,
