@@ -226,6 +226,14 @@ def _generate_next_tag(
 
     # increase release number according to release type
     version_dict[release_type] += 1
+
+    if release_type == "minor":
+      version_dict["patch"] = 0
+
+    if release_type == "major":
+      version_dict["patch"] = 0
+      version_dict["minor"] = 0
+
     return (
         f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
         + "-release"
