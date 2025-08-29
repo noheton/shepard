@@ -209,14 +209,14 @@ def _generate_next_tag(
         )
         return "1.0.0"
 
-    release_type = "patch"
+    release_type = defaultReleaseType
     if has_breaking_changes:
-        click.echo(
+        major = click.confirm(
             "The release contains breaking changes!"
-            + " Automatically increasing 'major' version."
+            + " Do you want to perform a 'major' release?"
         )
-        release_type = "major"
-    else:
+        release_type = "major" if major else defaultReleaseType
+    if not release_type == "major":
         click.echo(f"The current version tag is {latest_release_tag}.")
         release_type = click.prompt(
             "What is the next release type?",
