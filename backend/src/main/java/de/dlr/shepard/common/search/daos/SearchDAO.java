@@ -32,6 +32,7 @@ public class SearchDAO {
     String collectionVariable
   ) {
     String query = selectionQuery + emitCollectionReturnPart(collectionVariable, pagination);
+    System.out.println("overall query: " + query);
     Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;

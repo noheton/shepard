@@ -90,7 +90,7 @@ public class CollectionSearchServiceQuarkusTest {
   @Test
   @Transactional
   public void findCollection1NotCollectionWithAnnotationsTest() {
-    System.out.println("findColl1Test started");
+    System.out.println("findColl1Test started heute");
     String collectionSearchQuery = "{\"property\": \"name\", \"value\": \"collection1\", \"operator\": \"contains\"}";
     PaginatedCollectionList searchResult = collectionSearchService.search(
       collectionSearchQuery,
@@ -101,10 +101,18 @@ public class CollectionSearchServiceQuarkusTest {
     );
     System.out.println("number of found collections: " + searchResult.getResults().size());
     System.out.println("found: " + searchResult.getResults().get(0));
-    assertEquals(true, searchResult.getResults().contains(collection1));
-    //assertEquals(false, searchResult.getResults().contains(collectionWithAnnotation));
+    boolean containsCollection1 = false;
+    boolean containsCollectionWithAnnotation = false;
+    for (Collection foundCollection : searchResult.getResults()) {
+      if (foundCollection.getShepardId() == collection1.getShepardId()) containsCollection1 = true;
+      if (foundCollection.getShepardId() == collectionWithAnnotation.getShepardId()) containsCollectionWithAnnotation =
+        true;
+    }
+    assertEquals(true, containsCollection1);
+    assertEquals(false, containsCollectionWithAnnotation);
   }
-  /*@Test
+
+  @Test
   @Transactional
   public void findCollectionWithAnnotationsNotCollectionTest() {
     System.out.println("findAnnoCollTest started");
@@ -117,7 +125,14 @@ public class CollectionSearchServiceQuarkusTest {
       BasicCollectionAttributes.createdAt,
       true
     );
-    assertEquals(false, searchResult.getResults().contains(collection1));
-    assertEquals(true, searchResult.getResults().contains(collectionWithAnnotation));
-  }*/
+    boolean containsCollection1 = false;
+    boolean containsCollectionWithAnnotation = false;
+    for (Collection foundCollection : searchResult.getResults()) {
+      if (foundCollection.getShepardId() == collection1.getShepardId()) containsCollection1 = true;
+      if (foundCollection.getShepardId() == collectionWithAnnotation.getShepardId()) containsCollectionWithAnnotation =
+        true;
+    }
+    assertEquals(false, containsCollection1);
+    assertEquals(true, containsCollectionWithAnnotation);
+  }
 }

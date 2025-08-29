@@ -171,21 +171,6 @@ public class Neo4jQueryBuilder {
     return null;
   }
 
-  private static String byPart(JsonNode node, String variable) {
-    String ret = "(";
-    String by =
-      switch (node.get(Constants.OP_PROPERTY).textValue()) {
-        case "createdBy" -> "created_by";
-        case "updatedBy" -> "updated_by";
-        default -> "";
-      };
-    ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE toLower(u.username) ";
-    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
-    ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
-    ret = ret + "})";
-    return ret;
-  }
-
   private static String atPart(JsonNode node, String variable) {
     String ret = "(";
     String property = node.get(Constants.OP_PROPERTY).textValue();
@@ -208,20 +193,36 @@ public class Neo4jQueryBuilder {
   }
 
   private static String hasAnnotationPart(JsonNode node, String variable) {
-    String annotation = node.get(Constants.OP_PROPERTY).textValue();
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    System.out.println("annotation: " + annotation);
     String propertyName = annotation.split(":")[0];
     String valueName = annotation.split(":")[1];
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
-    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " " + propertyName + " AND ";
-    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " " + valueName;
-    ret = ret + ")})";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
+    ret = ret + "\")})";
+    return ret;
+  }
+
+  private static String byPart(JsonNode node, String variable) {
+    String ret = "(";
+    String by =
+      switch (node.get(Constants.OP_PROPERTY).textValue()) {
+        case "createdBy" -> "created_by";
+        case "updatedBy" -> "updated_by";
+        default -> "";
+      };
+    ret = ret + "EXISTS {MATCH (" + variable + ") - [:" + by + "] -> (u) WHERE toLower(u.username) ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
+    ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
+    ret = ret + "})";
     return ret;
   }
 
   private static String hasPayloadAnnotationPart(JsonNode node, String variable) {
-    String annotation = node.get(Constants.OP_PROPERTY).textValue();
+    String annotation = node.get(Constants.OP_VALUE).textValue();
     String propertyName = annotation.split(":")[0];
     String valueName = annotation.split(":")[1];
     String ret = "(";

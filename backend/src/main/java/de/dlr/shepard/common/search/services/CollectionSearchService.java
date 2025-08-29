@@ -36,6 +36,7 @@ public class CollectionSearchService {
     QueryValidator.checkQuery(collectionSearchQuery);
     PaginationHelper pagination = null;
     if (page.isPresent() && pageSize.isPresent()) pagination = new PaginationHelper(page.get(), pageSize.get());
+    System.out.println("collectionSearchQuery: " + collectionSearchQuery);
     String neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
       collectionSearchQuery,
       user.getUsername(),
