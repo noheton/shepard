@@ -192,20 +192,6 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
-  private static String hasAnnotationPart(JsonNode node, String variable) {
-    String annotation = node.get(Constants.OP_VALUE).textValue();
-    System.out.println("annotation: " + annotation);
-    String propertyName = annotation.split(":")[0];
-    String valueName = annotation.split(":")[1];
-    String ret = "(";
-    ret =
-      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
-    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
-    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
-    ret = ret + "\")})";
-    return ret;
-  }
-
   private static String byPart(JsonNode node, String variable) {
     String ret = "(";
     String by =
@@ -221,6 +207,20 @@ public class Neo4jQueryBuilder {
     return ret;
   }
 
+  private static String hasAnnotationPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    System.out.println("annotation: " + annotation);
+    String propertyName = annotation.split(":")[0];
+    String valueName = annotation.split(":")[1];
+    String ret = "(";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
+    ret = ret + "\")})";
+    return ret;
+  }
+
   private static String hasPayloadAnnotationPart(JsonNode node, String variable) {
     String annotation = node.get(Constants.OP_VALUE).textValue();
     String propertyName = annotation.split(":")[0];
@@ -231,9 +231,9 @@ public class Neo4jQueryBuilder {
       "EXISTS {MATCH (" +
       variable +
       ") - [:has_payload] -> (pl) - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
-    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " " + propertyName + " AND ";
-    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " " + valueName;
-    ret = ret + ")})";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
+    ret = ret + "\")})";
     return ret;
   }
 
@@ -372,6 +372,19 @@ public class Neo4jQueryBuilder {
       ":DataObject)-[:has_reference]->(" +
       Constants.REFERENCE_IN_QUERY +
       ":BasicReference)";
+    return ret;
+  }
+
+  public static String annotatableTimeseriesInContainerSelectionQuery(
+    long containerId,
+    String searchBodyQuery,
+    String userName
+  ) {
+    String ret = "";
+    ret = ret + "MATCH (" + Constants.ANNOTATABLE_TS_IN_QUERY + ":AnnotatableTimeseries) ";
+    ret = ret + "WHERE (" + Constants.ANNOTATABLE_TS_IN_QUERY + ".containerId = " + containerId + ") ";
+    ret = ret + " AND ";
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.ANNOTATABLE_TS_IN_QUERY);
     return ret;
   }
 

@@ -175,6 +175,7 @@ public class Constants {
   public static final String COLLECTION_IN_QUERY = "col";
   public static final String DATAOBJECT_IN_QUERY = "do";
   public static final String REFERENCE_IN_QUERY = "br";
+  public static final String ANNOTATABLE_TS_IN_QUERY = "ats";
   public static final String FILECONTAINER_IN_QUERY = "fc";
   public static final String TIMESERIESCONTAINER_IN_QUERY = "tsc";
   public static final String STRUCTUREDDATACONTAINER_IN_QUERY = "sdc";
