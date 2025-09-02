@@ -29,6 +29,12 @@ const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
+
+watch(dataObject, () => {
+  useHead({
+    title: dataObject.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>

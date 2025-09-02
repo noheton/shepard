@@ -17,6 +17,12 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
+
+watch(collection, () => {
+  useHead({
+    title: collection.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>

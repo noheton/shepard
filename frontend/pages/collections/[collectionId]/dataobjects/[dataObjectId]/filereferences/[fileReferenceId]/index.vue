@@ -11,10 +11,6 @@ import { useFetchFileReference } from "~/composables/context/useFetchFileReferen
 
 definePageMeta({ layout: "collection" });
 
-useHead({
-  title: "File Reference  | shepard",
-});
-
 const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId, fileReferenceId } =
   routeParams.value as CollectionRouteParams & {
@@ -111,6 +107,12 @@ function onDownloadFile(params: { filename: string; oid: string }) {
       handleError(e, "downloading file");
     });
 }
+
+watch(fileReference, () => {
+  useHead({
+    title: fileReference.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>
