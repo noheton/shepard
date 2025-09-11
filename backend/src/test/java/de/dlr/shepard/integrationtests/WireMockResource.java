@@ -36,7 +36,7 @@ public class WireMockResource implements QuarkusTestResourceLifecycleManager {
         .willReturn(aResponse().withStatus(200).withBody("{ \"head\": {\"link\": []  }, \"boolean\": true }"))
     );
     wireMockServer.stubFor(
-      // stub for PropertyIRI SparqlConnector.request_term
+      // stub for PropertyIRI SparqlConnector.request_term ingredient
       get(urlPathEqualTo("/sparql"))
         .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/ontology/ingredient")))
         .willReturn(
@@ -47,7 +47,7 @@ public class WireMockResource implements QuarkusTestResourceLifecycleManager {
             )
         )
     );
-    // stub for ValueIRI SparqlConnector.request_term
+    // stub for ValueIRI SparqlConnector.request_term Almond_milk
     wireMockServer.stubFor(
       get(urlPathEqualTo("/sparql"))
         .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/resource/Almond_milk")))
@@ -56,6 +56,30 @@ public class WireMockResource implements QuarkusTestResourceLifecycleManager {
             .withStatus(200)
             .withBody(
               "{\"head\":{\"link\":[],\"vars\":[\"o\"]},\"results\":{\"distinct\":false,\"ordered\":true,\"bindings\":[{\"o\":{\"type\":\"literal\",\"xml:lang\":\"en\",\"value\":\"Almond milk\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"ar\",\"value\":\"حليب اللوز\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"ca\",\"value\":\"Llet d'ametlla\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"de\",\"value\":\"Mandelmilch\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"el\",\"value\":\"Γάλα αμυγδάλου\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"eo\",\"value\":\"Migdallakto\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"es\",\"value\":\"Leche de almendra\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"fr\",\"value\":\"Lait d'amande\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"in\",\"value\":\"Sari kacang almond\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"it\",\"value\":\"Latte di mandorla\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"ko\",\"value\":\"아몬드밀크\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"ja\",\"value\":\"アーモンドミルク\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"nl\",\"value\":\"Amandelmelk\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"pl\",\"value\":\"Mleko migdałowe\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"pt\",\"value\":\"Leite-de-amêndoa\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"ru\",\"value\":\"Миндальное молоко\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"sv\",\"value\":\"Mandelmjölk\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"uk\",\"value\":\"Мигдалеве молоко\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"zh\",\"value\":\"扁桃仁奶\"}}]}}"
+            )
+        )
+    );
+    // stub for ValueIRI SparqlConnector.request_term Oat_milk
+    wireMockServer.stubFor(
+      get(urlPathEqualTo("/sparql"))
+        .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/resource/Oat_milk")))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(
+              "{\"head\":{\"link\":[],\"vars\":[\"o\"]},\"results\":{\"distinct\":false,\"ordered\":true,\"bindings\":[{\"o\":{\"type\":\"literal\",\"xml:lang\":\"en\",\"value\":\"Oat milk\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"de\",\"value\":\"Hafermilch\"}}]}}"
+            )
+        )
+    );
+    // stub for ValueIRI SparqlConnector.request_term Rice_milk
+    wireMockServer.stubFor(
+      get(urlPathEqualTo("/sparql"))
+        .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/resource/Rice_milk")))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withBody(
+              "{\"head\":{\"link\":[],\"vars\":[\"o\"]},\"results\":{\"distinct\":false,\"ordered\":true,\"bindings\":[{\"o\":{\"type\":\"literal\",\"xml:lang\":\"en\",\"value\":\"Rice milk\"}},{\"o\":{\"type\":\"literal\",\"xml:lang\":\"de\",\"value\":\"Reismilch\"}}]}}"
             )
         )
     );

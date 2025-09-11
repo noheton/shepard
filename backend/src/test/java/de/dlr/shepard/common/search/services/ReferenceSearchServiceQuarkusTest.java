@@ -52,9 +52,6 @@ public class ReferenceSearchServiceQuarkusTest {
   CollectionService collectionService;
 
   @Inject
-  AnnotatableTimeseriesSearchService annotatableTimeseriesSearchService;
-
-  @Inject
   DataObjectService dataObjectService;
 
   @Inject
@@ -67,7 +64,7 @@ public class ReferenceSearchServiceQuarkusTest {
   TimeseriesService timeseriesService;
 
   @Inject
-  AnnotatableTimeseriesSearchService annotatableTimeserieSearchService;
+  AnnotatableTimeseriesSearchService annotatableTimeseriesSearchService;
 
   @Inject
   AnnotatableTimeseriesService annotatableTimeseriesService;
@@ -189,21 +186,23 @@ public class ReferenceSearchServiceQuarkusTest {
     TraversalRules[] rules = {};
     scope.setTraversalRules(rules);
     SearchScope[] scopes = { scope };
-    String query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"regmatch\"}";
+    String query =
+      "{\"property\": \"hasAnnotationIRI\", \"value\": \"http://dbpedia.org/ontology/ingredient::http://dbpedia.org/resource/Almond_milk\", \"operator\": \"regmatch\"}";
     SearchBody body = new SearchBody();
     body.setScopes(scopes);
     SearchParams params = new SearchParams();
     params.setQuery(query);
     body.setSearchParams(params);
-    List<AnnotatableTimeseries> annoTSSearch = annotatableTimeserieSearchService.search(tsCon.getId(), body);
+    List<AnnotatableTimeseries> annoTSSearch = annotatableTimeseriesSearchService.search(tsCon.getId(), body);
     System.out.println("found1: " + annoTSSearch.size());
+    System.out.println("found1Id: " + annoTSSearch.get(0).getId());
     query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"eq\"}";
     body = new SearchBody();
     body.setScopes(scopes);
     params = new SearchParams();
     params.setQuery(query);
     body.setSearchParams(params);
-    annoTSSearch = annotatableTimeserieSearchService.search(tsCon.getId(), body);
+    annoTSSearch = annotatableTimeseriesSearchService.search(tsCon.getId(), body);
     System.out.println("found2: " + annoTSSearch.size());
     /*ResponseBody response = referenceSearcher.search(body);
     BasicEntityIO[] results = response.getResults();
@@ -239,5 +238,11 @@ public class ReferenceSearchServiceQuarkusTest {
     ResponseBody response = referenceSearcher.search(body);
     System.out.println("#found: " + response.getResults().length);
     System.out.println("Id1: " + response.getResults()[0].getId());
+
+    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"eq\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
+    response = referenceSearcher.search(body);
+    System.out.println("#found: " + response.getResults().length);
   }
 }
