@@ -1,9 +1,16 @@
 package de.dlr.shepard.common.search.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.search.io.ResponseBody;
+import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.SearchParams;
+import de.dlr.shepard.common.search.io.SearchScope;
+import de.dlr.shepard.common.util.TraversalRules;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -306,7 +313,6 @@ public class TimeseriesServicePlaygroundQuarkusTest {
   @Test
   @Transactional
   public void referenceAnnotatedTimeseries() {
-    authenticationContext.setPrincipal(new JWTPrincipal(username1, "key"));
     List<TimeseriesContainer> allContainers = timeseriesContainerService.getContainers();
     for (TimeseriesContainer container : allContainers) {
       List<TimeseriesEntity> timeseriesEntitiesInContainer = timeseriesRepository.list(
@@ -336,5 +342,23 @@ public class TimeseriesServicePlaygroundQuarkusTest {
         System.out.println("query successful: " + success);
       }
     }
+    SearchScope scope = new SearchScope();
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    TraversalRules[] rules = {};
+    scope.setTraversalRules(rules);
+    SearchScope[] scopes = { scope };
+    String query =
+      "{\"property\": \"hasPayloadAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"regmatch\"}";
+    SearchBody body = new SearchBody();
+    body.setScopes(scopes);
+    SearchParams params = new SearchParams();
+    params.setQuery(query);
+    body.setSearchParams(params);
+    ResponseBody response = referenceSearcher.search(body);
+    System.out.println("#found: " + response.getResults().length);
+    System.out.println("Id1: " + response.getResults()[0].getId());
+    assertEquals(1, response.getResults().length);
+    assertEquals(tsref1.getId(), response.getResults()[0].getId());
   }
 }

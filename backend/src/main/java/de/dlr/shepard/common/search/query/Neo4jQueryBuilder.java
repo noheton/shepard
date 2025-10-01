@@ -36,7 +36,8 @@ public class Neo4jQueryBuilder {
     "updatedAt",
     "hasAnnotation",
     "hasAnnotationIRI",
-    "hasPayloadAnnotation"
+    "hasPayloadAnnotation",
+    "hasPayloadAnnotationIRI"
   );
 
   private static final List<String> IdProperties = List.of(
@@ -154,6 +155,8 @@ public class Neo4jQueryBuilder {
     if (property.equals("hasAnnotationIRI")) return hasAnnotationIRIPart(node, variable);
     // for SemanticAnnotations of payloads
     if (property.equals("hasPayloadAnnotation")) return hasPayloadAnnotationPart(node, variable);
+    // for SemanticAnnotations of payloads
+    if (property.equals("hasPayloadAnnotationIRI")) return hasPayloadAnnotationIRIPart(node, variable);
     return null;
   }
 
@@ -213,8 +216,8 @@ public class Neo4jQueryBuilder {
   private static String hasAnnotationPart(JsonNode node, String variable) {
     String annotation = node.get(Constants.OP_VALUE).textValue();
     System.out.println("annotation: " + annotation);
-    String propertyName = annotation.split(":")[0];
-    String valueName = annotation.split(":")[1];
+    String propertyName = annotation.split("::")[0];
+    String valueName = annotation.split("::")[1];
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
@@ -240,17 +243,35 @@ public class Neo4jQueryBuilder {
 
   private static String hasPayloadAnnotationPart(JsonNode node, String variable) {
     String annotation = node.get(Constants.OP_VALUE).textValue();
-    String propertyName = annotation.split(":")[0];
-    String valueName = annotation.split(":")[1];
+    String propertyName = annotation.split("::")[0];
+    String valueName = annotation.split("::")[1];
     String ret = "(";
     ret =
       ret +
-      "EXISTS {MATCH (" +
+      "EXISTS {MATCH (dcon:BasicContainer) <- [:is_in_container] - (" +
       variable +
-      ") - [:has_payload] -> (pl) - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+      ") - [:has_payload] -> (pl) <- [:corresponds_to] - (apl) - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
-    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
-    ret = ret + "\")})";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName + "\" ";
+    ret = ret + " AND id(dcon) = apl.containerId";
+    ret = ret + ")})";
+    return ret;
+  }
+
+  private static String hasPayloadAnnotationIRIPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    String propertyName = annotation.split("::")[0];
+    String valueName = annotation.split("::")[1];
+    String ret = "(";
+    ret =
+      ret +
+      "EXISTS {MATCH (dcon:BasicContainer) <- [:is_in_container] - (" +
+      variable +
+      ") - [:has_payload] -> (pl) <- [:corresponds_to] - (apl) - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueIRI " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName + "\" ";
+    ret = ret + " AND id(dcon) = apl.containerId";
+    ret = ret + ")})";
     return ret;
   }
 

@@ -196,7 +196,7 @@ public class ReferenceSearchServiceQuarkusTest {
     List<AnnotatableTimeseries> annoTSSearch = annotatableTimeseriesSearchService.search(tsCon.getId(), body);
     System.out.println("found1: " + annoTSSearch.size());
     System.out.println("found1Id: " + annoTSSearch.get(0).getId());
-    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"eq\"}";
+    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"eq\"}";
     body = new SearchBody();
     body.setScopes(scopes);
     params = new SearchParams();
@@ -229,7 +229,7 @@ public class ReferenceSearchServiceQuarkusTest {
     TraversalRules[] rules = {};
     scope.setTraversalRules(rules);
     SearchScope[] scopes = { scope };
-    String query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"regmatch\"}";
+    String query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"regmatch\"}";
     SearchBody body = new SearchBody();
     body.setScopes(scopes);
     SearchParams params = new SearchParams();
@@ -239,7 +239,7 @@ public class ReferenceSearchServiceQuarkusTest {
     System.out.println("#found: " + response.getResults().length);
     System.out.println("Id1: " + response.getResults()[0].getId());
 
-    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*:Almon.*\", \"operator\": \"eq\"}";
+    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"eq\"}";
     params.setQuery(query);
     body.setSearchParams(params);
     response = referenceSearcher.search(body);
