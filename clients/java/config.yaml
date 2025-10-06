@@ -17,3 +17,4 @@ additionalProperties:
   scmConnection: scm:git:git@gitlab.com:dlr-shepard/shepard.git
   scmDeveloperConnection: scm:git:git@gitlab.com:dlr-shepard/shepard.git
   scmUrl: https://gitlab.com/dlr-shepard/shepard
+  disallowAdditionalPropertiesIfNotPresent: false
