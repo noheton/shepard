@@ -1,3 +1,5 @@
+# For releases
+
 stages:
   - check
   - build

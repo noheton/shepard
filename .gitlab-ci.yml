@@ -40,7 +40,12 @@ include:
       - if: $CI_COMMIT_REF_NAME == "develop"
 
   # Special pipeline for main branch
-  - local: .gitlab/ci/main.gitlab-ci.yml
+  - local: .gitlab/ci/branches-main.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_REF_NAME == "main"
+
+  # Special pipeline for releases
+  - local: .gitlab/ci/release.gitlab-ci.yml
     rules:
       - if: $CI_COMMIT_TAG =~ /^[0-9]+\.[0-9]+\.[0-9]+-release$/
 
