@@ -1,5 +1,5 @@
 check_scripts:
-  image: python:3
+  image: python:3.13
   stage: check
   cache:
     key:
