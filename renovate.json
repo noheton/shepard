@@ -39,7 +39,9 @@
       "matchFileNames": ["backend/**"],
       "matchPackageNames": ["io.quarkus.platform:{/,}**"],
       "groupName": "backend quarkus update",
-      "prBodyNotes": "This pull request updates Quarkus to the latest version. We do not want to update to non-LTS versions of Quarkus. A list of current Quarkus releases can be found here [Quarkus releases](https://quarkus.io/blog/tag/release/)."
+      "prBodyNotes": [
+        "This pull request updates Quarkus to the latest version. We do not want to update to non-LTS versions of Quarkus. A list of current Quarkus releases can be found here [Quarkus releases](https://quarkus.io/blog/tag/release/)."
+      ]
     },
     {
       "matchFileNames": ["backend/**"],
