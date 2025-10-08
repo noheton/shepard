@@ -216,7 +216,7 @@ def _generate_next_tag(
             + " Do you want to perform a 'major' release?"
         )
         release_type = "major" if major else defaultReleaseType
-    if not release_type == "major":
+    if release_type != "major":
         click.echo(f"The current version tag is {latest_release_tag}.")
         release_type = click.prompt(
             "What is the next release type?",
@@ -228,11 +228,11 @@ def _generate_next_tag(
     version_dict[release_type] += 1
 
     if release_type == "minor":
-      version_dict["patch"] = 0
+        version_dict["patch"] = 0
 
     if release_type == "major":
-      version_dict["patch"] = 0
-      version_dict["minor"] = 0
+        version_dict["patch"] = 0
+        version_dict["minor"] = 0
 
     return (
         f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
