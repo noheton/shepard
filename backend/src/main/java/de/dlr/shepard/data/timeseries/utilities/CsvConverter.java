@@ -54,6 +54,7 @@ public final class CsvConverter {
         }
       }
 
+      streamWriter.flush();
       var csvBytes = stream.toByteArray();
       return new ByteArrayInputStream(csvBytes);
     } catch (IOException e) {
