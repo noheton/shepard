@@ -10,6 +10,8 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import io.quarkus.logging.Log;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,45 +33,33 @@ public final class CsvConverter {
   }
 
   public static InputStream convertToCsv(List<TimeseriesWithDataPoints> timeseriesWithDataPointsList) {
-    Path tmpfile = null;
-    try {
-      tmpfile = Files.createTempFile("shepard", ".csv");
-      try (var stream = Files.newOutputStream(tmpfile); var streamWriter = new OutputStreamWriter(stream)) {
-        StatefulBeanToCsv<CsvTimeseriesDataPoint> writer = new StatefulBeanToCsvBuilder<CsvTimeseriesDataPoint>(
-          streamWriter
-        )
-          .withApplyQuotesToAll(false)
-          .build();
+    try (var stream = new ByteArrayOutputStream(); var streamWriter = new OutputStreamWriter(stream)) {
+      StatefulBeanToCsv<CsvTimeseriesDataPoint> writer = new StatefulBeanToCsvBuilder<CsvTimeseriesDataPoint>(
+        streamWriter
+      )
+        .withApplyQuotesToAll(false)
+        .build();
 
-        for (var timeseriesWithDataPoints : timeseriesWithDataPointsList) {
-          try {
-            writer.write(
-              convertTimeseriesWithDataToCsv(
-                timeseriesWithDataPoints.getTimeseries(),
-                timeseriesWithDataPoints.getPoints()
-              )
-            );
-          } catch (CsvException e) {
-            Log.error("CsvException while writing stream", e);
-            throw new InvalidRequestException();
-          }
+      for (var timeseriesWithDataPoints : timeseriesWithDataPointsList) {
+        try {
+          writer.write(
+            convertTimeseriesWithDataToCsv(
+              timeseriesWithDataPoints.getTimeseries(),
+              timeseriesWithDataPoints.getPoints()
+            )
+          );
+        } catch (CsvException e) {
+          Log.error("CsvException while writing stream", e);
+          throw new InvalidRequestException();
         }
       }
+
+      var csvBytes = stream.toByteArray();
+      return new ByteArrayInputStream(csvBytes);
     } catch (IOException e) {
       Log.error("IOException while creating or writing to the temp file", e);
       throw new InvalidRequestException();
     }
-
-    InputStream result = null;
-    if (tmpfile != null) {
-      try {
-        result = Files.newInputStream(tmpfile);
-      } catch (IOException e) {
-        Log.error("IOException while opening the temp file for reading", e);
-        throw new InvalidRequestException();
-      }
-    }
-    return result;
   }
 
   public static List<TimeseriesWithDataPoints> convertToTimeseriesWithData(InputStream stream) {
