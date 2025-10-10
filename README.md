@@ -5,6 +5,11 @@ It is designed as a monorepo containing frontend, backend and documentation.
 
 To find more information about shepard, its usage and infrastructure, check out [the documentation concept](https://gitlab.com/dlr-shepard/shepard/-/blob/main/architecture/shepard-architectural-documentation.adoc?ref_type=heads#user-content-documentation-artifacts).
 
+## Quick test / evaluation setup
+
+There is a Docker Compose configuration in `infrastructure-local` which you can use to quickly try out shepard.
+It contains the databases, some monitoring tools, an oidc provider as well as the shepard frontend and backend.
+
 ## Getting started as a user
 
 - The respective OpenAPI definition can be found at `<your backend url>/shepard/doc/openapi.json`.
