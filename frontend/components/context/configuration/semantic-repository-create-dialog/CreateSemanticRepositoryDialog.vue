@@ -49,25 +49,25 @@ async function createSemanticRepository() {
   >
     <template #form>
       <v-form ref="form" v-model="isValid">
-        <v-row class="pt-9">
-          <v-col class="pb-1">
+        <v-row>
+          <v-col class="pt-9">
             <NameInput v-model:name="semanticRepositoryName" />
           </v-col>
         </v-row>
         <v-row>
-          <v-col class="pb-1">
+          <v-col class="pt-2">
             <SemanticRepositoryTypeSelect
               v-model:semantic-repository-type="semanticRepositoryType"
             />
           </v-col>
         </v-row>
         <v-row>
-          <v-col>
+          <v-col class="pt-2">
             <EndpointInput v-model:endpoint="endpoint" />
           </v-col>
         </v-row>
         <v-row>
-          <v-col>
+          <v-col class="pt-1">
             <MandatoryFieldHint />
           </v-col>
         </v-row>
