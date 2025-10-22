@@ -8,6 +8,10 @@ import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
+import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
+import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
+import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
 import de.dlr.shepard.context.references.file.entities.FileReference;
@@ -43,6 +47,9 @@ public class ExportService {
   BasicReferenceService basicReferenceService;
 
   @Inject
+  LabJournalEntryService labJournalEntryService;
+
+  @Inject
   TimeseriesReferenceService timeseriesReferenceService;
 
   @Inject
@@ -69,11 +76,11 @@ public class ExportService {
   public InputStream exportCollectionByShepardId(long collectionId) throws IOException {
     Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
-    var builder = new ExportBuilder(collection);
+    var exportBuilder = new ExportBuilder(collection);
     for (var dataObject : collection.getDataObjects()) {
-      fetchAndWriteDataObject(collectionId, builder, dataObject.getShepardId());
+      fetchAndWriteDataObject(collectionId, exportBuilder, dataObject.getShepardId());
     }
-    return builder.build();
+    return exportBuilder.build();
   }
 
   private void fetchAndWriteDataObject(long collectionId, ExportBuilder builder, long dataObjectId)
@@ -82,7 +89,7 @@ public class ExportService {
     builder.addDataObject(dataObject);
 
     // TODO: Add more types, maybe improve (StrategyPattern?)
-    for (var reference : dataObject.getReferences()) {
+    for (BasicReference reference : dataObject.getReferences()) {
       switch (reference.getType()) {
         case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
           collectionId,
@@ -113,6 +120,19 @@ public class ExportService {
         default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
       }
     }
+    for (LabJournalEntry entry : dataObject.getLabJournalEntries()) {
+      fetchAndWriteLabJournalEntry(collectionId, dataObjectId, builder, entry.getId());
+    }
+  }
+
+  private void fetchAndWriteLabJournalEntry(
+    long collectionId,
+    long dataObjectId,
+    ExportBuilder builder,
+    long labJournalEntryId
+  ) throws IOException {
+    LabJournalEntry entry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
+    builder.addLabJournalEntry(new LabJournalEntryIO(entry), entry.getCreatedBy());
   }
 
   private void fetchAndWriteTimeseriesReference(
@@ -128,9 +148,7 @@ public class ExportService {
       referenceId,
       null
     );
-
     builder.addReference(new TimeseriesReferenceIO(reference), reference.getCreatedBy());
-
     InputStream timeseriesPayload = null;
     try {
       timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(

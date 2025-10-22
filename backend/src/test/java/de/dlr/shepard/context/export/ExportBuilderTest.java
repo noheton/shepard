@@ -25,7 +25,7 @@ public class ExportBuilderTest {
     var user = new User("bob");
     var collection = getCollection(user);
     var builder = new ExportBuilder(collection);
-    var crate = builder.getBuilder().build();
+    var crate = builder.getRoCrateBuilder().build();
     var entity = crate.getDataEntityById("2.json");
     assertEquals("Collection Name", entity.getProperty("name").asText());
   }
@@ -39,7 +39,7 @@ public class ExportBuilderTest {
     var dataObject = getDataObject(user, collection);
     builder.addDataObject(dataObject);
 
-    var crate = builder.getBuilder().build();
+    var crate = builder.getRoCrateBuilder().build();
     var entity = crate.getDataEntityById("3.json");
     assertEquals("DataObject Name", entity.getProperty("name").asText());
   }
@@ -54,7 +54,7 @@ public class ExportBuilderTest {
     var reference = getReference(user, dataObject);
     builder.addReference(new BasicReferenceIO(reference), user);
 
-    var crate = builder.getBuilder().build();
+    var crate = builder.getRoCrateBuilder().build();
     var entity = crate.getDataEntityById("4.json");
     assertEquals("Reference Name", entity.getProperty("name").asText());
   }
@@ -68,7 +68,7 @@ public class ExportBuilderTest {
     byte[] bytes = new byte[0];
     builder.addPayload(bytes, "file", "name");
 
-    var crate = builder.getBuilder().build();
+    var crate = builder.getRoCrateBuilder().build();
     var entity = crate.getEntityById("file");
     assertEquals("name", entity.getProperty("name").asText());
   }
@@ -82,7 +82,7 @@ public class ExportBuilderTest {
     var bytes = new byte[0];
     builder.addPayload(bytes, "file", "name", "text/csv");
 
-    var crate = builder.getBuilder().build();
+    var crate = builder.getRoCrateBuilder().build();
     var entity = crate.getEntityById("file");
     assertEquals("name", entity.getProperty("name").asText());
     assertEquals("text/csv", entity.getProperty("encodingFormat").asText());
