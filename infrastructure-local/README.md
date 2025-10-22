@@ -25,7 +25,7 @@ To do this execute the following steps:
    Username and password are "admin" each.
 
 5. [Create a user](https://www.keycloak.org/docs/latest/server_admin/index.html#proc-creating-user_server_administration_guide) in keycloak.
- 
+
 6. Set the environment variable `OIDC_PUBLIC` in `.env` to the public key obtained from <http://localhost:8082/realms/master/>.
 
 ## Trying / testing shepard
