@@ -1,28 +1,30 @@
 <script setup lang="ts">
 import { SpatialDataContainerAccessor } from "~/composables/container/SpatialDataContainerAccessor";
 
-useHead({
-  title: "Spatial Data Container | shepard",
-});
-
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.SPATIALDATA;
 
-const container = new SpatialDataContainerAccessor(containerId);
+const containerAccessor = new SpatialDataContainerAccessor(containerId);
 const fetchData = () => {
-  container.fetchData();
-  container.fetchRoles();
+  containerAccessor.fetchData();
+  containerAccessor.fetchRoles();
 };
 
 onContainerUpdated(() => {
   fetchData();
 });
 fetchData();
+
+watch(containerAccessor.spatialData, () => {
+  useHead({
+    title: containerAccessor.spatialData.value?.name + " | shepard",
+  });
+});
 </script>
 <template>
   <v-container fluid style="max-width: 1200px; margin: auto">
-    <v-row v-if="!!container.spatialData.value" no-gutters>
+    <v-row v-if="!!containerAccessor.spatialData.value" no-gutters>
       <v-col cols="12">
         <Breadcrumbs
           :items="[
@@ -31,7 +33,7 @@ fetchData();
               to: containersPath,
             },
             {
-              title: container.spatialData.value.name,
+              title: containerAccessor.spatialData.value.name,
               to: containersPath + urlSegment + containerId,
             },
           ]"
@@ -41,19 +43,19 @@ fetchData();
         <v-container class="pa-0" fluid>
           <v-row no-gutters>
             <ContainerTitleAndMetadataDisplay
-              :id="container.spatialData.value.id"
-              :name="container.spatialData.value.name"
+              :id="containerAccessor.spatialData.value.id"
+              :name="containerAccessor.spatialData.value.name"
               :type-label="'Spatial Data Container'"
             >
               <template #buttons>
                 <EditPermissionsButton
-                  v-if="container.isAllowedToEditPermissions.value"
-                  :shepard-object-accessor="container"
+                  v-if="containerAccessor.isAllowedToEditPermissions.value"
+                  :shepard-object-accessor="containerAccessor"
                 />
                 <DeleteContainerButton
-                  v-if="container.isAllowedToDelete.value"
-                  :entity-name="container.spatialData.value.name"
-                  @delete="container.delete()"
+                  v-if="containerAccessor.isAllowedToDelete.value"
+                  :entity-name="containerAccessor.spatialData.value.name"
+                  @delete="containerAccessor.delete()"
                 />
               </template>
             </ContainerTitleAndMetadataDisplay>

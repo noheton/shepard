@@ -1,10 +1,13 @@
 package de.dlr.shepard.data.timeseries.services;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
@@ -23,9 +26,15 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response.Status;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 @QuarkusTest
 public class TimeseriesServiceTest {
@@ -173,7 +182,7 @@ public class TimeseriesServiceTest {
     assertNotNull(actual);
     assertEquals(1, actual.size());
     TimeseriesDataPoint actualPoint = actual.get(0);
-    assertTrue(actualPoint.getValue() instanceof Integer, "DataPoint value must be an integer");
+    assertInstanceOf(Long.class, actualPoint.getValue(), "DataPoint value must be a long");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
 
@@ -261,6 +270,58 @@ public class TimeseriesServiceTest {
     });
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
+  }
+
+  @Test
+  @Transactional
+  public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_autoConversion() throws Exception {
+    try (var configProviderMock = Mockito.mockStatic(ConfigProvider.class)) {
+      var config = mock(Config.class);
+      configProviderMock.when(ConfigProvider::getConfig).thenReturn(config);
+      when(config.getOptionalValue("shepard.autoconvert-int", Boolean.class)).thenReturn(Optional.of(true));
+
+      User user = new User("Testuser");
+      TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+      containerIO.setName(containerName);
+
+      when(userService.getCurrentUser()).thenReturn(user);
+      when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+      var container = timeseriesContainerService.createContainer(containerIO);
+      var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
+
+      List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
+      var point = TimeseriesTestDataGenerator.generateDataPointDouble(22.3);
+      dataPoints.add(point);
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
+
+      List<TimeseriesDataPoint> otherDataPoints = new ArrayList<>();
+      var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
+      otherDataPoints.add(pointWithDifferentType);
+
+      assertDoesNotThrow(() -> {
+        this.timeseriesService.saveDataPoints(container.getId(), timeseries, otherDataPoints);
+      });
+
+      var queryParams = new TimeseriesDataPointsQueryParams(
+        0,
+        Instant.now().toEpochMilli() * 1_000_000,
+        null,
+        null,
+        null
+      );
+      var storedPoints = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
+
+      assertEquals(2, storedPoints.size());
+
+      var storedValues = storedPoints.stream().map(TimeseriesDataPoint::getValue).toList();
+
+      storedValues.forEach(item -> assertInstanceOf(Double.class, item));
+
+      List<Double> expectedValues = Arrays.asList(22.3, 20.0);
+
+      assertTrue(storedValues.containsAll(expectedValues));
+    }
   }
 
   @Test

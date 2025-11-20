@@ -1,2 +1,2 @@
 --index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple
-shepard-client==3.0.0
+shepard-client==5.1.1

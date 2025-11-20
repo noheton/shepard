@@ -8,6 +8,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
@@ -34,7 +35,7 @@ public class ExportBuilder {
   private ObjectMapper objectMapper = new ObjectMapper();
 
   @Getter(value = AccessLevel.PROTECTED)
-  private RoCrateBuilder builder;
+  private RoCrateBuilder roCrateBuilder;
 
   private ByteArrayOutputStream baos;
   private ZipOutputStream zos;
@@ -48,37 +49,44 @@ public class ExportBuilder {
     var roCrateName = collection.getName() + " Research Object Crate";
     var roCrateDescription = "Research Object Crate representing the shepard Collection " + collection.getName();
 
-    builder = new RoCrateBuilder().addName(roCrateName).addDescription(roCrateDescription);
+    roCrateBuilder = new RoCrateBuilder().addName(roCrateName).addDescription(roCrateDescription);
 
     var collectionEntity = createFileEntity(new CollectionIO(collection));
-    builder.addDataEntity(collectionEntity);
+    roCrateBuilder.addDataEntity(collectionEntity);
     addPersonEntity(collection.getCreatedBy());
   }
 
   public ExportBuilder addDataObject(DataObject dataObject) throws IOException {
     var dataObjectEntity = createFileEntity(new DataObjectIO(dataObject));
-    builder.addDataEntity(dataObjectEntity);
+    roCrateBuilder.addDataEntity(dataObjectEntity);
     addPersonEntity(dataObject.getCreatedBy());
     return this;
   }
 
   public ExportBuilder addReference(BasicReferenceIO reference, User author) throws IOException {
     var referenceEntity = createFileEntity(reference);
-    builder.addDataEntity(referenceEntity);
+    roCrateBuilder.addDataEntity(referenceEntity);
+    addPersonEntity(author);
+    return this;
+  }
+
+  public ExportBuilder addLabJournalEntry(LabJournalEntryIO entry, User author) throws IOException {
+    var referenceEntity = createFileEntity(entry);
+    roCrateBuilder.addDataEntity(referenceEntity);
     addPersonEntity(author);
     return this;
   }
 
   public ExportBuilder addPayload(byte[] payload, String filename, String name) throws IOException {
     addToZip(filename, payload);
-    builder.addDataEntity(createFileEntityBuilder(filename, name).build());
+    roCrateBuilder.addDataEntity(createFileEntityBuilder(filename, name).build());
     return this;
   }
 
   public ExportBuilder addPayload(byte[] payload, String filename, String name, String encodingFormat)
     throws IOException {
     addToZip(filename, payload);
-    builder.addDataEntity(createFileEntityBuilder(filename, name, encodingFormat).build());
+    roCrateBuilder.addDataEntity(createFileEntityBuilder(filename, name, encodingFormat).build());
     return this;
   }
 
@@ -92,11 +100,11 @@ public class ExportBuilder {
       .setFamilyName(user.getLastName())
       .build();
 
-    builder.addContextualEntity(entity);
+    roCrateBuilder.addContextualEntity(entity);
   }
 
   public InputStream build() throws IOException {
-    var roCrate = builder.build();
+    var roCrate = roCrateBuilder.build();
     Object jsonObject = objectMapper.readValue(roCrate.getJsonMetadata(), Object.class);
     byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(jsonObject);
     addToZip(ExportConstants.ROCRATE_METADATA, bytes);
@@ -108,16 +116,21 @@ public class ExportBuilder {
   private FileEntity createFileEntity(AbstractDataObjectIO entity) throws IOException {
     var filename = entity.getId() + ExportConstants.JSON_FILE_EXTENSION;
     writeEntityToZip(filename, entity);
-
     var fileEntityBuilder = createFileEntityBuilder(entity, filename);
     fileEntityBuilder.addProperty(ExportConstants.DESCRIPTION_PROP, entity.getDescription());
+    return fileEntityBuilder.build();
+  }
+
+  private FileEntity createFileEntity(LabJournalEntryIO entry) throws IOException {
+    var filename = entry.getId() + ExportConstants.JSON_FILE_EXTENSION;
+    writeEntityToZip(filename, entry);
+    var fileEntityBuilder = createFileEntityBuilder(entry, filename);
     return fileEntityBuilder.build();
   }
 
   private FileEntity createFileEntity(BasicReferenceIO entity) throws IOException {
     var filename = entity.getId() + ExportConstants.JSON_FILE_EXTENSION;
     writeEntityToZip(filename, entity);
-
     var fileEntityBuilder = createFileEntityBuilder(entity, filename);
     fileEntityBuilder.addProperty(ExportConstants.TYPE_PROP, entity.getType());
     return fileEntityBuilder.build();
@@ -138,16 +151,26 @@ public class ExportBuilder {
     return fileEntityBuilder;
   }
 
+  private static FileEntityBuilder createFileEntityBuilder(LabJournalEntryIO entry, String filename) {
+    var createdAt = convertToIsoDate(entry.getCreatedAt());
+    var type = entry.getClass().getSimpleName().replace("IO", "");
+    var fileEntityBuilder = new FileEntity.FileEntityBuilder().setId(filename);
+    fileEntityBuilder.addProperty("encodingFormat", "application/json");
+    fileEntityBuilder
+      .addAuthor(entry.getCreatedBy())
+      .addProperty(ExportConstants.CREATED_PROP, createdAt)
+      .addProperty(ExportConstants.TYPE_PROP, type);
+    return fileEntityBuilder;
+  }
+
   private static FileEntityBuilder createFileEntityBuilder(BasicEntityIO entity, String filename) {
     var createdAt = convertToIsoDate(entity.getCreatedAt());
     var type = entity.getClass().getSimpleName().replace("IO", "");
-
     var fileEntityBuilder = createFileEntityBuilder(filename, entity.getName(), "application/json");
     fileEntityBuilder
       .addAuthor(entity.getCreatedBy())
       .addProperty(ExportConstants.CREATED_PROP, createdAt)
       .addProperty(ExportConstants.TYPE_PROP, type);
-
     if (entity.getUpdatedAt() != null) fileEntityBuilder.addProperty(
       ExportConstants.UPDATED_PROP,
       convertToIsoDate(entity.getUpdatedAt())

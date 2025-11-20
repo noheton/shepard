@@ -2,6 +2,7 @@ import click
 from shepard_client.api_client import ApiClient
 from shepard_client.configuration import Configuration
 
+from shepard_scripts.scripts.change_version import change_version
 from shepard_scripts.scripts.example_data import (
     create_collection,
     create_data_object_reference,
@@ -40,8 +41,8 @@ def cli():
 )
 @click.option(
     "--since-release",
-    help="Release since which changelog should be created. " +
-         "Must be part of the 20 latest releases!",
+    help="Release since which changelog should be created. "
+    + "Must be part of the 20 latest releases!",
 )
 @click.argument("token_file", type=click.File("r"))
 def release(hotfix_release, token_file, since_release):
@@ -113,6 +114,13 @@ def example_data(host, api_key_file):
     ]
     created_names = ", ".join(created)
     click.echo(f"done. created the following objects: {created_names}")
+
+
+@cli.command
+@click.argument("version")
+def update_version(version: str):
+    """Update the version number."""
+    change_version(version)
 
 
 if __name__ == "__main__":

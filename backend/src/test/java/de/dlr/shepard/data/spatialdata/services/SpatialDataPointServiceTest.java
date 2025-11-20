@@ -23,7 +23,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
 import java.util.Map;
-import kotlin.NotImplementedError;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
 import org.mockito.Mockito;
@@ -204,9 +203,9 @@ public class SpatialDataPointServiceTest {
       null
     );
 
-    Error error = assertThrows(NotImplementedError.class, () ->
+    Exception error = assertThrows(UnsupportedOperationException.class, () ->
       spatialDataPointService.getSpatialDataPointIOs(containerId, spatialDataParamsIO)
     );
-    assertEquals(error.getMessage(), "not implemented");
+    assertEquals("not implemented", error.getMessage());
   }
 }

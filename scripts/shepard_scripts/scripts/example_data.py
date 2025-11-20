@@ -105,7 +105,9 @@ def create_structured_data(
 ) -> StructuredDataReference:
     structured_data_container_api = StructuredDataContainerApi(client)
     container = StructuredDataContainer(name="A SD Container")
-    container = structured_data_container_api.create_structured_data_container(container)
+    container = structured_data_container_api.create_structured_data_container(
+        container
+    )
 
     if not container.id:
         raise RuntimeError("No sd container")

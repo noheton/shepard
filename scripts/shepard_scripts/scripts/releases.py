@@ -147,8 +147,8 @@ def _get_latest_release(project: Project, since_release: str) -> tuple[str, str]
         releases: list[ProjectRelease] = project.releases.list(per_page=1, page=0)  # type: ignore
         if not releases:
             raise Exception(
-                "No past release could be found! " +
-                "For this script to work there needs to be an exising release!"
+                "No past release could be found! "
+                + "For this script to work there needs to be an exising release!"
             )
         release = releases[0]
     else:
@@ -156,8 +156,8 @@ def _get_latest_release(project: Project, since_release: str) -> tuple[str, str]
             release = project.releases.get(since_release)
         except Exception as e:
             raise Exception(
-                f"Release {since_release} could not be found! " +
-                "Maybe the release does not exist or it is misspelled?"
+                f"Release {since_release} could not be found! "
+                + "Maybe the release does not exist or it is misspelled?"
             ) from e
 
     return release.released_at, release.tag_name
@@ -209,14 +209,14 @@ def _generate_next_tag(
         )
         return "1.0.0"
 
-    release_type = "patch"
+    release_type = defaultReleaseType
     if has_breaking_changes:
-        click.echo(
+        major = click.confirm(
             "The release contains breaking changes!"
-            + " Automatically increasing 'major' version."
+            + " Do you want to perform a 'major' release?"
         )
-        release_type = "major"
-    else:
+        release_type = "major" if major else defaultReleaseType
+    if release_type != "major":
         click.echo(f"The current version tag is {latest_release_tag}.")
         release_type = click.prompt(
             "What is the next release type?",
@@ -226,6 +226,14 @@ def _generate_next_tag(
 
     # increase release number according to release type
     version_dict[release_type] += 1
+
+    if release_type == "minor":
+        version_dict["patch"] = 0
+
+    if release_type == "major":
+        version_dict["patch"] = 0
+        version_dict["minor"] = 0
+
     return (
         f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
         + "-release"

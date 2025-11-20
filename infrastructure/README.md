@@ -17,7 +17,6 @@ This folder contains everything you need to set up a shepard instance with Docke
 > Depending on how you plan to use shepard, the system requirements can vary greatly. While most services are relatively lightweight, the databases and shepard backend can be quite demanding. As a starting point, 8 GB of memory may be sufficient. Also, most services benefit greatly from many CPU cores, so there should be at least 4 cores/8 threads. The amount of disk space you need depends directly on the size of the data you want to manage with shepard.
 
 - [Neo4j system requirements](https://neo4j.com/docs/operations-manual/current/installation/requirements/#deployment-requirements-hardware)
-- [InfluxDB system requirements](https://docs.influxdata.com/influxdb/v1.8/guides/hardware_sizing/#influxdb-oss-guidelines)
 - [MongoDB system requirements](https://www.mongodb.com/blog/post/performance-best-practices-hardware-and-os-configuration)
 
 ## Installation
@@ -90,12 +89,6 @@ NEO4J_dbms_memory_pagecache_size: 3G
 command: --wiredTigerCacheSizeGB 2.0
 ```
 
-- InfluxDB:
-
-```yaml
-INFLUXDB_DATA_CACHE_MAX_MEMORY_SIZE: 2G
-```
-
 ### 6. Copy the file `.env.example` to `.env`
 
 ```bash
@@ -111,31 +104,29 @@ cp .env.example .env
 - TimescaleDB and PostGIS are extensions of PostgreSQL.
   Theoretically they can be stored in the same database but it is recommended to use separate instances.
 
-| Variable                       | Description                                                                                               | Example                                                                                           |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| BACKEND_URL                    | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
-| NEO4J_PW                       | initial Neo4j password                                                                                    |                                                                                                   |
-| MONGO_ROOT_USERNAME            | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
-| MONGO_ROOT_PASSWORD            | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
-| MONGO_DATABASE                 | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
-| MONGO_USERNAME                 | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
-| MONGO_PASSWORD                 | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |                                                                                                   |
-| POSTGRES_DB                    | Database name                                                                                             | postgres                                                                                          |
-| POSTGRES_USER                  | Username for the postgres admin account                                                                   | postgres                                                                                          |
-| POSTGRES_PASSWORD              | Password for the postgres admin account                                                                   | password                                                                                          |
-| POSTGRES_SHEPARD_USER          | Username for the shepard user account                                                                     | shepard                                                                                           |
-| POSTGRES_SHEPARD_USER_PW       | Password for the shepard user account                                                                     | shepard_secret                                                                                    |
-| OIDC_AUTHORITY                 | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
-| OIDC_PUBLIC                    | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
-| OIDC_ROLE                      | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
-| CLIENT_ID                      | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
-| INFLUX_PW                      | initial InfluxDB password (Only needed until timeseries data is successfully migrated)                    |                                                                                                   |
-| FRONTEND_URL                   | URL of the frontend with trailing slash                                                                   | `https://frontend.shepard.example.com/`                                                           |
-| FRONTEND_AUTH_SECRET           | A random secret string                                                                                    |
-| SESSION_REFRESH_INTERVAL       | frontend session refresh interval in ms (defaults to 30secs)                                              | 30000                                                                                             |
-| SHEPARD_MIGRATION_MODE_ENABLED | set to `true` to trigger the one-time migration from InfluxDB to TimescaleDB.                             | `true`                                                                                            |
-| SHEPARD_SPATIAL_DATA_ENABLED   | Enable experimental spatial data feature. Requires postgis                                                | `false`                                                                                           |
-| COMPOSE_PROFILES               | Select the docker compose profiles that are active                                                        | Default: empty                                                                                    |
+| Variable                     | Description                                                                                               | Example                                                                                           |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| BACKEND_URL                  | contains the URL of the backend to be accessed by the clients                                             | `https://backend.shepard.example.com/`                                                            |
+| NEO4J_PW                     | initial Neo4j password                                                                                    |                                                                                                   |
+| MONGO_ROOT_USERNAME          | MongoDB admin name (automatically created on a fresh instance)                                            |                                                                                                   |
+| MONGO_ROOT_PASSWORD          | MongoDB admin password (automatically created on a fresh instance)                                        |                                                                                                   |
+| MONGO_DATABASE               | MongoDB database name for shepard (automatically created on a fresh instance)                             |                                                                                                   |
+| MONGO_USERNAME               | MongoDB non-admin user username for `MONGO_DATABASE` database                                             |                                                                                                   |
+| MONGO_PASSWORD               | MongoDB non-admin user password for `MONGO_DATABASE` database                                             |                                                                                                   |
+| POSTGRES_DB                  | Database name                                                                                             | postgres                                                                                          |
+| POSTGRES_USER                | Username for the postgres admin account                                                                   | postgres                                                                                          |
+| POSTGRES_PASSWORD            | Password for the postgres admin account                                                                   | password                                                                                          |
+| POSTGRES_SHEPARD_USER        | Username for the shepard user account                                                                     | shepard                                                                                           |
+| POSTGRES_SHEPARD_USER_PW     | Password for the shepard user account                                                                     | shepard_secret                                                                                    |
+| OIDC_AUTHORITY               | is the URL of the oidc identity provider, which can be accessed by both the users and the shepard backend | `https://keycloak.example.com/realms/master/`                                                     |
+| OIDC_PUBLIC                  | is the public key of the signature of the oidc identity provider (e.g. keycloak)                          | `MII...`                                                                                          |
+| OIDC_ROLE                    | allows to restrict access to users with a specific realm role                                             | see [restrict access to users with specific roles](#restrict-access-to-users-with-specific-roles) |
+| CLIENT_ID                    | is the client ID of the frontend as known to the oidc identity provider                                   | `example-client-id`                                                                               |
+| FRONTEND_URL                 | URL of the frontend with trailing slash                                                                   | `https://frontend.shepard.example.com/`                                                           |
+| FRONTEND_AUTH_SECRET         | A random secret string                                                                                    |
+| SESSION_REFRESH_INTERVAL     | frontend session refresh interval in ms (defaults to 30secs)                                              | 30000                                                                                             |
+| SHEPARD_SPATIAL_DATA_ENABLED | Enable experimental spatial data feature. Requires postgis                                                | `false`                                                                                           |
+| COMPOSE_PROFILES             | Select the docker compose profiles that are active                                                        | Default: empty                                                                                    |
 
 > **_NOTE:_** The `FRONTEND_AUTH_SECRET` could be any random generated string which will be used to hash JWT tokens. you can quickly create a good value on the command line using `openssl`
 >
@@ -173,7 +164,6 @@ Additionally, the following profiles are defined:
 
 | Profile                         | Feature                                                                                                                                      |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| influxdb                        | Enable InfluxDB and Chronograph, only necessary for migration to TimescaleDB.                                                                |
 | spatial                         | Enable postgis to enable experimental spatial data feature. The feature itself must be activated using the environment variables (see above) |
 | monitoring                      | Enable the monitoring feature (see below).                                                                                                   |
 | timescale-migration-preparation | Only used for the migration process, see migration documentation for more information                                                        |
@@ -185,20 +175,6 @@ Profiles can either be selected on CLI, e.g.
 
 or by setting the `COMPOSE_PROFILES` environment variable (e.g. in `.env`).
 Multiple profiles must be comma-separated.
-
-## Restrict public access to Chronograph
-
-_This section only refers to old installations still using InfluxDB. By default, chronograph is no longer activated._
-
-Chronograf by default is publicly accessible! You can configure it with OAuth or simply with a password and username. More information can be found [here](https://docs.influxdata.com/chronograf/v1/administration/managing-security/).
-
-## Migrate Timeseries Data (When Updating from <4.0.0 to >=4.0.0)
-
-InfluxDB has been replaced with TimescaleDB to persist timeseries data as of version 4.0.0.
-Timeseries data needs to be migrated from InfluxDB to the new database.
-Otherwise shepard will not start.
-
-See https://gitlab.com/dlr-shepard/shepard/-/merge_requests/389#migration-instructions for the migration instructions.
 
 ## Start
 

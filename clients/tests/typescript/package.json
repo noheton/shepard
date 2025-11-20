@@ -7,7 +7,7 @@
     "generate-client": "cd ../../.. && docker run -it --rm -v ./clients/typescript:/clients/typescript -v ./backend/target/openapi:/backend/target/openapi openapitools/openapi-generator-cli:v7.7.0 docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript/ -p=npmName=@dlr-shepard/shepard-client,npmRepository=bliblu/projects/blabla/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true"
   },
   "dependencies": {
-    "@dlr-shepard/shepard-client": "3.0.0"
+    "@dlr-shepard/shepard-client": "5.1.1"
   },
   "devDependencies": {
     "ts-node": "10.9.2",

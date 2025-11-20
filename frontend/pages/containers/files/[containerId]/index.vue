@@ -2,10 +2,6 @@
 import type { ShepardFile } from "@dlr-shepard/backend-client";
 import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
 
-useHead({
-  title: "File Container | shepard",
-});
-
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.FILE;
@@ -25,6 +21,12 @@ const uploadFile = async (file: File): Promise<ShepardFile> => {
   return containerAccessor.uploadFile(file);
 };
 fetchData();
+
+watch(containerAccessor.fileContainer, () => {
+  useHead({
+    title: containerAccessor.fileContainer.value?.name + " | shepard",
+  });
+});
 </script>
 <template>
   <v-container fluid style="max-width: 1200px; margin: auto">

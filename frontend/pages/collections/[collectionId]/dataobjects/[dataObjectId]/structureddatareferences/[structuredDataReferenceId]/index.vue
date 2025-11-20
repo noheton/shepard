@@ -8,10 +8,6 @@ import { useFetchStructuredDataReference } from "~/composables/context/useFetchS
 
 definePageMeta({ layout: "collection" });
 
-useHead({
-  title: "Structured Data Reference  | shepard",
-});
-
 const { routeParams } = useCollectionRouteParams();
 const { collectionId, dataObjectId, structuredDataReferenceId } =
   routeParams.value as CollectionRouteParams & {
@@ -85,6 +81,12 @@ function onShowStructuredDataContentDialog(structuredDataPayload: string) {
 }
 
 const itemsPerPage = 10;
+
+watch(structuredDataReference, () => {
+  useHead({
+    title: structuredDataReference.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>

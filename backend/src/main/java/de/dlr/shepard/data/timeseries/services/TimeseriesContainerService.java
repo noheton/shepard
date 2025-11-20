@@ -69,30 +69,6 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
     return containerOptional.get();
   }
 
-  /**
-   * Get Timeseries Container by Id
-   *
-   * This function is introduced to fix the issue occurring in ticket: #581.
-   * TODO: This function should only be used for the timeseries migration, and should be deleted in the future!
-   *
-   * @throws InvalidPathException if container is null or deleted
-   * @throws InvalidAuthException if user has no read permissions on container
-   * @return timeseries container
-   */
-  @Deprecated
-  public TimeseriesContainer getContainerNoChecks(long timeseriesContainerId) {
-    Optional<TimeseriesContainer> containerOptional = getContainerOptional(timeseriesContainerId);
-    if (containerOptional.isEmpty()) {
-      String errorMsg = String.format(
-        "ID ERROR - Timeseries Container with id %s is null or deleted",
-        timeseriesContainerId
-      );
-      Log.errorf(errorMsg);
-      throw new InvalidPathException(errorMsg);
-    }
-    return containerOptional.get();
-  }
-
   private Optional<TimeseriesContainer> getContainerOptional(long timeseriesContainerId) {
     TimeseriesContainer timeseriesContainer = timeseriesContainerDAO.findByNeo4jId(timeseriesContainerId);
     if (timeseriesContainer == null || timeseriesContainer.isDeleted()) {

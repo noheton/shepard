@@ -1,0 +1,20 @@
+additionalProperties:
+  apiPackage: de.dlr.shepard.client.java.api
+  modelPackage: de.dlr.shepard.client.java.model
+  artifactId: shepard-client
+  groupId: de.dlr.shepard.client.java
+  parentGroupId: de.dlr.shepard.client.java
+  parentArtifactId: de.dlr.shepard.client.java
+  parentVersion: 1.0.0-SNAPSHOT
+  artifactDescription: shepard Client library for Java
+  artifactUrl: https://gitlab.com/dlr-shepard/shepard
+  developerEmail: shepard@dlr.de
+  developerName: DLR e.V.
+  developerOrganization: DLR e.V.
+  developerOrganizationUrl: https://www.dlr.de/en/bt
+  licenseName: Apache License 2.0
+  licenseUrl: https://www.apache.org/licenses/LICENSE-2.0
+  scmConnection: scm:git:git@gitlab.com:dlr-shepard/shepard.git
+  scmDeveloperConnection: scm:git:git@gitlab.com:dlr-shepard/shepard.git
+  scmUrl: https://gitlab.com/dlr-shepard/shepard
+  disallowAdditionalPropertiesIfNotPresent: false

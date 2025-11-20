@@ -19,7 +19,6 @@ import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
-import de.dlr.shepard.data.timeseries.migration.influxtimeseries.InfluxTimeseries;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.logging.Log;
 import java.util.Collections;
@@ -83,7 +82,6 @@ public class NeoConnector implements IConnector {
           CollectionReference.class.getPackageName(),
           FileContainer.class.getPackageName(),
           FileReference.class.getPackageName(),
-          InfluxTimeseries.class.getPackageName(),
           LabJournalEntry.class.getPackageName(),
           Permissions.class.getPackageName(),
           SemanticAnnotation.class.getPackageName(),

@@ -19,10 +19,18 @@ public final class TimeseriesTestDataGenerator {
   }
 
   public static TimeseriesDataPoint generateDataPointInteger(long timestamp, Integer value) {
-    return new TimeseriesDataPoint(timestamp, value);
+    return generateDataPointInteger(timestamp, Long.valueOf(value));
   }
 
   public static TimeseriesDataPoint generateDataPointInteger(Integer value) {
+    return generateDataPointInteger(Instant.now().toEpochMilli() * 1_000_000, value);
+  }
+
+  public static TimeseriesDataPoint generateDataPointInteger(long timestamp, Long value) {
+    return new TimeseriesDataPoint(timestamp, value);
+  }
+
+  public static TimeseriesDataPoint generateDataPointInteger(Long value) {
     return new TimeseriesDataPoint(Instant.now().toEpochMilli() * 1_000_000, value);
   }
 

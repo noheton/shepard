@@ -6,24 +6,20 @@ import {
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { StructuredDataContainerAccessor } from "~/composables/container/StructuredDataAccessor";
 
-useHead({
-  title: "Structured Data Container | shepard",
-});
-
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;
 
-const container = new StructuredDataContainerAccessor(containerId);
+const containerAccessor = new StructuredDataContainerAccessor(containerId);
 
 onContainerUpdated(() => {
   fetchData();
 });
 
 const fetchData = () => {
-  container.fetchData();
-  container.fetchItems();
-  container.fetchRoles();
+  containerAccessor.fetchData();
+  containerAccessor.fetchItems();
+  containerAccessor.fetchRoles();
 };
 
 const itemToDelete = ref<StructuredData | undefined>(undefined);
@@ -40,7 +36,7 @@ const uploadFile = async (file: File): Promise<void> => {
   const content = await file.text();
   const json = JSON.parse(content);
   if (json && typeof json === "object") {
-    await container.uploadItem(file.name, content);
+    await containerAccessor.uploadItem(file.name, content);
   } else {
     throw new Error("Invalid JSON");
   }
@@ -90,12 +86,18 @@ function onDownload(structuredData: StructuredData) {
 }
 
 fetchData();
+
+watch(containerAccessor.container, () => {
+  useHead({
+    title: containerAccessor.container.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>
   <div style="max-width: 1200px; margin: auto">
     <v-container fluid>
-      <v-row v-if="!!container.container.value" no-gutters>
+      <v-row v-if="!!containerAccessor.container.value" no-gutters>
         <v-col cols="12">
           <Breadcrumbs
             :items="[
@@ -104,7 +106,7 @@ fetchData();
                 to: containersPath,
               },
               {
-                title: container.container.value.name,
+                title: containerAccessor.container.value.name,
                 to: containersPath + urlSegment + containerId,
               },
             ]"
@@ -114,14 +116,14 @@ fetchData();
           <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <ContainerTitleAndMetadataDisplay
-                :id="container.container.value.id"
-                :n-items="container.items.value.length"
-                :name="container.container.value.name"
+                :id="containerAccessor.container.value.id"
+                :n-items="containerAccessor.items.value.length"
+                :name="containerAccessor.container.value.name"
                 :type-label="'Structured Data Container'"
               >
                 <template #buttons>
                   <UploadFilesButton
-                    v-if="container.isAllowedToEditData.value"
+                    v-if="containerAccessor.isAllowedToEditData.value"
                     accept="application/json"
                     button-text="Upload JSON"
                     dialog-title="Upload JSON"
@@ -130,13 +132,13 @@ fetchData();
                     @upload-finished="fetchData"
                   />
                   <EditPermissionsButton
-                    v-if="container.isAllowedToEditPermissions.value"
-                    :shepard-object-accessor="container"
+                    v-if="containerAccessor.isAllowedToEditPermissions.value"
+                    :shepard-object-accessor="containerAccessor"
                   />
                   <DeleteContainerButton
-                    v-if="container.isAllowedToDelete.value"
-                    :entity-name="container.container.value.name"
-                    @delete="container.delete()"
+                    v-if="containerAccessor.isAllowedToDelete.value"
+                    :entity-name="containerAccessor.container.value.name"
+                    @delete="containerAccessor.delete()"
                   />
                 </template>
               </ContainerTitleAndMetadataDisplay>
@@ -146,9 +148,9 @@ fetchData();
       </v-row>
       <CenteredLoadingSpinner v-else />
       <StructuredDataTable
-        :is-allowed-to-edit="container.isAllowedToEditData.value"
-        :items="container.items.value"
-        :loading="container.loading.value"
+        :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
+        :items="containerAccessor.items.value"
+        :loading="containerAccessor.loading.value"
         @delete-item="item => deleteItem(item)"
         @show-structured-data-content-dialog="
           structuredData => onShowStructuredDataContentDialog(structuredData)
@@ -161,7 +163,7 @@ fetchData();
         showFileDeleteConfirmDialog && itemToDelete?.oid && itemToDelete.name
       "
       v-model:show-dialog="showFileDeleteConfirmDialog"
-      @confirmed="container.deleteItem(itemToDelete.oid)"
+      @confirmed="containerAccessor.deleteItem(itemToDelete.oid)"
     />
     <StructuredDataViewerDialog
       v-if="showStructuredDataContentViewerDialog"

@@ -6,10 +6,6 @@ import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimes
 
 definePageMeta({ layout: "collection" });
 
-useHead({
-  title: "Timeseries Reference  | shepard",
-});
-
 interface TimeseriesDataTableItem extends Timeseries {
   isSelected: boolean;
 }
@@ -117,6 +113,12 @@ const onSelectedItemChanged = () => {
 };
 
 const itemsPerPage = 10;
+
+watch(timeseriesReference, () => {
+  useHead({
+    title: timeseriesReference.value?.name + " | shepard",
+  });
+});
 </script>
 
 <template>

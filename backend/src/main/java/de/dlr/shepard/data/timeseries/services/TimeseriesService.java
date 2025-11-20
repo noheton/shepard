@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 @RequestScoped
 public class TimeseriesService {
@@ -39,6 +40,16 @@ public class TimeseriesService {
 
   @Inject
   TimeseriesContainerService timeseriesContainerService;
+
+  /**
+   * Flag to determine whether integer values received should be automatically converted to double if the
+   * timeseries they are supposed to be inserted is of type double.
+   * This flag is not injected using @ConfigProperty because that would make testing much more complicated.
+   * These properties are set upon startup and cannot be changed within a single test.
+   */
+  Boolean autoConvertIntToDouble = ConfigProvider.getConfig()
+    .getOptionalValue("shepard.autoconvert-int", Boolean.class)
+    .orElse(false);
 
   /**
    * Returns a list of timeseries objects that are in the given database.
@@ -257,46 +268,6 @@ public class TimeseriesService {
     return timeseriesEntity;
   }
 
-  /**
-   * Saves data points in the database.
-   * If the corresponding timeseries did not exist before, it will be persisted in
-   * the database.
-   *
-   * This function is introduced to fix the issue occurring in ticket: #581.
-   *
-   * TODO: This function should only be used for the timeseries migration, and
-   * should be deleted in the future!
-   *
-   * @param timeseriesContainerId Identifies the TimeseriesContainer
-   * @param timeseries            The timeseries identifiers
-   * @param dataPoints            Data points to be added to the timeseries
-   * @param dataType              The data type that values in this timeseries
-   *                              will have
-   * @return created timeseries
-   */
-  @Deprecated
-  @Transactional(Transactional.TxType.REQUIRES_NEW)
-  @TransactionConfiguration(timeout = 6000)
-  public TimeseriesEntity saveDataPointsNoChecks(
-    long timeseriesContainerId,
-    Timeseries timeseries,
-    List<TimeseriesDataPoint> dataPoints,
-    DataPointValueType dataType
-  ) {
-    TimeseriesEntity timeseriesEntity = getOrCreateTimeseriesNoChecks(timeseriesContainerId, timeseries, dataType);
-    assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
-    try {
-      timeseriesDataPointRepository.insertManyDataPointsWithCopyCommand(dataPoints, timeseriesEntity);
-    } catch (SQLException e) {
-      // COPY command cannot handle duplicates (conflict on timeseries_id and time column)
-      // We are going to use the normal batch insertion instead.
-      Log.warnf("SQLException during copy insert (expected): %s ", e.getMessage());
-      Log.warn("We are going to repeat the operation with batch insert.");
-      return repeatSaveDataPointsWithBatchInsert(dataPoints, timeseriesEntity);
-    }
-    return timeseriesEntity;
-  }
-
   @Deprecated
   @Transactional(Transactional.TxType.REQUIRES_NEW)
   @TransactionConfiguration(timeout = 6000)
@@ -306,33 +277,6 @@ public class TimeseriesService {
   ) {
     timeseriesDataPointRepository.insertManyDataPoints(entities, timeseriesEntity);
     return timeseriesEntity;
-  }
-
-  /**
-   * This function is introduced to fix the issue occurring in ticket: #581.
-   *
-   * TODO: This function should only be used for the timeseries migration, and
-   * should be deleted in the future!
-   */
-  @Deprecated
-  private TimeseriesEntity getOrCreateTimeseriesNoChecks(
-    long containerId,
-    Timeseries timeseries,
-    DataPointValueType incomingValueType
-  ) {
-    // try to find timeseries in db
-    Optional<TimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
-    if (matchingTimeseries.isPresent()) return matchingTimeseries.get();
-    TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
-
-    // create new timeseries because it does not exist
-    TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
-    QuarkusTransaction.requiringNew()
-      .run(() -> {
-        this.timeseriesRepository.upsert(containerId, timeseriesEntity);
-      });
-    var found = this.timeseriesRepository.findTimeseries(containerId, timeseries);
-    return found.get();
   }
 
   private TimeseriesEntity getOrCreateTimeseries(
@@ -361,7 +305,7 @@ public class TimeseriesService {
     return found.get();
   }
 
-  private static void assertDataPointsMatchTimeseriesValueType(
+  private void assertDataPointsMatchTimeseriesValueType(
     TimeseriesEntity timeseriesEntity,
     List<TimeseriesDataPoint> dataPoints
   ) {
@@ -373,10 +317,14 @@ public class TimeseriesService {
     }
   }
 
-  private static void assertValueTypeMatchesTimeseries(
-    TimeseriesEntity timeseries,
-    DataPointValueType incomingValueType
-  ) {
+  private void assertValueTypeMatchesTimeseries(TimeseriesEntity timeseries, DataPointValueType incomingValueType) {
+    // If auto-conversion is enabled, allow transformation from Integer to Double
+    if (
+      autoConvertIntToDouble &&
+      incomingValueType == DataPointValueType.Integer &&
+      timeseries.getValueType() == DataPointValueType.Double
+    ) return;
+
     if (timeseries.getValueType() != incomingValueType) throw new InvalidBodyException(
       "Timeseries already exists for data type %s but new data points are of type %s",
       timeseries.getValueType(),

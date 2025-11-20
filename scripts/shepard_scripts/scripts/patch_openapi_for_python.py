@@ -9,7 +9,25 @@ def main(input_spec: str, output_spec: str):
 
     for schema in openapi_spec["components"]["schemas"]:
         if "required" in openapi_spec["components"]["schemas"][schema]:
-            openapi_spec["components"]["schemas"][schema].pop("required", None)
+            readonly: list[str] = [
+                k
+                for k, v in openapi_spec["components"]["schemas"][schema][
+                    "properties"
+                ].items()
+                if "readOnly" in v
+            ]
+            nullable: list[str] = [
+                k
+                for k, v in openapi_spec["components"]["schemas"][schema][
+                    "properties"
+                ].items()
+                if "nullable" in v
+            ]
+            required: list[str] = openapi_spec["components"]["schemas"][schema][
+                "required"
+            ]
+            truly_required = list(set(required) - set(readonly) - set(nullable))
+            openapi_spec["components"]["schemas"][schema]["required"] = truly_required
 
     with open(output_spec, "w") as fp:
         fp.write(json.dumps(openapi_spec, indent=2))
