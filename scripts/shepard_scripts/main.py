@@ -1,17 +1,7 @@
 import click
-from shepard_client.api_client import ApiClient
-from shepard_client.configuration import Configuration
 
+import shepard_scripts.scripts.example_data as solar_system_example
 from shepard_scripts.scripts.change_version import change_version
-from shepard_scripts.scripts.example_data import (
-    create_collection,
-    create_data_object_reference,
-    create_data_objects,
-    create_file,
-    create_structured_data,
-    create_timeseries,
-    create_uri_reference,
-)
 from shepard_scripts.scripts.packages import cleanup_packages
 from shepard_scripts.scripts.releases import (
     create_dependency_issue,
@@ -75,45 +65,20 @@ def packages(token_file):
 
 
 @cli.command
-@click.argument("host")
-@click.argument("api_key_file", type=click.File("r"))
-def example_data(host, api_key_file):
-    """Create example data."""
-
-    # Set up configuration
-    api_key = str(api_key_file.readline()).rstrip("\n")
-    conf = Configuration(host=host, api_key={"apikey": api_key})
-    client = ApiClient(configuration=conf)
-
-    # Create things
-    collection = create_collection(client)
-    data_object, child, successor = create_data_objects(client, collection.id)
-    file_reference = create_file(client, collection.id, data_object.id)
-    sd_reference = create_structured_data(client, collection.id, data_object.id)
-    timeseries_reference = create_timeseries(client, collection.id, data_object.id)
-    collection_reference, data_object_reference = create_data_object_reference(
-        client, collection.id, data_object.id
-    )
-    uri_reference = create_uri_reference(client, collection.id, data_object.id)
-
-    # Print result
-    created = [
-        obj.name
-        for obj in [
-            collection,
-            data_object,
-            child,
-            successor,
-            file_reference,
-            sd_reference,
-            timeseries_reference,
-            collection_reference,
-            data_object_reference,
-            uri_reference,
-        ]
-    ]
-    created_names = ", ".join(created)
-    click.echo(f"done. created the following objects: {created_names}")
+@click.option(
+    "--delete-old-data",
+    "-d",
+    is_flag=True,
+    help="""Delete all Collections and Containers that have been created by this script.
+This essentially replaces them with fresh data.""",
+)
+def sample(delete_old_data):
+    """
+    Create sample data for a given shepard instance.
+    A valid api key and the backend url need to be provided as part of the environment.
+    You may use the .env.example, copy it to .env and fill in both values for it to take effect.
+    """
+    solar_system_example.generate_sample_data(delete_old_data)
 
 
 @cli.command

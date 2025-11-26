@@ -1,0 +1,8 @@
+{
+  "planet": "earth",
+  "parent_star": {
+    "name": "sun",
+    "main_element": "hydrogen"
+  },
+  "continents": ["Africa", "Eurasia", "North America", "South America", "Australia", "Antarctica"]
+}

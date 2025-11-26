@@ -91,3 +91,7 @@ clients/python
 # docToolChain
 build/
 .gradle/
+
+# environment files except .env.example
+*.env
+!.env.example

@@ -47,8 +47,10 @@ Clean packages
 poetry run cli packages ./token.txt
 ```
 
-Create example data
+Create the inner solar system sample data for a given shepard instance.
+A valid api key and the backend url need to be provided as part of the environment.
+You may use the .env.example, copy it to .env and fill in both values for it to take effect.
 
 ```sh
-poetry run cli example-data https://backend.example.com/shepard/api ./api_key.txt
+poetry run cli example-data
 ```

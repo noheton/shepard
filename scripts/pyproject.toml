@@ -12,8 +12,11 @@ python-gitlab = "5.6.0"
 ruff = "0.11.6"
 jinja2 = "^3.1.2"
 click = "^8.1.7"
-shepard-client = {version = "3.0.2", source = "shepard-gitlab"}
+shepard-client = {version = "5.1.0", source = "shepard-gitlab"}
 ruamel-yaml = "^0.18.15"
+pandas = "^2.3.3"
+dotenv = "^0.9.9"
+numpy = "^2.3.5"
 
 [tool.poetry.scripts]
 cli = "shepard_scripts.main:cli"
@@ -29,6 +32,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 target-version = "py312"
+# ignore S101 - checks for assert keyword - checks for assert keyword
+lint.ignore=["S101"]
 lint.select = [
     # pycodestyle
     "E",
@@ -47,6 +52,6 @@ lint.select = [
     # isort
     "I",
 ]
-# Same as Black.
-line-length = 88
+# (Almost) (Almost) same as Black.
+line-length = 100
 indent-width = 4
