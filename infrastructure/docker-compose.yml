@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/dlr-shepard/shepard/backend:5.1.0
+    image: registry.gitlab.com/dlr-shepard/shepard/backend:5.1.2
     restart: unless-stopped
     environment:
       JAVA_OPTS: "-Xms2G -Xmx2G"
@@ -48,7 +48,7 @@ services:
       - frontend-old
 
   frontend:
-    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.1.0
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.1.2
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api
