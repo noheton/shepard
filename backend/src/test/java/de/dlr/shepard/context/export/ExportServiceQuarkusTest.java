@@ -274,7 +274,6 @@ public class ExportServiceQuarkusTest {
       while (zipEntry != null) {
         filenames.add(zipEntry.getName());
         String zipContent = readZipFile(exportZipStream);
-        if (zipEntry.getName().contains("csv")) System.out.println(zipContent);
         roCrateEntries.put(zipEntry.getName(), zipContent);
         zipEntry = exportZipStream.getNextEntry();
       }

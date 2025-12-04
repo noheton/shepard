@@ -33,7 +33,9 @@ public class Neo4jQueryBuilder {
     "valueIRI",
     "propertyIRI",
     "createdAt",
-    "updatedAt"
+    "updatedAt",
+    "hasAnnotation",
+    "hasAnnotationIRI"
   );
 
   private static final List<String> IdProperties = List.of(
@@ -145,7 +147,37 @@ public class Neo4jQueryBuilder {
     if (property.equals("createdAt") || property.equals("updatedAt")) return atPart(node, variable);
     // for SemanticAnnotationIRIs
     if (property.equals("valueIRI") || property.equals("propertyIRI")) return iRIPart(node, variable);
+    // for SemanticAnnotations
+    if (property.equals("hasAnnotation")) return hasAnnotationPart(node, variable);
+    // for SemanticAnnotations
+    if (property.equals("hasAnnotationIRI")) return hasAnnotationIRIPart(node, variable);
     return null;
+  }
+
+  private static String hasAnnotationIRIPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    String propertyIRI = annotation.split("::")[0];
+    String valueIRI = annotation.split("::")[1];
+    String ret = "(";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyIRI + "\" AND ";
+    ret = ret + " sem.valueIRI " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueIRI;
+    ret = ret + "\")})";
+    return ret;
+  }
+
+  private static String hasAnnotationPart(JsonNode node, String variable) {
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    String propertyName = annotation.split("::")[0];
+    String valueName = annotation.split("::")[1];
+    String ret = "(";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
+    ret = ret + "\")})";
+    return ret;
   }
 
   private static String simpleIdPropertyPart(JsonNode node, String variable) {
@@ -269,6 +301,7 @@ public class Neo4jQueryBuilder {
       case Constants.JSON_LE -> "<=";
       case Constants.JSON_IN -> "IN";
       case Constants.JSON_NE -> "<>";
+      case Constants.JSON_REGMATCH -> "=~";
       default -> throw new ShepardParserException("unknown comparison operator " + operator);
     };
   }

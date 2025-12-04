@@ -1081,7 +1081,6 @@ public class SpatialDataPointRepositoryTest {
       metadataFilter,
       Collections.emptyList()
     );
-    System.out.println("Data \n" + data);
     assertNotNull(data);
     assertEquals(2, data.size());
   }

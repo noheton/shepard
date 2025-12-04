@@ -202,6 +202,5 @@ public class SemanticRepositoryServiceQuarkusTest {
     repMalformedURL.setType(SemanticRepositoryType.SPARQL);
     repMalformedURL.setEndpoint("http://test.org");
     Exception ex = assertThrows(Exception.class, () -> semanticRepositoryService.createRepository(repMalformedURL));
-    System.out.println("message: " + ex.getMessage());
   }
 }

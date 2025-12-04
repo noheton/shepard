@@ -159,7 +159,6 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
       .as(SemanticAnnotationIO.class);
 
     assertThat(collectionAnnotation.getId()).isNotNull();
-    System.out.println("AnnotatonID: " + collectionAnnotation.getId());
     assertThat(collectionAnnotation.getName()).isEqualTo("ingredient::Almond milk");
     assertThat(collectionAnnotation.getPropertyIRI()).isEqualTo("http://dbpedia.org/ontology/ingredient");
     assertThat(collectionAnnotation.getPropertyRepositoryId()).isEqualTo(repository.getId());

@@ -195,6 +195,7 @@ public class Constants {
   public static final String JSON_LE = "le";
   public static final String JSON_IN = "in";
   public static final String JSON_NE = "ne";
+  public static final String JSON_REGMATCH = "regmatch";
 
   // spatial data
   public static final String SPATIAL_DATA_CONTAINER = "spatialDataContainer";
