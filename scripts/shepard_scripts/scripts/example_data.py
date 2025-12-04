@@ -243,31 +243,33 @@ def create_timeseries_data(
     ts_data = list(generate_data_points())
     for location, ts in ts_data:
         import_single_temperature_timeseries(tsc_api, tsc.id, location, ts)
-    ts_to_reference = [
-        timeseries_for_location("Mecklenburg-Vorpommern"),
-        timeseries_for_location("Niedersachsen"),
-        timeseries_for_location("Sachsen"),
-        timeseries_for_location("Bayern"),
+    ts_northern_germany = [
+      timeseries_for_location("Niedersachsen"),
+      timeseries_for_location("Schleswig-Holstein"),
+      timeseries_for_location("Mecklenburg-Vorpommern"),
     ]
-    tsr_api = TimeseriesReferenceApi(CLIENT)
     tsr = TimeseriesReference(
-        name="Climate since 1980",
+        name="Climate in northern Germany since 1980",
         start=year_to_timestamp(1980),
         end=year_to_timestamp(datetime.datetime.now().year),
-        timeseries=ts_to_reference,
+        timeseries=ts_northern_germany,
         timeseriesContainerId=tsc.id,
     )
-    yield tsr_api.create_timeseries_reference(
+    yield TIMESERIES_REFERENCE_API.create_timeseries_reference(
         collection_for_ref.id, data_object_for_ref.id, tsr
     )
+    ts_southern_germany = [
+      timeseries_for_location("Bayern"),
+      timeseries_for_location("Baden-Wuerttemberg"),
+    ]
     tsr = TimeseriesReference(
-        name="Climate in the 90s",
-        start=year_to_timestamp(1990),
-        end=year_to_timestamp(2000),
-        timeseries=ts_to_reference,
+        name="Climate in southern Germany since 1980",
+        start=year_to_timestamp(1980),
+        end=year_to_timestamp(datetime.datetime.now().year),
+        timeseries=ts_southern_germany,
         timeseriesContainerId=tsc.id,
     )
-    yield tsr_api.create_timeseries_reference(
+    yield TIMESERIES_REFERENCE_API.create_timeseries_reference(
         collection_for_ref.id, data_object_for_ref.id, tsr
     )
 
