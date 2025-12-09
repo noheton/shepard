@@ -10,6 +10,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.common.util.TraversalRules;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -44,7 +45,11 @@ public class Neo4jQueryBuilder {
     "referencedDataObjectId",
     "fileContainerId",
     "structuredDataContainerId",
-    "timeseriesContainerId"
+    "timeseriesContainerId",
+    "successorIds",
+    "predecessorIds",
+    "childrenIds",
+    "parentIds"
   );
 
   private static String getNeo4jWithNeo4jIdString(String jsonquery, String variable) {
@@ -194,6 +199,13 @@ public class Neo4jQueryBuilder {
     if (property.equals("structuredDataContainerId")) return structuredDataContainerIdPart(node, variable);
     // for TimeseriesReferences
     if (property.equals("timeseriesContainerId")) return timeseriesContainerIdPart(node, variable);
+    // for neighborhoodIds
+    if (
+      property.equals("successorIds") ||
+      property.equals("predecessorIds") ||
+      property.equals("childrenIds") ||
+      property.equals("parentIds")
+    ) return neighborhoodIdsPart(node, variable);
     return null;
   }
 
@@ -209,6 +221,93 @@ public class Neo4jQueryBuilder {
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
     ret = ret + "})";
+    return ret;
+  }
+
+  private static String neighborhoodIdsPart(JsonNode node, String variable) {
+    String operatorString = node.get(Constants.OP_OPERATOR).textValue();
+    String neighborhoodProperty = node.get(Constants.OP_PROPERTY).textValue();
+    String neighborhoodNeo4j =
+      switch (neighborhoodProperty) {
+        case "successorIds" -> "-[:has_successor]->";
+        case "predecessorIds" -> "<-[:has_successor]-";
+        case "childrenIds" -> "-[:has_child]->";
+        case "parentIds" -> "<-[:has_child]-";
+        default -> "";
+      };
+    if (operatorString.equals(Constants.JSON_CONTAINS)) return neighborhoodIdsContainsPart(
+      node,
+      variable,
+      neighborhoodNeo4j
+    );
+    if (operatorString.equals(Constants.JSON_IS_CONTAINED_IN)) return neighborhoodIdsIsContainedInPart(
+      node,
+      variable,
+      neighborhoodNeo4j
+    );
+    if (operatorString.equals(Constants.JSON_EQ)) return neighborhoodIdsEqualsPart(node, variable, neighborhoodNeo4j);
+    throw new ShepardParserException("illegal comparison operator " + operatorString);
+  }
+
+  private static String neighborhoodIdsEqualsPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    return (
+      "((" +
+      neighborhoodIdsIsContainedInPart(node, variable, neighborhoodNeo4j) +
+      ") AND (" +
+      neighborhoodIdsContainsPart(node, variable, neighborhoodNeo4j) +
+      "))"
+    );
+  }
+
+  private static String neighborhoodIdsIsContainedInPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    String ret = "(";
+    ArrayList<Long> successorIds = new ArrayList<Long>();
+    for (JsonNode longNode : node.get(Constants.OP_VALUE)) {
+      successorIds.add(longNode.longValue());
+    }
+    if (successorIds.size() == 0) return "(NOT EXISTS{MATCH (" + variable + ")" + neighborhoodNeo4j + "(neighborObj)})";
+    String arrayString = "[";
+    for (int i = 0; i < successorIds.size() - 1; i++) arrayString = arrayString + successorIds.get(i) + ",";
+    arrayString = arrayString + successorIds.get(successorIds.size() - 1) + "]";
+    ret =
+      ret +
+      "NOT EXISTS{MATCH (" +
+      variable +
+      ")" +
+      neighborhoodNeo4j +
+      "(neighborObj) WHERE (NOT id(neighborObj) IN " +
+      arrayString +
+      ")})";
+    return ret;
+  }
+
+  private static String neighborhoodIdsContainsPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    String ret = "(";
+    ArrayList<Long> successorIds = new ArrayList<Long>();
+    for (JsonNode longNode : node.get(Constants.OP_VALUE)) {
+      successorIds.add(longNode.longValue());
+    }
+    if (successorIds.size() == 0) return "(1=1)";
+    for (int i = 0; i < successorIds.size() - 1; i++) {
+      ret =
+        ret +
+        "(EXISTS {MATCH (" +
+        variable +
+        ")" +
+        neighborhoodNeo4j +
+        "(neighborObj) WHERE id(neighborObj)=" +
+        successorIds.get(i) +
+        "}) AND ";
+    }
+    ret =
+      ret +
+      "(EXISTS {MATCH (" +
+      variable +
+      ")" +
+      neighborhoodNeo4j +
+      "(neighborObj) WHERE id(neighborObj)=" +
+      successorIds.get(successorIds.size() - 1) +
+      "}))";
     return ret;
   }
 
