@@ -244,9 +244,9 @@ def create_timeseries_data(
     for location, ts in ts_data:
         import_single_temperature_timeseries(tsc_api, tsc.id, location, ts)
     ts_northern_germany = [
-      timeseries_for_location("Niedersachsen"),
-      timeseries_for_location("Schleswig-Holstein"),
-      timeseries_for_location("Mecklenburg-Vorpommern"),
+        timeseries_for_location("Niedersachsen"),
+        timeseries_for_location("Schleswig-Holstein"),
+        timeseries_for_location("Mecklenburg-Vorpommern"),
     ]
     tsr = TimeseriesReference(
         name="Climate in northern Germany since 1980",
@@ -259,8 +259,8 @@ def create_timeseries_data(
         collection_for_ref.id, data_object_for_ref.id, tsr
     )
     ts_southern_germany = [
-      timeseries_for_location("Bayern"),
-      timeseries_for_location("Baden-Wuerttemberg"),
+        timeseries_for_location("Bayern"),
+        timeseries_for_location("Baden-Wuerttemberg"),
     ]
     tsr = TimeseriesReference(
         name="Climate in southern Germany since 1980",

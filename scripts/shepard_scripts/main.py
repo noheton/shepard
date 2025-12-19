@@ -6,8 +6,8 @@ from shepard_scripts.scripts.packages import cleanup_packages
 from shepard_scripts.scripts.releases import (
     create_dependency_issue,
     create_release,
+    create_release_details,
     get_project,
-    get_release_details,
     get_user_id,
     prompt_confirm,
     prompt_title,
@@ -49,7 +49,7 @@ def release(hotfix_release, token_file, since_release):
     isHotfixRelease = bool(hotfix_release)
     project = get_project(GITLAB_INSTANCE, token, PROJECT_ID)
     user_id = get_user_id(GITLAB_INSTANCE, token)
-    tag, notes = get_release_details(project, isHotfixRelease, since_release)
+    tag, notes = create_release_details(project, isHotfixRelease, since_release)
     title = prompt_title(tag)
     prompt_confirm(title, tag, notes)
     create_release(project, title, tag, notes)
