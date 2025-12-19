@@ -187,9 +187,13 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.COLLECTION_ID)
   @Parameter(name = Constants.DATA_OBJECT_ID)
   @Parameter(name = Constants.TIMESERIES_REFERENCE_ID)
-  @Parameter(name = Constants.FUNCTION)
-  @Parameter(name = Constants.GROUP_BY)
-  @Parameter(name = Constants.FILLOPTION)
+  @Parameter(name = Constants.FUNCTION, deprecated = true, description = "A function providing metrics.")
+  @Parameter(
+    name = Constants.GROUP_BY,
+    deprecated = true,
+    description = "Nanoseconds describing a bucket size over which a metric should be calculated."
+  )
+  @Parameter(name = Constants.FILLOPTION, deprecated = true)
   @Parameter(name = Constants.DEVICE)
   @Parameter(name = Constants.LOCATION)
   @Parameter(name = Constants.SYMBOLICNAME)
