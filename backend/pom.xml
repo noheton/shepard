@@ -40,19 +40,19 @@
     <quarkus.platform.version>3.15.7</quarkus.platform.version>
     <surefire-plugin.version>3.5.4</surefire-plugin.version>
     <assertj.version>3.27.6</assertj.version>
-    <commons.version>2.20.0</commons.version>
+    <commons.version>2.21.0</commons.version>
     <equalsverifier.version>3.19.4</equalsverifier.version>
-    <hibernate.spatial.version>6.6.31.Final</hibernate.spatial.version>
+    <hibernate.spatial.version>6.6.40.Final</hibernate.spatial.version>
     <janino.version>3.1.12</janino.version>
     <jjwt.version>0.11.5</jjwt.version>
     <junit.version>5.10.5</junit.version>
     <lombok.version>1.18.42</lombok.version>
-    <mockito.version>5.20.0</mockito.version>
+    <mockito.version>5.21.0</mockito.version>
     <mongodb.version>5.1.1</mongodb.version>
     <neo4j-ogm.version>4.0.11</neo4j-ogm.version>
     <opencsv.version>5.12.0</opencsv.version>
     <restassured.version>5.5.6</restassured.version>
-    <apache.commons.version>3.19.0</apache.commons.version>
+    <apache.commons.version>3.20.0</apache.commons.version>
     <neo4j-cypher-dsl.version>2024.7.4</neo4j-cypher-dsl.version>
   </properties>
   <dependencyManagement>
@@ -235,7 +235,7 @@
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
       <artifactId>neo4j-migrations</artifactId>
-      <version>2.19.2</version>
+      <version>2.20.1</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -251,7 +251,7 @@
     <dependency>
       <groupId>edu.kit.datamanager</groupId>
       <artifactId>ro-crate-java</artifactId>
-      <version>2.0.2</version>
+      <version>2.1.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -278,7 +278,7 @@
       <!-- jsoup HTML parser library @ https://jsoup.org/ -->
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.21.2</version>
+      <version>1.22.1</version>
     </dependency>
   </dependencies>
   <build>
@@ -353,7 +353,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>0.8.14</version>
         <configuration>
           <skip>${skipUTs}</skip>
           <excludes>
@@ -399,12 +399,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.27.0</version>
+        <version>3.28.0</version>
       </plugin>
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.9.6.0</version>
+        <version>4.9.8.2</version>
       </plugin>
     </plugins>
   </build>
