@@ -3,7 +3,6 @@ import { createVuetify, type ThemeDefinition } from "vuetify";
 import * as directives from "vuetify/directives";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VFileUpload } from "vuetify/labs/VFileUpload";
-import { VTreeview } from "vuetify/labs/VTreeview";
 import "vuetify/styles";
 
 export default defineNuxtPlugin(app => {
@@ -16,7 +15,6 @@ export default defineNuxtPlugin(app => {
     },
     components: {
       VFileUpload,
-      VTreeview,
       VDateInput,
     },
     directives,
