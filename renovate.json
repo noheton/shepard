@@ -10,6 +10,7 @@
   "dependencyDashboardLabels": ["dependencies"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
+  "minimumReleaseAge": "14",
   "packageRules": [
     {
       "matchFileNames": ["package.json"],
