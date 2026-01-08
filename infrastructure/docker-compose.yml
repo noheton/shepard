@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/dlr-shepard/shepard/backend:5.1.2
+    image: registry.gitlab.com/dlr-shepard/shepard/backend:5.2.0
     restart: unless-stopped
     environment:
       JAVA_OPTS: "-Xms2G -Xmx2G"
@@ -48,7 +48,7 @@ services:
       - frontend-old
 
   frontend:
-    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.1.2
+    image: registry.gitlab.com/dlr-shepard/shepard/frontend:5.2.0
     restart: unless-stopped
     environment:
       NUXT_PUBLIC_BACKEND_API_URL: ${BACKEND_URL}shepard/api
@@ -115,7 +115,7 @@ services:
       - mongo
 
   timescaledb:
-    image: timescale/timescaledb:2.18.1-pg16
+    image: timescale/timescaledb:2.24.0-pg16
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -171,7 +171,7 @@ services:
       - frontend
 
   timescale-migration-preparation:
-    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:5.0.0
+    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:5.0.1
     volumes:
       - ./log:/app/log
     env_file:
@@ -185,7 +185,7 @@ services:
       - timescale-migration-preparation
 
   prometheus:
-    image: prom/prometheus:v3.3.0
+    image: prom/prometheus:v3.9.1
     command:
       - --web.enable-remote-write-receiver
       - --enable-feature=native-histograms
@@ -199,7 +199,7 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:11.3.0-security-01
+    image: grafana/grafana:11.6.3-security-01
     networks:
       - shepard
     environment:
