@@ -49,7 +49,7 @@ const showCreateDialog = ref(false);
     <CreateCollectionDialog
       v-if="showCreateDialog"
       v-model:show-dialog="showCreateDialog"
-      @collection-created="id => router.push(collectionsPath + id)"
+      @collection-created="(id: number) => router.push(collectionsPath + id)"
     />
   </div>
 </template>

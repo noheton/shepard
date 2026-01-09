@@ -127,7 +127,9 @@ const exportCollection = () => {
             >
               <ContextMenu
                 :items="contextMenuItems"
-                @expansion-state-changed="e => (showContextMenuButton = e)"
+                @expansion-state-changed="
+                  (e: boolean) => (showContextMenuButton = e)
+                "
               />
             </DisplayChildrenOnHover>
             <EditCollectionDialog
