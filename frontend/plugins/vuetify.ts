@@ -1,5 +1,6 @@
 import "@mdi/font/css/materialdesignicons.css";
 import { createVuetify, type ThemeDefinition } from "vuetify";
+import { VTreeview } from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { VDateInput } from "vuetify/labs/VDateInput";
 import { VFileUpload } from "vuetify/labs/VFileUpload";
@@ -16,6 +17,7 @@ export default defineNuxtPlugin(app => {
     components: {
       VFileUpload,
       VDateInput,
+      VTreeview,
     },
     directives,
     theme: {
