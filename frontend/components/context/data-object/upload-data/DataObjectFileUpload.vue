@@ -22,7 +22,7 @@ const files = ref<File[]>();
     icon="mdi-folder-upload-outline"
     show-size
     title="Drag and drop files here or click to upload"
-    @click.stop.prevent.self="showDataObjectFileUploadDialog = true"
+    @click.stop.prevent.capture="showDataObjectFileUploadDialog = true"
     @update:model-value="showDataObjectFileUploadDialog = true"
   >
     <!-- Overwrite file upload items here, since we do not need them-->
