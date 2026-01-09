@@ -218,6 +218,12 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     visibility: hidden;
   }
 
+  /* Align treeview expansion buttons with list decoration for vuetify 3.11  */
+  :deep(.v-list-item-action--start) {
+    margin-inline-end: 0;
+    margin-inline-start: 0;
+  }
+
   :deep(.v-list-item--density-compact.v-list-item--one-line) {
     min-height: unset;
   }
