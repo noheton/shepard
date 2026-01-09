@@ -199,7 +199,7 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:11.6.3-security-01
+    image: grafana/grafana:12.2.1-security-01
     networks:
       - shepard
     environment:
