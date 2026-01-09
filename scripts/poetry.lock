@@ -736,14 +736,14 @@ files = [
 
 [[package]]
 name = "shepard-client"
-version = "5.1.0"
+version = "5.2.0"
 description = "shepard backend"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "shepard_client-5.1.0-py3-none-any.whl", hash = "sha256:047ce4b60ae80045c4e6a1770e55daa6332a0a15d424ed88eb0ae1e051891d29"},
-    {file = "shepard_client-5.1.0.tar.gz", hash = "sha256:9ae404df802a7d5ffeddefff1d176619041da7bff999230b77cc3f62860da5f7"},
+    {file = "shepard_client-5.2.0-py3-none-any.whl", hash = "sha256:13f46f30ae983f100dea95db325299590095a2e218a4e9f18f438bbe83329805"},
+    {file = "shepard_client-5.2.0.tar.gz", hash = "sha256:80c313581de62f03d9f1fb1b344c1f00fb8c4dfb865c29bd415efaa80ad22e4d"},
 ]
 
 [package.dependencies]
@@ -829,4 +829,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "a443af1bc4fb0a398c9588eb26217186743f1e80f70390befd3dd92d9cd98965"
+content-hash = "fec9402837559c1c2873cbdb582909db11ae40245c49020d61cfb102dea7649d"
