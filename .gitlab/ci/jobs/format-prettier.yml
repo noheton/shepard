@@ -1,5 +1,5 @@
 format_prettier:
-  image: node:22-slim
+  image: node:24-slim
   stage: check
   cache:
     key:
