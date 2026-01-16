@@ -1,0 +1,44 @@
+package de.dlr.shepard.common.search.services;
+
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.search.daos.SearchDAO;
+import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchBody;
+import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchResult;
+import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import java.util.List;
+
+@RequestScoped
+public class AnnotatableTimeseriesSearchService {
+
+  @Inject
+  SearchDAO searchDAO;
+
+  @Inject
+  UserService userService;
+
+  public AnnotatableTimeseriesInContainerSearchResult search(
+    long containerId,
+    AnnotatableTimeseriesInContainerSearchBody searchBody
+  ) {
+    User user = userService.getCurrentUser();
+    String searchBodyQuery = searchBody.getSearchParams().getQuery();
+    String selectionQuery = Neo4jQueryBuilder.annotatableTimeseriesInContainerSelectionQuery(
+      containerId,
+      searchBodyQuery,
+      user.getUsername()
+    );
+    List<AnnotatableTimeseries> annotatableTimeseriesFound = searchDAO.findAnnotatableTimeseries(
+      selectionQuery,
+      Constants.ANNOTATABLE_TS_IN_QUERY
+    );
+    AnnotatableTimeseriesInContainerSearchResult ret = new AnnotatableTimeseriesInContainerSearchResult(
+      annotatableTimeseriesFound
+    );
+    return ret;
+  }
+}

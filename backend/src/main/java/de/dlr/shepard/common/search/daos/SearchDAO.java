@@ -10,6 +10,7 @@ import de.dlr.shepard.common.util.PaginationHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +60,21 @@ public class SearchDAO {
   public List<BasicReference> findReferences(String selectionQuery, String referenceVariable) {
     String query = selectionQuery + emitReferencesReturnPart(referenceVariable);
     Iterable<BasicReference> collections = session.query(BasicReference.class, query, Collections.emptyMap());
+    var ret = StreamSupport.stream(collections.spliterator(), false).toList();
+    return ret;
+  }
+
+  public List<AnnotatableTimeseries> findAnnotatableTimeseries(
+    String selectionQuery,
+    String annotatableTimeseriesVariable
+  ) {
+    String query = selectionQuery + emitAnnotatableTimeseriesReturnPart(annotatableTimeseriesVariable);
+    System.out.println("final query: " + query);
+    Iterable<AnnotatableTimeseries> collections = session.query(
+      AnnotatableTimeseries.class,
+      query,
+      Collections.emptyMap()
+    );
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;
   }
@@ -150,6 +166,10 @@ public class SearchDAO {
       userVariable,
       userVariable
     );
+  }
+
+  private String emitAnnotatableTimeseriesReturnPart(String annotatableTimeseriesVariable) {
+    return " RETURN " + annotatableTimeseriesVariable;
   }
 
   private String emitUserGroupReturnPart(String userGroupVariable) {

@@ -209,6 +209,19 @@ public class Neo4jQueryBuilder {
     return null;
   }
 
+  public static String annotatableTimeseriesInContainerSelectionQuery(
+    long containerId,
+    String searchBodyQuery,
+    String userName
+  ) {
+    String ret = "";
+    ret = ret + "MATCH (" + Constants.ANNOTATABLE_TS_IN_QUERY + ":AnnotatableTimeseries) ";
+    ret = ret + "WHERE (" + Constants.ANNOTATABLE_TS_IN_QUERY + ".containerId = " + containerId + ") ";
+    ret = ret + " AND ";
+    ret = ret + getNeo4jWithNeo4jIdString(searchBodyQuery, Constants.ANNOTATABLE_TS_IN_QUERY);
+    return ret;
+  }
+
   private static String byPart(JsonNode node, String variable) {
     String ret = "(";
     String by =
