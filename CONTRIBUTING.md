@@ -50,7 +50,15 @@ shepard uses three types of branches to organize development:
 - Follow the installation and configuration instructions for both front- and backend
 - Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` in the folders)
 - install Docker and Docker Compose (alternatively Podman and Podman Compose)
-- Run `docker compose -f backend/docker-compose.yml up` (alternatively `podman compose ...`)
+- Run `docker compose --profile dev -f infrastructure-local/docker-compose.yml up -d` (alternatively `podman compose ...`)
+- Set up your local keycloak instance:
+  1. Navigate to http://localhost:8082
+  2. Log in as admin with username `admin` and password `admin`
+  3. Navigate to `Clients` > `Import client`
+  4. Upload `infrastructure-local/keycloak_frontend-dev.json` as a resource file and hit `Save`
+  5. Create a user via `Users` > `Add user`. Set credentials!
+  6. Log out from keycloak
+  7. Navigate to http://localhost:8082/realms/master/ and in `backend/.env` set the environment variable `OIDC_PUBLIC` to the public key obtained
 - Run backend & frontend using `npm run start:dev`
 
 ### Frontend Development Environment
@@ -134,7 +142,7 @@ The variables preconfigured in `.env.example` also contain variables for local d
 
 | Service              | URL                      | Comment                           |
 | -------------------- | ------------------------ | --------------------------------- |
-| Keycloak frontend    | <http://localhost:8081/> | _user: admin, pw: admin_          |
+| Keycloak frontend    | <http://localhost:8082/> | _user: admin, pw: admin_          |
 | neo4j database       | <http://localhost:7687>  | _user: neo4j, pw: shepardshepard_ |
 | neo4j frontend       | <http://localhost:7474>  |                                   |
 | mongodb Database     | <http://localhost:27017> | _user: mongo, pw: shepard_        |
