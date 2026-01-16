@@ -21,8 +21,8 @@ To do this execute the following steps:
    As of writing podman does not support profiles as docker does.
    If using podman you may have to comment out the `backend` and `frontend` section in the `docker-compose.yml` since those will not work without keycloak configured.
 
-4. Import the [client](https://www.keycloak.org/docs/latest/server_admin/index.html#assembly-managing-clients_server_administration_guide) "frontend-dev" to the keycloak master realm using the file `keycloak_frontend-dev.json` using the [admin console](https://www.keycloak.org/docs/latest/server_admin/index.html#using-the-admin-console).
-   Username and password are "admin" each.
+4. Create a new [client](https://www.keycloak.org/docs/latest/server_admin/index.html#assembly-managing-clients_server_administration_guide) "frontend-dev" at the keycloak master realm using the [admin console](https://www.keycloak.org/docs/latest/server_admin/index.html#using-the-admin-console) (http://localhost:8082/). Username and password are "admin" each.
+   Go to "Clients", "Import client" and use the source file `keycloak_frontend-dev.json`.
 
 5. [Create a user](https://www.keycloak.org/docs/latest/server_admin/index.html#proc-creating-user_server_administration_guide) in keycloak.
 
