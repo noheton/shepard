@@ -3,7 +3,9 @@ package de.dlr.shepard.common.search.io;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.io.AnnotatableTimeseriesIO;
 import java.util.List;
+import lombok.Data;
 
+@Data
 public class AnnotatableTimeseriesInContainerSearchResult
   extends ASearchResults<AnnotatableTimeseriesInContainerSearchParams> {
 
