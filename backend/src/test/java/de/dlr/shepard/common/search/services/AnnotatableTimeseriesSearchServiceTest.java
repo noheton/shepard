@@ -215,5 +215,6 @@ public class AnnotatableTimeseriesSearchServiceTest {
     searchBody.setSearchParams(searchParams);
     searchResult = annotatableTimeseriesSearchService.search(tsCon1.getId(), searchBody);
     assertEquals(2, searchResult.getResults().length);
+    System.out.println(searchResult.getResults()[0].toString());
   }
 }
