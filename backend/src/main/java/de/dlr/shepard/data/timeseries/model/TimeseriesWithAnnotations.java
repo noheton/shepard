@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.model;
 
+import de.dlr.shepard.context.semantic.HasAnnotation;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
@@ -7,7 +8,7 @@ import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.inject.Inject;
 import java.util.List;
 
-public class TimeseriesWithAnnotations {
+public class TimeseriesWithAnnotations implements HasAnnotation {
 
   public int getTimeseriesId() {
     return tsSqlDb.getId();
