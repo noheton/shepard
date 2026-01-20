@@ -193,7 +193,7 @@ public class AnnotatableTimeseriesSearchServiceTest {
 
   @Test
   @Transactional
-  public void searchOneAnnotatedTimeseries() {
+  public void searchAnnotatedTimeseries() {
     //search in container2 for one existing annoTS
     searchParams.setContainerId(tsCon2.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
