@@ -1,17 +1,22 @@
 package de.dlr.shepard.common.search.io;
 
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
-import de.dlr.shepard.context.semantic.io.AnnotatableTimeseriesIO;
+import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotations;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 
 @Data
 public class TimeseriesInContainerSearchResult extends ASearchResults<AnnotatableTimeseriesInContainerSearchParams> {
 
-  private AnnotatableTimeseriesIO[] results;
+  private List<TimeseriesIO> results;
 
   public TimeseriesInContainerSearchResult(List<AnnotatableTimeseries> resultList) {
-    results = new AnnotatableTimeseriesIO[resultList.size()];
-    for (int i = 0; i < resultList.size(); i++) results[i] = new AnnotatableTimeseriesIO(resultList.get(i));
+    results = resultList
+      .stream()
+      .map(TimeseriesWithAnnotations::new)
+      .map(TimeseriesIO::new)
+      .collect(Collectors.toList());
   }
 }
