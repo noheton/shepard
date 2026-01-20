@@ -70,7 +70,7 @@ public class TimeseriesService {
    * Returns a timeseries entity by id
    *
    * @param containerId timeseries container id
-   * @param id
+   * @param id timeseries id uniquely identifying it within the timescaledb
    * @return TimeseriesEntity
    * @throws InvalidPathException if container with containerId or the timeseries
    *                              are not accessible

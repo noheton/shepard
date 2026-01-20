@@ -1,8 +1,10 @@
 package de.dlr.shepard.data.timeseries.io;
 
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotations;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 import lombok.Data;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -34,14 +36,21 @@ public class TimeseriesIO {
   @NotBlank
   private final String field;
 
-  public TimeseriesIO(TimeseriesEntity timeseriesEntity) {
-    this.id = timeseriesEntity.getId();
-    this.containerId = timeseriesEntity.getContainerId();
-    this.valueType = timeseriesEntity.getValueType();
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
+  @NotBlank
+  private int timeseriesId;
+
+  List<SemanticAnnotation> annotationIds;
+
+  public TimeseriesIO(TimeseriesWithAnnotations timeseries) {
+    this.id = timeseries.getTimeseriesId();
+    this.containerId = timeseries.getContainerId();
+    this.valueType = timeseries.getValueType();
+    this.measurement = timeseries.getMeasurement();
+    this.device = timeseries.getDevice();
+    this.location = timeseries.getLocation();
+    this.symbolicName = timeseries.getSymbolicName();
+    this.field = timeseries.getField();
+    this.timeseriesId = timeseries.getTimeseriesId();
+    this.annotationIds = timeseries.getAnnotations();
   }
 }
