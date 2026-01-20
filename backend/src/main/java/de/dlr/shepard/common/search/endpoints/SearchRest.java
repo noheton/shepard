@@ -1,13 +1,13 @@
 package de.dlr.shepard.common.search.endpoints;
 
 import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchBody;
-import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchResult;
 import de.dlr.shepard.common.search.io.CollectionSearchBody;
 import de.dlr.shepard.common.search.io.CollectionSearchResult;
 import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.common.search.io.UserGroupSearchBody;
 import de.dlr.shepard.common.search.io.UserGroupSearchResult;
 import de.dlr.shepard.common.search.io.UserSearchBody;
@@ -212,13 +212,13 @@ public class SearchRest {
   }
 
   @POST
-  @Path("/" + Constants.CONTAINERS + "/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ANNOTATABLE_TIMESERIES)
+  @Path("/" + Constants.CONTAINERS + "/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES)
   @Tag(name = Constants.SEARCH)
-  @Operation(description = "Search annotatable timeseries in a container")
+  @Operation(description = "Search for timeseries within a timeseries container")
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(implementation = AnnotatableTimeseriesInContainerSearchResult.class))
+    content = @Content(schema = @Schema(implementation = TimeseriesInContainerSearchResult.class))
   )
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")
@@ -229,7 +229,7 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = AnnotatableTimeseriesInContainerSearchBody.class))
     ) @Valid AnnotatableTimeseriesInContainerSearchBody annotatableTimeseriesInContainerSearchBody
   ) {
-    AnnotatableTimeseriesInContainerSearchResult ret = annotatableTimeseriesSearchService.search(
+    TimeseriesInContainerSearchResult ret = annotatableTimeseriesSearchService.search(
       containerId,
       annotatableTimeseriesInContainerSearchBody
     );

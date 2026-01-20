@@ -8,7 +8,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchBody;
 import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchParams;
-import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchResult;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
@@ -117,7 +117,7 @@ public class AnnotatableTimeseriesSearchServiceTest {
   private AnnotatableTimeseriesInContainerSearchBody searchBody;
   private AnnotatableTimeseriesInContainerSearchParams searchParams;
   private String query;
-  private AnnotatableTimeseriesInContainerSearchResult searchResult;
+  private TimeseriesInContainerSearchResult searchResult;
 
   @BeforeEach
   public void setUp() {

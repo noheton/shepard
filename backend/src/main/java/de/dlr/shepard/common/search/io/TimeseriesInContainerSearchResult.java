@@ -6,12 +6,11 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class AnnotatableTimeseriesInContainerSearchResult
-  extends ASearchResults<AnnotatableTimeseriesInContainerSearchParams> {
+public class TimeseriesInContainerSearchResult extends ASearchResults<AnnotatableTimeseriesInContainerSearchParams> {
 
   private AnnotatableTimeseriesIO[] results;
 
-  public AnnotatableTimeseriesInContainerSearchResult(List<AnnotatableTimeseries> resultList) {
+  public TimeseriesInContainerSearchResult(List<AnnotatableTimeseries> resultList) {
     results = new AnnotatableTimeseriesIO[resultList.size()];
     for (int i = 0; i < resultList.size(); i++) results[i] = new AnnotatableTimeseriesIO(resultList.get(i));
   }
