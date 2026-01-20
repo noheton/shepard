@@ -6,8 +6,8 @@ import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
-import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchBody;
 import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchParams;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchBody;
 import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
 
 @QuarkusTest
 @WithTestResource(WireMockResource.class)
-public class AnnotatableTimeseriesSearchServiceTest {
+public class TimeseriesSearchServiceTest {
 
   @Inject
   CollectionService collectionService;
@@ -63,7 +63,7 @@ public class AnnotatableTimeseriesSearchServiceTest {
   TimeseriesService timeseriesService;
 
   @Inject
-  AnnotatableTimeseriesSearchService annotatableTimeseriesSearchService;
+  TimeseriesSearchService timeseriesSearchService;
 
   @Inject
   AnnotatableTimeseriesService annotatableTimeseriesService;
@@ -114,7 +114,7 @@ public class AnnotatableTimeseriesSearchServiceTest {
   private User user1;
   private String username = "u";
   private String username1 = "u1";
-  private AnnotatableTimeseriesInContainerSearchBody searchBody;
+  private TimeseriesInContainerSearchBody searchBody;
   private AnnotatableTimeseriesInContainerSearchParams searchParams;
   private String query;
   private TimeseriesInContainerSearchResult searchResult;
@@ -187,7 +187,7 @@ public class AnnotatableTimeseriesSearchServiceTest {
     AnnoToCreate2.setValueIRI("http://dbpedia.org/resource/Rice_milk");
     AnnoToCreate2.setValueRepositoryId(repository.getId());
     ts2Anno = annotatableTimeseriesService.createAnnotation(tsCon2.getId(), timeseriesEntity2.getId(), AnnoToCreate2);
-    searchBody = new AnnotatableTimeseriesInContainerSearchBody();
+    searchBody = new TimeseriesInContainerSearchBody();
     searchParams = new AnnotatableTimeseriesInContainerSearchParams();
   }
 
@@ -199,21 +199,21 @@ public class AnnotatableTimeseriesSearchServiceTest {
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
-    searchResult = annotatableTimeseriesSearchService.search(tsCon2.getId(), searchBody);
+    searchResult = timeseriesSearchService.search(tsCon2.getId(), searchBody);
     assertEquals(1, searchResult.getResults().length);
     //search in container1 for non-existing annoTS
     searchParams.setContainerId(tsCon1.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
-    searchResult = annotatableTimeseriesSearchService.search(tsCon1.getId(), searchBody);
+    searchResult = timeseriesSearchService.search(tsCon1.getId(), searchBody);
     assertEquals(0, searchResult.getResults().length);
     //search in container1 for two existing annoTS
     searchParams.setContainerId(tsCon1.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*milk.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
-    searchResult = annotatableTimeseriesSearchService.search(tsCon1.getId(), searchBody);
+    searchResult = timeseriesSearchService.search(tsCon1.getId(), searchBody);
     assertEquals(2, searchResult.getResults().length);
     System.out.println(searchResult.getResults()[0].toString());
   }

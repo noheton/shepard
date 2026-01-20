@@ -1,22 +1,22 @@
 package de.dlr.shepard.common.search.endpoints;
 
-import de.dlr.shepard.common.search.io.AnnotatableTimeseriesInContainerSearchBody;
 import de.dlr.shepard.common.search.io.CollectionSearchBody;
 import de.dlr.shepard.common.search.io.CollectionSearchResult;
 import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchBody;
 import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.common.search.io.UserGroupSearchBody;
 import de.dlr.shepard.common.search.io.UserGroupSearchResult;
 import de.dlr.shepard.common.search.io.UserSearchBody;
 import de.dlr.shepard.common.search.io.UserSearchResult;
-import de.dlr.shepard.common.search.services.AnnotatableTimeseriesSearchService;
 import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.ContainerSearchService;
 import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.search.services.SearchService;
+import de.dlr.shepard.common.search.services.TimeseriesSearchService;
 import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.search.services.UserSearchService;
 import de.dlr.shepard.common.util.Constants;
@@ -68,7 +68,7 @@ public class SearchRest {
   CollectionSearchService collectionSearchService;
 
   @Inject
-  AnnotatableTimeseriesSearchService annotatableTimeseriesSearchService;
+  TimeseriesSearchService timeseriesSearchService;
 
   @POST
   @Tag(name = Constants.SEARCH)
@@ -222,16 +222,17 @@ public class SearchRest {
   )
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")
-  public Response searchAnnotatableTimeseriesInContainer(
+  public Response searchTimeseriesInContainer(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @RequestBody(
       required = true,
-      content = @Content(schema = @Schema(implementation = AnnotatableTimeseriesInContainerSearchBody.class))
-    ) @Valid AnnotatableTimeseriesInContainerSearchBody annotatableTimeseriesInContainerSearchBody
+      content = @Content(schema = @Schema(implementation = TimeseriesInContainerSearchBody.class))
+    ) @Valid TimeseriesInContainerSearchBody timeseriesInContainerSearchBody
   ) {
-    TimeseriesInContainerSearchResult ret = annotatableTimeseriesSearchService.search(
+    // todo wie sieht hier die Suche aus? Inwiefern ist das im Such-JSON bzw. im Endpoint festgelegt?
+    TimeseriesInContainerSearchResult ret = timeseriesSearchService.search(
       containerId,
-      annotatableTimeseriesInContainerSearchBody
+      timeseriesInContainerSearchBody
     );
     return Response.ok(ret).build();
   }
