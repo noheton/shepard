@@ -21,7 +21,6 @@ import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -78,6 +77,7 @@ public class TimeseriesService {
    *                              timeseries container
    */
   public TimeseriesEntity getTimeseriesById(long containerId, int id) {
+    //timeseriesContainerService = new TimeseriesContainerService();
     timeseriesContainerService.getContainer(containerId);
 
     var timeseries = timeseriesRepository.findById(id);

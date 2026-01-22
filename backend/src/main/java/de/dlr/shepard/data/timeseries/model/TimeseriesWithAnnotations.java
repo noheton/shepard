@@ -11,6 +11,15 @@ import java.util.List;
 
 public class TimeseriesWithAnnotations implements HasAnnotation {
 
+  @Inject
+  AnnotatableTimeseriesService annotationService;
+
+  @Inject
+  TimeseriesService timeseriesService;
+
+  private final TimeseriesEntity tsSqlDb;
+  private final AnnotatableTimeseries tsGraphDb;
+
   public int getTimeseriesId() {
     return tsGraphDb.getTimeseriesId();
   }
@@ -47,15 +56,6 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
     return tsGraphDb.getAnnotations();
   }
 
-  @Inject
-  AnnotatableTimeseriesService annotationService;
-
-  @Inject
-  TimeseriesService timeseriesService;
-
-  private final TimeseriesEntity tsSqlDb;
-  private final AnnotatableTimeseries tsGraphDb;
-
   public TimeseriesWithAnnotations(TimeseriesEntity tsSqlDb) {
     this.tsGraphDb = new AnnotatableTimeseries(
       tsSqlDb.getContainerId(),
@@ -66,6 +66,7 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
   }
 
   public TimeseriesWithAnnotations(AnnotatableTimeseries tsGraphDb) {
+    //timeseriesService = new TimeseriesService();
     this.tsGraphDb = tsGraphDb;
     this.tsSqlDb = timeseriesService.getTimeseriesById(tsGraphDb.getContainerId(), tsGraphDb.getTimeseriesId());
   }
