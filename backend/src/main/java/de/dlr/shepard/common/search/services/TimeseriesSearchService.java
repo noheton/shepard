@@ -8,6 +8,7 @@ import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotationsFactoryService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -21,6 +22,9 @@ public class TimeseriesSearchService {
   @Inject
   UserService userService;
 
+  @Inject
+  TimeseriesWithAnnotationsFactoryService ts;
+
   public TimeseriesInContainerSearchResult search(long containerId, TimeseriesInContainerSearchBody searchBody) {
     User user = userService.getCurrentUser();
     String searchBodyQuery = searchBody.getSearchParams().getQuery();
@@ -33,7 +37,6 @@ public class TimeseriesSearchService {
       selectionQuery,
       Constants.ANNOTATABLE_TS_IN_QUERY
     );
-    TimeseriesInContainerSearchResult ret = new TimeseriesInContainerSearchResult(annotatableTimeseriesFound);
-    return ret;
+    return new TimeseriesInContainerSearchResult(ts, annotatableTimeseriesFound);
   }
 }

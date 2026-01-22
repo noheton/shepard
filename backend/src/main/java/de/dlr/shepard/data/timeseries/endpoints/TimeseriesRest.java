@@ -15,7 +15,7 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
-import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotations;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotationsFactoryService;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
@@ -76,6 +76,9 @@ public class TimeseriesRest {
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  TimeseriesWithAnnotationsFactoryService timeseriesWithAnnotationsFactoryService;
 
   @Context
   private SecurityContext securityContext;
@@ -270,7 +273,9 @@ public class TimeseriesRest {
     var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
     var timeseriesList = timeseriesEntityList
       .stream()
-      .map(entity -> new TimeseriesIO(new TimeseriesWithAnnotations(entity)))
+      //      .map(entity -> new TimeseriesIO(timeseriesWithAnnotationsFactoryService.create(entity)))
+      .map(timeseriesWithAnnotationsFactoryService::create)
+      .map(TimeseriesIO::new)
       .filter(
         entity ->
           (measurement == null || measurement.isEmpty() || entity.getMeasurement().equals(measurement)) &&
@@ -302,7 +307,7 @@ public class TimeseriesRest {
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
   ) {
     var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
-    return Response.ok(new TimeseriesIO(new TimeseriesWithAnnotations(timeseries))).build();
+    return Response.ok(new TimeseriesIO(timeseriesWithAnnotationsFactoryService.create(timeseries))).build();
   }
 
   @GET
