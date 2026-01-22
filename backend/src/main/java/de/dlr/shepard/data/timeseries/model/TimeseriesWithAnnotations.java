@@ -17,8 +17,8 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
   @Inject
   TimeseriesService timeseriesService;
 
-  private final TimeseriesEntity tsSqlDb;
-  private final AnnotatableTimeseries tsGraphDb;
+  private TimeseriesEntity tsSqlDb;
+  private AnnotatableTimeseries tsGraphDb;
 
   public int getTimeseriesId() {
     return tsGraphDb.getTimeseriesId();
@@ -68,5 +68,10 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
   public TimeseriesWithAnnotations(AnnotatableTimeseries tsGraphDb) {
     this.tsGraphDb = tsGraphDb;
     this.tsSqlDb = timeseriesService.getTimeseriesById(tsGraphDb.getContainerId(), tsGraphDb.getTimeseriesId());
+  }
+
+  public TimeseriesWithAnnotations(AnnotatableTimeseries tsGraphDb, TimeseriesEntity tsSqlDb) {
+    this.tsGraphDb = tsGraphDb;
+    this.tsSqlDb = tsSqlDb;
   }
 }
