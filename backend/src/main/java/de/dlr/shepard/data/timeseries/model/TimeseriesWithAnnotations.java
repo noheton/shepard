@@ -66,7 +66,6 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
   }
 
   public TimeseriesWithAnnotations(AnnotatableTimeseries tsGraphDb) {
-    //timeseriesService = new TimeseriesService();
     this.tsGraphDb = tsGraphDb;
     this.tsSqlDb = timeseriesService.getTimeseriesById(tsGraphDb.getContainerId(), tsGraphDb.getTimeseriesId());
   }

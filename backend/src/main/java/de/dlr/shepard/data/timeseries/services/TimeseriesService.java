@@ -77,7 +77,6 @@ public class TimeseriesService {
    *                              timeseries container
    */
   public TimeseriesEntity getTimeseriesById(long containerId, int id) {
-    //timeseriesContainerService = new TimeseriesContainerService();
     timeseriesContainerService.getContainer(containerId);
 
     var timeseries = timeseriesRepository.findById(id);
