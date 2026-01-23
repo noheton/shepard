@@ -51,4 +51,9 @@ public class TimeseriesWithAnnotations implements HasAnnotation {
     this.tsSqlDb = tsSqlDb;
     this.tsGraphDb = tsGraphDb;
   }
+
+  public TimeseriesWithAnnotations(AnnotatableTimeseries tsGraphDb, TimeseriesEntity tsSqlDb) {
+    this.tsGraphDb = tsGraphDb;
+    this.tsSqlDb = tsSqlDb;
+  }
 }
