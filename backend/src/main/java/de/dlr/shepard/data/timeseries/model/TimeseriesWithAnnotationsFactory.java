@@ -12,7 +12,6 @@ public class TimeseriesWithAnnotationsFactory {
   public TimeseriesWithAnnotationsFactory() {}
 
   public TimeseriesWithAnnotations createTSWithAnno(AnnotatableTimeseries tsGraphDb) {
-    TimeseriesEntity entity = timeseriesService.getTimeseriesById(2l, 1);
     return timeseriesService.createTSWithAnno(tsGraphDb);
   }
 }
