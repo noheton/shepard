@@ -229,7 +229,6 @@ public class SearchRest {
       content = @Content(schema = @Schema(implementation = TimeseriesInContainerSearchBody.class))
     ) @Valid TimeseriesInContainerSearchBody timeseriesInContainerSearchBody
   ) {
-    // todo wie sieht hier die Suche aus? Inwiefern ist das im Such-JSON bzw. im Endpoint festgelegt?
     TimeseriesInContainerSearchResult ret = timeseriesSearchService.search(
       containerId,
       timeseriesInContainerSearchBody

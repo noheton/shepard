@@ -195,21 +195,18 @@ public class TimeseriesSearchServiceTest {
   @Transactional
   public void searchAnnotatedTimeseries() {
     //search in container2 for one existing annoTS
-    //searchParams.setContainerId(tsCon2.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     searchResult = timeseriesSearchService.search(tsCon2.getId(), searchBody);
     assertEquals(1, searchResult.getResults().size());
     //search in container1 for non-existing annoTS
-    //searchParams.setContainerId(tsCon1.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     searchResult = timeseriesSearchService.search(tsCon1.getId(), searchBody);
     assertEquals(0, searchResult.getResults().size());
     //search in container1 for two existing annoTS
-    //searchParams.setContainerId(tsCon1.getId());
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*milk.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
