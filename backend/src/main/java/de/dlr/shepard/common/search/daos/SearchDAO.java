@@ -69,7 +69,6 @@ public class SearchDAO {
     String annotatableTimeseriesVariable
   ) {
     String query = selectionQuery + emitAnnotatableTimeseriesReturnPart(annotatableTimeseriesVariable);
-    System.out.println("final query: " + query);
     Iterable<AnnotatableTimeseries> collections = session.query(
       AnnotatableTimeseries.class,
       query,

@@ -39,6 +39,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -200,6 +201,7 @@ public class TimeseriesSearchServiceTest {
     searchBody.setSearchParams(searchParams);
     searchResult = timeseriesSearchService.search(tsCon2.getId(), searchBody);
     assertEquals(1, searchResult.getResults().size());
+    assertEquals(timeseriesEntity2.getId(), searchResult.getResults().get(0).getId());
     //search in container1 for non-existing annoTS
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \".*ingre.*::.*Rice.*\", \"operator\": \"regmatch\"}";
     searchParams.setQuery(query);
@@ -212,6 +214,12 @@ public class TimeseriesSearchServiceTest {
     searchBody.setSearchParams(searchParams);
     searchResult = timeseriesSearchService.search(tsCon1.getId(), searchBody);
     assertEquals(2, searchResult.getResults().size());
-    System.out.println(searchResult.getResults().get(0).toString());
+    HashSet<Integer> expectedIds = new HashSet<Integer>();
+    expectedIds.add(timeseriesEntity1.getId());
+    expectedIds.add(timeseriesEntity1a.getId());
+    HashSet<Integer> actualIds = new HashSet<Integer>();
+    actualIds.add(searchResult.getResults().get(0).getId());
+    actualIds.add(searchResult.getResults().get(1).getId());
+    assertEquals(true, expectedIds.equals(actualIds));
   }
 }
