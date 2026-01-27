@@ -1,16 +1,25 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.configuration.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -119,5 +128,20 @@ public class TestNeo4jMigrations {
     );
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
+  }
+
+  @Test
+  public void testV11() throws ClassNotFoundException, SQLException {
+    Class.forName("org.postgresql.Driver");
+    var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
+    var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
+    var pass = ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class);
+    Flyway flyway = Flyway.configure().dataSource(url, user, pass).load();
+    flyway.migrate();
+
+    var connection = DriverManager.getConnection(url, user, pass);
+
+    runMigrations("V11");
+    fail();
   }
 }
