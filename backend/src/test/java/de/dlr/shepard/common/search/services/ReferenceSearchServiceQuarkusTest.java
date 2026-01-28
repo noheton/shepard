@@ -6,6 +6,7 @@ import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.ShepardParserException;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.SearchParams;
@@ -194,6 +195,7 @@ public class ReferenceSearchServiceQuarkusTest {
     body.setSearchParams(params);
     ResponseBody response = referenceSearcher.search(body);
     assertEquals(1, response.getResults().length);
+    assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
 
     query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"eq\"}";
     params.setQuery(query);
@@ -207,5 +209,22 @@ public class ReferenceSearchServiceQuarkusTest {
     body.setSearchParams(params);
     response = referenceSearcher.search(body);
     assertEquals(1, response.getResults().length);
+    assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
+
+    String wrongAnnotation = "http://dbpedia.org/ontology/ingredienthttp://dbpedia.org/resource/Almond_milk";
+    query = "{\"property\": \"hasAnnotationIRI\", \"value\": \"" + wrongAnnotation + "\", \"operator\": \"eq\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
+    boolean caught = false;
+    String expectedExceptionMessage =
+      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
+      "but the given value is " +
+      wrongAnnotation;
+    try {
+      response = referenceSearcher.search(body);
+    } catch (ShepardParserException e) {
+      if (e.getMessage().equals(expectedExceptionMessage)) caught = true;
+    }
+    assertEquals(true, caught);
   }
 }
