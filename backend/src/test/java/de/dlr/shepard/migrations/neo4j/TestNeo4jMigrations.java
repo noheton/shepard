@@ -5,17 +5,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderHeaderAware;
+import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import jakarta.validation.constraints.NotNull;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.stream.StreamSupport;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.flywaydb.core.Flyway;
@@ -131,7 +152,7 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11() throws ClassNotFoundException, SQLException {
+  public void testV11() throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
@@ -140,8 +161,148 @@ public class TestNeo4jMigrations {
     flyway.migrate();
 
     var connection = DriverManager.getConnection(url, user, pass);
+    var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
+    var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs).toList();
+
+    ts_list.forEach(ts -> {
+      try {
+        buildTimeseriesInsert(connection, ts).execute();
+      } catch (SQLException e) {
+        throw new RuntimeException(e);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
 
     runMigrations("V11");
     fail();
+  }
+
+  private static class SQLBuilder {
+
+    private String sql;
+
+    public SQLBuilder(String sql) {
+      this.sql = sql;
+    }
+
+    private void internalSet(String key, String s) {
+      this.sql = sql.replace(":" + key, s);
+    }
+
+    public SQLBuilder set(String key, String s) {
+      this.internalSet(key, "'" + s + "'");
+      return this;
+    }
+
+    public SQLBuilder set(String key, Long l) {
+      this.internalSet(key, String.valueOf(l));
+      return this;
+    }
+
+    public SQLBuilder set(String key, Object o) {
+      this.internalSet(key, String.valueOf(o));
+      return this;
+    }
+
+    public String build() {
+      return this.sql;
+    }
+  }
+
+  private static PreparedStatement buildTimeseriesInsert(Connection con, ContaineredTs ts)
+    throws IOException, SQLException {
+    var point = ts.getPoints().get(0);
+    String sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
+    var builder = new SQLBuilder(sql)
+      .set("container_id", ts.getContainerId())
+      .set("measurement", ts.getTimeseries().getMeasurement())
+      .set("field", ts.getTimeseries().getField())
+      .set("symbolic_name", ts.getTimeseries().getSymbolicName())
+      .set("device", ts.getTimeseries().getDevice())
+      .set("location", ts.getTimeseries().getLocation())
+      .set("value_type", valueToValueType(point.getValue()).toString())
+      .set("timestamp", point.getTimestamp())
+      .set("value", point.getValue())
+      .build();
+
+    PreparedStatement st = con.prepareStatement(builder);
+    System.out.println();
+    System.out.println(st.toString());
+    return st;
+  }
+
+  private static String getDatapointColumn(TimeseriesDataPoint p) {
+    if (p.getValue() instanceof Double) return "double_value";
+    else if (p.getValue() instanceof String) return "string_value";
+    else if (p.getValue() instanceof Boolean) return "boolean_value";
+    else if (p.getValue() instanceof Integer) return "integer_value";
+    throw new RuntimeException("Data point " + p + " is of unfitting value!");
+  }
+
+  @EqualsAndHashCode(callSuper = true)
+  @Data
+  private static class ContaineredTs extends TimeseriesWithDataPoints {
+
+    @NotNull
+    private long containerId;
+
+    public ContaineredTs(long containerId, Timeseries timeseries, List<TimeseriesDataPoint> points) {
+      super(timeseries, points);
+      this.containerId = containerId;
+    }
+  }
+
+  private static ContaineredTs csvEntryToTs(Map<String, String> entry) {
+    return new ContaineredTs(
+      Long.parseLong(entry.get("CONTAINERID")),
+      new Timeseries(
+        entry.get("MEASUREMENT"),
+        entry.get("DEVICE"),
+        entry.get("LOCATION"),
+        entry.get("SYMBOLICNAME"),
+        entry.get("FIELD")
+      ),
+      List.of(new TimeseriesDataPoint(Long.parseLong(entry.get("TIMESTAMP")), entry.get("VALUE")))
+    );
+  }
+
+  private static DataPointValueType valueToValueType(Object value) {
+    var strValue = value.toString();
+    try {
+      Double.valueOf(strValue);
+      return DataPointValueType.Double;
+    } catch (NumberFormatException e1) {
+      try {
+        Integer.valueOf(strValue);
+        return DataPointValueType.Integer;
+      } catch (NumberFormatException e2) {
+        if ("true".equalsIgnoreCase(strValue) || "false".equalsIgnoreCase(strValue)) return DataPointValueType.Boolean;
+        else return DataPointValueType.String;
+      }
+    }
+  }
+
+  private static String joinOnCommas(Object... objects) {
+    return String.join(
+      ",",
+      Arrays.stream(objects)
+        .map(obj -> obj instanceof String || obj instanceof DataPointValueType ? "'" + obj + "'" : obj.toString())
+        .toList()
+    );
+  }
+
+  private static List<Map<String, String>> readCsvAsMapList(String csvFilePath)
+    throws IOException, CsvValidationException {
+    CSVReaderHeaderAware reader = new CSVReaderHeaderAware(new FileReader(csvFilePath));
+
+    List<Map<String, String>> rows = new ArrayList<>();
+    Map<String, String> rowMap;
+
+    while ((rowMap = reader.readMap()) != null) {
+      rows.add(rowMap);
+    }
+
+    return rows;
   }
 }
