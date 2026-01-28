@@ -1,11 +1,9 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
-import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
@@ -13,11 +11,8 @@ import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotNull;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,22 +20,18 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.stream.StreamSupport;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.configuration.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -167,9 +158,7 @@ public class TestNeo4jMigrations {
     ts_list.forEach(ts -> {
       try {
         buildTimeseriesInsert(connection, ts).execute();
-      } catch (SQLException e) {
-        throw new RuntimeException(e);
-      } catch (IOException e) {
+      } catch (SQLException | IOException e) {
         throw new RuntimeException(e);
       }
     });
@@ -206,13 +195,13 @@ public class TestNeo4jMigrations {
       return this;
     }
 
-    public SQLBuilder set(String key, Object o) {
-      this.internalSet(key, String.valueOf(o));
+    public SQLBuilder set(String key, Double d) {
+      this.internalSet(key, String.valueOf(d));
       return this;
     }
 
-    public SQLBuilder set(String key, Double d) {
-      this.internalSet(key, String.valueOf(d));
+    public SQLBuilder set(String key, Object o) {
+      this.internalSet(key, String.valueOf(o));
       return this;
     }
 
@@ -312,15 +301,6 @@ public class TestNeo4jMigrations {
         else return DataPointValueType.String;
       }
     }
-  }
-
-  private static String joinOnCommas(Object... objects) {
-    return String.join(
-      ",",
-      Arrays.stream(objects)
-        .map(obj -> obj instanceof String || obj instanceof DataPointValueType ? "'" + obj + "'" : obj.toString())
-        .toList()
-    );
   }
 
   private static List<Map<String, String>> readCsvAsMapList(String csvFilePath)
