@@ -195,6 +195,12 @@ public class TestNeo4jMigrations {
       return this;
     }
 
+    public SQLBuilder set(String key, String s, boolean escape) {
+      if (escape) this.set(key, s);
+      else this.internalSet(key, s);
+      return this;
+    }
+
     public SQLBuilder set(String key, Long l) {
       this.internalSet(key, String.valueOf(l));
       return this;
@@ -202,6 +208,11 @@ public class TestNeo4jMigrations {
 
     public SQLBuilder set(String key, Object o) {
       this.internalSet(key, String.valueOf(o));
+      return this;
+    }
+
+    public SQLBuilder set(String key, Double d) {
+      this.internalSet(key, String.valueOf(d));
       return this;
     }
 
@@ -223,10 +234,17 @@ public class TestNeo4jMigrations {
       .set("location", ts.getTimeseries().getLocation())
       .set("value_type", valueToValueType(point.getValue()).toString())
       .set("timestamp", point.getTimestamp())
-      .set("value", point.getValue())
-      .build();
+      .set("dp_column", getDatapointColumn(point), false);
 
-    PreparedStatement st = con.prepareStatement(builder);
+    var valType = valueToValueType(point.getValue());
+    switch (valType) {
+      case Double -> builder.set("value", (Double) point.getValue());
+      case Integer -> builder.set("value", (Integer) point.getValue());
+      case Boolean -> builder.set("value", (Boolean) point.getValue());
+      case String -> builder.set("value", (String) point.getValue());
+    }
+
+    PreparedStatement st = con.prepareStatement(builder.build());
     System.out.println();
     System.out.println(st.toString());
     return st;
@@ -236,7 +254,7 @@ public class TestNeo4jMigrations {
     if (p.getValue() instanceof Double) return "double_value";
     else if (p.getValue() instanceof String) return "string_value";
     else if (p.getValue() instanceof Boolean) return "boolean_value";
-    else if (p.getValue() instanceof Integer) return "integer_value";
+    else if (p.getValue() instanceof Integer) return "int_value";
     throw new RuntimeException("Data point " + p + " is of unfitting value!");
   }
 
@@ -263,19 +281,32 @@ public class TestNeo4jMigrations {
         entry.get("SYMBOLICNAME"),
         entry.get("FIELD")
       ),
-      List.of(new TimeseriesDataPoint(Long.parseLong(entry.get("TIMESTAMP")), entry.get("VALUE")))
+      List.of(new TimeseriesDataPoint(Long.parseLong(entry.get("TIMESTAMP")), strValueToObject(entry.get("VALUE"))))
     );
+  }
+
+  private static Object strValueToObject(String strValue) {
+    try {
+      return Integer.valueOf(strValue);
+    } catch (NumberFormatException e1) {
+      try {
+        return Double.valueOf(strValue);
+      } catch (NumberFormatException e2) {
+        if ("true".equalsIgnoreCase(strValue) || "false".equalsIgnoreCase(strValue)) return Boolean.valueOf(strValue);
+        else return strValue;
+      }
+    }
   }
 
   private static DataPointValueType valueToValueType(Object value) {
     var strValue = value.toString();
     try {
-      Double.valueOf(strValue);
-      return DataPointValueType.Double;
+      Integer.valueOf(strValue);
+      return DataPointValueType.Integer;
     } catch (NumberFormatException e1) {
       try {
-        Integer.valueOf(strValue);
-        return DataPointValueType.Integer;
+        Double.valueOf(strValue);
+        return DataPointValueType.Double;
       } catch (NumberFormatException e2) {
         if ("true".equalsIgnoreCase(strValue) || "false".equalsIgnoreCase(strValue)) return DataPointValueType.Boolean;
         else return DataPointValueType.String;
