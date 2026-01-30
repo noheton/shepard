@@ -40,7 +40,7 @@
     <assertj.version>3.27.6</assertj.version>
     <commons.version>2.21.0</commons.version>
     <equalsverifier.version>3.19.4</equalsverifier.version>
-    <hibernate.spatial.version>6.6.40.Final</hibernate.spatial.version>
+    <hibernate.spatial.version>7.2.2.Final</hibernate.spatial.version>
     <janino.version>3.1.12</janino.version>
     <jjwt.version>0.11.5</jjwt.version>
     <junit.version>5.10.5</junit.version>
