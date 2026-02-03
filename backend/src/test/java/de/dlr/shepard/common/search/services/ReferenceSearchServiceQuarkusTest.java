@@ -84,17 +84,23 @@ public class ReferenceSearchServiceQuarkusTest {
   @Inject
   SemanticAnnotationService semanticAnnotationService;
 
-  private Collection collection1;
-  private DataObject dataObjectc1d1;
-  private TimeseriesReference annoReference;
-  private TimeseriesReference noAnnoReference;
-  private TimeseriesContainer tsCon;
-  private TimeseriesEntity timeseriesEntity1;
-  private TimeseriesEntity timeseriesEntity2;
-  private SemanticAnnotation ts1Anno;
-  private SemanticRepository repository;
-  private User user;
-  private String username = "username";
+  private static Collection collection1;
+  private static DataObject dataObjectc1d1;
+  private static TimeseriesReference annoReference;
+  private static TimeseriesReference noAnnoReference;
+  private static TimeseriesContainer tsCon;
+  private static TimeseriesEntity timeseriesEntity1;
+  private static TimeseriesEntity timeseriesEntity2;
+  private static SemanticAnnotation ts1Anno;
+  private static SemanticRepository repository;
+  private static User user;
+  private static SemanticAnnotationIO AnnoToCreate;
+  private static String username = "username";
+  private static SearchScope scope;
+  private static SearchBody body;
+  private static SearchParams params;
+  private static String query;
+  private static ResponseBody response;
 
   @BeforeEach
   public void setUp() {
@@ -171,49 +177,81 @@ public class ReferenceSearchServiceQuarkusTest {
         ref2IO
       );
     }
+    if (AnnoToCreate == null) {
+      AnnoToCreate = new SemanticAnnotationIO();
+      AnnoToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
+      AnnoToCreate.setPropertyRepositoryId(repository.getId());
+      AnnoToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
+      AnnoToCreate.setValueRepositoryId(repository.getId());
+      semanticAnnotationService.createAnnotationByShepardId(annoReference.getId(), AnnoToCreate);
+      System.out.println("setUp executed");
+    }
+    if (scope == null) scope = new SearchScope();
+    if (body == null) {
+      body = new SearchBody();
+      TraversalRules[] rules = {};
+      scope.setTraversalRules(rules);
+    }
+    if (params == null) params = new SearchParams();
   }
 
   @Test
   @Transactional
-  public void annotatedTSReferenceSearch() {
-    SemanticAnnotationIO AnnoToCreate = new SemanticAnnotationIO();
-    AnnoToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
-    AnnoToCreate.setPropertyRepositoryId(repository.getId());
-    AnnoToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
-    AnnoToCreate.setValueRepositoryId(repository.getId());
-    semanticAnnotationService.createAnnotationByShepardId(annoReference.getId(), AnnoToCreate);
-    SearchScope scope = new SearchScope();
+  public void findNoReference() {
     scope.setCollectionId(collection1.getShepardId());
     scope.setDataObjectId(dataObjectc1d1.getShepardId());
-    TraversalRules[] rules = {};
-    scope.setTraversalRules(rules);
     SearchScope[] scopes = { scope };
-    String query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"regmatch\"}";
-    SearchBody body = new SearchBody();
+    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"eq\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
     body.setScopes(scopes);
-    SearchParams params = new SearchParams();
+    response = referenceSearcher.search(body);
+    assertEquals(0, response.getResults().length);
+  }
+
+  @Test
+  @Transactional
+  public void findExactlyOneReferenceByeIRIEquality() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    SearchScope[] scopes = { scope };
+    query =
+      "{\"property\": \"hasAnnotationIRI\", \"value\": \"http://dbpedia.org/ontology/ingredient::http://dbpedia.org/resource/Almond_milk\", \"operator\": \"eq\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
+    body.setScopes(scopes);
+    response = referenceSearcher.search(body);
+    assertEquals(1, response.getResults().length);
+    assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
+  }
+
+  @Test
+  @Transactional
+  public void findExactlyOneReferenceByeAnnotationRegMatch() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    SearchScope[] scopes = { scope };
+    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"regmatch\"}";
+    body.setScopes(scopes);
     params.setQuery(query);
     body.setSearchParams(params);
     ResponseBody response = referenceSearcher.search(body);
     assertEquals(1, response.getResults().length);
     assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
+  }
 
-    query = "{\"property\": \"hasAnnotation\", \"value\": \"ingre.*::Almon.*\", \"operator\": \"eq\"}";
-    params.setQuery(query);
-    body.setSearchParams(params);
-    response = referenceSearcher.search(body);
-    assertEquals(0, response.getResults().length);
-
-    query =
-      "{\"property\": \"hasAnnotationIRI\", \"value\": \"http://dbpedia.org/ontology/ingredient::http://dbpedia.org/resource/Almond_milk\", \"operator\": \"eq\"}";
-    params.setQuery(query);
-    body.setSearchParams(params);
-    response = referenceSearcher.search(body);
-    assertEquals(1, response.getResults().length);
-    assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
-
+  @Test
+  @Transactional
+  public void provoceExecptionByInvalidAnnotationIRI() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    TraversalRules[] rules = {};
+    scope.setTraversalRules(rules);
+    SearchScope[] scopes = { scope };
     String wrongAnnotation = "http://dbpedia.org/ontology/ingredienthttp://dbpedia.org/resource/Almond_milk";
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \"" + wrongAnnotation + "\", \"operator\": \"eq\"}";
+    body.setScopes(scopes);
+    SearchParams params = new SearchParams();
     params.setQuery(query);
     body.setSearchParams(params);
     assertThrows(ShepardParserException.class, () -> referenceSearcher.search(body));
