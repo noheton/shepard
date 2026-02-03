@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.search.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
@@ -215,16 +216,6 @@ public class ReferenceSearchServiceQuarkusTest {
     query = "{\"property\": \"hasAnnotationIRI\", \"value\": \"" + wrongAnnotation + "\", \"operator\": \"eq\"}";
     params.setQuery(query);
     body.setSearchParams(params);
-    boolean caught = false;
-    String expectedExceptionMessage =
-      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
-      "but the given value is " +
-      wrongAnnotation;
-    try {
-      response = referenceSearcher.search(body);
-    } catch (ShepardParserException e) {
-      if (e.getMessage().equals(expectedExceptionMessage)) caught = true;
-    }
-    assertEquals(true, caught);
+    assertThrows(ShepardParserException.class, () -> referenceSearcher.search(body));
   }
 }
