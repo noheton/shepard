@@ -184,7 +184,6 @@ public class ReferenceSearchServiceQuarkusTest {
       AnnoToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
       AnnoToCreate.setValueRepositoryId(repository.getId());
       semanticAnnotationService.createAnnotationByShepardId(annoReference.getId(), AnnoToCreate);
-      System.out.println("setUp executed");
     }
     if (scope == null) scope = new SearchScope();
     if (body == null) {
