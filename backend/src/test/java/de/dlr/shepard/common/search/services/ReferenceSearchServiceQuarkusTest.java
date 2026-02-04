@@ -23,7 +23,6 @@ import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesRefere
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.semantic.SemanticRepositoryType;
-import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.io.SemanticRepositoryIO;
@@ -91,7 +90,6 @@ public class ReferenceSearchServiceQuarkusTest {
   private static TimeseriesContainer tsCon;
   private static TimeseriesEntity timeseriesEntity1;
   private static TimeseriesEntity timeseriesEntity2;
-  private static SemanticAnnotation ts1Anno;
   private static SemanticRepository repository;
   private static User user;
   private static SemanticAnnotationIO AnnoToCreate;
@@ -142,12 +140,6 @@ public class ReferenceSearchServiceQuarkusTest {
       repToCreate.setType(SemanticRepositoryType.SPARQL);
       repToCreate.setEndpoint(WireMockResource.getWireMockServerURlWithPath("/sparql"));
       repository = semanticRepositoryService.createRepository(repToCreate);
-      SemanticAnnotationIO AnnoToCreate = new SemanticAnnotationIO();
-      AnnoToCreate.setPropertyIRI("http://dbpedia.org/ontology/ingredient");
-      AnnoToCreate.setPropertyRepositoryId(repository.getId());
-      AnnoToCreate.setValueIRI("http://dbpedia.org/resource/Almond_milk");
-      AnnoToCreate.setValueRepositoryId(repository.getId());
-      ts1Anno = annotatableTimeseriesService.createAnnotation(tsCon.getId(), timeseriesEntity1.getId(), AnnoToCreate);
       //create Reference on annotated Timeseries
       TimeseriesReferenceIO ref1IO = new TimeseriesReferenceIO();
       ref1IO.setName("refAnno");
