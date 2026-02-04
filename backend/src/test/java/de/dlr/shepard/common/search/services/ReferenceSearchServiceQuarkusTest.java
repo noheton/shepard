@@ -241,7 +241,7 @@ public class ReferenceSearchServiceQuarkusTest {
 
   @Test
   @Transactional
-  public void provoceExecptionByInvalidAnnotationIRI() {
+  public void provokeExecptionByInvalidAnnotationIRI() {
     scope.setCollectionId(collection1.getShepardId());
     scope.setDataObjectId(dataObjectc1d1.getShepardId());
     TraversalRules[] rules = {};
