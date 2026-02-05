@@ -161,8 +161,14 @@ public class Neo4jQueryBuilder {
 
   private static String hasAnnotationIRIPart(JsonNode node, String variable) {
     String annotation = node.get(Constants.OP_VALUE).textValue();
-    String propertyIRI = annotation.split("::")[0];
-    String valueIRI = annotation.split("::")[1];
+    String[] propertyValuePair = annotation.split("::");
+    if (propertyValuePair.length != 2) throw new ShepardParserException(
+      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
+      "but the given value is " +
+      annotation
+    );
+    String propertyIRI = propertyValuePair[0];
+    String valueIRI = propertyValuePair[1];
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI ";
@@ -174,8 +180,14 @@ public class Neo4jQueryBuilder {
 
   private static String hasAnnotationPart(JsonNode node, String variable) {
     String annotation = node.get(Constants.OP_VALUE).textValue();
-    String propertyName = annotation.split("::")[0];
-    String valueName = annotation.split("::")[1];
+    String[] propertyValuePair = annotation.split("::");
+    if (propertyValuePair.length != 2) throw new ShepardParserException(
+      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
+      "but the given value is " +
+      annotation
+    );
+    String propertyName = propertyValuePair[0];
+    String valueName = propertyValuePair[1];
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
