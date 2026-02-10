@@ -1,16 +1,17 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotNull;
 import java.io.FileReader;
@@ -22,7 +23,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -77,9 +77,17 @@ public class TestNeo4jMigrations {
   }
 
   private static List<Object> match(Node node) {
+    return match(node, Object.class);
+  }
+
+  private static <T> List<T> match(Node node, Class<T> type) {
     var statement = Cypher.match(node).returning(node).build();
     var result = query(statement);
-    return StreamSupport.stream(result.spliterator(), false).map(Map::values).flatMap(Collection::stream).toList();
+    return StreamSupport.stream(result.spliterator(), false)
+      .map(Map::values)
+      .flatMap(java.util.Collection::stream)
+      .map(type::cast)
+      .toList();
   }
 
   private static <K, V> void assertEqualsMaps(Map<K, V> expected, Map<K, V> actual) {
@@ -112,9 +120,7 @@ public class TestNeo4jMigrations {
     testNodeMigrated(collectionWithBadAttributes, collectionWithGoodAttributes);
 
     // test that the migration has not touched the attribute values
-    var migratedCollection = (de.dlr.shepard.context.collection.entities.Collection) match(
-      collectionWithGoodAttributes
-    ).getFirst();
+    var migratedCollection = match(collectionWithGoodAttributes, Collection.class).get(0);
     assertEqualsMaps(Map.of("a", "0", "b.c", "1"), migratedCollection.getAttributes());
   }
 
@@ -164,7 +170,9 @@ public class TestNeo4jMigrations {
     });
 
     runMigrations("V11");
-    fail();
+
+    var ts_result_list = match(node("Timeseries"), TimeseriesEntity.class);
+    assertEquals(4, ts_result_list.size());
   }
 
   private static class SQLBuilder {
