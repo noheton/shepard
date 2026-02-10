@@ -53,7 +53,7 @@ function updateErrorState() {
     <template #form>
       <v-form ref="form" v-model="isValid">
         <v-row class="pt-9">
-          <v-col class="pb-1">
+          <v-col>
             <v-text-field
               v-model:model-value="userGroupTitle"
               :rules="validationRules"
@@ -69,7 +69,7 @@ function updateErrorState() {
           </v-col>
         </v-row>
         <v-row>
-          <v-col>
+          <v-col class="pt-2">
             <PermissionTypeInput
               v-model:permission-type="permissionType"
               :limited-permission-set="[
@@ -80,7 +80,7 @@ function updateErrorState() {
           </v-col>
         </v-row>
         <v-row>
-          <v-col><MandatoryFieldHint /></v-col>
+          <v-col class="mt-1"><MandatoryFieldHint /></v-col>
         </v-row>
       </v-form>
     </template>
