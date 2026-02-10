@@ -247,4 +247,21 @@ public class ReferenceSearchServiceQuarkusTest {
     body.setSearchParams(params);
     assertThrows(ShepardParserException.class, () -> referenceSearcher.search(body));
   }
+
+  @Test
+  @Transactional
+  public void provokeExceptionByTooManyColons() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    TraversalRules[] rules = {};
+    scope.setTraversalRules(rules);
+    SearchScope[] scopes = { scope };
+    String wrongAnnotation = "A::B::C";
+    query = "{\"property\": \"hasAnnotationIRI\", \"value\": \"" + wrongAnnotation + "\", \"operator\": \"eq\"}";
+    body.setScopes(scopes);
+    SearchParams params = new SearchParams();
+    params.setQuery(query);
+    body.setSearchParams(params);
+    assertThrows(ShepardParserException.class, () -> referenceSearcher.search(body));
+  }
 }

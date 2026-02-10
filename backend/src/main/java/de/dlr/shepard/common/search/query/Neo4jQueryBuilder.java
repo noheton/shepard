@@ -52,6 +52,10 @@ public class Neo4jQueryBuilder {
     "parentIds"
   );
 
+  private static final String INCORRECT_COLON_EXCEPTION_MESSAGE =
+    "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
+    "but the given value is ";
+
   private static String getNeo4jWithNeo4jIdString(String jsonquery, String variable) {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = null;
@@ -160,15 +164,34 @@ public class Neo4jQueryBuilder {
   }
 
   private static String hasAnnotationIRIPart(JsonNode node, String variable) {
+    //REMARK:
+    //the split function in JAVA behaves sometimes in an inconsistent way:
+    //"::".split("::") = String[0] {  }
+    //"x::y".split("::") = String[2] { "x", "y" }
+    //"::y".split("::") = String[2] { "", "y" }
+    //"x::".split("::") = String[1] { "x" }
+    //to extract the empty string from the annotation pair correctly some additional work is needed
     String annotation = node.get(Constants.OP_VALUE).textValue();
+    if (!annotation.contains("::")) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
     String[] propertyValuePair = annotation.split("::");
-    if (propertyValuePair.length != 2) throw new ShepardParserException(
-      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
-      "but the given value is " +
-      annotation
-    );
-    String propertyIRI = propertyValuePair[0];
-    String valueIRI = propertyValuePair[1];
+    if (propertyValuePair.length > 2) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
+    String propertyIRI = null;
+    String valueIRI = null;
+    //case ::
+    if (propertyValuePair.length == 0) {
+      propertyIRI = "";
+      valueIRI = "";
+    }
+    //case x::
+    if (propertyValuePair.length == 1) {
+      propertyIRI = propertyValuePair[0];
+      valueIRI = "";
+    }
+    //case x::y (where x may be the empty string)
+    if (propertyValuePair.length == 2) {
+      propertyIRI = propertyValuePair[0];
+      valueIRI = propertyValuePair[1];
+    }
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI ";
@@ -179,15 +202,34 @@ public class Neo4jQueryBuilder {
   }
 
   private static String hasAnnotationPart(JsonNode node, String variable) {
+    //REMARK:
+    //the split function in JAVA behaves sometimes in an inconsistent way:
+    //"::".split("::") = String[0] {  }
+    //"x::y".split("::") = String[2] { "x", "y" }
+    //"::y".split("::") = String[2] { "", "y" }
+    //"x::".split("::") = String[1] { "x" }
+    //to extract the empty string from the annotation pair correctly some additional work is needed
     String annotation = node.get(Constants.OP_VALUE).textValue();
+    if (!annotation.contains("::")) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
     String[] propertyValuePair = annotation.split("::");
-    if (propertyValuePair.length != 2) throw new ShepardParserException(
-      "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
-      "but the given value is " +
-      annotation
-    );
-    String propertyName = propertyValuePair[0];
-    String valueName = propertyValuePair[1];
+    if (propertyValuePair.length > 2) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
+    String propertyName = null;
+    String valueName = null;
+    //case ::
+    if (propertyValuePair.length == 0) {
+      propertyName = "";
+      valueName = "";
+    }
+    //case x::
+    if (propertyValuePair.length == 1) {
+      propertyName = propertyValuePair[0];
+      valueName = "";
+    }
+    //case x::y (where x may be the empty string)
+    if (propertyValuePair.length == 2) {
+      propertyName = propertyValuePair[0];
+      valueName = propertyValuePair[1];
+    }
     String ret = "(";
     ret =
       ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
