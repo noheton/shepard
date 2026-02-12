@@ -218,6 +218,36 @@ public class ReferenceSearchServiceQuarkusTest {
 
   @Test
   @Transactional
+  public void findByPropertyIRIContains() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    SearchScope[] scopes = { scope };
+    query = "{\"property\": \"propertyIRI\", \"value\": \"dbpedia\", \"operator\": \"contains\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
+    body.setScopes(scopes);
+    response = referenceSearcher.search(body);
+    assertEquals(true, response.getResults().length > 0);
+    //assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
+  }
+
+  @Test
+  @Transactional
+  public void findByValueIRIContains() {
+    scope.setCollectionId(collection1.getShepardId());
+    scope.setDataObjectId(dataObjectc1d1.getShepardId());
+    SearchScope[] scopes = { scope };
+    query = "{\"property\": \"valueIRI\", \"value\": \"Almond\", \"operator\": \"contains\"}";
+    params.setQuery(query);
+    body.setSearchParams(params);
+    body.setScopes(scopes);
+    response = referenceSearcher.search(body);
+    assertEquals(true, response.getResults().length > 0);
+    //assertEquals(annoReference.getId(), response.getResultSet()[0].getReferenceId());
+  }
+
+  @Test
+  @Transactional
   public void findExactlyOneReferenceByeAnnotationRegMatch() {
     scope.setCollectionId(collection1.getShepardId());
     scope.setDataObjectId(dataObjectc1d1.getShepardId());
