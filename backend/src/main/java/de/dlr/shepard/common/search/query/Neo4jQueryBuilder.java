@@ -56,6 +56,8 @@ public class Neo4jQueryBuilder {
     "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
     "but the given value is ";
 
+  private static final String colonMatcher = "[^:]*(:[^:]+)*::([^:]+:)*[^:]*";
+
   private static String getNeo4jWithNeo4jIdString(String jsonquery, String variable) {
     ObjectMapper objectMapper = new ObjectMapper();
     JsonNode jsonNode = null;
@@ -172,9 +174,10 @@ public class Neo4jQueryBuilder {
     //"x::".split("::") = String[1] { "x" }
     //to extract the empty string from the annotation pair correctly some additional work is needed
     String annotation = node.get(Constants.OP_VALUE).textValue();
-    if (!annotation.contains("::")) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
+    if (!annotation.matches(colonMatcher)) throw new ShepardParserException(
+      INCORRECT_COLON_EXCEPTION_MESSAGE + annotation
+    );
     String[] propertyValuePair = annotation.split("::");
-    if (propertyValuePair.length > 2) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
     String propertyIRI = null;
     String valueIRI = null;
     //case ::
@@ -210,9 +213,10 @@ public class Neo4jQueryBuilder {
     //"x::".split("::") = String[1] { "x" }
     //to extract the empty string from the annotation pair correctly some additional work is needed
     String annotation = node.get(Constants.OP_VALUE).textValue();
-    if (!annotation.contains("::")) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
+    if (!annotation.matches(colonMatcher)) throw new ShepardParserException(
+      INCORRECT_COLON_EXCEPTION_MESSAGE + annotation
+    );
     String[] propertyValuePair = annotation.split("::");
-    if (propertyValuePair.length > 2) throw new ShepardParserException(INCORRECT_COLON_EXCEPTION_MESSAGE + annotation);
     String propertyName = null;
     String valueName = null;
     //case ::
