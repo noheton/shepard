@@ -9,13 +9,15 @@ import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.MigratedTimeseries;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotNull;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -159,20 +162,91 @@ public class TestNeo4jMigrations {
 
     var connection = DriverManager.getConnection(url, user, pass);
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
-    var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs).toList();
+    var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs);
 
-    ts_list.forEach(ts -> {
-      try {
-        buildTimeseriesInsert(connection, ts).execute();
-      } catch (SQLException | IOException e) {
-        throw new RuntimeException(e);
-      }
-    });
+    var tsIds = ts_list
+      .map(ts -> {
+        try {
+          var point = ts.getPoints().get(0);
+          var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
+          var stmt = connection.prepareStatement(sql);
+          stmt.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
+          stmt.setString(2, ts.getTimeseries().getMeasurement());
+          stmt.setString(3, ts.getTimeseries().getField());
+          stmt.setString(4, ts.getTimeseries().getSymbolicName());
+          stmt.setString(5, ts.getTimeseries().getDevice());
+          stmt.setString(6, ts.getTimeseries().getLocation());
+          stmt.setString(7, valueToValueType(point.getValue()).toString());
+          var resultSet = stmt.executeQuery();
+          var ts_id = resultSet.next() ? Optional.of(resultSet.getInt(1)) : Optional.empty();
+
+          var sql2 = Files.readString(Path.of("src/test/resources/insert_timeseries_data_point.sql"));
+          sql2 = sql2.replace(":column", getDatapointColumn(point));
+          var stmt2 = connection.prepareStatement(sql2);
+          stmt2.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
+          stmt2.setString(2, ts.getTimeseries().getMeasurement());
+          stmt2.setString(3, ts.getTimeseries().getField());
+          stmt2.setString(4, ts.getTimeseries().getSymbolicName());
+          stmt2.setString(5, ts.getTimeseries().getDevice());
+          stmt2.setString(6, ts.getTimeseries().getLocation());
+          stmt2.setBigDecimal(7, BigDecimal.valueOf(point.getTimestamp()));
+          stmt2.setObject(8, point.getValue());
+          stmt2.executeUpdate();
+          return ts_id;
+        } catch (SQLException | IOException e) {
+          throw new RuntimeException(e);
+        }
+      })
+      .filter(Optional::isPresent)
+      .map(Optional::get)
+      .map(Object::toString)
+      .map(Long::valueOf)
+      .toList();
 
     runMigrations("V11");
 
-    var ts_result_list = match(node("Timeseries"), TimeseriesEntity.class);
+    var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
     assertEquals(4, ts_result_list.size());
+    assertPresent(tsIds.get(0), 1, "motion", DataPointValueType.Boolean);
+    assertPresent(tsIds.get(1), 2, "motion", DataPointValueType.Boolean);
+    assertPresent(tsIds.get(2), 1, "motion", DataPointValueType.Double);
+    assertPresent(tsIds.get(3), 2, "motion", DataPointValueType.Double);
+    assertPresent(tsIds.get(4), 1, "status", DataPointValueType.String);
+    assertPresent(tsIds.get(5), 2, "status", DataPointValueType.String);
+    assertPresent(tsIds.get(6), 1, "int_level", DataPointValueType.Integer);
+    assertPresent(tsIds.get(7), 2, "int_level", DataPointValueType.Integer);
+  }
+
+  private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
+    var tsExpected = create(containerId, measurement, valueType);
+    var tsListActual = match(
+      node("Timeseries").withProperties(
+        "timeseriesId",
+        Cypher.literalOf(timeseriesId),
+        "containerId",
+        Cypher.literalOf(containerId),
+        "measurement",
+        Cypher.literalOf(measurement),
+        "valueType",
+        Cypher.literalOf(valueType.toString())
+      )
+    );
+    assertEquals(1, tsListActual.size());
+    assertEquals(tsExpected, tsListActual.get(0));
+  }
+
+  private static MigratedTimeseries create(long containerId, String measurement, DataPointValueType valueType) {
+    return new MigratedTimeseries(
+      measurement,
+      "device",
+      "location",
+      "symbolicName",
+      "field",
+      valueType,
+      //      timeseriesId,
+      0,
+      new TimeseriesContainer(containerId)
+    );
   }
 
   private static class SQLBuilder {
@@ -242,8 +316,8 @@ public class TestNeo4jMigrations {
     }
 
     PreparedStatement st = con.prepareStatement(builder.build());
-    System.out.println();
-    System.out.println(st.toString());
+    //    System.out.println();
+    //    System.out.println(st.toString());
     return st;
   }
 
