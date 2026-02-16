@@ -1,6 +1,5 @@
 package de.dlr.shepard.migrations.neo4j;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
+import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Statement;
 import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.ogm.model.Result;
@@ -77,7 +77,7 @@ public class TestNeo4jMigrations {
     new MigrationsRunner(targetVersion).apply();
   }
 
-  private static void create(Node node) {
+  private static void create(PatternElement node) {
     var statement = Cypher.create(node).build();
     query(statement);
   }
@@ -159,7 +159,8 @@ public class TestNeo4jMigrations {
   @Test
   public void testV11_01_timeseriesPresentInGraphDb()
     throws ClassNotFoundException, IOException, CsvValidationException {
-    testingTimeseriesIds = prepareV11Data();
+    testingTimeseriesIds = prepareV11TimescaleData();
+    prepareV11Neo4jData();
 
     runMigrations("V11");
 
@@ -213,11 +214,31 @@ public class TestNeo4jMigrations {
     return DriverManager.getConnection(url, user, pass);
   }
 
+  private void prepareV11Neo4jData() {
+    if (testingTimeseriesIds == null) throw new RuntimeException(
+      "TimescaleDB must be filled and timeseries IDs must exist!"
+    );
+    var tsNode = node("AnnotatableTimeseries").withProperties(
+      "containerId",
+      Cypher.literalOf(1),
+      "timeseriesId",
+      Cypher.literalOf(testingTimeseriesIds.get(0))
+    );
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      Cypher.literalOf("prop-V11-" + randomElement),
+      "valueName",
+      Cypher.literalOf("value-V11-" + randomElement)
+    );
+    var relation = tsNode.relationshipTo(annotation, "has_annotation");
+    create(relation);
+  }
+
   /**
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
    @return List of timeseries unique timeseries IDs. The insertion order cannot be guaranteed.
    */
-  private List<Long> prepareV11Data() throws CsvValidationException, IOException, ClassNotFoundException {
+  private List<Long> prepareV11TimescaleData() throws CsvValidationException, IOException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
