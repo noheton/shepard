@@ -272,16 +272,17 @@ public class TestNeo4jMigrations {
   private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
     var tsExpected = create(containerId, measurement, valueType, timeseriesId);
     var tsListActual = match(
-      node("Timeseries").withProperties(
-        "timeseriesId",
-        Cypher.literalOf(timeseriesId),
-        "containerId",
-        Cypher.literalOf(containerId),
-        "measurement",
-        Cypher.literalOf(measurement),
-        "valueType",
-        Cypher.literalOf(valueType.toString())
-      )
+      node("Timeseries")
+        .withProperties(
+          "timeseriesId",
+          Cypher.literalOf(timeseriesId),
+          "measurement",
+          Cypher.literalOf(measurement),
+          "valueType",
+          Cypher.literalOf(valueType.toString())
+        )
+        .relationshipTo(node("TimeseriesContainer").withProperties("containerId", Cypher.literalOf(containerId)))
+        .getLeft()
     );
     assertEquals(1, tsListActual.size());
     assertEquals(tsExpected, tsListActual.get(0));
