@@ -20,9 +20,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -232,7 +230,7 @@ public class TestNeo4jMigrations {
   }
 
   private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
-    var tsExpected = create(containerId, measurement, valueType);
+    var tsExpected = create(containerId, measurement, valueType, timeseriesId);
     var tsListActual = match(
       node("Timeseries").withProperties(
         "timeseriesId",
@@ -253,7 +251,12 @@ public class TestNeo4jMigrations {
    * Create a migrated timeseries from containerId, measurement and valueType.
    * device, location, symbolicName and field remain fixed.
    */
-  private static MigratedTimeseries create(long containerId, String measurement, DataPointValueType valueType) {
+  private static MigratedTimeseries create(
+    long containerId,
+    String measurement,
+    DataPointValueType valueType,
+    long timeseriesId
+  ) {
     return new MigratedTimeseries(
       measurement,
       "device",
@@ -261,7 +264,7 @@ public class TestNeo4jMigrations {
       "symbolicName",
       "field",
       valueType,
-      0,
+      timeseriesId,
       new TimeseriesContainer(containerId)
     );
   }
