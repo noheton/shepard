@@ -249,6 +249,10 @@ public class TestNeo4jMigrations {
     assertEquals(tsExpected, tsListActual.get(0));
   }
 
+  /**
+   * Create a migrated timeseries from containerId, measurement and valueType.
+   * device, location, symbolicName and field remain fixed.
+   */
   private static MigratedTimeseries create(long containerId, String measurement, DataPointValueType valueType) {
     return new MigratedTimeseries(
       measurement,
@@ -257,84 +261,14 @@ public class TestNeo4jMigrations {
       "symbolicName",
       "field",
       valueType,
-      //      timeseriesId,
       0,
       new TimeseriesContainer(containerId)
     );
   }
 
-  private static class SQLBuilder {
-
-    private String sql;
-
-    public SQLBuilder(String sql) {
-      this.sql = sql;
-    }
-
-    private void internalSet(String key, String s) {
-      this.sql = sql.replace(":" + key, s);
-    }
-
-    public SQLBuilder set(String key, String s) {
-      this.internalSet(key, "'" + s + "'");
-      return this;
-    }
-
-    public SQLBuilder set(String key, String s, boolean escape) {
-      if (escape) this.set(key, s);
-      else this.internalSet(key, s);
-      return this;
-    }
-
-    public SQLBuilder set(String key, Long l) {
-      this.internalSet(key, String.valueOf(l));
-      return this;
-    }
-
-    public SQLBuilder set(String key, Double d) {
-      this.internalSet(key, String.valueOf(d));
-      return this;
-    }
-
-    public SQLBuilder set(String key, Object o) {
-      this.internalSet(key, String.valueOf(o));
-      return this;
-    }
-
-    public String build() {
-      return this.sql;
-    }
-  }
-
-  private static PreparedStatement buildTimeseriesInsert(Connection con, ContaineredTs ts)
-    throws IOException, SQLException {
-    var point = ts.getPoints().get(0);
-    String sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
-    var builder = new SQLBuilder(sql)
-      .set("container_id", ts.getContainerId())
-      .set("measurement", ts.getTimeseries().getMeasurement())
-      .set("field", ts.getTimeseries().getField())
-      .set("symbolic_name", ts.getTimeseries().getSymbolicName())
-      .set("device", ts.getTimeseries().getDevice())
-      .set("location", ts.getTimeseries().getLocation())
-      .set("value_type", valueToValueType(point.getValue()).toString())
-      .set("timestamp", point.getTimestamp())
-      .set("dp_column", getDatapointColumn(point), false);
-
-    var valType = valueToValueType(point.getValue());
-    switch (valType) {
-      case Double -> builder.set("value", (Double) point.getValue());
-      case Integer -> builder.set("value", (Integer) point.getValue());
-      case Boolean -> builder.set("value", (Boolean) point.getValue());
-      case String -> builder.set("value", (String) point.getValue());
-    }
-
-    PreparedStatement st = con.prepareStatement(builder.build());
-    //    System.out.println();
-    //    System.out.println(st.toString());
-    return st;
-  }
-
+  /**
+   * Get the column name into which a timeseries data point should be saved in timescale.
+   */
   private static String getDatapointColumn(TimeseriesDataPoint p) {
     if (p.getValue() instanceof Double) return "double_value";
     else if (p.getValue() instanceof String) return "string_value";
@@ -343,6 +277,9 @@ public class TestNeo4jMigrations {
     throw new RuntimeException("Data point " + p + " is of unfitting value!");
   }
 
+  /**
+   * Helper class to represent a timeseries including its corresponding container id.
+   */
   @EqualsAndHashCode(callSuper = true)
   @Data
   private static class ContaineredTs extends TimeseriesWithDataPoints {
@@ -370,6 +307,9 @@ public class TestNeo4jMigrations {
     );
   }
 
+  /**
+   * Convert a string value of a timeseries to an Object of type Integer, Double, Boolean or String.
+   */
   private static Object strValueToObject(String strValue) {
     try {
       return Integer.valueOf(strValue);
@@ -383,6 +323,11 @@ public class TestNeo4jMigrations {
     }
   }
 
+  /**
+   * Determine the value type of a timeseries value
+   * @param value Object that contains the value of the timeseries data point
+   * @return The type corresponding to the value
+   */
   private static DataPointValueType valueToValueType(Object value) {
     var strValue = value.toString();
     try {
@@ -399,6 +344,9 @@ public class TestNeo4jMigrations {
     }
   }
 
+  /**
+   * Read a csv file into a list of maps each mapping header to corresponding value.
+   */
   private static List<Map<String, String>> readCsvAsMapList(String csvFilePath)
     throws IOException, CsvValidationException {
     CSVReaderHeaderAware reader = new CSVReaderHeaderAware(new FileReader(csvFilePath));
