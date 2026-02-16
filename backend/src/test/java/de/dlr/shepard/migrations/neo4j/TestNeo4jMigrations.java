@@ -1,6 +1,7 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
@@ -152,7 +153,7 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_1_timeseriesPresentInGraphDb()
+  public void testV11_01_timeseriesPresentInGraphDb()
     throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
     var tsIds = prepareV11Data();
 
@@ -171,12 +172,17 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_2_metadataDeletedInTimeseriesDb() {
-    fail();
+  public void testV11_02_metadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
+    try (var connection = createTimeseriesConnection()) {
+      var result = connection
+        .prepareStatement("select tablename from pg_tables where tablename = 'timeseries'")
+        .executeQuery();
+      assertFalse(result.next());
+    }
   }
 
   @Test
-  public void testV11_3_timeseriesDatapointsIntact() {
+  public void testV11_03_timeseriesDatapointsIntact() {
     fail();
   }
 
@@ -197,7 +203,7 @@ public class TestNeo4jMigrations {
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
    @return List of timeseries unique timeseries IDs. The insertion order cannot be guaranteed.
    */
-  private List<Long> prepareV11Data() throws CsvValidationException, IOException, SQLException, ClassNotFoundException {
+  private List<Long> prepareV11Data() throws CsvValidationException, IOException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
