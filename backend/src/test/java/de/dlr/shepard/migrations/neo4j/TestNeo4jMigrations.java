@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -184,6 +185,14 @@ public class TestNeo4jMigrations {
     fail();
   }
 
+  private Connection createTimeseriesConnection() throws SQLException, ClassNotFoundException {
+    Class.forName("org.postgresql.Driver");
+    var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
+    var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
+    var pass = ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class);
+    return DriverManager.getConnection(url, user, pass);
+  }
+
   /**
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
    @return List of timeseries unique timeseries IDs. The insertion order cannot be guaranteed.
@@ -196,13 +205,12 @@ public class TestNeo4jMigrations {
     Flyway flyway = Flyway.configure().dataSource(url, user, pass).load();
     flyway.migrate();
 
-    var connection = DriverManager.getConnection(url, user, pass);
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
     var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs);
 
     return ts_list
       .map(ts -> {
-        try {
+        try (var connection = createTimeseriesConnection()) {
           var point = ts.getPoints().get(0);
           var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
           var stmt = connection.prepareStatement(sql);
@@ -230,12 +238,7 @@ public class TestNeo4jMigrations {
           stmt2.executeUpdate();
           connection.close();
           return ts_id;
-        } catch (SQLException | IOException e) {
-          try {
-            if (!connection.isClosed()) connection.close();
-          } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-          }
+        } catch (SQLException | IOException | ClassNotFoundException e) {
           throw new RuntimeException(e);
         }
       })
