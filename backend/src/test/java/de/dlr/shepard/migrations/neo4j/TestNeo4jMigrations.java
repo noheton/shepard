@@ -1,7 +1,9 @@
 package de.dlr.shepard.migrations.neo4j;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
@@ -152,23 +154,25 @@ public class TestNeo4jMigrations {
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
   }
 
+  private static List<Long> testingTimeseriesIds;
+
   @Test
   public void testV11_01_timeseriesPresentInGraphDb()
-    throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
-    var tsIds = prepareV11Data();
+    throws ClassNotFoundException, IOException, CsvValidationException {
+    testingTimeseriesIds = prepareV11Data();
 
     runMigrations("V11");
 
     var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
     assertEquals(8, ts_result_list.size());
-    assertPresent(tsIds.get(0), 1, "motion", DataPointValueType.Boolean);
-    assertPresent(tsIds.get(1), 2, "motion", DataPointValueType.Boolean);
-    assertPresent(tsIds.get(2), 1, "motion", DataPointValueType.Double);
-    assertPresent(tsIds.get(3), 2, "motion", DataPointValueType.Double);
-    assertPresent(tsIds.get(4), 1, "status", DataPointValueType.String);
-    assertPresent(tsIds.get(5), 2, "status", DataPointValueType.String);
-    assertPresent(tsIds.get(6), 1, "int_level", DataPointValueType.Integer);
-    assertPresent(tsIds.get(7), 2, "int_level", DataPointValueType.Integer);
+    assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
+    assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
+    assertPresent(testingTimeseriesIds.get(2), 1, "motion", DataPointValueType.Double);
+    assertPresent(testingTimeseriesIds.get(3), 2, "motion", DataPointValueType.Double);
+    assertPresent(testingTimeseriesIds.get(4), 1, "status", DataPointValueType.String);
+    assertPresent(testingTimeseriesIds.get(5), 2, "status", DataPointValueType.String);
+    assertPresent(testingTimeseriesIds.get(6), 1, "int_level", DataPointValueType.Integer);
+    assertPresent(testingTimeseriesIds.get(7), 2, "int_level", DataPointValueType.Integer);
   }
 
   @Test
@@ -182,8 +186,18 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_03_timeseriesDatapointsIntact() {
-    fail();
+  public void testV11_03_timeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
+    try (var connection = createTimeseriesConnection()) {
+      var tsCount = connection
+        .prepareStatement("select count(timeseries_id) from timeseries_data_points")
+        .executeQuery();
+      tsCount.next();
+      assertEquals(15, tsCount.getInt("count"));
+      var actualTsIds = connection
+        .prepareStatement("select timeseries_id from timeseries_data_points group by timeseries_id")
+        .executeQuery();
+      while (actualTsIds.next()) assertTrue(testingTimeseriesIds.contains(actualTsIds.getLong("timeseries_id")));
+    }
   }
 
   @Test
