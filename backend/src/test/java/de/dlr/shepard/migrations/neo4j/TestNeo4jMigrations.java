@@ -150,13 +150,14 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11() throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
+  public void testV11_timeseriesPresentInGraphDb()
+    throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
     var tsIds = prepareV11Data();
 
     runMigrations("V11");
 
     var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
-    assertEquals(4, ts_result_list.size());
+    assertEquals(8, ts_result_list.size());
     assertPresent(tsIds.get(0), 1, "motion", DataPointValueType.Boolean);
     assertPresent(tsIds.get(1), 2, "motion", DataPointValueType.Boolean);
     assertPresent(tsIds.get(2), 1, "motion", DataPointValueType.Double);
