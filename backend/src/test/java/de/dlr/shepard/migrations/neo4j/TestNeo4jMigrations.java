@@ -1,6 +1,7 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import com.opencsv.CSVReaderHeaderAware;
@@ -150,7 +151,7 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_timeseriesPresentInGraphDb()
+  public void testV11_1_timeseriesPresentInGraphDb()
     throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
     var tsIds = prepareV11Data();
 
@@ -166,6 +167,21 @@ public class TestNeo4jMigrations {
     assertPresent(tsIds.get(5), 2, "status", DataPointValueType.String);
     assertPresent(tsIds.get(6), 1, "int_level", DataPointValueType.Integer);
     assertPresent(tsIds.get(7), 2, "int_level", DataPointValueType.Integer);
+  }
+
+  @Test
+  public void testV11_2_metadataDeletedInTimeseriesDb() {
+    fail();
+  }
+
+  @Test
+  public void testV11_3_timeseriesDatapointsIntact() {
+    fail();
+  }
+
+  @Test
+  public void testV12_AnnotatedTimeseriesMigrated() {
+    fail();
   }
 
   /**
