@@ -153,6 +153,27 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV11() throws ClassNotFoundException, SQLException, IOException, CsvValidationException {
+    var tsIds = prepareV11Data();
+
+    runMigrations("V11");
+
+    var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
+    assertEquals(4, ts_result_list.size());
+    assertPresent(tsIds.get(0), 1, "motion", DataPointValueType.Boolean);
+    assertPresent(tsIds.get(1), 2, "motion", DataPointValueType.Boolean);
+    assertPresent(tsIds.get(2), 1, "motion", DataPointValueType.Double);
+    assertPresent(tsIds.get(3), 2, "motion", DataPointValueType.Double);
+    assertPresent(tsIds.get(4), 1, "status", DataPointValueType.String);
+    assertPresent(tsIds.get(5), 2, "status", DataPointValueType.String);
+    assertPresent(tsIds.get(6), 1, "int_level", DataPointValueType.Integer);
+    assertPresent(tsIds.get(7), 2, "int_level", DataPointValueType.Integer);
+  }
+
+  /**
+   Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
+   @return List of timeseries unique timeseries IDs. The insertion order cannot be guaranteed.
+   */
+  private List<Long> prepareV11Data() throws CsvValidationException, IOException, SQLException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
@@ -164,7 +185,7 @@ public class TestNeo4jMigrations {
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
     var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs);
 
-    var tsIds = ts_list
+    return ts_list
       .map(ts -> {
         try {
           var point = ts.getPoints().get(0);
@@ -192,8 +213,14 @@ public class TestNeo4jMigrations {
           stmt2.setBigDecimal(7, BigDecimal.valueOf(point.getTimestamp()));
           stmt2.setObject(8, point.getValue());
           stmt2.executeUpdate();
+          connection.close();
           return ts_id;
         } catch (SQLException | IOException e) {
+          try {
+            if (!connection.isClosed()) connection.close();
+          } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+          }
           throw new RuntimeException(e);
         }
       })
@@ -202,19 +229,6 @@ public class TestNeo4jMigrations {
       .map(Object::toString)
       .map(Long::valueOf)
       .toList();
-
-    runMigrations("V11");
-
-    var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
-    assertEquals(4, ts_result_list.size());
-    assertPresent(tsIds.get(0), 1, "motion", DataPointValueType.Boolean);
-    assertPresent(tsIds.get(1), 2, "motion", DataPointValueType.Boolean);
-    assertPresent(tsIds.get(2), 1, "motion", DataPointValueType.Double);
-    assertPresent(tsIds.get(3), 2, "motion", DataPointValueType.Double);
-    assertPresent(tsIds.get(4), 1, "status", DataPointValueType.String);
-    assertPresent(tsIds.get(5), 2, "status", DataPointValueType.String);
-    assertPresent(tsIds.get(6), 1, "int_level", DataPointValueType.Integer);
-    assertPresent(tsIds.get(7), 2, "int_level", DataPointValueType.Integer);
   }
 
   private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
