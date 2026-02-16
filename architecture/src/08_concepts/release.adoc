@@ -6,13 +6,39 @@ A shepard release consists of a new version number, build artifacts (container, 
 
 ==== Versioning strategy
 
-We use semantic versioning, meaning that the version number consists of a major, minor and patch number in the following format:
+We use https://semver.org/[semantic versioning], meaning that the version number consists of a major, minor and patch number in the following format:
 `MAJOR.MINOR.PATCH`.
 Minor is the default version increase for a release.
 Breaking changes imply a Major release.
 And hotfixes or patches are performed as a Patch release (see Hotfix process below).
 
-Currently there are two workflows for releases, one minor/ major release and a patch release.
+A *breaking change* is a change that alters the API so that is not backwards compatible.
+Breaking changes require a new major release.
+That includes:
+ - removing or renaming an endpoint
+ - removing or changing the definition of an endpoint parameter
+ - making a previously optional parameter required
+ - changing the API indirectly, e.g. if the changed search endpoint would not accept a previously accepted search JSON
+ - removing major functionality from the frontend
+ - major architectural changes that require manual admin intervention such as switching databases
+ - changes to the clients do not constitute a breaking change.
+
+A *minor change* is a change that adds functionality to the API which is optional so that the API is backwards compatible.
+That includes:
+ - adding a new endpoint
+ - adding a new optional parameter to an existing endpoint
+ - making a required parameter optional
+ - indirectly adding functionality to an endpoint, e.g. extending the search query JSON
+ - introducing new functionality to the frontend
+ - altering purely frontend-side functionality
+
+A *patch change* is a change that makes backward compatible bug fixes.
+That includes:
+ - marking an endpoint as deprecated.
+ - fixing frontend layout issues
+ - updating a database so that it requires minimal admin intervention
+
+Currently, there are two workflows for releases, one minor/major release and a patch release.
 Both release types are explained step by step below.
 
 ==== Performing releases
@@ -33,7 +59,7 @@ This option is the same procedure as a regular release, which is described right
 . Setup the release script by following the steps listed in the https://gitlab.com/dlr-shepard/shepard/-/tree/develop/scripts[Scripts README.md]
 . Update the relevant version numbers.
 This is primarily a recommendation for deployment.
-In the actual release script the version number is calculated based on wether we consider it a patch, minor or major release.
+In the actual release script the version number is calculated based on whether we consider it a patch, minor or major release.
 Therefore we need to anticipate this version number which can be set using the following script:
 +
 ```sh
@@ -49,10 +75,10 @@ Then commit and push the changes to develop.
 ```sh
 poetry run cli release ./token.txt
 ```
-. The script will ask if the release is Patch, Minor or Major and calculates the new version accordingly. The script automatically uses Major if the previous changes contain breaking changes.
+. The script will ask for a new version number
 . Verify the listed merged merge requests
-. Verify the release notes created by the script. (editor opens automatically)
-. Suggest a release title that will be appended to the version number.
+. Verify the release notes created by the script and write a summary. (editor opens automatically)
+. Suggest an optional release title that will be appended to the version number.
 . Confirm the generated details.
 . Verify that everything was successfully created. (GitLab Release, Release Notes, etc.)
 
