@@ -3,11 +3,13 @@ package de.dlr.shepard.data.timeseries.services;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotations;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
@@ -21,7 +23,6 @@ import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -70,7 +71,7 @@ public class TimeseriesService {
    * Returns a timeseries entity by id
    *
    * @param containerId timeseries container id
-   * @param id
+   * @param id timeseries id uniquely identifying it within the timescaledb
    * @return TimeseriesEntity
    * @throws InvalidPathException if container with containerId or the timeseries
    *                              are not accessible
@@ -330,5 +331,10 @@ public class TimeseriesService {
       timeseries.getValueType(),
       incomingValueType
     );
+  }
+
+  public TimeseriesWithAnnotations createTSWithAnno(AnnotatableTimeseries tsGraphDb) {
+    TimeseriesEntity tsSqlDb = getTimeseriesById(tsGraphDb.getContainerId(), tsGraphDb.getTimeseriesId());
+    return new TimeseriesWithAnnotations(tsGraphDb, tsSqlDb);
   }
 }

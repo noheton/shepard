@@ -15,6 +15,7 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesWithAnnotationsFactoryService;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
@@ -75,6 +76,9 @@ public class TimeseriesRest {
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  TimeseriesWithAnnotationsFactoryService timeseriesWithAnnotationsFactoryService;
 
   @Context
   private SecurityContext securityContext;
@@ -234,10 +238,7 @@ public class TimeseriesRest {
       return Response.ok(Collections.emptyList()).build();
     }
 
-    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
-      .stream()
-      .map(entity -> new Timeseries(entity))
-      .toList();
+    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList.stream().map(Timeseries::new).toList();
 
     return Response.ok(timeseriesListWithoutId).build();
   }
@@ -272,7 +273,9 @@ public class TimeseriesRest {
     var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
     var timeseriesList = timeseriesEntityList
       .stream()
-      .map(entity -> new TimeseriesIO(entity))
+      //      .map(entity -> new TimeseriesIO(timeseriesWithAnnotationsFactoryService.create(entity)))
+      .map(timeseriesWithAnnotationsFactoryService::create)
+      .map(TimeseriesIO::new)
       .filter(
         entity ->
           (measurement == null || measurement.isEmpty() || entity.getMeasurement().equals(measurement)) &&
@@ -304,7 +307,7 @@ public class TimeseriesRest {
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
   ) {
     var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
-    return Response.ok(new TimeseriesIO(timeseries)).build();
+    return Response.ok(new TimeseriesIO(timeseriesWithAnnotationsFactoryService.create(timeseries))).build();
   }
 
   @GET
@@ -328,9 +331,9 @@ public class TimeseriesRest {
   @Parameter(name = Constants.FIELD, required = true)
   @Parameter(name = Constants.START, required = true)
   @Parameter(name = Constants.END, required = true)
-  @Parameter(name = Constants.FUNCTION)
-  @Parameter(name = Constants.GROUP_BY)
-  @Parameter(name = Constants.FILLOPTION)
+  @Parameter(name = Constants.FUNCTION, deprecated = true)
+  @Parameter(name = Constants.GROUP_BY, deprecated = true)
+  @Parameter(name = Constants.FILLOPTION, deprecated = true)
   public Response getTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
@@ -397,7 +400,7 @@ public class TimeseriesRest {
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
-  ) throws IOException {
+  ) {
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
@@ -514,7 +517,7 @@ public class TimeseriesRest {
   @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
   public interface UploadItemSchema {}
 
-  public class UploadFormSchema {
+  public static class UploadFormSchema {
 
     @Schema(required = true)
     public UploadItemSchema file;

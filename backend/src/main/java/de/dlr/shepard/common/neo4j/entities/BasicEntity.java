@@ -2,6 +2,7 @@ package de.dlr.shepard.common.neo4j.entities;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.context.semantic.HasAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @Setter
 @ToString
 @NoArgsConstructor
-public class BasicEntity extends AbstractEntity {
+public class BasicEntity extends AbstractEntity implements HasAnnotation {
 
   protected String name;
 

@@ -6,6 +6,8 @@ import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
 import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.SearchBody;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchBody;
+import de.dlr.shepard.common.search.io.TimeseriesInContainerSearchResult;
 import de.dlr.shepard.common.search.io.UserGroupSearchBody;
 import de.dlr.shepard.common.search.io.UserGroupSearchResult;
 import de.dlr.shepard.common.search.io.UserSearchBody;
@@ -14,6 +16,7 @@ import de.dlr.shepard.common.search.services.CollectionSearchService;
 import de.dlr.shepard.common.search.services.ContainerSearchService;
 import de.dlr.shepard.common.search.services.PaginatedCollectionList;
 import de.dlr.shepard.common.search.services.SearchService;
+import de.dlr.shepard.common.search.services.TimeseriesSearchService;
 import de.dlr.shepard.common.search.services.UserGroupSearchService;
 import de.dlr.shepard.common.search.services.UserSearchService;
 import de.dlr.shepard.common.util.Constants;
@@ -23,11 +26,13 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -61,6 +66,9 @@ public class SearchRest {
 
   @Inject
   CollectionSearchService collectionSearchService;
+
+  @Inject
+  TimeseriesSearchService timeseriesSearchService;
 
   @POST
   @Tag(name = Constants.SEARCH)
@@ -200,6 +208,31 @@ public class SearchRest {
     ) @Valid UserGroupSearchBody userGroupSearchBody
   ) {
     UserGroupSearchResult ret = userGroupSearchService.search(userGroupSearchBody);
+    return Response.ok(ret).build();
+  }
+
+  @POST
+  @Path("/" + Constants.CONTAINERS + "/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES)
+  @Tag(name = Constants.SEARCH)
+  @Operation(description = "Search for timeseries within a timeseries container")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesInContainerSearchResult.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  public Response searchTimeseriesInContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesInContainerSearchBody.class))
+    ) @Valid TimeseriesInContainerSearchBody timeseriesInContainerSearchBody
+  ) {
+    TimeseriesInContainerSearchResult ret = timeseriesSearchService.search(
+      containerId,
+      timeseriesInContainerSearchBody
+    );
     return Response.ok(ret).build();
   }
 }
