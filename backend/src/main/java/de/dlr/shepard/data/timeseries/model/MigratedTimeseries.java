@@ -49,7 +49,7 @@ public class MigratedTimeseries implements HasId {
 
   @NotBlank
   @NonNull
-  private long timeseriesId;
+  private Long timeseriesId;
 
   @Relationship(type = Constants.IS_IN_CONTAINER)
   @NotBlank
