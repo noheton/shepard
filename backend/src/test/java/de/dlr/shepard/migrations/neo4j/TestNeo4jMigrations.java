@@ -218,6 +218,80 @@ public class TestNeo4jMigrations {
     if (testingTimeseriesIds == null) throw new RuntimeException(
       "TimescaleDB must be filled and timeseries IDs must exist!"
     );
+    createAnnotatableTimeseries();
+    createReferencedTimeseries();
+  }
+
+  private static void createReferencedTimeseries() {
+    var tsNode = node("Timeseries").withProperties(
+      "measurement",
+      Cypher.literalOf("measurement-" + randomElement),
+      "device",
+      Cypher.literalOf("device" + randomElement),
+      "location",
+      Cypher.literalOf("location" + randomElement),
+      "symbolicName",
+      Cypher.literalOf("symbolicName"),
+      "field",
+      Cypher.literalOf("field")
+    );
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
+      "createdAt",
+      Cypher.literalOf(100),
+      "deleted",
+      Cypher.literalOf(false),
+      "end",
+      Cypher.literalOf(2000),
+      "name",
+      Cypher.literalOf("ref-1-" + randomElement),
+      "shepardId",
+      Cypher.literalOf(5),
+      "start",
+      Cypher.literalOf(1000)
+    );
+    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
+      "createdAt",
+      Cypher.literalOf(100),
+      "deleted",
+      Cypher.literalOf(false),
+      "end",
+      Cypher.literalOf(2000),
+      "name",
+      Cypher.literalOf("ref-2-" + randomElement),
+      "shepardId",
+      Cypher.literalOf(6),
+      "start",
+      Cypher.literalOf(1000)
+    );
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      Cypher.literalOf("prop-on-ts-ref-" + randomElement),
+      "valueName",
+      Cypher.literalOf("value-on-ts-ref-" + randomElement)
+    );
+    var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(200),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      Cypher.literalOf("TimeseriesContainer-1-" + randomElement)
+    );
+    var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(300),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      Cypher.literalOf("TimeseriesContainer-2-" + randomElement)
+    );
+    create(ref1.relationshipTo(tsNode, "has_payload"));
+    create(ref2.relationshipTo(tsNode, "has_payload"));
+    create(ref1.relationshipTo(container1, "is_in_container"));
+    create(ref2.relationshipTo(container2, "is_in_container"));
+  }
+
+  private static void createAnnotatableTimeseries() {
     var tsNode = node("AnnotatableTimeseries").withProperties(
       "containerId",
       Cypher.literalOf(1),
@@ -226,9 +300,9 @@ public class TestNeo4jMigrations {
     );
     var annotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      Cypher.literalOf("prop-V11-" + randomElement),
+      Cypher.literalOf("prop-on-timeseries-" + randomElement),
       "valueName",
-      Cypher.literalOf("value-V11-" + randomElement)
+      Cypher.literalOf("value-on-timeseries-" + randomElement)
     );
     var relation = tsNode.relationshipTo(annotation, "has_annotation");
     create(relation);
