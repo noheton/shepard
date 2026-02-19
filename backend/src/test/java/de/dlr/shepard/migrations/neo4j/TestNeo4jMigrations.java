@@ -289,6 +289,7 @@ public class TestNeo4jMigrations {
     create(ref2.relationshipTo(tsNode, "has_payload"));
     create(ref1.relationshipTo(container1, "is_in_container"));
     create(ref2.relationshipTo(container2, "is_in_container"));
+    create(ref1.relationshipTo(annotation, "has_annotation"));
   }
 
   private static void createAnnotatableTimeseries() {
