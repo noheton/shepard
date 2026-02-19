@@ -156,8 +156,11 @@ public class TestNeo4jMigrations {
 
   private static List<Long> testingTimeseriesIds;
 
+  /**
+   * Assert that the timeseries from timescale is now present as temporary timeseries nodes in the graph database.
+   */
   @Test
-  public void testV11_01_timeseriesPresentInGraphDb()
+  public void testV11_01_tempTimeseriesPresentInGraphDb()
     throws ClassNotFoundException, IOException, CsvValidationException {
     prepareV11TimescaleData();
     prepareV11Neo4jData();
@@ -176,6 +179,9 @@ public class TestNeo4jMigrations {
     assertPresent(testingTimeseriesIds.get(7), 2, "int_level", DataPointValueType.Integer);
   }
 
+  /**
+   * Assert that meta-information does not exist anymore in timescaledb.
+   */
   @Test
   public void testV11_02_metadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
@@ -186,6 +192,9 @@ public class TestNeo4jMigrations {
     }
   }
 
+  /**
+   * Assert that the values of all timeseries are still intact in timescaledb.
+   */
   @Test
   public void testV11_03_timeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
@@ -201,8 +210,27 @@ public class TestNeo4jMigrations {
     }
   }
 
+  /**
+   * Assert that all referenced timeseries migrated correctly towards the temp timeseries.
+   */
   @Test
-  public void testV12_AnnotatedTimeseriesMigrated() {
+  public void testV12_ReferencedTimeseriesMigrated() {
+    fail();
+  }
+
+  /**
+   * Assert that all annotated/annotatable timeseries migrated correctly towards the temp timeseries.
+   */
+  @Test
+  public void testV13_AnnotatedTimeseriesMigrated() {
+    fail();
+  }
+
+  /**
+   * Assert that the temp timeseries does not exist anymore, only timeseries with label "Timeseries".
+   */
+  @Test
+  public void testV14_TemporaryTimeseriesNonExistent() {
     fail();
   }
 
