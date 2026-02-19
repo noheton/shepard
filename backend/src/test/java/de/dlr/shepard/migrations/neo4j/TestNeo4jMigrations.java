@@ -159,7 +159,7 @@ public class TestNeo4jMigrations {
   @Test
   public void testV11_01_timeseriesPresentInGraphDb()
     throws ClassNotFoundException, IOException, CsvValidationException {
-    testingTimeseriesIds = prepareV11TimescaleData();
+    prepareV11TimescaleData();
     prepareV11Neo4jData();
 
     runMigrations("V11");
@@ -311,9 +311,8 @@ public class TestNeo4jMigrations {
 
   /**
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
-   @return List of timeseries unique timeseries IDs. The insertion order cannot be guaranteed.
    */
-  private List<Long> prepareV11TimescaleData() throws CsvValidationException, IOException, ClassNotFoundException {
+  private void prepareV11TimescaleData() throws CsvValidationException, IOException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
@@ -324,7 +323,7 @@ public class TestNeo4jMigrations {
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
     var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs);
 
-    return ts_list
+    testingTimeseriesIds = ts_list
       .map(ts -> {
         try (var connection = createTimeseriesConnection()) {
           var point = ts.getPoints().get(0);
