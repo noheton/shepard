@@ -11,6 +11,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.MigratedTimeseries;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -167,7 +168,7 @@ public class TestNeo4jMigrations {
 
     runMigrations("V11");
 
-    var ts_result_list = match(node("Timeseries"), MigratedTimeseries.class);
+    var ts_result_list = match(node("Timeseries"));
     assertEquals(8, ts_result_list.size());
     assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
     assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
