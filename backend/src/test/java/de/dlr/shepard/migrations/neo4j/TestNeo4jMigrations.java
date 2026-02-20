@@ -164,11 +164,10 @@ public class TestNeo4jMigrations {
   public void testV11_01_tempTimeseriesPresentInGraphDb()
     throws ClassNotFoundException, IOException, CsvValidationException {
     prepareV11TimescaleData();
-    prepareV11Neo4jData();
 
     runMigrations("V11");
 
-    var ts_result_list = match(node("Timeseries"));
+    var ts_result_list = match(node("TempTimeseries"));
     assertEquals(8, ts_result_list.size());
     assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
     assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
@@ -216,6 +215,8 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV12_ReferencedTimeseriesMigrated() {
+    createReferencedTimeseries();
+    runMigrations("V12");
     fail();
   }
 
@@ -224,6 +225,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV13_AnnotatedTimeseriesMigrated() {
+    createAnnotatableTimeseries();
     fail();
   }
 
@@ -243,26 +245,18 @@ public class TestNeo4jMigrations {
     return DriverManager.getConnection(url, user, pass);
   }
 
-  private void prepareV11Neo4jData() {
-    if (testingTimeseriesIds == null) throw new RuntimeException(
-      "TimescaleDB must be filled and timeseries IDs must exist!"
-    );
-    createAnnotatableTimeseries();
-    createReferencedTimeseries();
-  }
-
   private static void createReferencedTimeseries() {
     var tsNode = node("Timeseries").withProperties(
       "measurement",
       Cypher.literalOf("measurement-" + randomElement),
       "device",
-      Cypher.literalOf("device" + randomElement),
+      Cypher.literalOf("device-" + randomElement),
       "location",
-      Cypher.literalOf("location" + randomElement),
+      Cypher.literalOf("location-" + randomElement),
       "symbolicName",
-      Cypher.literalOf("symbolicName"),
+      Cypher.literalOf("symbolicName-" + randomElement),
       "field",
-      Cypher.literalOf("field")
+      Cypher.literalOf("field-" + randomElement)
     );
     var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
       "createdAt",
