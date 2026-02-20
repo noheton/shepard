@@ -167,7 +167,7 @@ public class TestNeo4jMigrations {
 
     runMigrations("V11");
 
-    var ts_result_list = match(node("TempTimeseries"));
+    var ts_result_list = match(node("TempV11Timeseries"));
     assertEquals(8, ts_result_list.size());
     assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
     assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
@@ -249,11 +249,19 @@ public class TestNeo4jMigrations {
   }
 
   /**
+   * Assert that the big merge fails if any inconsistency is encountered.
+   */
+  @Test
+  public void testV14_1_AbortUponInconsistency() {
+    runMigrations("V14");
+    fail();
+  }
+
+  /**
    * Assert that the temp timeseries does not exist anymore, only timeseries with label "Timeseries".
    */
   @Test
-  public void testV14_TemporaryTimeseriesNonExistent() {
-    runMigrations("V14");
+  public void testV14_2_TemporaryTimeseriesNonExistent() {
     fail();
   }
 
