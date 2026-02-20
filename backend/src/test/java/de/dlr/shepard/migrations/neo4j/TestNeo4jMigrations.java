@@ -236,6 +236,7 @@ public class TestNeo4jMigrations {
   @Test
   public void testV13_1_AnnotatedTimeseriesMigrated() {
     createAnnotatableTimeseries();
+    runMigrations("V13");
     fail();
   }
 
@@ -252,6 +253,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV14_TemporaryTimeseriesNonExistent() {
+    runMigrations("V14");
     fail();
   }
 
