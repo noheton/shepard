@@ -78,8 +78,8 @@ public class TestNeo4jMigrations {
     new MigrationsRunner(targetVersion).apply();
   }
 
-  private static void create(PatternElement node) {
-    var statement = Cypher.create(node).build();
+  private static void create(PatternElement... creatable) {
+    var statement = Cypher.create(creatable).build();
     query(statement);
   }
 
@@ -266,46 +266,52 @@ public class TestNeo4jMigrations {
   }
 
   private static void createReferencedTimeseries() {
-    var tsNode = node("Timeseries").withProperties(
-      "measurement",
-      Cypher.literalOf("measurement-" + randomElement),
-      "device",
-      Cypher.literalOf("device-" + randomElement),
-      "location",
-      Cypher.literalOf("location-" + randomElement),
-      "symbolicName",
-      Cypher.literalOf("symbolicName-" + randomElement),
-      "field",
-      Cypher.literalOf("field-" + randomElement)
-    );
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
-      "createdAt",
-      Cypher.literalOf(100),
-      "deleted",
-      Cypher.literalOf(false),
-      "end",
-      Cypher.literalOf(2000),
-      "name",
-      Cypher.literalOf("ref-1-" + randomElement),
-      "shepardId",
-      Cypher.literalOf(5),
-      "start",
-      Cypher.literalOf(1000)
-    );
-    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
-      "createdAt",
-      Cypher.literalOf(100),
-      "deleted",
-      Cypher.literalOf(false),
-      "end",
-      Cypher.literalOf(2000),
-      "name",
-      Cypher.literalOf("ref-2-" + randomElement),
-      "shepardId",
-      Cypher.literalOf(6),
-      "start",
-      Cypher.literalOf(1000)
-    );
+    var tsNode = node("Timeseries")
+      .withProperties(
+        "measurement",
+        Cypher.literalOf("measurement-" + randomElement),
+        "device",
+        Cypher.literalOf("device-" + randomElement),
+        "location",
+        Cypher.literalOf("location-" + randomElement),
+        "symbolicName",
+        Cypher.literalOf("symbolicName-" + randomElement),
+        "field",
+        Cypher.literalOf("field-" + randomElement)
+      )
+      .named("tsNode");
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        Cypher.literalOf("ref-1-" + randomElement),
+        "shepardId",
+        Cypher.literalOf(5),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref1");
+    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        Cypher.literalOf("ref-2-" + randomElement),
+        "shepardId",
+        Cypher.literalOf(6),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref2");
     var annotation = node("SemanticAnnotation").withProperties(
       "propertyName",
       Cypher.literalOf("prop-on-ts-ref-" + randomElement),
@@ -328,11 +334,13 @@ public class TestNeo4jMigrations {
       "name",
       Cypher.literalOf("TimeseriesContainer-2-" + randomElement)
     );
-    create(ref1.relationshipTo(tsNode, "has_payload"));
-    create(ref2.relationshipTo(tsNode, "has_payload"));
-    create(ref1.relationshipTo(container1, "is_in_container"));
-    create(ref2.relationshipTo(container2, "is_in_container"));
-    create(ref1.relationshipTo(annotation, "has_annotation"));
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      ref2.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
   }
 
   private static void createAnnotatableTimeseries() {
