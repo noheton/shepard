@@ -158,16 +158,55 @@ public class TestNeo4jMigrations {
   private static List<Long> testingTimeseriesIds;
 
   /**
-   * Assert that the timeseries from timescale is now present as temporary timeseries nodes in the graph database.
+   * Assert that all referenced timeseries migrated correctly towards individual timeseries.
    */
   @Test
-  public void testV11_01_tempTimeseriesPresentInGraphDb()
+  public void testV11_ReferencedTimeseriesMigrated() {
+    createReferencedTimeseries();
+    runMigrations("V11");
+    fail();
+  }
+
+  /**
+   * Assert that the migration aborts when encountering an inconsistent state and rolls back its changes.
+   */
+  @Test
+  public void testV12_1_AbortInconsistent() {
+    // todo: create inconsistent state
+    runMigrations("V12");
+    // todo: clean up inconsistency
+    fail();
+  }
+
+  /**
+   * Assert that all annotated/annotatable timeseries migrated correctly.
+   */
+  @Test
+  public void testV12_2_AnnotatedTimeseriesMigrated() {
+    createAnnotatableTimeseries();
+    runMigrations("V12");
+    fail();
+  }
+
+  /**
+   * Assert that the nodes for annotated/annotatable timeseries do not exist anymore.
+   */
+  @Test
+  public void testV12_2_AnnotatedTimeseriesNonExistent() {
+    fail();
+  }
+
+  /**
+   * Assert that the timeseries from timescale are now present as timeseries nodes in the graph database.
+   */
+  @Test
+  public void testV13_01_tempTimeseriesPresentInGraphDb()
     throws ClassNotFoundException, IOException, CsvValidationException {
     prepareV11TimescaleData();
 
-    runMigrations("V11");
+    runMigrations("V13");
 
-    var ts_result_list = match(node("TempV11Timeseries"));
+    var ts_result_list = match(node("Timeseries"));
     assertEquals(8, ts_result_list.size());
     assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
     assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
@@ -183,7 +222,7 @@ public class TestNeo4jMigrations {
    * Assert that meta-information does not exist anymore in timescaledb.
    */
   @Test
-  public void testV11_02_metadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
+  public void testV13_02_metadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
       var result = connection
         .prepareStatement("select tablename from pg_tables where tablename = 'timeseries'")
@@ -196,7 +235,7 @@ public class TestNeo4jMigrations {
    * Assert that the values of all timeseries are still intact in timescaledb.
    */
   @Test
-  public void testV11_03_timeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
+  public void testV13_03_timeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
       var tsCount = connection
         .prepareStatement("select count(timeseries_id) from timeseries_data_points")
@@ -208,61 +247,6 @@ public class TestNeo4jMigrations {
         .executeQuery();
       while (actualTsIds.next()) assertTrue(testingTimeseriesIds.contains(actualTsIds.getLong("timeseries_id")));
     }
-  }
-
-  /**
-   * Assert that all referenced timeseries migrated correctly towards the temp timeseries.
-   */
-  @Test
-  public void testV12_1_ReferencedTimeseriesMigrated() {
-    createReferencedTimeseries();
-    runMigrations("V12");
-    fail();
-  }
-
-  /**
-   * Assert that all referenced timeseries migrated correctly towards the temp timeseries even if the timeseries already exists because of migration V11.
-   * The existing timeseries should only be updated with the references.
-   * No new timeseries should be created and the existing ones should not be overwritten.
-   */
-  @Test
-  public void testV12_2_ReferencedTimeseriesMigratedExistingUpdated() {
-    fail();
-  }
-
-  /**
-   * Assert that all annotated/annotatable timeseries migrated correctly towards the temp timeseries.
-   */
-  @Test
-  public void testV13_1_AnnotatedTimeseriesMigrated() {
-    createAnnotatableTimeseries();
-    runMigrations("V13");
-    fail();
-  }
-
-  /**
-   * Assert that the migration of the annotatable timeseries updates equal timeseries that already exist.
-   */
-  @Test
-  public void testV13_2_AnnotatedTimeseriesMigratedExistingUpdated() {
-    fail();
-  }
-
-  /**
-   * Assert that the big merge fails if any inconsistency is encountered.
-   */
-  @Test
-  public void testV14_1_AbortUponInconsistency() {
-    runMigrations("V14");
-    fail();
-  }
-
-  /**
-   * Assert that the temp timeseries does not exist anymore, only timeseries with label "Timeseries".
-   */
-  @Test
-  public void testV14_2_TemporaryTimeseriesNonExistent() {
-    fail();
   }
 
   private Connection createTimeseriesConnection() throws SQLException, ClassNotFoundException {

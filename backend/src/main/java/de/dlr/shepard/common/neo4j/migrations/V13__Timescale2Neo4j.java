@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-public class V11__Refactor_Timeseries implements JavaBasedMigration {
+public class V13__Timescale2Neo4j implements JavaBasedMigration {
 
   @Override
   public void apply(MigrationContext context) {
@@ -21,9 +21,7 @@ public class V11__Refactor_Timeseries implements JavaBasedMigration {
         ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class)
       );
       assert isTimescaleOld(connection);
-    } catch (ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    } catch (SQLException e) {
+    } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
     }
   }
