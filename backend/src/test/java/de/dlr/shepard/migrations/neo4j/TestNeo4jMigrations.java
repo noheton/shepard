@@ -214,9 +214,19 @@ public class TestNeo4jMigrations {
    * Assert that all referenced timeseries migrated correctly towards the temp timeseries.
    */
   @Test
-  public void testV12_ReferencedTimeseriesMigrated() {
+  public void testV12_1_ReferencedTimeseriesMigrated() {
     createReferencedTimeseries();
     runMigrations("V12");
+    fail();
+  }
+
+  /**
+   * Assert that all referenced timeseries migrated correctly towards the temp timeseries even if the timeseries already exists because of migration V11.
+   * The existing timeseries should only be updated with the references.
+   * No new timeseries should be created and the existing ones should not be overwritten.
+   */
+  @Test
+  public void testV12_2_ReferencedTimeseriesMigratedExistingUpdated() {
     fail();
   }
 
@@ -224,8 +234,16 @@ public class TestNeo4jMigrations {
    * Assert that all annotated/annotatable timeseries migrated correctly towards the temp timeseries.
    */
   @Test
-  public void testV13_AnnotatedTimeseriesMigrated() {
+  public void testV13_1_AnnotatedTimeseriesMigrated() {
     createAnnotatableTimeseries();
+    fail();
+  }
+
+  /**
+   * Assert that the migration of the annotatable timeseries updates equal timeseries that already exist.
+   */
+  @Test
+  public void testV13_2_AnnotatedTimeseriesMigratedExistingUpdated() {
     fail();
   }
 
