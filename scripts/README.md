@@ -15,7 +15,8 @@ This directory provides useful scripts and tools to help maintaining shepard.
 ### Preparation (only required when you want to interact with a shepard instance)
 
 1. go to your shepard instance and create an api key
-2. create a file `scripts/api-key.txt` and add your api key there
+2. go to `shepard/scripts` and create a file `.env`. Therefore see `.env.example`.
+3. Fill in the missing variables: BACKEND_URL and API_KEY.
 
 ## Usage
 
@@ -25,7 +26,7 @@ Possible commands are:
 
 - `release`: Collects all changes on the main branch since the last release and creates a release page with an automatically generated changelog page. Furthermore, it also creates a new release tag on the main branch, that triggers the release pipeline. If you want to create a new release, please carefully read the documentation before: [Release Process Documentation](https://shepard-dlr-shepard-e573f5a4116ef73f64fe76039b5c0aad01da3a88afa.gitlab.io/architecture-docs/#_release_process).
 - `packages`: Delete outdated development packages from the gitlab registry
-- `example-data`: Create example data on a given shepard instance
+- `sample`: Create example data on a given shepard instance
 
 ## Example
 
@@ -52,5 +53,5 @@ A valid api key and the backend url need to be provided as part of the environme
 You may use the .env.example, copy it to .env and fill in both values for it to take effect.
 
 ```sh
-poetry run cli example-data
+poetry run cli sample
 ```
