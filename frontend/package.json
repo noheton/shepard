@@ -50,8 +50,8 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "1.12.1",
-    "@types/chart.js": "2.9.41",
-    "@types/node": "22.19.3",
+    "@types/chart.js": "4.0.1",
+    "@types/node": "24.10.12",
     "@vueuse/core": "14.2.0",
     "sass": "^1.81.0",
     "sass-loader": "^16.0.3",
