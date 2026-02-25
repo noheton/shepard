@@ -8,6 +8,10 @@ services:
     ports:
       - 7474:7474
       - 7687:7687
+    volumes:
+      - /opt/shepard/neo4j/logs:/logs
+      - /opt/shepard/neo4j/plugins:/plugins
+      - /opt/shepard/neo4j/data:/var/lib/neo4j/data
     restart: unless-stopped
     profiles:
       - dev
@@ -27,6 +31,8 @@ services:
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE-database}
     restart: unless-stopped
     volumes:
+      - /opt/shepard/mongodb/db:/data/db
+      - /opt/shepard/mongodb/configdb:/data/configdb
       - ../infrastructure/docker-entrypoint-initdb.d/mongodb/00-create-mongo-user.js:/docker-entrypoint-initdb.d/00-create-mongo-user.js
     profiles:
       - dev
@@ -65,6 +71,7 @@ services:
       POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
     restart: unless-stopped
     volumes:
+      - /opt/shepard/timescaledb:/var/lib/postgres/data
       - ../infrastructure/docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
     profiles:
       - dev
