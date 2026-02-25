@@ -1,5 +1,3 @@
-import re
-from collections import defaultdict
 from typing import Any
 
 import click
@@ -103,13 +101,13 @@ def _get_mr_list(merge_requests: list[MergeRequest]) -> str:
 def _get_release_notes(
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
-    description: str = "",
+    version: str,
 ) -> str:
     template_loader = jinja2.FileSystemLoader(searchpath="./")
     template_env = jinja2.Environment(loader=template_loader, autoescape=True)
     template = template_env.get_template(TEMPLATE_FILE)
     result = template.render(
-        description=description,
+        version=version,
         breaking_changes=_get_mr_list(breaking_changes),
         other_changes=_get_mr_list(other_changes),
     )
@@ -189,61 +187,18 @@ def _get_dependency_dashboard(project: Project) -> Issue:
     return issues[0]
 
 
-def _generate_next_tag(
-    latest_release_tag, has_breaking_changes: bool, isHotFixRelease: bool
-) -> str:
-    match = re.match(SEMVER_PATTERN, latest_release_tag)
-    version_dict = defaultdict(int)
-
-    defaultReleaseType = "minor"
-    if isHotFixRelease:
-        defaultReleaseType = "patch"
-
-    if match:
-        version_dict["major"] = int(match.group("major"))
-        version_dict["minor"] = int(match.group("minor"))
-        version_dict["patch"] = int(match.group("patch"))
-    else:
-        click.echo(
-            "The last version is not SEMVER, switching to SEMVER starting at 1.0.0"
-        )
-        return "1.0.0"
-
-    release_type = defaultReleaseType
-    if has_breaking_changes:
-        major = click.confirm(
-            "The release contains breaking changes!"
-            + " Do you want to perform a 'major' release?"
-        )
-        release_type = "major" if major else defaultReleaseType
-    if release_type != "major":
-        click.echo(f"The current version tag is {latest_release_tag}.")
-        release_type = click.prompt(
-            "What is the next release type?",
-            type=click.Choice(["patch", "minor", "major"]),
-            default=defaultReleaseType,
-        )
-
-    # increase release number according to release type
-    version_dict[release_type] += 1
-
-    if release_type == "minor":
-        version_dict["patch"] = 0
-
-    if release_type == "major":
-        version_dict["patch"] = 0
-        version_dict["minor"] = 0
-
-    return (
-        f"{version_dict['major']}.{version_dict['minor']}.{version_dict['patch']}"
-        + "-release"
+def _generate_next_tag(latest_release_tag) -> str:
+    version = click.prompt(
+        f"The latest version was {latest_release_tag}. Which version will this release get?"
     )
+    return f"{version}-release"
 
 
 def _generate_release_notes(
     project: Project,
     breaking_changes: list[MergeRequest],
     other_changes: list[MergeRequest],
+    version: str,
 ) -> str:
     click.echo("Merge Requests:")
     click.echo("\n".join([mr.title for mr in breaking_changes + other_changes]))
@@ -251,7 +206,8 @@ def _generate_release_notes(
 
     release_notes = (
         click.edit(
-            _get_release_notes(breaking_changes, other_changes), require_save=False
+            _get_release_notes(breaking_changes, other_changes, version),
+            require_save=False,
         )
         or ""
     )
@@ -259,39 +215,40 @@ def _generate_release_notes(
     return release_notes
 
 
-def get_release_details(
+def create_release_details(
     project: Project, isHotfixRelease: bool, since_release: str
 ) -> tuple[str, str]:
     latest_release_date, latest_release_tag = _get_latest_release(
         project, since_release
     )
 
-    breaking_changes: list[MergeRequest] = []
-    other_changes: list[MergeRequest] = []
-
     if isHotfixRelease:
         mr_iids: list[int] = prompt_mr_iids()
-        breaking_changes, _dependencies, other_changes = __get_mrs_by_id(
+        breaking_changes, _dependency_changes, other_changes = __get_mrs_by_id(
             project, mr_iids
         )
     else:
-        breaking_changes, _dependencies, other_changes = _get_changes(
+        breaking_changes, _dependency_changes, other_changes = _get_changes(
             project, latest_release_date
         )
-    release_notes = _generate_release_notes(project, breaking_changes, other_changes)
-    next_tag = _generate_next_tag(
-        latest_release_tag,
-        has_breaking_changes=bool(breaking_changes),
-        isHotFixRelease=isHotfixRelease,
+
+    next_tag = _generate_next_tag(latest_release_tag)
+
+    release_notes = _generate_release_notes(
+        project, breaking_changes, other_changes, next_tag
     )
 
-    return (next_tag, release_notes)
+    return next_tag, release_notes
 
 
 def prompt_title(tag: str) -> str:
-    release_name = click.prompt("Release name")
-    title = f"{tag} {release_name}"
-    return title
+    release_name = click.prompt(
+        "Release name (leave blank if release does not get named)", default=""
+    )
+    if not release_name:
+        return tag
+    else:
+        return tag + " " + release_name
 
 
 def prompt_confirm(title: str, tag: str, notes: str):

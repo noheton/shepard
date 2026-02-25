@@ -1,14 +1,16 @@
 <script lang="ts" setup>
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import Table from "@tiptap/extension-table";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import TableRow from "@tiptap/extension-table-row";
+import {
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "@tiptap/extension-table";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
 import type { Editor } from "@tiptap/vue-3";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import "assets/styles/highlightjs.scss";
@@ -88,7 +90,6 @@ onMounted(() => {
   if (props.codeType && editor.value) {
     editor.value.commands.setContent(
       `<pre><code class="language-${props.codeType}">${model.value}</code></pre>`,
-      false,
     );
   }
 });
@@ -104,10 +105,9 @@ watch(model, newContent => {
       if (props.codeType) {
         editor.value?.commands.setContent(
           `<pre><code class="language-${props.codeType}">${newContent}</code></pre>`,
-          false,
         );
       } else {
-        editor.value?.commands.setContent(newContent, false);
+        editor.value?.commands.setContent(newContent);
       }
     }
   }

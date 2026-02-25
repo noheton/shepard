@@ -76,7 +76,8 @@ public class HtmlSanitizerTest {
       </table>""";
     String wantedHtmlCaptionTag =
       """
-      <table>Monthly savings
+      <table>
+       Monthly savings
        <tbody>
         <tr>
          <th>Month</th>

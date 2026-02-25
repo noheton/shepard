@@ -83,8 +83,10 @@ watch(containerAccessor.fileContainer, () => {
       :files="containerAccessor.files.value"
       :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
       :loading="containerAccessor.loading.value"
-      @delete-file="file => containerAccessor.deleteFile(file)"
-      @download-file="file => containerAccessor.downloadFile(file)"
+      @delete-file="(file: ShepardFile) => containerAccessor.deleteFile(file)"
+      @download-file="
+        (file: ShepardFile) => containerAccessor.downloadFile(file)
+      "
     />
   </v-container>
 </template>

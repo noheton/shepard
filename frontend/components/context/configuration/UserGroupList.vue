@@ -33,7 +33,9 @@ const handleUserGroupCreated = (userGroup: UserGroup) => {
       <UserGroupsTable
         :user-groups="userGroups"
         :loading="isLoading"
-        @select-user-group="userGroup => emit('select-user-group', userGroup)"
+        @select-user-group="
+          (userGroup: UserGroup) => emit('select-user-group', userGroup)
+        "
       />
     </template>
   </ConfigurationPane>

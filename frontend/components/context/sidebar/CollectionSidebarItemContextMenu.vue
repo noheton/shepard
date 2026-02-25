@@ -62,7 +62,7 @@ async function deleteItem() {
             onClick: () => (showDeleteDialog = true),
           },
         ]"
-        @expansion-state-changed="e => (showContextMenuButton = e)"
+        @expansion-state-changed="(e: boolean) => (showContextMenuButton = e)"
       />
       <v-btn
         color="primary"

@@ -4,7 +4,6 @@ import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
-import de.dlr.shepard.auth.security.PermissionLastSeenCache;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -16,6 +15,10 @@ import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PermissionType;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
+import io.quarkus.cache.CacheResult;
+import io.quarkus.cache.CompositeCacheKey;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -33,6 +36,10 @@ import org.apache.commons.lang3.StringUtils;
 public class PermissionsService {
 
   @Inject
+  @CacheName("permissions-service-cache")
+  Cache cache;
+
+  @Inject
   PermissionsDAO permissionsDAO;
 
   @Inject
@@ -40,9 +47,6 @@ public class PermissionsService {
 
   @Inject
   UserGroupService userGroupService;
-
-  @Inject
-  PermissionLastSeenCache permissionLastSeenCache;
 
   /**
    * @param entity         the entity the permissions belong to
@@ -107,28 +111,20 @@ public class PermissionsService {
    * @param username   the user that wants access
    * @return whether the access is allowed or not
    */
+  @CacheResult(cacheName = "permissions-service-cache")
   public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
-    String cacheKey = String.format("%s,%s,%s", entityId, accessType.toString(), username);
-    if (permissionLastSeenCache.isKeyCached(cacheKey)) return true;
-
     Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
 
-    boolean isAllowed;
     if (userRolesOnEntity.isOwner()) {
-      isAllowed = true;
+      return true;
     } else {
-      isAllowed = switch (accessType) {
+      return switch (accessType) {
         case Read -> userRolesOnEntity.isReader() || userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
         case Write -> userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
         case Manage -> userRolesOnEntity.isManager();
         case None -> false;
       };
     }
-
-    if (isAllowed) {
-      permissionLastSeenCache.cacheKey(cacheKey);
-    }
-    return isAllowed;
   }
 
   /**
@@ -141,6 +137,13 @@ public class PermissionsService {
   public boolean isCurrentUserOwner(long entityId) {
     Roles roles = getUserRolesOnEntity(entityId, userService.getCurrentUser().getUsername());
     return roles.isOwner();
+  }
+
+  private void removeEntityFromCache(long entityId) {
+    if (cache != null) cache
+      .invalidateIf(el -> ((CompositeCacheKey) el).getKeyElements()[0].equals(entityId))
+      .await()
+      .indefinitely();
   }
 
   /**
@@ -177,6 +180,7 @@ public class PermissionsService {
     oldPermissions.setManager(newPermissions.getManager());
     oldPermissions.setPermissionType(newPermissions.getPermissionType());
     var res = permissionsDAO.createOrUpdate(oldPermissions);
+    removeEntityFromCache(id);
     return res;
   }
 

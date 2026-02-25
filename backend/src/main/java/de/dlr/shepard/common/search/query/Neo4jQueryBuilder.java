@@ -10,6 +10,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.SortingHelper;
 import de.dlr.shepard.common.util.TraversalRules;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -33,7 +34,9 @@ public class Neo4jQueryBuilder {
     "valueIRI",
     "propertyIRI",
     "createdAt",
-    "updatedAt"
+    "updatedAt",
+    "hasAnnotation",
+    "hasAnnotationIRI"
   );
 
   private static final List<String> IdProperties = List.of(
@@ -42,8 +45,18 @@ public class Neo4jQueryBuilder {
     "referencedDataObjectId",
     "fileContainerId",
     "structuredDataContainerId",
-    "timeseriesContainerId"
+    "timeseriesContainerId",
+    "successorIds",
+    "predecessorIds",
+    "childrenIds",
+    "parentIds"
   );
+
+  private static final String INCORRECT_COLON_EXCEPTION_MESSAGE =
+    "the annotation must contain exactly one occurrence of :: to divide the property and the name " +
+    "but the given value is ";
+
+  private static final String colonMatcher = "[^:]*(:[^:]+)*::([^:]+:)*[^:]*";
 
   private static String getNeo4jWithNeo4jIdString(String jsonquery, String variable) {
     ObjectMapper objectMapper = new ObjectMapper();
@@ -145,7 +158,89 @@ public class Neo4jQueryBuilder {
     if (property.equals("createdAt") || property.equals("updatedAt")) return atPart(node, variable);
     // for SemanticAnnotationIRIs
     if (property.equals("valueIRI") || property.equals("propertyIRI")) return iRIPart(node, variable);
+    // for SemanticAnnotations
+    if (property.equals("hasAnnotation")) return hasAnnotationPart(node, variable);
+    // for SemanticAnnotations
+    if (property.equals("hasAnnotationIRI")) return hasAnnotationIRIPart(node, variable);
     return null;
+  }
+
+  private static String hasAnnotationIRIPart(JsonNode node, String variable) {
+    //REMARK:
+    //the split function in JAVA behaves sometimes in an inconsistent way:
+    //"::".split("::") = String[0] {  }
+    //"x::y".split("::") = String[2] { "x", "y" }
+    //"::y".split("::") = String[2] { "", "y" }
+    //"x::".split("::") = String[1] { "x" }
+    //to extract the empty string from the annotation pair correctly some additional work is needed
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    if (!annotation.matches(colonMatcher)) throw new ShepardParserException(
+      INCORRECT_COLON_EXCEPTION_MESSAGE + annotation
+    );
+    String[] propertyValuePair = annotation.split("::");
+    String propertyIRI = null;
+    String valueIRI = null;
+    //case ::
+    if (propertyValuePair.length == 0) {
+      propertyIRI = "";
+      valueIRI = "";
+    }
+    //case x::
+    if (propertyValuePair.length == 1) {
+      propertyIRI = propertyValuePair[0];
+      valueIRI = "";
+    }
+    //case x::y (where x may be the empty string)
+    if (propertyValuePair.length == 2) {
+      propertyIRI = propertyValuePair[0];
+      valueIRI = propertyValuePair[1];
+    }
+    String ret = "(";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyIRI ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyIRI + "\" AND ";
+    ret = ret + " sem.valueIRI " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueIRI;
+    ret = ret + "\")})";
+    return ret;
+  }
+
+  private static String hasAnnotationPart(JsonNode node, String variable) {
+    //REMARK:
+    //the split function in JAVA behaves sometimes in an inconsistent way:
+    //"::".split("::") = String[0] {  }
+    //"x::y".split("::") = String[2] { "x", "y" }
+    //"::y".split("::") = String[2] { "", "y" }
+    //"x::".split("::") = String[1] { "x" }
+    //to extract the empty string from the annotation pair correctly some additional work is needed
+    String annotation = node.get(Constants.OP_VALUE).textValue();
+    if (!annotation.matches(colonMatcher)) throw new ShepardParserException(
+      INCORRECT_COLON_EXCEPTION_MESSAGE + annotation
+    );
+    String[] propertyValuePair = annotation.split("::");
+    String propertyName = null;
+    String valueName = null;
+    //case ::
+    if (propertyValuePair.length == 0) {
+      propertyName = "";
+      valueName = "";
+    }
+    //case x::
+    if (propertyValuePair.length == 1) {
+      propertyName = propertyValuePair[0];
+      valueName = "";
+    }
+    //case x::y (where x may be the empty string)
+    if (propertyValuePair.length == 2) {
+      propertyName = propertyValuePair[0];
+      valueName = propertyValuePair[1];
+    }
+    String ret = "(";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ") - [:has_annotation] -> (sem:SemanticAnnotation) WHERE (sem.propertyName ";
+    ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + propertyName + "\" AND ";
+    ret = ret + " sem.valueName " + operatorString(node.get(Constants.OP_OPERATOR)) + " \"" + valueName;
+    ret = ret + "\")})";
+    return ret;
   }
 
   private static String simpleIdPropertyPart(JsonNode node, String variable) {
@@ -162,6 +257,13 @@ public class Neo4jQueryBuilder {
     if (property.equals("structuredDataContainerId")) return structuredDataContainerIdPart(node, variable);
     // for TimeseriesReferences
     if (property.equals("timeseriesContainerId")) return timeseriesContainerIdPart(node, variable);
+    // for neighborhoodIds
+    if (
+      property.equals("successorIds") ||
+      property.equals("predecessorIds") ||
+      property.equals("childrenIds") ||
+      property.equals("parentIds")
+    ) return neighborhoodIdsPart(node, variable);
     return null;
   }
 
@@ -177,6 +279,93 @@ public class Neo4jQueryBuilder {
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE).toString().toLowerCase() + " ";
     ret = ret + "})";
+    return ret;
+  }
+
+  private static String neighborhoodIdsPart(JsonNode node, String variable) {
+    String operatorString = node.get(Constants.OP_OPERATOR).textValue();
+    String neighborhoodProperty = node.get(Constants.OP_PROPERTY).textValue();
+    String neighborhoodNeo4j =
+      switch (neighborhoodProperty) {
+        case "successorIds" -> "-[:has_successor]->";
+        case "predecessorIds" -> "<-[:has_successor]-";
+        case "childrenIds" -> "-[:has_child]->";
+        case "parentIds" -> "<-[:has_child]-";
+        default -> "";
+      };
+    if (operatorString.equals(Constants.JSON_CONTAINS)) return neighborhoodIdsContainsPart(
+      node,
+      variable,
+      neighborhoodNeo4j
+    );
+    if (operatorString.equals(Constants.JSON_IS_CONTAINED_IN)) return neighborhoodIdsIsContainedInPart(
+      node,
+      variable,
+      neighborhoodNeo4j
+    );
+    if (operatorString.equals(Constants.JSON_EQ)) return neighborhoodIdsEqualsPart(node, variable, neighborhoodNeo4j);
+    throw new ShepardParserException("illegal comparison operator " + operatorString);
+  }
+
+  private static String neighborhoodIdsEqualsPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    return (
+      "((" +
+      neighborhoodIdsIsContainedInPart(node, variable, neighborhoodNeo4j) +
+      ") AND (" +
+      neighborhoodIdsContainsPart(node, variable, neighborhoodNeo4j) +
+      "))"
+    );
+  }
+
+  private static String neighborhoodIdsIsContainedInPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    String ret = "(";
+    ArrayList<Long> successorIds = new ArrayList<Long>();
+    for (JsonNode longNode : node.get(Constants.OP_VALUE)) {
+      successorIds.add(longNode.longValue());
+    }
+    if (successorIds.size() == 0) return "(NOT EXISTS{MATCH (" + variable + ")" + neighborhoodNeo4j + "(neighborObj)})";
+    String arrayString = "[";
+    for (int i = 0; i < successorIds.size() - 1; i++) arrayString = arrayString + successorIds.get(i) + ",";
+    arrayString = arrayString + successorIds.get(successorIds.size() - 1) + "]";
+    ret =
+      ret +
+      "NOT EXISTS{MATCH (" +
+      variable +
+      ")" +
+      neighborhoodNeo4j +
+      "(neighborObj) WHERE (NOT id(neighborObj) IN " +
+      arrayString +
+      ")})";
+    return ret;
+  }
+
+  private static String neighborhoodIdsContainsPart(JsonNode node, String variable, String neighborhoodNeo4j) {
+    String ret = "(";
+    ArrayList<Long> successorIds = new ArrayList<Long>();
+    for (JsonNode longNode : node.get(Constants.OP_VALUE)) {
+      successorIds.add(longNode.longValue());
+    }
+    if (successorIds.size() == 0) return "(1=1)";
+    for (int i = 0; i < successorIds.size() - 1; i++) {
+      ret =
+        ret +
+        "(EXISTS {MATCH (" +
+        variable +
+        ")" +
+        neighborhoodNeo4j +
+        "(neighborObj) WHERE id(neighborObj)=" +
+        successorIds.get(i) +
+        "}) AND ";
+    }
+    ret =
+      ret +
+      "(EXISTS {MATCH (" +
+      variable +
+      ")" +
+      neighborhoodNeo4j +
+      "(neighborObj) WHERE id(neighborObj)=" +
+      successorIds.get(successorIds.size() - 1) +
+      "}))";
     return ret;
   }
 
@@ -269,6 +458,7 @@ public class Neo4jQueryBuilder {
       case Constants.JSON_LE -> "<=";
       case Constants.JSON_IN -> "IN";
       case Constants.JSON_NE -> "<>";
+      case Constants.JSON_REGMATCH -> "=~";
       default -> throw new ShepardParserException("unknown comparison operator " + operator);
     };
   }

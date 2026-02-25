@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.dlr.shepard</groupId>
   <artifactId>backend</artifactId>
@@ -8,8 +7,7 @@
   <name>shepard backend</name>
   <url>https://dlr-shepard.gitlab.io/dlr-shepard/shepard/</url>
   <description>This is the backend part of the shepard system.
-    The shepard backend manages all available databases and allows to create and query data via a rest api.
-  </description>
+    The shepard backend manages all available databases and allows to create and query data via a rest api.</description>
   <organization>
     <name>DLR e.V.</name>
     <url>https://www.dlr.de</url>
@@ -31,29 +29,29 @@
     <skipTests>false</skipTests>
     <skipITs>${skipTests}</skipITs>
     <skipUTs>${skipTests}</skipUTs>
-    <compiler-plugin.version>3.14.0</compiler-plugin.version>
+    <compiler-plugin.version>3.14.1</compiler-plugin.version>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.platform.version>3.15.2</quarkus.platform.version>
-    <surefire-plugin.version>3.5.3</surefire-plugin.version>
-    <assertj.version>3.27.3</assertj.version>
-    <commons.version>2.19.0</commons.version>
-    <equalsverifier.version>3.19.3</equalsverifier.version>
-    <hibernate.spatial.version>6.6.13.Final</hibernate.spatial.version>
+    <quarkus.platform.version>3.15.7</quarkus.platform.version>
+    <surefire-plugin.version>3.5.4</surefire-plugin.version>
+    <assertj.version>3.27.6</assertj.version>
+    <commons.version>2.21.0</commons.version>
+    <equalsverifier.version>3.19.4</equalsverifier.version>
+    <hibernate.spatial.version>6.6.40.Final</hibernate.spatial.version>
     <janino.version>3.1.12</janino.version>
     <jjwt.version>0.11.5</jjwt.version>
     <junit.version>5.10.5</junit.version>
-    <lombok.version>1.18.38</lombok.version>
-    <mockito.version>5.17.0</mockito.version>
+    <lombok.version>1.18.42</lombok.version>
+    <mockito.version>5.21.0</mockito.version>
     <mongodb.version>5.1.1</mongodb.version>
     <neo4j-ogm.version>4.0.11</neo4j-ogm.version>
-    <opencsv.version>5.10</opencsv.version>
-    <restassured.version>5.5.1</restassured.version>
-    <apache.commons.version>3.18.0</apache.commons.version>
-    <neo4j-cypher-dsl.version>2024.7.0</neo4j-cypher-dsl.version>
+    <opencsv.version>5.12.0</opencsv.version>
+    <restassured.version>5.5.6</restassured.version>
+    <apache.commons.version>3.20.0</apache.commons.version>
+    <neo4j-cypher-dsl.version>2024.7.4</neo4j-cypher-dsl.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -119,6 +117,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-cache</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -235,7 +237,7 @@
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
       <artifactId>neo4j-migrations</artifactId>
-      <version>2.17.2</version>
+      <version>2.20.1</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -251,7 +253,7 @@
     <dependency>
       <groupId>edu.kit.datamanager</groupId>
       <artifactId>ro-crate-java</artifactId>
-      <version>2.0.2</version>
+      <version>2.1.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -271,14 +273,14 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <!-- jsoup HTML parser library @ https://jsoup.org/ -->
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-health</artifactId>
     </dependency>
     <dependency>
-      <!-- jsoup HTML parser library @ https://jsoup.org/ -->
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.19.1</version>
+      <version>1.22.1</version>
     </dependency>
   </dependencies>
   <build>
@@ -353,7 +355,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>0.8.14</version>
         <configuration>
           <skip>${skipUTs}</skip>
           <excludes>
@@ -399,12 +401,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.26.0</version>
+        <version>3.28.0</version>
       </plugin>
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.9.3.0</version>
+        <version>4.9.8.2</version>
       </plugin>
     </plugins>
   </build>

@@ -1,5 +1,5 @@
 diff_typescript_client:
-  image: node:22-slim
+  image: node:24-slim
   cache:
     key:
       files:

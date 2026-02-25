@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "ignorePaths": ["**/node_modules/**", "**/bower_components/**"],
   "configMigration": true,
   "baseBranchPatterns": ["develop"],
   "osvVulnerabilityAlerts": true,
@@ -9,6 +10,7 @@
   "dependencyDashboardLabels": ["dependencies"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
+  "minimumReleaseAge": "14",
   "packageRules": [
     {
       "matchFileNames": ["package.json"],
@@ -38,7 +40,14 @@
       "matchFileNames": ["backend/**"],
       "matchPackageNames": ["io.quarkus.platform:{/,}**"],
       "groupName": "backend quarkus update",
-      "prBody": "This pull request updates Quarkus to the latest version. We do not want to update to non-LTS versions of Quarkus. A list of current Quarkus releases can be found here [Quarkus releases](https://quarkus.io/blog/tag/release/)."
+      "prBodyNotes": [
+        "This pull request updates Quarkus to the latest version. We do not want to update to non-LTS versions of Quarkus. A list of current Quarkus releases can be found here [Quarkus releases](https://quarkus.io/blog/tag/release/)."
+      ]
+    },
+    {
+      "matchFileNames": ["backend/**"],
+      "matchPackageNames": ["io.quarkiverse.wiremock:{/,}**"],
+      "groupName": "backend quarkus update"
     },
     {
       "matchFileNames": ["frontend/**"],

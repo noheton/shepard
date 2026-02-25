@@ -50,7 +50,15 @@ shepard uses three types of branches to organize development:
 - Follow the installation and configuration instructions for both front- and backend
 - Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` in the folders)
 - install Docker and Docker Compose (alternatively Podman and Podman Compose)
-- Run `docker compose -f backend/docker-compose.yml up` (alternatively `podman compose ...`)
+- Run `docker compose --profile dev -f infrastructure-local/docker-compose.yml up -d` (alternatively `podman compose ...`)
+- Set up your local keycloak instance:
+  1. Navigate to http://localhost:8082
+  2. Log in as admin with username `admin` and password `admin`
+  3. Navigate to `Clients` > `Import client`
+  4. Upload `infrastructure-local/keycloak_frontend-dev.json` as a resource file and hit `Save`
+  5. Create a user via `Users` > `Add user`. Set credentials!
+  6. Log out from keycloak
+  7. Navigate to http://localhost:8082/realms/master/ and in `backend/.env` set the environment variable `OIDC_PUBLIC` to the public key obtained
 - Run backend & frontend using `npm run start:dev`
 
 ### Frontend Development Environment
@@ -125,25 +133,22 @@ The variables preconfigured in `.env.example` also contain variables for local d
 1. Copy `.env.example` to `.env`
 2. Enter valid OIDC parameters
 
-#### Local databases & frontend
+#### Local databases
 
 1. install Docker and Docker Compose (alternatively Podman and Podman Compose)
-2. change to the backend root directory (backend folder)
-3. run `docker-compose up` (or `podman-compose up`)
-   - run `docker-compose --profile frontend up` to start core services and the frontend container
-4. local instances of the databases will be launched without persistent storage
-5. quick tip: run the integration tests to fill your databases with some content
+2. change to the `infrastructure-local` directory
+3. run `docker-compose --profile dev up` (or `podman-compose --profile dev up`)
+4. local instances of the databases will be launched and the storage will be persistent
 
-| Service           | URL                      | Comment                           |
-| ----------------- | ------------------------ | --------------------------------- |
-| shepard Frontend  | <http://localhost:8081/> | _Requires Keycloak_               |
-| neo4j Database    | <http://localhost:7687>  | _user: neo4j, pw: shepardshepard_ |
-| neo4j Frontend    | <http://localhost:7474>  |                                   |
-| mongodb Database  | <http://localhost:27017> | _user: mongo, pw: shepard_        |
-| mongodb Frontend  | <http://localhost:8084/> |                                   |
-| influxdb Database | <http://localhost:8086>  | _user: influx, pw: shepard_       |
-| influxdb Frontend | <http://localhost:8888>  |                                   |
-| postgres Database | <http://localhost:5432>  | _user: username, pw: password_    |
+| Service              | URL                      | Comment                           |
+| -------------------- | ------------------------ | --------------------------------- |
+| Keycloak frontend    | <http://localhost:8082/> | _user: admin, pw: admin_          |
+| neo4j database       | <http://localhost:7687>  | _user: neo4j, pw: shepardshepard_ |
+| neo4j frontend       | <http://localhost:7474>  |                                   |
+| mongodb Database     | <http://localhost:27017> | _user: mongo, pw: shepard_        |
+| mongodb Frontend     | <http://localhost:8084/> |                                   |
+| timescaledb Database | <http://localhost:5432>  | _user: username, pw: password_    |
+| postgis Database     | <http://localhost:5433>  | _user: username, pw: password_    |
 
 The credentials can be overridden with environment variables.
 Check the docker-compose file to find overridable variables.
@@ -155,18 +160,22 @@ Check the docker-compose file to find overridable variables.
   - VSCode: The "Debug Quarkus" configuration under "Run and Debug" in the left-side bar should start a working Quarkus instance
     > **Warning:** Using the VSCode run configuration "Debug Quarkus" above an opened file can edit the run configuration and cause issues.
     > Stick to the "Run and Debug" tab on the left side to avoid this.
-- visit your local frontend and generate an api key
+  - Command line: Run `npm run start:dev` from the root directory
+- visit your local frontend at <http://localhost:3000/user#api-keys> and generate an api key
 - the Swagger UI for development and testing can then be found at <http://localhost:8080/shepard/doc/swagger-ui>
 
-> **Hint:** If you don't have a local frontend and identity provider, you can easily generate an api key by running the integration tests
+> **Hint:** If you don't have or want a local frontend and identity provider, you can easily generate an api key by running the integration tests
 >
-> 1. run the integration tests: `./mvnw verify -P integration`
-> 2. go to <http://localhost:7474/> and log in to your local neo4j database
-> 3. obtain your api key with the following query:
+> 1. go to <http://localhost:7474/> and log in to your local neo4j database
+> 2. obtain your api key with the following query:
 >    `MATCH (a:ApiKey)-[:belongs_to]->(u:User {username: "test_it"}) RETURN a`
-> 4. switch to the table view and copy the attribute `jws`, this is your api key
+> 3. switch to the table view and copy the attribute `jws`, this is your api key
 
 #### Running Tests
+
+In order for all the tests to run we need empty databases prior to each run.
+If you intend to run the tests we recommend using the compose file `infrastructure-local/docker-compose-backend-tests.yml` for the databases instead of the "standard" `docker-compose.yml`.
+In this file there are no volumes defined so after shutting down the compose provider all data should be deleted.
 
 Running Unit Tests:
 
@@ -176,11 +185,13 @@ Either start quarkus with `./mvnw quarkus:dev` and start the interactive test ru
 ./mvnw test
 ```
 
-Running Integration Tests
+Running Integration Tests:
 
 ```sh
-./mvnw verify -P integration
+env SHEPARD_SPATIAL_DATA_ENABLED=true ./mvnw verify -P integration
 ```
+
+Note that for the integration tests to work completely we need to set the environment variable `SHEPARD_SPATIAL_DATA_ENABLED` to `true`!
 
 #### Known Issues
 

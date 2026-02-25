@@ -257,7 +257,7 @@ function fetchImage(fileContainerId: number, oid: string): Promise<Blob> {
       :data-object-id="dataObjectId"
       :is-editing="isEditing"
       :is-expanded="isExpanded"
-      @editor-created="ed => (editor = ed)"
+      @editor-created="(ed: Editor) => (editor = ed)"
     />
 
     <div

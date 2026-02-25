@@ -151,11 +151,14 @@ watch(containerAccessor.container, () => {
         :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
         :items="containerAccessor.items.value"
         :loading="containerAccessor.loading.value"
-        @delete-item="item => deleteItem(item)"
+        @delete-item="(item: StructuredData) => deleteItem(item)"
         @show-structured-data-content-dialog="
-          structuredData => onShowStructuredDataContentDialog(structuredData)
+          (structuredData: StructuredData) =>
+            onShowStructuredDataContentDialog(structuredData)
         "
-        @download-structured-data="structuredData => onDownload(structuredData)"
+        @download-structured-data="
+          (structuredData: StructuredData) => onDownload(structuredData)
+        "
       />
     </v-container>
     <ConfirmDeleteDialog
