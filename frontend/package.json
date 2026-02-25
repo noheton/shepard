@@ -59,6 +59,6 @@
     "vite": "^6.0.0",
     "vite-plugin-vuetify": "2.1.2",
     "vue-tsc": "2.2.12",
-    "vuetify": "3.11.6"
+    "vuetify": "4.0.0"
   }
 }
