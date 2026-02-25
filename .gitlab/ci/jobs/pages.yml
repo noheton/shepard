@@ -1,4 +1,4 @@
-# A specific job called pages in the configuration file makes GitLab aware that you’re deploying a GitLab Pages website.
+# A specific job called pages in the configuration file makes GitLab aware that you’re deploying a GitLab Pages website.
 pages:
   stage: upload
   needs: [build_maven_report, build_documentation]
