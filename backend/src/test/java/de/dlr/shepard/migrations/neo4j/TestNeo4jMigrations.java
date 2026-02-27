@@ -144,20 +144,35 @@ public class TestNeo4jMigrations {
   }
 
   /**
-   * Assert that all referenced timeseries migrated correctly towards individual timeseries.
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references and these references lie within different containers.
+   * In that case multiple timeseries, one for each container, should be created and each timeseries should reference its container.
    */
   @Test
-  public void testV11_1_ReferencedTimeseriesMigrated() {
-    createReferencedTimeseries();
+  public void testV11_1_MultiReferencedTimeseriesMigrated() {
+    createMultiReferencedTimeseries();
     runMigrations("V11");
     assertReferencedTimeseriesMigrated();
   }
 
   /**
+   * Assert that a timeseries migrated correctly if it is referenced by a single reference.
+   * In this case the timeseries should get a reference towards the container of its reference.
+   */
+  @Test
+  public void testV11_2_SingleReferencedTimeseriesMigrated() {}
+
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references which however all lie within one container.
+   * In this case the timeseries should get a reference towards this container.
+   */
+  @Test
+  public void testV11_3_SingleReferencedTimeseriesMigrated() {}
+
+  /**
    * Assert that now each timeseries has a relationship to exactly one container.
    */
   @Test
-  public void testV11_2_EachTimeseriesHasOneContainer() {
+  public void testV11_4_EachTimeseriesHasOneContainer() {
     var tsWithoutContainer = queryResults(
       "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
     );
@@ -270,7 +285,7 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createReferencedTimeseries() {
+  private static void createMultiReferencedTimeseries() {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
