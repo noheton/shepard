@@ -177,6 +177,10 @@ public class TestNeo4jMigrations {
   public void testV11_1_ReferencedTimeseriesMigrated() {
     createReferencedTimeseries();
     runMigrations("V11");
+    assertReferencedTimeseriesMigrated();
+  }
+
+  private static void assertReferencedTimeseriesMigrated() {
     var tsNode1 = node("Timeseries")
       .withProperties(
         "measurement",
