@@ -279,10 +279,18 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_2_EachTimeseriesHasOneContainer() {
+    var tsWithoutContainer = queryResults(
+      "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
+    );
+    assertEquals(0, tsWithoutContainer.size());
     var tsWithExactlyOneContainer = queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount = 1 return ts"
     );
     assertEquals(2, tsWithExactlyOneContainer.size());
+    var tsWithSeveralContainers = queryResults(
+      "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
+    );
+    assertEquals(0, tsWithSeveralContainers.size());
   }
 
   /**
