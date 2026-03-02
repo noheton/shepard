@@ -1,6 +1,7 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
@@ -145,16 +146,24 @@ public class TestNeo4jMigrations {
   }
 
   /**
+   * Prepare the test data, run the migrations and assert they run without aborting.
+   */
+  @Test
+  public void testV11_0_NoException() {
+    createMultiReferencedTimeseries("_V11-1");
+    createSingleReferencedTimeseries("_V11-2");
+    createMultiReferencedTimeseriesOneContainer("_V11-3");
+    runMigrations("V11");
+    assertTrue(true);
+  }
+
+  /**
    * Assert that a timeseries migrated correctly if it is referenced by multiple references and these references lie within different containers.
    * In that case multiple timeseries, one for each container, should be created and each timeseries should reference its container.
    */
   @Test
   public void testV11_1_MultiReferencedTimeseriesMigrated() {
-    createMultiReferencedTimeseries();
-    createSingleReferencedTimeseries();
-    createMultiReferencedTimeseriesOneContainer();
-    runMigrations("V11");
-    assertReferencedTimeseriesMigrated();
+    assertMultiReferencedTimeseriesMigrated("_V11-1");
   }
 
   /**
@@ -163,7 +172,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_2_SingleReferencedTimeseriesMigrated() {
-    assertSingleReferencedTimeseriesMigrated();
+    assertSingleReferencedTimeseriesMigrated("_V11-2");
   }
 
   /**
@@ -172,7 +181,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {
-    assertMultiReferencedTimeseriesOneContainerMigrated();
+    assertMultiReferencedTimeseriesOneContainerMigrated("_V11-3");
   }
 
   /**
@@ -194,7 +203,7 @@ public class TestNeo4jMigrations {
     assertEquals(0, tsWithSeveralContainers.size());
   }
 
-  private static void assertReferencedTimeseriesMigrated() {
+  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
     var tsNode1 = node("Timeseries")
       .withProperties(
         "measurement",
@@ -292,8 +301,7 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createSingleReferencedTimeseries() {
-    var suffix = "_V11-3";
+  private static void createSingleReferencedTimeseries(String suffix) {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
@@ -345,8 +353,7 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertSingleReferencedTimeseriesMigrated() {
-    var suffix = "_V11-3";
+  private static void assertSingleReferencedTimeseriesMigrated(String suffix) {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
@@ -403,8 +410,7 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void assertMultiReferencedTimeseriesOneContainerMigrated() {
-    var suffix = "_V11-2";
+  private static void assertMultiReferencedTimeseriesOneContainerMigrated(String suffix) {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
@@ -483,19 +489,19 @@ public class TestNeo4jMigrations {
     return Cypher.literalOf(of + "-" + randomElement);
   }
 
-  private static void createMultiReferencedTimeseries() {
+  private static void createMultiReferencedTimeseries(String suffix) {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
-        literal("measurement"),
+        literal("measurement" + suffix),
         "device",
-        literal("device"),
+        literal("device" + suffix),
         "location",
-        literal("location"),
+        literal("location" + suffix),
         "symbolicName",
-        literal("symbolicName"),
+        literal("symbolicName" + suffix),
         "field",
-        literal("field")
+        literal("field" + suffix)
       )
       .named("tsNode");
     var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
@@ -507,7 +513,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        literal("ref-1"),
+        literal("ref-1" + suffix),
         "shepardId",
         Cypher.literalOf(5),
         "start",
@@ -523,7 +529,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        literal("ref-2"),
+        literal("ref-2" + suffix),
         "shepardId",
         Cypher.literalOf(6),
         "start",
@@ -532,9 +538,9 @@ public class TestNeo4jMigrations {
       .named("ref2");
     var annotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      literal("prop-on-ts-ref"),
+      literal("prop-on-ts-ref" + suffix),
       "valueName",
-      literal("value-on-ts-ref")
+      literal("value-on-ts-ref" + suffix)
     );
     var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -542,7 +548,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      literal("TimeseriesContainer-1")
+      literal("TimeseriesContainer-1" + suffix)
     );
     var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -550,7 +556,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      literal("TimeseriesContainer-2")
+      literal("TimeseriesContainer-2" + suffix)
     );
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
@@ -561,8 +567,7 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void createMultiReferencedTimeseriesOneContainer() {
-    var suffix = "_V11-2";
+  private static void createMultiReferencedTimeseriesOneContainer(String suffix) {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
