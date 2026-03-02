@@ -404,7 +404,7 @@ public class TestNeo4jMigrations {
       ref1.relationshipTo(annotation, "has_annotation"),
       tsNode.relationshipTo(container, "is_in_container")
     )
-      .returning(Cypher.asterisk())
+      .returning(tsNode)
       .build();
     var results = queryResults(result, Object.class);
     assertEquals(1, results.size());
@@ -476,10 +476,9 @@ public class TestNeo4jMigrations {
       ref1.relationshipTo(container, "is_in_container"),
       ref1.relationshipTo(annotation, "has_annotation"),
       ref2.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(annotation, "has_annotation"),
       tsNode.relationshipTo(container, "is_in_container")
     )
-      .returning(Cypher.asterisk())
+      .returning(tsNode)
       .build();
     var results = queryResults(result, Object.class);
     assertEquals(1, results.size());
