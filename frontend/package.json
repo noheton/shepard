@@ -15,7 +15,7 @@
   "dependencies": {
     "@dlr-shepard/backend-client": "file:../backend-client",
     "@mdi/font": "7.4.47",
-    "@nuxt/fonts": "0.12.1",
+    "@nuxt/fonts": "0.14.0",
     "@sidebase/nuxt-auth": "0.10.1",
     "@tiptap/extension-bullet-list": "3.19.0",
     "@tiptap/extension-code": "3.19.0",
