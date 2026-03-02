@@ -162,7 +162,9 @@ public class TestNeo4jMigrations {
    * In this case the timeseries should get a reference towards the container of its reference.
    */
   @Test
-  public void testV11_2_SingleReferencedTimeseriesMigrated() {}
+  public void testV11_2_SingleReferencedTimeseriesMigrated() {
+    assertSingleReferencedTimeseriesMigrated();
+  }
 
   /**
    * Assert that a timeseries migrated correctly if it is referenced by multiple references which however all lie within one container.
@@ -283,6 +285,117 @@ public class TestNeo4jMigrations {
       ref1.relationshipTo(annotation, "has_annotation"),
       tsNode1.relationshipTo(container1, "is_in_container"),
       tsNode2.relationshipTo(container2, "is_in_container")
+    )
+      .returning(Cypher.asterisk())
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
+  private static void createSingleReferencedTimeseries() {
+    var suffix = "_V11-3";
+    var tsNode = node("Timeseries")
+      .withProperties(
+        "measurement",
+        literal("measurement" + suffix),
+        "device",
+        literal("device" + suffix),
+        "location",
+        literal("location" + suffix),
+        "symbolicName",
+        literal("symbolicName" + suffix),
+        "field",
+        literal("field" + suffix)
+      )
+      .named("tsNode");
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-1" + suffix),
+        "shepardId",
+        Cypher.literalOf(5),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref1");
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      literal("prop-on-ts-ref" + suffix),
+      "valueName",
+      literal("value-on-ts-ref" + suffix)
+    );
+    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(200),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      literal("TimeseriesContainer" + suffix)
+    );
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void assertSingleReferencedTimeseriesMigrated() {
+    var suffix = "_V11-3";
+    var tsNode = node("Timeseries")
+      .withProperties(
+        "measurement",
+        literal("measurement" + suffix),
+        "device",
+        literal("device" + suffix),
+        "location",
+        literal("location" + suffix),
+        "symbolicName",
+        literal("symbolicName" + suffix),
+        "field",
+        literal("field" + suffix)
+      )
+      .named("tsNode");
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-1" + suffix),
+        "shepardId",
+        Cypher.literalOf(5),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref1");
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      literal("prop-on-ts-ref" + suffix),
+      "valueName",
+      literal("value-on-ts-ref" + suffix)
+    );
+    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(200),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      literal("TimeseriesContainer" + suffix)
+    );
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      tsNode.relationshipTo(container, "is_in_container")
     )
       .returning(Cypher.asterisk())
       .build();
