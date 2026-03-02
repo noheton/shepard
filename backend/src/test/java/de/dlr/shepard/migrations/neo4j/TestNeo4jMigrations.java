@@ -151,6 +151,8 @@ public class TestNeo4jMigrations {
   @Test
   public void testV11_1_MultiReferencedTimeseriesMigrated() {
     createMultiReferencedTimeseries();
+    createSingleReferencedTimeseries();
+    createMultiReferencedTimeseriesOneContainer();
     runMigrations("V11");
     assertReferencedTimeseriesMigrated();
   }
@@ -167,7 +169,9 @@ public class TestNeo4jMigrations {
    * In this case the timeseries should get a reference towards this container.
    */
   @Test
-  public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {}
+  public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {
+    assertMultiReferencedTimeseriesOneContainerMigrated();
+  }
 
   /**
    * Assert that now each timeseries has a relationship to exactly one container.
@@ -286,6 +290,82 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
+  private static void assertMultiReferencedTimeseriesOneContainerMigrated() {
+    var suffix = "_V11-2";
+    var tsNode = node("Timeseries")
+      .withProperties(
+        "measurement",
+        literal("measurement" + suffix),
+        "device",
+        literal("device" + suffix),
+        "location",
+        literal("location" + suffix),
+        "symbolicName",
+        literal("symbolicName" + suffix),
+        "field",
+        literal("field" + suffix)
+      )
+      .named("tsNode");
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-1" + suffix),
+        "shepardId",
+        Cypher.literalOf(5),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref1");
+    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-2" + suffix),
+        "shepardId",
+        Cypher.literalOf(6),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref2");
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      literal("prop-on-ts-ref" + suffix),
+      "valueName",
+      literal("value-on-ts-ref" + suffix)
+    );
+    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(200),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      literal("TimeseriesContainer" + suffix)
+    );
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      ref2.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(annotation, "has_annotation"),
+      tsNode.relationshipTo(container, "is_in_container")
+    )
+      .returning(Cypher.asterisk())
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
   private static Literal<String> literal(String of) {
     return Cypher.literalOf(of + "-" + randomElement);
   }
@@ -364,6 +444,77 @@ public class TestNeo4jMigrations {
       ref2.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container1, "is_in_container"),
       ref2.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void createMultiReferencedTimeseriesOneContainer() {
+    var suffix = "_V11-2";
+    var tsNode = node("Timeseries")
+      .withProperties(
+        "measurement",
+        literal("measurement" + suffix),
+        "device",
+        literal("device" + suffix),
+        "location",
+        literal("location" + suffix),
+        "symbolicName",
+        literal("symbolicName" + suffix),
+        "field",
+        literal("field" + suffix)
+      )
+      .named("tsNode");
+    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-1" + suffix),
+        "shepardId",
+        Cypher.literalOf(5),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref1");
+    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(100),
+        "deleted",
+        Cypher.literalOf(false),
+        "end",
+        Cypher.literalOf(2000),
+        "name",
+        literal("ref-2" + suffix),
+        "shepardId",
+        Cypher.literalOf(6),
+        "start",
+        Cypher.literalOf(1000)
+      )
+      .named("ref2");
+    var annotation = node("SemanticAnnotation").withProperties(
+      "propertyName",
+      literal("prop-on-ts-ref" + suffix),
+      "valueName",
+      literal("value-on-ts-ref" + suffix)
+    );
+    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
+      "createdAt",
+      Cypher.literalOf(200),
+      "deleted",
+      Cypher.literalOf(false),
+      "name",
+      literal("TimeseriesContainer" + suffix)
+    );
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container"),
       ref1.relationshipTo(annotation, "has_annotation")
     );
   }
