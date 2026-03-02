@@ -16,6 +16,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Statement;
@@ -135,9 +136,9 @@ public class TestNeo4jMigrations {
 
     var migratedAnnotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      Cypher.literalOf("prop-" + randomElement),
+      literal("prop"),
       "valueName",
-      Cypher.literalOf("value-" + randomElement)
+      literal("value")
     );
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
@@ -191,29 +192,29 @@ public class TestNeo4jMigrations {
     var tsNode1 = node("Timeseries")
       .withProperties(
         "measurement",
-        Cypher.literalOf("measurement-" + randomElement),
+        literal("measurement"),
         "device",
-        Cypher.literalOf("device-" + randomElement),
+        literal("device"),
         "location",
-        Cypher.literalOf("location-" + randomElement),
+        literal("location"),
         "symbolicName",
-        Cypher.literalOf("symbolicName-" + randomElement),
+        literal("symbolicName"),
         "field",
-        Cypher.literalOf("field-" + randomElement)
+        literal("field")
       )
       .named("tsNode");
     var tsNode2 = node("Timeseries")
       .withProperties(
         "measurement",
-        Cypher.literalOf("measurement-" + randomElement),
+        literal("measurement"),
         "device",
-        Cypher.literalOf("device-" + randomElement),
+        literal("device"),
         "location",
-        Cypher.literalOf("location-" + randomElement),
+        literal("location"),
         "symbolicName",
-        Cypher.literalOf("symbolicName-" + randomElement),
+        literal("symbolicName"),
         "field",
-        Cypher.literalOf("field-" + randomElement)
+        literal("field")
       )
       .named("tsNode2");
     var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
@@ -225,7 +226,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        Cypher.literalOf("ref-1-" + randomElement),
+        literal("ref-1"),
         "shepardId",
         Cypher.literalOf(5),
         "start",
@@ -241,7 +242,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        Cypher.literalOf("ref-2-" + randomElement),
+        literal("ref-2"),
         "shepardId",
         Cypher.literalOf(6),
         "start",
@@ -250,9 +251,9 @@ public class TestNeo4jMigrations {
       .named("ref2");
     var annotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      Cypher.literalOf("prop-on-ts-ref-" + randomElement),
+      literal("prop-on-ts-ref"),
       "valueName",
-      Cypher.literalOf("value-on-ts-ref-" + randomElement)
+      literal("value-on-ts-ref")
     );
     var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -260,7 +261,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      Cypher.literalOf("TimeseriesContainer-1-" + randomElement)
+      literal("TimeseriesContainer-1")
     );
     var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -268,7 +269,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      Cypher.literalOf("TimeseriesContainer-2-" + randomElement)
+      literal("TimeseriesContainer-2")
     );
     var result = Cypher.match(
       ref1.relationshipTo(tsNode1, "has_payload"),
@@ -285,19 +286,23 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
+  private static Literal<String> literal(String of) {
+    return Cypher.literalOf(of + "-" + randomElement);
+  }
+
   private static void createMultiReferencedTimeseries() {
     var tsNode = node("Timeseries")
       .withProperties(
         "measurement",
-        Cypher.literalOf("measurement-" + randomElement),
+        literal("measurement"),
         "device",
-        Cypher.literalOf("device-" + randomElement),
+        literal("device"),
         "location",
-        Cypher.literalOf("location-" + randomElement),
+        literal("location"),
         "symbolicName",
-        Cypher.literalOf("symbolicName-" + randomElement),
+        literal("symbolicName"),
         "field",
-        Cypher.literalOf("field-" + randomElement)
+        literal("field")
       )
       .named("tsNode");
     var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
@@ -309,7 +314,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        Cypher.literalOf("ref-1-" + randomElement),
+        literal("ref-1"),
         "shepardId",
         Cypher.literalOf(5),
         "start",
@@ -325,7 +330,7 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        Cypher.literalOf("ref-2-" + randomElement),
+        literal("ref-2"),
         "shepardId",
         Cypher.literalOf(6),
         "start",
@@ -334,9 +339,9 @@ public class TestNeo4jMigrations {
       .named("ref2");
     var annotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      Cypher.literalOf("prop-on-ts-ref-" + randomElement),
+      literal("prop-on-ts-ref"),
       "valueName",
-      Cypher.literalOf("value-on-ts-ref-" + randomElement)
+      literal("value-on-ts-ref")
     );
     var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -344,7 +349,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      Cypher.literalOf("TimeseriesContainer-1-" + randomElement)
+      literal("TimeseriesContainer-1")
     );
     var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
       "createdAt",
@@ -352,7 +357,7 @@ public class TestNeo4jMigrations {
       "deleted",
       Cypher.literalOf(false),
       "name",
-      Cypher.literalOf("TimeseriesContainer-2-" + randomElement)
+      literal("TimeseriesContainer-2")
     );
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
