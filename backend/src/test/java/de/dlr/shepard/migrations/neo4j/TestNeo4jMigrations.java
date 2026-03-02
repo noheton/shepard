@@ -620,14 +620,16 @@ public class TestNeo4jMigrations {
       "valueName",
       literal("value-on-ts-ref" + suffix)
     );
-    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer" + suffix)
-    );
+    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer")
+      .withProperties(
+        "createdAt",
+        Cypher.literalOf(200),
+        "deleted",
+        Cypher.literalOf(false),
+        "name",
+        literal("TimeseriesContainer" + suffix)
+      )
+      .named("container");
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
