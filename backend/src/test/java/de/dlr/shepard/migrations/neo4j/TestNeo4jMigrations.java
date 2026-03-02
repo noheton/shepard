@@ -167,7 +167,7 @@ public class TestNeo4jMigrations {
    * In this case the timeseries should get a reference towards this container.
    */
   @Test
-  public void testV11_3_SingleReferencedTimeseriesMigrated() {}
+  public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {}
 
   /**
    * Assert that now each timeseries has a relationship to exactly one container.
