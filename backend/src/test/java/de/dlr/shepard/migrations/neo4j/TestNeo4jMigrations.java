@@ -293,10 +293,10 @@ public class TestNeo4jMigrations {
       tsNode1.relationshipTo(container1, "is_in_container"),
       tsNode2.relationshipTo(container2, "is_in_container")
     )
-      .returning(Cypher.asterisk())
+      .returning(tsNode1, tsNode2)
       .build();
     var results = queryResults(result, Object.class);
-    assertEquals(1, results.size());
+    assertEquals(2, results.size());
   }
 
   private static void createSingleReferencedTimeseries(String suffix) {
