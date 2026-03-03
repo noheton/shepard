@@ -151,9 +151,9 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_0_NoException() {
-    createMultiReferencedTimeseries("V11 1");
-    createSingleReferencedTimeseries("V11 2");
-    createMultiReferencedTimeseriesOneContainer("V11 3");
+    createMultiReferencedTimeseries();
+    createSingleReferencedTimeseries();
+    createMultiReferencedTimeseriesOneContainer();
     //    fail();
     runMigrations("V11");
     assertTrue(true);
@@ -165,7 +165,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_1_MultiReferencedTimeseriesMigrated() {
-    assertMultiReferencedTimeseriesMigrated("V11 1");
+    assertMultiReferencedTimeseriesMigrated();
   }
 
   /**
@@ -174,7 +174,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_2_SingleReferencedTimeseriesMigrated() {
-    assertSingleReferencedTimeseriesMigrated("V11 2");
+    assertSingleReferencedTimeseriesMigrated();
   }
 
   /**
@@ -183,7 +183,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {
-    assertMultiReferencedTimeseriesOneContainerMigrated("V11 3");
+    assertMultiReferencedTimeseriesOneContainerMigrated();
   }
 
   /**
@@ -205,8 +205,8 @@ public class TestNeo4jMigrations {
     assertEquals(0, tsWithSeveralContainers.size());
   }
 
-  private static void createSingleReferencedTimeseries(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void createSingleReferencedTimeseries() {
+    var c = new GraphDataCreator("V11 single referenced timeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -218,8 +218,8 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertSingleReferencedTimeseriesMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void assertSingleReferencedTimeseriesMigrated() {
+    var c = new GraphDataCreator("V11 single referenced timeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -236,8 +236,8 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createMultiReferencedTimeseriesOneContainer(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void createMultiReferencedTimeseriesOneContainer() {
+    var c = new GraphDataCreator("V11 multi referenced ts one container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -252,8 +252,8 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertMultiReferencedTimeseriesOneContainerMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void assertMultiReferencedTimeseriesOneContainerMigrated() {
+    var c = new GraphDataCreator("V11 multi referenced ts one container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -272,8 +272,8 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createMultiReferencedTimeseries(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void createMultiReferencedTimeseries() {
+    var c = new GraphDataCreator("V11 multi referenced ts two containers");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -289,8 +289,8 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
+  private static void assertMultiReferencedTimeseriesMigrated() {
+    var c = new GraphDataCreator("V11 multi referenced ts two containers");
     var tsNode1 = c.timeseries().named("tsNode1");
     var tsNode2 = c.timeseries().named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
