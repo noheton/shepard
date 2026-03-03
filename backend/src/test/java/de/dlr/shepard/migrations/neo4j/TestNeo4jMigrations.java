@@ -73,6 +73,11 @@ public class TestNeo4jMigrations {
     return queryResults(cypherQuery, type);
   }
 
+  private static List<Object> queryResults(Statement statement) {
+    var cypherQuery = cypherRenderer.render(statement);
+    return queryResults(cypherQuery, Object.class);
+  }
+
   private static List<Object> queryResults(String cypherQuery) {
     return queryResults(cypherQuery, Object.class);
   }
@@ -208,7 +213,8 @@ public class TestNeo4jMigrations {
     var tsWithExactlyOneContainer = queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount = 1 return ts"
     );
-    assertEquals(2, tsWithExactlyOneContainer.size());
+    var numTs = queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).get(0);
+    assertEquals(numTs, tsWithExactlyOneContainer.size());
     var tsWithSeveralContainers = queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
     );
@@ -329,17 +335,15 @@ public class TestNeo4jMigrations {
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var ref3 = c.timeseriesReference("ref3").named("ref3");
-    var annotation = c.annotation();
-    var container1 = c.timeseriesContainer(1);
-    var container2 = c.timeseriesContainer(2);
+    var container1 = c.timeseriesContainer(1).named("c1");
+    var container2 = c.timeseriesContainer(2).named("c2");
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
       ref3.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container1, "is_in_container"),
       ref2.relationshipTo(container2, "is_in_container"),
-      ref3.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
+      ref3.relationshipTo(container2, "is_in_container")
     );
   }
 
@@ -350,24 +354,26 @@ public class TestNeo4jMigrations {
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var ref3 = c.timeseriesReference("ref3").named("ref3");
-    var annotation = c.annotation();
-    var container1 = c.timeseriesContainer(1);
-    var container2 = c.timeseriesContainer(2);
-    var result = Cypher.match(
+    var container1 = c.timeseriesContainer(1).named("c1");
+    var container2 = c.timeseriesContainer(2).named("c2");
+    var queryTs1 = Cypher.match(
       ref1.relationshipTo(tsNode1, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      tsNode1.relationshipTo(container1, "is_in_container")
+    )
+      .returning(tsNode1)
+      .build();
+    assertEquals(1, queryResults(queryTs1).size());
+    var queryTs2 = Cypher.match(
       ref2.relationshipTo(tsNode2, "has_payload"),
       ref3.relationshipTo(tsNode2, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
       ref2.relationshipTo(container2, "is_in_container"),
       ref3.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      tsNode1.relationshipTo(container1, "is_in_container"),
       tsNode2.relationshipTo(container2, "is_in_container")
     )
-      .returning(tsNode1, tsNode2)
+      .returning(tsNode2)
       .build();
-    var results = queryResults(result, Object.class);
-    assertEquals(2, results.size());
+    assertEquals(1, queryResults(queryTs2).size());
   }
 
   private static Literal<String> literal(String of) {
