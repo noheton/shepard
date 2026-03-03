@@ -154,6 +154,7 @@ public class TestNeo4jMigrations {
     createMultiReferencedTimeseries();
     createSingleReferencedTimeseries();
     createMultiReferencedTimeseriesOneContainer();
+    create3MultiReferencedTimeseries2();
     //    fail();
     runMigrations("V11");
     assertTrue(true);
@@ -187,10 +188,19 @@ public class TestNeo4jMigrations {
   }
 
   /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references by three references sharing two containers.
+   * In this case the two timeseries, one for each container should be created.
+   */
+  @Test
+  public void testV11_4_Multi3ReferencedTimeseries() {
+    assert3MultiReferencedTimeseriesMigrated();
+  }
+
+  /**
    * Assert that now each timeseries has a relationship to exactly one container.
    */
   @Test
-  public void testV11_4_EachTimeseriesHasOneContainer() {
+  public void testV11_5_EachTimeseriesHasOneContainer() {
     var tsWithoutContainer = queryResults(
       "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
     );
@@ -303,6 +313,53 @@ public class TestNeo4jMigrations {
       ref2.relationshipTo(tsNode2, "has_payload"),
       ref1.relationshipTo(container1, "is_in_container"),
       ref2.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      tsNode1.relationshipTo(container1, "is_in_container"),
+      tsNode2.relationshipTo(container2, "is_in_container")
+    )
+      .returning(tsNode1, tsNode2)
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(2, results.size());
+  }
+
+  private static void create3MultiReferencedTimeseries2() {
+    var c = new GraphDataCreator("V11 multi referenced ts two containers three refs");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref3.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      ref2.relationshipTo(container2, "is_in_container"),
+      ref3.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void assert3MultiReferencedTimeseriesMigrated() {
+    var c = new GraphDataCreator("V11 multi referenced ts two containers three refs");
+    var tsNode1 = c.timeseries().named("tsNode1");
+    var tsNode2 = c.timeseries().named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode1, "has_payload"),
+      ref2.relationshipTo(tsNode2, "has_payload"),
+      ref3.relationshipTo(tsNode2, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      ref2.relationshipTo(container2, "is_in_container"),
+      ref3.relationshipTo(container2, "is_in_container"),
       ref1.relationshipTo(annotation, "has_annotation"),
       tsNode1.relationshipTo(container1, "is_in_container"),
       tsNode2.relationshipTo(container2, "is_in_container")
