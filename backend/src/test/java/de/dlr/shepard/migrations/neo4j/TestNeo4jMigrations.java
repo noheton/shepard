@@ -2,6 +2,7 @@ package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
@@ -219,6 +220,19 @@ public class TestNeo4jMigrations {
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
     );
     assertEquals(0, tsWithSeveralContainers.size());
+  }
+
+  @Test
+  public void testV11_6_EachReferenceHasTimeseries() {
+    assertEquals(
+      0,
+      queryResults(
+        "match(tsr:TimeseriesReference) where not exists " +
+        "{ match(tsr)-[:has_payload]->(:Timeseries) } " +
+        "return count(tsr)",
+        Long.class
+      ).get(0)
+    );
   }
 
   private static void createSingleReferencedTimeseries() {
