@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
@@ -150,9 +151,10 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_0_NoException() {
-    createMultiReferencedTimeseries("_V11-1");
-    createSingleReferencedTimeseries("_V11-2");
-    createMultiReferencedTimeseriesOneContainer("_V11-3");
+    createMultiReferencedTimeseries("V11 1");
+    createSingleReferencedTimeseries("V11 2");
+    createMultiReferencedTimeseriesOneContainer("V11 3");
+    //    fail();
     runMigrations("V11");
     assertTrue(true);
   }
@@ -163,7 +165,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_1_MultiReferencedTimeseriesMigrated() {
-    assertMultiReferencedTimeseriesMigrated("_V11-1");
+    assertMultiReferencedTimeseriesMigrated("V11 1");
   }
 
   /**
@@ -172,7 +174,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_2_SingleReferencedTimeseriesMigrated() {
-    assertSingleReferencedTimeseriesMigrated("_V11-2");
+    assertSingleReferencedTimeseriesMigrated("V11 2");
   }
 
   /**
@@ -181,7 +183,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {
-    assertMultiReferencedTimeseriesOneContainerMigrated("_V11-3");
+    assertMultiReferencedTimeseriesOneContainerMigrated("V11 3");
   }
 
   /**
@@ -203,37 +205,32 @@ public class TestNeo4jMigrations {
     assertEquals(0, tsWithSeveralContainers.size());
   }
 
-  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
-    var tsNode1 = node("Timeseries")
-      .withProperties(
+  @AllArgsConstructor
+  private static class GraphDataCreator {
+
+    private String suffix;
+
+    private String getSuffix() {
+      return " " + suffix;
+    }
+
+    private Node timeseries() {
+      return node("Timeseries").withProperties(
         "measurement",
-        literal("measurement"),
+        literal("measurement" + getSuffix()),
         "device",
-        literal("device"),
+        literal("device" + getSuffix()),
         "location",
-        literal("location"),
+        literal("location" + getSuffix()),
         "symbolicName",
-        literal("symbolicName"),
+        literal("symbolicName" + getSuffix()),
         "field",
-        literal("field")
-      )
-      .named("tsNode");
-    var tsNode2 = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement"),
-        "device",
-        literal("device"),
-        "location",
-        literal("location"),
-        "symbolicName",
-        literal("symbolicName"),
-        "field",
-        literal("field")
-      )
-      .named("tsNode2");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
+        literal("field" + getSuffix())
+      );
+    }
+
+    private Node timeseriesReference(String name) {
+      return node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
         "createdAt",
         Cypher.literalOf(100),
         "deleted",
@@ -241,51 +238,52 @@ public class TestNeo4jMigrations {
         "end",
         Cypher.literalOf(2000),
         "name",
-        literal("ref-1"),
+        literal(name + getSuffix()),
         "shepardId",
         Cypher.literalOf(5),
         "start",
         Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
+      );
+    }
+
+    private Node annotation() {
+      return node("SemanticAnnotation").withProperties(
+        "propertyName",
+        literal("prop" + getSuffix()),
+        "valueName",
+        literal("value" + getSuffix())
+      );
+    }
+
+    private Node timeseriesContainer(int index) {
+      return timeseriesContainer("TimeseriesContainer " + index);
+    }
+
+    private Node timeseriesContainer() {
+      return timeseriesContainer("TimeseriesContainer");
+    }
+
+    private Node timeseriesContainer(String name) {
+      return node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
         "createdAt",
-        Cypher.literalOf(100),
+        Cypher.literalOf(200),
         "deleted",
         Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
         "name",
-        literal("ref-2"),
-        "shepardId",
-        Cypher.literalOf(6),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref2");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref"),
-      "valueName",
-      literal("value-on-ts-ref")
-    );
-    var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer-1")
-    );
-    var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(300),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer-2")
-    );
+        literal(name + getSuffix())
+      );
+    }
+  }
+
+  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode1 = c.timeseries().named("tsNode1");
+    var tsNode2 = c.timeseries().named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
     var result = Cypher.match(
       ref1.relationshipTo(tsNode1, "has_payload"),
       ref2.relationshipTo(tsNode2, "has_payload"),
@@ -302,50 +300,11 @@ public class TestNeo4jMigrations {
   }
 
   private static void createSingleReferencedTimeseries(String suffix) {
-    var tsNode = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement" + suffix),
-        "device",
-        literal("device" + suffix),
-        "location",
-        literal("location" + suffix),
-        "symbolicName",
-        literal("symbolicName" + suffix),
-        "field",
-        literal("field" + suffix)
-      )
-      .named("tsNode");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-1" + suffix),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref" + suffix),
-      "valueName",
-      literal("value-on-ts-ref" + suffix)
-    );
-    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer" + suffix)
-    );
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
@@ -354,50 +313,11 @@ public class TestNeo4jMigrations {
   }
 
   private static void assertSingleReferencedTimeseriesMigrated(String suffix) {
-    var tsNode = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement" + suffix),
-        "device",
-        literal("device" + suffix),
-        "location",
-        literal("location" + suffix),
-        "symbolicName",
-        literal("symbolicName" + suffix),
-        "field",
-        literal("field" + suffix)
-      )
-      .named("tsNode");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-1" + suffix),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref" + suffix),
-      "valueName",
-      literal("value-on-ts-ref" + suffix)
-    );
-    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer" + suffix)
-    );
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
     var result = Cypher.match(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
@@ -411,66 +331,12 @@ public class TestNeo4jMigrations {
   }
 
   private static void assertMultiReferencedTimeseriesOneContainerMigrated(String suffix) {
-    var tsNode = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement" + suffix),
-        "device",
-        literal("device" + suffix),
-        "location",
-        literal("location" + suffix),
-        "symbolicName",
-        literal("symbolicName" + suffix),
-        "field",
-        literal("field" + suffix)
-      )
-      .named("tsNode");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-1" + suffix),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-2" + suffix),
-        "shepardId",
-        Cypher.literalOf(6),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref2");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref" + suffix),
-      "valueName",
-      literal("value-on-ts-ref" + suffix)
-    );
-    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer" + suffix)
-    );
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
     var result = Cypher.match(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
@@ -489,74 +355,13 @@ public class TestNeo4jMigrations {
   }
 
   private static void createMultiReferencedTimeseries(String suffix) {
-    var tsNode = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement" + suffix),
-        "device",
-        literal("device" + suffix),
-        "location",
-        literal("location" + suffix),
-        "symbolicName",
-        literal("symbolicName" + suffix),
-        "field",
-        literal("field" + suffix)
-      )
-      .named("tsNode");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-1" + suffix),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-2" + suffix),
-        "shepardId",
-        Cypher.literalOf(6),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref2");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref" + suffix),
-      "valueName",
-      literal("value-on-ts-ref" + suffix)
-    );
-    var container1 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(200),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer-1" + suffix)
-    );
-    var container2 = node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-      "createdAt",
-      Cypher.literalOf(300),
-      "deleted",
-      Cypher.literalOf(false),
-      "name",
-      literal("TimeseriesContainer-2" + suffix)
-    );
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
@@ -567,68 +372,12 @@ public class TestNeo4jMigrations {
   }
 
   private static void createMultiReferencedTimeseriesOneContainer(String suffix) {
-    var tsNode = node("Timeseries")
-      .withProperties(
-        "measurement",
-        literal("measurement" + suffix),
-        "device",
-        literal("device" + suffix),
-        "location",
-        literal("location" + suffix),
-        "symbolicName",
-        literal("symbolicName" + suffix),
-        "field",
-        literal("field" + suffix)
-      )
-      .named("tsNode");
-    var ref1 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-1" + suffix),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref1");
-    var ref2 = node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal("ref-2" + suffix),
-        "shepardId",
-        Cypher.literalOf(6),
-        "start",
-        Cypher.literalOf(1000)
-      )
-      .named("ref2");
-    var annotation = node("SemanticAnnotation").withProperties(
-      "propertyName",
-      literal("prop-on-ts-ref" + suffix),
-      "valueName",
-      literal("value-on-ts-ref" + suffix)
-    );
-    var container = node("TimeseriesContainer", "BasicEntity", "BasicContainer")
-      .withProperties(
-        "createdAt",
-        Cypher.literalOf(200),
-        "deleted",
-        Cypher.literalOf(false),
-        "name",
-        literal("TimeseriesContainer" + suffix)
-      )
-      .named("container");
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer().named("container");
     create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
