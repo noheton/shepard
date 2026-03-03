@@ -205,6 +205,118 @@ public class TestNeo4jMigrations {
     assertEquals(0, tsWithSeveralContainers.size());
   }
 
+  private static void createSingleReferencedTimeseries(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void assertSingleReferencedTimeseriesMigrated(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      tsNode.relationshipTo(container, "is_in_container")
+    )
+      .returning(tsNode)
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
+  private static void createMultiReferencedTimeseriesOneContainer(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer().named("container");
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void assertMultiReferencedTimeseriesOneContainerMigrated(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      ref2.relationshipTo(container, "is_in_container"),
+      tsNode.relationshipTo(container, "is_in_container")
+    )
+      .returning(tsNode)
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
+  private static void createMultiReferencedTimeseries(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      ref2.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation")
+    );
+  }
+
+  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
+    var c = new GraphDataCreator(suffix);
+    var tsNode1 = c.timeseries().named("tsNode1");
+    var tsNode2 = c.timeseries().named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode1, "has_payload"),
+      ref2.relationshipTo(tsNode2, "has_payload"),
+      ref1.relationshipTo(container1, "is_in_container"),
+      ref2.relationshipTo(container2, "is_in_container"),
+      ref1.relationshipTo(annotation, "has_annotation"),
+      tsNode1.relationshipTo(container1, "is_in_container"),
+      tsNode2.relationshipTo(container2, "is_in_container")
+    )
+      .returning(tsNode1, tsNode2)
+      .build();
+    var results = queryResults(result, Object.class);
+    assertEquals(2, results.size());
+  }
+
+  private static Literal<String> literal(String of) {
+    return Cypher.literalOf(of + "-" + randomElement);
+  }
+
   @AllArgsConstructor
   private static class GraphDataCreator {
 
@@ -273,117 +385,5 @@ public class TestNeo4jMigrations {
         literal(name + getSuffix())
       );
     }
-  }
-
-  private static void assertMultiReferencedTimeseriesMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode1 = c.timeseries().named("tsNode1");
-    var tsNode2 = c.timeseries().named("tsNode2");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var ref2 = c.timeseriesReference("ref2").named("ref2");
-    var annotation = c.annotation();
-    var container1 = c.timeseriesContainer(1);
-    var container2 = c.timeseriesContainer(2);
-    var result = Cypher.match(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      tsNode1.relationshipTo(container1, "is_in_container"),
-      tsNode2.relationshipTo(container2, "is_in_container")
-    )
-      .returning(tsNode1, tsNode2)
-      .build();
-    var results = queryResults(result, Object.class);
-    assertEquals(2, results.size());
-  }
-
-  private static void createSingleReferencedTimeseries(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode = c.timeseries().named("tsNode");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var annotation = c.annotation();
-    var container = c.timeseriesContainer();
-    create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
-    );
-  }
-
-  private static void assertSingleReferencedTimeseriesMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode = c.timeseries().named("tsNode");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var annotation = c.annotation();
-    var container = c.timeseriesContainer();
-    var result = Cypher.match(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      tsNode.relationshipTo(container, "is_in_container")
-    )
-      .returning(tsNode)
-      .build();
-    var results = queryResults(result, Object.class);
-    assertEquals(1, results.size());
-  }
-
-  private static void assertMultiReferencedTimeseriesOneContainerMigrated(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode = c.timeseries().named("tsNode");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var ref2 = c.timeseriesReference("ref2").named("ref2");
-    var annotation = c.annotation();
-    var container = c.timeseriesContainer();
-    var result = Cypher.match(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      ref2.relationshipTo(container, "is_in_container"),
-      tsNode.relationshipTo(container, "is_in_container")
-    )
-      .returning(tsNode)
-      .build();
-    var results = queryResults(result, Object.class);
-    assertEquals(1, results.size());
-  }
-
-  private static Literal<String> literal(String of) {
-    return Cypher.literalOf(of + "-" + randomElement);
-  }
-
-  private static void createMultiReferencedTimeseries(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode = c.timeseries().named("tsNode");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var ref2 = c.timeseriesReference("ref2").named("ref2");
-    var annotation = c.annotation();
-    var container1 = c.timeseriesContainer(1);
-    var container2 = c.timeseriesContainer(2);
-    create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
-    );
-  }
-
-  private static void createMultiReferencedTimeseriesOneContainer(String suffix) {
-    var c = new GraphDataCreator(suffix);
-    var tsNode = c.timeseries().named("tsNode");
-    var ref1 = c.timeseriesReference("ref1").named("ref1");
-    var ref2 = c.timeseriesReference("ref2").named("ref2");
-    var annotation = c.annotation();
-    var container = c.timeseriesContainer().named("container");
-    create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
-    );
   }
 }
