@@ -197,6 +197,8 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.DEVICE)
   @Parameter(name = Constants.LOCATION)
   @Parameter(name = Constants.SYMBOLICNAME)
+  @Parameter(name = Constants.MEASUREMENT)
+  @Parameter(name = Constants.FIELD)
   public Response getTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
@@ -206,7 +208,9 @@ public class TimeseriesReferenceRest {
     @QueryParam(Constants.FILLOPTION) FillOption fillOption,
     @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
     @QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
-    @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag
+    @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag,
+    @QueryParam(Constants.MEASUREMENT) Set<String> measurementFilterTag,
+    @QueryParam(Constants.FIELD) Set<String> fieldFilterTag
   ) {
     List<TimeseriesWithDataPoints> timeseriesWithDataPointsList =
       timeseriesReferenceService.getReferencedTimeseriesWithDataPointsList(
@@ -218,7 +222,9 @@ public class TimeseriesReferenceRest {
         fillOption,
         deviceFilterTag,
         locationFilterTag,
-        symbolicNameFilterTag
+        symbolicNameFilterTag,
+        measurementFilterTag,
+        fieldFilterTag
       );
     return Response.ok(timeseriesWithDataPointsList).build();
   }
@@ -249,6 +255,8 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.DEVICE)
   @Parameter(name = Constants.LOCATION)
   @Parameter(name = Constants.SYMBOLICNAME)
+  @Parameter(name = Constants.MEASUREMENT)
+  @Parameter(name = Constants.FIELD)
   public Response exportTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
@@ -258,7 +266,9 @@ public class TimeseriesReferenceRest {
     @QueryParam(Constants.FILLOPTION) FillOption fillOption,
     @QueryParam(Constants.DEVICE) Set<String> deviceFilterTag,
     @QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
-    @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag
+    @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag,
+    @QueryParam(Constants.MEASUREMENT) Set<String> measurementFilterTag,
+    @QueryParam(Constants.FIELD) Set<String> fieldFilterTag
   ) throws IOException {
     var stream = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
       collectionId,
@@ -269,7 +279,9 @@ public class TimeseriesReferenceRest {
       fillOption,
       deviceFilterTag,
       locationFilterTag,
-      symbolicNameFilterTag
+      symbolicNameFilterTag,
+      measurementFilterTag,
+      fieldFilterTag
     );
     if (stream == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();

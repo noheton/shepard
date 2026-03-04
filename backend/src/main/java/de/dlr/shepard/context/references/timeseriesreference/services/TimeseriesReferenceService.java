@@ -232,7 +232,9 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
-    Set<String> symbolicNameFilterSet
+    Set<String> symbolicNameFilterSet,
+    Set<String> measurementFilterSet,
+    Set<String> fieldFilterSet
   ) {
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
@@ -255,7 +257,16 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
     var filteredTimeseriesList = timeseriesList
       .stream()
-      .filter(timeseries -> matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet))
+      .filter(timeseries ->
+        matchFilter(
+          timeseries,
+          devicesFilterSet,
+          locationsFilterSet,
+          symbolicNameFilterSet,
+          measurementFilterSet,
+          fieldFilterSet
+        )
+      )
       .toList();
     var containerId = reference.getTimeseriesContainer().getId();
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
@@ -278,7 +289,9 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     FillOption fillOption,
     Set<String> devicesFilterSet,
     Set<String> locationsFilterSet,
-    Set<String> symbolicNameFilterSet
+    Set<String> symbolicNameFilterSet,
+    Set<String> measurementFilterSet,
+    Set<String> fieldFilterSet
   ) throws IOException {
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
@@ -300,7 +313,16 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
     var filteredTimeseriesList = timeseriesList
       .stream()
-      .filter(timeseries -> matchFilter(timeseries, devicesFilterSet, locationsFilterSet, symbolicNameFilterSet))
+      .filter(timeseries ->
+        matchFilter(
+          timeseries,
+          devicesFilterSet,
+          locationsFilterSet,
+          symbolicNameFilterSet,
+          measurementFilterSet,
+          fieldFilterSet
+        )
+      )
       .toList();
     var containerId = reference.getTimeseriesContainer().getId();
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
@@ -332,14 +354,25 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       null,
       Collections.emptySet(),
       Collections.emptySet(),
+      Collections.emptySet(),
+      Collections.emptySet(),
       Collections.emptySet()
     );
   }
 
-  private boolean matchFilter(Timeseries timeseries, Set<String> device, Set<String> location, Set<String> symName) {
+  private boolean matchFilter(
+    Timeseries timeseries,
+    Set<String> device,
+    Set<String> location,
+    Set<String> symName,
+    Set<String> measurement,
+    Set<String> field
+  ) {
     var deviceMatches = true;
     var locationMatches = true;
     var symbolicNameMatches = true;
+    var measurementMatches = true;
+    var fieldMatches = true;
     if (!device.isEmpty()) {
       deviceMatches = device.contains(timeseries.getDevice());
     }
@@ -349,6 +382,12 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     if (!symName.isEmpty()) {
       symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
     }
-    return deviceMatches && locationMatches && symbolicNameMatches;
+    if (!measurement.isEmpty()) {
+      measurementMatches = measurement.contains(timeseries.getMeasurement());
+    }
+    if (!field.isEmpty()) {
+      fieldMatches = field.contains(timeseries.getField());
+    }
+    return deviceMatches && locationMatches && symbolicNameMatches && measurementMatches && fieldMatches;
   }
 }

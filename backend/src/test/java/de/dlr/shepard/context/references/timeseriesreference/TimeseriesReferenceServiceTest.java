@@ -506,7 +506,9 @@ public class TimeseriesReferenceServiceTest {
       FillOption.LINEAR,
       Set.of("dev"),
       Set.of("loc"),
-      Set.of("symName")
+      Set.of("symName"),
+      Set.of("meas"),
+      Set.of("field")
     );
 
     assertEquals(List.of(timeseriesWithDataPoints), actual);
@@ -550,7 +552,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
 
@@ -592,7 +596,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
 
@@ -640,7 +646,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
   }
@@ -702,7 +710,9 @@ public class TimeseriesReferenceServiceTest {
       FillOption.LINEAR,
       Set.of("dev"),
       Set.of("loc"),
-      Set.of("symName")
+      Set.of("symName"),
+      Set.of("meas"),
+      Set.of("field")
     );
     assertEquals(exportedFileStream, actual);
   }
@@ -745,6 +755,8 @@ public class TimeseriesReferenceServiceTest {
         null,
         null,
         null,
+        Collections.emptySet(),
+        Collections.emptySet(),
         Collections.emptySet(),
         Collections.emptySet(),
         Collections.emptySet()
@@ -797,7 +809,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
   }
@@ -842,7 +856,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
   }
@@ -880,7 +896,9 @@ public class TimeseriesReferenceServiceTest {
         FillOption.LINEAR,
         Set.of("dev"),
         Set.of("loc"),
-        Set.of("name")
+        Set.of("name"),
+        Set.of("measurement"),
+        Set.of("field")
       )
     );
   }
