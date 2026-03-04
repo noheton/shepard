@@ -72,13 +72,11 @@ public class BasicEntityIO implements HasId {
   }
 
   protected static long[] extractIds(List<? extends BasicEntity> entities) {
-    var result = entities.stream().map(BasicEntity::getId).mapToLong(Long::longValue).toArray();
-    return result;
+    return entities.stream().map(BasicEntity::getId).mapToLong(Long::longValue).toArray();
   }
 
   protected static long[] extractShepardIds(List<? extends VersionableEntity> entities) {
-    var result = entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
-    return result;
+    return entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
   }
 
   @Override

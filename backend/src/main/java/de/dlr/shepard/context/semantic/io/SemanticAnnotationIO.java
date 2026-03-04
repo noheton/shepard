@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.semantic.io;
 
+import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Data
 @NoArgsConstructor
 @Schema(name = "SemanticAnnotation")
-public class SemanticAnnotationIO implements HasId {
+public class SemanticAnnotationIO implements HasId, Named {
 
   @Schema(readOnly = true, required = true)
   private Long id;

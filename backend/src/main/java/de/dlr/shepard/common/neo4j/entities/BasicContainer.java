@@ -11,7 +11,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @Data
 @ToString(callSuper = true)
 @NoArgsConstructor
-public class BasicContainer extends BasicEntity {
+public class BasicContainer extends BasicEntity implements HasPermissions {
 
   @ToString.Exclude
   @Relationship(type = Constants.HAS_PERMISSIONS)

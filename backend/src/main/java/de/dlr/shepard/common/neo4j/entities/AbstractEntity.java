@@ -25,7 +25,7 @@ import org.neo4j.ogm.annotation.typeconversion.DateLong;
 @Setter
 @ToString
 @NoArgsConstructor
-public abstract class AbstractEntity implements HasId {
+public abstract class AbstractEntity implements HasId, Deletable, HasProvenance {
 
   @Id
   @GeneratedValue

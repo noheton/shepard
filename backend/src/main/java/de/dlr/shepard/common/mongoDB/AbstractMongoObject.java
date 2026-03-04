@@ -2,6 +2,7 @@ package de.dlr.shepard.common.mongoDB;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.dlr.shepard.common.neo4j.entities.HasCreationDate;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
 import lombok.Data;
@@ -15,7 +16,7 @@ import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
 @Data
 @NoArgsConstructor
-public abstract class AbstractMongoObject implements HasId {
+public abstract class AbstractMongoObject implements HasId, HasCreationDate {
 
   @Id
   @GeneratedValue

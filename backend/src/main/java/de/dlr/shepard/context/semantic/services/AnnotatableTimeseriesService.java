@@ -47,8 +47,7 @@ public class AnnotatableTimeseriesService {
     annotation.setValueIRI(annotationIO.getValueIRI());
     annotation.setPropertyName(propertyName);
     annotation.setValueName(valueName);
-
-    annotatableTimeseries.getAnnotations().add(annotation);
+    annotatableTimeseries.addAnnotation(annotation);
     dao.createOrUpdate(annotatableTimeseries);
 
     return annotation;

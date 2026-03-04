@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.semantic.entities;
 
+import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Objects;
@@ -14,7 +15,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class SemanticAnnotation implements HasId {
+public class SemanticAnnotation implements HasId, Named {
 
   @Id
   @GeneratedValue
@@ -63,8 +64,7 @@ public class SemanticAnnotation implements HasId {
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null) return false;
-    if (!(obj instanceof SemanticAnnotation)) return false;
-    SemanticAnnotation other = (SemanticAnnotation) obj;
+    if (!(obj instanceof SemanticAnnotation other)) return false;
     return (
       Objects.equals(id, other.id) &&
       Objects.equals(propertyName, other.propertyName) &&

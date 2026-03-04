@@ -28,7 +28,7 @@ public class SubscriptionService {
   DateHelper dateHelper;
 
   /**
-   * Creates an Subscription and stores it in Neo4J
+   * Creates a Subscription and stores it in Neo4J
    *
    * @param subscription to be stored
    * @param username of the related user
@@ -51,7 +51,7 @@ public class SubscriptionService {
   }
 
   /**
-   * Searches the neo4j database for an Subscription
+   * Searches the neo4j database for a Subscription
    *
    * @param id identifies the searched Subscription
    * @param username of the related user
@@ -113,7 +113,7 @@ public class SubscriptionService {
     Filter methodFilter = new Filter("requestMethod", ComparisonOperator.EQUALS, method);
     var subscriptions = subscriptionDAO.findMatching(methodFilter);
     var result = new ArrayList<Subscription>(subscriptions.size());
-    subscriptions.forEach(result::add);
+    result.addAll(subscriptions);
     return result;
   }
 }

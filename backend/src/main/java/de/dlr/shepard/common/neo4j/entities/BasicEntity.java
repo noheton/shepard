@@ -16,7 +16,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @Setter
 @ToString
 @NoArgsConstructor
-public class BasicEntity extends AbstractEntity {
+public class BasicEntity extends AbstractEntity implements Annotatable, Named {
 
   protected String name;
 

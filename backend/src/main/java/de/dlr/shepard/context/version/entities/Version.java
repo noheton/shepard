@@ -1,6 +1,8 @@
 package de.dlr.shepard.context.version.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.neo4j.entities.Named;
+import de.dlr.shepard.common.neo4j.entities.UserCreated;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
@@ -21,7 +23,7 @@ import org.neo4j.ogm.typeconversion.UuidStringConverter;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class Version implements HasId {
+public class Version implements HasId, UserCreated, Named {
 
   @Id
   @GeneratedValue(strategy = UuidStrategy.class)
@@ -96,8 +98,7 @@ public class Version implements HasId {
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
-    if (!(obj instanceof Version)) return false;
-    Version other = (Version) obj;
+    if (!(obj instanceof Version other)) return false;
     return (
       Objects.equals(createdAt, other.createdAt) &&
       Objects.equals(isHEADVersion, other.isHEADVersion) &&

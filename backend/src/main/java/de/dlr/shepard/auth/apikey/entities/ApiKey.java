@@ -1,6 +1,8 @@
 package de.dlr.shepard.auth.apikey.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.neo4j.entities.HasCreationDate;
+import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
@@ -21,7 +23,7 @@ import org.neo4j.ogm.typeconversion.UuidStringConverter;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class ApiKey implements HasId {
+public class ApiKey implements HasId, Named, HasCreationDate {
 
   @Id
   @GeneratedValue(strategy = UuidStrategy.class)

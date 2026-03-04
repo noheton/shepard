@@ -2,6 +2,7 @@ package de.dlr.shepard.context.collection.entities;
 
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
+import de.dlr.shepard.common.neo4j.entities.HasPermissions;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
@@ -19,7 +20,7 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @Data
 @ToString(callSuper = true, onlyExplicitlyIncluded = true)
 @NoArgsConstructor
-public class Collection extends AbstractDataObject {
+public class Collection extends AbstractDataObject implements HasPermissions {
 
   @Relationship(type = Constants.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();

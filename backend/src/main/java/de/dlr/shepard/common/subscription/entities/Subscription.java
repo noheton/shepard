@@ -1,6 +1,8 @@
 package de.dlr.shepard.common.subscription.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.neo4j.entities.Named;
+import de.dlr.shepard.common.neo4j.entities.UserCreated;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.common.util.RequestMethod;
@@ -19,7 +21,7 @@ import org.neo4j.ogm.annotation.typeconversion.DateLong;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class Subscription implements HasId {
+public class Subscription implements HasId, UserCreated, Named {
 
   @Id
   @GeneratedValue
@@ -67,8 +69,7 @@ public class Subscription implements HasId {
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
-    if (!(obj instanceof Subscription)) return false;
-    Subscription other = (Subscription) obj;
+    if (!(obj instanceof Subscription other)) return false;
     return (
       Objects.equals(callbackURL, other.callbackURL) &&
       Objects.equals(createdAt, other.createdAt) &&

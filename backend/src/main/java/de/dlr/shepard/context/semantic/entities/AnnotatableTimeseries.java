@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.semantic.entities;
 
+import de.dlr.shepard.common.neo4j.entities.Annotatable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class AnnotatableTimeseries implements HasId {
+public class AnnotatableTimeseries implements HasId, Annotatable {
 
   @Id
   @GeneratedValue
@@ -36,5 +37,10 @@ public class AnnotatableTimeseries implements HasId {
   @Override
   public String getUniqueId() {
     return String.valueOf(id);
+  }
+
+  @Override
+  public void addAnnotation(SemanticAnnotation annotation) {
+    annotations.add(annotation);
   }
 }
