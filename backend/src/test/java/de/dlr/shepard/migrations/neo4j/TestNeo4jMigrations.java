@@ -163,7 +163,7 @@ public class TestNeo4jMigrations {
     create3References1Container();
     create2ReferencesOneContainer2Timeseries();
     createEmptyReference();
-    runMigrations("V13");
+    runMigrations("V11");
     assertTrue(true);
   }
 
