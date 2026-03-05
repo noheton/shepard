@@ -2,7 +2,6 @@ package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
@@ -157,56 +156,22 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_0_NoException() {
-    createMultiReferencedTimeseries();
+    create2References1Timeseries2Containers();
     createSingleReferencedTimeseries();
-    createMultiReferencedTimeseriesOneContainer();
-    create3MultiReferencedTimeseries2();
-    //    fail();
-    runMigrations("V11");
+    create2References1Timeseries1Container();
+    create3References2Timeseries2Containers();
+    create3References1Container();
+    create2ReferencesOneContainer2Timeseries();
+    createEmptyReference();
+    runMigrations("V13");
     assertTrue(true);
-  }
-
-  /**
-   * Assert that a timeseries migrated correctly if it is referenced by multiple references and these references lie within different containers.
-   * In that case multiple timeseries, one for each container, should be created and each timeseries should reference its container.
-   */
-  @Test
-  public void testV11_1_MultiReferencedTimeseriesMigrated() {
-    assertMultiReferencedTimeseriesMigrated();
-  }
-
-  /**
-   * Assert that a timeseries migrated correctly if it is referenced by a single reference.
-   * In this case the timeseries should get a reference towards the container of its reference.
-   */
-  @Test
-  public void testV11_2_SingleReferencedTimeseriesMigrated() {
-    assertSingleReferencedTimeseriesMigrated();
-  }
-
-  /**
-   * Assert that a timeseries migrated correctly if it is referenced by multiple references which however all lie within one container.
-   * In this case the timeseries should get a reference towards this container.
-   */
-  @Test
-  public void testV11_3_MultiReferencedTimeseriesOneContainerMigrated() {
-    assertMultiReferencedTimeseriesOneContainerMigrated();
-  }
-
-  /**
-   * Assert that a timeseries migrated correctly if it is referenced by multiple references by three references sharing two containers.
-   * In this case the two timeseries, one for each container should be created.
-   */
-  @Test
-  public void testV11_4_Multi3ReferencedTimeseries() {
-    assert3MultiReferencedTimeseriesMigrated();
   }
 
   /**
    * Assert that now each timeseries has a relationship to exactly one container.
    */
   @Test
-  public void testV11_5_EachTimeseriesHasOneContainer() {
+  public void testV11_EachTimeseriesHasOneContainer() {
     var tsWithoutContainer = queryResults(
       "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
     );
@@ -223,7 +188,7 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_6_EachReferenceHasTimeseries() {
+  public void testV11_EachReferenceHasTimeseries() {
     assertEquals(
       0,
       queryResults(
@@ -236,7 +201,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void createSingleReferencedTimeseries() {
-    var c = new GraphDataCreator("V11 single referenced timeseries");
+    var c = new GraphDataCreator("SingleReferencedTimeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -248,8 +213,13 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertSingleReferencedTimeseriesMigrated() {
-    var c = new GraphDataCreator("V11 single referenced timeseries");
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by a single reference.
+   * In this case the timeseries should get a reference towards the container of its reference.
+   */
+  @Test
+  public void testV11_SingleReferencedTimeseriesMigrated() {
+    var c = new GraphDataCreator("SingleReferencedTimeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -266,8 +236,8 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createMultiReferencedTimeseriesOneContainer() {
-    var c = new GraphDataCreator("V11 multi referenced ts one container");
+  private static void create2References1Timeseries1Container() {
+    var c = new GraphDataCreator("References1Timeseries1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -282,8 +252,13 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertMultiReferencedTimeseriesOneContainerMigrated() {
-    var c = new GraphDataCreator("V11 multi referenced ts one container");
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references which however all lie within one container.
+   * In this case the timeseries should get a reference towards this container.
+   */
+  @Test
+  public void testV11_References1Timeseries1ContainerMigrated() {
+    var c = new GraphDataCreator("References1Timeseries1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -302,8 +277,8 @@ public class TestNeo4jMigrations {
     assertEquals(1, results.size());
   }
 
-  private static void createMultiReferencedTimeseries() {
-    var c = new GraphDataCreator("V11 multi referenced ts two containers");
+  private static void create2References1Timeseries2Containers() {
+    var c = new GraphDataCreator("2References1Timeseries2Containers");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -319,8 +294,13 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assertMultiReferencedTimeseriesMigrated() {
-    var c = new GraphDataCreator("V11 multi referenced ts two containers");
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references and these references lie within different containers.
+   * In that case multiple timeseries, one for each container, should be created and each timeseries should reference its container.
+   */
+  @Test
+  public void testV11_2References1Timeseries2ContainersMigrated() {
+    var c = new GraphDataCreator("2References1Timeseries2Containers");
     var tsNode1 = c.timeseries().named("tsNode1");
     var tsNode2 = c.timeseries().named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -343,8 +323,8 @@ public class TestNeo4jMigrations {
     assertEquals(2, results.size());
   }
 
-  private static void create3MultiReferencedTimeseries2() {
-    var c = new GraphDataCreator("V11 multi referenced ts two containers three refs");
+  private static void create3References2Timeseries2Containers() {
+    var c = new GraphDataCreator("3References2Timeseries2Containers");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -361,8 +341,13 @@ public class TestNeo4jMigrations {
     );
   }
 
-  private static void assert3MultiReferencedTimeseriesMigrated() {
-    var c = new GraphDataCreator("V11 multi referenced ts two containers three refs");
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references by three references sharing two containers.
+   * In this case the two timeseries, one for each container should be created.
+   */
+  @Test
+  public void testV11_3References2Timeseries2ContainersMigrated() {
+    var c = new GraphDataCreator("3References2Timeseries2Containers");
     var tsNode1 = c.timeseries().named("tsNode1");
     var tsNode2 = c.timeseries().named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -390,6 +375,95 @@ public class TestNeo4jMigrations {
     assertEquals(1, queryResults(queryTs2).size());
   }
 
+  private static void create3References1Container() {
+    var c = new GraphDataCreator("3References1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container = c.timeseriesContainer().named("c1");
+    create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref3.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container"),
+      ref3.relationshipTo(container, "is_in_container")
+    );
+  }
+
+  @Test
+  public void testV11_3References1ContainerMigrated() {
+    var c = new GraphDataCreator("3References1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container = c.timeseriesContainer().named("c1");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref3.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container"),
+      ref3.relationshipTo(container, "is_in_container"),
+      tsNode.relationshipTo(container, "is_in_container")
+    )
+      .returning(tsNode)
+      .build();
+    assertEquals(1, queryResults(query).size());
+  }
+
+  private static void create2ReferencesOneContainer2Timeseries() {
+    var c = new GraphDataCreator("2ReferencesOneContainer2Timeseries");
+    var tsNode1 = c.timeseries("ts1").named("tsNode1");
+    var tsNode2 = c.timeseries("ts2").named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var container = c.timeseriesContainer().named("c1");
+    create(
+      ref1.relationshipTo(tsNode1, "has_payload"),
+      ref2.relationshipTo(tsNode2, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container")
+    );
+  }
+
+  @Test
+  public void testV11_2ReferencesOneContainer2TimeseriesMigrated() {
+    var c = new GraphDataCreator("2ReferencesOneContainer2Timeseries");
+    var tsNode1 = c.timeseries("ts1").named("tsNode1");
+    var tsNode2 = c.timeseries("ts2").named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var container = c.timeseriesContainer().named("c");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode1, "has_payload"),
+      ref2.relationshipTo(tsNode2, "has_payload"),
+      ref1.relationshipTo(container, "is_in_container"),
+      ref2.relationshipTo(container, "is_in_container")
+    )
+      .returning(tsNode1, tsNode2)
+      .build();
+    assertEquals(2, queryResults(query).size());
+  }
+
+  private static void createEmptyReference() {
+    var c = new GraphDataCreator("EmptyReference");
+    var ref = c.timeseriesReference();
+    var container = c.timeseriesContainer();
+    create(ref.relationshipTo(container, "is_in_container"));
+  }
+
+  @Test
+  public void testV11_EmptyReferenceUntouched() {
+    var c = new GraphDataCreator("EmptyReference");
+    var ref = c.timeseriesReference();
+    var container = c.timeseriesContainer();
+    var query = Cypher.match(ref.relationshipTo(container, "is_in_container")).returning(ref).build();
+    assertEquals(1, queryResults(query).size());
+  }
+
   private static Literal<String> literal(String of) {
     return Cypher.literalOf(of + "-" + randomElement);
   }
@@ -404,10 +478,14 @@ public class TestNeo4jMigrations {
     }
 
     private Node timeseries() {
+      return timeseries("device");
+    }
+
+    private Node timeseries(String device) {
       return node("Timeseries").withProperties(
         "measurement",
         literal("measurement" + getSuffix()),
-        "device",
+        device,
         literal("device" + getSuffix()),
         "location",
         literal("location" + getSuffix()),
@@ -416,6 +494,10 @@ public class TestNeo4jMigrations {
         "field",
         literal("field" + getSuffix())
       );
+    }
+
+    private Node timeseriesReference() {
+      return timeseriesReference("Timeseries Reference");
     }
 
     private Node timeseriesReference(String name) {
