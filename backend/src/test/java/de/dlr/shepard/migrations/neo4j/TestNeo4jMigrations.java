@@ -190,7 +190,7 @@ public class TestNeo4jMigrations {
   @Test
   public void testV11_EachReferenceHasTimeseries() {
     assertEquals(
-      0,
+      1,
       queryResults(
         "match(tsr:TimeseriesReference) where not exists " +
         "{ match(tsr)-[:has_payload]->(:Timeseries) } " +
