@@ -61,6 +61,8 @@ public class DataObjectService {
    * @return the stored DataObject with the auto generated id
    * @throws InvalidPathException if collection with collectionShepardId does not
    *                              exist
+   * @throws InvalidBodyException if associated dataObjectIds (predecessors, successors, parent)
+   *                              are not feasible (not existent, deleted, other collection)
    */
   public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) {
     Collection collection = collectionService.getCollection(collectionShepardId);
@@ -244,6 +246,8 @@ public class DataObjectService {
    *                              collectionShepardId does not exist
    * @throws InvalidAuthException if user does not have read or write permissions
    *                              on the collection
+   * @throws InvalidBodyException if associated dataObjectIds (predecessors, successors, parent)
+   *                              are not feasible (not existent, deleted, other collection)
    */
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
@@ -261,6 +265,13 @@ public class DataObjectService {
           dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
         });
     }
+    if (old.getSuccessors() != null) {
+      old
+        .getSuccessors()
+        .forEach(successor -> {
+          dataObjectDAO.deleteHasSuccessorRelation(old.getShepardId(), successor.getShepardId());
+        });
+    }
 
     DataObject newParent = findRelatedDataObject(
       old.getCollection().getShepardId(),
@@ -272,6 +283,11 @@ public class DataObjectService {
       dataObject.getPredecessorIds(),
       dataObjectShepardId
     );
+    List<DataObject> newSuccessors = findRelatedDataObjects(
+      old.getCollection().getShepardId(),
+      dataObject.getSuccessorIds(),
+      dataObjectShepardId
+    );
 
     old.setShepardId(old.getShepardId());
     old.setName(dataObject.getName());
@@ -279,6 +295,7 @@ public class DataObjectService {
     old.setAttributes(dataObject.getAttributes());
     old.setParent(newParent);
     old.setPredecessors(newPredecessors);
+    old.setSuccessors(newSuccessors);
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
 
