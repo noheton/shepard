@@ -284,11 +284,118 @@ public class DataObjectServiceQuarkusTest {
     DataObject dataObject = createDataObject(dataObjectIO);
 
     // Act
-    dataObjectIO.setAttributes(Map.of());
+    dataObjectIO.setAttributes(Map.of("newname", "my new data object"));
     dataObjectService.updateDataObject(collection.getShepardId(), dataObject.getShepardId(), dataObjectIO);
 
     // Assert
     DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
-    assertEquals(Map.of(), actualDataObject.getAttributes());
+    assertEquals(1, actualDataObject.getAttributes().size());
+    assertEquals("my new data object", actualDataObject.getAttributes().get("newname"));
+  }
+
+  @Test
+  public void testCreation() {
+    DataObjectIO dataObjectIO1 = new DataObjectIOBuilder().setName("do1").setDescription("do1Description").build();
+    DataObject dataObject1 = createDataObject(dataObjectIO1);
+
+    long[] dataObject2SuccessorIds = { dataObject1.getShepardId() };
+    DataObjectIO dataObjectIO2 = new DataObjectIOBuilder()
+      .setName("do2")
+      .setDescription("do2Description")
+      .setSuccessorIds(dataObject2SuccessorIds)
+      .build();
+    DataObject dataObject2 = createDataObject(dataObjectIO2);
+
+    long[] dataObject3PredecessorIds = { dataObject1.getShepardId(), dataObject2.getShepardId() };
+    DataObjectIO dataObjectIO3 = new DataObjectIOBuilder()
+      .setName("do3")
+      .setDescription("do3Description")
+      .setPredecessorIds(dataObject3PredecessorIds)
+      .setAttributes(Map.of("name", "my data object", "another name", "another value"))
+      .build();
+    DataObject dataObject3 = createDataObject(dataObjectIO3);
+
+    dataObject1 = dataObjectService.getDataObject(dataObject1.getShepardId());
+    dataObject2 = dataObjectService.getDataObject(dataObject2.getShepardId());
+    dataObject3 = dataObjectService.getDataObject(dataObject3.getShepardId());
+
+    assertEquals(1, dataObject1.getPredecessors().size());
+    assertEquals(1, dataObject1.getSuccessors().size());
+    assertEquals(dataObject3.getShepardId(), dataObject1.getSuccessors().get(0).getShepardId());
+    assertEquals(dataObject2.getShepardId(), dataObject1.getPredecessors().get(0).getShepardId());
+    assertEquals(0, dataObject2.getPredecessors().size());
+    assertEquals(2, dataObject2.getSuccessors().size());
+    assertEquals(
+      true,
+      dataObject2.getSuccessors().get(0).getShepardId().equals(dataObject1.getShepardId()) ||
+      dataObject2.getSuccessors().get(1).getShepardId().equals(dataObject1.getShepardId())
+    );
+    assertEquals(
+      true,
+      dataObject2.getSuccessors().get(0).getShepardId().equals(dataObject3.getShepardId()) ||
+      dataObject2.getSuccessors().get(1).getShepardId().equals(dataObject3.getShepardId())
+    );
+    assertEquals(0, dataObject3.getSuccessors().size());
+    assertEquals(2, dataObject3.getPredecessors().size());
+    assertEquals(
+      true,
+      dataObject3.getPredecessors().get(0).getShepardId().equals(dataObject1.getShepardId()) ||
+      dataObject3.getPredecessors().get(1).getShepardId().equals(dataObject1.getShepardId())
+    );
+    assertEquals(
+      true,
+      dataObject3.getPredecessors().get(0).getShepardId().equals(dataObject2.getShepardId()) ||
+      dataObject3.getPredecessors().get(1).getShepardId().equals(dataObject2.getShepardId())
+    );
+    assertEquals(dataObjectIO1.getName(), dataObject1.getName());
+    assertEquals(dataObjectIO1.getDescription(), dataObject1.getDescription());
+    assertEquals(dataObjectIO2.getName(), dataObject2.getName());
+    assertEquals(dataObjectIO2.getDescription(), dataObject2.getDescription());
+    assertEquals(dataObjectIO3.getName(), dataObject3.getName());
+    assertEquals(dataObjectIO3.getDescription(), dataObject3.getDescription());
+  }
+
+  @Test
+  public void testUpdate() {
+    DataObjectIO dataObjectIO1 = new DataObjectIOBuilder().setName("do1").setDescription("do1Description").build();
+    DataObject dataObject1 = createDataObject(dataObjectIO1);
+
+    long[] dataObject2SuccessorIds = { dataObject1.getShepardId() };
+    DataObjectIO dataObjectIO2 = new DataObjectIOBuilder()
+      .setName("do2")
+      .setDescription("do2Description")
+      .setSuccessorIds(dataObject2SuccessorIds)
+      .build();
+    DataObject dataObject2 = createDataObject(dataObjectIO2);
+
+    long[] dataObject3SuccessorIds = { dataObject1.getShepardId(), dataObject2.getShepardId() };
+    DataObjectIO dataObjectIO3 = new DataObjectIOBuilder()
+      .setName("do3")
+      .setDescription("do3Description")
+      .setSuccessorIds(dataObject3SuccessorIds)
+      .setAttributes(Map.of("name", "my data object", "another name", "another value"))
+      .build();
+    DataObject dataObject3 = createDataObject(dataObjectIO3);
+
+    long[] dataObject2NewPredecessorIds = { dataObject1.getShepardId() };
+    long[] dataObject2NewSuccessorIds = { dataObject1.getShepardId(), dataObject3.getShepardId() };
+    dataObjectIO2.setPredecessorIds(dataObject2NewPredecessorIds);
+    dataObjectIO2.setSuccessorIds(dataObject2NewSuccessorIds);
+    dataObjectService.updateDataObject(collection.getShepardId(), dataObject2.getShepardId(), dataObjectIO2);
+
+    dataObject2 = dataObjectService.getDataObject(dataObject2.getShepardId());
+    assertEquals(2, dataObject2.getSuccessors().size());
+    assertEquals(1, dataObject2.getPredecessors().size());
+    assertEquals(dataObject1.getShepardId(), dataObject2.getPredecessors().get(0).getShepardId());
+    assertEquals(
+      true,
+      dataObject2.getSuccessors().get(0).getShepardId().equals(dataObject3.getShepardId()) ||
+      dataObject2.getSuccessors().get(1).getShepardId().equals(dataObject3.getShepardId())
+    );
+    assertEquals(
+      true,
+      dataObject2.getSuccessors().get(0).getShepardId().equals(dataObject1.getShepardId()) ||
+      dataObject2.getSuccessors().get(1).getShepardId().equals(dataObject1.getShepardId())
+    );
   }
 }
