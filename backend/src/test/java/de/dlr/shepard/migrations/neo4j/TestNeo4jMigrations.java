@@ -188,7 +188,7 @@ public class TestNeo4jMigrations {
   }
 
   @Test
-  public void testV11_EachReferenceHasTimeseries() {
+  public void testV11_EachReferenceHasTimeseriesExceptEmptyRef() {
     assertEquals(
       1,
       queryResults(
