@@ -73,6 +73,7 @@ public class DataObjectService {
       dataObject.getPredecessorIds(),
       null
     );
+    List<DataObject> successors = findRelatedDataObjects(collection.getShepardId(), dataObject.getSuccessorIds(), null);
     DataObject toCreate = new DataObject();
     toCreate.setAttributes(dataObject.getAttributes());
     toCreate.setDescription(dataObject.getDescription());
@@ -80,6 +81,7 @@ public class DataObjectService {
     toCreate.setCollection(collection);
     toCreate.setParent(parent);
     toCreate.setPredecessors(predecessors);
+    toCreate.setSuccessors(successors);
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
@@ -337,8 +339,9 @@ public class DataObjectService {
 
     var result = new ArrayList<DataObject>(referencedShepardIds.length);
     /*
-     * TODO: seems to be inefficient since this loops generates referencedIds.length
-     * calls to Neo4j this could possibly be packed into one query (or in chunks of
+     * TODO: seems to be inefficient since this loop generates referencedIds.length
+     * calls to Neo4j
+     * this could possibly be packed into one query (or in chunks of
      * queries in case of a large referencedIds array)
      */
     for (var shepardId : referencedShepardIds) {
