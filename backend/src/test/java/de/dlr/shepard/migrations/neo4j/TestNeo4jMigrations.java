@@ -1,6 +1,7 @@
 package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
@@ -17,6 +18,10 @@ import org.neo4j.cypherdsl.core.Node;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestNeo4jMigrations {
 
+  /**
+   * Random element that is specific for this test run.
+   * This exists to identify data belonging to this test run to not pollute the namespaces of other test runs.
+   */
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
   private static final QueryHelper q = new QueryHelper();
   private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
@@ -80,9 +85,9 @@ public class TestNeo4jMigrations {
 
     var migratedAnnotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      Cypher.literalOf("prop"),
+      Cypher.literalOf("prop-" + randomElement),
       "valueName",
-      Cypher.literalOf("value")
+      Cypher.literalOf("value-" + randomElement)
     );
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
