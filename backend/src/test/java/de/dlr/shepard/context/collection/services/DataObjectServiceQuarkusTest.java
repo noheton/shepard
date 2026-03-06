@@ -278,7 +278,7 @@ public class DataObjectServiceQuarkusTest {
   }
 
   @Test
-  public void deleteAttributesOfDataObject_success() {
+  public void changeAttributesOfDataObject_success() {
     // Arrange
     DataObjectIO dataObjectIO = new DataObjectIOBuilder().setAttributes(Map.of("name", "my data object")).build();
     DataObject dataObject = createDataObject(dataObjectIO);
@@ -356,7 +356,7 @@ public class DataObjectServiceQuarkusTest {
   }
 
   @Test
-  public void testUpdate() {
+  public void testUpdateNeighborhood() {
     DataObjectIO dataObjectIO1 = new DataObjectIOBuilder().setName("do1").setDescription("do1Description").build();
     DataObject dataObject1 = createDataObject(dataObjectIO1);
 
