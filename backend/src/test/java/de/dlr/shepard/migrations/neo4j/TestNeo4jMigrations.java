@@ -5,89 +5,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
-import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
-import org.neo4j.cypherdsl.core.PatternElement;
-import org.neo4j.cypherdsl.core.Statement;
-import org.neo4j.cypherdsl.core.renderer.Renderer;
-import org.neo4j.ogm.model.Result;
-import org.neo4j.ogm.session.Session;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestNeo4jMigrations {
 
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
-  private static final Renderer cypherRenderer = Renderer.getDefaultRenderer();
-  private static Session session;
+  private static final QueryHelper q = new QueryHelper();
   private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
 
-  @BeforeAll
-  public static void setUp() {
-    var conn = NeoConnector.getInstance();
-    conn.connect();
-    session = conn.getNeo4jSession();
-  }
-
-  private static Result query(Statement statement) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return session.query(cypherQuery, Collections.emptyMap());
-  }
-
   private static void testNodeMigrated(Node old, Node migrated) {
-    assertEquals(0, match(old).size());
-    assertEquals(1, match(migrated).size());
+    assertEquals(0, q.match(old).size());
+    assertEquals(1, q.match(migrated).size());
   }
 
   private static void runMigrations(String targetVersion) {
     new MigrationsRunner(targetVersion).apply();
-  }
-
-  private static void create(PatternElement... creatable) {
-    var statement = Cypher.create(creatable).build();
-    query(statement);
-  }
-
-  private static List<Object> match(Node node) {
-    return match(node, Object.class);
-  }
-
-  private static <T> List<T> match(Node node, Class<T> type) {
-    var statement = Cypher.match(node).returning(node).build();
-    return queryResults(statement, type);
-  }
-
-  private static <T> List<T> queryResults(Statement statement, Class<T> type) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return queryResults(cypherQuery, type);
-  }
-
-  private static List<Object> queryResults(Statement statement) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return queryResults(cypherQuery, Object.class);
-  }
-
-  private static List<Object> queryResults(String cypherQuery) {
-    return queryResults(cypherQuery, Object.class);
-  }
-
-  private static <T> List<T> queryResults(String cypherQuery, Class<T> type) {
-    var result = session.query(cypherQuery, Collections.emptyMap());
-    return StreamSupport.stream(result.spliterator(), false)
-      .map(Map::values)
-      .flatMap(java.util.Collection::stream)
-      .map(type::cast)
-      .toList();
   }
 
   private static <K, V> void assertEqualsMaps(Map<K, V> expected, Map<K, V> actual) {
@@ -104,7 +44,7 @@ public class TestNeo4jMigrations {
       "attributes.b.c",
       Cypher.literalOf(1)
     );
-    create(collectionWithBadAttributes);
+    q.create(collectionWithBadAttributes);
 
     runMigrations("V9");
 
@@ -120,9 +60,7 @@ public class TestNeo4jMigrations {
     testNodeMigrated(collectionWithBadAttributes, collectionWithGoodAttributes);
 
     // test that the migration has not touched the attribute values
-    var migratedCollection = (de.dlr.shepard.context.collection.entities.Collection) match(
-      collectionWithGoodAttributes
-    ).getFirst();
+    var migratedCollection = q.match(collectionWithGoodAttributes, Collection.class).get(0);
     assertEqualsMaps(Map.of("a", "0", "b.c", "1"), migratedCollection.getAttributes());
   }
 
@@ -136,7 +74,7 @@ public class TestNeo4jMigrations {
       "valueIRI",
       Cypher.literalOf("viri")
     );
-    create(legacyAnnotation);
+    q.create(legacyAnnotation);
 
     runMigrations("V10");
 
@@ -171,16 +109,16 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_EachTimeseriesHasOneContainer() {
-    var tsWithoutContainer = queryResults(
+    var tsWithoutContainer = q.queryResults(
       "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
     );
     assertEquals(0, tsWithoutContainer.size());
-    var tsWithExactlyOneContainer = queryResults(
+    var tsWithExactlyOneContainer = q.queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount = 1 return ts"
     );
-    var numTs = queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).get(0);
+    var numTs = q.queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).get(0);
     assertEquals(numTs, tsWithExactlyOneContainer.size());
-    var tsWithSeveralContainers = queryResults(
+    var tsWithSeveralContainers = q.queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
     );
     assertEquals(0, tsWithSeveralContainers.size());
@@ -190,12 +128,14 @@ public class TestNeo4jMigrations {
   public void testV11_EachReferenceHasTimeseriesExceptEmptyRef() {
     assertEquals(
       1,
-      queryResults(
-        "match(tsr:TimeseriesReference) where not exists " +
-        "{ match(tsr)-[:has_payload]->(:Timeseries) } " +
-        "return count(tsr)",
-        Long.class
-      ).get(0)
+      q
+        .queryResults(
+          "match(tsr:TimeseriesReference) where not exists " +
+          "{ match(tsr)-[:has_payload]->(:Timeseries) } " +
+          "return count(tsr)",
+          Long.class
+        )
+        .get(0)
     );
   }
 
@@ -205,7 +145,7 @@ public class TestNeo4jMigrations {
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
     var container = c.timeseriesContainer();
-    create(
+    q.create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
       ref1.relationshipTo(annotation, "has_annotation")
@@ -231,7 +171,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode)
       .build();
-    var results = queryResults(result, Object.class);
+    var results = q.queryResults(result, Object.class);
     assertEquals(1, results.size());
   }
 
@@ -242,7 +182,7 @@ public class TestNeo4jMigrations {
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var annotation = c.annotation();
     var container = c.timeseriesContainer().named("container");
-    create(
+    q.create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
@@ -272,7 +212,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode)
       .build();
-    var results = queryResults(result, Object.class);
+    var results = q.queryResults(result, Object.class);
     assertEquals(1, results.size());
   }
 
@@ -284,7 +224,7 @@ public class TestNeo4jMigrations {
     var annotation = c.annotation();
     var container1 = c.timeseriesContainer(1);
     var container2 = c.timeseriesContainer(2);
-    create(
+    q.create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
       ref1.relationshipTo(container1, "is_in_container"),
@@ -318,7 +258,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode1, tsNode2)
       .build();
-    var results = queryResults(result, Object.class);
+    var results = q.queryResults(result, Object.class);
     assertEquals(2, results.size());
   }
 
@@ -330,7 +270,7 @@ public class TestNeo4jMigrations {
     var ref3 = c.timeseriesReference("ref3").named("ref3");
     var container1 = c.timeseriesContainer(1).named("c1");
     var container2 = c.timeseriesContainer(2).named("c2");
-    create(
+    q.create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
       ref3.relationshipTo(tsNode, "has_payload"),
@@ -361,7 +301,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode1)
       .build();
-    assertEquals(1, queryResults(queryTs1).size());
+    assertEquals(1, q.queryResults(queryTs1).size());
     var queryTs2 = Cypher.match(
       ref2.relationshipTo(tsNode2, "has_payload"),
       ref3.relationshipTo(tsNode2, "has_payload"),
@@ -371,7 +311,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode2)
       .build();
-    assertEquals(1, queryResults(queryTs2).size());
+    assertEquals(1, q.queryResults(queryTs2).size());
   }
 
   private static void create3References1Container() {
@@ -381,7 +321,7 @@ public class TestNeo4jMigrations {
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var ref3 = c.timeseriesReference("ref3").named("ref3");
     var container = c.timeseriesContainer().named("c1");
-    create(
+    q.create(
       ref1.relationshipTo(tsNode, "has_payload"),
       ref2.relationshipTo(tsNode, "has_payload"),
       ref3.relationshipTo(tsNode, "has_payload"),
@@ -410,7 +350,7 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode)
       .build();
-    assertEquals(1, queryResults(query).size());
+    assertEquals(1, q.queryResults(query).size());
   }
 
   private static void create2ReferencesOneContainer2Timeseries() {
@@ -420,7 +360,7 @@ public class TestNeo4jMigrations {
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var container = c.timeseriesContainer().named("c1");
-    create(
+    q.create(
       ref1.relationshipTo(tsNode1, "has_payload"),
       ref2.relationshipTo(tsNode2, "has_payload"),
       ref1.relationshipTo(container, "is_in_container"),
@@ -444,14 +384,14 @@ public class TestNeo4jMigrations {
     )
       .returning(tsNode1, tsNode2)
       .build();
-    assertEquals(2, queryResults(query).size());
+    assertEquals(2, q.queryResults(query).size());
   }
 
   private static void createEmptyReference() {
     var c = sample.instance("EmptyReference");
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
-    create(ref.relationshipTo(container, "is_in_container"));
+    q.create(ref.relationshipTo(container, "is_in_container"));
   }
 
   @Test
@@ -460,6 +400,6 @@ public class TestNeo4jMigrations {
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
     var query = Cypher.match(ref.relationshipTo(container, "is_in_container")).returning(ref).build();
-    assertEquals(1, queryResults(query).size());
+    assertEquals(1, q.queryResults(query).size());
   }
 }
