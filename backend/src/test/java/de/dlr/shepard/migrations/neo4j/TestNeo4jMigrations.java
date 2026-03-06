@@ -11,14 +11,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
-import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
-import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Statement;
@@ -32,6 +30,7 @@ public class TestNeo4jMigrations {
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
   private static final Renderer cypherRenderer = Renderer.getDefaultRenderer();
   private static Session session;
+  private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
 
   @BeforeAll
   public static void setUp() {
@@ -143,9 +142,9 @@ public class TestNeo4jMigrations {
 
     var migratedAnnotation = node("SemanticAnnotation").withProperties(
       "propertyName",
-      literal("prop"),
+      Cypher.literalOf("prop"),
       "valueName",
-      literal("value")
+      Cypher.literalOf("value")
     );
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
@@ -201,7 +200,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void createSingleReferencedTimeseries() {
-    var c = new GraphDataCreator("SingleReferencedTimeseries");
+    var c = sample.instance("SingleReferencedTimeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -219,7 +218,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_SingleReferencedTimeseriesMigrated() {
-    var c = new GraphDataCreator("SingleReferencedTimeseries");
+    var c = sample.instance("SingleReferencedTimeseries");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var annotation = c.annotation();
@@ -237,7 +236,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void create2References1Timeseries1Container() {
-    var c = new GraphDataCreator("References1Timeseries1Container");
+    var c = sample.instance("References1Timeseries1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -258,7 +257,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_References1Timeseries1ContainerMigrated() {
-    var c = new GraphDataCreator("References1Timeseries1Container");
+    var c = sample.instance("References1Timeseries1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -278,7 +277,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void create2References1Timeseries2Containers() {
-    var c = new GraphDataCreator("2References1Timeseries2Containers");
+    var c = sample.instance("2References1Timeseries2Containers");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -300,7 +299,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_2References1Timeseries2ContainersMigrated() {
-    var c = new GraphDataCreator("2References1Timeseries2Containers");
+    var c = sample.instance("2References1Timeseries2Containers");
     var tsNode1 = c.timeseries().named("tsNode1");
     var tsNode2 = c.timeseries().named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -324,7 +323,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void create3References2Timeseries2Containers() {
-    var c = new GraphDataCreator("3References2Timeseries2Containers");
+    var c = sample.instance("3References2Timeseries2Containers");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -347,7 +346,7 @@ public class TestNeo4jMigrations {
    */
   @Test
   public void testV11_3References2Timeseries2ContainersMigrated() {
-    var c = new GraphDataCreator("3References2Timeseries2Containers");
+    var c = sample.instance("3References2Timeseries2Containers");
     var tsNode1 = c.timeseries().named("tsNode1");
     var tsNode2 = c.timeseries().named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -376,7 +375,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void create3References1Container() {
-    var c = new GraphDataCreator("3References1Container");
+    var c = sample.instance("3References1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -394,7 +393,7 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV11_3References1ContainerMigrated() {
-    var c = new GraphDataCreator("3References1Container");
+    var c = sample.instance("3References1Container");
     var tsNode = c.timeseries().named("tsNode");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
     var ref2 = c.timeseriesReference("ref2").named("ref2");
@@ -415,7 +414,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void create2ReferencesOneContainer2Timeseries() {
-    var c = new GraphDataCreator("2ReferencesOneContainer2Timeseries");
+    var c = sample.instance("2ReferencesOneContainer2Timeseries");
     var tsNode1 = c.timeseries("ts1").named("tsNode1");
     var tsNode2 = c.timeseries("ts2").named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -431,7 +430,7 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV11_2ReferencesOneContainer2TimeseriesMigrated() {
-    var c = new GraphDataCreator("2ReferencesOneContainer2Timeseries");
+    var c = sample.instance("2ReferencesOneContainer2Timeseries");
     var tsNode1 = c.timeseries("ts1").named("tsNode1");
     var tsNode2 = c.timeseries("ts2").named("tsNode2");
     var ref1 = c.timeseriesReference("ref1").named("ref1");
@@ -449,7 +448,7 @@ public class TestNeo4jMigrations {
   }
 
   private static void createEmptyReference() {
-    var c = new GraphDataCreator("EmptyReference");
+    var c = sample.instance("EmptyReference");
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
     create(ref.relationshipTo(container, "is_in_container"));
@@ -457,92 +456,10 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV11_EmptyReferenceUntouched() {
-    var c = new GraphDataCreator("EmptyReference");
+    var c = sample.instance("EmptyReference");
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
     var query = Cypher.match(ref.relationshipTo(container, "is_in_container")).returning(ref).build();
     assertEquals(1, queryResults(query).size());
-  }
-
-  private static Literal<String> literal(String of) {
-    return Cypher.literalOf(of + "-" + randomElement);
-  }
-
-  @AllArgsConstructor
-  private static class GraphDataCreator {
-
-    private String suffix;
-
-    private String getSuffix() {
-      return " " + suffix;
-    }
-
-    private Node timeseries() {
-      return timeseries("device");
-    }
-
-    private Node timeseries(String device) {
-      return node("Timeseries").withProperties(
-        "measurement",
-        literal("measurement" + getSuffix()),
-        device,
-        literal("device" + getSuffix()),
-        "location",
-        literal("location" + getSuffix()),
-        "symbolicName",
-        literal("symbolicName" + getSuffix()),
-        "field",
-        literal("field" + getSuffix())
-      );
-    }
-
-    private Node timeseriesReference() {
-      return timeseriesReference("Timeseries Reference");
-    }
-
-    private Node timeseriesReference(String name) {
-      return node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
-        "createdAt",
-        Cypher.literalOf(100),
-        "deleted",
-        Cypher.literalOf(false),
-        "end",
-        Cypher.literalOf(2000),
-        "name",
-        literal(name + getSuffix()),
-        "shepardId",
-        Cypher.literalOf(5),
-        "start",
-        Cypher.literalOf(1000)
-      );
-    }
-
-    private Node annotation() {
-      return node("SemanticAnnotation").withProperties(
-        "propertyName",
-        literal("prop" + getSuffix()),
-        "valueName",
-        literal("value" + getSuffix())
-      );
-    }
-
-    private Node timeseriesContainer(int index) {
-      return timeseriesContainer("TimeseriesContainer " + index);
-    }
-
-    private Node timeseriesContainer() {
-      return timeseriesContainer("TimeseriesContainer");
-    }
-
-    private Node timeseriesContainer(String name) {
-      return node("TimeseriesContainer", "BasicEntity", "BasicContainer").withProperties(
-        "createdAt",
-        Cypher.literalOf(200),
-        "deleted",
-        Cypher.literalOf(false),
-        "name",
-        literal(name + getSuffix())
-      );
-    }
   }
 }
