@@ -361,6 +361,7 @@
           <excludes>
             <exclude>**/Backend.*</exclude>
             <exclude>**/Constants.*</exclude>
+            <exclude>**/migrations/*</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -515,6 +516,17 @@
         <quarkus.profile>test</quarkus.profile>
         <logging.appender>STDOUT</logging.appender>
         <skipUTs>true</skipUTs>
+        <quarkus.native.enabled>false</quarkus.native.enabled>
+      </properties>
+    </profile>
+    <profile>
+      <id>migration-test</id>
+      <properties>
+        <build.profile.id>migration-test</build.profile.id>
+        <quarkus.profile>test</quarkus.profile>
+        <logging.appender>STDOUT</logging.appender>
+        <skipUTs>true</skipUTs>
+        <skipITs>true</skipITs>
         <quarkus.native.enabled>false</quarkus.native.enabled>
       </properties>
     </profile>
