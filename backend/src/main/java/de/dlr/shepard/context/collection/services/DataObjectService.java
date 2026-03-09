@@ -283,6 +283,7 @@ public class DataObjectService {
       dataObject.getPredecessorIds(),
       dataObjectShepardId
     );
+    Log.info("#new Predecessors for DataObject " + dataObjectShepardId + ": " + newPredecessors.size());
     List<DataObject> newSuccessors = findRelatedDataObjects(
       old.getCollection().getShepardId(),
       dataObject.getSuccessorIds(),
