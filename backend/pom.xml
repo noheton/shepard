@@ -324,6 +324,7 @@
           <skipTests>${skipUTs}</skipTests>
           <excludes>
             <exclude>**/integrationtests/*.java</exclude>
+            <exclude>**/migrations/**</exclude>
           </excludes>
           <systemPropertyVariables>
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -350,6 +351,9 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
+          <excludes>
+            <exclude>**/migrations/**</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>
@@ -361,7 +365,7 @@
           <excludes>
             <exclude>**/Backend.*</exclude>
             <exclude>**/Constants.*</exclude>
-            <exclude>**/migrations/*</exclude>
+            <exclude>**/migrations/**</exclude>
           </excludes>
         </configuration>
         <executions>
