@@ -220,6 +220,11 @@
       <version>${jjwt.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      </dependency>
+    <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
       <version>${neo4j-ogm.version}</version>

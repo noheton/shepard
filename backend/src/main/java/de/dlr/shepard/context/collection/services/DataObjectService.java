@@ -68,6 +68,11 @@ public class DataObjectService {
 
     User user = userService.getCurrentUser();
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
+    if (dataObject.getSuccessorIds() != null) if (
+      dataObject.getSuccessorIds().length != 0
+    ) throw new InvalidBodyException(
+      "when creating a new dataObject the list of successors must not be specified or be empty"
+    );
     List<DataObject> predecessors = findRelatedDataObjects(
       collection.getShepardId(),
       dataObject.getPredecessorIds(),
@@ -258,6 +263,19 @@ public class DataObjectService {
         .forEach(predecessor -> {
           dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
         });
+    }
+    if (dataObject.getSuccessorIds() != null) {
+      HashSet<Long> givenSuccessorIds = new HashSet<Long>();
+      for (int i = 0; i < dataObject.getSuccessorIds().length; i++) givenSuccessorIds.add(
+        dataObject.getSuccessorIds()[i]
+      );
+      HashSet<Long> foundSuccessorIds = new HashSet<Long>();
+      for (int i = 0; i < old.getSuccessors().size(); i++) foundSuccessorIds.add(
+        old.getSuccessors().get(i).getShepardId()
+      );
+      if (!givenSuccessorIds.equals(foundSuccessorIds)) throw new InvalidBodyException(
+        "the given list of successors does not match the current list of successors"
+      );
     }
 
     DataObject newParent = findRelatedDataObject(
