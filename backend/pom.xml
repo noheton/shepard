@@ -47,7 +47,7 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.version>3.27.2</quarkus.platform.version>
     <surefire-plugin.version>3.5.5</surefire-plugin.version>
-    <assertj.version>3.27.6</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
     <commons.version>2.21.0</commons.version>
     <equalsverifier.version>4.4.1</equalsverifier.version>
     <hibernate.spatial.version>7.2.6.Final</hibernate.spatial.version>
