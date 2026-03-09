@@ -356,5 +356,6 @@ public class DataObjectServiceQuarkusTest {
 
     //Assert
     assertEquals(1, updatedPredecessor.getSuccessors().size());
+    assertEquals(successor.getShepardId(), updatedPredecessor.getSuccessors().get(0).getShepardId());
   }
 }
