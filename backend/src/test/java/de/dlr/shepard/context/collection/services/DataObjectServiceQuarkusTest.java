@@ -296,9 +296,12 @@ public class DataObjectServiceQuarkusTest {
 
   @Test
   public void createDataObjectWithNonEmptySuccessorList() {
+    //Arrange
     long[] successorIds = { 3L };
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setSuccessorIds(successorIds);
+
+    //Act and Assert
     assertThrows(InvalidBodyException.class, () -> createDataObject(dataObjectIO));
   }
 
@@ -329,6 +332,7 @@ public class DataObjectServiceQuarkusTest {
     long[] updatedSuccessorIds = { successor.getShepardId(), successor.getShepardId() + 1 };
     updatedPredecessorIO.setSuccessorIds(updatedSuccessorIds);
 
+    //Act and Assert
     assertThrows(InvalidBodyException.class, () ->
       dataObjectService.updateDataObject(collection.getShepardId(), predecessor.getShepardId(), updatedPredecessorIO)
     );
