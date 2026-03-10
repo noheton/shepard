@@ -3,6 +3,7 @@ package de.dlr.shepard.data.timeseries.services;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -23,21 +24,23 @@ public class TimeseriesCsvService {
   /**
    * Export one timeseries as CSV File if found.
    *
-   * @param containerId           Id of the container in Neo4j
-   * @param timeseriesList        The list of timeseries whose points are queried
+   * @param containerId           ID of the container in Neo4j
+   * @param timeseries            The timeseries whose points are queried
    * @param queryParams           The query params to fetch the data points
    * @return InputStream containing the CSV file
    */
   public InputStream exportTimeseriesDataToCsv(
     long containerId,
     Timeseries timeseries,
-    TimeseriesDataPointsQueryParams queryParams
+    TimeseriesDataPointsQueryParams queryParams,
+    CsvFormat csvFormat
   ) {
     timeseriesContainerService.getContainer(containerId);
 
     var stream = CsvConverter.convertToCsv(
       timeseries,
-      this.timeseriesService.getDataPointsByTimeseries(containerId, timeseries, queryParams)
+      this.timeseriesService.getDataPointsByTimeseries(containerId, timeseries, queryParams),
+      csvFormat
     );
     return stream;
   }
@@ -54,7 +57,8 @@ public class TimeseriesCsvService {
   public InputStream exportManyTimeseriesWithDataPointsToCsv(
     Long containerId,
     List<Timeseries> timeseriesList,
-    TimeseriesDataPointsQueryParams queryParams
+    TimeseriesDataPointsQueryParams queryParams,
+    CsvFormat csvFormat
   ) throws IOException {
     timeseriesContainerService.getContainer(containerId);
 
@@ -63,7 +67,7 @@ public class TimeseriesCsvService {
       timeseriesList,
       queryParams
     );
-    var stream = CsvConverter.convertToCsv(timeseriesWithDataPointsList);
+    var stream = CsvConverter.convertToCsv(timeseriesWithDataPointsList, csvFormat);
     return stream;
   }
 

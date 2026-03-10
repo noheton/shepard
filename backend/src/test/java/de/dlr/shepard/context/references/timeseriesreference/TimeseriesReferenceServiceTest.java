@@ -31,6 +31,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
@@ -690,7 +691,8 @@ public class TimeseriesReferenceServiceTest {
       timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
         container.getId(),
         List.of(ts.toTimeseries()),
-        queryParams
+        queryParams,
+        CsvFormat.ROW
       )
     ).thenReturn(exportedFileStream);
     when(userService.getCurrentUser()).thenReturn(user);
@@ -712,7 +714,8 @@ public class TimeseriesReferenceServiceTest {
       Set.of("loc"),
       Set.of("symName"),
       Set.of("meas"),
-      Set.of("field")
+      Set.of("field"),
+      CsvFormat.ROW
     );
     assertEquals(exportedFileStream, actual);
   }
@@ -759,13 +762,15 @@ public class TimeseriesReferenceServiceTest {
         Collections.emptySet(),
         Collections.emptySet(),
         Collections.emptySet(),
-        Collections.emptySet()
+        Collections.emptySet(),
+        CsvFormat.ROW
       )
     ).thenReturn(is);
     var actual = referenceService.exportReferencedTimeseriesByShepardId(
       collectionShepardId,
       dataObject.getShepardId(),
-      ref.getShepardId()
+      ref.getShepardId(),
+      CsvFormat.ROW
     );
     assertEquals(is, actual);
   }
@@ -811,7 +816,8 @@ public class TimeseriesReferenceServiceTest {
         Set.of("loc"),
         Set.of("name"),
         Set.of("measurement"),
-        Set.of("field")
+        Set.of("field"),
+        CsvFormat.ROW
       )
     );
   }
@@ -858,7 +864,8 @@ public class TimeseriesReferenceServiceTest {
         Set.of("loc"),
         Set.of("name"),
         Set.of("measurement"),
-        Set.of("field")
+        Set.of("field"),
+        CsvFormat.ROW
       )
     );
   }
@@ -898,7 +905,8 @@ public class TimeseriesReferenceServiceTest {
         Set.of("loc"),
         Set.of("name"),
         Set.of("measurement"),
-        Set.of("field")
+        Set.of("field"),
+        CsvFormat.ROW
       )
     );
   }

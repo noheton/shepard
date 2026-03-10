@@ -14,6 +14,7 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -84,7 +85,8 @@ public class TimeseriesCsvServiceTest {
       null,
       null
     );
-    var actual = this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams);
+    var actual =
+      this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams, CsvFormat.ROW);
 
     StringBuilder actualCsvContent = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
@@ -127,7 +129,8 @@ public class TimeseriesCsvServiceTest {
       null,
       null
     );
-    var actual = this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams);
+    var actual =
+      this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams, CsvFormat.ROW);
 
     StringBuilder actualCsvContent = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
@@ -177,7 +180,8 @@ public class TimeseriesCsvServiceTest {
       null,
       null
     );
-    var actual = this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams);
+    var actual =
+      this.timeseriesCsvService.exportTimeseriesDataToCsv(container.getId(), timeseries, queryParams, CsvFormat.ROW);
 
     StringBuilder actualCsvContent = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(actual))) {
@@ -258,7 +262,7 @@ public class TimeseriesCsvServiceTest {
         );
       });
 
-    var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap);
+    var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap, CsvFormat.ROW);
 
     int lineCounter = 0;
 

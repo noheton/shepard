@@ -22,6 +22,7 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
@@ -291,7 +292,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet,
     Set<String> measurementFilterSet,
-    Set<String> fieldFilterSet
+    Set<String> fieldFilterSet,
+    CsvFormat csvFormat
   ) throws IOException {
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
@@ -336,14 +338,16 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     return timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
       containerId,
       filteredTimeseriesList,
-      queryParams
+      queryParams,
+      csvFormat
     );
   }
 
   public InputStream exportReferencedTimeseriesByShepardId(
     long collectionShepardId,
     long dataObjectShepardId,
-    long referenceId
+    long referenceId,
+    CsvFormat csvFormat
   ) throws IOException {
     return exportReferencedTimeseriesByShepardId(
       collectionShepardId,
@@ -356,7 +360,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       Collections.emptySet(),
       Collections.emptySet(),
       Collections.emptySet(),
-      Collections.emptySet()
+      Collections.emptySet(),
+      csvFormat
     );
   }
 
