@@ -15,6 +15,7 @@ import de.dlr.shepard.context.collection.services.DataObjectIOBuilder;
 import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeAll;
@@ -1221,5 +1222,25 @@ public class DataObjectIT extends BaseTestCaseIT {
       .extract()
       .as(DataObjectIO.class);
     assertEquals(Map.of(), updatedDataObject.getAttributes());
+  }
+
+  @Test
+  public void createDataObjectWithSuccessors() {
+    // Arrange
+    var dataObjectWithSuccessors = new DataObjectIO();
+    dataObjectWithSuccessors.setName("dows");
+    long[] successorIds = { 0L };
+    dataObjectWithSuccessors.setSuccessorIds(successorIds);
+
+    LinkedHashMap res = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectWithSuccessors)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(400)
+      .extract()
+      .as(LinkedHashMap.class);
+    assertEquals("InvalidBodyException", res.get("exception"));
   }
 }

@@ -61,8 +61,10 @@ public class DataObjectService {
    * @return the stored DataObject with the auto generated id
    * @throws InvalidPathException if collection with collectionShepardId does not
    *                              exist
+   * @throws InvalidPathException if collection with collectionShepardId does not
+   *                              exist
    */
-  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) {
+  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) throws InvalidBodyException {
     Collection collection = collectionService.getCollection(collectionShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
