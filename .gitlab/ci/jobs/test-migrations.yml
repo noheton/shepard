@@ -58,7 +58,7 @@ test_backend:
   before_script:
     - cd backend
   script:
-    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} verify -P migration-test -D test=de.dlr.shepard.migrations.*
+    - mvn ${MAVEN_CLI_OPTS} -Drevision=${VERSION_NUMBER} verify -Pmigration-test -Dtest=de.dlr.shepard.migrations.*
     - cat target/site/jacoco/index.html | grep -oP 'Total.*?([0-9]{1,3})%'
     - ls -hal target
   coverage: "/Total.*?([0-9]{1,3})%/"
