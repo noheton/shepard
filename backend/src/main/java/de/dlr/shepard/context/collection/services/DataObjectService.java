@@ -21,10 +21,13 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequestScoped
 public class DataObjectService {
@@ -267,14 +270,9 @@ public class DataObjectService {
         });
     }
     if (dataObject.getSuccessorIds() != null) {
-      HashSet<Long> givenSuccessorIds = new HashSet<Long>();
-      for (int i = 0; i < dataObject.getSuccessorIds().length; i++) givenSuccessorIds.add(
-        dataObject.getSuccessorIds()[i]
-      );
-      HashSet<Long> foundSuccessorIds = new HashSet<Long>();
-      for (int i = 0; i < old.getSuccessors().size(); i++) foundSuccessorIds.add(
-        old.getSuccessors().get(i).getShepardId()
-      );
+      Set<Long> givenSuccessorIds = Arrays.stream(dataObject.getSuccessorIds()).boxed().collect(Collectors.toSet());
+      Set<Long> foundSuccessorIds = new HashSet<Long>();
+      old.getSuccessors().forEach(successor -> foundSuccessorIds.add(successor.getId()));
       if (!givenSuccessorIds.equals(foundSuccessorIds)) throw new InvalidBodyException(
         "the given list of successors does not match the current list of successors"
       );
@@ -299,7 +297,6 @@ public class DataObjectService {
     old.setPredecessors(newPredecessors);
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
-
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
     return updated;
