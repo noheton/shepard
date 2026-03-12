@@ -66,6 +66,7 @@ public class DataObjectService {
    *                              exist
    * @throws InvalidPathException if collection with collectionShepardId does not
    *                              exist
+   * @throws InvalidBodyException if the list of successors is not null or not empty
    */
   public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) throws InvalidBodyException {
     Collection collection = collectionService.getCollection(collectionShepardId);
@@ -252,6 +253,7 @@ public class DataObjectService {
    *                              collectionShepardId does not exist
    * @throws InvalidAuthException if user does not have read or write permissions
    *                              on the collection
+   * @throws InvalidBodyException if the list of successors is not admitted
    */
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
