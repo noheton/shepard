@@ -74,8 +74,8 @@ public class DataObjectService {
 
     User user = userService.getCurrentUser();
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
-    if (dataObject.getSuccessorIds() != null) if (
-      dataObject.getSuccessorIds().length != 0
+    if (
+      dataObject.getSuccessorIds() != null && dataObject.getSuccessorIds().length != 0
     ) throw new InvalidBodyException(
       "when creating a new dataObject the list of successors must not be specified or be empty"
     );
