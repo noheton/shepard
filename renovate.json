@@ -10,7 +10,7 @@
   "dependencyDashboardLabels": ["dependencies"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
-  "minimumReleaseAge": "14",
+  "minimumReleaseAge": "14 days",
   "packageRules": [
     {
       "matchFileNames": ["package.json"],
@@ -66,16 +66,12 @@
       "groupName": "load tests"
     },
     {
-      "matchFileNames": ["timescale-migration-preparation/**"],
-      "groupName": "timescale migration preparation"
-    },
-    {
       "matchFileNames": ["backend/**", "frontend/**"],
       "matchManagers": ["dockerfile", "docker-compose"],
       "groupName": "develop dependencies"
     },
     {
-      "matchPackageNames": ["influxdb", "neo4j", "mongo"],
+      "matchPackageNames": ["neo4j", "mongo"],
       "matchManagers": ["gitlabci"],
       "groupName": "infrastructure dependencies"
     },
@@ -86,11 +82,6 @@
     {
       "matchPackageNames": ["openapitools/openapi-generator-cli"],
       "groupName": "openapi generator"
-    },
-    {
-      "matchPackageNames": ["influxdb"],
-      "matchManagers": ["docker-compose", "gitlabci"],
-      "allowedVersions": "<=1.8"
     },
     {
       "matchPackageNames": ["chronograf"],
