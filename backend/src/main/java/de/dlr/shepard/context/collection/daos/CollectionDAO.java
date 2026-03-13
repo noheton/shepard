@@ -35,11 +35,11 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    var query = String.format(
-      "MATCH %s WHERE %s WITH c",
-      CypherQueryHelper.getObjectPart("c", "Collection", params.hasName()),
-      CypherQueryHelper.getReadableByQuery("c", username)
-    );
+    var query =
+      "MATCH %s WHERE %s WITH c".formatted(
+          CypherQueryHelper.getObjectPart("c", "Collection", params.hasName()),
+          CypherQueryHelper.getReadableByQuery("c", username)
+        );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
     }
@@ -72,13 +72,18 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    String query = String.format(
-      "MATCH %s WHERE %s AND %s WITH %s",
-      CypherQueryHelper.getObjectPartWithVersion(collectionVariable, "Collection", params.hasName(), versionVariable),
-      CypherQueryHelper.getReadableByQuery(collectionVariable, username),
-      CypherQueryHelper.getVersionHeadPart(versionVariable),
-      collectionVariable
-    );
+    String query =
+      "MATCH %s WHERE %s AND %s WITH %s".formatted(
+          CypherQueryHelper.getObjectPartWithVersion(
+            collectionVariable,
+            "Collection",
+            params.hasName(),
+            versionVariable
+          ),
+          CypherQueryHelper.getReadableByQuery(collectionVariable, username),
+          CypherQueryHelper.getVersionHeadPart(versionVariable),
+          collectionVariable
+        );
     if (params.hasOrderByAttribute()) {
       query +=
         " " + CypherQueryHelper.getOrderByPart(collectionVariable, params.getOrderByAttribute(), params.getOrderDesc());
@@ -110,13 +115,11 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     collection.setUpdatedAt(updatedAt);
     collection.setDeleted(true);
     createOrUpdate(collection);
-    String query = String.format(
+    String query =
       """
       MATCH (c:Collection {shepardId:%d}) OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
       OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
-      FOREACH (n in [c,d,r] | SET n.deleted = true)""",
-      shepardId
-    );
+      FOREACH (n in [c,d,r] | SET n.deleted = true)""".formatted(shepardId);
     boolean result = runQuery(query, Collections.emptyMap());
     return result;
   }

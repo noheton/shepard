@@ -119,7 +119,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 
     TimeseriesReference reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Timeseries Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - Timeseries Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -240,10 +240,10 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Referenced Timeseries Container from reference with id %s is null or has been deleted",
-        timeseriesShepardId
-      );
+      String errorMsg =
+        "Referenced Timeseries Container from reference with id %s is null or has been deleted".formatted(
+            timeseriesShepardId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -298,10 +298,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "The referenced TimeseriesContainer is null or deleted for Reference with id %s",
-        timeseriesShepardId
-      );
+      String errorMsg =
+        "The referenced TimeseriesContainer is null or deleted for Reference with id %s".formatted(timeseriesShepardId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

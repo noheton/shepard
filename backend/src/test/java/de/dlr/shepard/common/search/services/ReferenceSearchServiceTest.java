@@ -43,7 +43,7 @@ public class ReferenceSearchServiceTest {
 
   private static final User user = new User("Testuser");
 
-  private static String query = String.format(
+  private static String query =
     """
     {
       "OR": [
@@ -57,9 +57,7 @@ public class ReferenceSearchServiceTest {
           "value": 123,
           "operator": "le"
         }
-    ]}""",
-    1L
-  );
+    ]}""".formatted(1L);
 
   @ParameterizedTest
   @MethodSource

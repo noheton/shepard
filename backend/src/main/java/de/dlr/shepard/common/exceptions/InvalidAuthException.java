@@ -1,9 +1,11 @@
 package de.dlr.shepard.common.exceptions;
 
 import jakarta.ws.rs.core.Response.Status;
+import java.io.Serial;
 
 public class InvalidAuthException extends ShepardException {
 
+  @Serial
   private static final long serialVersionUID = 8796971092537544749L;
 
   public InvalidAuthException() {

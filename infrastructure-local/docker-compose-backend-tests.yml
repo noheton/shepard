@@ -14,13 +14,9 @@ services:
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME-mongo}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD-shepard}
-      - MONGO_USERNAME=${MONGO_USERNAME-username}
-      - MONGO_PASSWORD=${MONGO_PASSWORD-password}
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE-database}
-    volumes:
-      - ../infrastructure/docker-entrypoint-initdb.d/mongodb/00-create-mongo-user.js:/docker-entrypoint-initdb.d/00-create-mongo-user.js
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: shepard
+      MONGO_INITDB_DATABASE: test
 
   timescaledb:
     image: timescale/timescaledb:2.18.1-pg16

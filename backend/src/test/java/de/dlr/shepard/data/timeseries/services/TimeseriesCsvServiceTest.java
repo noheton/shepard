@@ -270,10 +270,7 @@ public class TimeseriesCsvServiceTest {
       String line;
       while ((line = reader.readLine()) != null) {
         lineCounter += 1;
-        assertTrue(
-          csvFileContent.contains(line),
-          String.format("Line '%s' is not contained in original CSV file", line)
-        );
+        assertTrue(csvFileContent.contains(line), "Line '%s' is not contained in original CSV file".formatted(line));
       }
     }
     // make sure the number of lines in both CSV files are equal

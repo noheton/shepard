@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.migrations.neo4j;
+package de.dlr.shepard.migrations.neo4j;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.neo4j.cypherdsl.core.Cypher.*;
@@ -93,7 +93,7 @@ public class TestNeo4jMigrations {
     // test that the migration has not touched the attribute values
     var migratedCollection = (de.dlr.shepard.context.collection.entities.Collection) match(
       collectionWithGoodAttributes
-    ).get(0);
+    ).getFirst();
     assertEqualsMaps(Map.of("a", "0", "b.c", "1"), migratedCollection.getAttributes());
   }
 

@@ -114,11 +114,11 @@ public class ExportServiceTest {
     try (
       var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
         when(mock.build()).thenReturn(mockStream);
-      });
+      })
     ) {
       var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
-      var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+      var exportBuilderMock = exportBuilderMockController.constructed().getFirst();
       verify(exportBuilderMock).addReference(any(BasicReferenceIO.class), eq(user));
       verify(exportBuilderMock).addDataObject(dataObject);
 
@@ -144,11 +144,11 @@ public class ExportServiceTest {
     try (
       var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
         when(mock.build()).thenReturn(mockStream);
-      });
+      })
     ) {
       var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
-      var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+      var exportBuilderMock = exportBuilderMockController.constructed().getFirst();
       verify(exportBuilderMock).addReference(any(BasicReferenceIO.class), eq(user));
       verify(exportBuilderMock).addDataObject(dataObject);
 
@@ -174,11 +174,11 @@ public class ExportServiceTest {
     try (
       var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
         when(mock.build()).thenReturn(mockStream);
-      });
+      })
     ) {
       var actual = service.exportCollectionByShepardId(collection.getShepardId());
 
-      var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+      var exportBuilderMock = exportBuilderMockController.constructed().getFirst();
       verify(exportBuilderMock).addReference(any(TimeseriesReferenceIO.class), eq(user));
       verify(exportBuilderMock).addDataObject(dataObject);
 
@@ -205,11 +205,11 @@ public class ExportServiceTest {
     try (
       var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
         when(mock.build()).thenReturn(mockStream);
-      });
+      })
     ) {
       InputStream actual = service.exportCollectionByShepardId(collection.getShepardId());
 
-      var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+      var exportBuilderMock = exportBuilderMockController.constructed().getFirst();
       verify(exportBuilderMock).addReference(any(FileReferenceIO.class), eq(user));
       verify(exportBuilderMock).addDataObject(dataObject);
 
@@ -235,11 +235,11 @@ public class ExportServiceTest {
     try (
       var exportBuilderMockController = mockConstruction(ExportBuilder.class, (mock, context) -> {
         when(mock.build()).thenReturn(mockStream);
-      });
+      })
     ) {
       InputStream actual = service.exportCollectionByShepardId(collection.getShepardId());
 
-      var exportBuilderMock = exportBuilderMockController.constructed().get(0);
+      var exportBuilderMock = exportBuilderMockController.constructed().getFirst();
       verify(exportBuilderMock).addReference(any(StructuredDataReferenceIO.class), eq(user));
       verify(exportBuilderMock).addDataObject(dataObject);
 

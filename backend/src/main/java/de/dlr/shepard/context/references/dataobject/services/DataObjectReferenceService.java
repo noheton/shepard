@@ -92,10 +92,8 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
 
     DataObjectReference reference = dataObjectReferenceDAO.findByShepardId(dataObjectReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = String.format(
-        "ID ERROR - Data Object Reference with id %s is null or deleted",
-        dataObjectReferenceShepardId
-      );
+      String errorMsg =
+        "ID ERROR - Data Object Reference with id %s is null or deleted".formatted(dataObjectReferenceShepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -139,17 +137,15 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
       referenced = dataObjectService.getDataObject(dataObjectReference.getReferencedDataObjectId());
     } catch (InvalidPathException e) {
       throw new InvalidBodyException(
-        String.format(
-          "The referenced DataObject with id %d could not be found.",
-          dataObjectReference.getReferencedDataObjectId()
-        )
+        "The referenced DataObject with id %d could not be found.".formatted(
+            dataObjectReference.getReferencedDataObjectId()
+          )
       );
     } catch (InvalidAuthException e) {
       throw new InvalidBodyException(
-        String.format(
-          "You do not have permissions to access the referenced DataObject with id %d.",
-          dataObjectReference.getReferencedDataObjectId()
-        )
+        "You do not have permissions to access the referenced DataObject with id %d.".formatted(
+            dataObjectReference.getReferencedDataObjectId()
+          )
       );
     }
 
@@ -233,10 +229,10 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
     );
 
     if (reference.getReferencedDataObject() == null || reference.getReferencedDataObject().isDeleted()) {
-      String errorMsg = String.format(
-        "DataObject referenced by DataObject reference with id %s is not accessible",
-        reference.getShepardId()
-      );
+      String errorMsg =
+        "DataObject referenced by DataObject reference with id %s is not accessible".formatted(
+            reference.getShepardId()
+          );
       Log.errorf(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -245,10 +241,9 @@ public class DataObjectReferenceService implements IReferenceService<DataObjectR
       return dataObjectService.getDataObject(reference.getReferencedDataObject().getShepardId());
     } catch (InvalidPathException e) {
       throw new NotFoundException(
-        String.format(
-          "The referenced DataObject with id %d could not be found.",
-          reference.getReferencedDataObject().getShepardId()
-        )
+        "The referenced DataObject with id %d could not be found.".formatted(
+            reference.getReferencedDataObject().getShepardId()
+          )
       );
     }
   }

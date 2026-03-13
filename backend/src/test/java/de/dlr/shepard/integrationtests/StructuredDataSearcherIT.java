@@ -744,7 +744,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
+    var dataObjectsURL = "/%s/%d/%s/".formatted(Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
     dataObjectIO.setParentId(parentID);
@@ -761,7 +761,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithPredecessors(String name, long collectionId, long[] predecessorsIDs) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
+    var dataObjectsURL = "/%s/%d/%s/".formatted(Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);
     dataObjectIO.setPredecessorIds(predecessorsIDs);
@@ -802,7 +802,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, containerID, Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, containerID, Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -819,14 +819,14 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     toCreate.setName(name);
     toCreate.setStructuredDataOids(structuredDataOIDs);
     toCreate.setStructuredDataContainerId(container.getId());
-    String referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.STRUCTURED_DATA_REFERENCES
-    );
+    String referencesURL =
+      "/%s/%d/%s/%d/%s".formatted(
+          Constants.COLLECTIONS,
+          collection.getId(),
+          Constants.DATA_OBJECTS,
+          dataObject.getId(),
+          Constants.STRUCTURED_DATA_REFERENCES
+        );
     return given()
       .spec(requestSpecOfDefaultUser)
       .body(toCreate)
@@ -839,12 +839,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static void deleteDataObject(DataObjectIO dataObject) {
-    String dataObjectsURL = String.format(
-      "/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS
-    );
+    String dataObjectsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     given()
       .spec(requestSpecOfDefaultUser)
       .when()
@@ -854,7 +849,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
   }
 
   private static void putDataObject(Long dataObjectToChangeID, Long collectionID, DataObjectIO changedDataObject) {
-    String putURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
+    String putURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
     putURL = putURL + "/" + dataObjectToChangeID;
     given().spec(requestSpecOfDefaultUser).body(changedDataObject).when().put(putURL).then().statusCode(200);
   }

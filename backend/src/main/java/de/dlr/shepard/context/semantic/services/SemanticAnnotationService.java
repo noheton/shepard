@@ -48,7 +48,7 @@ public class SemanticAnnotationService {
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
     if (annotation == null) {
-      String errorMsg = String.format("ID ERROR - Semantic Annotation with id %s is null or deleted", id);
+      String errorMsg = "ID ERROR - Semantic Annotation with id %s is null or deleted".formatted(id);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

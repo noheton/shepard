@@ -30,13 +30,13 @@ public class CypherQueryHelper {
 
   private static String getObjectPartWithName(String variable, String type) {
     var namePart = "{ name : $name, deleted: FALSE }";
-    var result = String.format("(%s:%s %s)", variable, type, namePart);
+    var result = "(%s:%s %s)".formatted(variable, type, namePart);
     return result;
   }
 
   private static String getObjectPartWithoutName(String variable, String type) {
     var namePart = "{ deleted: FALSE }";
-    var result = String.format("(%s:%s %s)", variable, type, namePart);
+    var result = "(%s:%s %s)".formatted(variable, type, namePart);
     return result;
   }
 
@@ -45,7 +45,7 @@ public class CypherQueryHelper {
   }
 
   public static String getPaginationPart(PaginationHelper paginationParams) {
-    return String.format("SKIP %d LIMIT %d", paginationParams.getOffset(), paginationParams.getSize());
+    return "SKIP %d LIMIT %d".formatted(paginationParams.getOffset(), paginationParams.getSize());
   }
 
   public static String getReturnPart(String entity) {
@@ -65,14 +65,14 @@ public class CypherQueryHelper {
   }
 
   public static String getReturnCountPart(String entity, Neighborhood neighborhood) {
-    return (getNeighborhoodPart(entity, neighborhood, 1) + " RETURN " + String.format("COUNT(%s)", entity));
+    return (getNeighborhoodPart(entity, neighborhood, 1) + " RETURN " + "COUNT(%s)".formatted(entity));
   }
 
   public static String getReturnPart(String entity, Neighborhood neighborhood, int depth) {
     return (
       getNeighborhoodPart(entity, neighborhood, depth) +
       " RETURN " +
-      String.format("%s, nodes(path), relationships(path)", entity)
+      "%s, nodes(path), relationships(path)".formatted(entity)
     );
   }
 
@@ -81,7 +81,7 @@ public class CypherQueryHelper {
       getNeighborhoodPart(entity, neighborhood, depth) +
       (pagination != null ? " " + CypherQueryHelper.getPaginationPart(pagination) : "") +
       " RETURN " +
-      String.format("%s, nodes(path), relationships(path)", entity)
+      "%s, nodes(path), relationships(path)".formatted(entity)
     );
   }
 
@@ -94,7 +94,7 @@ public class CypherQueryHelper {
         case OUTGOING -> "path=(%s)-[*0..%d]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL";
         case ESSENTIAL -> "path=(%s)-[*0..%d]->(n) WHERE n:Permission OR n:User";
       };
-    return "MATCH " + String.format(match, entity, depth);
+    return "MATCH " + match.formatted(entity, depth);
   }
 
   public static String getReturnPartLight(String entity) {
@@ -106,8 +106,7 @@ public class CypherQueryHelper {
     boolean isString = orderByAttribute.isString();
     if (!isString) ret = "ORDER BY " + variable + "." + orderByAttribute;
     else if (
-      orderByAttribute instanceof BasicContainerAttributes &&
-      ((BasicContainerAttributes) orderByAttribute) == BasicContainerAttributes.type
+      orderByAttribute instanceof BasicContainerAttributes attributes && attributes == BasicContainerAttributes.type
     ) ret = "ORDER BY LABELS(" + variable + ")";
     else ret = "ORDER BY toLower(" + variable + "." + orderByAttribute + ")";
     if (orderByAttribute.toString() == "id") ret = "ORDER BY id(" + variable + ")";
@@ -125,21 +124,21 @@ public class CypherQueryHelper {
   }
 
   public static String getReadableByQuery(String variable, String username) {
-    String ret = String.format(
+    String ret =
       """
       (NOT exists((%s)-[:has_permissions]->(:Permissions)) \
       OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: "%s" })) \
       OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "Public"})) \
       OR exists((%s)-[:has_permissions]->(:Permissions {permissionType: "PublicReadable"})) \
-      OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "%s"})))""",
-      variable,
-      variable,
-      username,
-      variable,
-      variable,
-      variable,
-      username
-    );
+      OR exists((%s)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: "%s"})))""".formatted(
+          variable,
+          variable,
+          username,
+          variable,
+          variable,
+          variable,
+          username
+        );
     return ret;
   }
 

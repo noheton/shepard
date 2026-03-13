@@ -16,10 +16,8 @@ public class SemanticRepositoryDAO extends GenericDAO<SemanticRepository> {
   public List<SemanticRepository> findAllSemanticRepositories(QueryParamHelper params) {
     Map<String, Object> paramsMap = new HashMap<>();
     if (params.hasName()) paramsMap.put("name", params.getName());
-    var query = String.format(
-      "MATCH %s WITH r",
-      CypherQueryHelper.getObjectPart("r", "SemanticRepository", params.hasName())
-    );
+    var query =
+      "MATCH %s WITH r".formatted(CypherQueryHelper.getObjectPart("r", "SemanticRepository", params.hasName()));
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
     }

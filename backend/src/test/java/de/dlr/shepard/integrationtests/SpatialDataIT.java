@@ -272,7 +272,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(createdDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(204);
   }
@@ -296,7 +296,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfOtherUser)
       .body(createdDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(403);
   }
@@ -307,7 +307,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     var dataPoints = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -324,13 +324,13 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
     // Sphere of radius 49 will include the points [0, 0, 0] [10, 10, 10] and [20, 20, 20]
     SpatialDataPointIO[] expectedDataPoints = {
-      createdDataPoints.get(0),
+      createdDataPoints.getFirst(),
       createdDataPoints.get(1),
       createdDataPoints.get(2),
     };
@@ -347,7 +347,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -365,7 +365,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .queryParam("geometryFilter", geometryFilter)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -384,7 +384,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("metadataFilter", metadataFilter)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -405,7 +405,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("measurementsFilter", measurementsFilter)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -425,7 +425,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("startTime", 0)
       .queryParam("endTime", 4)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -443,7 +443,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("limit", 5)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -461,7 +461,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("skip", 2)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .extract()
       .as(SpatialDataPointIO[].class);
@@ -478,7 +478,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("skip", 2)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(403);
   }
@@ -497,7 +497,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     PermissionsIO actualPermissions = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -512,7 +512,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     given()
       .spec(requestSpecOfOtherUser)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(403);
   }
@@ -529,7 +529,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
     Roles actualRolesOwner = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.ROLES))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.ROLES))
       .then()
       .statusCode(200)
       .extract()
@@ -554,7 +554,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(updatedPermissions)
       .when()
-      .put(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .put("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -570,7 +570,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .queryParam("geometryFilter", geometryFilter)
       .queryParam("skip", 2)
       .when()
-      .get(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200);
 
@@ -591,7 +591,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfOtherUser)
       .body(createdDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(204);
   }
@@ -611,7 +611,7 @@ public class SpatialDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfOtherUser)
       .body(updatedPermissions)
       .when()
-      .put(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PERMISSIONS))
+      .put("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(403);
   }

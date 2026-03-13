@@ -76,11 +76,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     // for search involving SemanticAnnotations
     repositoryURL = "/" + Constants.SEMANTIC_REPOSITORIES;
     annotatedCollection = createCollection("SemanticsCollection");
-    annotatedCollectionURL = String.format(
-      "/%s/%d/semanticAnnotations",
-      Constants.COLLECTIONS,
-      annotatedCollection.getId()
-    );
+    annotatedCollectionURL = "/%s/%d/semanticAnnotations".formatted(Constants.COLLECTIONS, annotatedCollection.getId());
     var repositoryToCreate = new SemanticRepositoryIO();
     repositoryToCreate.setName("SemanticRepository");
     repositoryToCreate.setType(SemanticRepositoryType.SPARQL);
@@ -120,7 +116,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "OR": [
@@ -134,9 +130,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": 123,
             "operator": "le"
           }
-      ]}""",
-      collection1.getId()
-    );
+      ]}""".formatted(collection1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -163,7 +157,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -178,9 +172,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      collection1.getId()
-    );
+      }""".formatted(collection1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -207,15 +199,13 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "property": "id",
         "value": %d,
         "operator": "ne"
-      }""",
-      collection1.getId()
-    );
+      }""".formatted(collection1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -240,7 +230,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "OR": [
@@ -254,10 +244,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": %d,
             "operator": "le"
           }
-      ]}""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      ]}""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -283,7 +270,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -297,10 +284,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": %d,
             "operator": "gt"
           }
-      ]}""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      ]}""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -326,7 +310,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -340,10 +324,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": "%s",
             "operator": "eq"
           }
-      ]}""",
-      collection1.getId(),
-      collection1.getName()
-    );
+      ]}""".formatted(collection1.getId(), collection1.getName());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -370,7 +351,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "OR": [
@@ -384,10 +365,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": %d,
             "operator": "le"
           }
-      ]}""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      ]}""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -433,7 +411,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       	{
         "OR": [
@@ -447,10 +425,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": %d,
             "operator": "le"
           }
-      ]}""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      ]}""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -511,7 +486,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       	{
         "OR": [
@@ -525,10 +500,7 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
             "value": %d,
             "operator": "le"
           }
-      ]}""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      ]}""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -589,16 +561,13 @@ public class CollectionSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Collection);
-    String query = String.format(
+    String query =
       """
       {
         "property": "id",
         "value": [%d,%d],
         "operator": "in"
-      }""",
-      collection1.getId(),
-      collection2.getId()
-    );
+      }""".formatted(collection1.getId(), collection2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()

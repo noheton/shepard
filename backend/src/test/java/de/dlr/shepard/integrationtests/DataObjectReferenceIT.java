@@ -50,30 +50,27 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     dataObject21 = createDataObject("2c1dDataObject", collection2.getId());
     dataObject22 = createDataObject("2c2dDataObject", collection2.getId());
 
-    c1d1referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject11.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
-    c1d2referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject12.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
-    c2d1referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject21.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
+    c1d1referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection1.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject11.getId(),
+        Constants.DATAOBJECT_REFERENCES
+      );
+    c1d2referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection1.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject12.getId(),
+        Constants.DATAOBJECT_REFERENCES
+      );
+    c2d1referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection2.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject21.getId(),
+        Constants.DATAOBJECT_REFERENCES
+      );
 
     var referenceToCreate = new DataObjectReferenceIO();
     referenceToCreate.setName("reference12to21");
@@ -212,13 +209,13 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(7)
   public void getDataObjectReferencedTest() {
-    var referencedURL = String.format(
-      "/%s/%d/%s/%d",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject12.getId()
-    );
+    var referencedURL =
+      "/%s/%d/%s/%d".formatted(
+          Constants.COLLECTIONS,
+          collection1.getId(),
+          Constants.DATA_OBJECTS,
+          dataObject12.getId()
+        );
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
@@ -238,7 +235,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", c1d1referencesURL, reference11to12.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(c1d1referencesURL, reference11to12.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200)
       .extract()
@@ -269,14 +266,14 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       otherUser
     );
 
-    String referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collectionWithReferencingDataObject.getId(),
-      Constants.DATA_OBJECTS,
-      referencingDataObject.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
+    String referencesURL =
+      "/%s/%d/%s/%d/%s".formatted(
+          Constants.COLLECTIONS,
+          collectionWithReferencingDataObject.getId(),
+          Constants.DATA_OBJECTS,
+          referencingDataObject.getId(),
+          Constants.DATAOBJECT_REFERENCES
+        );
 
     DataObjectReferenceIO referenceToCreate = new DataObjectReferenceIO();
     referenceToCreate.setName("reference");
@@ -295,10 +292,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .as(ErrorResponse.class);
 
     assertEquals(
-      String.format(
-        "You do not have permissions to access the referenced DataObject with id %s.",
-        dataObject11.getId()
-      ),
+      "You do not have permissions to access the referenced DataObject with id %s.".formatted(dataObject11.getId()),
       error.getMessage()
     );
   }
@@ -346,13 +340,13 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(11)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InHEADVersionTest() {
-    var referencedURL = String.format(
-      "/%s/%d/%s/%d",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject12.getId()
-    );
+    var referencedURL =
+      "/%s/%d/%s/%d".formatted(
+          Constants.COLLECTIONS,
+          collection1.getId(),
+          Constants.DATA_OBJECTS,
+          dataObject12.getId()
+        );
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
@@ -368,13 +362,13 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(12)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void incomingReferencesToDataObject12InFirstVersionTest() {
-    var referencedURL = String.format(
-      "/%s/%d/%s/%d",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject12.getId()
-    );
+    var referencedURL =
+      "/%s/%d/%s/%d".formatted(
+          Constants.COLLECTIONS,
+          collection1.getId(),
+          Constants.DATA_OBJECTS,
+          dataObject12.getId()
+        );
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .queryParam("versionUid", c1v1UID)
@@ -391,13 +385,13 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
   @Order(13)
   @EnabledIf(VersioningFeatureToggle.IS_ENABLED_METHOD_ID)
   public void multipleIncomingReferencesToDataObject21InHEADVersion() {
-    var referencedURL = String.format(
-      "/%s/%d/%s/%d",
-      Constants.COLLECTIONS,
-      collection2.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject21.getId()
-    );
+    var referencedURL =
+      "/%s/%d/%s/%d".formatted(
+          Constants.COLLECTIONS,
+          collection2.getId(),
+          Constants.DATA_OBJECTS,
+          dataObject21.getId()
+        );
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
@@ -424,14 +418,14 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       collectionWithReferencedDataObject.getId()
     );
 
-    String referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collectionWithReferencingDataObject.getId(),
-      Constants.DATA_OBJECTS,
-      referencingDataObject.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
+    String referencesURL =
+      "/%s/%d/%s/%d/%s".formatted(
+          Constants.COLLECTIONS,
+          collectionWithReferencingDataObject.getId(),
+          Constants.DATA_OBJECTS,
+          referencingDataObject.getId(),
+          Constants.DATAOBJECT_REFERENCES
+        );
 
     DataObjectReferenceIO referenceToCreate = new DataObjectReferenceIO();
     referenceToCreate.setName("reference");
@@ -452,13 +446,12 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
-        String.format(
-          "/%s/%d/%s/%d",
-          Constants.COLLECTIONS,
-          collectionWithReferencedDataObject.getId(),
-          Constants.DATA_OBJECTS,
-          referencedDataObject.getId()
-        )
+        "/%s/%d/%s/%d".formatted(
+            Constants.COLLECTIONS,
+            collectionWithReferencedDataObject.getId(),
+            Constants.DATA_OBJECTS,
+            referencedDataObject.getId()
+          )
       )
       .then()
       .statusCode(204);
@@ -467,7 +460,7 @@ public class DataObjectReferenceIT extends BaseTestCaseIT {
     given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(404);
   }

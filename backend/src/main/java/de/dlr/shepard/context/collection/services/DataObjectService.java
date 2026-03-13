@@ -118,10 +118,10 @@ public class DataObjectService {
     String errorMsg;
     if (versionUID == null) {
       ret = dataObjectDAO.findByShepardId(shepardId);
-      errorMsg = String.format("DataObject with id %s is null or deleted", shepardId);
+      errorMsg = "DataObject with id %s is null or deleted".formatted(shepardId);
     } else {
       ret = dataObjectDAO.findByShepardId(shepardId, versionUID);
-      errorMsg = String.format("DataObject with id %s and versionUID %s is null or deleted", shepardId, versionUID);
+      errorMsg = "DataObject with id %s and versionUID %s is null or deleted".formatted(shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
       Log.error(errorMsg);
@@ -305,9 +305,7 @@ public class DataObjectService {
     User user = userService.getCurrentUser();
 
     if (!dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date)) {
-      throw new InvalidRequestException(
-        String.format("Could not delete DataObject with ShepardId %s", dataObjectShepardId)
-      );
+      throw new InvalidRequestException("Could not delete DataObject with ShepardId %s".formatted(dataObjectShepardId));
     }
   }
 
@@ -359,7 +357,7 @@ public class DataObjectService {
 
     var dataObject = dataObjectDAO.findByShepardId(referencedShepardId);
     if (dataObject == null || dataObject.isDeleted()) throw new InvalidBodyException(
-      String.format("The DataObject with id %d could not be found.", referencedShepardId)
+      "The DataObject with id %d could not be found.".formatted(referencedShepardId)
     );
 
     // Prevent cross collection references

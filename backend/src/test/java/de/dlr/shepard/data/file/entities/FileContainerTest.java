@@ -3,6 +3,7 @@ package de.dlr.shepard.data.file.entities;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -22,6 +23,7 @@ public class FileContainerTest extends BaseTestCase {
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(Collection.class, new Collection(3L), new Collection(4L))
+      .withPrefabValues(Permissions.class, new Permissions(1L), new Permissions(2L))
       .verify();
   }
 

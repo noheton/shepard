@@ -26,7 +26,7 @@ public class ApiKeyIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    apiKeyURL = String.format("/%s/%s/%s", Constants.USERS, nameOfDefaultUser, Constants.APIKEYS);
+    apiKeyURL = "/%s/%s/%s".formatted(Constants.USERS, nameOfDefaultUser, Constants.APIKEYS);
   }
 
   @Test
@@ -115,13 +115,12 @@ public class ApiKeyIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "/%s/%s/%s/%s",
-          Constants.USERS,
-          otherUser.getUser().getUsername(),
-          Constants.APIKEYS,
-          otherUser.getApiKey().getUid()
-        )
+        "/%s/%s/%s/%s".formatted(
+            Constants.USERS,
+            otherUser.getUser().getUsername(),
+            Constants.APIKEYS,
+            otherUser.getApiKey().getUid()
+          )
       )
       .then()
       .statusCode(403)
@@ -137,13 +136,12 @@ public class ApiKeyIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "/%s/%s/%s/%s",
-          Constants.USERS,
-          otherUser.getUser().getUsername(),
-          Constants.APIKEYS,
-          UUID.randomUUID()
-        )
+        "/%s/%s/%s/%s".formatted(
+            Constants.USERS,
+            otherUser.getUser().getUsername(),
+            Constants.APIKEYS,
+            UUID.randomUUID()
+          )
       )
       .then()
       .statusCode(403)
@@ -186,13 +184,12 @@ public class ApiKeyIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
-        String.format(
-          "/%s/%s/%s/%s",
-          Constants.USERS,
-          otherUser.getUser().getUsername(),
-          Constants.APIKEYS,
-          UUID.randomUUID()
-        )
+        "/%s/%s/%s/%s".formatted(
+            Constants.USERS,
+            otherUser.getUser().getUsername(),
+            Constants.APIKEYS,
+            UUID.randomUUID()
+          )
       )
       .then()
       .statusCode(403)
@@ -208,13 +205,12 @@ public class ApiKeyIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
-        String.format(
-          "/%s/%s/%s/%s",
-          Constants.USERS,
-          otherUser.getUser().getUsername(),
-          Constants.APIKEYS,
-          otherUser.getApiKey().getUid()
-        )
+        "/%s/%s/%s/%s".formatted(
+            Constants.USERS,
+            otherUser.getUser().getUsername(),
+            Constants.APIKEYS,
+            otherUser.getApiKey().getUid()
+          )
       )
       .then()
       .statusCode(403)

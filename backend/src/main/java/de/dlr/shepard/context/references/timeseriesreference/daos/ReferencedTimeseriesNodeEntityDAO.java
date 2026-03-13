@@ -27,10 +27,10 @@ public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTime
     String symbolicName,
     String field
   ) {
-    var query = String.format(
-      "MATCH (t:Timeseries { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s",
-      CypherQueryHelper.getReturnPart("t")
-    );
+    var query =
+      "MATCH (t:Timeseries { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s".formatted(
+          CypherQueryHelper.getReturnPart("t")
+        );
     Map<String, Object> params = Map.of(
       "measurement",
       measurement,

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ public class SpatialDataPointRepositoryTest {
   private long generateManagedContainerId() {
     var id = 0L;
     do {
-      id = (long) (Math.random() * 1_000);
+      id = (long) (ThreadLocalRandom.current().nextDouble() * 1_000);
     } while (containerIdsForCleanup.contains(id));
 
     containerIdsForCleanup.add(id);
@@ -99,13 +100,13 @@ public class SpatialDataPointRepositoryTest {
 
     var current = repository.getByContainerId(containerId);
     assertEquals(1, current.size());
-    assertEquals(1_000_000_000_000L, current.get(0).getTime());
-    assertEquals("org.locationtech.jts.geom.Point", current.get(0).getPosition().getClass().getName());
-    assertEquals(4, current.get(0).getPosition().getCoordinate().x);
-    assertEquals(5, current.get(0).getPosition().getCoordinate().y);
-    assertEquals(6, current.get(0).getPosition().getCoordinate().z);
-    assertEquals(metadata, current.get(0).getMetadata());
-    assertEquals(measurements, current.get(0).getMeasurements());
+    assertEquals(1_000_000_000_000L, current.getFirst().getTime());
+    assertEquals("org.locationtech.jts.geom.Point", current.getFirst().getPosition().getClass().getName());
+    assertEquals(4, current.getFirst().getPosition().getCoordinate().x);
+    assertEquals(5, current.getFirst().getPosition().getCoordinate().y);
+    assertEquals(6, current.getFirst().getPosition().getCoordinate().z);
+    assertEquals(metadata, current.getFirst().getMetadata());
+    assertEquals(measurements, current.getFirst().getMeasurements());
   }
 
   @Test
@@ -131,9 +132,9 @@ public class SpatialDataPointRepositoryTest {
 
     var current = repository.getByContainerId(containerId);
     assertEquals(100, current.size());
-    assertFalse(Double.isNaN(current.get(0).getPosition().getCoordinate().x));
-    assertFalse(Double.isNaN(current.get(0).getPosition().getCoordinate().y));
-    assertFalse(Double.isNaN(current.get(0).getPosition().getCoordinate().z));
+    assertFalse(Double.isNaN(current.getFirst().getPosition().getCoordinate().x));
+    assertFalse(Double.isNaN(current.getFirst().getPosition().getCoordinate().y));
+    assertFalse(Double.isNaN(current.getFirst().getPosition().getCoordinate().z));
   }
 
   @Test
@@ -766,7 +767,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
-    assertTrue(data.get(0).equals(dataPoint));
+    assertTrue(data.getFirst().equals(dataPoint));
   }
 
   @Test
@@ -803,7 +804,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
-    assertTrue(data.get(0).equals(dataPoint));
+    assertTrue(data.getFirst().equals(dataPoint));
   }
 
   @Test
@@ -862,7 +863,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertEquals(1, data.size());
-    assertEquals(dataPoint1, data.get(0));
+    assertEquals(dataPoint1, data.getFirst());
   }
 
   @Test
@@ -905,7 +906,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertEquals(1, data.size());
-    assertEquals(dataPoint1, data.get(0));
+    assertEquals(dataPoint1, data.getFirst());
   }
 
   @Test
@@ -928,7 +929,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertEquals(1, data.size());
-    assertEquals(dataPoint1, data.get(0));
+    assertEquals(dataPoint1, data.getFirst());
   }
 
   @Test
@@ -957,7 +958,7 @@ public class SpatialDataPointRepositoryTest {
 
     assertNotNull(data);
     assertTrue(data.size() == 1);
-    assertTrue(data.get(0).equals(dataPoint1));
+    assertTrue(data.getFirst().equals(dataPoint1));
   }
 
   @Test

@@ -95,7 +95,7 @@ public class UserWithApiKeyBuilder {
       apiKey = new ApiKey("IntegrationTestApiKey", new Date(), user);
       session.save(apiKey);
     } else {
-      apiKey = user.getApiKeys().get(0);
+      apiKey = user.getApiKeys().getFirst();
     }
 
     // Update Api Key

@@ -231,14 +231,14 @@ public abstract class GenericDAO<T> {
   }
 
   public void deleteRelation(long fromId, long toId, String fromType, String toType, String relationName) {
-    String query = String.format(
-      "MATCH (a:%s {shepardId: %s})-[r:%s]->(b:%s {shepardId: %s}) DELETE r;",
-      fromType,
-      fromId,
-      relationName,
-      toType,
-      toId
-    );
+    String query =
+      "MATCH (a:%s {shepardId: %s})-[r:%s]->(b:%s {shepardId: %s}) DELETE r;".formatted(
+          fromType,
+          fromId,
+          relationName,
+          toType,
+          toId
+        );
     session.query(query, new HashMap<String, String>());
   }
 

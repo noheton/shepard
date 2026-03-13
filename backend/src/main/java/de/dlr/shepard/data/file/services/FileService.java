@@ -63,7 +63,7 @@ public class FileService {
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -102,14 +102,14 @@ public class FileService {
     try {
       collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", containerId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(containerId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
     var oid = new ObjectId(fileOid);
     var payloadDocument = collection.find(eq(ID_ATTR, oid)).first();
     if (payloadDocument == null) {
-      String errorMsg = String.format("Could not find document with oid: %s", fileOid);
+      String errorMsg = "Could not find document with oid: %s".formatted(fileOid);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -135,13 +135,13 @@ public class FileService {
     try {
       collection = mongoDatabase.getCollection(containerId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", containerId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(containerId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
     var doc = collection.find(eq(ID_ATTR, new ObjectId(fileOid))).first();
     if (doc == null) {
-      String errorMsg = String.format("Could not find file with oid: %s", fileOid);
+      String errorMsg = "Could not find file with oid: %s".formatted(fileOid);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -158,7 +158,7 @@ public class FileService {
     try {
       toDelete = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not delete container with mongoid: %s", mongoId);
+      String errorMsg = "Could not delete container with mongoid: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -174,13 +174,13 @@ public class FileService {
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
     var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(fileOid)));
     if (doc == null) {
-      String errorMsg = String.format("Could not find and delete file with oid: %s", fileOid);
+      String errorMsg = "Could not find and delete file with oid: %s".formatted(fileOid);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

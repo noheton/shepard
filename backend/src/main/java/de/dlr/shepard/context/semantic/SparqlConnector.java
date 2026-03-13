@@ -59,7 +59,7 @@ public class SparqlConnector implements ISemanticRepositoryConnector {
   }
 
   private String requestTerm(String termIri) {
-    var query = String.format(SELECT_TEMPLATE, termIri);
+    var query = SELECT_TEMPLATE.formatted(termIri);
     var invocation = client.target(endpoint).queryParam("query", query).request(MediaType.APPLICATION_JSON).buildGet();
     String responseEntity = request(invocation);
     client.close();
