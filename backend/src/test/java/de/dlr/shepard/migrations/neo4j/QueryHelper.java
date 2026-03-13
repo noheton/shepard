@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.migrations.neo4j;
+package de.dlr.shepard.migrations.neo4j;
 
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import java.util.Collections;

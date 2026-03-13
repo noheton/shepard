@@ -64,7 +64,7 @@ public class TestNeo4jMigrations {
     testNodeMigrated(collectionWithBadAttributes, collectionWithGoodAttributes);
 
     // test that the migration has not touched the attribute values
-    var migratedCollection = q.match(collectionWithGoodAttributes, Collection.class).get(0);
+    var migratedCollection = q.match(collectionWithGoodAttributes, Collection.class).getFirst();
     assertEqualsMaps(Map.of("a", "0", "b.c", "1"), migratedCollection.getAttributes());
   }
 
@@ -120,7 +120,7 @@ public class TestNeo4jMigrations {
     var tsWithExactlyOneContainer = q.queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount = 1 return ts"
     );
-    var numTs = q.queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).get(0);
+    var numTs = q.queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).getFirst();
     assertEquals(numTs, tsWithExactlyOneContainer.size());
     var tsWithSeveralContainers = q.queryResults(
       "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
@@ -139,7 +139,7 @@ public class TestNeo4jMigrations {
           "return count(tsr)",
           Long.class
         )
-        .get(0)
+        .getFirst()
     );
   }
 

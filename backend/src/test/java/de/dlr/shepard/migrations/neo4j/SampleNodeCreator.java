@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.migrations.neo4j;
+package de.dlr.shepard.migrations.neo4j;
 
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
