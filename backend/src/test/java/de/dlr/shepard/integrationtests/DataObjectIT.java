@@ -1214,4 +1214,80 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
     assertEquals(Map.of(), updatedDataObject.getAttributes());
   }
+
+  @Test
+  public void updateDataObjectChangeNeighborhood() {
+    // Arrange
+    DataObjectIO dataObjectIO1 = new DataObjectIOBuilder().setName("do1").build();
+    DataObjectIO dataObject1 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectIO1)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    long[] dataObjectIO2Predecessors = { dataObject1.getId() };
+    DataObjectIO dataObjectIO2 = new DataObjectIOBuilder()
+      .setName("do2")
+      .setPredecessorIds(dataObjectIO2Predecessors)
+      .build();
+    DataObjectIO dataObject2 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectIO2)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    long[] dataObjectIO3Predecessors = { dataObject1.getId() };
+    long[] dataObjectIO3Successors = { dataObject1.getId(), dataObject2.getId() };
+    DataObjectIO dataObjectIO3 = new DataObjectIOBuilder()
+      .setName("do3")
+      .setPredecessorIds(dataObjectIO3Predecessors)
+      .setSuccessorIds(dataObjectIO3Successors)
+      .build();
+    DataObjectIO dataObject3 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectIO3)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act
+    long[] dataObjectIO3NewPredecessors = { dataObject2.getId() };
+    long[] dataObjectIO3NewSuccessors = { dataObject1.getId() };
+    dataObjectIO3.setPredecessorIds(dataObjectIO3NewPredecessors);
+    dataObjectIO3.setSuccessorIds(dataObjectIO3NewSuccessors);
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectIO3)
+      .when()
+      .put(dataObjectsURL + "/" + dataObject3.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert
+    DataObjectIO updatedDataObject3 = given()
+      .spec(requestSpecOfDefaultUser)
+      .when()
+      .get(dataObjectsURL + "/" + dataObject3.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    assertEquals(1, updatedDataObject3.getPredecessorIds().length);
+    assertEquals(1, updatedDataObject3.getSuccessorIds().length);
+    assertEquals(dataObject2.getId(), updatedDataObject3.getPredecessorIds()[0]);
+    assertEquals(dataObject1.getId(), updatedDataObject3.getSuccessorIds()[0]);
+  }
 }

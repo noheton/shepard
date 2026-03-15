@@ -17,8 +17,18 @@ public class DataObjectIOBuilder {
     return this;
   }
 
+  public DataObjectIOBuilder setDescription(String description) {
+    dataObjectIO.setDescription(description);
+    return this;
+  }
+
   public DataObjectIOBuilder setPredecessorIds(long[] predecessorIds) {
     dataObjectIO.setPredecessorIds(predecessorIds);
+    return this;
+  }
+
+  public DataObjectIOBuilder setSuccessorIds(long[] successorIds) {
+    dataObjectIO.setSuccessorIds(successorIds);
     return this;
   }
 

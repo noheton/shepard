@@ -22,6 +22,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
   @Schema(readOnly = true, required = true)
   private long[] successorIds;
 
+  @Schema(readOnly = true, required = true)
   private long[] predecessorIds;
 
   @Schema(readOnly = true, required = true)
