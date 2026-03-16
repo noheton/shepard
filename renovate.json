@@ -13,6 +13,11 @@
   "minimumReleaseAge": "14 days",
   "packageRules": [
     {
+      "matchFileNames": ["ruff"],
+      "natchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
       "matchFileNames": ["package.json"],
       "groupName": "develop dependencies"
     },
