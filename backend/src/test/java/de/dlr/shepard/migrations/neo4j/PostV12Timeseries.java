@@ -18,7 +18,7 @@ import org.neo4j.ogm.annotation.Relationship;
 @NodeEntity
 @NoArgsConstructor
 @Data
-public class PostV12Timeseries extends PreV12Timeseries implements Annotatable {
+class PostV12Timeseries extends PreV12Timeseries implements Annotatable {
 
   public PostV12Timeseries(
     String measurement,

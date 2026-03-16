@@ -13,7 +13,7 @@ import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
-public class QueryHelper {
+class QueryHelper {
 
   private static final Renderer cypherRenderer = Renderer.getDefaultRenderer();
   private static Session session;

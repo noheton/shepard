@@ -3,7 +3,7 @@ package de.dlr.shepard.migrations.neo4j;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class SampleNodeCreatorFactory {
+class SampleNodeCreatorFactory {
 
   private final String randomElement;
 

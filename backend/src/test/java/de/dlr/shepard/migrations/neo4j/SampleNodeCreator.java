@@ -8,7 +8,7 @@ import org.neo4j.cypherdsl.core.Literal;
 import org.neo4j.cypherdsl.core.Node;
 
 @AllArgsConstructor
-public class SampleNodeCreator {
+class SampleNodeCreator {
 
   private String suffix;
   private String randomElement;

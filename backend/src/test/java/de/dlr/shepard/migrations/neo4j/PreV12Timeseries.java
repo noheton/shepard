@@ -2,7 +2,6 @@ package de.dlr.shepard.migrations.neo4j;
 
 import de.dlr.shepard.common.util.HasId;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -16,7 +15,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 @EqualsAndHashCode
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
-public class PreV12Timeseries implements HasId {
+class PreV12Timeseries implements HasId {
 
   @Id
   @GeneratedValue
