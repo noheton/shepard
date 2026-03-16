@@ -11,15 +11,24 @@ import io.quarkus.runtime.Shutdown;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import org.flywaydb.core.Flyway;
 
 @QuarkusMain
 public class ShepardMain implements QuarkusApplication {
 
-  private static IConnector neo4j = NeoConnector.getInstance();
+  private static final IConnector neo4j = NeoConnector.getInstance();
+
+  @Inject
+  Flyway flyway;
 
   @Startup
   void init() {
     Log.info("Starting shepard backend");
+
+    System.out.println("Run PostGres migrations...");
+    flyway.migrate();
+    System.out.println("Finished PostGres migrations!");
 
     var pkiHelper = new PKIHelper();
     var migrationRunner = new MigrationsRunner();
@@ -28,8 +37,9 @@ public class ShepardMain implements QuarkusApplication {
     Log.info("Waiting for databases");
     migrationRunner.waitForConnection();
 
-    Log.info("Run database migrations");
+    Log.info("Run neo4j database migrations...");
     migrationRunner.apply();
+    Log.info("Finished neo4j database migrations!");
 
     Log.info("Initialize databases");
     neo4j.connect();
