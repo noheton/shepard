@@ -2,7 +2,6 @@ package de.dlr.shepard.migrations.neo4j;
 
 import de.dlr.shepard.common.neo4j.entities.Annotatable;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
@@ -10,65 +9,55 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
+@EqualsAndHashCode(callSuper = true)
 @NodeEntity
-@Data
 @NoArgsConstructor
-@RequiredArgsConstructor
-public class MigratedTimeseries implements HasId, Annotatable {
+@Data
+public class PostV12Timeseries extends PreV12Timeseries implements Annotatable {
 
-  @Id
-  @GeneratedValue
-  private Long id;
-
-  @NotBlank
-  @NonNull
-  private String measurement;
-
-  @NotBlank
-  @NonNull
-  private String device;
-
-  @NotBlank
-  @NonNull
-  private String location;
-
-  @NotBlank
-  @NonNull
-  private String symbolicName;
+  public PostV12Timeseries(
+    String measurement,
+    String device,
+    String location,
+    String symbolicName,
+    String field,
+    DataPointValueType valueType,
+    long timeseriesId,
+    TimeseriesContainer container
+  ) {
+    super(measurement, device, location, symbolicName, field);
+    this.valueType = valueType;
+    this.timeseriesId = timeseriesId;
+    this.container = container;
+  }
 
   @NotBlank
-  @NonNull
-  private String field;
-
-  @NotBlank
-  @NonNull
   private DataPointValueType valueType;
 
   @NotBlank
-  @NonNull
   private Long timeseriesId;
 
   @Relationship(type = Constants.IS_IN_CONTAINER)
   @NotBlank
-  @NonNull
   private TimeseriesContainer container;
 
   @Relationship(type = Constants.HAS_ANNOTATION)
   @NotBlank
-  @NonNull
-  private List<SemanticAnnotation> annotations = new ArrayList<>();
+  private final List<SemanticAnnotation> annotations = new ArrayList<>();
 
   @Override
   public String getUniqueId() {
     return String.valueOf(timeseriesId);
+  }
+
+  @Override
+  public List<SemanticAnnotation> getAnnotations() {
+    return annotations;
   }
 
   @Override

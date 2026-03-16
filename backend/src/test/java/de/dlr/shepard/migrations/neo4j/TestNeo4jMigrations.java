@@ -719,13 +719,13 @@ public class TestNeo4jMigrations {
    * Create a migrated timeseries from containerId, measurement and valueType.
    * device, location, symbolicName and field remain fixed.
    */
-  private static MigratedTimeseries createMigratedTimeseries(
+  private static PostV12Timeseries createMigratedTimeseries(
     long containerId,
     String measurement,
     DataPointValueType valueType,
     long timeseriesId
   ) {
-    return new MigratedTimeseries(
+    return new PostV12Timeseries(
       measurement,
       "device",
       "location",
