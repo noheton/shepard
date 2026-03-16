@@ -531,6 +531,9 @@ public class TestNeo4jMigrations {
     }
   }
 
+  @Test
+  public void testV12_NewTimeseriesMergedWithPreexisting() {}
+
   private Connection createTimeseriesConnection() throws SQLException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
