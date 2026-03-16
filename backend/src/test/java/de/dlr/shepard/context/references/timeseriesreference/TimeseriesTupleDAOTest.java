@@ -10,7 +10,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
