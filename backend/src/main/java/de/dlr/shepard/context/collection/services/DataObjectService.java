@@ -249,7 +249,7 @@ public class DataObjectService {
    * @param dataObjectShepardId Identifies the dataObject
    * @param dataObject          DataObject entity for updating.
    * @return updated DataObject.
-   * @throws InvalidPathException if dataobject cannot be found or collection with
+   * @throws InvalidPathException if dataObject cannot be found or collection with
    *                              collectionShepardId does not exist
    * @throws InvalidAuthException if user does not have read or write permissions
    *                              on the collection
@@ -273,8 +273,11 @@ public class DataObjectService {
     }
     if (dataObject.getSuccessorIds() != null) {
       Set<Long> givenSuccessorIds = Arrays.stream(dataObject.getSuccessorIds()).boxed().collect(Collectors.toSet());
-      Set<Long> foundSuccessorIds = new HashSet<Long>();
-      old.getSuccessors().forEach(successor -> foundSuccessorIds.add(successor.getId()));
+      Set<Long> foundSuccessorIds = old
+        .getSuccessors()
+        .stream()
+        .map(successor -> successor.getId())
+        .collect(Collectors.toSet());
       if (!givenSuccessorIds.equals(foundSuccessorIds)) throw new InvalidBodyException(
         "the given list of successors does not match the current list of successors"
       );
