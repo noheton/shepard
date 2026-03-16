@@ -259,6 +259,7 @@ public class DataObjectService {
           dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
         });
     }
+    dataObjectDAO.deleteAllAttributes(old);
 
     DataObject newParent = findRelatedDataObject(
       old.getCollection().getShepardId(),
@@ -279,7 +280,6 @@ public class DataObjectService {
     old.setPredecessors(newPredecessors);
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
-
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
     return updated;

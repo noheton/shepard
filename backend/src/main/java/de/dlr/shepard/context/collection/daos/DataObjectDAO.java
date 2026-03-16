@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
+import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Node;
 
 @RequestScoped
 public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
@@ -125,6 +127,21 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       getEntityType().getSimpleName(),
       Constants.HAS_CHILD
     );
+  }
+
+  /**
+   * Deletes all attributes of a DataObject in neo4j
+   * @param dataObject  identifies the DataObject
+   */
+  public void deleteAllAttributes(DataObject dataObject) {
+    if (dataObject.getAttributes() == null || dataObject.getAttributes().isEmpty()) return;
+    Node d = Cypher.node("DataObject");
+    String st = Cypher.match(d)
+      .where(d.internalId().isEqualTo(Cypher.literalOf(dataObject.getId())))
+      .remove(dataObject.getAttributes().keySet().stream().map(key -> d.property("attributes||" + key)).toList())
+      .build()
+      .getCypher();
+    session.query(st, new HashMap<String, String>());
   }
 
   /**
