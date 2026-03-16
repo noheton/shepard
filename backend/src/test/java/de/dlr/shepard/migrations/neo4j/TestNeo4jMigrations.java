@@ -1,21 +1,16 @@
 package de.dlr.shepard.migrations.neo4j;
 
+import static de.dlr.shepard.migrations.neo4j.V12Helper.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
-import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
 import de.dlr.shepard.context.collection.entities.Collection;
-import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
-import jakarta.validation.constraints.NotNull;
-import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
@@ -23,12 +18,9 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.flywaydb.core.Flyway;
@@ -483,101 +475,6 @@ public class TestNeo4jMigrations {
     assertEquals(1, q.queryResults(query).size());
   }
 
-  /**
-   * Get the column name into which a timeseries data point should be saved in timescale.
-   */
-  private static String getDatapointColumn(TimeseriesDataPoint p) {
-    if (p.getValue() instanceof Double) return "double_value";
-    else if (p.getValue() instanceof String) return "string_value";
-    else if (p.getValue() instanceof Boolean) return "boolean_value";
-    else if (p.getValue() instanceof Integer) return "int_value";
-    throw new RuntimeException("Data point " + p + " is of unfitting value!");
-  }
-
-  /**
-   * Helper class to represent a timeseries including its corresponding container id.
-   */
-  @EqualsAndHashCode(callSuper = true)
-  @Data
-  private static class ContaineredTs extends TimeseriesWithDataPoints {
-
-    @NotNull
-    private long containerId;
-
-    public ContaineredTs(long containerId, Timeseries timeseries, List<TimeseriesDataPoint> points) {
-      super(timeseries, points);
-      this.containerId = containerId;
-    }
-  }
-
-  private static ContaineredTs csvEntryToTs(Map<String, String> entry) {
-    return new ContaineredTs(
-      Long.parseLong(entry.get("CONTAINERID")),
-      new Timeseries(
-        entry.get("MEASUREMENT"),
-        entry.get("DEVICE"),
-        entry.get("LOCATION"),
-        entry.get("SYMBOLICNAME"),
-        entry.get("FIELD")
-      ),
-      List.of(new TimeseriesDataPoint(Long.parseLong(entry.get("TIMESTAMP")), strValueToObject(entry.get("VALUE"))))
-    );
-  }
-
-  /**
-   * Convert a string value of a timeseries to an Object of type Integer, Double, Boolean or String.
-   */
-  private static Object strValueToObject(String strValue) {
-    try {
-      return Integer.valueOf(strValue);
-    } catch (NumberFormatException e1) {
-      try {
-        return Double.valueOf(strValue);
-      } catch (NumberFormatException e2) {
-        if ("true".equalsIgnoreCase(strValue) || "false".equalsIgnoreCase(strValue)) return Boolean.valueOf(strValue);
-        else return strValue;
-      }
-    }
-  }
-
-  /**
-   * Determine the value type of a timeseries value
-   * @param value Object that contains the value of the timeseries data point
-   * @return The type corresponding to the value
-   */
-  private static DataPointValueType valueToValueType(Object value) {
-    var strValue = value.toString();
-    try {
-      Integer.valueOf(strValue);
-      return DataPointValueType.Integer;
-    } catch (NumberFormatException e1) {
-      try {
-        Double.valueOf(strValue);
-        return DataPointValueType.Double;
-      } catch (NumberFormatException e2) {
-        if ("true".equalsIgnoreCase(strValue) || "false".equalsIgnoreCase(strValue)) return DataPointValueType.Boolean;
-        else return DataPointValueType.String;
-      }
-    }
-  }
-
-  /**
-   * Read a csv file into a list of maps each mapping header to corresponding value.
-   */
-  private static List<Map<String, String>> readCsvAsMapList(String csvFilePath)
-    throws IOException, CsvValidationException {
-    CSVReaderHeaderAware reader = new CSVReaderHeaderAware(new FileReader(csvFilePath));
-
-    List<Map<String, String>> rows = new ArrayList<>();
-    Map<String, String> rowMap;
-
-    while ((rowMap = reader.readMap()) != null) {
-      rows.add(rowMap);
-    }
-
-    return rows;
-  }
-
   List<Long> testingTimeseriesIds;
 
   /**
@@ -653,7 +550,7 @@ public class TestNeo4jMigrations {
     flyway.migrate();
 
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
-    var ts_list = dbEntries.stream().map(TestNeo4jMigrations::csvEntryToTs);
+    var ts_list = dbEntries.stream().map(V12Helper::csvEntryToTs);
 
     testingTimeseriesIds = ts_list
       .map(ts -> {
