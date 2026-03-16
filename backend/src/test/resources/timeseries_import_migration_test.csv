@@ -1,0 +1,16 @@
+DEVICE,FIELD,LOCATION,MEASUREMENT,SYMBOLICNAME,TIMESTAMP,VALUE,CONTAINERID
+device,field,location,motion,symbolicName,1704067200000000000,true,1
+device,field,location,motion,symbolicName,1704067201000000000,false,1
+device,field,location,motion,symbolicName,1704067203000000000,true,2
+device,field,location,motion,symbolicName,1704067206000000000,false,2
+device,field,location,motion,symbolicName,1704067210000000000,true,2
+device,field,location,water_level,symbolicName,1704067200000000000,90.0,1
+device,field,location,water_level,symbolicName,1704067201000000000,120.57,1
+device,field,location,water_level,symbolicName,1704067203000000000,127.25,1
+device,field,location,water_level,symbolicName,1704067206000000000,129.25,2
+device,field,location,water_level,symbolicName,1704067210000000000,134.0,2
+device,field,location,status,symbolicName,1704067200000000000,running,1
+device,field,location,status,symbolicName,1704067200000000001,running,2
+device,field,location,int_level,symbolicName,1704067210000000000,1340003,1
+device,field,location,int_level,symbolicName,1704067210000000001,131231511,1
+device,field,location,int_level,symbolicName,1704067210000000002,3,2

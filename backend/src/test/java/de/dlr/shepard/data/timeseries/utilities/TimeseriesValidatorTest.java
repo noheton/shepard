@@ -9,13 +9,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_everythingIsCorrect_noException() {
-    TimeseriesTuple timeseries = new TimeseriesTuple(
-      "measurement",
-      "field",
-      "device",
-      "location",
-      "symbolicName"
-    );
+    TimeseriesTuple timeseries = new TimeseriesTuple("measurement", "field", "device", "location", "symbolicName");
 
     Assertions.assertDoesNotThrow(() -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
