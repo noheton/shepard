@@ -487,7 +487,7 @@ public class TestNeo4jMigrations {
    * Assert that the timeseries from timescale are now present as timeseries nodes in the graph database.
    */
   @Test
-  public void testV12_tempTimeseriesPresentInGraphDb() {
+  public void testV12_TimeseriesPresentInGraphDb() {
     var ts_result_list = q.match(node("Timeseries"));
     assertEquals(8, ts_result_list.size());
     assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
@@ -504,7 +504,7 @@ public class TestNeo4jMigrations {
    * Assert that meta-information does not exist anymore in timescaledb.
    */
   @Test
-  public void testV12_metadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
+  public void testV12_MetadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
       var result = connection
         .prepareStatement("select tablename from pg_tables where tablename = 'timeseries'")
@@ -517,7 +517,7 @@ public class TestNeo4jMigrations {
    * Assert that the values of all timeseries are still intact in timescaledb.
    */
   @Test
-  public void testV12_timeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
+  public void testV12_TimeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
     try (var connection = createTimeseriesConnection()) {
       var tsCount = connection
         .prepareStatement("select count(timeseries_id) from timeseries_data_points")
