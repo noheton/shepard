@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/openjdk-21:1.24
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.24
 
 COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
 COPY --chown=185 target/quarkus-app/*.jar /deployments/
