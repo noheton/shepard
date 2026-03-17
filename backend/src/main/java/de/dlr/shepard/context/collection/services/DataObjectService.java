@@ -273,11 +273,7 @@ public class DataObjectService {
     }
     if (dataObject.getSuccessorIds() != null) {
       Set<Long> givenSuccessorIds = Arrays.stream(dataObject.getSuccessorIds()).boxed().collect(Collectors.toSet());
-      Set<Long> foundSuccessorIds = old
-        .getSuccessors()
-        .stream()
-        .map(successor -> successor.getId())
-        .collect(Collectors.toSet());
+      Set<Long> foundSuccessorIds = old.getSuccessors().stream().map(DataObject::getId).collect(Collectors.toSet());
       if (!givenSuccessorIds.equals(foundSuccessorIds)) throw new InvalidBodyException(
         "the given list of successors does not match the current list of successors"
       );

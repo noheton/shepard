@@ -93,8 +93,6 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
     newPredecessorIDs[newPredecessorIDs.length - 1] = cyclicSuccessor.getId();
     firstSuccessor.setPredecessorIds(newPredecessorIDs);
     firstSuccessor.setSuccessorIds(null);
-    //System.out.println("value: " + (1 / 0));
-    System.out.println("versuche put");
     putDataObject(firstSuccessor.getId(), collection.getId(), firstSuccessor);
     // create and store first payload
     var structuredDataToCreate = new StructuredData();
