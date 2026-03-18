@@ -480,6 +480,7 @@ public class TestNeo4jMigrations {
   @Test
   public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
     prepareV12TimescaleData();
+    addPreexistingTimeseries();
     runMigrations("V12");
   }
 
@@ -531,8 +532,50 @@ public class TestNeo4jMigrations {
     }
   }
 
+  private final Node intLevelTs = node("Timeseries").withProperties(
+    "device",
+    literalOf("device"),
+    "field",
+    literalOf("field"),
+    "location",
+    literalOf("location"),
+    "measurement",
+    literalOf("int_level"),
+    "symbolicName",
+    literalOf("symbolicName")
+  );
+
+  private void addPreexistingTimeseries() {
+    var c = sample.instance("V12");
+    q.create(intLevelTs.relationshipTo(c.timeseriesContainer("V12-1")));
+    q.create(intLevelTs.relationshipTo(c.timeseriesContainer("V12-2")));
+  }
+
   @Test
-  public void testV12_NewTimeseriesMergedWithPreexisting() {}
+  public void testV12_NewTimeseriesMergedWithPreexisting() {
+    var c = sample.instance("V12");
+    var nodes1 = q.match(intLevelTs.relationshipTo(c.timeseriesContainer("V12-1")).getLeft());
+    assertEquals(1, nodes1.size());
+    var actualNode1 = nodes1.getFirst();
+    var expectedNode1 = intLevelTs.withProperties(
+      "timeseriesId",
+      Cypher.literalOf(testingTimeseriesIds.get(13)),
+      "valueType",
+      Cypher.literalOf("int_value")
+    );
+    assertEquals(expectedNode1, actualNode1);
+
+    var nodes2 = q.match(intLevelTs.relationshipTo(c.timeseriesContainer("V12-2")).getLeft());
+    assertEquals(1, nodes2.size());
+    var actualNode2 = nodes2.getFirst();
+    var expectedNode2 = intLevelTs.withProperties(
+      "timeseriesId",
+      Cypher.literalOf(testingTimeseriesIds.get(14)),
+      "valueType",
+      Cypher.literalOf("int_value")
+    );
+    assertEquals(expectedNode2, actualNode2);
+  }
 
   private Connection createTimeseriesConnection() throws SQLException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
