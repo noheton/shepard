@@ -25,8 +25,8 @@ public class SampleNodeCreator {
     return node("Timeseries").withProperties(
       "measurement",
       literal("measurement" + getSuffix()),
-      device,
-      literal("device" + getSuffix()),
+      "device",
+      literal(device + getSuffix()),
       "location",
       literal("location" + getSuffix()),
       "symbolicName",
