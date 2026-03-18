@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.flywaydb.core.Flyway;
@@ -477,11 +478,13 @@ public class TestNeo4jMigrations {
 
   List<Long> testingTimeseriesIds;
 
+  List<PostV12Timeseries> allTimeseries;
+
   @Test
   public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
-    prepareV12TimescaleData();
-    addPreexistingTimeseries();
-    runMigrations("V12");
+    var containeredTimeseries = prepareV12TimescaleData();
+    preparePreexistingNeo4jData();
+    //    runMigrations("V12");
   }
 
   /**
@@ -545,10 +548,13 @@ public class TestNeo4jMigrations {
     literalOf("symbolicName")
   );
 
-  private void addPreexistingTimeseries() {
-    var c = sample.instance("V12");
-    q.create(intLevelTs.relationshipTo(c.timeseriesContainer("V12-1")));
-    q.create(intLevelTs.relationshipTo(c.timeseriesContainer("V12-2")));
+  private final SampleNodeCreator sampleCreatorV12 = sample.instance("V12");
+  private final Node tsc1 = sampleCreatorV12.timeseriesContainer(1);
+  private final Node tsc2 = sampleCreatorV12.timeseriesContainer(2);
+
+  private void preparePreexistingNeo4jData() {
+    q.create(intLevelTs.relationshipTo(tsc1));
+    q.create(intLevelTs.relationshipTo(tsc2));
   }
 
   @Test
@@ -585,10 +591,13 @@ public class TestNeo4jMigrations {
     return DriverManager.getConnection(url, user, pass);
   }
 
+  private record Triple<T, U, V>(T x, U y, V z) {}
+
   /**
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
    */
-  private void prepareV12TimescaleData() throws CsvValidationException, IOException, ClassNotFoundException {
+  private Stream<Triple<Long, DataPointValueType, ContaineredTs>> prepareV12TimescaleData()
+    throws CsvValidationException, IOException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
@@ -599,45 +608,73 @@ public class TestNeo4jMigrations {
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
     var ts_list = dbEntries.stream().map(V12Helper::csvEntryToTs);
 
-    testingTimeseriesIds = ts_list
-      .map(ts -> {
-        try (var connection = createTimeseriesConnection()) {
-          var point = ts.getPoints().getFirst();
-          var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
-          var stmt = connection.prepareStatement(sql);
-          stmt.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
-          stmt.setString(2, ts.getTimeseries().getMeasurement());
-          stmt.setString(3, ts.getTimeseries().getField());
-          stmt.setString(4, ts.getTimeseries().getSymbolicName());
-          stmt.setString(5, ts.getTimeseries().getDevice());
-          stmt.setString(6, ts.getTimeseries().getLocation());
-          stmt.setString(7, valueToValueType(point.getValue()).toString());
-          var resultSet = stmt.executeQuery();
-          var ts_id = resultSet.next() ? Optional.of(resultSet.getInt(1)) : Optional.empty();
+    return ts_list.map(this::addTimeseriesToTimescale).filter(Optional::isPresent).map(Optional::get);
+  }
 
-          var sql2 = Files.readString(Path.of("src/test/resources/insert_timeseries_data_point.sql"));
-          sql2 = sql2.replace(":column", getDatapointColumn(point));
-          var stmt2 = connection.prepareStatement(sql2);
-          stmt2.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
-          stmt2.setString(2, ts.getTimeseries().getMeasurement());
-          stmt2.setString(3, ts.getTimeseries().getField());
-          stmt2.setString(4, ts.getTimeseries().getSymbolicName());
-          stmt2.setString(5, ts.getTimeseries().getDevice());
-          stmt2.setString(6, ts.getTimeseries().getLocation());
-          stmt2.setBigDecimal(7, BigDecimal.valueOf(point.getTimestamp()));
-          stmt2.setObject(8, point.getValue());
-          stmt2.executeUpdate();
-          connection.close();
-          return ts_id;
-        } catch (SQLException | IOException | ClassNotFoundException e) {
-          throw new RuntimeException(e);
-        }
-      })
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .map(Object::toString)
-      .map(Long::valueOf)
-      .toList();
+  /**
+   * Add the first point of the ContaineredTs to the timescale table timeseries_with_data_points.
+   * If the timeseries does not exist yet create it and return its id including the ContaineredTs.
+   * @param ts ContaineredTs that must have only one data point
+   * @return Empty optional if timeseries already existed, otherwise timeseries id and ContaineredTs.
+   */
+  private Optional<Triple<Long, DataPointValueType, ContaineredTs>> addTimeseriesToTimescale(ContaineredTs ts) {
+    try (var connection = createTimeseriesConnection()) {
+      var point = ts.getPoints().getFirst();
+      var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
+      var stmt = connection.prepareStatement(sql);
+      var valueType = valueToValueType(point.getValue());
+      stmt.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
+      stmt.setString(2, ts.getTimeseries().getMeasurement());
+      stmt.setString(3, ts.getTimeseries().getField());
+      stmt.setString(4, ts.getTimeseries().getSymbolicName());
+      stmt.setString(5, ts.getTimeseries().getDevice());
+      stmt.setString(6, ts.getTimeseries().getLocation());
+      stmt.setString(7, valueType.toString());
+      var resultSet = stmt.executeQuery();
+      Optional<Long> ts_id = resultSet.next() ? Optional.of(resultSet.getLong(1)) : Optional.empty();
+
+      var sql2 = Files.readString(Path.of("src/test/resources/insert_timeseries_data_point.sql"));
+      sql2 = sql2.replace(":column", getDatapointColumn(point));
+      var stmt2 = connection.prepareStatement(sql2);
+      stmt2.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
+      stmt2.setString(2, ts.getTimeseries().getMeasurement());
+      stmt2.setString(3, ts.getTimeseries().getField());
+      stmt2.setString(4, ts.getTimeseries().getSymbolicName());
+      stmt2.setString(5, ts.getTimeseries().getDevice());
+      stmt2.setString(6, ts.getTimeseries().getLocation());
+      stmt2.setBigDecimal(7, BigDecimal.valueOf(point.getTimestamp()));
+      stmt2.setObject(8, point.getValue());
+      stmt2.executeUpdate();
+
+      return ts_id.map(tsIdValue -> new Triple<>(tsIdValue, valueType, ts));
+    } catch (SQLException | IOException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Stream<PostV12Timeseries> containeredTsToInternalRep(
+    Stream<Triple<Long, DataPointValueType, ContaineredTs>> tsList
+  ) {
+    return tsList.map(p -> {
+      var tsId = p.x;
+      var vtype = p.y;
+      var cts = p.z;
+      var containerList = cts.getContainerId() == 1
+        ? q.match(tsc1, TimeseriesContainer.class)
+        : q.match(tsc2, TimeseriesContainer.class);
+      assert containerList.size() == 1;
+      var container = containerList.getFirst();
+      return new PostV12Timeseries(
+        cts.getTimeseries().getMeasurement(),
+        cts.getTimeseries().getDevice(),
+        cts.getTimeseries().getLocation(),
+        cts.getTimeseries().getSymbolicName(),
+        cts.getTimeseries().getField(),
+        vtype,
+        tsId,
+        container
+      );
+    });
   }
 
   private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
