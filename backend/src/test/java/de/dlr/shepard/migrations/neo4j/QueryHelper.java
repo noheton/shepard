@@ -9,13 +9,11 @@ import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.PatternElement;
 import org.neo4j.cypherdsl.core.Statement;
-import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 class QueryHelper {
 
-  private static final Renderer cypherRenderer = Renderer.getDefaultRenderer();
   private static Session session;
 
   public QueryHelper() {
@@ -25,8 +23,7 @@ class QueryHelper {
   }
 
   public Result query(Statement statement) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return session.query(cypherQuery, Collections.emptyMap());
+    return session.query(statement.getCypher(), Collections.emptyMap());
   }
 
   public void create(PatternElement... creatable) {
@@ -44,13 +41,11 @@ class QueryHelper {
   }
 
   public <T> List<T> queryResults(Statement statement, Class<T> type) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return queryResults(cypherQuery, type);
+    return queryResults(statement.getCypher(), type);
   }
 
   public List<Object> queryResults(Statement statement) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return queryResults(cypherQuery, Object.class);
+    return queryResults(statement.getCypher(), Object.class);
   }
 
   public List<Object> queryResults(String cypherQuery) {
