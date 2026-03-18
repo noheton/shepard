@@ -103,6 +103,7 @@ public class TestNeo4jMigrations {
     create3References2Timeseries2Containers();
     create3References1Container();
     create2ReferencesOneContainer2Timeseries();
+    create3References3Containers1Timeseries();
     createEmptyReference();
     runMigrations("V11");
     assertTrue(true);
@@ -389,6 +390,53 @@ public class TestNeo4jMigrations {
       .returning(tsNode1, tsNode2)
       .build();
     assertEquals(2, q.queryResults(query).size());
+  }
+
+  private static void create3References3Containers1Timeseries() {
+    var c = sample.instance("3References3Containers1Timeseries");
+    var tsNode = c.timeseries().named("ts");
+    var ref1 = c.timeseriesReference(1).named("r1");
+    var ref2 = c.timeseriesReference(2).named("r2");
+    var ref3 = c.timeseriesReference(3).named("r3");
+    var c1 = c.timeseriesContainer(1).named("c1");
+    var c2 = c.timeseriesContainer(2).named("c2");
+    var c3 = c.timeseriesContainer(3).named("c3");
+    q.create(
+      ref1.relationshipTo(tsNode, "has_payload"),
+      ref2.relationshipTo(tsNode, "has_payload"),
+      ref3.relationshipTo(tsNode, "has_payload"),
+      ref1.relationshipTo(c1, "is_in_container"),
+      ref2.relationshipTo(c2, "is_in_container"),
+      ref3.relationshipTo(c3, "is_in_container")
+    );
+  }
+
+  @Test
+  public void testV11_3References3Containers1TimeseriesMigrated() {
+    var c = sample.instance("3References3Containers1Timeseries");
+    var tsNode1 = c.timeseries().named("ts1");
+    var tsNode2 = c.timeseries().named("ts2");
+    var tsNode3 = c.timeseries().named("ts3");
+    var ref1 = c.timeseriesReference(1).named("r1");
+    var ref2 = c.timeseriesReference(2).named("r2");
+    var ref3 = c.timeseriesReference(3).named("r3");
+    var c1 = c.timeseriesContainer(1).named("c1");
+    var c2 = c.timeseriesContainer(2).named("c2");
+    var c3 = c.timeseriesContainer(3).named("c3");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode1, "has_payload"),
+      ref2.relationshipTo(tsNode2, "has_payload"),
+      ref3.relationshipTo(tsNode3, "has_payload"),
+      ref1.relationshipTo(c1, "is_in_container"),
+      ref2.relationshipTo(c2, "is_in_container"),
+      ref3.relationshipTo(c3, "is_in_container"),
+      tsNode1.relationshipTo(c1, "is_in_container"),
+      tsNode2.relationshipTo(c2, "is_in_container"),
+      tsNode3.relationshipTo(c3, "is_in_container")
+    )
+      .returning(tsNode1, tsNode2, tsNode3)
+      .build();
+    assertEquals(3, q.queryResults(query).size());
   }
 
   private static void createEmptyReference() {

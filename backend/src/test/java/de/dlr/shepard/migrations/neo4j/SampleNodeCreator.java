@@ -40,6 +40,10 @@ public class SampleNodeCreator {
     return timeseriesReference("Timeseries Reference");
   }
 
+  public Node timeseriesReference(int index) {
+    return timeseriesReference("ref" + index);
+  }
+
   Node timeseriesReference(String name) {
     return node("TimeseriesReference", "VersionableEntity", "BasicReference", "BasicEntity").withProperties(
       "createdAt",
