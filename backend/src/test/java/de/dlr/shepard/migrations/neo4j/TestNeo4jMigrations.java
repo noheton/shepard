@@ -25,6 +25,10 @@ public class TestNeo4jMigrations {
   private static final QueryHelper q = new QueryHelper();
   private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
 
+  private static final String HAS_PAYLOAD = "has_payload";
+  private static final String IS_IN_CONTAINER = "is_in_container";
+  private static final String HAS_ANNOTATION = "has_annotation";
+
   private static void testNodeMigrated(Node old, Node migrated) {
     assertEquals(0, q.match(old).size());
     assertEquals(1, q.match(migrated).size());
@@ -151,9 +155,9 @@ public class TestNeo4jMigrations {
     var annotation = c.annotation();
     var container = c.timeseriesContainer();
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
     );
   }
 
@@ -169,10 +173,10 @@ public class TestNeo4jMigrations {
     var annotation = c.annotation();
     var container = c.timeseriesContainer();
     var result = Cypher.match(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      tsNode.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
     )
       .returning(tsNode)
       .build();
@@ -188,11 +192,11 @@ public class TestNeo4jMigrations {
     var annotation = c.annotation();
     var container = c.timeseriesContainer().named("container");
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
     );
   }
 
@@ -209,11 +213,11 @@ public class TestNeo4jMigrations {
     var annotation = c.annotation();
     var container = c.timeseriesContainer();
     var result = Cypher.match(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      ref2.relationshipTo(container, "is_in_container"),
-      tsNode.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
     )
       .returning(tsNode)
       .build();
@@ -230,11 +234,11 @@ public class TestNeo4jMigrations {
     var container1 = c.timeseriesContainer(1);
     var container2 = c.timeseriesContainer(2);
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
     );
   }
 
@@ -253,13 +257,13 @@ public class TestNeo4jMigrations {
     var container1 = c.timeseriesContainer(1);
     var container2 = c.timeseriesContainer(2);
     var result = Cypher.match(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref1.relationshipTo(annotation, "has_annotation"),
-      tsNode1.relationshipTo(container1, "is_in_container"),
-      tsNode2.relationshipTo(container2, "is_in_container")
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      tsNode1.relationshipTo(container1, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(container2, IS_IN_CONTAINER)
     )
       .returning(tsNode1, tsNode2)
       .build();
@@ -276,12 +280,12 @@ public class TestNeo4jMigrations {
     var container1 = c.timeseriesContainer(1).named("c1");
     var container2 = c.timeseriesContainer(2).named("c2");
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref3.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref3.relationshipTo(container2, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref3.relationshipTo(container2, IS_IN_CONTAINER)
     );
   }
 
@@ -300,19 +304,19 @@ public class TestNeo4jMigrations {
     var container1 = c.timeseriesContainer(1).named("c1");
     var container2 = c.timeseriesContainer(2).named("c2");
     var queryTs1 = Cypher.match(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref1.relationshipTo(container1, "is_in_container"),
-      tsNode1.relationshipTo(container1, "is_in_container")
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      tsNode1.relationshipTo(container1, IS_IN_CONTAINER)
     )
       .returning(tsNode1)
       .build();
     assertEquals(1, q.queryResults(queryTs1).size());
     var queryTs2 = Cypher.match(
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref3.relationshipTo(tsNode2, "has_payload"),
-      ref2.relationshipTo(container2, "is_in_container"),
-      ref3.relationshipTo(container2, "is_in_container"),
-      tsNode2.relationshipTo(container2, "is_in_container")
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref3.relationshipTo(container2, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(container2, IS_IN_CONTAINER)
     )
       .returning(tsNode2)
       .build();
@@ -327,12 +331,12 @@ public class TestNeo4jMigrations {
     var ref3 = c.timeseriesReference("ref3").named("ref3");
     var container = c.timeseriesContainer().named("c1");
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref3.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container"),
-      ref3.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref3.relationshipTo(container, IS_IN_CONTAINER)
     );
   }
 
@@ -345,13 +349,13 @@ public class TestNeo4jMigrations {
     var ref3 = c.timeseriesReference("ref3").named("ref3");
     var container = c.timeseriesContainer().named("c1");
     var query = Cypher.match(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref3.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container"),
-      ref3.relationshipTo(container, "is_in_container"),
-      tsNode.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref3.relationshipTo(container, IS_IN_CONTAINER),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
     )
       .returning(tsNode)
       .build();
@@ -366,10 +370,10 @@ public class TestNeo4jMigrations {
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var container = c.timeseriesContainer().named("c1");
     q.create(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER)
     );
   }
 
@@ -382,10 +386,10 @@ public class TestNeo4jMigrations {
     var ref2 = c.timeseriesReference("ref2").named("ref2");
     var container = c.timeseriesContainer().named("c");
     var query = Cypher.match(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref1.relationshipTo(container, "is_in_container"),
-      ref2.relationshipTo(container, "is_in_container")
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER)
     )
       .returning(tsNode1, tsNode2)
       .build();
@@ -402,12 +406,12 @@ public class TestNeo4jMigrations {
     var c2 = c.timeseriesContainer(2).named("c2");
     var c3 = c.timeseriesContainer(3).named("c3");
     q.create(
-      ref1.relationshipTo(tsNode, "has_payload"),
-      ref2.relationshipTo(tsNode, "has_payload"),
-      ref3.relationshipTo(tsNode, "has_payload"),
-      ref1.relationshipTo(c1, "is_in_container"),
-      ref2.relationshipTo(c2, "is_in_container"),
-      ref3.relationshipTo(c3, "is_in_container")
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(c1, IS_IN_CONTAINER),
+      ref2.relationshipTo(c2, IS_IN_CONTAINER),
+      ref3.relationshipTo(c3, IS_IN_CONTAINER)
     );
   }
 
@@ -424,15 +428,15 @@ public class TestNeo4jMigrations {
     var c2 = c.timeseriesContainer(2).named("c2");
     var c3 = c.timeseriesContainer(3).named("c3");
     var query = Cypher.match(
-      ref1.relationshipTo(tsNode1, "has_payload"),
-      ref2.relationshipTo(tsNode2, "has_payload"),
-      ref3.relationshipTo(tsNode3, "has_payload"),
-      ref1.relationshipTo(c1, "is_in_container"),
-      ref2.relationshipTo(c2, "is_in_container"),
-      ref3.relationshipTo(c3, "is_in_container"),
-      tsNode1.relationshipTo(c1, "is_in_container"),
-      tsNode2.relationshipTo(c2, "is_in_container"),
-      tsNode3.relationshipTo(c3, "is_in_container")
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode3, HAS_PAYLOAD),
+      ref1.relationshipTo(c1, IS_IN_CONTAINER),
+      ref2.relationshipTo(c2, IS_IN_CONTAINER),
+      ref3.relationshipTo(c3, IS_IN_CONTAINER),
+      tsNode1.relationshipTo(c1, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(c2, IS_IN_CONTAINER),
+      tsNode3.relationshipTo(c3, IS_IN_CONTAINER)
     )
       .returning(tsNode1, tsNode2, tsNode3)
       .build();
@@ -443,7 +447,7 @@ public class TestNeo4jMigrations {
     var c = sample.instance("EmptyReference");
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
-    q.create(ref.relationshipTo(container, "is_in_container"));
+    q.create(ref.relationshipTo(container, IS_IN_CONTAINER));
   }
 
   @Test
@@ -451,7 +455,7 @@ public class TestNeo4jMigrations {
     var c = sample.instance("EmptyReference");
     var ref = c.timeseriesReference();
     var container = c.timeseriesContainer();
-    var query = Cypher.match(ref.relationshipTo(container, "is_in_container")).returning(ref).build();
+    var query = Cypher.match(ref.relationshipTo(container, IS_IN_CONTAINER)).returning(ref).build();
     assertEquals(1, q.queryResults(query).size());
   }
 }
