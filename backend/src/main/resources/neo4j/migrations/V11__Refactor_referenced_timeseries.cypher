@@ -9,6 +9,8 @@
 // If a timeseries is referenced by multiple references, that lie in different containers:
 // Create a new timeseries for each and set a relation from each respective reference to it.
 // Reference the respective container from the timeseries and delete the now obsolete timeseries.
+// The label `is_in_container` is a bit misleading since a reference points towards a container.
+// However to maintain backwards compatibility and not blow up the migration too much we keep it for now.
 match(tsc1:TimeseriesContainer)<-[ic1:is_in_container]-(tsr1:TimeseriesReference)-[:has_payload]->(ts:Timeseries)
   <-[:has_payload]-(tsr2:TimeseriesReference)-[ic2:is_in_container]->(tsc2:TimeseriesContainer)
   where tsc1 <> tsc2
