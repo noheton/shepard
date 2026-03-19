@@ -26,24 +26,28 @@ public class ShepardMain implements QuarkusApplication {
   void init() {
     Log.info("Starting shepard backend");
 
-    Log.info("Run PostGres migrations...");
-    flyway.migrate();
-    Log.info("Finished PostGres migrations!");
+    migrateTimescale("1.7.0");
 
     var pkiHelper = new PKIHelper();
     var migrationRunner = new MigrationsRunner();
     pkiHelper.init();
 
-    Log.info("Waiting for databases");
+    Log.info("Waiting for neo4j database...");
     migrationRunner.waitForConnection();
 
     Log.info("Run neo4j database migrations...");
     migrationRunner.apply();
     Log.info("Finished neo4j database migrations!");
 
-    Log.info("Initialize databases");
+    Log.info("Initialize neo4j databases...");
     neo4j.connect();
-    Log.info("Connection established to neo4j database.");
+    Log.info("Connection established to neo4j database!");
+  }
+
+  private void migrateTimescale(String version) {
+    Log.info("Run PostGres migrations until V" + version + "...");
+    Flyway.configure().configuration(flyway.getConfiguration()).target(version).load().migrate();
+    Log.info("Finished PostGres migrations V" + version + "!");
   }
 
   @Override
