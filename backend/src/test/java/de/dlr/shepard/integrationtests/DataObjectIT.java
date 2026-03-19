@@ -1214,4 +1214,117 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
     assertEquals(Map.of(), updatedDataObject.getAttributes());
   }
+
+  @Test
+  public void createDataObjectWithSuccessors() {
+    // Arrange
+    var dataObjectWithSuccessors = new DataObjectIO();
+    dataObjectWithSuccessors.setName("dows");
+    long[] successorIds = { 0L };
+    dataObjectWithSuccessors.setSuccessorIds(successorIds);
+    //Act
+    ErrorResponse res = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(dataObjectWithSuccessors)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(400)
+      .extract()
+      .as(ErrorResponse.class);
+    //Assert
+    assertEquals("InvalidBodyException", res.getException());
+  }
+
+  @Test
+  public void updateDataObjectWithIncorrectSuccessors() {
+    // Arrange
+    var do1IO = new DataObjectIO();
+    do1IO.setName("do1");
+    DataObjectIO do1 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do1IO)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+    var do2IO = new DataObjectIO();
+    do2IO.setName("do2");
+    long[] predecessors = { do1.getId() };
+    do2IO.setPredecessorIds(predecessors);
+    DataObjectIO do2 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do2IO)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+    //Act
+    var do1New = new DataObjectIO();
+    do1New.setName("do1New");
+    long[] successors = { do2.getId() + 1 };
+    do1New.setSuccessorIds(successors);
+    System.out.println("PUTURL: " + dataObjectsURL + "/" + do1.getId());
+    ErrorResponse res = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do1New)
+      .when()
+      .put(orderByDataObjectsURL + "/" + do1.getId())
+      .then()
+      .statusCode(400)
+      .extract()
+      .as(ErrorResponse.class);
+    //Assert
+    assertEquals("InvalidBodyException", res.getException());
+  }
+
+  @Test
+  public void updateDataObjectWithCorrectSuccessors() {
+    // Arrange
+    var do1IO = new DataObjectIO();
+    do1IO.setName("do1");
+    DataObjectIO do1 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do1IO)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+    var do2IO = new DataObjectIO();
+    do2IO.setName("do2");
+    long[] predecessors = { do1.getId() };
+    do2IO.setPredecessorIds(predecessors);
+    DataObjectIO do2 = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do2IO)
+      .when()
+      .post(orderByDataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+    //Act
+    var do1New = new DataObjectIO();
+    do1New.setName("do1New");
+    long[] successors = { do2.getId() };
+    do1New.setSuccessorIds(successors);
+    System.out.println("PUTURL: " + dataObjectsURL + "/" + do1.getId());
+    DataObjectIO res = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(do1New)
+      .when()
+      .put(orderByDataObjectsURL + "/" + do1.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+    //Assert
+    assertEquals(do1New.getName(), res.getName());
+  }
 }

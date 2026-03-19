@@ -21,10 +21,13 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RequestScoped
 public class DataObjectService {
@@ -61,13 +64,21 @@ public class DataObjectService {
    * @return the stored DataObject with the auto generated id
    * @throws InvalidPathException if collection with collectionShepardId does not
    *                              exist
+   * @throws InvalidPathException if collection with collectionShepardId does not
+   *                              exist
+   * @throws InvalidBodyException if the list of successors is not null or not empty
    */
-  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) {
+  public DataObject createDataObject(long collectionShepardId, DataObjectIO dataObject) throws InvalidBodyException {
     Collection collection = collectionService.getCollection(collectionShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
     User user = userService.getCurrentUser();
     DataObject parent = findRelatedDataObject(collection.getShepardId(), dataObject.getParentId(), null);
+    if (
+      dataObject.getSuccessorIds() != null && dataObject.getSuccessorIds().length != 0
+    ) throw new InvalidBodyException(
+      "when creating a new dataObject the list of successors must not be specified or be empty"
+    );
     List<DataObject> predecessors = findRelatedDataObjects(
       collection.getShepardId(),
       dataObject.getPredecessorIds(),
@@ -238,10 +249,11 @@ public class DataObjectService {
    * @param dataObjectShepardId Identifies the dataObject
    * @param dataObject          DataObject entity for updating.
    * @return updated DataObject.
-   * @throws InvalidPathException if dataobject cannot be found or collection with
+   * @throws InvalidPathException if dataObject cannot be found or collection with
    *                              collectionShepardId does not exist
    * @throws InvalidAuthException if user does not have read or write permissions
    *                              on the collection
+   * @throws InvalidBodyException if the list of successors is not admitted
    */
   public DataObject updateDataObject(long collectionShepardId, long dataObjectShepardId, DataObjectIO dataObject) {
     DataObject old = getDataObject(collectionShepardId, dataObjectShepardId);
@@ -249,15 +261,23 @@ public class DataObjectService {
 
     User user = userService.getCurrentUser();
 
-    if (old.getParent() != null) {
-      dataObjectDAO.deleteHasChildRelation(old.getParent().getShepardId(), old.getShepardId());
-    }
-    if (old.getPredecessors() != null) {
-      old
-        .getPredecessors()
-        .forEach(predecessor -> {
-          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
-        });
+    if (old.getParent() != null) dataObjectDAO.deleteHasChildRelation(
+      old.getParent().getShepardId(),
+      old.getShepardId()
+    );
+
+    if (old.getPredecessors() != null) old
+      .getPredecessors()
+      .forEach(predecessor -> {
+        dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
+      });
+
+    if (dataObject.getSuccessorIds() != null) {
+      Set<Long> givenSuccessorIds = Arrays.stream(dataObject.getSuccessorIds()).boxed().collect(Collectors.toSet());
+      Set<Long> foundSuccessorIds = old.getSuccessors().stream().map(DataObject::getId).collect(Collectors.toSet());
+      if (!givenSuccessorIds.equals(foundSuccessorIds)) throw new InvalidBodyException(
+        "the given list of successors does not match the current list of successors"
+      );
     }
     dataObjectDAO.deleteAllAttributes(old);
 
