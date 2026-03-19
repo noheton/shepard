@@ -64,12 +64,6 @@ public class MigrationsRunner {
   }
 
   public void apply() {
-    try {
-      migrations.apply();
-    } catch (ServiceUnavailableException e) {
-      Log.error("Migrations cannot be executed because the neo4j database is not available");
-    } catch (MigrationsException e) {
-      Log.error("An error occurred during the execution of the migrations: ", e);
-    }
+    migrations.apply();
   }
 }
