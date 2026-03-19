@@ -477,7 +477,7 @@ public class TestNeo4jMigrations {
     assertEquals(1, q.queryResults(query).size());
   }
 
-  List<PostV12Timeseries> allTimeseries;
+  private static List<PostV12Timeseries> allTimeseries;
 
   @Test
   public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
