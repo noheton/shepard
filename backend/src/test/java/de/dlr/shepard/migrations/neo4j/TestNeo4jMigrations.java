@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -476,16 +477,18 @@ public class TestNeo4jMigrations {
     assertEquals(1, q.queryResults(query).size());
   }
 
-  List<Long> testingTimeseriesIds;
-
   List<PostV12Timeseries> allTimeseries;
 
   @Test
   public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
     var containeredTimeseries = prepareV12TimescaleData();
     preparePreexistingNeo4jData();
-    //    runMigrations("V12");
+    allTimeseries = containeredTsToInternalRep(containeredTimeseries)
+      .sorted(Comparator.comparing(PostV12Timeseries::getTimeseriesId))
+      .toList();
   }
+
+  // todo migrate
 
   /**
    * Assert that the timeseries from timescale are now present as timeseries nodes in the graph database.
@@ -494,14 +497,14 @@ public class TestNeo4jMigrations {
   public void testV12_TimeseriesPresentInGraphDb() {
     var ts_result_list = q.match(node("Timeseries"));
     assertEquals(8, ts_result_list.size());
-    assertPresent(testingTimeseriesIds.get(0), 1, "motion", DataPointValueType.Boolean);
-    assertPresent(testingTimeseriesIds.get(1), 2, "motion", DataPointValueType.Boolean);
-    assertPresent(testingTimeseriesIds.get(2), 1, "motion", DataPointValueType.Double);
-    assertPresent(testingTimeseriesIds.get(3), 2, "motion", DataPointValueType.Double);
-    assertPresent(testingTimeseriesIds.get(4), 1, "status", DataPointValueType.String);
-    assertPresent(testingTimeseriesIds.get(5), 2, "status", DataPointValueType.String);
-    assertPresent(testingTimeseriesIds.get(6), 1, "int_level", DataPointValueType.Integer);
-    assertPresent(testingTimeseriesIds.get(7), 2, "int_level", DataPointValueType.Integer);
+    assertPresent(allTimeseries.get(0).getTimeseriesId(), 1, "motion", DataPointValueType.Boolean);
+    assertPresent(allTimeseries.get(1).getTimeseriesId(), 2, "motion", DataPointValueType.Boolean);
+    assertPresent(allTimeseries.get(2).getTimeseriesId(), 1, "motion", DataPointValueType.Double);
+    assertPresent(allTimeseries.get(3).getTimeseriesId(), 2, "motion", DataPointValueType.Double);
+    assertPresent(allTimeseries.get(4).getTimeseriesId(), 1, "status", DataPointValueType.String);
+    assertPresent(allTimeseries.get(5).getTimeseriesId(), 2, "status", DataPointValueType.String);
+    assertPresent(allTimeseries.get(6).getTimeseriesId(), 1, "int_level", DataPointValueType.Integer);
+    assertPresent(allTimeseries.get(7).getTimeseriesId(), 2, "int_level", DataPointValueType.Integer);
   }
 
   /**
@@ -531,7 +534,13 @@ public class TestNeo4jMigrations {
       var actualTsIds = connection
         .prepareStatement("select timeseries_id from timeseries_data_points group by timeseries_id")
         .executeQuery();
-      while (actualTsIds.next()) assertTrue(testingTimeseriesIds.contains(actualTsIds.getLong("timeseries_id")));
+      while (actualTsIds.next()) assertTrue(
+        allTimeseries
+          .stream()
+          .map(PostV12Timeseries::getTimeseriesId)
+          .toList()
+          .contains(actualTsIds.getLong("timeseries_id"))
+      );
     }
   }
 
@@ -553,8 +562,8 @@ public class TestNeo4jMigrations {
   private final Node tsc2 = sampleCreatorV12.timeseriesContainer(2);
 
   private void preparePreexistingNeo4jData() {
-    q.create(intLevelTs.relationshipTo(tsc1));
-    q.create(intLevelTs.relationshipTo(tsc2));
+    q.create(intLevelTs.relationshipTo(tsc1, IS_IN_CONTAINER));
+    q.create(intLevelTs.relationshipTo(tsc2, IS_IN_CONTAINER));
   }
 
   @Test
@@ -565,7 +574,7 @@ public class TestNeo4jMigrations {
     var actualNode1 = nodes1.getFirst();
     var expectedNode1 = intLevelTs.withProperties(
       "timeseriesId",
-      Cypher.literalOf(testingTimeseriesIds.get(13)),
+      Cypher.literalOf(allTimeseries.get(13).getTimeseriesId()),
       "valueType",
       Cypher.literalOf("int_value")
     );
@@ -576,7 +585,7 @@ public class TestNeo4jMigrations {
     var actualNode2 = nodes2.getFirst();
     var expectedNode2 = intLevelTs.withProperties(
       "timeseriesId",
-      Cypher.literalOf(testingTimeseriesIds.get(14)),
+      Cypher.literalOf(allTimeseries.get(14).getTimeseriesId()),
       "valueType",
       Cypher.literalOf("int_value")
     );
