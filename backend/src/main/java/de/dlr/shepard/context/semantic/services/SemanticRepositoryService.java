@@ -46,7 +46,7 @@ public class SemanticRepositoryService {
   public SemanticRepository getRepository(long id) {
     var repository = semanticRepositoryDAO.findByNeo4jId(id);
     if (repository == null || repository.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Semantic Repository with id %s is null or deleted", id);
+      String errorMsg = "ID ERROR - Semantic Repository with id %s is null or deleted".formatted(id);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

@@ -50,7 +50,7 @@ public class SpatialDataContainerService
     var containerOptional = this.getContainerOptional(containerId);
 
     if (containerOptional.isEmpty()) {
-      String errorMsg = String.format("ID ERROR - Spatial data container with id %s is null or deleted", containerId);
+      String errorMsg = "ID ERROR - Spatial data container with id %s is null or deleted".formatted(containerId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

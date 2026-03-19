@@ -71,7 +71,7 @@ public class StructuredDataContainerService
   public StructuredDataContainer getContainer(long id) {
     StructuredDataContainer structuredDataContainer = structuredDataContainerDAO.findByNeo4jId(id);
     if (structuredDataContainer == null || structuredDataContainer.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Structured Data Container with id %s is null or deleted", id);
+      String errorMsg = "ID ERROR - Structured Data Container with id %s is null or deleted".formatted(id);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

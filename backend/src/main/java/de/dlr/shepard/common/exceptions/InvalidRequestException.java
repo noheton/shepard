@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.exceptions;
 
 import jakarta.ws.rs.core.Response.Status;
+import java.io.Serial;
 
 /**
  * InvalidRequestException implements an exception. This exception should be
@@ -11,6 +12,7 @@ import jakarta.ws.rs.core.Response.Status;
  **/
 public class InvalidRequestException extends ShepardException {
 
+  @Serial
   private static final long serialVersionUID = 8918170154141864994L;
 
   public InvalidRequestException() {

@@ -72,7 +72,7 @@ public class CollectionDAOQuarkusTest {
     QueryParamHelper params = new QueryParamHelper();
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection1u);
+    assertEquals(ret.getFirst(), collection1u);
   }
 
   @Test
@@ -82,7 +82,7 @@ public class CollectionDAOQuarkusTest {
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName1);
     assertEquals(ret.size(), 2);
     Set<Collection> retSet = new HashSet<Collection>();
-    retSet.add(ret.get(0));
+    retSet.add(ret.getFirst());
     retSet.add(ret.get(1));
     Set<Collection> expSet = new HashSet<Collection>();
     expSet.add(collection2u1);
@@ -96,7 +96,7 @@ public class CollectionDAOQuarkusTest {
     QueryParamHelper params = new QueryParamHelper();
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection1u);
+    assertEquals(ret.getFirst(), collection1u);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class CollectionDAOQuarkusTest {
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName1);
     assertEquals(ret.size(), 2);
     Set<Collection> retSet = new HashSet<Collection>();
-    retSet.add(ret.get(0));
+    retSet.add(ret.getFirst());
     retSet.add(ret.get(1));
     Set<Collection> expSet = new HashSet<Collection>();
     expSet.add(collection2u1);
@@ -122,7 +122,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, true);
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName1);
     assertEquals(ret.size(), 2);
-    assertEquals(ret.get(0), collection2u1);
+    assertEquals(ret.getFirst(), collection2u1);
     assertEquals(ret.get(1), collection1u1);
   }
 
@@ -134,7 +134,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, true);
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName1);
     assertEquals(ret.size(), 2);
-    assertEquals(ret.get(0), collection2u1);
+    assertEquals(ret.getFirst(), collection2u1);
     assertEquals(ret.get(1), collection1u1);
   }
 
@@ -144,7 +144,7 @@ public class CollectionDAOQuarkusTest {
     var params = new QueryParamHelper().withName(collection1u.getName());
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection1u);
+    assertEquals(ret.getFirst(), collection1u);
   }
 
   @Test
@@ -153,7 +153,7 @@ public class CollectionDAOQuarkusTest {
     var params = new QueryParamHelper().withName(collection2u1.getName());
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName1);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection2u1);
+    assertEquals(ret.getFirst(), collection2u1);
   }
 
   @Test
@@ -164,7 +164,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, false);
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName1);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection1u1);
+    assertEquals(ret.getFirst(), collection1u1);
   }
 
   @Test
@@ -175,7 +175,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, false);
     List<Collection> ret = collectionDAO.findAllCollectionsByNeo4jId(params, userName1);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection2u1);
+    assertEquals(ret.getFirst(), collection2u1);
   }
 
   @Test
@@ -186,7 +186,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, false);
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName1);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection1u1);
+    assertEquals(ret.getFirst(), collection1u1);
   }
 
   @Test
@@ -197,7 +197,7 @@ public class CollectionDAOQuarkusTest {
     params = params.withOrderByAttribute(collectionAttribute, false);
     List<Collection> ret = collectionDAO.findAllCollectionsByShepardId(params, userName1);
     assertEquals(ret.size(), 1);
-    assertEquals(ret.get(0), collection2u1);
+    assertEquals(ret.getFirst(), collection2u1);
   }
 
   @Test

@@ -1,11 +1,15 @@
 package de.dlr.shepard.data.timeseries.model;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Data
 @EqualsAndHashCode
+@NoArgsConstructor(force = true)
+@AllArgsConstructor
 public class Timeseries {
 
   @NotBlank
@@ -22,14 +26,6 @@ public class Timeseries {
 
   @NotBlank
   private final String field;
-
-  public Timeseries(String measurement, String device, String location, String symbolicName, String field) {
-    this.measurement = measurement;
-    this.device = device;
-    this.location = location;
-    this.symbolicName = symbolicName;
-    this.field = field;
-  }
 
   public Timeseries(TimeseriesEntity timeseriesEntity) {
     this.measurement = timeseriesEntity.getMeasurement();

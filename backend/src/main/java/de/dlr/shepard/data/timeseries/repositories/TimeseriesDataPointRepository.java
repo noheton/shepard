@@ -117,10 +117,8 @@ public class TimeseriesDataPointRepository {
       }
 
       InputStream input = new ByteArrayInputStream(sb.toString().getBytes());
-      String sql = String.format(
-        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);",
-        columnName
-      );
+      String sql =
+        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);".formatted(columnName);
 
       copyManager.copyIn(sql, input);
     } catch (IOException ex) {
@@ -239,27 +237,27 @@ public class TimeseriesDataPointRepository {
 
       String aggregationString = "";
       switch (function) {
-        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = String.format("%s(%s)", function.name(), columnName);
-        case MEAN -> aggregationString = String.format("AVG(%s)", columnName);
-        case LAST, FIRST -> aggregationString = String.format("%s(%s, time)", function.name(), columnName);
-        case SPREAD -> aggregationString = String.format("MAX(%s) - MIN(%s)", columnName, columnName);
-        case MEDIAN -> aggregationString = String.format("percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)", columnName);
-        case MODE -> aggregationString = String.format("mode() WITHIN GROUP (ORDER BY %s)", columnName);
+        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = "%s(%s)".formatted(function.name(), columnName);
+        case MEAN -> aggregationString = "AVG(%s)".formatted(columnName);
+        case LAST, FIRST -> aggregationString = "%s(%s, time)".formatted(function.name(), columnName);
+        case SPREAD -> aggregationString = "MAX(%s) - MIN(%s)".formatted(columnName, columnName);
+        case MEDIAN -> aggregationString = "percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)".formatted(columnName);
+        case MODE -> aggregationString = "mode() WITHIN GROUP (ORDER BY %s)".formatted(columnName);
         case INTEGRAL -> {}
       }
 
       // handle filling - by default bucket_gapfill uses NULL filloption
       if (fillOption == FillOption.LINEAR) {
-        aggregationString = String.format("interpolate(%s) as value ", aggregationString);
+        aggregationString = "interpolate(%s) as value ".formatted(aggregationString);
       } else if (fillOption == FillOption.PREVIOUS) {
-        aggregationString = String.format("locf(%s) as value ", aggregationString);
+        aggregationString = "locf(%s) as value ".formatted(aggregationString);
       } else {
         aggregationString += " as value ";
       }
 
       queryString += aggregationString;
     } else {
-      queryString = String.format("SELECT time, %s ", columnName);
+      queryString = "SELECT time, %s ".formatted(columnName);
     }
 
     queryString += """
@@ -302,12 +300,12 @@ public class TimeseriesDataPointRepository {
 
       String aggregationString = "";
       switch (function) {
-        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = String.format("%s(%s)", function.name(), columnName);
-        case MEAN -> aggregationString = String.format("AVG(%s)", columnName);
-        case LAST, FIRST -> aggregationString = String.format("%s(%s, time)", function.name(), columnName);
-        case SPREAD -> aggregationString = String.format("MAX(%s) - MIN(%s)", columnName, columnName);
-        case MEDIAN -> aggregationString = String.format("percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)", columnName);
-        case MODE -> aggregationString = String.format("mode() WITHIN GROUP (ORDER BY %s)", columnName);
+        case MAX, MIN, COUNT, SUM, STDDEV -> aggregationString = "%s(%s)".formatted(function.name(), columnName);
+        case MEAN -> aggregationString = "AVG(%s)".formatted(columnName);
+        case LAST, FIRST -> aggregationString = "%s(%s, time)".formatted(function.name(), columnName);
+        case SPREAD -> aggregationString = "MAX(%s) - MIN(%s)".formatted(columnName, columnName);
+        case MEDIAN -> aggregationString = "percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)".formatted(columnName);
+        case MODE -> aggregationString = "mode() WITHIN GROUP (ORDER BY %s)".formatted(columnName);
         case INTEGRAL -> {}
       }
 
@@ -315,7 +313,7 @@ public class TimeseriesDataPointRepository {
 
       queryString += aggregationString;
     } else {
-      queryString = String.format("SELECT time, %s ", columnName);
+      queryString = "SELECT time, %s ".formatted(columnName);
     }
 
     queryString += """

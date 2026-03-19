@@ -22,11 +22,10 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    query = String.format(
-      "MATCH %s WHERE %s WITH c",
-      CypherQueryHelper.getObjectPart("c", "StructuredDataContainer", params.hasName()),
-      CypherQueryHelper.getReadableByQuery("c", username)
-    );
+    query = "MATCH %s WHERE %s WITH c".formatted(
+        CypherQueryHelper.getObjectPart("c", "StructuredDataContainer", params.hasName()),
+        CypherQueryHelper.getReadableByQuery("c", username)
+      );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
     }

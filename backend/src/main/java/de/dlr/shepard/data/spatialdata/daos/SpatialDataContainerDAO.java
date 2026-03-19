@@ -23,11 +23,10 @@ public class SpatialDataContainerDAO extends GenericDAO<SpatialDataContainer> {
       paramsMap.put("size", params.getPagination().getSize());
     }
 
-    query = String.format(
-      "MATCH %s WHERE %s WITH c",
-      CypherQueryHelper.getObjectPart("c", "SpatialDataContainer", params.hasName()),
-      CypherQueryHelper.getReadableByQuery("c", username)
-    );
+    query = "MATCH %s WHERE %s WITH c".formatted(
+        CypherQueryHelper.getObjectPart("c", "SpatialDataContainer", params.hasName()),
+        CypherQueryHelper.getReadableByQuery("c", username)
+      );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
     }

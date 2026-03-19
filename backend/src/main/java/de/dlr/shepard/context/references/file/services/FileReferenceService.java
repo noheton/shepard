@@ -110,7 +110,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
     FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId, versionUID);
     if (fileReference == null || fileReference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - File Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - File Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -224,10 +224,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     );
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Referenced FileContainer is not set or deleted in FileReference with id %s",
-        reference.getId()
-      );
+      String errorMsg =
+        "Referenced FileContainer is not set or deleted in FileReference with id %s".formatted(reference.getId());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -269,10 +267,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     );
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "FileContainer with id %s is not set or deleted in FileReference",
-        reference.getFileContainer()
-      );
+      String errorMsg =
+        "FileContainer with id %s is not set or deleted in FileReference".formatted(reference.getFileContainer());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -310,10 +306,8 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     FileReference reference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Referenced FileContainer is not set or deleted in FileReference with id %s",
-        reference.getId()
-      );
+      String errorMsg =
+        "Referenced FileContainer is not set or deleted in FileReference with id %s".formatted(reference.getId());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

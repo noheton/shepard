@@ -110,7 +110,6 @@ public class LabJournalEntryRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
   @APIResponse(
     description = "bad request",
     responseCode = "400",
@@ -149,7 +148,6 @@ public class LabJournalEntryRest {
     responseCode = "200",
     content = @Content(schema = @Schema(implementation = LabJournalEntryIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
   @APIResponse(
     description = "bad request",
     responseCode = "400",

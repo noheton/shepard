@@ -11,7 +11,7 @@ public class PermissionsDAO extends GenericDAO<Permissions> {
 
   public Permissions findByEntityNeo4jId(long entityId) {
     String query =
-      String.format("MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = %d ", entityId) +
+      "MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = %d ".formatted(entityId) +
       CypherQueryHelper.getReturnPart("p");
     var permissions = findByQuery(query, Collections.emptyMap());
     if (permissions.iterator().hasNext()) return permissions.iterator().next();

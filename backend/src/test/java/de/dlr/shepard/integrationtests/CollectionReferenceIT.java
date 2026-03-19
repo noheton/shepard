@@ -33,14 +33,13 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
     dataObject = createDataObject("CollectionReference", collection.getId());
     referenced = createCollection("ReferencedCollection");
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.COLLECTION_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.COLLECTION_REFERENCES
+      );
   }
 
   @Test
@@ -131,7 +130,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(6)
   public void getCollectionReferencedTest() {
-    var referencedURL = String.format("/%s/%d", Constants.COLLECTIONS, referenced.getId());
+    var referencedURL = "/%s/%d".formatted(Constants.COLLECTIONS, referenced.getId());
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
@@ -151,7 +150,7 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200)
       .extract()
@@ -176,14 +175,13 @@ public class CollectionReferenceIT extends BaseTestCaseIT {
       .body(toCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          collection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.COLLECTION_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            collection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.COLLECTION_REFERENCES
+          )
       )
       .then()
       .statusCode(201)

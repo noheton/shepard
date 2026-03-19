@@ -6,7 +6,7 @@ import ac.simons.neo4j.migrations.core.MigrationsConfig.VersionSortOrder;
 import ac.simons.neo4j.migrations.core.MigrationsException;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Nullable;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
@@ -31,7 +31,7 @@ public class MigrationsRunner {
     // This is a workaround to make all migrations available in a dockerized quarkus jar.
     // See https://gitlab.com/dlr-shepard/shepard/-/issues/146 for more information
     var localPath = this.getClass().getClassLoader().getResource("neo4j/migrations").toString();
-    var dockerPath = Paths.get("/deployments/neo4j/migrations").toAbsolutePath().toString();
+    var dockerPath = Path.of("/deployments/neo4j/migrations").toAbsolutePath().toString();
     var isDocker = localPath.startsWith("jar");
     var locationsToScan = isDocker ? dockerPath : localPath;
 

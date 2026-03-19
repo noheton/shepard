@@ -44,7 +44,7 @@ public class StructuredDataService {
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -67,7 +67,7 @@ public class StructuredDataService {
     try {
       collection.insertOne(toInsert);
     } catch (MongoException e) {
-      String errorMsg = String.format("Could not write to mongodb: %s", e.toString());
+      String errorMsg = "Could not write to mongodb: %s".formatted(e.toString());
       Log.error(errorMsg);
       throw new InternalServerErrorException(errorMsg);
     }
@@ -80,7 +80,7 @@ public class StructuredDataService {
     try {
       toDelete = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not delete container with mongoId: %s", mongoId);
+      String errorMsg = "Could not delete container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -92,7 +92,7 @@ public class StructuredDataService {
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -101,12 +101,12 @@ public class StructuredDataService {
     try {
       payloadDocument = collection.find(eq(ID_ATTR, new ObjectId(oid))).first();
       if (payloadDocument == null) {
-        String errorMsg = String.format("Could not find document with oid: %s", oid);
+        String errorMsg = "Could not find document with oid: %s".formatted(oid);
         Log.error(errorMsg);
         throw new NotFoundException(errorMsg);
       }
     } catch (Exception e) {
-      String errorMsg = String.format("Could not find document with oid: %s", oid);
+      String errorMsg = "Could not find document with oid: %s".formatted(oid);
       Log.error(e);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
@@ -126,13 +126,13 @@ public class StructuredDataService {
     try {
       collection = mongoDatabase.getCollection(mongoId);
     } catch (IllegalArgumentException e) {
-      String errorMsg = String.format("Could not find container with mongoId: %s", mongoId);
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
     var doc = collection.findOneAndDelete(eq(ID_ATTR, new ObjectId(oid)));
     if (doc == null) {
-      String errorMsg = String.format("Could not delete document with oid: %s", oid);
+      String errorMsg = "Could not delete document with oid: %s".formatted(oid);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

@@ -13,11 +13,10 @@ public class SpatialDataReferenceDAO extends VersionableEntityDAO<SpatialDataRef
 
   public List<SpatialDataReference> findByDataObjectShepardId(long dataObjectShepardId) {
     String query =
-      String.format(
-        "MATCH (d:DataObject {shepardId: %d})-[hr:has_reference]->%s",
-        dataObjectShepardId,
-        CypherQueryHelper.getObjectPart("r", "SpatialDataReference", false)
-      ) +
+      "MATCH (d:DataObject {shepardId: %d})-[hr:has_reference]->%s".formatted(
+          dataObjectShepardId,
+          CypherQueryHelper.getObjectPart("r", "SpatialDataReference", false)
+        ) +
       CypherQueryHelper.getReturnPart("r");
     var queryResult = findByQuery(query, Collections.emptyMap());
 

@@ -82,11 +82,8 @@ public class TimeseriesService {
 
     var timeseries = timeseriesRepository.findById(id);
     if (timeseries == null) {
-      String errorMsg = String.format(
-        "ID ERROR - Timeseries with id %s in container %s is null or deleted",
-        id,
-        containerId
-      );
+      String errorMsg =
+        "ID ERROR - Timeseries with id %s in container %s is null or deleted".formatted(id, containerId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -108,15 +105,15 @@ public class TimeseriesService {
 
     var timeseriesEntity = timeseriesRepository.findTimeseries(containerId, timeseries);
     if (timeseriesEntity.isEmpty()) {
-      String errorMsg = String.format(
-        "Timeseries (%s, %s, %s, %s, %s) in container %s is null or deleted",
-        timeseries.getMeasurement(),
-        timeseries.getDevice(),
-        timeseries.getLocation(),
-        timeseries.getSymbolicName(),
-        timeseries.getField(),
-        containerId
-      );
+      String errorMsg =
+        "Timeseries (%s, %s, %s, %s, %s) in container %s is null or deleted".formatted(
+            timeseries.getMeasurement(),
+            timeseries.getDevice(),
+            timeseries.getLocation(),
+            timeseries.getSymbolicName(),
+            timeseries.getField(),
+            containerId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -229,9 +226,9 @@ public class TimeseriesService {
     timeseriesContainerService.getContainer(timeseriesContainerId);
     timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
 
-    DataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(dataPoints.get(0).getValue()).orElseThrow(
-      () -> new InvalidBodyException()
-    );
+    DataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(
+      dataPoints.getFirst().getValue()
+    ).orElseThrow(() -> new InvalidBodyException());
 
     return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, incomingValueType);
   }

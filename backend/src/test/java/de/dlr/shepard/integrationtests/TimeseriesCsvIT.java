@@ -43,14 +43,13 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
     collection = createCollection("TimeseriesReferenceTestCollection");
     dataObject = createDataObject("TimeseriesReferenceTestDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.TIMESERIES_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.TIMESERIES_REFERENCES
+      );
 
     containerURL = "/" + Constants.TIMESERIES_CONTAINERS;
 
@@ -77,7 +76,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
       .contentType(ContentType.MULTIPART)
       .multiPart(newFile)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.IMPORT))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.IMPORT))
       .then()
       .statusCode(200);
   }
@@ -114,7 +113,7 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.EXPORT))
+      .get("%s/%d/%s".formatted(referencesURL, reference.getId(), Constants.EXPORT))
       .then()
       .statusCode(200)
       .extract()

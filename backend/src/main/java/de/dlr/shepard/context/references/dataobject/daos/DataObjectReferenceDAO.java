@@ -21,11 +21,10 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
    */
   public List<DataObjectReference> findByDataObjectNeo4jId(long dataObjectId) {
     String query =
-      String.format(
-        "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-        CypherQueryHelper.getObjectPart("r", "DataObjectReference", false),
-        dataObjectId
-      ) +
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ".formatted(
+          CypherQueryHelper.getObjectPart("r", "DataObjectReference", false),
+          dataObjectId
+        ) +
       CypherQueryHelper.getReturnPart("r");
 
     var queryResult = findByQuery(query, Collections.emptyMap());

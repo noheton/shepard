@@ -49,12 +49,12 @@ public abstract class SemanticAnnotationRest {
   protected void assertSemanticAnnotationBelongsToEntity(BasicEntity entity, long semanticAnnotationId) {
     semanticAnnotationService.getAnnotationByNeo4jId(semanticAnnotationId);
     if (
-      !entity
+      entity
         .getAnnotations()
         .stream()
         .filter(annotation -> annotation.getId().equals(semanticAnnotationId))
         .findFirst()
-        .isPresent()
+        .isEmpty()
     ) {
       String errorMsg = "ID ERROR - There is no association between annotation and entity";
       Log.error(errorMsg);

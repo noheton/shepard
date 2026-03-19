@@ -6,6 +6,7 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import io.quarkus.logging.Log;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,12 +23,25 @@ public final class CsvConverter {
 
   private CsvConverter() {}
 
-  public static InputStream convertToCsv(Timeseries timeseries, List<TimeseriesDataPoint> dataPoints) {
-    return convertToCsv(List.of(new TimeseriesWithDataPoints(timeseries, dataPoints)));
+  public static InputStream convertToCsv(
+    Timeseries timeseries,
+    List<TimeseriesDataPoint> dataPoints,
+    CsvFormat format
+  ) {
+    return convertToCsv(List.of(new TimeseriesWithDataPoints(timeseries, dataPoints)), format);
   }
 
-  public static InputStream convertToCsv(List<TimeseriesWithDataPoints> timeseriesWithDataPointsList) {
-    return new CsvInputStream(new CsvRowLineProvider(timeseriesWithDataPointsList));
+  public static InputStream convertToCsv(
+    List<TimeseriesWithDataPoints> timeseriesWithDataPointsList,
+    CsvFormat format
+  ) {
+    CsvFormat formatNonNull = format != null ? format : CsvFormat.ROW;
+    CsvLineProvider provider =
+      switch (formatNonNull) {
+        case ROW -> new CsvRowLineProvider(timeseriesWithDataPointsList);
+        case COLUMN -> new CsvColumnLineProvider(timeseriesWithDataPointsList);
+      };
+    return new CsvInputStream(provider);
   }
 
   public static List<TimeseriesWithDataPoints> convertToTimeseriesWithData(InputStream stream) {

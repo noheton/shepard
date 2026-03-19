@@ -149,8 +149,8 @@ public class DataObjectServiceQuarkusTest {
       collection.getShepardId(),
       firstDataObject.getShepardId()
     );
-    assertEquals(firstDataObjectReloaded.getIncoming().get(0).getId(), referenceToFirstDataObject.getId());
-    assertEquals(referencingDataObject.getReferences().get(0).getId(), referenceToFirstDataObject.getId());
+    assertEquals(firstDataObjectReloaded.getIncoming().getFirst().getId(), referenceToFirstDataObject.getId());
+    assertEquals(referencingDataObject.getReferences().getFirst().getId(), referenceToFirstDataObject.getId());
 
     dataObjectReferenceService.deleteReference(
       collection.getShepardId(),
@@ -177,7 +177,7 @@ public class DataObjectServiceQuarkusTest {
     dataObjectService.deleteDataObject(collection.getShepardId(), deletedPredecessor.getShepardId());
     firstDataObjectReloaded = dataObjectService.getDataObject(firstDataObject.getShepardId());
     assertEquals(1, firstDataObjectReloaded.getPredecessors().size());
-    assertEquals(survivingPredecessor.getId(), firstDataObjectReloaded.getPredecessors().get(0).getId());
+    assertEquals(survivingPredecessor.getId(), firstDataObjectReloaded.getPredecessors().getFirst().getId());
     dataObjectService.deleteDataObject(collection.getShepardId(), firstDataObject.getShepardId());
     DataObject survivingPredecessorReloaded = dataObjectService.getDataObject(survivingPredecessor.getShepardId());
     assertEquals(0, survivingPredecessorReloaded.getSuccessors().size());

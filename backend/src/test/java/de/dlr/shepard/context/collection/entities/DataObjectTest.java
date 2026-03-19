@@ -10,6 +10,7 @@ import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Mode;
 import org.junit.jupiter.api.Test;
 
 public class DataObjectTest extends BaseTestCase {
@@ -17,6 +18,7 @@ public class DataObjectTest extends BaseTestCase {
   @Test
   public void equalsContract() {
     EqualsVerifier.simple()
+      .set(Mode.skipMockito())
       .forClass(DataObject.class)
       .withPrefabValues(Collection.class, new Collection(1L), new Collection(2L))
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))

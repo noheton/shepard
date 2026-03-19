@@ -141,7 +141,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()

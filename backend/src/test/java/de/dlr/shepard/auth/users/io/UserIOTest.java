@@ -32,7 +32,7 @@ public class UserIOTest {
 
     var converted = new UserIO(user);
     assertEquals(user.getUsername(), converted.getUsername());
-    assertEquals(String.format("[%s]", key.getUid()), Arrays.toString(converted.getApiKeyIds()));
+    assertEquals("[%s]".formatted(key.getUid()), Arrays.toString(converted.getApiKeyIds()));
     assertEquals(user.getEmail(), converted.getEmail());
     assertEquals(user.getFirstName(), converted.getFirstName());
     assertEquals(user.getLastName(), converted.getLastName());

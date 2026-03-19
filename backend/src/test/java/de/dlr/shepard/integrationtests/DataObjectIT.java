@@ -57,20 +57,14 @@ public class DataObjectIT extends BaseTestCaseIT {
     collectionForOrderByTest = createCollection("OrderByTestCollection");
     versionizedCollection = createCollection("collection for versioning");
 
-    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
-    orderByDataObjectsURL = String.format(
-      "/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collectionForOrderByTest.getId(),
-      Constants.DATA_OBJECTS
-    );
-    versioningURL = String.format(
-      "/%s/%d/%s",
-      Constants.COLLECTIONS,
-      versionizedCollection.getId(),
-      Constants.DATA_OBJECTS
-    );
-    versionizedCollectionURL = String.format("/%s/%d", Constants.COLLECTIONS, versionizedCollection.getId());
+    dataObjectsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
+    orderByDataObjectsURL = "/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collectionForOrderByTest.getId(),
+        Constants.DATA_OBJECTS
+      );
+    versioningURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, versionizedCollection.getId(), Constants.DATA_OBJECTS);
+    versionizedCollectionURL = "/%s/%d".formatted(Constants.COLLECTIONS, versionizedCollection.getId());
 
     var aInput = new DataObjectIO();
     aInput.setName("a");
@@ -999,13 +993,12 @@ public class DataObjectIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "/%s/%d/%s/%d",
-          Constants.COLLECTIONS,
-          privateCollection.getId(),
-          Constants.DATA_OBJECTS,
-          privateDataObject.getId()
-        )
+        "/%s/%d/%s/%d".formatted(
+            Constants.COLLECTIONS,
+            privateCollection.getId(),
+            Constants.DATA_OBJECTS,
+            privateDataObject.getId()
+          )
       )
       .then()
       .statusCode(403)
@@ -1024,13 +1017,12 @@ public class DataObjectIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "/%s/%d/%s/%d",
-          Constants.COLLECTIONS,
-          otherCollection.getId(),
-          Constants.DATA_OBJECTS,
-          thisDataObject.getId()
-        )
+        "/%s/%d/%s/%d".formatted(
+            Constants.COLLECTIONS,
+            otherCollection.getId(),
+            Constants.DATA_OBJECTS,
+            thisDataObject.getId()
+          )
       )
       .then()
       .statusCode(404)
