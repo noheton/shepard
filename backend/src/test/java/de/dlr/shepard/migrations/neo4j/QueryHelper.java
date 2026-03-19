@@ -26,6 +26,16 @@ class QueryHelper {
     return session.query(statement.getCypher(), Collections.emptyMap());
   }
 
+  public void queryNoReturn(String cypher) {
+    session.query(cypher, Collections.emptyMap());
+  }
+
+  public void deleteAll(String label) {
+    var node = Cypher.node(label);
+    var st = Cypher.match(node).detachDelete(node).build();
+    queryNoReturn(st.getCypher());
+  }
+
   public void create(PatternElement... creatable) {
     var statement = Cypher.create(creatable).build();
     query(statement);

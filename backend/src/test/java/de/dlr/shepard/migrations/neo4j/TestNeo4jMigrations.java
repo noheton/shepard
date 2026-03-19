@@ -481,14 +481,20 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
+    clearDatabase();
     var containeredTimeseries = prepareV12TimescaleData();
     preparePreexistingNeo4jData();
     allTimeseries = containeredTsToInternalRep(containeredTimeseries)
       .sorted(Comparator.comparing(PostV12Timeseries::getTimeseriesId))
       .toList();
+    runMigrations("V12");
   }
 
-  // todo migrate
+  private void clearDatabase() {
+    q.deleteAll("Timeseries");
+    q.deleteAll("TimeseriesContainer");
+    q.deleteAll("TimeseriesReference");
+  }
 
   /**
    * Assert that the timeseries from timescale are now present as timeseries nodes in the graph database.
