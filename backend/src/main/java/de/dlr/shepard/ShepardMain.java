@@ -26,9 +26,9 @@ public class ShepardMain implements QuarkusApplication {
   void init() {
     Log.info("Starting shepard backend");
 
-    System.out.println("Run PostGres migrations...");
+    Log.info("Run PostGres migrations...");
     flyway.migrate();
-    System.out.println("Finished PostGres migrations!");
+    Log.info("Finished PostGres migrations!");
 
     var pkiHelper = new PKIHelper();
     var migrationRunner = new MigrationsRunner();
