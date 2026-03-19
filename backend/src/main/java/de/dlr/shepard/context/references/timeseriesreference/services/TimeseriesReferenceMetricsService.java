@@ -83,10 +83,10 @@ public class TimeseriesReferenceMetricsService {
     if (
       timeseriesReference.getTimeseriesContainer() == null || timeseriesReference.getTimeseriesContainer().isDeleted()
     ) {
-      String errorMsg = String.format(
-        "Referenced TimeseriesContainer is not set or deleted in TimeseriesReference with id %s",
-        timeseriesReferenceId
-      );
+      String errorMsg =
+        "Referenced TimeseriesContainer is not set or deleted in TimeseriesReference with id %s".formatted(
+            timeseriesReferenceId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -99,15 +99,15 @@ public class TimeseriesReferenceMetricsService {
         timeseries
       );
     } catch (NotFoundException e) {
-      String errorMsg = String.format(
-        "Timeseries (%s, %s, %s, %s, %s) in the referenced TimeseriesContainer under TimeseriesReference with id %s",
-        timeseries.getMeasurement(),
-        timeseries.getDevice(),
-        timeseries.getLocation(),
-        timeseries.getSymbolicName(),
-        timeseries.getField(),
-        timeseriesReferenceId
-      );
+      String errorMsg =
+        "Timeseries (%s, %s, %s, %s, %s) in the referenced TimeseriesContainer under TimeseriesReference with id %s".formatted(
+            timeseries.getMeasurement(),
+            timeseries.getDevice(),
+            timeseries.getLocation(),
+            timeseries.getSymbolicName(),
+            timeseries.getField(),
+            timeseriesReferenceId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -130,7 +130,7 @@ public class TimeseriesReferenceMetricsService {
         ) return new MetricsIO(metric, "N/A");
         var dataPoints =
           this.timeseriesDataPointRepository.queryAggregationFunction(timeseriesEntity.getId(), valueType, queryParams);
-        return new MetricsIO(metric, dataPoints.get(0).getValue());
+        return new MetricsIO(metric, dataPoints.getFirst().getValue());
       })
       .collect(Collectors.toList());
   }

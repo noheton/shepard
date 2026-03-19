@@ -83,10 +83,9 @@ public class StructuredDataReferenceService
       container = structuredDataContainerService.getContainer(structuredDataReference.getStructuredDataContainerId());
     } catch (InvalidPathException e) {
       throw new InvalidBodyException(
-        String.format(
-          "ID ERROR - Structured Data Container with id %s is null or deleted",
-          structuredDataReference.getStructuredDataContainerId()
-        )
+        "ID ERROR - Structured Data Container with id %s is null or deleted".formatted(
+            structuredDataReference.getStructuredDataContainerId()
+          )
       );
     }
 
@@ -160,7 +159,7 @@ public class StructuredDataReferenceService
 
     StructuredDataReference structuredDataReference = structuredDataReferenceDAO.findByShepardId(shepardId, versionUID);
     if (structuredDataReference == null || structuredDataReference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Structured Data Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - Structured Data Reference with id %s is null or deleted".formatted(shepardId);
       Log.errorf(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -228,10 +227,10 @@ public class StructuredDataReferenceService
     );
 
     if (reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "StructuredData Container referenced by StructuredData Reference with Id %s is null or deleted",
-        structuredDataReferenceShepardId
-      );
+      String errorMsg =
+        "StructuredData Container referenced by StructuredData Reference with Id %s is null or deleted".formatted(
+            structuredDataReferenceShepardId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -280,10 +279,10 @@ public class StructuredDataReferenceService
     );
 
     if (reference.getStructuredDataContainer() == null || reference.getStructuredDataContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Structured Data Container referenced by StructuredDataReference with id %s is deleted",
-        reference.getShepardId()
-      );
+      String errorMsg =
+        "Structured Data Container referenced by StructuredDataReference with id %s is deleted".formatted(
+            reference.getShepardId()
+          );
       Log.errorf(errorMsg);
       throw new InvalidRequestException(errorMsg);
     }
@@ -292,10 +291,9 @@ public class StructuredDataReferenceService
       structuredDataContainerService.getContainer(reference.getStructuredDataContainer().getId());
     } catch (InvalidPathException e) {
       throw new NotFoundException(
-        String.format(
-          "The StructuredData Container with id %d could not be found.",
-          reference.getStructuredDataContainer().getId()
-        )
+        "The StructuredData Container with id %d could not be found.".formatted(
+            reference.getStructuredDataContainer().getId()
+          )
       );
     }
 

@@ -44,14 +44,13 @@ public class FileReferenceIT extends BaseTestCaseIT {
     collection = createCollection("FileReferenceTestCollection");
     dataObject = createDataObject("FileReferenceTestDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.FILE_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.FILE_REFERENCES
+      );
 
     containerURL = "/" + Constants.FILE_CONTAINERS;
     fileRequestSpec = new RequestSpecBuilder()
@@ -75,7 +74,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
       .spec(fileRequestSpec)
       .multiPart("file", "test.txt", targetStream)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -172,14 +171,13 @@ public class FileReferenceIT extends BaseTestCaseIT {
       .body(toCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          collection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.FILE_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            collection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.FILE_REFERENCES
+          )
       )
       .then()
       .statusCode(201)
@@ -204,7 +202,7 @@ public class FileReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/payload/%s", referencesURL, reference.getId(), file.getOid()))
+      .get("%s/%d/payload/%s".formatted(referencesURL, reference.getId(), file.getOid()))
       .then()
       .statusCode(200)
       .extract()

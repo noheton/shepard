@@ -62,16 +62,19 @@ public class DataObjectIOTest {
     assertEquals(obj.getCreatedAt(), converted.getCreatedAt());
     assertEquals("bob", converted.getCreatedBy());
     assertEquals(obj.getDescription(), converted.getDescription());
-    assertEquals("[" + obj.getIncoming().get(0).getShepardId() + "]", Arrays.toString(converted.getIncomingIds()));
+    assertEquals("[" + obj.getIncoming().getFirst().getShepardId() + "]", Arrays.toString(converted.getIncomingIds()));
     assertEquals(obj.getName(), converted.getName());
     assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
     assertEquals("claus", converted.getUpdatedBy());
     assertEquals(parent.getShepardId(), converted.getParentId());
     assertEquals(col.getShepardId(), converted.getCollectionId());
-    assertEquals("[" + obj.getChildren().get(0).getShepardId() + "]", Arrays.toString(converted.getChildrenIds()));
-    assertEquals("[" + obj.getSuccessors().get(0).getShepardId() + "]", Arrays.toString(converted.getSuccessorIds()));
+    assertEquals("[" + obj.getChildren().getFirst().getShepardId() + "]", Arrays.toString(converted.getChildrenIds()));
     assertEquals(
-      "[" + obj.getPredecessors().get(0).getShepardId() + "]",
+      "[" + obj.getSuccessors().getFirst().getShepardId() + "]",
+      Arrays.toString(converted.getSuccessorIds())
+    );
+    assertEquals(
+      "[" + obj.getPredecessors().getFirst().getShepardId() + "]",
       Arrays.toString(converted.getPredecessorIds())
     );
   }

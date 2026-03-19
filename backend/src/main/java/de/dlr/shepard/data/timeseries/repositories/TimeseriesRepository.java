@@ -31,14 +31,14 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
         ).list();
     if (timeseriesList.isEmpty()) return Optional.empty();
     if (timeseriesList.size() > 1) {
-      var errorMessage = String.format(
-        "Multiple Timeseries exist with the same properties for container id: %d. Timeseries Ids: %s",
-        containerId,
-        timeseriesList.stream().map(ts -> ts.getId() + "").collect(Collectors.joining(", "))
-      );
+      var errorMessage =
+        "Multiple Timeseries exist with the same properties for container id: %d. Timeseries Ids: %s".formatted(
+            containerId,
+            timeseriesList.stream().map(ts -> ts.getId() + "").collect(Collectors.joining(", "))
+          );
       throw new RuntimeException(errorMessage);
     }
-    return Optional.of(timeseriesList.get(0));
+    return Optional.of(timeseriesList.getFirst());
   }
 
   public void upsert(long containerId, TimeseriesEntity entity) {

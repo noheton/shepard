@@ -48,7 +48,7 @@ public class PermissionsIT extends BaseTestCaseIT {
   public static void setUp() {
     collectionsURL = "/" + Constants.COLLECTIONS;
     collection = createCollection("PermissionsTestCollection");
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
     user1 = getNewUserWithApiKey("user1");
     user2 = getNewUserWithApiKey("user2");
     user3 = getNewUserWithApiKey("user3");
@@ -144,7 +144,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification1)
       .body(permissions)
       .when()
-      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .put("/%s/%d/%s".formatted(Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -182,7 +182,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification2)
       .body(permissions)
       .when()
-      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .put("/%s/%d/%s".formatted(Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -219,7 +219,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification2)
       .body(permissions)
       .when()
-      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .put("/%s/%d/%s".formatted(Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -257,7 +257,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification2)
       .body(permissions)
       .when()
-      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .put("/%s/%d/%s".formatted(Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(403)
       .extract()
@@ -282,7 +282,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       .spec(requestSpecification1)
       .body(permissions)
       .when()
-      .put(String.format("/%s/%d/%s", Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
+      .put("/%s/%d/%s".formatted(Constants.COLLECTIONS, collection3.getId(), Constants.PERMISSIONS))
       .then()
       .statusCode(200)
       .extract()
@@ -343,7 +343,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.PublicReadable);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification1).body(permissions).when().put(permissionsURL);
     var answer = given().spec(requestSpecification2).when().get(collectionsURL + "/" + collection1.getId());
     assertEquals(200, answer.statusCode());
@@ -386,7 +386,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Public);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection1.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification1).body(permissions).when().put(permissionsURL).then().statusCode(200);
     var answer = given()
       .spec(requestSpecification2)
@@ -422,7 +422,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
     var answer = given().spec(requestSpecification1).when().get(collectionsURL + "/" + collection2.getId());
     assertEquals(200, answer.statusCode());
@@ -442,7 +442,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
     var answer = given()
       .spec(requestSpecification1)
@@ -483,7 +483,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     requestSpecification2 = new RequestSpecBuilder()
       .setContentType(ContentType.JSON)
       .addHeader("X-API-KEY", jws2)
@@ -528,7 +528,7 @@ public class PermissionsIT extends BaseTestCaseIT {
       }
     };
 
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL).then().statusCode(200);
 
     var answer = given().spec(requestSpecification3).when().get(collectionsURL + "/" + collection2.getId());
@@ -566,7 +566,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     var answer = given()
@@ -608,7 +608,7 @@ public class PermissionsIT extends BaseTestCaseIT {
         setPermissionType(PermissionType.Private);
       }
     };
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection2.getId(), Constants.PERMISSIONS);
     given().spec(requestSpecification2).body(permissions).when().put(permissionsURL);
 
     var answer = given()

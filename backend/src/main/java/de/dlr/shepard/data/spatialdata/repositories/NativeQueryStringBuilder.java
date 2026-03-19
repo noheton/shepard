@@ -30,16 +30,16 @@ public class NativeQueryStringBuilder {
   }
 
   public NativeQueryStringBuilder select(String tableName, String[] columns) {
-    selectString = String.format("SELECT %s FROM %s".formatted(String.join(", ", columns), tableName));
+    selectString = "SELECT %s FROM %s".formatted(String.join(", ", columns), tableName).formatted();
     return this;
   }
 
   public NativeQueryStringBuilder addWhereCondition(String parameterName, Object value) {
     if (value == null) return this;
     if (value.getClass() == String.class) {
-      whereConditions.append(String.format(" AND %s = '%s'", parameterName, value));
+      whereConditions.append(" AND %s = '%s'".formatted(parameterName, value));
     } else {
-      whereConditions.append(String.format(" AND %s = %s", parameterName, value));
+      whereConditions.append(" AND %s = %s".formatted(parameterName, value));
     }
     return this;
   }
@@ -48,10 +48,10 @@ public class NativeQueryStringBuilder {
     if (timestampStart == null && timestampEnd == null) return this;
     var timeQuery = new StringBuilder();
     if (timestampStart != null) {
-      timeQuery.append(String.format(" AND %s >= %s", parameterName, timestampStart));
+      timeQuery.append(" AND %s >= %s".formatted(parameterName, timestampStart));
     }
     if (timestampEnd != null) {
-      timeQuery.append(String.format(" AND %s <= %s", parameterName, timestampEnd));
+      timeQuery.append(" AND %s <= %s".formatted(parameterName, timestampEnd));
     }
     timeCondition = timeQuery.toString();
     return this;
@@ -62,7 +62,7 @@ public class NativeQueryStringBuilder {
     try {
       var mapper = new ObjectMapper();
       var filterAsString = mapper.writeValueAsString(filter);
-      jsonConditions.append(String.format(" AND %s @> '%s'", parameterName, filterAsString));
+      jsonConditions.append(" AND %s @> '%s'".formatted(parameterName, filterAsString));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -113,15 +113,14 @@ public class NativeQueryStringBuilder {
     if (measurementsFilter.isEmpty()) return this;
     measurementsFilter.forEach(filterCondition ->
       measurementsFilterConditions.append(
-        String.format(
-          " AND jsonb_typeof(%s #> '{%s}') = 'number' AND (%s #>> '{%s}')::NUMERIC %s %s",
-          parameterName,
-          filterCondition.getKey(),
-          parameterName,
-          filterCondition.getKey(),
-          filterCondition.getOperator().getOperatorString(),
-          filterCondition.getValue()
-        )
+        " AND jsonb_typeof(%s #> '{%s}') = 'number' AND (%s #>> '{%s}')::NUMERIC %s %s".formatted(
+            parameterName,
+            filterCondition.getKey(),
+            parameterName,
+            filterCondition.getKey(),
+            filterCondition.getOperator().getOperatorString(),
+            filterCondition.getValue()
+          )
       )
     );
     return this;
@@ -129,13 +128,13 @@ public class NativeQueryStringBuilder {
 
   public NativeQueryStringBuilder addLimitClause(Integer limit) {
     if (limit == null) return this;
-    limitClause = String.format(" LIMIT %d", limit);
+    limitClause = " LIMIT %d".formatted(limit);
     return this;
   }
 
   public NativeQueryStringBuilder addSkipClause(Integer skip) {
     if (skip == null) return this;
-    skipClause = String.format(" AND id %% %d = 0", skip);
+    skipClause = " AND id %% %d = 0".formatted(skip);
     return this;
   }
 

@@ -191,7 +191,7 @@ public class DataObjectReferenceServiceQuarkusTest {
       null
     );
     assertEquals(1, ret.size());
-    assertEquals(c1do1Toc1do2, ret.get(0));
+    assertEquals(c1do1Toc1do2, ret.getFirst());
   }
 
   @Test

@@ -18,11 +18,11 @@ public class ShepardFileDAO extends GenericDAO<ShepardFile> {
    * @return the found shepardFile or null
    */
   public ShepardFile find(long containerId, String oid) {
-    var query = String.format(
-      "MATCH (c:FileContainer)-[:file_in_container]->(f:ShepardFile {oid: $oid}) WHERE ID(c)=%d %s",
-      containerId,
-      CypherQueryHelper.getReturnPart("f")
-    );
+    var query =
+      "MATCH (c:FileContainer)-[:file_in_container]->(f:ShepardFile {oid: $oid}) WHERE ID(c)=%d %s".formatted(
+          containerId,
+          CypherQueryHelper.getReturnPart("f")
+        );
     var results = findByQuery(query, Map.of("oid", oid));
     return results.iterator().hasNext() ? results.iterator().next() : null;
   }

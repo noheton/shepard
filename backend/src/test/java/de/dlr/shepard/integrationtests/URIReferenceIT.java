@@ -31,14 +31,13 @@ public class URIReferenceIT extends BaseTestCaseIT {
     collection = createCollection("URIReferenceTestCollection");
     dataObject = createDataObject("URIReferenceDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.URI_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.URI_REFERENCES
+      );
   }
 
   @Test
@@ -129,14 +128,13 @@ public class URIReferenceIT extends BaseTestCaseIT {
       .body(toCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          collection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.URI_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            collection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.URI_REFERENCES
+          )
       )
       .then()
       .statusCode(201)

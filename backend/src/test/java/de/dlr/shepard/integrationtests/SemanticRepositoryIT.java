@@ -46,23 +46,21 @@ public class SemanticRepositoryIT extends BaseTestCaseIT {
     dataObject = createDataObject("SemanticDataObject", collection.getId());
     dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId(), dataObject.getId());
 
-    collectionAnnotationURL = String.format("/%s/%d/semanticAnnotations", Constants.COLLECTIONS, collection.getId());
-    dataObjectAnnotationURL = String.format(
-      "/%s/%d/%s/%d/semanticAnnotations",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId()
-    );
-    referenceAnnotationURL = String.format(
-      "/%s/%d/%s/%d/%s/%d/semanticAnnotations",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.BASIC_REFERENCES,
-      dataObjectReference.getId()
-    );
+    collectionAnnotationURL = "/%s/%d/semanticAnnotations".formatted(Constants.COLLECTIONS, collection.getId());
+    dataObjectAnnotationURL = "/%s/%d/%s/%d/semanticAnnotations".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId()
+      );
+    referenceAnnotationURL = "/%s/%d/%s/%d/%s/%d/semanticAnnotations".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.BASIC_REFERENCES,
+        dataObjectReference.getId()
+      );
   }
 
   @Test

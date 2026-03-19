@@ -20,11 +20,10 @@ public class TimeseriesReferenceDAO extends VersionableEntityDAO<TimeseriesRefer
    */
   public List<TimeseriesReference> findByDataObjectNeo4jId(long dataObjectId) {
     String query =
-      String.format(
-        "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-        CypherQueryHelper.getObjectPart("r", "TimeseriesReference", false),
-        dataObjectId
-      ) +
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ".formatted(
+          CypherQueryHelper.getObjectPart("r", "TimeseriesReference", false),
+          dataObjectId
+        ) +
       CypherQueryHelper.getReturnPart("r");
 
     var queryResult = findByQuery(query, Collections.emptyMap());

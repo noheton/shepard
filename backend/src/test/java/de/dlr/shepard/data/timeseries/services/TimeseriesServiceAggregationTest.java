@@ -74,7 +74,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -109,7 +109,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -144,7 +144,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.1, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -179,7 +179,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.2, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -214,7 +214,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.1, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -249,7 +249,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(0.2, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(0.2, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -291,7 +291,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -330,7 +330,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(13.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(13.0, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -369,7 +369,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals((long) 7, actual.get(0).getValue());
+    assertEquals((long) 7, actual.getFirst().getValue());
   }
 
   @Test
@@ -405,7 +405,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(17.0, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(17.0, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -445,7 +445,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(5.2372293656638, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(5.2372293656638, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -481,7 +481,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(BigDecimal.valueOf(17), actual.get(0).getValue());
+    assertEquals(BigDecimal.valueOf(17), actual.getFirst().getValue());
   }
 
   @Test
@@ -521,7 +521,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(5.2372293656638, ((BigDecimal) actual.get(0).getValue()).doubleValue(), doubleEpsilon);
+    assertEquals(5.2372293656638, ((BigDecimal) actual.getFirst().getValue()).doubleValue(), doubleEpsilon);
   }
 
   @Test
@@ -556,7 +556,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(23L, actual.get(0).getValue());
+    assertEquals(23L, actual.getFirst().getValue());
   }
 
   /*
@@ -595,7 +595,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(1, actual.size());
-    assertEquals(22.3, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.3, (Double) actual.getFirst().getValue(), doubleEpsilon);
   }
 
   @Test
@@ -631,7 +631,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(6, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.1, (Double) actual.getFirst().getValue(), doubleEpsilon);
     assertEquals(22.1, (Double) actual.get(1).getValue(), doubleEpsilon);
     assertEquals(22.5, (Double) actual.get(2).getValue(), doubleEpsilon);
     assertEquals(22.5, (Double) actual.get(3).getValue(), doubleEpsilon);
@@ -671,7 +671,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(3, actual.size());
-    assertEquals(22.1, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.1, (Double) actual.getFirst().getValue(), doubleEpsilon);
     assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
     assertEquals(22.2, (Double) actual.get(2).getValue(), doubleEpsilon);
   }
@@ -708,7 +708,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(3, actual.size());
-    assertEquals(true, actual.get(0).getValue());
+    assertEquals(true, actual.getFirst().getValue());
     assertEquals(false, actual.get(1).getValue());
     assertEquals(true, actual.get(2).getValue());
   }
@@ -745,7 +745,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(3, actual.size());
-    assertEquals("Hello", actual.get(0).getValue());
+    assertEquals("Hello", actual.getFirst().getValue());
     assertEquals("World", actual.get(1).getValue());
     assertEquals("!", actual.get(2).getValue());
   }
@@ -782,7 +782,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(3, actual.size());
-    assertEquals(1L, actual.get(0).getValue());
+    assertEquals(1L, actual.getFirst().getValue());
     assertEquals(2L, actual.get(1).getValue());
     assertEquals(3L, actual.get(2).getValue());
   }
@@ -820,7 +820,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(6, actual.size());
-    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.5, (Double) actual.getFirst().getValue(), doubleEpsilon);
     assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
     assertEquals(null, actual.get(2).getValue());
     assertEquals(22.2, (Double) actual.get(3).getValue(), doubleEpsilon);
@@ -861,7 +861,7 @@ public class TimeseriesServiceAggregationTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(6, actual.size());
-    assertEquals(22.5, (Double) actual.get(0).getValue(), doubleEpsilon);
+    assertEquals(22.5, (Double) actual.getFirst().getValue(), doubleEpsilon);
     assertEquals(22.3, (Double) actual.get(1).getValue(), doubleEpsilon);
     assertEquals(22.25, (Double) actual.get(2).getValue(), doubleEpsilon);
     assertEquals(22.2, (Double) actual.get(3).getValue(), doubleEpsilon);

@@ -6,6 +6,7 @@ import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesRefere
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -14,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -257,6 +259,7 @@ public class TimeseriesReferenceRest {
   @Parameter(name = Constants.SYMBOLICNAME)
   @Parameter(name = Constants.MEASUREMENT)
   @Parameter(name = Constants.FIELD)
+  @Parameter(name = Constants.CSVFORMAT)
   public Response exportTimeseriesPayload(
     @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
     @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
@@ -268,7 +271,8 @@ public class TimeseriesReferenceRest {
     @QueryParam(Constants.LOCATION) Set<String> locationFilterTag,
     @QueryParam(Constants.SYMBOLICNAME) Set<String> symbolicNameFilterTag,
     @QueryParam(Constants.MEASUREMENT) Set<String> measurementFilterTag,
-    @QueryParam(Constants.FIELD) Set<String> fieldFilterTag
+    @QueryParam(Constants.FIELD) Set<String> fieldFilterTag,
+    @QueryParam(Constants.CSVFORMAT) @DefaultValue(value = "ROW") CsvFormat csvFormat
   ) throws IOException {
     var stream = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
       collectionId,
@@ -281,7 +285,8 @@ public class TimeseriesReferenceRest {
       locationFilterTag,
       symbolicNameFilterTag,
       measurementFilterTag,
-      fieldFilterTag
+      fieldFilterTag,
+      csvFormat
     );
     if (stream == null) return Response.status(Status.NOT_FOUND).build();
     return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM).build();

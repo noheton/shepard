@@ -129,10 +129,10 @@ public class DataObjectService {
     String errorMsg;
     if (versionUID == null) {
       ret = dataObjectDAO.findByShepardId(shepardId);
-      errorMsg = String.format("DataObject with id %s is null or deleted", shepardId);
+      errorMsg = "DataObject with id %s is null or deleted".formatted(shepardId);
     } else {
       ret = dataObjectDAO.findByShepardId(shepardId, versionUID);
-      errorMsg = String.format("DataObject with id %s and versionUID %s is null or deleted", shepardId, versionUID);
+      errorMsg = "DataObject with id %s and versionUID %s is null or deleted".formatted(shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
       Log.error(errorMsg);
@@ -261,16 +261,17 @@ public class DataObjectService {
 
     User user = userService.getCurrentUser();
 
-    if (old.getParent() != null) {
-      dataObjectDAO.deleteHasChildRelation(old.getParent().getShepardId(), old.getShepardId());
-    }
-    if (old.getPredecessors() != null) {
-      old
-        .getPredecessors()
-        .forEach(predecessor -> {
-          dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
-        });
-    }
+    if (old.getParent() != null) dataObjectDAO.deleteHasChildRelation(
+      old.getParent().getShepardId(),
+      old.getShepardId()
+    );
+
+    if (old.getPredecessors() != null) old
+      .getPredecessors()
+      .forEach(predecessor -> {
+        dataObjectDAO.deleteHasSuccessorRelation(predecessor.getShepardId(), old.getShepardId());
+      });
+
     if (dataObject.getSuccessorIds() != null) {
       Set<Long> givenSuccessorIds = Arrays.stream(dataObject.getSuccessorIds()).boxed().collect(Collectors.toSet());
       Set<Long> foundSuccessorIds = old.getSuccessors().stream().map(DataObject::getId).collect(Collectors.toSet());
@@ -278,6 +279,7 @@ public class DataObjectService {
         "the given list of successors does not match the current list of successors"
       );
     }
+    dataObjectDAO.deleteAllAttributes(old);
 
     DataObject newParent = findRelatedDataObject(
       old.getCollection().getShepardId(),
@@ -323,9 +325,7 @@ public class DataObjectService {
     User user = userService.getCurrentUser();
 
     if (!dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date)) {
-      throw new InvalidRequestException(
-        String.format("Could not delete DataObject with ShepardId %s", dataObjectShepardId)
-      );
+      throw new InvalidRequestException("Could not delete DataObject with ShepardId %s".formatted(dataObjectShepardId));
     }
   }
 
@@ -377,7 +377,7 @@ public class DataObjectService {
 
     var dataObject = dataObjectDAO.findByShepardId(referencedShepardId);
     if (dataObject == null || dataObject.isDeleted()) throw new InvalidBodyException(
-      String.format("The DataObject with id %d could not be found.", referencedShepardId)
+      "The DataObject with id %d could not be found.".formatted(referencedShepardId)
     );
 
     // Prevent cross collection references

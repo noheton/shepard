@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.exceptions;
 
 import jakarta.ws.rs.core.Response.Status;
+import java.io.Serial;
 
 /**
  * InvalidBodyException implements an exception. This exception should be thrown
@@ -11,7 +12,9 @@ import jakarta.ws.rs.core.Response.Status;
  **/
 public class InvalidBodyException extends ShepardException {
 
+  @Serial
   private static final long serialVersionUID = 8918170154141864994L;
+
   private static final Status status = Status.BAD_REQUEST;
 
   public InvalidBodyException() {
@@ -23,6 +26,6 @@ public class InvalidBodyException extends ShepardException {
   }
 
   public InvalidBodyException(String format, Object... args) {
-    super(String.format(format, args), status);
+    super(format.formatted(args), status);
   }
 }

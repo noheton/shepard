@@ -106,7 +106,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -141,13 +141,12 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "%s/%d/%s/%s",
-          containerURL,
-          container.getId(),
-          Constants.PAYLOAD,
-          payload.getStructuredData().getOid()
-        )
+        "%s/%d/%s/%s".formatted(
+            containerURL,
+            container.getId(),
+            Constants.PAYLOAD,
+            payload.getStructuredData().getOid()
+          )
       )
       .then()
       .statusCode(200)
@@ -169,13 +168,12 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfOtherUser)
       .when()
       .get(
-        String.format(
-          "%s/%d/%s/%s",
-          containerURL,
-          container.getId(),
-          Constants.PAYLOAD,
-          payload.getStructuredData().getOid()
-        )
+        "%s/%d/%s/%s".formatted(
+            containerURL,
+            container.getId(),
+            Constants.PAYLOAD,
+            payload.getStructuredData().getOid()
+          )
       )
       .then()
       .statusCode(403)
@@ -189,7 +187,7 @@ public class StructuredDataIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, 1234321))
+      .get("%s/%d/%s/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD, 1234321))
       .then()
       .statusCode(404)
       .extract()
@@ -204,13 +202,12 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .delete(
-        String.format(
-          "%s/%d/%s/%s",
-          containerURL,
-          container.getId(),
-          Constants.PAYLOAD,
-          payload.getStructuredData().getOid()
-        )
+        "%s/%d/%s/%s".formatted(
+            containerURL,
+            container.getId(),
+            Constants.PAYLOAD,
+            payload.getStructuredData().getOid()
+          )
       )
       .then()
       .statusCode(204);
@@ -219,13 +216,12 @@ public class StructuredDataIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "%s/%d/%s/%s",
-          containerURL,
-          container.getId(),
-          Constants.PAYLOAD,
-          payload.getStructuredData().getOid()
-        )
+        "%s/%d/%s/%s".formatted(
+            containerURL,
+            container.getId(),
+            Constants.PAYLOAD,
+            payload.getStructuredData().getOid()
+          )
       )
       .then()
       .statusCode(404);

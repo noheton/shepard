@@ -15,11 +15,10 @@ public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
 
   public List<SemanticAnnotation> findAllSemanticAnnotationsByNeo4jId(long entityId) {
     String query;
-    query = String.format(
-      "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE ID(e)=%d WITH a %s",
-      entityId,
-      CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
-    );
+    query = "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE ID(e)=%d WITH a %s".formatted(
+        entityId,
+        CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
+      );
     var queryResult = findByQuery(query, Collections.emptyMap());
     var ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;

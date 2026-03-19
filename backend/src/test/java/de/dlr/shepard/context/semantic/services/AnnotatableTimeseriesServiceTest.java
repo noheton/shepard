@@ -143,8 +143,8 @@ public class AnnotatableTimeseriesServiceTest {
     var actual = service.getAnnotations(container.getId(), timeseriesId);
 
     assertEquals(2, actual.size());
-    assertNotNull(actual.get(0).getPropertyRepository(), "Property repository is null");
-    assertNotNull(actual.get(0).getValueRepository(), "Value repository is null");
+    assertNotNull(actual.getFirst().getPropertyRepository(), "Property repository is null");
+    assertNotNull(actual.getFirst().getValueRepository(), "Value repository is null");
   }
 
   @Test

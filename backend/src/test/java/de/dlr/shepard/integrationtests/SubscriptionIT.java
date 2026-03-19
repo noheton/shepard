@@ -24,7 +24,7 @@ public class SubscriptionIT extends BaseTestCaseIT {
 
   @BeforeAll
   public static void setUp() {
-    subscriptionsURL = String.format("/%s/%s/%s", Constants.USERS, nameOfDefaultUser, Constants.SUBSCRIPTIONS);
+    subscriptionsURL = "/%s/%s/%s".formatted(Constants.USERS, nameOfDefaultUser, Constants.SUBSCRIPTIONS);
   }
 
   @Test
@@ -105,13 +105,12 @@ public class SubscriptionIT extends BaseTestCaseIT {
       .spec(requestSpecOfOtherUser)
       .when()
       .get(
-        String.format(
-          "/%s/%s/%s/%s",
-          Constants.USERS,
-          otherUser.getUser().getUsername(),
-          Constants.SUBSCRIPTIONS,
-          subscription.getId()
-        )
+        "/%s/%s/%s/%s".formatted(
+            Constants.USERS,
+            otherUser.getUser().getUsername(),
+            Constants.SUBSCRIPTIONS,
+            subscription.getId()
+          )
       )
       .then()
       .statusCode(403)

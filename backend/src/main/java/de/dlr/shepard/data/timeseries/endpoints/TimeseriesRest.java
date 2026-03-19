@@ -16,6 +16,7 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
@@ -29,6 +30,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -385,6 +387,7 @@ public class TimeseriesRest {
   @Parameter(name = Constants.FUNCTION)
   @Parameter(name = Constants.GROUP_BY)
   @Parameter(name = Constants.FILLOPTION)
+  @Parameter(name = Constants.CSVFORMAT)
   public Response exportTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
@@ -396,7 +399,8 @@ public class TimeseriesRest {
     @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption,
+    @QueryParam(Constants.CSVFORMAT) @DefaultValue(value = "ROW") CsvFormat csvFormat
   ) throws IOException {
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
@@ -406,7 +410,12 @@ public class TimeseriesRest {
       fillOption,
       function
     );
-    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(timeseriesContainerId, timeseries, queryParams);
+    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(
+      timeseriesContainerId,
+      timeseries,
+      queryParams,
+      csvFormat
+    );
 
     return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")

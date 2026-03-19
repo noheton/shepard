@@ -36,14 +36,13 @@ public class BasicReferenceIT extends BaseTestCaseIT {
     dataObjectReference = createDataObjectReference(collection.getId(), dataObject.getId(), dataObject.getId());
     uriReference = createUriReference(collection.getId(), dataObject.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/references",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.BASIC_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/references".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.BASIC_REFERENCES
+      );
   }
 
   @Test

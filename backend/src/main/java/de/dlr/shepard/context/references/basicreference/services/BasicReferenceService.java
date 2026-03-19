@@ -47,7 +47,7 @@ public class BasicReferenceService {
 
     BasicReference basicReference = basicReferenceDAO.findByShepardId(shepardId);
     if (basicReference == null || basicReference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Basic Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - Basic Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

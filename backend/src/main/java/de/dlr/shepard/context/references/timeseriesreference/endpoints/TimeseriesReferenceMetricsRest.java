@@ -147,7 +147,7 @@ public class TimeseriesReferenceMetricsRest {
         timeseries,
         List.of(function)
       )
-      .get(0);
+      .getFirst();
 
     return Response.ok(result).build();
   }

@@ -169,10 +169,10 @@ public class CollectionService {
     String errorMsg;
     if (versionUID == null) {
       ret = collectionDAO.findByShepardId(shepardId, excludeDataObjectsAndIncomingReferences);
-      errorMsg = String.format("Collection with id %s is null or deleted", shepardId);
+      errorMsg = "Collection with id %s is null or deleted".formatted(shepardId);
     } else {
       ret = collectionDAO.findByShepardId(shepardId, versionUID, excludeDataObjectsAndIncomingReferences);
-      errorMsg = String.format("Collection with id %s and versionUID %s is null or deleted", shepardId, versionUID);
+      errorMsg = "Collection with id %s and versionUID %s is null or deleted".formatted(shepardId, versionUID);
     }
     if (ret == null || ret.isDeleted()) {
       throw new InvalidPathException("ID ERROR - " + errorMsg);
@@ -234,7 +234,7 @@ public class CollectionService {
     var date = dateHelper.getDate();
     var user = userService.getCurrentUser();
     if (!collectionDAO.deleteCollectionByShepardId(shepardId, user, date)) {
-      throw new InvalidRequestException(String.format("Could not delete Collection with ShepardId %s", shepardId));
+      throw new InvalidRequestException("Could not delete Collection with ShepardId %s".formatted(shepardId));
     }
   }
 

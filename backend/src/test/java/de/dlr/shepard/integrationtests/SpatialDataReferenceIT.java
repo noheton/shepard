@@ -41,14 +41,13 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     collection = createCollection("SpatialDataReferenceTestCollection");
     dataObject = createDataObject("SpatialDataReferenceTestDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.SPATIAL_DATA_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.SPATIAL_DATA_REFERENCES
+      );
 
     containerURL = "/" + Constants.SPATIAL_DATA_CONTAINERS;
 
@@ -78,7 +77,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(spatialDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(204);
   }
@@ -177,14 +176,13 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
       .body(otherReferenceToCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          otherCollection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.SPATIAL_DATA_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            otherCollection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.SPATIAL_DATA_REFERENCES
+          )
       )
       .then()
       .statusCode(201)
@@ -209,7 +207,7 @@ public class SpatialDataReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200)
       .extract()

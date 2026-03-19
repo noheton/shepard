@@ -22,6 +22,7 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
@@ -118,7 +119,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
 
     TimeseriesReference reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - Timeseries Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - Timeseries Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -239,10 +240,10 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Referenced Timeseries Container from reference with id %s is null or has been deleted",
-        timeseriesShepardId
-      );
+      String errorMsg =
+        "Referenced Timeseries Container from reference with id %s is null or has been deleted".formatted(
+            timeseriesShepardId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -291,15 +292,14 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> locationsFilterSet,
     Set<String> symbolicNameFilterSet,
     Set<String> measurementFilterSet,
-    Set<String> fieldFilterSet
+    Set<String> fieldFilterSet,
+    CsvFormat csvFormat
   ) throws IOException {
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "The referenced TimeseriesContainer is null or deleted for Reference with id %s",
-        timeseriesShepardId
-      );
+      String errorMsg =
+        "The referenced TimeseriesContainer is null or deleted for Reference with id %s".formatted(timeseriesShepardId);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -336,14 +336,16 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     return timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
       containerId,
       filteredTimeseriesList,
-      queryParams
+      queryParams,
+      csvFormat
     );
   }
 
   public InputStream exportReferencedTimeseriesByShepardId(
     long collectionShepardId,
     long dataObjectShepardId,
-    long referenceId
+    long referenceId,
+    CsvFormat csvFormat
   ) throws IOException {
     return exportReferencedTimeseriesByShepardId(
       collectionShepardId,
@@ -356,7 +358,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       Collections.emptySet(),
       Collections.emptySet(),
       Collections.emptySet(),
-      Collections.emptySet()
+      Collections.emptySet(),
+      csvFormat
     );
   }
 

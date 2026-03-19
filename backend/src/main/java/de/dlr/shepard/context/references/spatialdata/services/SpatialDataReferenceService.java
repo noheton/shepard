@@ -80,7 +80,7 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
 
     SpatialDataReference spatialDataReference = spatialDataReferenceDAO.findByShepardId(shepardId, versionUID);
     if (spatialDataReference == null || spatialDataReference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - SpatialData Reference with id %s is null or deleted", shepardId);
+      String errorMsg = "ID ERROR - SpatialData Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -89,7 +89,7 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
       spatialDataReference.getDataObject() == null ||
       !spatialDataReference.getDataObject().getShepardId().equals(dataObjectShepardId)
     ) {
-      String errorMsg = String.format("ID ERROR - There is no association between dataObject and reference", shepardId);
+      String errorMsg = "ID ERROR - There is no association between dataObject and reference".formatted(shepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -185,10 +185,10 @@ public class SpatialDataReferenceService implements IReferenceService<SpatialDat
     );
 
     if (reference.getSpatialDataContainer() == null || reference.getSpatialDataContainer().isDeleted()) {
-      String errorMsg = String.format(
-        "Referenced SpatialDataContainer is not set or deleted in SpatialDataReference with id %s",
-        reference.getId()
-      );
+      String errorMsg =
+        "Referenced SpatialDataContainer is not set or deleted in SpatialDataReference with id %s".formatted(
+            reference.getId()
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

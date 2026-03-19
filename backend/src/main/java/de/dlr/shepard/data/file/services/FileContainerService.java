@@ -75,7 +75,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     FileContainer fileContainer = fileContainerDAO.findByNeo4jId(id);
 
     if (fileContainer == null || fileContainer.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - File Container with id %s is null or deleted", id);
+      String errorMsg = "ID ERROR - File Container with id %s is null or deleted".formatted(id);
       Log.errorf(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
