@@ -83,7 +83,7 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    TimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.getFirst();
     assertTrue(actualPoint.getValue() instanceof Double, "DataPoint value must be a double");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -116,7 +116,7 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    TimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.getFirst();
     assertTrue(actualPoint.getValue() instanceof Boolean, "DataPoint value must be a boolean");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -148,7 +148,7 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    TimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.getFirst();
     assertTrue(actualPoint.getValue() instanceof String, "DataPoint value must be a string");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -181,7 +181,7 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
     assertNotNull(actual);
     assertEquals(1, actual.size());
-    TimeseriesDataPoint actualPoint = actual.get(0);
+    TimeseriesDataPoint actualPoint = actual.getFirst();
     assertInstanceOf(Long.class, actualPoint.getValue(), "DataPoint value must be a long");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
@@ -344,7 +344,7 @@ public class TimeseriesServiceTest {
 
     var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
     assertEquals(1, actual.size());
-    assertEquals("temperature", actual.get(0).getMeasurement());
+    assertEquals("temperature", actual.getFirst().getMeasurement());
   }
 
   @Test
@@ -535,7 +535,7 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(5, actual.size());
-    assertEquals(actual.get(0).getValue(), "value 1");
+    assertEquals(actual.getFirst().getValue(), "value 1");
     assertEquals(actual.get(1).getValue(), "value 2");
     assertEquals(actual.get(2).getValue(), "value 3 UPDATED");
     assertEquals(actual.get(3).getValue(), "value 4");
@@ -574,7 +574,7 @@ public class TimeseriesServiceTest {
       var retrievedTimeseries =
         this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
       assertEquals(1, retrievedTimeseries.size());
-      assertEquals(retrievedTimeseries.get(0).getValue(), "value 2");
+      assertEquals(retrievedTimeseries.getFirst().getValue(), "value 2");
     } catch (InvalidBodyException ex) {
       assertTrue(true);
     } catch (Exception ex) {

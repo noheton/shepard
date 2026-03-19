@@ -97,7 +97,7 @@ public class V2__Extract_json implements JavaBasedMigration {
             MATCH (c:FileContainer) WHERE ID(c) = %s
             CREATE (c)-[:file_in_container]->(sf:ShepardFile $props)
             """;
-          tx.run(String.format(query, cId), params);
+          tx.run(query.formatted(cId), params);
         }
       }
       tx.run("MATCH (c:FileContainer) WHERE ID(c) = " + cId + " REMOVE c.filesJson");
@@ -135,7 +135,7 @@ public class V2__Extract_json implements JavaBasedMigration {
             SET sf += $props
             CREATE (r)-[hp:has_payload]->(sf)
             """;
-          tx.run(String.format(query, rId), params);
+          tx.run(query.formatted(rId), params);
         }
       }
       tx.run("MATCH (r:FileReference) WHERE ID(r) = " + rId + " REMOVE r.filesJson");
@@ -170,7 +170,7 @@ public class V2__Extract_json implements JavaBasedMigration {
             MATCH (c:StructuredDataContainer) WHERE ID(c) = %s
             CREATE (c)-[:structureddata_in_container]->(sd:StructuredData $props)
             """;
-          tx.run(String.format(query, cId), params);
+          tx.run(query.formatted(cId), params);
         }
       }
       tx.run("MATCH (c:StructuredDataContainer) WHERE ID(c) = " + cId + " REMOVE c.structuredDatasJson");
@@ -208,7 +208,7 @@ public class V2__Extract_json implements JavaBasedMigration {
             SET sd += $props
             CREATE (r)-[hp:has_payload]->(sd)
             """;
-          tx.run(String.format(query, rId), params);
+          tx.run(query.formatted(rId), params);
         }
       }
       tx.run("MATCH (r:StructuredDataReference) WHERE ID(r) = " + rId + " REMOVE r.structuredDatasJson");
@@ -255,7 +255,7 @@ public class V2__Extract_json implements JavaBasedMigration {
             CREATE (r)-[hp:has_payload]->(ts)
             """;
 
-          tx.run(String.format(query, rId), params);
+          tx.run(query.formatted(rId), params);
         }
       }
       tx.run("MATCH (r:TimeseriesReference) WHERE ID(r) = " + rId + " REMOVE r.timeseriesJson");

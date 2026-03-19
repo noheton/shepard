@@ -42,14 +42,13 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     collection = createCollection("TimeseriesReferenceTestCollection");
     dataObject = createDataObject("TimeseriesReferenceTestDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.TIMESERIES_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.TIMESERIES_REFERENCES
+      );
 
     containerURL = "/" + Constants.TIMESERIES_CONTAINERS;
 
@@ -84,7 +83,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(timeseriesWithDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201);
   }
@@ -92,7 +91,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   @Test
   @Order(1)
   public void createTimeseriesReference() {
-    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
+    var nanos = timeseriesWithDataPoints.getPoints().getFirst().getTimestamp();
     var toCreate = new TimeseriesReferenceIO();
     toCreate.setName("TimeseriesReferenceDummy");
     toCreate.setStart(nanos - 1000000000L);
@@ -174,7 +173,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
   public void getTimeseriesReference_referenceBelongsToDifferentCollection_notFound() {
     CollectionIO otherCollection = createCollection("otherCollection");
     DataObjectIO otherDataObject = createDataObject("otherDataObject", otherCollection.getId());
-    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
+    var nanos = timeseriesWithDataPoints.getPoints().getFirst().getTimestamp();
     var otherReferenceToCreate = new TimeseriesReferenceIO();
     otherReferenceToCreate.setName("TimeseriesReferenceDummy");
     otherReferenceToCreate.setStart(nanos - 1000000000L);
@@ -187,14 +186,13 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
       .body(otherReferenceToCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          otherCollection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.TIMESERIES_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            otherCollection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.TIMESERIES_REFERENCES
+          )
       )
       .then()
       .statusCode(201)
@@ -219,7 +217,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s", referencesURL, reference.getId(), Constants.PAYLOAD))
+      .get("%s/%d/%s".formatted(referencesURL, reference.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(200)
       .extract()

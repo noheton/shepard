@@ -20,7 +20,7 @@ public class GracePeriodIT extends BaseTestCaseIT {
   public static void setUp() {
     collection = createCollection("PermissionsTestCollection");
     collectionsURL = "/" + Constants.COLLECTIONS;
-    permissionsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
+    permissionsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.PERMISSIONS);
   }
 
   @Test

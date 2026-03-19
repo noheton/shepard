@@ -23,11 +23,10 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
       paramsMap.put("size", params.getPagination().getSize());
     }
 
-    query = String.format(
-      "MATCH %s WHERE %s WITH c",
-      CypherQueryHelper.getObjectPart("c", "TimeseriesContainer", params.hasName()),
-      CypherQueryHelper.getReadableByQuery("c", username)
-    );
+    query = "MATCH %s WHERE %s WITH c".formatted(
+        CypherQueryHelper.getObjectPart("c", "TimeseriesContainer", params.hasName()),
+        CypherQueryHelper.getReadableByQuery("c", username)
+      );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("c", params.getOrderByAttribute(), params.getOrderDesc());
     }

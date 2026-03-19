@@ -24,11 +24,11 @@ public class UserGroupDAO extends GenericDAO<UserGroup> {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    var query = String.format(
-      "MATCH %s WHERE %s WITH ug",
-      CypherQueryHelper.getObjectPart("ug", "UserGroup", false),
-      CypherQueryHelper.getReadableByQuery("ug", username)
-    );
+    var query =
+      "MATCH %s WHERE %s WITH ug".formatted(
+          CypherQueryHelper.getObjectPart("ug", "UserGroup", false),
+          CypherQueryHelper.getReadableByQuery("ug", username)
+        );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("ug", params.getOrderByAttribute(), params.getOrderDesc());
     }

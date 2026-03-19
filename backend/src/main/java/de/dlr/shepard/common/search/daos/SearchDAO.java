@@ -44,7 +44,7 @@ public class SearchDAO {
   }
 
   public Integer getCollectionTotalCount(String selectionQuery, String collectionVariable) {
-    String query = String.format("%s RETURN COUNT(%s)", selectionQuery, collectionVariable);
+    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery, collectionVariable);
     Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
     return collectionTotalCountIterable.iterator().next();
   }
@@ -126,38 +126,34 @@ public class SearchDAO {
   }
 
   private String emitDataObjectReturnPart(String dataObjectVariable) {
-    return String.format(
-      " WITH %s MATCH path=(c:Collection)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
-      dataObjectVariable,
-      dataObjectVariable,
-      dataObjectVariable
-    );
+    return " WITH %s MATCH path=(c:Collection)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)".formatted(
+        dataObjectVariable,
+        dataObjectVariable,
+        dataObjectVariable
+      );
   }
 
   private String emitReferencesReturnPart(String referenceVariable) {
-    return String.format(
-      " WITH %s MATCH path=(c:Collection)-[]->(d:DataObject)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)",
-      referenceVariable,
-      referenceVariable,
-      referenceVariable
-    );
+    return " WITH %s MATCH path=(c:Collection)-[]->(d:DataObject)-[]->(%s)-[]->(u:User) RETURN %s, nodes(path), relationships(path)".formatted(
+        referenceVariable,
+        referenceVariable,
+        referenceVariable
+      );
   }
 
   private String emitUserReturnPart(String userVariable) {
-    return String.format(
-      " WITH %s MATCH path=(%s:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)",
-      userVariable,
-      userVariable,
-      userVariable
-    );
+    return " WITH %s MATCH path=(%s:User)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)".formatted(
+        userVariable,
+        userVariable,
+        userVariable
+      );
   }
 
   private String emitUserGroupReturnPart(String userGroupVariable) {
-    return String.format(
-      " WITH %s MATCH path=(%s:UserGroup)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)",
-      userGroupVariable,
-      userGroupVariable,
-      userGroupVariable
-    );
+    return " WITH %s MATCH path=(%s:UserGroup)<-[:belongs_to|subscribed_by*0..1]-(n) RETURN %s, nodes(path), relationships(path)".formatted(
+        userGroupVariable,
+        userGroupVariable,
+        userGroupVariable
+      );
   }
 }

@@ -141,7 +141,7 @@ public class FileIT extends BaseTestCaseIT {
       .spec(fileRequestSpec)
       .multiPart(newFile)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -177,7 +177,7 @@ public class FileIT extends BaseTestCaseIT {
     var actual = given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+      .get("%s/%d/%s/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
       .statusCode(200)
       .extract()
@@ -192,14 +192,14 @@ public class FileIT extends BaseTestCaseIT {
     given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .delete(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+      .delete("%s/%d/%s/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
       .statusCode(204);
 
     given()
       .spec(requestSpecOfDefaultUser)
       .when()
-      .get(String.format("%s/%d/%s/%s", containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
+      .get("%s/%d/%s/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD, file.getOid()))
       .then()
       .statusCode(404);
 

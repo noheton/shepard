@@ -9,6 +9,7 @@ import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import jakarta.inject.Inject;
 import java.io.ByteArrayInputStream;
@@ -49,7 +50,7 @@ public class CsvConverterTest {
       """;
 
     String actualCsvString = IOUtils.toString(
-      CsvConverter.convertToCsv(timeseries, dataPoints),
+      CsvConverter.convertToCsv(timeseries, dataPoints, CsvFormat.ROW),
       StandardCharsets.UTF_8
     );
 
@@ -64,7 +65,7 @@ public class CsvConverterTest {
     String expectedCsvString = "";
 
     String actualCsvString = IOUtils.toString(
-      CsvConverter.convertToCsv(timeseries, dataPoints),
+      CsvConverter.convertToCsv(timeseries, dataPoints, CsvFormat.ROW),
       StandardCharsets.UTF_8
     );
 

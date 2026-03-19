@@ -51,7 +51,7 @@ public class UserGroupService {
    */
   public UserGroup getUserGroup(Long userGroupId) {
     UserGroup group = getUserGroupOptional(userGroupId).orElseThrow(() ->
-      new InvalidPathException(String.format("ID ERROR - User Group with id %s is null or deleted", userGroupId))
+      new InvalidPathException("ID ERROR - User Group with id %s is null or deleted".formatted(userGroupId))
     );
     assertIsAllowedToReadUserGroup(userGroupId);
     return group;
@@ -124,12 +124,12 @@ public class UserGroupService {
 
     Optional<Permissions> permissions = permissionsService.getPermissionsOfEntityOptional(id);
     if (permissions.isPresent() && !permissionsService.deletePermissions(permissions.get())) {
-      String errorMsg = String.format("Could not delete permissions %s", permissions.toString());
+      String errorMsg = "Could not delete permissions %s".formatted(permissions.toString());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
     if (!userGroupDAO.deleteByNeo4jId(id)) {
-      String errorMsg = String.format("Could not delete userGroup with id %s", id);
+      String errorMsg = "Could not delete userGroup with id %s".formatted(id);
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

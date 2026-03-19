@@ -43,14 +43,13 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
     collection = createCollection("StructuredDataReferenceTestCollection");
     dataObject = createDataObject("StructuredDataReferenceTestDataObject", collection.getId());
 
-    referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObject.getId(),
-      Constants.STRUCTURED_DATA_REFERENCES
-    );
+    referencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObject.getId(),
+        Constants.STRUCTURED_DATA_REFERENCES
+      );
 
     containerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
 
@@ -75,7 +74,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(payload)
       .when()
-      .post(String.format("%s/%d/%s", containerURL, container.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(containerURL, container.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -172,7 +171,7 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .as(ErrorResponse.class);
 
     assertThat(actual.getMessage()).isEqualTo(
-      String.format("ID ERROR - Structured Data Reference with id %s is null or deleted", collection.getId())
+      "ID ERROR - Structured Data Reference with id %s is null or deleted".formatted(collection.getId())
     );
   }
 
@@ -191,14 +190,13 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .body(toCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          collection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.STRUCTURED_DATA_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            collection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.STRUCTURED_DATA_REFERENCES
+          )
       )
       .then()
       .statusCode(201)
@@ -225,13 +223,12 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .when()
       .get(
-        String.format(
-          "%s/%d/%s/%s",
-          referencesURL,
-          reference.getId(),
-          Constants.PAYLOAD,
-          payload.getStructuredData().getOid()
-        )
+        "%s/%d/%s/%s".formatted(
+            referencesURL,
+            reference.getId(),
+            Constants.PAYLOAD,
+            payload.getStructuredData().getOid()
+          )
       )
       .then()
       .statusCode(200)
@@ -268,14 +265,13 @@ public class StructuredDataReferenceIT extends BaseTestCaseIT {
       .body(toCreate)
       .when()
       .post(
-        String.format(
-          "/%s/%d/%s/%d/%s",
-          Constants.COLLECTIONS,
-          otherCollection.getId(),
-          Constants.DATA_OBJECTS,
-          otherDataObject.getId(),
-          Constants.STRUCTURED_DATA_REFERENCES
-        )
+        "/%s/%d/%s/%d/%s".formatted(
+            Constants.COLLECTIONS,
+            otherCollection.getId(),
+            Constants.DATA_OBJECTS,
+            otherDataObject.getId(),
+            Constants.STRUCTURED_DATA_REFERENCES
+          )
       )
       .then()
       .statusCode(403)

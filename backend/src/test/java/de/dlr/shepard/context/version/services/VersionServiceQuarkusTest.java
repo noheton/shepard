@@ -327,13 +327,13 @@ public class VersionServiceQuarkusTest {
     assertEquals(0, dataObject2Version1.getChildren().size());
     assertEquals(0, dataObject2Version1.getPredecessors().size());
     assertEquals(1, dataObject2Version1.getSuccessors().size());
-    assertEquals(dataObject3Version1, dataObject2Version1.getSuccessors().get(0));
+    assertEquals(dataObject3Version1, dataObject2Version1.getSuccessors().getFirst());
 
     //inspecting DataObject1Version1
     assertEquals(1, dataObject1Version1.getSuccessors().size());
-    assertEquals(dataObject1Version1.getSuccessors().get(0), dataObject3Version1);
+    assertEquals(dataObject1Version1.getSuccessors().getFirst(), dataObject3Version1);
     assertEquals(1, dataObject1Version1.getChildren().size());
-    assertEquals(dataObject1Version1.getChildren().get(0), dataObject2Version1);
+    assertEquals(dataObject1Version1.getChildren().getFirst(), dataObject2Version1);
     assertEquals(null, dataObject1Version1.getParent());
     assertEquals(0, dataObject1Version1.getPredecessors().size());
   }
@@ -451,7 +451,7 @@ public class VersionServiceQuarkusTest {
     DataObject dataObject1Version1 = dataObjectService.getDataObject(dataObject1.getShepardId(), version1.getUid());
     DataObject dataObject2Version1 = dataObjectService.getDataObject(dataObject2.getShepardId(), version1.getUid());
     assertEquals(dataObject1ToDataObject2Version1.getReferencedDataObject().getId(), dataObject2Version1.getId());
-    assertEquals(dataObject1Version1.getReferences().get(0).getId(), dataObject1ToDataObject2Version1.getId());
+    assertEquals(dataObject1Version1.getReferences().getFirst().getId(), dataObject1ToDataObject2Version1.getId());
     assertTrue(hasExactlyOneVersion(collection1.getId()));
     assertTrue(hasExactlyOneVersion(dataObject1.getId()));
     assertTrue(hasExactlyOneVersion(dataObject2.getId()));
@@ -510,7 +510,7 @@ public class VersionServiceQuarkusTest {
     Collection referencedCollectionReloaded = collectionService.getCollectionWithDataObjectsAndIncomingReferences(
       referencedCollection.getShepardId()
     );
-    assertEquals(collectionReference.getId(), referencedCollectionReloaded.getIncoming().get(0).getId());
+    assertEquals(collectionReference.getId(), referencedCollectionReloaded.getIncoming().getFirst().getId());
     assertEquals(1, referencedCollectionReloaded.getIncoming().size());
     assertTrue(hasExactlyOneVersion(collectionReference.getId()));
     assertTrue(hasExactlyOneVersion(referencedCollection.getId()));
@@ -624,13 +624,13 @@ public class VersionServiceQuarkusTest {
       collectionVersionized.getId()
     );
     assertEquals(1, versionizedCollectionAnnotations.size());
-    assertEquals(collectionAnnotation, versionizedCollectionAnnotations.get(0));
+    assertEquals(collectionAnnotation, versionizedCollectionAnnotations.getFirst());
     DataObject DOVersionized = dataObjectService.getDataObject(dataObjectAnnotated.getShepardId(), Version1.getUid());
     List<SemanticAnnotation> versionizedDOAnnotations = semanticAnnotationService.getAllAnnotationsByNeo4jId(
       DOVersionized.getId()
     );
     assertEquals(1, versionizedDOAnnotations.size());
-    assertEquals(DOAnnotation, versionizedDOAnnotations.get(0));
+    assertEquals(DOAnnotation, versionizedDOAnnotations.getFirst());
     StructuredDataReference referenceVersionized = structuredDataReferenceService.getReference(
       collectionAnnotated.getShepardId(),
       dataObjectAnnotated.getShepardId(),

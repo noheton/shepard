@@ -130,7 +130,7 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
       CollectionIO col = createCollection(runId + "testCollectionSearchWithPaginationSize" + i);
       createdCollections.add(col);
     }
-    CollectionIO collectionToUpdate = createdCollections.get(0);
+    CollectionIO collectionToUpdate = createdCollections.getFirst();
     collectionToUpdate.setDescription("I have been updated.");
     given()
       .spec(requestSpecOfDefaultUser)
@@ -235,10 +235,10 @@ public class PaginatedCollectionSearcherIT extends BaseTestCaseIT {
 
     // Assert
     assertThat(resultsSortedByNameDescending.getResults().size()).isEqualTo(numberOfCollections);
-    assertTrue(resultsSortedByNameDescending.getResults().get(0).getName().startsWith("2"));
+    assertTrue(resultsSortedByNameDescending.getResults().getFirst().getName().startsWith("2"));
     assertTrue(resultsSortedByNameDescending.getResults().get(2).getName().startsWith("0"));
     assertThat(resultsSortedByNameAscending.getResults().size()).isEqualTo(numberOfCollections);
-    assertTrue(resultsSortedByNameAscending.getResults().get(0).getName().startsWith("0"));
+    assertTrue(resultsSortedByNameAscending.getResults().getFirst().getName().startsWith("0"));
     assertTrue(resultsSortedByNameAscending.getResults().get(2).getName().startsWith("2"));
   }
 }

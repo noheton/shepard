@@ -21,11 +21,10 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
    */
   public List<StructuredDataReference> findByDataObjectNeo4jId(long dataObjectId) {
     String query =
-      String.format(
-        "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ",
-        CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false),
-        dataObjectId
-      ) +
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ".formatted(
+          CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false),
+          dataObjectId
+        ) +
       CypherQueryHelper.getReturnPart("r");
     var queryResult = findByQuery(query, Collections.emptyMap());
     List<StructuredDataReference> result = StreamSupport.stream(queryResult.spliterator(), false)

@@ -326,7 +326,7 @@ public class Neo4jQueryBuilder {
     if (successorIds.size() == 0) return "(NOT EXISTS{MATCH (" + variable + ")" + neighborhoodNeo4j + "(neighborObj)})";
     String arrayString = "[";
     for (int i = 0; i < successorIds.size() - 1; i++) arrayString = arrayString + successorIds.get(i) + ",";
-    arrayString = arrayString + successorIds.get(successorIds.size() - 1) + "]";
+    arrayString = arrayString + successorIds.getLast() + "]";
     ret =
       ret +
       "NOT EXISTS{MATCH (" +
@@ -364,7 +364,7 @@ public class Neo4jQueryBuilder {
       ")" +
       neighborhoodNeo4j +
       "(neighborObj) WHERE id(neighborObj)=" +
-      successorIds.get(successorIds.size() - 1) +
+      successorIds.getLast() +
       "}))";
     return ret;
   }

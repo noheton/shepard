@@ -89,7 +89,7 @@ public class PermissionsService {
     User user = userService.getCurrentUser();
     isAccessTypeAllowedForUser(entityId, AccessType.Manage, user.getUsername());
     return getPermissionsOfEntityOptional(entityId).orElseThrow(() ->
-      new NotFoundException(String.format("Permissions with entity %s is null", entityId))
+      new NotFoundException("Permissions with entity %s is null".formatted(entityId))
     );
   }
 
@@ -200,7 +200,7 @@ public class PermissionsService {
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
 
     // migration state endpoints
-    if (pathSegments.get(0).getPath().equals("temp") && pathSegments.get(1).getPath().equals("migrations")) {
+    if (pathSegments.getFirst().getPath().equals("temp") && pathSegments.get(1).getPath().equals("migrations")) {
       return true;
     }
 
@@ -211,13 +211,13 @@ public class PermissionsService {
     }
 
     // lab journal entries
-    if (pathSegments.get(0).getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
+    if (pathSegments.getFirst().getPath().equals(Constants.LAB_JOURNAL_ENTRIES)) {
       // Lab journal permissions are already checked inside LabJournalEntryService
       return true;
     }
 
     // users, apiKeys, subscriptions
-    if (pathSegments.get(0).getPath().equals(Constants.USERS)) {
+    if (pathSegments.getFirst().getPath().equals(Constants.USERS)) {
       // Permissions are already checked inside User- ApiKey- and SubscriptionService
       return true;
     }
@@ -230,7 +230,7 @@ public class PermissionsService {
 
     // usersearch and containersearch
     if (
-      pathSegments.get(0).getPath().equals(Constants.SEARCH) &&
+      pathSegments.getFirst().getPath().equals(Constants.SEARCH) &&
       List.of(Constants.USERS, Constants.CONTAINERS, Constants.COLLECTIONS, Constants.USERGROUPS).contains(
         pathSegments.get(1).getPath()
       ) &&

@@ -62,7 +62,7 @@ public class UserService {
    */
   public User getUser(String username) {
     return getUserOptional(username).orElseThrow(() ->
-      new InvalidPathException(String.format("User with name %s not found", username))
+      new InvalidPathException("User with name %s not found".formatted(username))
     );
   }
 

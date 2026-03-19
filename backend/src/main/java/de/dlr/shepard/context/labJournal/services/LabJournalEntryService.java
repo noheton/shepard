@@ -102,7 +102,7 @@ public class LabJournalEntryService {
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
 
     if (null == labJournalEntry || labJournalEntry.isDeleted()) {
-      String errorMsg = String.format("LabJournal with Id %s cannot be found or is deleted", labJournalEntryId);
+      String errorMsg = "LabJournal with Id %s cannot be found or is deleted".formatted(labJournalEntryId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

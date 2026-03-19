@@ -87,7 +87,7 @@ public class URIReferenceService implements IReferenceService<URIReference, URIR
 
     URIReference reference = uRIReferenceDAO.findByShepardId(uriReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = String.format("ID ERROR - URI Reference with id %s is null or deleted", uriReferenceShepardId);
+      String errorMsg = "ID ERROR - URI Reference with id %s is null or deleted".formatted(uriReferenceShepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

@@ -25,6 +25,7 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
+import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -154,7 +155,8 @@ public class ExportService {
       timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
         collectionShepardId,
         dataObjectShepardId,
-        referenceId
+        referenceId,
+        CsvFormat.ROW
       );
     } catch (ShepardException e) {
       Log.warn("Cannot access timeseries payload during export");

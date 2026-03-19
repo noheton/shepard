@@ -17,12 +17,12 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
 
   public T findByShepardId(Long shepardId) {
     List<T> list = findByShepardIds(List.of(shepardId), false);
-    return list.isEmpty() ? null : list.get(0);
+    return list.isEmpty() ? null : list.getFirst();
   }
 
   public T findByShepardId(Long shepardId, boolean light) {
     List<T> list = findByShepardIds(List.of(shepardId), light);
-    return list.isEmpty() ? null : list.get(0);
+    return list.isEmpty() ? null : list.getFirst();
   }
 
   public T findByShepardId(Long shepardId, UUID versionUID) {
@@ -35,12 +35,12 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     String versionPart = "";
     if (versionUID != null) versionPart = CypherQueryHelper.getVersionPart("v", versionUID);
     else versionPart = CypherQueryHelper.getVersionHeadPart("v");
-    String query = String.format(
-      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
-      getEntityType().getSimpleName(),
-      CypherQueryHelper.getShepardIdPart("o", shepardId),
-      versionPart
-    );
+    String query =
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
+          getEntityType().getSimpleName(),
+          CypherQueryHelper.getShepardIdPart("o", shepardId),
+          versionPart
+        );
     query += returnPart;
     Iterable<T> result = findByQuery(query, paramsMap);
     if (!result.iterator().hasNext()) return null;
@@ -55,12 +55,12 @@ public abstract class VersionableEntityDAO<T> extends GenericDAO<T> {
     Map<String, Object> paramsMap = new HashMap<>();
     var returnPart = light ? CypherQueryHelper.getReturnPartLight("o") : CypherQueryHelper.getReturnPart("o");
 
-    String query = String.format(
-      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ",
-      getEntityType().getSimpleName(),
-      CypherQueryHelper.getShepardIdsPart("o", shepardIds),
-      CypherQueryHelper.getVersionHeadPart("v")
-    );
+    String query =
+      "MATCH (o:%s {deleted: FALSE})-[:has_version]->(v:Version) WHERE %s AND %s WITH o ".formatted(
+          getEntityType().getSimpleName(),
+          CypherQueryHelper.getShepardIdsPart("o", shepardIds),
+          CypherQueryHelper.getVersionHeadPart("v")
+        );
     query += returnPart;
     Iterable<T> result = findByQuery(query, paramsMap);
     return StreamSupport.stream(result.spliterator(), false).collect(Collectors.toList());

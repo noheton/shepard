@@ -13,7 +13,7 @@
 
 .upload_java_client:
   stage: upload
-  image: maven:3-eclipse-temurin-17
+  image: maven:3-eclipse-temurin-21
   needs: [build_java_client]
   script:
     - cd clients/java

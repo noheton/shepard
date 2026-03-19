@@ -35,11 +35,10 @@ public class BasicReferenceDAO extends VersionableEntityDAO<BasicReference> {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    query = String.format(
-      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r",
-      CypherQueryHelper.getObjectPart("r", "BasicReference", params.hasName()),
-      dataObjectId
-    );
+    query = "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d WITH r".formatted(
+        CypherQueryHelper.getObjectPart("r", "BasicReference", params.hasName()),
+        dataObjectId
+      );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("r", params.getOrderByAttribute(), params.getOrderDesc());
     }
@@ -71,11 +70,10 @@ public class BasicReferenceDAO extends VersionableEntityDAO<BasicReference> {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    query = String.format(
-      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d.shepardId=%d WITH br",
-      CypherQueryHelper.getObjectPart("br", "BasicReference", params.hasName()),
-      dataObjectShepardId
-    );
+    query = "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d.shepardId=%d WITH br".formatted(
+        CypherQueryHelper.getObjectPart("br", "BasicReference", params.hasName()),
+        dataObjectShepardId
+      );
     if (params.hasOrderByAttribute()) {
       query += " " + CypherQueryHelper.getOrderByPart("br", params.getOrderByAttribute(), params.getOrderDesc());
     }

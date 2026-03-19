@@ -92,10 +92,8 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
 
     CollectionReference reference = collectionReferenceDAO.findByShepardId(collectionReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = String.format(
-        "ID ERROR - Collection Reference with id %s is null or deleted",
-        collectionReferenceShepardId
-      );
+      String errorMsg =
+        "ID ERROR - Collection Reference with id %s is null or deleted".formatted(collectionReferenceShepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -137,17 +135,15 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
       referenced = collectionService.getCollection(collectionReference.getReferencedCollectionId());
     } catch (InvalidPathException e) {
       throw new InvalidBodyException(
-        String.format(
-          "The referenced collection with id %d could not be found.",
-          collectionReference.getReferencedCollectionId()
-        )
+        "The referenced collection with id %d could not be found.".formatted(
+            collectionReference.getReferencedCollectionId()
+          )
       );
     } catch (InvalidAuthException e) {
       throw new InvalidAuthException(
-        String.format(
-          "You do not have permissions to access the referenced collection with id %d.",
-          collectionReference.getReferencedCollectionId()
-        )
+        "You do not have permissions to access the referenced collection with id %d.".formatted(
+            collectionReference.getReferencedCollectionId()
+          )
       );
     }
 
@@ -228,10 +224,10 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
     );
 
     if (reference.getReferencedCollection() == null || reference.getReferencedCollection().isDeleted()) {
-      String errorMsg = String.format(
-        "Collection referenced by CollectionReference with id %s cannot be found or is deleted",
-        reference.getShepardId()
-      );
+      String errorMsg =
+        "Collection referenced by CollectionReference with id %s cannot be found or is deleted".formatted(
+            reference.getShepardId()
+          );
       Log.errorf(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -242,10 +238,9 @@ public class CollectionReferenceService implements IReferenceService<CollectionR
       );
     } catch (InvalidPathException e) {
       throw new NotFoundException(
-        String.format(
-          "The referenced collection with id %d could not be found.",
-          reference.getReferencedCollection().getShepardId()
-        )
+        "The referenced collection with id %d could not be found.".formatted(
+            reference.getReferencedCollection().getShepardId()
+          )
       );
     }
   }

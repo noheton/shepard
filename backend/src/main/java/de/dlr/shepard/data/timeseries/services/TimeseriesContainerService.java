@@ -64,10 +64,8 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
   public TimeseriesContainer getContainer(long timeseriesContainerId) {
     Optional<TimeseriesContainer> containerOptional = getContainerOptional(timeseriesContainerId);
     if (containerOptional.isEmpty()) {
-      String errorMsg = String.format(
-        "ID ERROR - Timeseries Container with id %s is null or deleted",
-        timeseriesContainerId
-      );
+      String errorMsg =
+        "ID ERROR - Timeseries Container with id %s is null or deleted".formatted(timeseriesContainerId);
       Log.errorf(errorMsg);
       throw new InvalidPathException(errorMsg);
     }

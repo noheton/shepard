@@ -37,7 +37,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
   @BeforeAll
   public static void setUp() {
     collection = createCollection("DataObjectSearcherTestCollection");
-    dataObjectsURL = String.format("/%s/%d/%s", Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
+    dataObjectsURL = "/%s/%d/%s".formatted(Constants.COLLECTIONS, collection.getId(), Constants.DATA_OBJECTS);
 
     searchURL = "/" + Constants.SEARCH;
     var payload1 = new DataObjectIO();
@@ -80,7 +80,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "OR": [
@@ -95,9 +95,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "le"
           }
         ]
-      }""",
-      dataObjectIO1.getId()
-    );
+      }""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -125,7 +123,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -140,9 +138,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      dataObjectIO1.getId()
-    );
+      }""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -168,7 +164,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -183,9 +179,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      dataObjectIO1.getId()
-    );
+      }""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -211,7 +205,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -226,9 +220,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      dataObjectIO1.getId()
-    );
+      }""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -253,7 +245,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -268,9 +260,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      dataObjectIO1.getId()
-    );
+      }""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -297,7 +287,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -312,9 +302,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "contains"
           }
         ]
-      }""",
-      dataObjectIO2.getId()
-    );
+      }""".formatted(dataObjectIO2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -342,7 +330,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "OR": [
@@ -357,9 +345,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "operator": "eq"
           }
         ]
-      }""",
-      dataObjectIO2.getId()
-    );
+      }""".formatted(dataObjectIO2.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -387,7 +373,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -401,9 +387,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "value": "DataObjectSearchDummy4",
             "operator": "eq"
           }
-      ]}""",
-      dataObjectIO4.getId()
-    );
+      ]}""".formatted(dataObjectIO4.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -434,7 +418,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.DataObject);
-    String query = String.format(
+    String query =
       """
       {
         "AND": [
@@ -448,9 +432,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
             "value": "DataObjectSearchDummy1",
             "operator": "eq"
           }
-      ]}""",
-      dataObjectIO1.getId()
-    );
+      ]}""".formatted(dataObjectIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -535,7 +517,7 @@ public class DataObjectSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObjectWithParent(String name, long collectionId, long parentID) {
-    var dataObjectsURL = String.format("/%s/%d/%s/", Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
+    var dataObjectsURL = "/%s/%d/%s/".formatted(Constants.COLLECTIONS, collectionId, Constants.DATA_OBJECTS);
 
     DataObjectIO dataObjectIO = new DataObjectIO();
     dataObjectIO.setName(name);

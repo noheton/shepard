@@ -500,7 +500,7 @@ public class FileReferenceServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(username);
     when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username)).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.get(0));
+    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.getFirst());
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenThrow(new NotFoundException());
 
     var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());

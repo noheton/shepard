@@ -3,6 +3,7 @@ package de.dlr.shepard.context.collection.entities;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
@@ -27,6 +28,7 @@ public class CollectionTest extends BaseTestCase {
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(Version.class, new Version(new UUID(1L, 2L)), new Version(new UUID(3L, 4L)))
       .withPrefabValues(FileContainer.class, new FileContainer(1L), new FileContainer(2L))
+      .withPrefabValues(Permissions.class, new Permissions(1L), new Permissions(2L))
       .verify();
   }
 

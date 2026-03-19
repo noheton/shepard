@@ -106,14 +106,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     toCreate1.setName("DataObjectReferenceDummy1");
     toCreate1.setRelationship("integrationtests");
     toCreate1.setReferencedDataObjectId(referenced.getId());
-    dataObjetReferencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObjectIO1.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
+    dataObjetReferencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObjectIO1.getId(),
+        Constants.DATAOBJECT_REFERENCES
+      );
     referenceIO1 = given()
       .spec(requestSpecOfDefaultUser)
       .body(toCreate1)
@@ -143,14 +142,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     toCreate4.setName("DataObjectReferenceDummy4");
     toCreate4.setRelationship("integrationtests");
     toCreate4.setReferencedDataObjectId(dataObjectIO4.getId());
-    dataObjetReferencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObjectIO4.getId(),
-      Constants.DATAOBJECT_REFERENCES
-    );
+    dataObjetReferencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObjectIO4.getId(),
+        Constants.DATAOBJECT_REFERENCES
+      );
     referenceIO4 = given()
       .spec(requestSpecOfDefaultUser)
       .body(toCreate4)
@@ -161,14 +159,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .extract()
       .as(DataObjectReferenceIO.class);
 
-    fileReferencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection.getId(),
-      Constants.DATA_OBJECTS,
-      dataObjectIO2.getId(),
-      Constants.FILE_REFERENCES
-    );
+    fileReferencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        collection.getId(),
+        Constants.DATA_OBJECTS,
+        dataObjectIO2.getId(),
+        Constants.FILE_REFERENCES
+      );
     fileContainerURL = "/" + Constants.FILE_CONTAINERS;
     var fileContainerToCreate = new FileContainerIO();
     fileContainerToCreate.setName("FileContainer");
@@ -190,7 +187,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .spec(fileRequestSpecification)
       .multiPart("file", "test.txt", targetStream)
       .when()
-      .post(String.format("%s/%d/%s", fileContainerURL, fileContainerIO.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(fileContainerURL, fileContainerIO.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -223,16 +220,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "id",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      referenceIO1.getId()
-    );
+      """.formatted(referenceIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -261,16 +256,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       	{
             "property": "id",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      referenceIO1.getId()
-    );
+      """.formatted(referenceIO1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -363,16 +356,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "referencedDataObjectId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      dataObjectIO4.getId()
-    );
+      """.formatted(dataObjectIO4.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -397,16 +388,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "fileContainerId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      fileContainerIO.getId()
-    );
+      """.formatted(fileContainerIO.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -429,14 +418,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     toCreate.setName("CollectionReferenceDummy");
     toCreate.setRelationship("integrationtests");
     toCreate.setReferencedCollectionId(collection1.getId());
-    String referencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      collection1.getId(),
-      Constants.DATA_OBJECTS,
-      collection1DataObject.getId(),
-      Constants.COLLECTION_REFERENCES
-    );
+    String referencesURL =
+      "/%s/%d/%s/%d/%s".formatted(
+          Constants.COLLECTIONS,
+          collection1.getId(),
+          Constants.DATA_OBJECTS,
+          collection1DataObject.getId(),
+          Constants.COLLECTION_REFERENCES
+        );
     CollectionReferenceIO createdCollectionReference = given()
       .spec(requestSpecOfDefaultUser)
       .body(toCreate)
@@ -453,16 +442,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "referencedCollectionId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      collection1.getId()
-    );
+      """.formatted(collection1.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -491,16 +478,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "referencedCollectionId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      collection.getId()
-    );
+      """.formatted(collection.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -520,14 +505,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   public void findViaStructuredDataTest() {
     sDataCollection = createCollection("StructuredDataReferenceTestCollection");
     sDataObject = createDataObject("StructuredDataReferenceTestDataObject", sDataCollection.getId());
-    sDataReferencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      sDataCollection.getId(),
-      Constants.DATA_OBJECTS,
-      sDataObject.getId(),
-      Constants.STRUCTURED_DATA_REFERENCES
-    );
+    sDataReferencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        sDataCollection.getId(),
+        Constants.DATA_OBJECTS,
+        sDataObject.getId(),
+        Constants.STRUCTURED_DATA_REFERENCES
+      );
     sDataContainerURL = "/" + Constants.STRUCTURED_DATA_CONTAINERS;
     StructuredDataContainerIO sDataContainerToCreate = new StructuredDataContainerIO();
     sDataContainerToCreate.setName("StructuredDataContainer");
@@ -550,7 +534,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(sDataPayload)
       .when()
-      .post(String.format("%s/%d/%s", sDataContainerURL, sDataContainer.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(sDataContainerURL, sDataContainer.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201)
       .extract()
@@ -576,16 +560,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "structuredDataContainerId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      sDataContainer.getId()
-    );
+      """.formatted(sDataContainer.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -606,14 +588,13 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   public void findViaTimeseriesTest() {
     tSerCollection = createCollection("TimeseriesReferenceSearchTestCollection");
     tSerDataObject = createDataObject("TimeseriesReferenceSearchTestDataObject", tSerCollection.getId());
-    tSerReferencesURL = String.format(
-      "/%s/%d/%s/%d/%s",
-      Constants.COLLECTIONS,
-      tSerCollection.getId(),
-      Constants.DATA_OBJECTS,
-      tSerDataObject.getId(),
-      Constants.TIMESERIES_REFERENCES
-    );
+    tSerReferencesURL = "/%s/%d/%s/%d/%s".formatted(
+        Constants.COLLECTIONS,
+        tSerCollection.getId(),
+        Constants.DATA_OBJECTS,
+        tSerDataObject.getId(),
+        Constants.TIMESERIES_REFERENCES
+      );
     tSerContainerURL = "/" + Constants.TIMESERIES_CONTAINERS;
     var tSerContainerToCreate = new TimeseriesContainerIO();
     tSerContainerToCreate.setName("TimeseriesContainer");
@@ -643,10 +624,10 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       .spec(requestSpecOfDefaultUser)
       .body(timeseriesWithDataPoints)
       .when()
-      .post(String.format("%s/%d/%s", tSerContainerURL, tSerContainer.getId(), Constants.PAYLOAD))
+      .post("%s/%d/%s".formatted(tSerContainerURL, tSerContainer.getId(), Constants.PAYLOAD))
       .then()
       .statusCode(201);
-    var nanos = timeseriesWithDataPoints.getPoints().get(0).getTimestamp();
+    var nanos = timeseriesWithDataPoints.getPoints().getFirst().getTimestamp();
     var tSerReferenceToCreate = new TimeseriesReferenceIO();
     tSerReferenceToCreate.setName("TimeseriesReferenceDummy");
     tSerReferenceToCreate.setStart(nanos - 1000000000L);
@@ -669,16 +650,14 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
     searchBody.setScopes(new SearchScope[] { searchScope });
     SearchParams searchParams = new SearchParams();
     searchParams.setQueryType(QueryType.Reference);
-    String query = String.format(
+    String query =
       """
       {
             "property": "timeseriesContainerId",
             "value": %d,
             "operator": "eq"
           }
-      """,
-      tSerContainer.getId()
-    );
+      """.formatted(tSerContainer.getId());
     searchParams.setQuery(query);
     searchBody.setSearchParams(searchParams);
     var result = given()
@@ -695,12 +674,8 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
   }
 
   private static DataObjectIO createDataObject(DataObjectIO dataObjectIO) {
-    var dataObjectsURL = String.format(
-      "/%s/%d/%s/",
-      Constants.COLLECTIONS,
-      dataObjectIO.getCollectionId(),
-      Constants.DATA_OBJECTS
-    );
+    var dataObjectsURL =
+      "/%s/%d/%s/".formatted(Constants.COLLECTIONS, dataObjectIO.getCollectionId(), Constants.DATA_OBJECTS);
     var createdDataObject = given()
       .spec(requestSpecOfDefaultUser)
       .body(dataObjectIO)

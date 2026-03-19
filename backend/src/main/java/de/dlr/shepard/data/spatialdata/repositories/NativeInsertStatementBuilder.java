@@ -12,7 +12,7 @@ public class NativeInsertStatementBuilder {
 
   public NativeInsertStatementBuilder addValues(String values) {
     addValuesIfNecessary();
-    sb.append(String.format("(%s),", values));
+    sb.append("(%s),".formatted(values));
     return this;
   }
 

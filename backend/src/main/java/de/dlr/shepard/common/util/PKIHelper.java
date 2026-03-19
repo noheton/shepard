@@ -5,7 +5,6 @@ import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -21,9 +20,9 @@ public class PKIHelper {
 
   private static final String RSA = "RSA";
 
-  private Path keysDir = Paths.get(System.getProperty("user.home"), ".shepard/keys");
-  private Path pubKey = Paths.get(keysDir.toString(), "public.key");
-  private Path privKey = Paths.get(keysDir.toString(), "private.key");
+  private Path keysDir = Path.of(System.getProperty("user.home"), ".shepard/keys");
+  private Path pubKey = Path.of(keysDir.toString(), "public.key");
+  private Path privKey = Path.of(keysDir.toString(), "private.key");
 
   @Getter
   private PublicKey publicKey;
@@ -105,7 +104,7 @@ public class PKIHelper {
     kpg.initialize(2048);
     var kp = kpg.generateKeyPair();
 
-    try (var pubFos = Files.newOutputStream(pubKey); var privFos = Files.newOutputStream(privKey);) {
+    try (var pubFos = Files.newOutputStream(pubKey); var privFos = Files.newOutputStream(privKey)) {
       pubFos.write(kp.getPublic().getEncoded());
       privFos.write(kp.getPrivate().getEncoded());
     }

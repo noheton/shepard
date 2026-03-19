@@ -38,7 +38,7 @@ public class WireMockResource implements QuarkusTestResourceLifecycleManager {
     wireMockServer.stubFor(
       // stub for PropertyIRI SparqlConnector.request_term
       get(urlPathEqualTo("/sparql"))
-        .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/ontology/ingredient")))
+        .withQueryParam("query", equalTo(SELECT_TEMPLATE.formatted("http://dbpedia.org/ontology/ingredient")))
         .willReturn(
           aResponse()
             .withStatus(200)
@@ -50,7 +50,7 @@ public class WireMockResource implements QuarkusTestResourceLifecycleManager {
     // stub for ValueIRI SparqlConnector.request_term
     wireMockServer.stubFor(
       get(urlPathEqualTo("/sparql"))
-        .withQueryParam("query", equalTo(String.format(SELECT_TEMPLATE, "http://dbpedia.org/resource/Almond_milk")))
+        .withQueryParam("query", equalTo(SELECT_TEMPLATE.formatted("http://dbpedia.org/resource/Almond_milk")))
         .willReturn(
           aResponse()
             .withStatus(200)
