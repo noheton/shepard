@@ -10,6 +10,7 @@ import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.Shutdown;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.annotations.QuarkusMain;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import org.flywaydb.core.Flyway;
@@ -26,24 +27,42 @@ public class ShepardMain implements QuarkusApplication {
   void init() {
     Log.info("Starting shepard backend");
 
-    Log.info("Run PostGres migrations...");
+    migrateTimescale("1.7.0");
+
+    migrateNeo4j("V12");
+
+    Log.info("Run leftover timescale migrations...");
     flyway.migrate();
-    Log.info("Finished PostGres migrations!");
+    Log.info("Finished leftover timescale migrations...");
+
+    Log.info("Run leftover Neo4j migrations...");
+    var neoRunner = new MigrationsRunner();
+    neoRunner.waitForConnection();
+    neoRunner.apply();
+    Log.info("Finished leftover Neo4j migrations...");
 
     var pkiHelper = new PKIHelper();
-    var migrationRunner = new MigrationsRunner();
     pkiHelper.init();
 
-    Log.info("Waiting for databases");
-    migrationRunner.waitForConnection();
+    Log.info("Initialize neo4j databases...");
+    neo4j.connect();
+    Log.info("Connection established to neo4j database!");
+  }
 
-    Log.info("Run neo4j database migrations...");
+  private void migrateTimescale(String version) {
+    Log.info("Run PostGres migrations until V" + version + "...");
+    if (version == null) flyway.migrate();
+    else Flyway.configure().configuration(flyway.getConfiguration()).target(version).load().migrate();
+    Log.info("Finished PostGres migrations V" + version + "!");
+  }
+
+  private void migrateNeo4j(String version) {
+    var migrationRunner = new MigrationsRunner(version);
+    Log.info("Waiting for neo4j database...");
+    migrationRunner.waitForConnection();
+    Log.info("Run neo4j database migrations until " + version + "...");
     migrationRunner.apply();
     Log.info("Finished neo4j database migrations!");
-
-    Log.info("Initialize databases");
-    neo4j.connect();
-    Log.info("Connection established to neo4j database.");
   }
 
   @Override
