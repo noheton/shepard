@@ -1,7 +1,7 @@
 package de.dlr.shepard.migrations.neo4j;
 
+import static de.dlr.shepard.migrations.neo4j.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
@@ -28,10 +28,6 @@ public class TestNeo4jMigrations {
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
   private static final QueryHelper q = new QueryHelper();
   private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
-
-  private static final String HAS_PAYLOAD = "has_payload";
-  private static final String IS_IN_CONTAINER = "is_in_container";
-  private static final String HAS_ANNOTATION = "has_annotation";
 
   private static final TestV12 testV12 = new TestV12();
 

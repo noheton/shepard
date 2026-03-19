@@ -1,5 +1,6 @@
 package de.dlr.shepard.migrations.neo4j;
 
+import static de.dlr.shepard.migrations.neo4j.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,10 +35,6 @@ import org.neo4j.cypherdsl.core.Node;
 public class TestV12 extends MigrationTest {
 
   private List<PostV12Timeseries> allTimeseries;
-
-  private static final String HAS_PAYLOAD = "has_payload";
-  private static final String IS_IN_CONTAINER = "is_in_container";
-  private static final String HAS_ANNOTATION = "has_annotation";
 
   @Override
   public void setupPreMigrationData() throws CsvValidationException, IOException, ClassNotFoundException {
