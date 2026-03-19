@@ -18,6 +18,10 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
 
+/**
+ * Test the database migrations with a focus on the Neo4j migrations, utilizing the neo4j-migrations package.
+ * This includes migrations which additionally rely on timescale data.
+ */
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestNeo4jMigrations {
 
