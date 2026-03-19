@@ -92,6 +92,7 @@ public class StructuredDataSearcherIT extends BaseTestCaseIT {
       firstSuccessor.getPredecessorIds()[i];
     newPredecessorIDs[newPredecessorIDs.length - 1] = cyclicSuccessor.getId();
     firstSuccessor.setPredecessorIds(newPredecessorIDs);
+    firstSuccessor.setSuccessorIds(null);
     putDataObject(firstSuccessor.getId(), collection.getId(), firstSuccessor);
     // create and store first payload
     var structuredDataToCreate = new StructuredData();

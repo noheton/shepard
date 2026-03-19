@@ -1,12 +1,14 @@
 package de.dlr.shepard.context.collection.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
@@ -290,5 +292,74 @@ public class DataObjectServiceQuarkusTest {
     // Assert
     DataObject actualDataObject = dataObjectService.getDataObject(dataObject.getShepardId());
     assertEquals(Map.of(), actualDataObject.getAttributes());
+  }
+
+  @Test
+  public void createDataObjectWithNonEmptySuccessorList() {
+    //Arrange
+    long[] successorIds = { 3L };
+    DataObjectIO dataObjectIO = new DataObjectIO();
+    dataObjectIO.setSuccessorIds(successorIds);
+
+    //Act and Assert
+    assertThrows(InvalidBodyException.class, () -> createDataObject(dataObjectIO));
+  }
+
+  @Test
+  public void createDataObjectWithEmptySuccessorList() {
+    //Arrange
+    long[] successorIds = {};
+    DataObjectIO dataObjectIO = new DataObjectIO();
+    dataObjectIO.setSuccessorIds(successorIds);
+
+    //Act
+    DataObject dataObject = createDataObject(dataObjectIO);
+
+    //Assert
+    assertEquals(0, dataObject.getSuccessors().size());
+  }
+
+  @Test
+  public void updateWithIncompatibleSuccessorList() {
+    //Arrange
+    DataObjectIO predecessorIO = new DataObjectIO();
+    DataObject predecessor = createDataObject(predecessorIO);
+    long[] predecessorIds = { predecessor.getShepardId() };
+    DataObjectIO successorIO = new DataObjectIO();
+    successorIO.setPredecessorIds(predecessorIds);
+    DataObject successor = createDataObject(successorIO);
+    DataObjectIO updatedPredecessorIO = new DataObjectIO();
+    long[] updatedSuccessorIds = { successor.getShepardId(), successor.getShepardId() + 1 };
+    updatedPredecessorIO.setSuccessorIds(updatedSuccessorIds);
+
+    //Act and Assert
+    assertThrows(InvalidBodyException.class, () ->
+      dataObjectService.updateDataObject(collection.getShepardId(), predecessor.getShepardId(), updatedPredecessorIO)
+    );
+  }
+
+  @Test
+  public void updateWithCompatibleSuccessorList() {
+    //Arrange
+    DataObjectIO predecessorIO = new DataObjectIO();
+    DataObject predecessor = createDataObject(predecessorIO);
+    long[] predecessorIds = { predecessor.getShepardId() };
+    DataObjectIO successorIO = new DataObjectIO();
+    successorIO.setPredecessorIds(predecessorIds);
+    DataObject successor = createDataObject(successorIO);
+    DataObjectIO updatedPredecessorIO = new DataObjectIO();
+    long[] updatedSuccessorIds = { successor.getShepardId(), successor.getShepardId() };
+    updatedPredecessorIO.setSuccessorIds(updatedSuccessorIds);
+
+    //Act
+    DataObject updatedPredecessor = dataObjectService.updateDataObject(
+      collection.getShepardId(),
+      predecessor.getShepardId(),
+      updatedPredecessorIO
+    );
+
+    //Assert
+    assertEquals(1, updatedPredecessor.getSuccessors().size());
+    assertEquals(successor.getShepardId(), updatedPredecessor.getSuccessors().get(0).getShepardId());
   }
 }
