@@ -63,13 +63,13 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
       var r = tx.run(updateQuery);
       // If this value is not returned that means the timeseries does not yet exist and needs to be created.
       if (!r.hasNext()) tx.run(insertQuery);
-      // Remove the foreign key association between timeseries_data_points and timeseries so we can remove table timeseries
     }
     tx.commit();
   }
 
   private static void deleteMetadataFromTimescale(Connection connection) throws SQLException {
     try (
+      // Remove the foreign key association between timeseries_data_points and timeseries so we can remove table timeseries
       var dropConstraint = connection.prepareStatement(
         "alter table timeseries_data_points drop constraint FKog3jr0iowrx3wkun79k0ihs6o"
       );
@@ -99,12 +99,11 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
       "valueType",
       Cypher.literalOf(ts.valueType().toString())
     );
-    var insertQuery = Cypher.match(TSC_NODE.where(TSC_NODE.internalId().eq(Cypher.literalOf(ts.containerId()))))
+    return Cypher.match(TSC_NODE.where(TSC_NODE.internalId().eq(Cypher.literalOf(ts.containerId()))))
       .with(TSC_NODE)
       .create(tsNodeToCreate.relationshipTo(TSC_NODE, "is_in_container"))
       .build()
       .getCypher();
-    return insertQuery;
   }
 
   private static String ts2UpdateQuery(Timeseries ts) {
@@ -122,14 +121,13 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
         Cypher.literalOf(ts.field())
       )
       .named("ts");
-    var updateQuery = Cypher.match(tsNodeToUpdate.relationshipTo(TSC_NODE, "is_in_container"))
+    return Cypher.match(tsNodeToUpdate.relationshipTo(TSC_NODE, "is_in_container"))
       .where(TSC_NODE.internalId().eq(Cypher.literalOf(ts.containerId())))
       .set(tsNodeToUpdate.property("timeseriesId").to(Cypher.literalOf(ts.id())))
       .set(tsNodeToUpdate.property("valueType").to(Cypher.literalOf(ts.valueType().toString())))
       .returning(Cypher.literalTrue())
       .build()
       .getCypher();
-    return updateQuery;
   }
 
   private @NonNull ArrayList<Timeseries> getTimeseriesListFromTimescale(Connection connection) throws SQLException {
