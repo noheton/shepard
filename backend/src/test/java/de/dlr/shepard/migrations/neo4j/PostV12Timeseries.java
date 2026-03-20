@@ -2,6 +2,7 @@ package de.dlr.shepard.migrations.neo4j;
 
 import de.dlr.shepard.common.neo4j.entities.Annotatable;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
@@ -10,39 +11,46 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import org.neo4j.ogm.annotation.GeneratedValue;
+import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
 import org.neo4j.ogm.annotation.Relationship;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode
 @NodeEntity
 @Data
-class PostV12Timeseries extends PreV12Timeseries implements Annotatable {
+@RequiredArgsConstructor
+class PostV12Timeseries implements Annotatable, HasId {
 
-  public PostV12Timeseries(
-    String measurement,
-    String device,
-    String location,
-    String symbolicName,
-    String field,
-    DataPointValueType valueType,
-    long timeseriesId,
-    TimeseriesContainer container
-  ) {
-    super(measurement, device, location, symbolicName, field);
-    this.valueType = valueType;
-    this.timeseriesId = timeseriesId;
-    this.container = container;
-  }
+  @Id
+  @GeneratedValue
+  private Long id;
 
   @NotBlank
-  private DataPointValueType valueType;
+  private final String measurement;
 
   @NotBlank
-  private Long timeseriesId;
+  private final String device;
+
+  @NotBlank
+  private final String location;
+
+  @NotBlank
+  private final String symbolicName;
+
+  @NotBlank
+  private final String field;
+
+  @NotBlank
+  private final DataPointValueType valueType;
+
+  @NotBlank
+  private final Long timeseriesId;
 
   @Relationship(type = Constants.IS_IN_CONTAINER)
   @NotBlank
-  private TimeseriesContainer container;
+  private final TimeseriesContainer container;
 
   @Relationship(type = Constants.HAS_ANNOTATION)
   @NotBlank
@@ -50,7 +58,7 @@ class PostV12Timeseries extends PreV12Timeseries implements Annotatable {
 
   @Override
   public String getUniqueId() {
-    return String.valueOf(timeseriesId);
+    return String.valueOf(id);
   }
 
   @Override
