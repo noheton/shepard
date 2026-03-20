@@ -45,20 +45,40 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
     try (var connection = createPostgresConnection()) {
       assert isTimescaleOld(connection);
       var tsList = getTimeseriesListFromTimescale(connection);
-      var session = context.getSession();
-      for (var ts : tsList) {
-        var updateQuery = ts2UpdateQuery(ts);
-        var insertQuery = ts2InsertQuery(ts);
-
-        var tx = session.beginTransaction();
-        // If an existing timeseries is altered the update query will return a value.
-        var r = tx.run(updateQuery);
-        // If this value is not returned that means the timeseries does not yet exist and needs to be created.
-        if (!r.hasNext()) tx.run(insertQuery);
-        tx.commit();
-      }
+      migrateTimeseriesMetadataToNeo4(context, tsList);
+      deleteMetadataFromTimescale(connection);
     } catch (ClassNotFoundException | SQLException e) {
-      throw new RuntimeException(e);
+      throw new MigrationFailureException(e);
+    }
+  }
+
+  private static void migrateTimeseriesMetadataToNeo4(MigrationContext context, ArrayList<Timeseries> tsList) {
+    var session = context.getSession();
+    var tx = session.beginTransaction();
+    for (var ts : tsList) {
+      var updateQuery = ts2UpdateQuery(ts);
+      var insertQuery = ts2InsertQuery(ts);
+
+      // If an existing timeseries is altered the update query will return a value.
+      var r = tx.run(updateQuery);
+      // If this value is not returned that means the timeseries does not yet exist and needs to be created.
+      if (!r.hasNext()) tx.run(insertQuery);
+      // Remove the foreign key association between timeseries_data_points and timeseries so we can remove table timeseries
+    }
+    tx.commit();
+  }
+
+  private static void deleteMetadataFromTimescale(Connection connection) throws SQLException {
+    try (
+      var dropConstraint = connection.prepareStatement(
+        "alter table timeseries_data_points drop constraint FKog3jr0iowrx3wkun79k0ihs6o"
+      );
+      var dropTimeseries = connection.prepareStatement("drop table timeseries")
+    ) {
+      connection.setAutoCommit(false);
+      dropConstraint.executeUpdate();
+      dropTimeseries.executeUpdate();
+      connection.commit();
     }
   }
 
