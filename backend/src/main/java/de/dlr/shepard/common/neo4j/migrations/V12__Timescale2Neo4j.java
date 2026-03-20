@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jspecify.annotations.NonNull;
 import org.neo4j.cypherdsl.core.Cypher;
 
 public class V12__Timescale2Neo4j implements JavaBasedMigration {
@@ -40,26 +41,7 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
   public void apply(MigrationContext context) {
     try (var connection = createPostgresConnection()) {
       assert isTimescaleOld(connection);
-      var res = connection
-        .prepareStatement(
-          "select id, container_id, measurement, device, location, symbolic_name, field, value_type from timeseries"
-        )
-        .executeQuery();
-      var resList = new ArrayList<Timeseries>();
-      while (res.next()) {
-        resList.add(
-          new Timeseries(
-            res.getLong(1),
-            res.getLong(2),
-            res.getString(3),
-            res.getString(4),
-            res.getString(5),
-            res.getString(6),
-            res.getString(7),
-            dbValueType2Java(res.getString(8))
-          )
-        );
-      }
+      var resList = getTimeseriesListFromTimescale(connection);
       var session = context.getSession();
       for (var ts : resList) {
         var tsNodeToUpdate = node("Timeseries")
@@ -117,6 +99,30 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
     } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private @NonNull ArrayList<Timeseries> getTimeseriesListFromTimescale(Connection connection) throws SQLException {
+    var res = connection
+      .prepareStatement(
+        "select id, container_id, measurement, device, location, symbolic_name, field, value_type from timeseries"
+      )
+      .executeQuery();
+    var resList = new ArrayList<Timeseries>();
+    while (res.next()) {
+      resList.add(
+        new Timeseries(
+          res.getLong(1),
+          res.getLong(2),
+          res.getString(3),
+          res.getString(4),
+          res.getString(5),
+          res.getString(6),
+          res.getString(7),
+          dbValueType2Java(res.getString(8))
+        )
+      );
+    }
+    return resList;
   }
 
   private DataPointValueType dbValueType2Java(String valueType) {
