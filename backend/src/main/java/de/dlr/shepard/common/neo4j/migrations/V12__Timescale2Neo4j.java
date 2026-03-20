@@ -14,8 +14,11 @@ import java.util.ArrayList;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jspecify.annotations.NonNull;
 import org.neo4j.cypherdsl.core.Cypher;
+import org.neo4j.cypherdsl.core.Node;
 
 public class V12__Timescale2Neo4j implements JavaBasedMigration {
+
+  private static final Node TSC_NODE = node("TimeseriesContainer").named("tsc");
 
   private record Timeseries(
     long id,
@@ -41,53 +44,11 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
   public void apply(MigrationContext context) {
     try (var connection = createPostgresConnection()) {
       assert isTimescaleOld(connection);
-      var resList = getTimeseriesListFromTimescale(connection);
+      var tsList = getTimeseriesListFromTimescale(connection);
       var session = context.getSession();
-      for (var ts : resList) {
-        var tsNodeToUpdate = node("Timeseries")
-          .withProperties(
-            "measurement",
-            Cypher.literalOf(ts.measurement()),
-            "device",
-            Cypher.literalOf(ts.device()),
-            "location",
-            Cypher.literalOf(ts.location()),
-            "symbolicName",
-            Cypher.literalOf(ts.symbolicName()),
-            "field",
-            Cypher.literalOf(ts.field())
-          )
-          .named("ts");
-        var tsc = node("TimeseriesContainer").named("tsc");
-        var updateQuery = Cypher.match(tsNodeToUpdate.relationshipTo(tsc, "is_in_container"))
-          .where(tsc.internalId().eq(Cypher.literalOf(ts.containerId())))
-          .set(tsNodeToUpdate.property("timeseriesId").to(Cypher.literalOf(ts.id())))
-          .set(tsNodeToUpdate.property("valueType").to(Cypher.literalOf(ts.valueType().toString())))
-          .returning(Cypher.literalTrue())
-          .build()
-          .getCypher();
-
-        var tsNodeToCreate = tsNodeToUpdate.withProperties(
-          "timeseriesId",
-          Cypher.literalOf(ts.id()),
-          "measurement",
-          Cypher.literalOf(ts.measurement()),
-          "device",
-          Cypher.literalOf(ts.device()),
-          "location",
-          Cypher.literalOf(ts.location()),
-          "symbolicName",
-          Cypher.literalOf(ts.symbolicName()),
-          "field",
-          Cypher.literalOf(ts.field()),
-          "valueType",
-          Cypher.literalOf(ts.valueType().toString())
-        );
-        var insertQuery = Cypher.match(tsc.where(tsc.internalId().eq(Cypher.literalOf(ts.containerId()))))
-          .with(tsc)
-          .create(tsNodeToCreate.relationshipTo(tsc, "is_in_container"))
-          .build()
-          .getCypher();
+      for (var ts : tsList) {
+        var updateQuery = ts2UpdateQuery(ts);
+        var insertQuery = ts2InsertQuery(ts);
 
         var tx = session.beginTransaction();
         // If an existing timeseries is altered the update query will return a value.
@@ -99,6 +60,56 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
     } catch (ClassNotFoundException | SQLException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private static String ts2InsertQuery(Timeseries ts) {
+    var tsNodeToCreate = node("Timeseries").withProperties(
+      "timeseriesId",
+      Cypher.literalOf(ts.id()),
+      "measurement",
+      Cypher.literalOf(ts.measurement()),
+      "device",
+      Cypher.literalOf(ts.device()),
+      "location",
+      Cypher.literalOf(ts.location()),
+      "symbolicName",
+      Cypher.literalOf(ts.symbolicName()),
+      "field",
+      Cypher.literalOf(ts.field()),
+      "valueType",
+      Cypher.literalOf(ts.valueType().toString())
+    );
+    var insertQuery = Cypher.match(TSC_NODE.where(TSC_NODE.internalId().eq(Cypher.literalOf(ts.containerId()))))
+      .with(TSC_NODE)
+      .create(tsNodeToCreate.relationshipTo(TSC_NODE, "is_in_container"))
+      .build()
+      .getCypher();
+    return insertQuery;
+  }
+
+  private static String ts2UpdateQuery(Timeseries ts) {
+    var tsNodeToUpdate = node("Timeseries")
+      .withProperties(
+        "measurement",
+        Cypher.literalOf(ts.measurement()),
+        "device",
+        Cypher.literalOf(ts.device()),
+        "location",
+        Cypher.literalOf(ts.location()),
+        "symbolicName",
+        Cypher.literalOf(ts.symbolicName()),
+        "field",
+        Cypher.literalOf(ts.field())
+      )
+      .named("ts");
+    var updateQuery = Cypher.match(tsNodeToUpdate.relationshipTo(TSC_NODE, "is_in_container"))
+      .where(TSC_NODE.internalId().eq(Cypher.literalOf(ts.containerId())))
+      .set(tsNodeToUpdate.property("timeseriesId").to(Cypher.literalOf(ts.id())))
+      .set(tsNodeToUpdate.property("valueType").to(Cypher.literalOf(ts.valueType().toString())))
+      .returning(Cypher.literalTrue())
+      .build()
+      .getCypher();
+    return updateQuery;
   }
 
   private @NonNull ArrayList<Timeseries> getTimeseriesListFromTimescale(Connection connection) throws SQLException {
