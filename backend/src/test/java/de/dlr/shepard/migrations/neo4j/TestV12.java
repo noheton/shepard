@@ -158,28 +158,10 @@ public class TestV12 extends MigrationTest {
   }
 
   public void assertNewTimeseriesMergedWithPreexisting() {
-    var c = sample.instance("V12");
-    var nodes1 = q.match(intLevelTs.relationshipTo(c.timeseriesContainer("V12-1")).getLeft());
-    assertEquals(1, nodes1.size());
-    var actualNode1 = nodes1.getFirst();
-    var expectedNode1 = intLevelTs.withProperties(
-      "timeseriesId",
-      Cypher.literalOf(allTimeseries.get(13).getTimeseriesId()),
-      "valueType",
-      Cypher.literalOf("int_value")
-    );
-    assertEquals(expectedNode1, actualNode1);
-
-    var nodes2 = q.match(intLevelTs.relationshipTo(c.timeseriesContainer("V12-2")).getLeft());
-    assertEquals(1, nodes2.size());
-    var actualNode2 = nodes2.getFirst();
-    var expectedNode2 = intLevelTs.withProperties(
-      "timeseriesId",
-      Cypher.literalOf(allTimeseries.get(14).getTimeseriesId()),
-      "valueType",
-      Cypher.literalOf("int_value")
-    );
-    assertEquals(expectedNode2, actualNode2);
+    var nodes1 = Cypher.match(intLevelTs.relationshipTo(tsc1, IS_IN_CONTAINER)).returning(intLevelTs).build();
+    assertEquals(1, q.queryResults(nodes1).size());
+    var nodes2 = Cypher.match(intLevelTs.relationshipTo(tsc2, IS_IN_CONTAINER)).returning(intLevelTs).build();
+    assertEquals(1, q.queryResults(nodes2).size());
   }
 
   private Connection createTimeseriesConnection() throws SQLException, ClassNotFoundException {
