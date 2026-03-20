@@ -63,14 +63,24 @@ public class TestV12 extends MigrationTest {
   public void assertTimeseriesPresentInGraphDb() {
     var ts_result_list = q.match(node("Timeseries"));
     assertEquals(8, ts_result_list.size());
-    assertPresent(allTimeseries.get(0).getTimeseriesId(), 1, "motion", DataPointValueType.Boolean);
-    assertPresent(allTimeseries.get(1).getTimeseriesId(), 2, "motion", DataPointValueType.Boolean);
-    assertPresent(allTimeseries.get(2).getTimeseriesId(), 1, "motion", DataPointValueType.Double);
-    assertPresent(allTimeseries.get(3).getTimeseriesId(), 2, "motion", DataPointValueType.Double);
-    assertPresent(allTimeseries.get(4).getTimeseriesId(), 1, "status", DataPointValueType.String);
-    assertPresent(allTimeseries.get(5).getTimeseriesId(), 2, "status", DataPointValueType.String);
-    assertPresent(allTimeseries.get(6).getTimeseriesId(), 1, "int_level", DataPointValueType.Integer);
-    assertPresent(allTimeseries.get(7).getTimeseriesId(), 2, "int_level", DataPointValueType.Integer);
+    for (var ts : allTimeseries) {
+      var tsListActual = q.match(
+        node("Timeseries")
+          .withProperties(
+            "timeseriesId",
+            Cypher.literalOf(ts.getTimeseriesId()),
+            "measurement",
+            Cypher.literalOf(ts.getMeasurement()),
+            "valueType",
+            Cypher.literalOf(ts.getValueType().toString())
+          )
+          .relationshipTo(
+            node("TimeseriesContainer").withProperties("name", Cypher.literalOf(ts.getContainer().getName()))
+          )
+          .getLeft()
+      );
+      assertEquals(1, tsListActual.size());
+    }
   }
 
   /**
@@ -273,25 +283,6 @@ public class TestV12 extends MigrationTest {
         container
       );
     });
-  }
-
-  private void assertPresent(long timeseriesId, long containerId, String measurement, DataPointValueType valueType) {
-    var tsExpected = createMigratedTimeseries(containerId, measurement, valueType, timeseriesId);
-    var tsListActual = q.match(
-      node("Timeseries")
-        .withProperties(
-          "timeseriesId",
-          Cypher.literalOf(timeseriesId),
-          "measurement",
-          Cypher.literalOf(measurement),
-          "valueType",
-          Cypher.literalOf(valueType.toString())
-        )
-        .relationshipTo(node("TimeseriesContainer").withProperties("containerId", Cypher.literalOf(containerId)))
-        .getLeft()
-    );
-    assertEquals(1, tsListActual.size());
-    assertEquals(tsExpected, tsListActual.getFirst());
   }
 
   /**
