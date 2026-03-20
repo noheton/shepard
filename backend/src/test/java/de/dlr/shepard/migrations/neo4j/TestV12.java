@@ -9,9 +9,7 @@ import static org.neo4j.cypherdsl.core.Cypher.node;
 
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.flywaydb.core.Flyway;
+import org.jspecify.annotations.NonNull;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
 
@@ -192,14 +191,11 @@ public class TestV12 extends MigrationTest {
     return DriverManager.getConnection(url, user, pass);
   }
 
-  private record Triple<T, U, V>(T x, U y, V z) {}
-
   /**
    Prepare the timeseries database for the migration of timeseries metadata towards the graph database.
    */
-  private Stream<Triple<Long, DataPointValueType, ContaineredTs>> prepareV12TimescaleData(
-    Map<Long, Long> containerIdMappings
-  ) throws CsvValidationException, IOException, ClassNotFoundException {
+  private Stream<Timeseries> prepareV12TimescaleData(Map<Long, Long> containerIdMappings)
+    throws CsvValidationException, IOException, ClassNotFoundException {
     Class.forName("org.postgresql.Driver");
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
@@ -213,124 +209,114 @@ public class TestV12 extends MigrationTest {
 
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
 
-    var tsList = dbEntries.stream().map(TestV12::csvEntryToTs).toList();
-
-    // replace the dummy container ids 1 and 2 with the actual ids from Neo4j
-    tsList.forEach(t -> t.setContainerId(containerIdMappings.get(t.getContainerId())));
-
-    return tsList.stream().map(this::addTimeseriesToTimescale).filter(Optional::isPresent).map(Optional::get);
+    return dbEntries
+      .stream()
+      .map(TestV12::csvEntryToTs)
+      // replace the dummy container ids 1 and 2 with the actual ids from Neo4j
+      .map(t -> new DatapointCsvEntry(containerIdMappings.get(t.containerId()), t.timestamp(), t.value(), t.quintuple())
+      )
+      .map(this::addTimeseriesToTimescale)
+      .filter(Optional::isPresent)
+      .map(Optional::get);
   }
 
+  private record DatapointCsvEntry(long containerId, long timestamp, Object value, Quintuple quintuple) {}
+
+  private record Quintuple(String measurement, String device, String location, String symbolicName, String field) {}
+
+  private record Timeseries(long containerId, long timeseriesId, Quintuple quintuple, DataPointValueType valueType) {}
+
   /**
-   * Add the first point of the ContaineredTs to the timescale table timeseries_with_data_points.
-   * If the timeseries does not exist yet create it and return its id including the ContaineredTs.
-   * @param ts ContaineredTs that must have only one data point
-   * @return Empty optional if timeseries already existed, otherwise timeseries id and ContaineredTs.
+   * Add the first point of the Timeseries to the timescale table timeseries_with_data_points.
+   * If the timeseries does not exist yet create it and return its id including the Timeseries.
+   * @param ts Timeseries that must have only one data point
+   * @return Empty optional if timeseries already existed, otherwise timeseries id and Timeseries.
    */
-  private Optional<Triple<Long, DataPointValueType, ContaineredTs>> addTimeseriesToTimescale(ContaineredTs ts) {
+  private Optional<Timeseries> addTimeseriesToTimescale(DatapointCsvEntry ts) {
     try (var connection = createTimeseriesConnection()) {
-      var point = ts.getPoints().getFirst();
-      var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
-      var stmt = connection.prepareStatement(sql);
-      var valueType = valueToValueType(point.getValue());
-      stmt.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
-      stmt.setString(2, ts.getTimeseries().getMeasurement());
-      stmt.setString(3, ts.getTimeseries().getField());
-      stmt.setString(4, ts.getTimeseries().getSymbolicName());
-      stmt.setString(5, ts.getTimeseries().getDevice());
-      stmt.setString(6, ts.getTimeseries().getLocation());
-      stmt.setString(7, valueType.toString());
-      var resultSet = stmt.executeQuery();
-      Optional<Long> ts_id = resultSet.next() ? Optional.of(resultSet.getLong(1)) : Optional.empty();
-
-      var sql2 = Files.readString(Path.of("src/test/resources/insert_timeseries_data_point.sql"));
-      sql2 = sql2.replace(":column", getDatapointColumn(point));
-      var stmt2 = connection.prepareStatement(sql2);
-      stmt2.setBigDecimal(1, BigDecimal.valueOf(ts.getContainerId()));
-      stmt2.setString(2, ts.getTimeseries().getMeasurement());
-      stmt2.setString(3, ts.getTimeseries().getField());
-      stmt2.setString(4, ts.getTimeseries().getSymbolicName());
-      stmt2.setString(5, ts.getTimeseries().getDevice());
-      stmt2.setString(6, ts.getTimeseries().getLocation());
-      stmt2.setBigDecimal(7, BigDecimal.valueOf(point.getTimestamp()));
-      stmt2.setObject(8, point.getValue());
-      stmt2.executeUpdate();
-
-      return ts_id.map(tsIdValue -> new Triple<>(tsIdValue, valueType, ts));
+      Optional<Long> ts_id = insertTimeseries(ts, connection);
+      insertTimeseriesDataPoint(connection, ts);
+      var valueType = valueToValueType(ts.value());
+      return ts_id.map(tsIdValue -> new Timeseries(ts.containerId, tsIdValue, ts.quintuple(), valueType));
     } catch (SQLException | IOException | ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private Stream<PostV12Timeseries> containeredTsToInternalRep(
-    Stream<Triple<Long, DataPointValueType, ContaineredTs>> tsList
-  ) {
-    return tsList.map(p -> {
-      var tsId = p.x;
-      var vtype = p.y;
-      var cts = p.z;
-      var containerList = cts.getContainerId() == 1
+  private static @NonNull Optional<Long> insertTimeseries(DatapointCsvEntry ts, Connection connection)
+    throws IOException, SQLException {
+    var sql = Files.readString(Path.of("src/test/resources/insert_timeseries.sql"));
+    var stmt = connection.prepareStatement(sql);
+    var valueType = valueToValueType(ts.value());
+    stmt.setBigDecimal(1, BigDecimal.valueOf(ts.containerId()));
+    stmt.setString(2, ts.quintuple().measurement());
+    stmt.setString(3, ts.quintuple().field());
+    stmt.setString(4, ts.quintuple().symbolicName());
+    stmt.setString(5, ts.quintuple().device());
+    stmt.setString(6, ts.quintuple().location());
+    stmt.setString(7, valueType.toString());
+    var resultSet = stmt.executeQuery();
+    return resultSet.next() ? Optional.of(resultSet.getLong(1)) : Optional.empty();
+  }
+
+  private void insertTimeseriesDataPoint(Connection connection, DatapointCsvEntry ts) throws IOException, SQLException {
+    var sql2 = Files.readString(Path.of("src/test/resources/insert_timeseries_data_point.sql"));
+    sql2 = sql2.replace(":column", getDatapointColumn(ts.value()));
+    var stmt2 = connection.prepareStatement(sql2);
+    stmt2.setBigDecimal(1, BigDecimal.valueOf(ts.containerId()));
+    stmt2.setString(2, ts.quintuple().measurement());
+    stmt2.setString(3, ts.quintuple().field());
+    stmt2.setString(4, ts.quintuple().symbolicName());
+    stmt2.setString(5, ts.quintuple().device());
+    stmt2.setString(6, ts.quintuple().location());
+    stmt2.setBigDecimal(7, BigDecimal.valueOf(ts.timestamp()));
+    stmt2.setObject(8, ts.value());
+    stmt2.executeUpdate();
+  }
+
+  private Stream<PostV12Timeseries> containeredTsToInternalRep(Stream<Timeseries> tsList) {
+    return tsList.map(ts -> {
+      var containerList = ts.containerId() == 1
         ? q.match(tsc1, TimeseriesContainer.class)
         : q.match(tsc2, TimeseriesContainer.class);
       assert containerList.size() == 1;
       var container = containerList.getFirst();
       return new PostV12Timeseries(
-        cts.getTimeseries().getMeasurement(),
-        cts.getTimeseries().getDevice(),
-        cts.getTimeseries().getLocation(),
-        cts.getTimeseries().getSymbolicName(),
-        cts.getTimeseries().getField(),
-        vtype,
-        tsId,
+        ts.quintuple().measurement(),
+        ts.quintuple().device(),
+        ts.quintuple().location(),
+        ts.quintuple().symbolicName(),
+        ts.quintuple().field(),
+        ts.valueType(),
+        ts.timeseriesId(),
         container
       );
     });
   }
 
   /**
-   * Create a migrated timeseries from containerId, measurement and valueType.
-   * device, location, symbolicName and field remain fixed.
-   */
-  private static PostV12Timeseries createMigratedTimeseries(
-    long containerId,
-    String measurement,
-    DataPointValueType valueType,
-    long timeseriesId
-  ) {
-    return new PostV12Timeseries(
-      measurement,
-      "device",
-      "location",
-      "symbolicName",
-      "field",
-      valueType,
-      timeseriesId,
-      new TimeseriesContainer(containerId)
-    );
-  }
-
-  /**
    * Get the column name into which a timeseries data point should be saved in timescale.
    */
-  private static String getDatapointColumn(TimeseriesDataPoint p) {
-    if (p.getValue() instanceof Double) return "double_value";
-    else if (p.getValue() instanceof String) return "string_value";
-    else if (p.getValue() instanceof Boolean) return "boolean_value";
-    else if (p.getValue() instanceof Integer) return "int_value";
-    throw new RuntimeException("Data point " + p + " is of unfitting value!");
+  private static String getDatapointColumn(Object value) {
+    if (value instanceof Double) return "double_value";
+    else if (value instanceof String) return "string_value";
+    else if (value instanceof Boolean) return "boolean_value";
+    else if (value instanceof Integer) return "int_value";
+    throw new RuntimeException("Data point " + value + " is of unfitting value!");
   }
 
-  private static ContaineredTs csvEntryToTs(Map<String, String> entry) {
-    return new ContaineredTs(
+  private static DatapointCsvEntry csvEntryToTs(Map<String, String> entry) {
+    return new DatapointCsvEntry(
       Long.parseLong(entry.get("CONTAINERID")),
-      new Timeseries(
+      Long.parseLong(entry.get("TIMESTAMP")),
+      strValueToObject(entry.get("VALUE")),
+      new Quintuple(
         entry.get("MEASUREMENT"),
         entry.get("DEVICE"),
         entry.get("LOCATION"),
         entry.get("SYMBOLICNAME"),
         entry.get("FIELD")
-      ),
-      List.of(new TimeseriesDataPoint(Long.parseLong(entry.get("TIMESTAMP")), strValueToObject(entry.get("VALUE"))))
+      )
     );
   }
 
