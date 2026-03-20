@@ -174,7 +174,11 @@ public class TestV12 extends MigrationTest {
     var url = ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class);
     var user = ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class);
     var pass = ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class);
-    Flyway flyway = Flyway.configure().target("1.7.0").dataSource(url, user, pass).load();
+    Flyway flyway = Flyway.configure()
+      .target("1.7.0")
+      .dataSource(url, user, pass)
+      .locations("db/migration", "classpath:de/dlr/shepard/data/timeseries/migrations")
+      .load();
     flyway.migrate();
 
     var dbEntries = readCsvAsMapList("src/test/resources/timeseries_import_migration_test.csv");
