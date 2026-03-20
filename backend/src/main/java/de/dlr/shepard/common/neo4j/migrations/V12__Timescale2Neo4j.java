@@ -27,15 +27,18 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
     DataPointValueType valueType
   ) {}
 
+  public Connection createPostgresConnection() throws ClassNotFoundException, SQLException {
+    Class.forName("org.postgresql.Driver");
+    return DriverManager.getConnection(
+      ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class),
+      ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class),
+      ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class)
+    );
+  }
+
   @Override
   public void apply(MigrationContext context) {
-    try {
-      Class.forName("org.postgresql.Driver");
-      Connection connection = DriverManager.getConnection(
-        ConfigProvider.getConfig().getValue("quarkus.datasource.jdbc.url", String.class),
-        ConfigProvider.getConfig().getValue("quarkus.datasource.username", String.class),
-        ConfigProvider.getConfig().getValue("quarkus.datasource.password", String.class)
-      );
+    try (var connection = createPostgresConnection()) {
       assert isTimescaleOld(connection);
       var res = connection
         .prepareStatement(
