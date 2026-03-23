@@ -128,4 +128,37 @@ public class TestNeo4jMigrations {
   public void testV12_NewTimeseriesMergedWithPreexisting() {
     testV12.assertNewTimeseriesMergedWithPreexisting();
   }
+
+  @Test
+  public void testV13_0_NoException() {
+    createAnnotatedTimeseries();
+    runMigrations("V13");
+  }
+
+  private void createAnnotatedTimeseries() {
+    var s = sample.instance("V13");
+
+    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotatedTs = node("AnnotatableTimeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotation = s.annotation();
+
+    q.create(annotatedTs.relationshipTo(annotation, "has_annotation"));
+    q.create(ts);
+  }
+
+  @Test
+  public void testV13_AnnotatedTimeseriesMigrated() {
+    var s = sample.instance("V13");
+
+    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotation = s.annotation();
+    var query = Cypher.match(ts.relationshipTo(annotation, "has_annotation")).returning(ts).build();
+    assertEquals(1, q.queryResults(query).size());
+  }
+
+  @Test
+  public void testV13_LegacyAnnotatedTimeseriesDeleted() {
+    var ts = node("AnnotatableTimeseries");
+    assertEquals(0, q.match(ts).size());
+  }
 }
