@@ -46,8 +46,8 @@ import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
 import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.integrationtests.WireMockResource;
@@ -206,7 +206,7 @@ public class VersionServiceQuarkusTest {
     TimeseriesReferenceIO referenceIO = new TimeseriesReferenceIO();
     referenceIO.setName(name);
     referenceIO.setTimeseriesContainerId(container.getId());
-    List<Timeseries> timeseries = new ArrayList<Timeseries>();
+    List<TimeseriesFiveTuple> timeseries = new ArrayList<TimeseriesFiveTuple>();
     referenceIO.setTimeseries(timeseries);
     return timeseriesReferenceService.createReference(
       collectionShepardId,

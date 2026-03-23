@@ -17,9 +17,9 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -231,7 +231,7 @@ public class TimeseriesServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
 
     var container = timeseriesContainerService.createContainer(containerIO);
-    var timeseries = new Timeseries("", "", "", "", "");
+    var timeseries = new TimeseriesFiveTuple("", "", "", "", "");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
     dataPoints.add(point);
@@ -358,7 +358,7 @@ public class TimeseriesServiceTest {
 
   @Test
   public void getTimeseries_timeseriesDoesNotExist_throwsNotFoundException() {
-    Timeseries nonExistingTimeseries = new Timeseries(
+    TimeseriesFiveTuple nonExistingTimeseries = new TimeseriesFiveTuple(
       "nonExisting",
       "nonExisting",
       "nonExisting",

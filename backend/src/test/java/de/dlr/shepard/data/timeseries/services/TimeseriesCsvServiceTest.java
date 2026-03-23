@@ -10,10 +10,10 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import io.quarkus.test.InjectMock;
@@ -226,11 +226,11 @@ public class TimeseriesCsvServiceTest {
 
     List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
-    List<Timeseries> expTimeseries = new ArrayList<Timeseries>();
+    List<TimeseriesFiveTuple> expTimeseries = new ArrayList<TimeseriesFiveTuple>();
 
     for (var currTimeseries : availTimeseriesList) {
       expTimeseries.add(
-        new Timeseries(
+        new TimeseriesFiveTuple(
           currTimeseries.getMeasurement(),
           currTimeseries.getDevice(),
           currTimeseries.getLocation(),

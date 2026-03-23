@@ -27,8 +27,8 @@ import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
@@ -616,7 +616,7 @@ public class ReferenceSearcherIT extends BaseTestCaseIT {
       dataPoints.add(point);
     }
     timeseriesWithDataPoints = new TimeseriesWithDataPoints(
-      new Timeseries("meas", "dev", "loc", "symName", "field"),
+      new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field"),
       dataPoints
     );
 

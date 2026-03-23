@@ -3,9 +3,9 @@ package de.dlr.shepard.context.references.timeseriesreference.services;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
@@ -42,7 +42,7 @@ public class TimeseriesReferenceMetricsService {
     long dataObjectId,
     long timeseriesReferenceId,
     UUID versionUID,
-    Timeseries timeseries
+    TimeseriesFiveTuple timeseries
   ) {
     return getTimeseriesReferenceMetrics(
       collectionId,
@@ -68,7 +68,7 @@ public class TimeseriesReferenceMetricsService {
     long dataObjectId,
     long timeseriesReferenceId,
     UUID versionUID,
-    Timeseries timeseries,
+    TimeseriesFiveTuple timeseries,
     List<AggregateFunction> metrics
   ) {
     dataObjectService.getDataObject(collectionId, dataObjectId, versionUID);
