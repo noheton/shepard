@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import jakarta.inject.Inject;
@@ -86,10 +86,10 @@ public class CsvConverterTest {
       device,field,location,boolean,symbolicName,88551128,false
       """;
 
-    var expectedTimeseriesDouble = new Timeseries("double", "device", "location", "symbolicName", "field");
-    var expectedTimeseriesInteger = new Timeseries("integer", "device", "location", "symbolicName", "field");
-    var expectedTimeseriesBoolean = new Timeseries("boolean", "device", "location", "symbolicName", "field");
-    var expectedTimeseriesString = new Timeseries("string", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesDouble = new TimeseriesFiveTuple("double", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesInteger = new TimeseriesFiveTuple("integer", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesBoolean = new TimeseriesFiveTuple("boolean", "device", "location", "symbolicName", "field");
+    var expectedTimeseriesString = new TimeseriesFiveTuple("string", "device", "location", "symbolicName", "field");
 
     List<TimeseriesDataPoint> expectedDataPointsIODouble = new ArrayList<>(
       List.of(new TimeseriesDataPoint(88551122, 22.1), new TimeseriesDataPoint(88551124, 22.2))

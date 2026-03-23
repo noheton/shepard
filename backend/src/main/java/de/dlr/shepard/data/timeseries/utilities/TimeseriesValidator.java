@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.utilities;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 
 public class TimeseriesValidator {
 
@@ -9,7 +9,7 @@ public class TimeseriesValidator {
   private static String errorStringFormat =
     "%s is not allowed to be empty or contain one of those characters: 'Space, Comma, Point, Slash'";
 
-  public static void assertTimeseriesPropertiesAreValid(Timeseries timeseries) {
+  public static void assertTimeseriesPropertiesAreValid(TimeseriesFiveTuple timeseries) {
     validateString(timeseries.getDevice(), "device");
     validateString(timeseries.getField(), "field");
     validateString(timeseries.getLocation(), "location");

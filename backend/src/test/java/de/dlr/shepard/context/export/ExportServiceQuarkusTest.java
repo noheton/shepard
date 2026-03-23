@@ -29,9 +29,9 @@ import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -99,7 +99,7 @@ public class ExportServiceQuarkusTest {
   private FileReference fileReference;
   private DataObjectReference dataObjectReference;
   private ShepardFile shepardFile;
-  private Timeseries timeseries;
+  private TimeseriesFiveTuple timeseries;
   private TimeseriesReference timeseriesReference;
   private TimeseriesContainer timeseriesContainer;
   private final String userName = "user_name";
@@ -200,8 +200,8 @@ public class ExportServiceQuarkusTest {
       points.add(dataPoint1);
       points.add(dataPoint2);
       points.add(dataPoint3);
-      timeseries = new Timeseries("m", "d", "l", "s", "f");
-      ArrayList<Timeseries> timeseriesList = new ArrayList<Timeseries>();
+      timeseries = new TimeseriesFiveTuple("m", "d", "l", "s", "f");
+      ArrayList<TimeseriesFiveTuple> timeseriesList = new ArrayList<TimeseriesFiveTuple>();
       timeseriesList.add(timeseries);
       timeseriesService.saveDataPoints(timeseriesContainer.getId(), timeseries, points);
 
