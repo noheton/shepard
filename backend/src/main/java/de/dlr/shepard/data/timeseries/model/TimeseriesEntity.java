@@ -61,7 +61,7 @@ public class TimeseriesEntity {
     this.valueType = valueType;
   }
 
-  public TimeseriesEntity(long containerId, Timeseries timeseries, DataPointValueType valueType) {
+  public TimeseriesEntity(long containerId, TimeseriesFiveTuple timeseries, DataPointValueType valueType) {
     this(
       containerId,
       timeseries.getMeasurement(),

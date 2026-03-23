@@ -26,7 +26,7 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
@@ -183,7 +183,7 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field");
 
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
@@ -266,7 +266,7 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
         setName("MyName");
@@ -354,7 +354,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("me.as", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesFiveTuple("me.as", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -387,7 +387,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -415,7 +415,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(containerShepardId);
       }
     };

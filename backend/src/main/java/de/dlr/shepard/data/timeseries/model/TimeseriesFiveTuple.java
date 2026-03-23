@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode
 @NoArgsConstructor(force = true)
 @AllArgsConstructor
-public class Timeseries {
+public class TimeseriesFiveTuple {
 
   @NotBlank
   private final String measurement;
@@ -27,7 +27,7 @@ public class Timeseries {
   @NotBlank
   private final String field;
 
-  public Timeseries(TimeseriesEntity timeseriesEntity) {
+  public TimeseriesFiveTuple(TimeseriesEntity timeseriesEntity) {
     this.measurement = timeseriesEntity.getMeasurement();
     this.device = timeseriesEntity.getDevice();
     this.location = timeseriesEntity.getLocation();

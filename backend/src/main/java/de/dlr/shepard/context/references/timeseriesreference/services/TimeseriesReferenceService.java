@@ -18,9 +18,9 @@ import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTim
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -364,7 +364,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   }
 
   private boolean matchFilter(
-    Timeseries timeseries,
+    TimeseriesFiveTuple timeseries,
     Set<String> device,
     Set<String> location,
     Set<String> symName,
