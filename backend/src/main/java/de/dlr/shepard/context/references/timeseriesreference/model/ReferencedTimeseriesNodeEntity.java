@@ -2,7 +2,7 @@ package de.dlr.shepard.context.references.timeseriesreference.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.dlr.shepard.common.util.HasId;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.TimeseriesUniqueIdBuilder;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -50,7 +50,7 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
     this.field = field;
   }
 
-  public ReferencedTimeseriesNodeEntity(Timeseries timeseries) {
+  public ReferencedTimeseriesNodeEntity(TimeseriesFiveTuple timeseries) {
     this.measurement = timeseries.getMeasurement();
     this.device = timeseries.getDevice();
     this.location = timeseries.getLocation();
@@ -58,8 +58,8 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
     this.field = timeseries.getField();
   }
 
-  public Timeseries toTimeseries() {
-    return new Timeseries(
+  public TimeseriesFiveTuple toTimeseries() {
+    return new TimeseriesFiveTuple(
       this.getMeasurement(),
       this.getDevice(),
       this.getLocation(),

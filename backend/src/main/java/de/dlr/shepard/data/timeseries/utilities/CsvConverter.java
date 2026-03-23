@@ -4,8 +4,8 @@ import com.opencsv.bean.CsvToBeanBuilder;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import io.quarkus.logging.Log;
 import java.io.IOException;
@@ -24,7 +24,7 @@ public final class CsvConverter {
   private CsvConverter() {}
 
   public static InputStream convertToCsv(
-    Timeseries timeseries,
+    TimeseriesFiveTuple timeseries,
     List<TimeseriesDataPoint> dataPoints,
     CsvFormat format
   ) {
@@ -69,10 +69,13 @@ public final class CsvConverter {
   private static List<TimeseriesWithDataPoints> convertCsvToTimeseriesWithData(
     List<CsvTimeseriesDataPoint> csvInputList
   ) {
-    HashMap<Timeseries, List<TimeseriesDataPoint>> result = new HashMap<Timeseries, List<TimeseriesDataPoint>>();
+    HashMap<TimeseriesFiveTuple, List<TimeseriesDataPoint>> result = new HashMap<
+      TimeseriesFiveTuple,
+      List<TimeseriesDataPoint>
+    >();
 
     for (var csvInputLine : csvInputList) {
-      var timeseries = new Timeseries(
+      var timeseries = new TimeseriesFiveTuple(
         csvInputLine.getMeasurement(),
         csvInputLine.getDevice(),
         csvInputLine.getLocation(),

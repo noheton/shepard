@@ -2,7 +2,7 @@ package de.dlr.shepard.context.references.timeseriesreference.io;
 
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -27,7 +27,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
 
   @NotEmpty
   @Schema(required = true)
-  private List<Timeseries> timeseries;
+  private List<TimeseriesFiveTuple> timeseries;
 
   @NotNull
   @Schema(required = true)

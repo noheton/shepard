@@ -3,7 +3,7 @@ package de.dlr.shepard.data.timeseries.utilities;
 import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -29,7 +29,7 @@ public class CsvColumnLineProvider implements CsvLineProvider {
 
   // True if the header has been written
   private boolean firstLineWritten = false;
-  private final Timeseries[] timeseriesArray;
+  private final TimeseriesFiveTuple[] timeseriesArray;
 
   // The TreeMap containing all data points is sorted according to the order of the keys (timestamps)
   private final TreeMap<Long, Object[]> dataPoints = new TreeMap<>();
@@ -37,7 +37,7 @@ public class CsvColumnLineProvider implements CsvLineProvider {
   public CsvColumnLineProvider(@Nonnull List<TimeseriesWithDataPoints> timeseriesWithDataPoints) {
     Objects.requireNonNull(timeseriesWithDataPoints);
     size = timeseriesWithDataPoints.size();
-    timeseriesArray = new Timeseries[size];
+    timeseriesArray = new TimeseriesFiveTuple[size];
 
     // Sort the data points according to their timestamp
     for (int i = 0; i < size; i++) {
