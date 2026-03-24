@@ -34,4 +34,12 @@ public class TimeseriesFiveTuple {
     this.symbolicName = timeseriesEntity.getSymbolicName();
     this.field = timeseriesEntity.getField();
   }
+
+  public TimeseriesFiveTuple(Timeseries ts) {
+    this.measurement = ts.getMeasurement();
+    this.device = ts.getDevice();
+    this.location = ts.getLocation();
+    this.symbolicName = ts.getSymbolicName();
+    this.field = ts.getField();
+  }
 }

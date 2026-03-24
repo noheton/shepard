@@ -2,6 +2,7 @@ package de.dlr.shepard.data.timeseries.repositories;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
@@ -40,10 +41,14 @@ public class TimeseriesDataPointRepository {
    *                              Timestamp')
    */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
-  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
+  public void insertManyDataPoints(
+    List<TimeseriesDataPoint> entities,
+    long timeseriesId,
+    DataPointValueType valueType
+  ) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesId, valueType);
 
       try {
         query.executeUpdate();
@@ -108,13 +113,12 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    TimeseriesEntity timeseriesEntity
+    long timeseriesId,
+    DataPointValueType valueType
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
-      "INSERT INTO timeseries_data_points (timeseries_id, time, " +
-      getColumnName(timeseriesEntity.getValueType()) +
-      ") values "
+      "INSERT INTO timeseries_data_points (timeseries_id, time, " + getColumnName(valueType) + ") values "
     );
     queryString.append(
       IntStream.range(startInclusive, endExclusive)
@@ -123,16 +127,16 @@ public class TimeseriesDataPointRepository {
     );
     queryString.append(
       " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(valueType) +
       " = " +
       "EXCLUDED." +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(valueType) +
       ";"
     );
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
-    query.setParameter("timeseriesid", timeseriesEntity.getId());
+    query.setParameter("timeseriesid", timeseriesId);
 
     IntStream.range(startInclusive, endExclusive).forEach(index -> {
       query.setParameter("time" + index, entities.get(index).getTimestamp());

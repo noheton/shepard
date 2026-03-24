@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.io;
 
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotBlank;
@@ -43,5 +44,16 @@ public class TimeseriesIO {
     this.location = timeseriesEntity.getLocation();
     this.symbolicName = timeseriesEntity.getSymbolicName();
     this.field = timeseriesEntity.getField();
+  }
+
+  public TimeseriesIO(Timeseries ts) {
+    this.id = ts.getTimeseriesId().intValue();
+    this.containerId = ts.getContainer().getId();
+    this.valueType = ts.getValueType();
+    this.measurement = ts.getMeasurement();
+    this.device = ts.getDevice();
+    this.location = ts.getLocation();
+    this.symbolicName = ts.getSymbolicName();
+    this.field = ts.getField();
   }
 }

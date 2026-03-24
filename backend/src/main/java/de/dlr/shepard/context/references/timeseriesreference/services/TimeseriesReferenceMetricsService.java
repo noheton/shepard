@@ -94,7 +94,7 @@ public class TimeseriesReferenceMetricsService {
     TimeseriesEntity timeseriesEntity;
 
     try {
-      timeseriesEntity = timeseriesService.getTimeseries(
+      timeseriesEntity = timeseriesService.getTimeseriesThrowingIfNotExists(
         timeseriesReference.getTimeseriesContainer().getId(),
         timeseries
       );

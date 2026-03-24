@@ -10,9 +10,9 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
@@ -224,7 +224,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
     List<TimeseriesFiveTuple> expTimeseries = new ArrayList<TimeseriesFiveTuple>();
 
@@ -295,7 +295,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
 
     assertEquals(
       0,

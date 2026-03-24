@@ -30,6 +30,7 @@ import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
@@ -88,8 +89,8 @@ public class ReferenceSearchServiceQuarkusTest {
   private static TimeseriesReference annoReference;
   private static TimeseriesReference noAnnoReference;
   private static TimeseriesContainer tsCon;
-  private static TimeseriesEntity timeseriesEntity1;
-  private static TimeseriesEntity timeseriesEntity2;
+  private static Timeseries timeseriesEntity1;
+  private static Timeseries timeseriesEntity2;
   private static SemanticRepository repository;
   private static User user;
   private static SemanticAnnotationIO AnnoToCreate;

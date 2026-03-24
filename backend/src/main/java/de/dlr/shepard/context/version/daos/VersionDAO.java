@@ -341,8 +341,4 @@ public class VersionDAO extends GenericDAO<Version> {
       """;
     runQuery(query, params);
   }
-
-  public Iterable<Version> findByQuery(String query) {
-    return findByQuery(query, Collections.emptyMap());
-  }
 }
