@@ -6,7 +6,6 @@ import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.context.version.entities.Version;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -24,8 +23,7 @@ public class VersionDAO extends GenericDAO<Version> {
    * @return the found version
    */
   public Version find(UUID id) {
-    Version version = session.load(getEntityType(), id, DEPTH_ENTITY);
-    return version;
+    return session.load(getEntityType(), id, DEPTH_ENTITY);
   }
 
   @Override
@@ -34,21 +32,17 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public List<Version> findAllVersions(long collectionId) {
-    ArrayList<Version> result = new ArrayList<Version>();
-    HashSet<Version> resultHashSet = new HashSet<Version>();
+    HashSet<Version> resultHashSet = new HashSet<>();
     Map<String, Object> paramsMap = new HashMap<>();
     String query = "";
     query = query + "MATCH (col:Collection)-[]->(ver:Version) WHERE col.shepardId = " + collectionId + " ";
     query = query + CypherQueryHelper.getReturnPart("ver", Neighborhood.EVERYTHING);
 
     var resultSet = findByQuery(query, paramsMap);
-    Iterator<Version> it = resultSet.iterator();
-    while (it.hasNext()) {
-      Version next = it.next();
+    for (Version next : resultSet) {
       resultHashSet.add(find(next.getUid()));
     }
-    for (Version ver : resultHashSet) result.add(ver);
-    return result;
+    return new ArrayList<>(resultHashSet);
   }
 
   public Version findHEADVersion(long collectionId) {
@@ -82,7 +76,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void createLink(long versionableEntityId, UUID versionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("versionableEntityId", versionableEntityId);
     params.put("versionUID", versionUID);
     String query =
@@ -101,7 +95,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   private void copyDataObjectCreatedByRelations(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -114,7 +108,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   private void copyDataObjects(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -128,7 +122,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   private void copyChildRelations(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -142,7 +136,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   private void copySuccessorRelations(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -162,7 +156,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyCollectionReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -180,7 +174,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyExternalDataObjectReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -198,7 +192,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyInternalDataObjectReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -215,7 +209,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void attachVersionAndCreatedByToDataObjectReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -229,7 +223,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyFileReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -252,7 +246,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyStructuredDataReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -278,7 +272,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyTimeseriesReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -304,7 +298,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void copyURIReferences(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -321,7 +315,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void addAnnotations(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
@@ -336,7 +330,7 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void removeHasPredecessor(UUID sourceVersionUID, UUID targetVersionUID) {
-    HashMap<String, Object> params = new HashMap<String, Object>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put("sourceVersionUID", sourceVersionUID);
     params.put("targetVersionUID", targetVersionUID);
     String query =
