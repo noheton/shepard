@@ -17,23 +17,17 @@ import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
-import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.file.services.FileReferenceService;
-import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileContainerService;
-import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
-import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
@@ -76,16 +70,10 @@ public class ExportServiceQuarkusTest {
   TimeseriesService timeseriesService;
 
   @Inject
-  StructuredDataContainerService structuredDataContainerService;
-
-  @Inject
   FileContainerService fileContainerService;
 
   @Inject
   FileReferenceService fileReferenceService;
-
-  @Inject
-  VersionDAO versionDAO;
 
   @Inject
   TimeseriesReferenceService timeseriesReferenceService;
@@ -97,22 +85,10 @@ public class ExportServiceQuarkusTest {
   TimeseriesContainerService timeseriesContainerService;
 
   @Inject
-  StructuredDataService structuredDataService;
-
-  @Inject
-  StructuredDataReferenceService structuredDataReferenceService;
-
-  @Inject
   DataObjectService dataObjectService;
 
   @Inject
   DataObjectReferenceService dataObjectReferenceService;
-
-  @Inject
-  VersionService versionService;
-
-  @Inject
-  CollectionReferenceService collectionReferenceService;
 
   private Collection collection;
   private User user;
