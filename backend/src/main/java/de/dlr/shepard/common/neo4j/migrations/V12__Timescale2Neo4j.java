@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jspecify.annotations.NonNull;
 import org.neo4j.cypherdsl.core.Cypher;
@@ -52,7 +53,7 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
     }
   }
 
-  private static void migrateTimeseriesMetadataToNeo4(MigrationContext context, ArrayList<Timeseries> tsList) {
+  private static void migrateTimeseriesMetadataToNeo4(MigrationContext context, List<Timeseries> tsList) {
     var session = context.getSession();
     var tx = session.beginTransaction();
     for (var ts : tsList) {
@@ -130,7 +131,7 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
       .getCypher();
   }
 
-  private @NonNull ArrayList<Timeseries> getTimeseriesListFromTimescale(Connection connection) throws SQLException {
+  private @NonNull List<Timeseries> getTimeseriesListFromTimescale(Connection connection) throws SQLException {
     var res = connection
       .prepareStatement(
         "select id, container_id, measurement, device, location, symbolic_name, field, value_type from timeseries"
