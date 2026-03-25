@@ -95,7 +95,7 @@ public class TimeseriesDataPointRepository {
 
   @Timed(value = "shepard.timeseries-data-point-aggregate.query")
   public List<TimeseriesDataPoint> queryAggregationFunction(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -221,7 +221,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectAggregationFunctionQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {

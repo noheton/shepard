@@ -84,37 +84,6 @@ public class TimeseriesService {
   }
 
   /**
-   * Returns a timeseries entity
-   *
-   * @param containerId timeseries container id
-   * @param timeseries timeseries id
-   * @return TimeseriesEntity
-   * @throws NotFoundException if the timeseries is not found
-   * @throws InvalidPathException if container with containerId is not accessible
-   * @throws InvalidAuthException if user has no read permissions on the timeseries container
-   */
-  @Deprecated
-  public TimeseriesEntity getTimeseriesThrowingIfNotExists(long containerId, TimeseriesFiveTuple timeseries) {
-    timeseriesContainerService.getContainer(containerId);
-
-    var timeseriesEntity = timeseriesRepository.findTimeseries(containerId, timeseries);
-    if (timeseriesEntity.isEmpty()) {
-      String errorMsg =
-        "Timeseries (%s, %s, %s, %s, %s) in container %s is null or deleted".formatted(
-            timeseries.getMeasurement(),
-            timeseries.getDevice(),
-            timeseries.getLocation(),
-            timeseries.getSymbolicName(),
-            timeseries.getField(),
-            containerId
-          );
-      Log.error(errorMsg);
-      throw new NotFoundException(errorMsg);
-    }
-    return timeseriesEntity.get();
-  }
-
-  /**
    * Deletes timeseries container by id
    *
    * @param containerId timeseries container id

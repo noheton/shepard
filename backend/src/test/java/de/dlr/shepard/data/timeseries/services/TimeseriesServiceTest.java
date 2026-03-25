@@ -384,7 +384,7 @@ public class TimeseriesServiceTest {
   }
 
   @Test
-  public void getTimeseries_timeseriesDoesNotExist_throwsNotFoundException() {
+  public void getTimeseries_timeseriesDoesNotExist_returnsEmpty() {
     TimeseriesFiveTuple nonExistingTimeseries = new TimeseriesFiveTuple(
       "nonExisting",
       "nonExisting",
@@ -401,9 +401,7 @@ public class TimeseriesServiceTest {
     containerIO.setName(containerName);
     var container = timeseriesContainerService.createContainer(containerIO);
 
-    assertThrowsExactly(NotFoundException.class, () ->
-      this.timeseriesService.getTimeseriesThrowingIfNotExists(container.getId(), nonExistingTimeseries)
-    );
+    assertEquals(Optional.empty(), this.timeseriesService.getTimeseries(container.getId(), nonExistingTimeseries));
   }
 
   @Test
