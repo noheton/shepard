@@ -8,20 +8,16 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
-import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.utilities.ObjectTypeEvaluator;
 import de.dlr.shepard.data.timeseries.utilities.TimeseriesValidator;
 import io.quarkus.narayana.jta.runtime.TransactionConfiguration;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -33,9 +29,6 @@ public class TimeseriesService {
 
   @Inject
   TimeseriesDAO timeseriesDAO;
-
-  @Inject
-  TimeseriesRepository timeseriesRepository;
 
   @Inject
   TimeseriesDataPointRepository timeseriesDataPointRepository;
@@ -111,41 +104,9 @@ public class TimeseriesService {
     TimeseriesDataPointsQueryParams queryParams
   ) {
     timeseriesContainerService.getContainer(containerId);
+    var ts = timeseriesDAO.findTimeseries(containerId, timeseries).orElseThrow();
 
-    return getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams);
-  }
-
-  /**
-   * Retrieve a list of DataPoints for a time-interval with options to grouping/
-   * time slicing, filling and aggregating.
-   * <p />
-   * This function does not check if the container specified by containerId is
-   * accessible.
-   * We add <code>@ActivateRequestContext</code> in order to call this method in a
-   * parallel stream.
-   * The container check relies on an active request context.
-   * However, the 'ActivateRequestContext' annotation does not allow for a
-   * container check.
-   *
-   * @param containerId timeseries container id
-   * @param timeseries 5-tuple identifying a timeseries
-   * @param queryParams additional query parameters
-   * @return List<TimeseriesDataPoint>
-   */
-  @ActivateRequestContext
-  public List<TimeseriesDataPoint> getDataPointsByTimeseriesActivatedRequestContext(
-    long containerId,
-    TimeseriesFiveTuple timeseries,
-    TimeseriesDataPointsQueryParams queryParams
-  ) {
-    Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
-
-    if (timeseriesEntity.isEmpty()) return Collections.emptyList();
-
-    int timeseriesId = timeseriesEntity.get().getId();
-    DataPointValueType valueType = timeseriesEntity.get().getValueType();
-
-    return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
+    return timeseriesDataPointRepository.queryDataPoints(ts.getTimeseriesId(), ts.getValueType(), queryParams);
   }
 
   public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
@@ -158,11 +119,16 @@ public class TimeseriesService {
     ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<>();
     timeseriesList
       .parallelStream()
+      .map(fiveTuple -> timeseriesDAO.findTimeseries(containerId, fiveTuple).orElseThrow())
       .forEach(timeseries ->
         timeseriesWithDataPointsQueue.add(
           new TimeseriesWithDataPoints(
-            timeseries,
-            getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
+            new TimeseriesFiveTuple(timeseries),
+            timeseriesDataPointRepository.queryDataPoints(
+              timeseries.getTimeseriesId(),
+              timeseries.getValueType(),
+              queryParams
+            )
           )
         )
       );

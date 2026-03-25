@@ -8,7 +8,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
-import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -20,9 +19,6 @@ import java.util.stream.Collectors;
 
 @RequestScoped
 public class TimeseriesReferenceMetricsService {
-
-  @Inject
-  TimeseriesRepository timeseriesRepository;
 
   @Inject
   TimeseriesService timeseriesService;

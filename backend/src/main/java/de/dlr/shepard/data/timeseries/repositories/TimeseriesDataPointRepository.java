@@ -11,6 +11,7 @@ import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.annotation.Timed;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -70,9 +71,24 @@ public class TimeseriesDataPointRepository {
     query.getResultList();
   }
 
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
+   * <p />
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
+   *
+   * @param timeseriesId timeseriesId identifying a timeseries
+   * @param valueType type of the timeseries values for column lookup
+   * @param queryParams additional query parameters
+   * @return List<TimeseriesDataPoint>
+   */
   @Timed(value = "shepard.timeseries-data-point.query")
+  @ActivateRequestContext
   public List<TimeseriesDataPoint> queryDataPoints(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -147,7 +163,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
