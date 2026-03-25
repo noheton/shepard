@@ -33,7 +33,7 @@ public class TimeseriesDataPointRepository {
    * Insert a list of timeseries data points into the database.
    *
    * @param entities         list of timeseries data points
-   * @param timeseries
+   * @param timeseriesId The ID of the timeseries
    * @throws InvalidBodyException can be thrown when 'entities' contains the same
    *                              timestamp more than once (read more in
    *                              architectural documentation: 'Building Block
