@@ -1,13 +1,12 @@
 package de.dlr.shepard.data.timeseries.io;
 
 import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-@Schema(name = "TimeseriesEntity")
+@Schema(name = "Timeseries")
 @Data
 public class TimeseriesIO {
 
@@ -34,17 +33,6 @@ public class TimeseriesIO {
 
   @NotBlank
   private final String field;
-
-  public TimeseriesIO(TimeseriesEntity timeseriesEntity) {
-    this.id = timeseriesEntity.getId();
-    this.containerId = timeseriesEntity.getContainerId();
-    this.valueType = timeseriesEntity.getValueType();
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
-  }
 
   public TimeseriesIO(Timeseries ts) {
     this.id = ts.getTimeseriesId().intValue();

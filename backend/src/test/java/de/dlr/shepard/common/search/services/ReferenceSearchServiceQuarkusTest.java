@@ -33,7 +33,6 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;

@@ -27,14 +27,6 @@ public class TimeseriesFiveTuple {
   @NotBlank
   private final String field;
 
-  public TimeseriesFiveTuple(TimeseriesEntity timeseriesEntity) {
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
-  }
-
   public TimeseriesFiveTuple(Timeseries ts) {
     this.measurement = ts.getMeasurement();
     this.device = ts.getDevice();
