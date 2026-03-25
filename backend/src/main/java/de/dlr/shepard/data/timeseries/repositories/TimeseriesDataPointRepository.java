@@ -4,41 +4,29 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.annotation.Timed;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hibernate.exception.DataException;
-import org.postgresql.PGConnection;
-import org.postgresql.copy.CopyManager;
 
 @RequestScoped
 public class TimeseriesDataPointRepository {
 
-  private final int INSERT_BATCH_SIZE = 20000;
+  private static final int INSERT_BATCH_SIZE = 20000;
 
   @PersistenceContext
   EntityManager entityManager;
-
-  @Inject
-  AgroalDataSource defaultDataSource;
 
   /**
    * Insert a list of timeseries data points into the database.
@@ -67,63 +55,6 @@ public class TimeseriesDataPointRepository {
         }
         throw ex;
       }
-    }
-  }
-
-  /**
-   * Insert a list of timeseries data points into the database using the COPY command.
-   * This is used by the influxdb migration but can also be used for csv import or
-   * similar scenarios.
-   * @param entities
-   * @param timeseriesEntity
-   */
-  @Timed(value = "shepard.timeseries-data-point.copy-insert")
-  public void insertManyDataPointsWithCopyCommand(
-    List<TimeseriesDataPoint> entities,
-    TimeseriesEntity timeseriesEntity
-  ) throws SQLException {
-    try (Connection conn = defaultDataSource.getConnection()) {
-      PGConnection pgConn = (PGConnection) conn.unwrap(PGConnection.class);
-      CopyManager copyManager = pgConn.getCopyAPI();
-
-      var columnName = getColumnName(timeseriesEntity.getValueType());
-      var sb = new StringBuilder();
-
-      timeseriesEntity.getId();
-
-      // Strings must be quoted in double quotes in case they contain a comma which is also the delimiter
-      if (timeseriesEntity.getValueType() == DataPointValueType.String) {
-        for (int i = 0; i < entities.size(); i++) {
-          TimeseriesDataPoint entity = entities.get(i);
-          sb
-            .append(timeseriesEntity.getId())
-            .append(",")
-            .append(entity.getTimestamp())
-            .append(",\"")
-            .append(entity.getValue())
-            .append("\"\n");
-        }
-      } else {
-        for (int i = 0; i < entities.size(); i++) {
-          TimeseriesDataPoint entity = entities.get(i);
-          sb
-            .append(timeseriesEntity.getId())
-            .append(",")
-            .append(entity.getTimestamp())
-            .append(",")
-            .append(entity.getValue())
-            .append("\n");
-        }
-      }
-
-      InputStream input = new ByteArrayInputStream(sb.toString().getBytes());
-      String sql =
-        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);".formatted(columnName);
-
-      copyManager.copyIn(sql, input);
-    } catch (IOException ex) {
-      Log.errorf("IOException during copy insert: %s", ex.getMessage());
-      throw new RuntimeException("IO Error while inserting data points", ex);
     }
   }
 
