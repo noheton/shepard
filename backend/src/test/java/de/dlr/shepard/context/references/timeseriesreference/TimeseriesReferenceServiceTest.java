@@ -26,10 +26,10 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -239,11 +239,11 @@ public class TimeseriesReferenceServiceTest {
     when(timeseriesContainerService.getContainer(300L)).thenReturn(container);
     when(
       timeseriesDAO.find(
-        timeseries.getMeasurement(),
-        timeseries.getDevice(),
-        timeseries.getLocation(),
-        timeseries.getSymbolicName(),
-        timeseries.getField()
+        timeseries.measurement(),
+        timeseries.device(),
+        timeseries.location(),
+        timeseries.symbolicName(),
+        timeseries.field()
       )
     ).thenReturn(new ReferencedTimeseriesNodeEntity(timeseries));
     when(timeseriesReferenceDAO.createOrUpdate(toCreate)).thenReturn(created);
@@ -320,11 +320,11 @@ public class TimeseriesReferenceServiceTest {
     when(timeseriesContainerService.getContainer(container.getId())).thenReturn(container);
     when(
       timeseriesDAO.find(
-        timeseries.getMeasurement(),
-        timeseries.getDevice(),
-        timeseries.getLocation(),
-        timeseries.getSymbolicName(),
-        timeseries.getField()
+        timeseries.measurement(),
+        timeseries.device(),
+        timeseries.location(),
+        timeseries.symbolicName(),
+        timeseries.field()
       )
     ).thenReturn(null);
     when(timeseriesReferenceDAO.createOrUpdate(toCreate)).thenReturn(created);

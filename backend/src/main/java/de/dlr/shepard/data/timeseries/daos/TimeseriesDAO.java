@@ -55,15 +55,15 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
   public Optional<Timeseries> findTimeseries(long containerId, TimeseriesFiveTuple tsFiveTuple) {
     var ts = node(TIMESERIES).withProperties(
       "measurement",
-      Cypher.literalOf(tsFiveTuple.getMeasurement()),
+      Cypher.literalOf(tsFiveTuple.measurement()),
       "device",
-      Cypher.literalOf(tsFiveTuple.getDevice()),
+      Cypher.literalOf(tsFiveTuple.device()),
       "location",
-      Cypher.literalOf(tsFiveTuple.getLocation()),
+      Cypher.literalOf(tsFiveTuple.location()),
       "symbolicName",
-      Cypher.literalOf(tsFiveTuple.getSymbolicName()),
+      Cypher.literalOf(tsFiveTuple.symbolicName()),
       "field",
-      Cypher.literalOf(tsFiveTuple.getField())
+      Cypher.literalOf(tsFiveTuple.field())
     );
     var tsc = node(TIMESERIES_CONTAINER);
     var query = match(ts.relationshipTo(tsc, IS_IN_CONTAINER))

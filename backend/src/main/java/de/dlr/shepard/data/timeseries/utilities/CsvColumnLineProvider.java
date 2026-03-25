@@ -88,11 +88,11 @@ public class CsvColumnLineProvider implements CsvLineProvider {
     for (int i = 0; i < size; i++) {
       header[i + 1] = String.join(
         "-",
-        timeseriesArray[i].getMeasurement(),
-        timeseriesArray[i].getDevice(),
-        timeseriesArray[i].getLocation(),
-        timeseriesArray[i].getSymbolicName(),
-        timeseriesArray[i].getField()
+        timeseriesArray[i].measurement(),
+        timeseriesArray[i].device(),
+        timeseriesArray[i].location(),
+        timeseriesArray[i].symbolicName(),
+        timeseriesArray[i].field()
       );
     }
     csvWriter.writeNext(header, false);

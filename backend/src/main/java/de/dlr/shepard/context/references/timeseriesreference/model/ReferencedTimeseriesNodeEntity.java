@@ -51,11 +51,11 @@ public class ReferencedTimeseriesNodeEntity implements HasId {
   }
 
   public ReferencedTimeseriesNodeEntity(TimeseriesFiveTuple timeseries) {
-    this.measurement = timeseries.getMeasurement();
-    this.device = timeseries.getDevice();
-    this.location = timeseries.getLocation();
-    this.symbolicName = timeseries.getSymbolicName();
-    this.field = timeseries.getField();
+    this.measurement = timeseries.measurement();
+    this.device = timeseries.device();
+    this.location = timeseries.location();
+    this.symbolicName = timeseries.symbolicName();
+    this.field = timeseries.field();
   }
 
   public TimeseriesFiveTuple toTimeseries() {

@@ -178,13 +178,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     toCreate.setTimeseriesContainer(container);
 
     for (var ts : timeseriesReference.getTimeseries()) {
-      var found = timeseriesDAO.find(
-        ts.getMeasurement(),
-        ts.getDevice(),
-        ts.getLocation(),
-        ts.getSymbolicName(),
-        ts.getField()
-      );
+      var found = timeseriesDAO.find(ts.measurement(), ts.device(), ts.location(), ts.symbolicName(), ts.field());
       if (found != null) {
         toCreate.addTimeseries(found);
       } else {
@@ -377,19 +371,19 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     var measurementMatches = true;
     var fieldMatches = true;
     if (!device.isEmpty()) {
-      deviceMatches = device.contains(timeseries.getDevice());
+      deviceMatches = device.contains(timeseries.device());
     }
     if (!location.isEmpty()) {
-      locationMatches = location.contains(timeseries.getLocation());
+      locationMatches = location.contains(timeseries.location());
     }
     if (!symName.isEmpty()) {
-      symbolicNameMatches = symName.contains(timeseries.getSymbolicName());
+      symbolicNameMatches = symName.contains(timeseries.symbolicName());
     }
     if (!measurement.isEmpty()) {
-      measurementMatches = measurement.contains(timeseries.getMeasurement());
+      measurementMatches = measurement.contains(timeseries.measurement());
     }
     if (!field.isEmpty()) {
-      fieldMatches = field.contains(timeseries.getField());
+      fieldMatches = field.contains(timeseries.field());
     }
     return deviceMatches && locationMatches && symbolicNameMatches && measurementMatches && fieldMatches;
   }

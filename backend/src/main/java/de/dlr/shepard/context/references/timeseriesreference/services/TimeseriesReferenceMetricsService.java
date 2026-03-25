@@ -91,11 +91,11 @@ public class TimeseriesReferenceMetricsService {
       .orElseThrow(() -> {
         String errorMsg =
           "Timeseries (%s, %s, %s, %s, %s) in the referenced TimeseriesContainer under TimeseriesReference with id %s".formatted(
-              timeseries.getMeasurement(),
-              timeseries.getDevice(),
-              timeseries.getLocation(),
-              timeseries.getSymbolicName(),
-              timeseries.getField(),
+              timeseries.measurement(),
+              timeseries.device(),
+              timeseries.location(),
+              timeseries.symbolicName(),
+              timeseries.field(),
               timeseriesReferenceId
             );
         Log.error(errorMsg);

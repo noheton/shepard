@@ -216,11 +216,11 @@ public class TimeseriesService {
     TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
     var container = timeseriesContainerService.getContainer(containerId);
     var tsToCreate = new Timeseries(
-      timeseries.getMeasurement(),
-      timeseries.getDevice(),
-      timeseries.getLocation(),
-      timeseries.getSymbolicName(),
-      timeseries.getField(),
+      timeseries.measurement(),
+      timeseries.device(),
+      timeseries.location(),
+      timeseries.symbolicName(),
+      timeseries.field(),
       incomingValueType,
       timeseriesDAO.getCurrentMaximumTimeseriesId() + 1,
       container

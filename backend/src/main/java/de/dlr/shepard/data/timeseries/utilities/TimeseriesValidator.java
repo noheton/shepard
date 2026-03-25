@@ -10,11 +10,11 @@ public class TimeseriesValidator {
     "%s is not allowed to be empty or contain one of those characters: 'Space, Comma, Point, Slash'";
 
   public static void assertTimeseriesPropertiesAreValid(TimeseriesFiveTuple timeseries) {
-    validateString(timeseries.getDevice(), "device");
-    validateString(timeseries.getField(), "field");
-    validateString(timeseries.getLocation(), "location");
-    validateString(timeseries.getMeasurement(), "measurement");
-    validateString(timeseries.getSymbolicName(), "symbolicName");
+    validateString(timeseries.device(), "device");
+    validateString(timeseries.field(), "field");
+    validateString(timeseries.location(), "location");
+    validateString(timeseries.measurement(), "measurement");
+    validateString(timeseries.symbolicName(), "symbolicName");
   }
 
   private static void validateString(String input, String fieldName) {

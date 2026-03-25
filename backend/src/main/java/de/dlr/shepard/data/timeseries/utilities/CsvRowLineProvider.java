@@ -53,11 +53,11 @@ public class CsvRowLineProvider implements CsvLineProvider {
       csvWriter.write(
         new CsvTimeseriesDataPoint(
           dataPoint.getTimestamp(),
-          timeseries.getMeasurement(),
-          timeseries.getDevice(),
-          timeseries.getLocation(),
-          timeseries.getSymbolicName(),
-          timeseries.getField(),
+          timeseries.measurement(),
+          timeseries.device(),
+          timeseries.location(),
+          timeseries.symbolicName(),
+          timeseries.field(),
           dataPoint.getValue()
         )
       );
