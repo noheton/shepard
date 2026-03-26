@@ -101,7 +101,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
    *
    * @param collectionShepardId
    * @param dataObjectShepardId
-   * @param shepardId
+   * @param timeseriesReferenceShepardId
    * @param versionUID the version UUID
    * @return TimeseriesReference
    * @throws InvalidPathException If reference with Id does not exist or is deleted, or if collection or dataObject Id of path is not valid
@@ -111,14 +111,15 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   public TimeseriesReference getReference(
     long collectionShepardId,
     long dataObjectShepardId,
-    long shepardId,
+    long timeseriesReferenceShepardId,
     UUID versionUID
   ) {
     dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
 
-    TimeseriesReference reference = timeseriesReferenceDAO.findByShepardId(shepardId, versionUID);
+    TimeseriesReference reference = timeseriesReferenceDAO.findByShepardId(timeseriesReferenceShepardId, versionUID);
     if (reference == null || reference.isDeleted()) {
-      String errorMsg = "ID ERROR - Timeseries Reference with id %s is null or deleted".formatted(shepardId);
+      String errorMsg =
+        "ID ERROR - Timeseries Reference with id %s is null or deleted".formatted(timeseriesReferenceShepardId);
       Log.error(errorMsg);
       throw new InvalidPathException(errorMsg);
     }
@@ -254,8 +255,12 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       throw new NotFoundException(ex.getMessage());
     }
 
-    var filteredTimeseriesList = reference
+    var timeseriesList = reference
       .getReferencedTimeseriesList()
+      .stream()
+      .map(ReferencedTimeseriesNodeEntity::toTimeseries)
+      .toList();
+    var filteredTimeseriesList = timeseriesList
       .stream()
       .filter(timeseries ->
         matchFilter(
@@ -283,7 +288,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   public InputStream exportReferencedTimeseriesByShepardId(
     long collectionShepardId,
     long dataObjectShepardId,
-    long timeseriesShepardId,
+    long timeseriesReferenceShepardId,
     AggregateFunction function,
     Long timeSliceNanoseconds,
     FillOption fillOption,
@@ -294,11 +299,18 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> fieldFilterSet,
     CsvFormat csvFormat
   ) throws IOException {
-    TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
+    TimeseriesReference reference = getReference(
+      collectionShepardId,
+      dataObjectShepardId,
+      timeseriesReferenceShepardId,
+      null
+    );
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
       String errorMsg =
-        "The referenced TimeseriesContainer is null or deleted for Reference with id %s".formatted(timeseriesShepardId);
+        "The referenced TimeseriesContainer is null or deleted for Reference with id %s".formatted(
+            timeseriesReferenceShepardId
+          );
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
