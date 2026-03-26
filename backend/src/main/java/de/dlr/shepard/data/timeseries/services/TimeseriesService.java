@@ -104,8 +104,9 @@ public class TimeseriesService {
     TimeseriesDataPointsQueryParams queryParams
   ) {
     timeseriesContainerService.getContainer(containerId);
-    var ts = timeseriesDAO.findTimeseries(containerId, timeseries).orElseThrow();
-
+    var tsOpt = timeseriesDAO.findTimeseries(containerId, timeseries);
+    if (tsOpt.isEmpty()) return List.of();
+    var ts = tsOpt.get();
     return timeseriesDataPointRepository.queryDataPoints(ts.getTimeseriesId(), ts.getValueType(), queryParams);
   }
 
@@ -119,7 +120,9 @@ public class TimeseriesService {
     ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<>();
     timeseriesList
       .parallelStream()
-      .map(fiveTuple -> timeseriesDAO.findTimeseries(containerId, fiveTuple).orElseThrow())
+      .map(fiveTuple -> timeseriesDAO.findTimeseries(containerId, fiveTuple))
+      .filter(Optional::isPresent)
+      .map(Optional::get)
       .forEach(timeseries ->
         timeseriesWithDataPointsQueue.add(
           new TimeseriesWithDataPoints(
