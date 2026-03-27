@@ -19,6 +19,7 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
@@ -35,6 +36,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -53,21 +56,27 @@ public class TimeseriesServiceTest {
   @InjectMock
   AuthenticationContext authenticationContext;
 
-  private final String containerName = "AnotherContainer";
+  private final String containerName = "TimeseriesServiceTestContainer";
   private final long startDate = InstantHelper.fromGermanDate("01.01.2024").toNano();
   private final long endDate = InstantHelper.now().addHours(1).toNano();
+
+  private TimeseriesContainer container;
+
+  @BeforeEach
+  public void setUpEach() {
+    User user = new User("Testuser");
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    container = timeseriesContainerService.createContainer(containerIO);
+  }
 
   @Test
   @Transactional
   public void saveDataPoints_addDoubleValue_success() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(123.456);
@@ -93,14 +102,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_addBooleanValue_success() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointBoolean(true);
@@ -126,13 +127,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_addStringValue_success() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointString("Hello World");
@@ -158,14 +152,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_addIntegerValue_success() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(42);
@@ -191,14 +177,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_toExistingTimeseries_success() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
@@ -225,14 +203,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_requiredFieldsMissing_throwsException() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = new TimeseriesFiveTuple("", "", "", "", "");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
@@ -248,14 +218,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_throwsException() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
 
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
@@ -282,14 +244,6 @@ public class TimeseriesServiceTest {
       configProviderMock.when(ConfigProvider::getConfig).thenReturn(config);
       when(config.getOptionalValue("shepard.autoconvert-int", Boolean.class)).thenReturn(Optional.of(true));
 
-      User user = new User("Testuser");
-      TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-      containerIO.setName(containerName);
-
-      when(userService.getCurrentUser()).thenReturn(user);
-      when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-      var container = timeseriesContainerService.createContainer(containerIO);
       var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
 
       List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
@@ -329,14 +283,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getTimeseriesAvailable_timeseriesExists_returnsTimeseries() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
@@ -393,14 +339,6 @@ public class TimeseriesServiceTest {
       "nonExisting"
     );
 
-    User user = new User("Testuser");
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-    var container = timeseriesContainerService.createContainer(containerIO);
-
     assertEquals(Optional.empty(), this.timeseriesService.getTimeseries(container.getId(), nonExistingTimeseries));
   }
 
@@ -417,14 +355,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnsAll() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -453,14 +383,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnsThreeOutOfFive() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -484,14 +406,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnNone() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -519,14 +433,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoint_non_unique_returnOverwritten() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-1");
 
     // setup batch of distinct timeseries data points
@@ -570,14 +476,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoint_non_unique_batch_returnExceptionOrSilentlyOverwrite() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-2");
 
     // setup batch of non-unique timestamp values - we expect an exception to be thrown
