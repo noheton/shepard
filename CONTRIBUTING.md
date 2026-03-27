@@ -45,7 +45,8 @@ shepard uses three types of branches to organize development:
 
 ## Setting up a Fullstack Developing Environment
 
-Pleas see `infrastructure-local/README.md`
+For setting up
+Please see `infrastructure-local/README.md`
 
 ## How Can I Contribute?
 

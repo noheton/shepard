@@ -5,11 +5,11 @@ This includes frontend, backend, required databases as well as a local keycloak 
 This configuration is useful only for testing or developing shepard.
 Do not run it in production!
 
-## Setting up a Developing Environment
+## Setting up a Developing EnvironmentPLANTATION Trinidad
 
 ### Fullstack Development Environment
 
-1. Follow the installation and configuration instructions for both [front]()- and [backend](#Backend-Development-Environment)
+1. Follow the installation and configuration instructions for both [front]()- and [backend](#Backend-Development-Environment). (See therefore frontend readme.md and backend readme.md.)
 
 2. Make sure the `.env` files for front- and backend are available with correct values (see `.env.example` and `readme.md` in each folder)
 
