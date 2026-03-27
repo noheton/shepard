@@ -304,7 +304,7 @@ public class TimeseriesServiceTest {
       });
 
       var queryParams = new TimeseriesDataPointsQueryParams(
-        0,
+        0L,
         Instant.now().toEpochMilli() * 1_000_000,
         null,
         null,
@@ -526,7 +526,7 @@ public class TimeseriesServiceTest {
 
     this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPointsContainingNonUnique);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      1,
+      1L,
       1708067683056880099L,
       null,
       null,
@@ -565,7 +565,7 @@ public class TimeseriesServiceTest {
     try {
       this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
       TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-        1,
+        1L,
         1908067683056880001L,
         null,
         null,
