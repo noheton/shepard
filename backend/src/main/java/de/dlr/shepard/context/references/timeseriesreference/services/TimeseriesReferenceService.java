@@ -11,10 +11,9 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
-import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
+import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesFiveTupleDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
@@ -55,7 +54,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   DataObjectService dataObjectService;
 
   @Inject
-  ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
+  TimeseriesFiveTupleDAO timeseriesDAO;
 
   @Inject
   UserService userService;
@@ -188,7 +187,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       if (found != null) {
         toCreate.addTimeseries(found);
       } else {
-        toCreate.addTimeseries(new ReferencedTimeseriesNodeEntity(ts));
+        toCreate.addTimeseries(ts);
       }
     }
     TimeseriesReference created = timeseriesReferenceDAO.createOrUpdate(toCreate);
@@ -255,8 +254,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       throw new NotFoundException(ex.getMessage());
     }
 
-    var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
-    var filteredTimeseriesList = timeseriesList
+    var filteredTimeseriesList = reference
+      .getReferencedTimeseriesList()
       .stream()
       .filter(timeseries ->
         matchFilter(
@@ -310,8 +309,8 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       throw new InvalidRequestException(ex.getMessage());
     }
 
-    var timeseriesList = reference.getReferencedTimeseriesList().stream().map(ts -> ts.toTimeseries()).toList();
-    var filteredTimeseriesList = timeseriesList
+    var filteredTimeseriesList = reference
+      .getReferencedTimeseriesList()
       .stream()
       .filter(timeseries ->
         matchFilter(

@@ -1,16 +1,26 @@
 package de.dlr.shepard.data.timeseries.model;
 
+import de.dlr.shepard.common.util.HasId;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.neo4j.ogm.annotation.GeneratedValue;
+import org.neo4j.ogm.annotation.Id;
+import org.neo4j.ogm.annotation.NodeEntity;
 
+@NodeEntity
 @Data
 @EqualsAndHashCode
 @NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class TimeseriesFiveTuple {
+@RequiredArgsConstructor
+public class TimeseriesFiveTuple implements HasId {
+
+  @Id
+  @GeneratedValue
+  @EqualsAndHashCode.Exclude
+  private Long id;
 
   @NotBlank
   private final String measurement;
@@ -33,5 +43,10 @@ public class TimeseriesFiveTuple {
     this.location = timeseriesEntity.getLocation();
     this.symbolicName = timeseriesEntity.getSymbolicName();
     this.field = timeseriesEntity.getField();
+  }
+
+  @Override
+  public String getUniqueId() {
+    return TimeseriesUniqueIdBuilder.buildUniqueId(measurement, device, location, symbolicName, field);
   }
 }

@@ -37,7 +37,7 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
     super(ref);
     this.start = ref.getStart();
     this.end = ref.getEnd();
-    this.timeseries = ref.getReferencedTimeseriesList().stream().map(entity -> entity.toTimeseries()).toList();
+    this.timeseries = ref.getReferencedTimeseriesList();
     this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
   }
 }
