@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
@@ -42,7 +41,7 @@ public class TimeseriesReferenceIOTest {
     timeseriesReference.setDataObject(dataObject);
     timeseriesReference.setEnd(213);
     timeseriesReference.setStart(123);
-    timeseriesReference.setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(ts)));
+    timeseriesReference.setReferencedTimeseriesList(List.of(ts));
     timeseriesReference.setTimeseriesContainer(container);
 
     var converted = new TimeseriesReferenceIO(timeseriesReference);
@@ -75,7 +74,7 @@ public class TimeseriesReferenceIOTest {
     timeseriesReference.setDataObject(dataObject);
     timeseriesReference.setEnd(213);
     timeseriesReference.setStart(123);
-    timeseriesReference.setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(ts)));
+    timeseriesReference.setReferencedTimeseriesList(List.of(ts));
 
     var converted = new TimeseriesReferenceIO(timeseriesReference);
     assertEquals(timeseriesReference.getShepardId(), converted.getId());
