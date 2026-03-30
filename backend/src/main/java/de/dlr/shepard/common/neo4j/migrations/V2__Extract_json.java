@@ -12,55 +12,33 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
 import org.neo4j.driver.Session;
 
 public class V2__Extract_json implements JavaBasedMigration {
 
-  @AllArgsConstructor
-  class ShepardFile {
+  record ShepardFile(String oid, String filename, long createdAt, String md5) {}
 
-    public final String oid;
-    public final String filename;
-    public final long createdAt;
-    public final String md5;
-  }
+  record StructuredData(String oid, String name, long createdAt) {}
 
-  @AllArgsConstructor
-  class StructuredData {
-
-    public final String oid;
-    public final String name;
-    public final long createdAt;
-  }
-
-  @AllArgsConstructor
-  class Timeseries {
-
-    public final String measurement;
-    public final String device;
-    public final String location;
-    public final String symbolicName;
-    public final String field;
-  }
+  record Timeseries(String measurement, String device, String location, String symbolicName, String field) {}
 
   private static final String FILES_JSON = "filesJson";
   private static final String STRUCTURED_DATAS_JSON = "structuredDatasJson";
   private static final String TIMESERIES_JSON = "timeseriesJson";
-  private ObjectMapper mapper = new ObjectMapper();
+  private final ObjectMapper mapper = new ObjectMapper();
 
   @Override
   public void apply(MigrationContext context) {
     try (Session session = context.getSession()) {
-      Log.info("Running migration (1/5)");
+      Log.info("Running V2 migration (1/5)");
       migrateFileContainer(session);
-      Log.info("Running migration (2/5)");
+      Log.info("Running V2 migration (2/5)");
       migrateFileReferences(session);
-      Log.info("Running migration (3/5)");
+      Log.info("Running V2 migration (3/5)");
       migrateStructuredDataContainer(session);
-      Log.info("Running migration (4/5)");
+      Log.info("Running V2 migration (4/5)");
       migrateStructuredDataReferences(session);
-      Log.info("Running migration (5/5)");
+      Log.info("Running V2 migration (5/5)");
       migrateTimeseriesReferences(session);
     } catch (Exception e) {
       Log.error("Error while running migration: ", e);
@@ -276,7 +254,7 @@ public class V2__Extract_json implements JavaBasedMigration {
   }
 
   private long parseDate(String date) {
-    if (date.length() == 0) return 0L;
+    if (date.isEmpty()) return 0L;
     Date parsed;
     try {
       parsed = new StdDateFormat().parse(date);
