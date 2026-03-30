@@ -120,4 +120,13 @@ public class TestNeo4jMigrations {
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
   }
+
+  @Test
+  public void testV11() {
+    var legacyReferencedTimeseries = node("Timeseries");
+    create(legacyReferencedTimeseries);
+    runMigrations("V11");
+    var migratedTimeseries = node("TimeseriesTuple");
+    testNodeMigrated(legacyReferencedTimeseries, migratedTimeseries);
+  }
 }
