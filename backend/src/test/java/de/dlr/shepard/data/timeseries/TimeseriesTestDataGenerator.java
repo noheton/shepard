@@ -3,7 +3,6 @@ package de.dlr.shepard.data.timeseries;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
-
 import java.time.Instant;
 import java.util.List;
 
