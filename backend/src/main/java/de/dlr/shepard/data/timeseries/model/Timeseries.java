@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "timeseries")
-public class TimeseriesEntity {
+public class Timeseries {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,9 +41,9 @@ public class TimeseriesEntity {
   @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)
   private DataPointValueType valueType;
 
-  public TimeseriesEntity() {}
+  public Timeseries() {}
 
-  public TimeseriesEntity(
+  public Timeseries(
     long containerId,
     String measurement,
     String field,
@@ -61,7 +61,7 @@ public class TimeseriesEntity {
     this.valueType = valueType;
   }
 
-  public TimeseriesEntity(long containerId, TimeseriesTuple timeseries, DataPointValueType valueType) {
+  public Timeseries(long containerId, TimeseriesTuple timeseries, DataPointValueType valueType) {
     this(
       containerId,
       timeseries.getMeasurement(),

@@ -4,7 +4,7 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -44,7 +44,7 @@ public class TimeseriesDataPointRepository {
    * Insert a list of timeseries data points into the database.
    *
    * @param entities         list of timeseries data points
-   * @param timeseriesEntity
+   * @param timeseries
    * @throws InvalidBodyException can be thrown when 'entities' contains the same
    *                              timestamp more than once (read more in
    *                              architectural documentation: 'Building Block
@@ -52,10 +52,10 @@ public class TimeseriesDataPointRepository {
    *                              Timestamp')
    */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
-  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
+  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, Timeseries timeseries) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseries);
 
       try {
         query.executeUpdate();
@@ -75,28 +75,28 @@ public class TimeseriesDataPointRepository {
    * This is used by the influxdb migration but can also be used for csv import or
    * similar scenarios.
    * @param entities
-   * @param timeseriesEntity
+   * @param timeseries
    */
   @Timed(value = "shepard.timeseries-data-point.copy-insert")
   public void insertManyDataPointsWithCopyCommand(
     List<TimeseriesDataPoint> entities,
-    TimeseriesEntity timeseriesEntity
+    Timeseries timeseries
   ) throws SQLException {
     try (Connection conn = defaultDataSource.getConnection()) {
       PGConnection pgConn = (PGConnection) conn.unwrap(PGConnection.class);
       CopyManager copyManager = pgConn.getCopyAPI();
 
-      var columnName = getColumnName(timeseriesEntity.getValueType());
+      var columnName = getColumnName(timeseries.getValueType());
       var sb = new StringBuilder();
 
-      timeseriesEntity.getId();
+      timeseries.getId();
 
       // Strings must be quoted in double quotes in case they contain a comma which is also the delimiter
-      if (timeseriesEntity.getValueType() == DataPointValueType.String) {
+      if (timeseries.getValueType() == DataPointValueType.String) {
         for (int i = 0; i < entities.size(); i++) {
           TimeseriesDataPoint entity = entities.get(i);
           sb
-            .append(timeseriesEntity.getId())
+            .append(timeseries.getId())
             .append(",")
             .append(entity.getTimestamp())
             .append(",\"")
@@ -107,7 +107,7 @@ public class TimeseriesDataPointRepository {
         for (int i = 0; i < entities.size(); i++) {
           TimeseriesDataPoint entity = entities.get(i);
           sb
-            .append(timeseriesEntity.getId())
+            .append(timeseries.getId())
             .append(",")
             .append(entity.getTimestamp())
             .append(",")
@@ -177,12 +177,12 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    TimeseriesEntity timeseriesEntity
+    Timeseries timeseries
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
       "INSERT INTO timeseries_data_points (timeseries_id, time, " +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(timeseries.getValueType()) +
       ") values "
     );
     queryString.append(
@@ -192,16 +192,16 @@ public class TimeseriesDataPointRepository {
     );
     queryString.append(
       " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(timeseries.getValueType()) +
       " = " +
       "EXCLUDED." +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(timeseries.getValueType()) +
       ";"
     );
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
-    query.setParameter("timeseriesid", timeseriesEntity.getId());
+    query.setParameter("timeseriesid", timeseries.getId());
 
     IntStream.range(startInclusive, endExclusive).forEach(index -> {
       query.setParameter("time" + index, entities.get(index).getTimestamp());

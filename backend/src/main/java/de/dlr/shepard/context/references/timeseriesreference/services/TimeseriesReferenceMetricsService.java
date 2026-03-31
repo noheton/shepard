@@ -4,7 +4,7 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
@@ -91,7 +91,7 @@ public class TimeseriesReferenceMetricsService {
       throw new NotFoundException(errorMsg);
     }
 
-    TimeseriesEntity timeseriesEntity;
+    Timeseries timeseriesEntity;
 
     try {
       timeseriesEntity = timeseriesService.getTimeseries(

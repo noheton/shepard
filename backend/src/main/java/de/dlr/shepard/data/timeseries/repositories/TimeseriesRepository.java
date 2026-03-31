@@ -1,6 +1,6 @@
 package de.dlr.shepard.data.timeseries.repositories;
 
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
@@ -13,13 +13,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequestScoped
-public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEntity, Integer> {
+public class TimeseriesRepository implements PanacheRepositoryBase<Timeseries, Integer> {
 
   @PersistenceContext
   EntityManager entityManager;
 
-  public Optional<TimeseriesEntity> findTimeseries(long containerId, TimeseriesTuple timeseries) {
-    List<TimeseriesEntity> timeseriesList =
+  public Optional<Timeseries> findTimeseries(long containerId, TimeseriesTuple timeseries) {
+    List<Timeseries> timeseriesList =
       this.find(
           "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",
           containerId,
@@ -41,10 +41,10 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
     return Optional.of(timeseriesList.getFirst());
   }
 
-  public void upsert(long containerId, TimeseriesEntity entity) {
+  public void upsert(long containerId, Timeseries entity) {
     var rowCount = entityManager
       .createQuery(
-        "insert into TimeseriesEntity (containerId, measurement, field, symbolicName, device, location, valueType)" +
+        "insert into Timeseries (containerId, measurement, field, symbolicName, device, location, valueType)" +
         " values (:containerId, :measurement, :field, :symbolicName, :device, :location, :valueType)" +
         " on conflict(containerId, measurement, field, symbolicName, device, location) do nothing"
       )
@@ -65,7 +65,7 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
   @Timed(value = "shepard.timeseries.delete")
   public void deleteByContainerId(long containerId) {
     var rowCount = entityManager
-      .createQuery("delete from TimeseriesEntity where containerId = :containerId")
+      .createQuery("delete from Timeseries where containerId = :containerId")
       .setParameter("containerId", containerId)
       .executeUpdate();
 

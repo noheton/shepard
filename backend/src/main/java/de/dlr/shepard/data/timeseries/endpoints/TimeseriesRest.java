@@ -12,8 +12,8 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
@@ -199,13 +199,13 @@ public class TimeseriesRest {
       content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
     ) @Valid TimeseriesWithDataPoints payload
   ) {
-    TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
+    Timeseries timeseries = timeseriesService.saveDataPoints(
       containerId,
       payload.getTimeseries(),
       payload.getPoints()
     );
 
-    return Response.ok(new TimeseriesTuple(timeseriesEntity)).status(Status.CREATED).build();
+    return Response.ok(new TimeseriesTuple(timeseries)).status(Status.CREATED).build();
   }
 
   @Deprecated(forRemoval = true)
@@ -228,15 +228,15 @@ public class TimeseriesRest {
   public Response getTimeseriesAvailable(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
   ) {
-    List<TimeseriesEntity> timeseriesEntityList;
+    List<Timeseries> timeseriesList;
 
     try {
-      timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+      timeseriesList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
     } catch (InvalidPathException | InvalidAuthException e) {
       return Response.ok(Collections.emptyList()).build();
     }
 
-    List<TimeseriesTuple> timeseriesListWithoutId = timeseriesEntityList
+    List<TimeseriesTuple> timeseriesListWithoutId = timeseriesList
       .stream()
       .map(entity -> new TimeseriesTuple(entity))
       .toList();
