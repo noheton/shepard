@@ -10,7 +10,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Mode;
@@ -35,7 +35,7 @@ public class TimeseriesReferenceTest extends BaseTestCase {
   @Test
   public void addTimeseriesTest() {
     var ref = new TimeseriesReference(1L);
-    var ts = new TimeseriesFiveTuple("meas", "dev", "loc", "symname", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symname", "field");
     ref.addTimeseries(ts);
 
     assertEquals(List.of(ts), ref.getReferencedTimeseriesList());
