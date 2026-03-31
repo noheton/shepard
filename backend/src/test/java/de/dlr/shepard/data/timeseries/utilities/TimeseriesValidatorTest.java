@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.utilities;
 
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -9,13 +9,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_everythingIsCorrect_noException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple(
-      "measurement",
-      "field",
-      "device",
-      "location",
-      "symbolicName"
-    );
+    TimeseriesTuple timeseries = new TimeseriesTuple("measurement", "field", "device", "location", "symbolicName");
 
     Assertions.assertDoesNotThrow(() -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -24,7 +18,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_everythingIsNull_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple(null, null, null, null, null);
+    TimeseriesTuple timeseries = new TimeseriesTuple(null, null, null, null, null);
 
     InvalidBodyException thrown = Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -34,7 +28,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_containsSpace_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("my measurement", "a", "b", "c", "d");
+    TimeseriesTuple timeseries = new TimeseriesTuple("my measurement", "a", "b", "c", "d");
 
     Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -43,7 +37,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_containsPoint_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("my.measurement", "a", "b", "c", "d");
+    TimeseriesTuple timeseries = new TimeseriesTuple("my.measurement", "a", "b", "c", "d");
 
     Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -52,7 +46,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_containsComma_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("my,measurement", "a", "b", "c", "d");
+    TimeseriesTuple timeseries = new TimeseriesTuple("my,measurement", "a", "b", "c", "d");
 
     Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -61,7 +55,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_containsSlash_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("my/measurement", "a", "b", "c", "d");
+    TimeseriesTuple timeseries = new TimeseriesTuple("my/measurement", "a", "b", "c", "d");
 
     Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
@@ -70,7 +64,7 @@ public class TimeseriesValidatorTest {
 
   @Test
   public void assertTimeseriesPropertiesAreValid_emptyString_throwsException() {
-    TimeseriesFiveTuple timeseries = new TimeseriesFiveTuple("", "a", "b", "c", "d");
+    TimeseriesTuple timeseries = new TimeseriesTuple("", "a", "b", "c", "d");
 
     Assertions.assertThrowsExactly(InvalidBodyException.class, () -> {
       TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);

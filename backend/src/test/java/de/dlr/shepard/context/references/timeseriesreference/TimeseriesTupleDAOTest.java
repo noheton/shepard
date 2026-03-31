@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
-import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesFiveTupleDAO;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesTupleDAO;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,26 +15,26 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.neo4j.ogm.session.Session;
 
-public class TimeseriesFiveTupleDAOTest extends BaseTestCase {
+public class TimeseriesTupleDAOTest extends BaseTestCase {
 
   @Mock
   private Session session;
 
   @InjectMocks
-  private TimeseriesFiveTupleDAO dao = new TimeseriesFiveTupleDAO();
+  private TimeseriesTupleDAO dao = new TimeseriesTupleDAO();
 
   @Test
   public void findTest() {
-    var ts = new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "value");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "value");
     var query =
       """
-      MATCH (t:TimeseriesFiveTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) \
+      MATCH (t:TimeseriesTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) \
       MATCH path=(t)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN t, nodes(path), relationships(path)""";
 
     when(
       session.query(
-        TimeseriesFiveTuple.class,
+        TimeseriesTuple.class,
         query,
         Map.of("measurement", "meas", "device", "dev", "location", "loc", "symbolicName", "symName", "field", "value")
       )
@@ -47,13 +47,13 @@ public class TimeseriesFiveTupleDAOTest extends BaseTestCase {
   public void findTest_notFound() {
     var query =
       """
-      MATCH (t:TimeseriesFiveTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) \
+      MATCH (t:TimeseriesTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) \
       MATCH path=(t)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN t, nodes(path), relationships(path)""";
 
     when(
       session.query(
-        TimeseriesFiveTuple.class,
+        TimeseriesTuple.class,
         query,
         Map.of("measurement", "meas", "device", "dev", "location", "loc", "symbolicName", "symName", "field", "value")
       )

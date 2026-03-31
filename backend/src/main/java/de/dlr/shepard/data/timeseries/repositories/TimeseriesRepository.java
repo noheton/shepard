@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.repositories;
 
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.logging.Log;
@@ -18,7 +18,7 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
   @PersistenceContext
   EntityManager entityManager;
 
-  public Optional<TimeseriesEntity> findTimeseries(long containerId, TimeseriesFiveTuple timeseries) {
+  public Optional<TimeseriesEntity> findTimeseries(long containerId, TimeseriesTuple timeseries) {
     List<TimeseriesEntity> timeseriesList =
       this.find(
           "containerId = ?1 and measurement = ?2 and field = ?3 and symbolicName = ?4 and device = ?5 and location = ?6",

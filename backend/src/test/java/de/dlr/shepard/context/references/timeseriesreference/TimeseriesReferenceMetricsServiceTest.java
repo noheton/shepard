@@ -18,7 +18,7 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.services.InstantHelper;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
@@ -62,7 +62,7 @@ public class TimeseriesReferenceMetricsServiceTest {
   AuthenticationContext authenticationContext;
 
   private long containerId, collectionId, dataobjectId, timeseriesReferenceId, stringTimeseriesReferenceId, booleanTimeseriesReferenceId;
-  private TimeseriesFiveTuple timeseries, stringTimeseries, booleanTimeseries;
+  private TimeseriesTuple timeseries, stringTimeseries, booleanTimeseries;
 
   @BeforeEach
   public void setup() {
@@ -92,9 +92,9 @@ public class TimeseriesReferenceMetricsServiceTest {
 
     var timeseriesContainer = timeseriesContainerService.createContainer(containerIO);
     containerId = timeseriesContainer.getId();
-    timeseries = new TimeseriesFiveTuple("measurement", "device", "location", "symbolicName", "field");
-    stringTimeseries = new TimeseriesFiveTuple("stringMeasurement", "device", "location", "symbolicName", "field");
-    booleanTimeseries = new TimeseriesFiveTuple("booleanMeasurement", "device", "location", "symbolicName", "field");
+    timeseries = new TimeseriesTuple("measurement", "device", "location", "symbolicName", "field");
+    stringTimeseries = new TimeseriesTuple("stringMeasurement", "device", "location", "symbolicName", "field");
+    booleanTimeseries = new TimeseriesTuple("booleanMeasurement", "device", "location", "symbolicName", "field");
 
     InstantHelper instantHelper = InstantHelper.fromGermanDate("01.01.2024");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(

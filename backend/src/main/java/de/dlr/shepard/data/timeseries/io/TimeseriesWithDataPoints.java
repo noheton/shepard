@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.timeseries.io;
 
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -15,7 +15,7 @@ import lombok.Data;
 public class TimeseriesWithDataPoints {
 
   @NotNull
-  private final TimeseriesFiveTuple timeseries;
+  private final TimeseriesTuple timeseries;
 
   @NotEmpty
   private final List<TimeseriesDataPoint> points;

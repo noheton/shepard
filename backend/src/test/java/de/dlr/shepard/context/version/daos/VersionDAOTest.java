@@ -455,7 +455,7 @@ public class VersionDAOTest extends BaseTestCase {
     when(copyTimeseriesReferencesResult.queryStatistics()).thenReturn(queryStatistics);
     StringBuffer copyPayloadQueryBuffer = new StringBuffer();
     copyPayloadQueryBuffer.append(
-      "MATCH (v_source:Version)<-[:has_version]-(tsr_source:TimeseriesReference)-[:has_payload]->(ts:TimeseriesFiveTuple), "
+      "MATCH (v_source:Version)<-[:has_version]-(tsr_source:TimeseriesReference)-[:has_payload]->(ts:TimeseriesTuple), "
     );
     copyPayloadQueryBuffer.append("(v_target:Version)<-[:has_version]-(tsr_target:TimeseriesReference) ");
     copyPayloadQueryBuffer.append(
