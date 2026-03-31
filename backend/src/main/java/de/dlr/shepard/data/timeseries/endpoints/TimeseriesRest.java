@@ -21,6 +21,7 @@ import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -49,6 +50,7 @@ import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -151,7 +153,6 @@ public class TimeseriesRest {
   @Transactional
   public Response createTimeseriesContainer(
     @RequestBody(
-      required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
     ) @Valid TimeseriesContainerIO timeseriesContainer
   ) {
@@ -195,17 +196,12 @@ public class TimeseriesRest {
   public Response createTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @RequestBody(
-      required = true,
       content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
     ) @Valid TimeseriesWithDataPoints payload
   ) {
-    Timeseries timeseries = timeseriesService.saveDataPoints(
-      containerId,
-      payload.getTimeseries(),
-      payload.getPoints()
-    );
+    Timeseries timeseries = timeseriesService.saveDataPoints(containerId, payload.getTimeseries(), payload.getPoints());
 
-    return Response.ok(new TimeseriesTuple(timeseries)).status(Status.CREATED).build();
+    return Response.ok(timeseries.getTimeseriesTuple()).status(Status.CREATED).build();
   }
 
   @Deprecated(forRemoval = true)
@@ -238,7 +234,7 @@ public class TimeseriesRest {
 
     List<TimeseriesTuple> timeseriesListWithoutId = timeseriesList
       .stream()
-      .map(entity -> new TimeseriesTuple(entity))
+      .map(Timeseries::getTimeseriesTuple)
       .toList();
 
     return Response.ok(timeseriesListWithoutId).build();
@@ -274,7 +270,7 @@ public class TimeseriesRest {
     var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
     var timeseriesList = timeseriesEntityList
       .stream()
-      .map(entity -> new TimeseriesIO(entity))
+      .map(TimeseriesIO::new)
       .filter(
         entity ->
           (measurement == null || measurement.isEmpty() || entity.getMeasurement().equals(measurement)) &&
@@ -290,7 +286,7 @@ public class TimeseriesRest {
   @GET
   @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES + "/{" + Constants.TIMESERIES_ID + "}")
   @Tag(name = Constants.TIMESERIES_CONTAINER)
-  @Operation(description = "Get timeseries by id.")
+  @Operation(description = "Get the 5-tuple describing a timeseries by its id.")
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -302,10 +298,10 @@ public class TimeseriesRest {
   @APIResponse(responseCode = "404", description = "not found")
   @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
   public Response getTimeseriesById(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
-    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Long timeseriesId
   ) {
-    var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId);
     return Response.ok(new TimeseriesIO(timeseries)).build();
   }
 
@@ -486,7 +482,6 @@ public class TimeseriesRest {
   public PermissionsIO editTimeseriesPermissions(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @RequestBody(
-      required = true,
       content = @Content(schema = @Schema(implementation = PermissionsIO.class))
     ) @Valid PermissionsIO permissions
   ) {
@@ -523,7 +518,7 @@ public class TimeseriesRest {
   @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
   public interface UploadItemSchema {}
 
-  public class UploadFormSchema {
+  public static class UploadFormSchema {
 
     @Schema(required = true)
     public UploadItemSchema file;

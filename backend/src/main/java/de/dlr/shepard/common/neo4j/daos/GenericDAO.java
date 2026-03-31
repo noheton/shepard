@@ -7,8 +7,11 @@ import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.TraversalRules;
 import io.quarkus.logging.Log;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.neo4j.ogm.cypher.Filter;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
@@ -113,6 +116,11 @@ public abstract class GenericDAO<T> {
     Log.debugf("queryParams: %s", str.toString());
     Iterable<T> iter = session.query(getEntityType(), query, paramsMap);
     return iter;
+  }
+
+  public Stream<T> findByQuery(String query) {
+    var results = session.query(getEntityType(), query, Collections.emptyMap());
+    return StreamSupport.stream(results.spliterator(), false);
   }
 
   public boolean runQuery(String query, Map<String, Object> paramsMap) {

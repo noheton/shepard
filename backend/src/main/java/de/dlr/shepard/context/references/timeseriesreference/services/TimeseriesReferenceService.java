@@ -11,8 +11,8 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
-import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesTupleDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesTupleDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.version.services.VersionService;
@@ -255,11 +255,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       throw new NotFoundException(ex.getMessage());
     }
 
-    var timeseriesList = reference
-      .getReferencedTimeseriesList()
-      .stream()
-      .map(ReferencedTimeseriesNodeEntity::toTimeseries)
-      .toList();
+    var timeseriesList = reference.getReferencedTimeseriesList().stream().toList();
     var filteredTimeseriesList = timeseriesList
       .stream()
       .filter(timeseries ->

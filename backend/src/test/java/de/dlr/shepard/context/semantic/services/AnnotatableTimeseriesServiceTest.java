@@ -63,7 +63,7 @@ public class AnnotatableTimeseriesServiceTest {
   private SemanticRepository semanticRepository;
   private final String iri = "http://purl.obolibrary.org/obo/uo.owl";
 
-  private final int nonExistingTimeseriesId = 9999999;
+  private final long nonExistingTimeseriesId = 9999999L;
   private final long nonExistingAnnotationId = 9999999L;
 
   @BeforeAll
@@ -86,7 +86,7 @@ public class AnnotatableTimeseriesServiceTest {
   @BeforeEach
   public void setupEach() {
     Mockito.when(semanticAnnotationService.validateTerm(semanticRepository, iri)).thenReturn("prop", "value");
-    Mockito.when(timeseriesService.getTimeseriesById(eq(container.getId()), eq(nonExistingTimeseriesId))).thenThrow(
+    Mockito.when(timeseriesService.getTimeseriesById(eq(nonExistingTimeseriesId))).thenThrow(
       new InvalidPathException()
     );
   }

@@ -4,14 +4,11 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
-import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.annotation.Timed;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
@@ -41,10 +38,14 @@ public class TimeseriesDataPointRepository {
    *                              Timestamp')
    */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
-  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, Timeseries timeseries) {
+  public void insertManyDataPoints(
+    List<TimeseriesDataPoint> entities,
+    long timeseriesId,
+    DataPointValueType valueType
+  ) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseries);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesId, valueType);
 
       try {
         query.executeUpdate();
@@ -66,9 +67,23 @@ public class TimeseriesDataPointRepository {
     query.getResultList();
   }
 
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
+   * <p />
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
+   *
+   * @param timeseriesId timeseriesId identifying a timeseries
+   * @param valueType type of the timeseries values for column lookup
+   * @param queryParams additional query parameters
+   * @return List<TimeseriesDataPoint>
+   */
   @Timed(value = "shepard.timeseries-data-point.query")
   public List<TimeseriesDataPoint> queryDataPoints(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -91,7 +106,7 @@ public class TimeseriesDataPointRepository {
 
   @Timed(value = "shepard.timeseries-data-point-aggregate.query")
   public List<TimeseriesDataPoint> queryAggregationFunction(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -109,13 +124,12 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    Timeseries timeseries
+    long timeseriesId,
+    DataPointValueType valueType
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
-      "INSERT INTO timeseries_data_points (timeseries_id, time, " +
-      getColumnName(timeseries.getValueType()) +
-      ") values "
+      "INSERT INTO timeseries_data_points (timeseries_id, time, " + getColumnName(valueType) + ") values "
     );
     queryString.append(
       IntStream.range(startInclusive, endExclusive)
@@ -124,16 +138,16 @@ public class TimeseriesDataPointRepository {
     );
     queryString.append(
       " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseries.getValueType()) +
+      getColumnName(valueType) +
       " = " +
       "EXCLUDED." +
-      getColumnName(timeseries.getValueType()) +
+      getColumnName(valueType) +
       ";"
     );
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
-    query.setParameter("timeseriesid", timeseries.getId());
+    query.setParameter("timeseriesid", timeseriesId);
 
     IntStream.range(startInclusive, endExclusive).forEach(index -> {
       query.setParameter("time" + index, entities.get(index).getTimestamp());
@@ -144,7 +158,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -218,7 +232,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectAggregationFunctionQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
