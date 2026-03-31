@@ -7,9 +7,10 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.util.Date;
 import java.util.List;
+
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +30,7 @@ public class TimeseriesReferenceIOTest {
     var dataObject = new DataObject(2L);
     dataObject.setShepardId(500L);
     var container = new TimeseriesContainer(3L);
-    var ts = new TimeseriesFiveTuple("meas", "dev", "loc", "name", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "name", "field");
 
     var timeseriesReference = new TimeseriesReference(1L);
     timeseriesReference.setShepardId(341L);
@@ -64,7 +65,7 @@ public class TimeseriesReferenceIOTest {
     var user = new User("bob");
     var dataObject = new DataObject(2L);
     dataObject.setShepardId(3485L);
-    var ts = new TimeseriesFiveTuple("meas", "dev", "loc", "name", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "name", "field");
 
     var timeseriesReference = new TimeseriesReference(1L);
     timeseriesReference.setShepardId(234L);

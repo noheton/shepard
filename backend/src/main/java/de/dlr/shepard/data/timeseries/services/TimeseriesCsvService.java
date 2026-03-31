@@ -2,7 +2,7 @@ package de.dlr.shepard.data.timeseries.services;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import jakarta.enterprise.context.RequestScoped;
@@ -31,7 +31,7 @@ public class TimeseriesCsvService {
    */
   public InputStream exportTimeseriesDataToCsv(
     long containerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     TimeseriesDataPointsQueryParams queryParams,
     CsvFormat csvFormat
   ) {
@@ -56,7 +56,7 @@ public class TimeseriesCsvService {
    */
   public InputStream exportManyTimeseriesWithDataPointsToCsv(
     Long containerId,
-    List<TimeseriesFiveTuple> timeseriesList,
+    List<TimeseriesTuple> timeseriesList,
     TimeseriesDataPointsQueryParams queryParams,
     CsvFormat csvFormat
   ) throws IOException {

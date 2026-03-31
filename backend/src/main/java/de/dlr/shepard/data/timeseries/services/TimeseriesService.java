@@ -4,10 +4,7 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.*;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
@@ -99,7 +96,7 @@ public class TimeseriesService {
    * @throws InvalidPathException if container with containerId is not accessible
    * @throws InvalidAuthException if user has no read permissions on the timeseries container
    */
-  public TimeseriesEntity getTimeseries(long containerId, TimeseriesFiveTuple timeseries) {
+  public TimeseriesEntity getTimeseries(long containerId, TimeseriesTuple timeseries) {
     timeseriesContainerService.getContainer(containerId);
 
     var timeseriesEntity = timeseriesRepository.findTimeseries(containerId, timeseries);
@@ -143,7 +140,7 @@ public class TimeseriesService {
    */
   public List<TimeseriesDataPoint> getDataPointsByTimeseries(
     long containerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     TimeseriesDataPointsQueryParams queryParams
   ) {
     timeseriesContainerService.getContainer(containerId);
@@ -171,7 +168,7 @@ public class TimeseriesService {
   @ActivateRequestContext
   public List<TimeseriesDataPoint> getDataPointsByTimeseriesActivatedRequestContext(
     long containerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     TimeseriesDataPointsQueryParams queryParams
   ) {
     Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
@@ -186,7 +183,7 @@ public class TimeseriesService {
 
   public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
     Long containerId,
-    List<TimeseriesFiveTuple> timeseriesList,
+    List<TimeseriesTuple> timeseriesList,
     TimeseriesDataPointsQueryParams queryParams
   ) {
     timeseriesContainerService.getContainer(containerId);
@@ -219,7 +216,7 @@ public class TimeseriesService {
    */
   public TimeseriesEntity saveDataPoints(
     long timeseriesContainerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     List<TimeseriesDataPoint> dataPoints
   ) {
     timeseriesContainerService.getContainer(timeseriesContainerId);
@@ -248,7 +245,7 @@ public class TimeseriesService {
   @TransactionConfiguration(timeout = 6000)
   public TimeseriesEntity saveDataPoints(
     long timeseriesContainerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     List<TimeseriesDataPoint> dataPoints,
     DataPointValueType dataType
   ) {
@@ -277,7 +274,7 @@ public class TimeseriesService {
 
   private TimeseriesEntity getOrCreateTimeseries(
     long containerId,
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     DataPointValueType incomingValueType
   ) {
     timeseriesContainerService.getContainer(containerId);

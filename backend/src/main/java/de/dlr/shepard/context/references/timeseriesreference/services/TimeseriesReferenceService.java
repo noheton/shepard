@@ -11,7 +11,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
-import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesFiveTupleDAO;
+import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesTupleDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -19,7 +19,7 @@ import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -54,7 +54,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   DataObjectService dataObjectService;
 
   @Inject
-  TimeseriesFiveTupleDAO timeseriesDAO;
+  TimeseriesTupleDAO timeseriesDAO;
 
   @Inject
   UserService userService;
@@ -363,7 +363,7 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
   }
 
   private boolean matchFilter(
-    TimeseriesFiveTuple timeseries,
+    TimeseriesTuple timeseries,
     Set<String> device,
     Set<String> location,
     Set<String> symName,

@@ -294,7 +294,7 @@ public class VersionDAO extends GenericDAO<Version> {
       """;
     runQuery(query, params);
     query = """
-    MATCH (v_source:Version)<-[:has_version]-(tsr_source:TimeseriesReference)-[:has_payload]->(ts:TimeseriesFiveTuple),
+    MATCH (v_source:Version)<-[:has_version]-(tsr_source:TimeseriesReference)-[:has_payload]->(ts:TimeseriesTuple),
     (v_target:Version)<-[:has_version]-(tsr_target:TimeseriesReference)
     WHERE v_source.uid = $sourceVersionUID AND v_target.uid = $targetVersionUID
     AND tsr_source.shepardId = tsr_target.shepardId

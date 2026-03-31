@@ -2,14 +2,14 @@ package de.dlr.shepard.data.timeseries;
 
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.time.Instant;
 import java.util.List;
 
 public final class TimeseriesTestDataGenerator {
 
-  public static TimeseriesFiveTuple generateTimeseries(String measurement) {
-    return new TimeseriesFiveTuple(measurement, "device", "location", "symbolicName", "field");
+  public static TimeseriesTuple generateTimeseries(String measurement) {
+    return new TimeseriesTuple(measurement, "device", "location", "symbolicName", "field");
   }
 
   public static TimeseriesWithDataPoints generateTimeseriesWithDataPoints(
