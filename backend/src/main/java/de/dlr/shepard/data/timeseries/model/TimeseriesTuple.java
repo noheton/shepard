@@ -15,7 +15,7 @@ import org.neo4j.ogm.annotation.NodeEntity;
 @EqualsAndHashCode
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor
-public class TimeseriesFiveTuple implements HasId {
+public class TimeseriesTuple implements HasId {
 
   @Id
   @GeneratedValue
@@ -37,7 +37,7 @@ public class TimeseriesFiveTuple implements HasId {
   @NotBlank
   private final String field;
 
-  public TimeseriesFiveTuple(TimeseriesEntity timeseriesEntity) {
+  public TimeseriesTuple(TimeseriesEntity timeseriesEntity) {
     this.measurement = timeseriesEntity.getMeasurement();
     this.device = timeseriesEntity.getDevice();
     this.location = timeseriesEntity.getLocation();

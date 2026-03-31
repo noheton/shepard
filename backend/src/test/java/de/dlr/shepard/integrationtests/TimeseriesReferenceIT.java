@@ -11,7 +11,7 @@ import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesRefere
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesFiveTuple;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.ArrayList;
 import java.util.List;
@@ -75,7 +75,7 @@ public class TimeseriesReferenceIT extends BaseTestCaseIT {
     }
 
     timeseriesWithDataPoints = new TimeseriesWithDataPoints(
-      new TimeseriesFiveTuple("meas", "dev", "loc", "symName", "field"),
+      new TimeseriesTuple("meas", "dev", "loc", "symName", "field"),
       dataPoints
     );
 
