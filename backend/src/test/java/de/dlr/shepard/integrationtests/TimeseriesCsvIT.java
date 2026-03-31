@@ -8,7 +8,7 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.restassured.http.ContentType;
 import java.io.File;
@@ -84,8 +84,8 @@ public class TimeseriesCsvIT extends BaseTestCaseIT {
   @Test
   @Order(2)
   public void createReference() {
-    var ts1 = new Timeseries("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
-    var ts2 = new Timeseries("Different", "Just", "For", "Testing", "Purposes");
+    var ts1 = new TimeseriesTuple("MyMeas", "MyDev", "MyLoc", "MySymName", "value");
+    var ts2 = new TimeseriesTuple("Different", "Just", "For", "Testing", "Purposes");
     var timeseries = List.of(ts1, ts2);
 
     var toCreate = new TimeseriesReferenceIO();

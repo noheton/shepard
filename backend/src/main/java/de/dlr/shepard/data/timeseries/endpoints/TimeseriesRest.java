@@ -12,9 +12,9 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIOMapper;
 import de.dlr.shepard.data.timeseries.io.TimeseriesIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -185,7 +185,7 @@ public class TimeseriesRest {
   @APIResponse(
     description = "created",
     responseCode = "201",
-    content = @Content(schema = @Schema(implementation = Timeseries.class))
+    content = @Content(schema = @Schema(implementation = TimeseriesTuple.class))
   )
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")
@@ -205,7 +205,7 @@ public class TimeseriesRest {
       payload.getPoints()
     );
 
-    return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
+    return Response.ok(new TimeseriesTuple(timeseriesEntity)).status(Status.CREATED).build();
   }
 
   @Deprecated(forRemoval = true)
@@ -218,7 +218,7 @@ public class TimeseriesRest {
   @APIResponse(
     description = "ok",
     responseCode = "200",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesTuple.class))
   )
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")
@@ -236,9 +236,9 @@ public class TimeseriesRest {
       return Response.ok(Collections.emptyList()).build();
     }
 
-    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
+    List<TimeseriesTuple> timeseriesListWithoutId = timeseriesEntityList
       .stream()
-      .map(entity -> new Timeseries(entity))
+      .map(entity -> new TimeseriesTuple(entity))
       .toList();
 
     return Response.ok(timeseriesListWithoutId).build();
@@ -346,7 +346,7 @@ public class TimeseriesRest {
     @QueryParam(Constants.GROUP_BY) Long groupBy,
     @QueryParam(Constants.FILLOPTION) FillOption fillOption
   ) throws Exception {
-    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    var timeseries = new TimeseriesTuple(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
       end,
@@ -402,7 +402,7 @@ public class TimeseriesRest {
     @QueryParam(Constants.FILLOPTION) FillOption fillOption,
     @QueryParam(Constants.CSVFORMAT) @DefaultValue(value = "ROW") CsvFormat csvFormat
   ) throws IOException {
-    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    var timeseries = new TimeseriesTuple(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
       start,
       end,

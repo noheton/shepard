@@ -2,12 +2,12 @@ package de.dlr.shepard.context.references.timeseriesreference.daos;
 
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Map;
 
 @RequestScoped
-public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTimeseriesNodeEntity> {
+public class TimeseriesTupleDAO extends GenericDAO<TimeseriesTuple> {
 
   /**
    * Find a timeseries by properties
@@ -20,7 +20,7 @@ public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTime
    *
    * @return the found timeseries or null
    */
-  public ReferencedTimeseriesNodeEntity find(
+  public TimeseriesTuple find(
     String measurement,
     String device,
     String location,
@@ -28,7 +28,7 @@ public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTime
     String field
   ) {
     var query =
-      "MATCH (t:Timeseries { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s".formatted(
+      "MATCH (t:TimeseriesTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s".formatted(
           CypherQueryHelper.getReturnPart("t")
         );
     Map<String, Object> params = Map.of(
@@ -48,7 +48,7 @@ public class ReferencedTimeseriesNodeEntityDAO extends GenericDAO<ReferencedTime
   }
 
   @Override
-  public Class<ReferencedTimeseriesNodeEntity> getEntityType() {
-    return ReferencedTimeseriesNodeEntity.class;
+  public Class<TimeseriesTuple> getEntityType() {
+    return TimeseriesTuple.class;
   }
 }
