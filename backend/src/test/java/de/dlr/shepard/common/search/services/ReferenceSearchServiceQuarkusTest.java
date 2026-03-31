@@ -85,8 +85,8 @@ public class ReferenceSearchServiceQuarkusTest {
   private static TimeseriesReference annoReference;
   private static TimeseriesReference noAnnoReference;
   private static TimeseriesContainer tsCon;
-  private static TimeseriesEntity timeseriesEntity1;
-  private static TimeseriesEntity timeseriesEntity2;
+  private static Timeseries timeseries1;
+  private static Timeseries timeseries2;
   private static SemanticRepository repository;
   private static User user;
   private static SemanticAnnotationIO AnnoToCreate;
@@ -129,8 +129,8 @@ public class ReferenceSearchServiceQuarkusTest {
       points.add(dataPoint);
       TimeseriesTuple ts1 = new TimeseriesTuple("m1", "d1", "l1", "s1", "f1");
       TimeseriesTuple ts2 = new TimeseriesTuple("m2", "d2", "l2", "s2", "f2");
-      timeseriesEntity1 = timeseriesService.saveDataPoints(tsCon.getId(), ts1, points);
-      timeseriesEntity2 = timeseriesService.saveDataPoints(tsCon.getId(), ts2, points);
+      timeseries1 = timeseriesService.saveDataPoints(tsCon.getId(), ts1, points);
+      timeseries2 = timeseriesService.saveDataPoints(tsCon.getId(), ts2, points);
       //create annotation for first timeseries
       SemanticRepositoryIO repToCreate = new SemanticRepositoryIO();
       repToCreate.setName("SemanticRepository");

@@ -56,7 +56,7 @@ public class TimeseriesService {
    * @param containerId of the given timeseries container
    * @return a list of timeseries entities
    */
-  public List<TimeseriesEntity> getTimeseriesAvailable(long containerId) {
+  public List<Timeseries> getTimeseriesAvailable(long containerId) {
     timeseriesContainerService.getContainer(containerId);
 
     return timeseriesRepository.list("containerId", containerId);
@@ -67,13 +67,13 @@ public class TimeseriesService {
    *
    * @param containerId timeseries container id
    * @param id
-   * @return TimeseriesEntity
+   * @return Timeseries
    * @throws InvalidPathException if container with containerId or the timeseries
    *                              are not accessible
    * @throws InvalidAuthException if user has no read permissions on the
    *                              timeseries container
    */
-  public TimeseriesEntity getTimeseriesById(long containerId, int id) {
+  public Timeseries getTimeseriesById(long containerId, int id) {
     timeseriesContainerService.getContainer(containerId);
 
     var timeseries = timeseriesRepository.findById(id);
@@ -91,12 +91,12 @@ public class TimeseriesService {
    *
    * @param containerId timeseries container id
    * @param timeseries
-   * @return TimeseriesEntity
+   * @return Timeseries
    * @throws NotFoundException if the timeseries is not found
    * @throws InvalidPathException if container with containerId is not accessible
    * @throws InvalidAuthException if user has no read permissions on the timeseries container
    */
-  public TimeseriesEntity getTimeseries(long containerId, TimeseriesTuple timeseries) {
+  public Timeseries getTimeseries(long containerId, TimeseriesTuple timeseries) {
     timeseriesContainerService.getContainer(containerId);
 
     var timeseriesEntity = timeseriesRepository.findTimeseries(containerId, timeseries);
@@ -171,7 +171,7 @@ public class TimeseriesService {
     TimeseriesTuple timeseries,
     TimeseriesDataPointsQueryParams queryParams
   ) {
-    Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
+    Optional<Timeseries> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
 
     if (timeseriesEntity.isEmpty()) return Collections.emptyList();
 
@@ -214,7 +214,7 @@ public class TimeseriesService {
    * @param dataPoints            Data points to be added to the timeseries
    * @return created timeseries
    */
-  public TimeseriesEntity saveDataPoints(
+  public Timeseries saveDataPoints(
     long timeseriesContainerId,
     TimeseriesTuple timeseries,
     List<TimeseriesDataPoint> dataPoints
@@ -243,7 +243,7 @@ public class TimeseriesService {
    */
   @Transactional(Transactional.TxType.REQUIRES_NEW)
   @TransactionConfiguration(timeout = 6000)
-  public TimeseriesEntity saveDataPoints(
+  public Timeseries saveDataPoints(
     long timeseriesContainerId,
     TimeseriesTuple timeseries,
     List<TimeseriesDataPoint> dataPoints,
@@ -252,7 +252,7 @@ public class TimeseriesService {
     timeseriesContainerService.getContainer(timeseriesContainerId);
     timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
 
-    TimeseriesEntity timeseriesEntity = getOrCreateTimeseries(timeseriesContainerId, timeseries, dataType);
+    Timeseries timeseriesEntity = getOrCreateTimeseries(timeseriesContainerId, timeseries, dataType);
 
     assertDataPointsMatchTimeseriesValueType(timeseriesEntity, dataPoints);
 
@@ -264,15 +264,15 @@ public class TimeseriesService {
   @Deprecated
   @Transactional(Transactional.TxType.REQUIRES_NEW)
   @TransactionConfiguration(timeout = 6000)
-  public TimeseriesEntity repeatSaveDataPointsWithBatchInsert(
+  public Timeseries repeatSaveDataPointsWithBatchInsert(
     List<TimeseriesDataPoint> entities,
-    TimeseriesEntity timeseriesEntity
+    Timeseries timeseries
   ) {
-    timeseriesDataPointRepository.insertManyDataPoints(entities, timeseriesEntity);
-    return timeseriesEntity;
+    timeseriesDataPointRepository.insertManyDataPoints(entities, timeseries);
+    return timeseries;
   }
 
-  private TimeseriesEntity getOrCreateTimeseries(
+  private Timeseries getOrCreateTimeseries(
     long containerId,
     TimeseriesTuple timeseries,
     DataPointValueType incomingValueType
@@ -281,14 +281,14 @@ public class TimeseriesService {
     timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
     // try to find timeseries in db
-    Optional<TimeseriesEntity> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
+    Optional<Timeseries> matchingTimeseries = timeseriesRepository.findTimeseries(containerId, timeseries);
 
     if (matchingTimeseries.isPresent()) return matchingTimeseries.get();
 
     TimeseriesValidator.assertTimeseriesPropertiesAreValid(timeseries);
 
     // create new timeseries because it does not exist
-    TimeseriesEntity timeseriesEntity = new TimeseriesEntity(containerId, timeseries, incomingValueType);
+    Timeseries timeseriesEntity = new Timeseries(containerId, timeseries, incomingValueType);
     QuarkusTransaction.requiringNew()
       .run(() -> {
         this.timeseriesRepository.upsert(containerId, timeseriesEntity);
@@ -299,18 +299,18 @@ public class TimeseriesService {
   }
 
   private void assertDataPointsMatchTimeseriesValueType(
-    TimeseriesEntity timeseriesEntity,
+    Timeseries timeseries,
     List<TimeseriesDataPoint> dataPoints
   ) {
     for (TimeseriesDataPoint dataPoint : dataPoints) {
       DataPointValueType expectedType = ObjectTypeEvaluator.determineType(dataPoint.getValue()).orElseThrow(() ->
         new InvalidBodyException()
       );
-      assertValueTypeMatchesTimeseries(timeseriesEntity, expectedType);
+      assertValueTypeMatchesTimeseries(timeseries, expectedType);
     }
   }
 
-  private void assertValueTypeMatchesTimeseries(TimeseriesEntity timeseries, DataPointValueType incomingValueType) {
+  private void assertValueTypeMatchesTimeseries(Timeseries timeseries, DataPointValueType incomingValueType) {
     // If auto-conversion is enabled, allow transformation from Integer to Double
     if (
       autoConvertIntToDouble &&

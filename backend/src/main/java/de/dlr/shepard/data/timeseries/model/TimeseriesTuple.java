@@ -37,12 +37,12 @@ public class TimeseriesTuple implements HasId {
   @NotBlank
   private final String field;
 
-  public TimeseriesTuple(TimeseriesEntity timeseriesEntity) {
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
+  public TimeseriesTuple(Timeseries timeseries) {
+    this.measurement = timeseries.getMeasurement();
+    this.device = timeseries.getDevice();
+    this.location = timeseries.getLocation();
+    this.symbolicName = timeseries.getSymbolicName();
+    this.field = timeseries.getField();
   }
 
   @Override
