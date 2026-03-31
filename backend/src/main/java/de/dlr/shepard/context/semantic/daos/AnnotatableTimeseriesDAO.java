@@ -13,7 +13,7 @@ import org.neo4j.ogm.cypher.Filter;
 @RequestScoped
 public class AnnotatableTimeseriesDAO extends GenericDAO<AnnotatableTimeseries> {
 
-  public Optional<AnnotatableTimeseries> findByTimeseries(long containerId, int timeseriesId) {
+  public Optional<AnnotatableTimeseries> findByTimeseries(long containerId, long timeseriesId) {
     var containerFilter = new Filter("containerId", ComparisonOperator.EQUALS, containerId);
     var timeseriesFilter = new Filter("timeseriesId", ComparisonOperator.EQUALS, timeseriesId);
     return this.session.loadAll(AnnotatableTimeseries.class, containerFilter.and(timeseriesFilter), 2)

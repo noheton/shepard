@@ -27,8 +27,8 @@ public class AnnotatableTimeseriesService {
   @Inject
   TimeseriesContainerService timeseriesContainerService;
 
-  public SemanticAnnotation createAnnotation(long containerId, int timeseriesId, SemanticAnnotationIO annotationIO) {
-    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+  public SemanticAnnotation createAnnotation(long containerId, long timeseriesId, SemanticAnnotationIO annotationIO) {
+    timeseriesService.getTimeseriesById(timeseriesId);
     timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
     var annotatableTimeseries = dao
@@ -53,15 +53,15 @@ public class AnnotatableTimeseriesService {
     return annotation;
   }
 
-  public void deleteAnnotation(long containerId, int timeseriesId, long annotationId) {
-    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+  public void deleteAnnotation(long containerId, long timeseriesId, long annotationId) {
+    timeseriesService.getTimeseriesById(timeseriesId);
     timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
 
     dao.deleteAnnotation(annotationId);
   }
 
-  public List<SemanticAnnotation> getAnnotations(long containerId, int timeseriesId) {
-    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+  public List<SemanticAnnotation> getAnnotations(long containerId, long timeseriesId) {
+    timeseriesService.getTimeseriesById(timeseriesId);
 
     Optional<AnnotatableTimeseries> annotatableTimeseries = dao.findByTimeseries(containerId, timeseriesId);
     if (annotatableTimeseries.isPresent()) {
@@ -71,8 +71,8 @@ public class AnnotatableTimeseriesService {
     }
   }
 
-  public SemanticAnnotation getAnnotationById(long containerId, int timeseriesId, long annotationId) {
-    timeseriesService.getTimeseriesById(containerId, timeseriesId);
+  public SemanticAnnotation getAnnotationById(long containerId, long timeseriesId, long annotationId) {
+    timeseriesService.getTimeseriesById(timeseriesId);
 
     return dao.getAnnotationById(annotationId);
   }

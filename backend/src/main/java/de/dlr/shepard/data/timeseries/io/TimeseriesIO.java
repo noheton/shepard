@@ -11,7 +11,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class TimeseriesIO {
 
   @NotBlank
-  private final int id;
+  private final long id;
 
   @NotBlank
   private final long containerId;
@@ -35,13 +35,13 @@ public class TimeseriesIO {
   private final String field;
 
   public TimeseriesIO(Timeseries timeseries) {
-    this.id = timeseries.getId();
-    this.containerId = timeseries.getContainerId();
+    this.id = timeseries.getTimeseriesId();
+    this.containerId = timeseries.getContainer().getId();
     this.valueType = timeseries.getValueType();
-    this.measurement = timeseries.getMeasurement();
-    this.device = timeseries.getDevice();
-    this.location = timeseries.getLocation();
-    this.symbolicName = timeseries.getSymbolicName();
-    this.field = timeseries.getField();
+    this.measurement = timeseries.getTimeseriesTuple().getMeasurement();
+    this.device = timeseries.getTimeseriesTuple().getDevice();
+    this.location = timeseries.getTimeseriesTuple().getLocation();
+    this.symbolicName = timeseries.getTimeseriesTuple().getSymbolicName();
+    this.field = timeseries.getTimeseriesTuple().getField();
   }
 }

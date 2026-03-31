@@ -20,13 +20,7 @@ public class TimeseriesTupleDAO extends GenericDAO<TimeseriesTuple> {
    *
    * @return the found timeseries or null
    */
-  public TimeseriesTuple find(
-    String measurement,
-    String device,
-    String location,
-    String symbolicName,
-    String field
-  ) {
+  public TimeseriesTuple find(String measurement, String device, String location, String symbolicName, String field) {
     var query =
       "MATCH (t:TimeseriesTuple { measurement: $measurement, device: $device, location: $location, symbolicName: $symbolicName, field: $field }) %s".formatted(
           CypherQueryHelper.getReturnPart("t")

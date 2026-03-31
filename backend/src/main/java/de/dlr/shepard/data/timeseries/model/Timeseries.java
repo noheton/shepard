@@ -1,112 +1,46 @@
 package de.dlr.shepard.data.timeseries.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
-@Entity
-@Table(name = "timeseries")
-public class Timeseries {
+@NodeEntity
+@Data
+@NoArgsConstructor(force = true)
+@RequiredArgsConstructor
+public class Timeseries implements HasId {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private int id;
+  @GeneratedValue
+  @EqualsAndHashCode.Exclude
+  private Long id;
 
-  @Column(name = "container_id", nullable = false)
-  private long containerId;
+  @NotBlank
+  @Relationship(type = Constants.IS_IN_CONTAINER, direction = Direction.OUTGOING)
+  private final TimeseriesContainer container;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
-  private String measurement;
+  @NotBlank
+  @Relationship(type = Constants.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
+  private final TimeseriesTuple timeseriesTuple;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
-  private String field;
-
-  @Column(columnDefinition = "TEXT", nullable = false)
-  private String device;
-
-  @Column(columnDefinition = "TEXT", nullable = false)
-  private String location;
-
-  @Column(name = "symbolic_name", columnDefinition = "TEXT", nullable = false)
-  private String symbolicName;
-
+  @NotBlank
   @Enumerated(EnumType.STRING)
-  @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)
-  private DataPointValueType valueType;
+  private final DataPointValueType valueType;
 
-  public Timeseries() {}
+  @NotBlank
+  private final Long timeseriesId;
 
-  public Timeseries(
-    long containerId,
-    String measurement,
-    String field,
-    String device,
-    String location,
-    String symbolicName,
-    DataPointValueType valueType
-  ) {
-    this.containerId = containerId;
-    this.measurement = measurement;
-    this.field = field;
-    this.device = device;
-    this.location = location;
-    this.symbolicName = symbolicName;
-    this.valueType = valueType;
-  }
-
-  public Timeseries(long containerId, TimeseriesTuple timeseries, DataPointValueType valueType) {
-    this(
-      containerId,
-      timeseries.getMeasurement(),
-      timeseries.getField(),
-      timeseries.getDevice(),
-      timeseries.getLocation(),
-      timeseries.getSymbolicName(),
-      valueType
-    );
-  }
-
-  public int getId() {
-    return id;
-  }
-
-  public String getMeasurement() {
-    return measurement;
-  }
-
-  public long getContainerId() {
-    return containerId;
-  }
-
-  public String getDevice() {
-    return device;
-  }
-
-  public String getLocation() {
-    return location;
-  }
-
-  public String getSymbolicName() {
-    return symbolicName;
-  }
-
-  public String getField() {
-    return field;
-  }
-
-  public DataPointValueType getValueType() {
-    return valueType;
-  }
-
-  @JsonIgnore
+  @Override
   public String getUniqueId() {
-    return String.join("-", measurement, device, location, symbolicName, field, valueType.toString());
+    return "timeseries-" + getTimeseriesId();
   }
 }

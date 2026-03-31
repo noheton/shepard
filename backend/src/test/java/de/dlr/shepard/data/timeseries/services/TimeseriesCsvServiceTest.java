@@ -10,7 +10,10 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.*;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import io.quarkus.test.InjectMock;
@@ -228,11 +231,11 @@ public class TimeseriesCsvServiceTest {
     for (var currTimeseries : availTimeseriesList) {
       expTimeseries.add(
         new TimeseriesTuple(
-          currTimeseries.getMeasurement(),
-          currTimeseries.getDevice(),
-          currTimeseries.getLocation(),
-          currTimeseries.getSymbolicName(),
-          currTimeseries.getField()
+          currTimeseries.getTimeseriesTuple().getMeasurement(),
+          currTimeseries.getTimeseriesTuple().getDevice(),
+          currTimeseries.getTimeseriesTuple().getLocation(),
+          currTimeseries.getTimeseriesTuple().getSymbolicName(),
+          currTimeseries.getTimeseriesTuple().getField()
         )
       );
     }
