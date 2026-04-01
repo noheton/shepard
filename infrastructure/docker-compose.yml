@@ -25,7 +25,7 @@ services:
       SHEPARD_AUTOCONVERT_INT: ${SHEPARD_AUTOCONVERT_INT}
     volumes:
       - /opt/shepard/backend/logs:/deployments/logs
-      - /opt/shepard/backend/config:/home/jboss/.shepard
+      - /opt/shepard/backend/config:/home/default/.shepard
     depends_on:
       - neo4j
       - mongodb
