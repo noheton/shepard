@@ -1,64 +1,47 @@
 package de.dlr.shepard.migrations.neo4j;
 
+import static de.dlr.shepard.migrations.neo4j.Constants.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
+import com.opencsv.exceptions.CsvValidationException;
 import de.dlr.shepard.common.neo4j.MigrationsRunner;
-import de.dlr.shepard.common.neo4j.NeoConnector;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import de.dlr.shepard.context.collection.entities.Collection;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Map;
-import java.util.stream.StreamSupport;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
-import org.neo4j.cypherdsl.core.Statement;
-import org.neo4j.cypherdsl.core.renderer.Renderer;
-import org.neo4j.ogm.model.Result;
-import org.neo4j.ogm.session.Session;
 
+/**
+ * Test the database migrations with a focus on the Neo4j migrations, utilizing the neo4j-migrations package.
+ * This includes migrations which additionally rely on timescale data.
+ */
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class TestNeo4jMigrations {
 
+  /**
+   * Random element that is specific for this test run.
+   * This exists to identify data belonging to this test run to not pollute the namespaces of other test runs.
+   */
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
-  private static final Renderer cypherRenderer = Renderer.getDefaultRenderer();
-  private static Session session;
+  private static final QueryHelper q = new QueryHelper();
+  private static final SampleNodeCreatorFactory sample = new SampleNodeCreatorFactory(randomElement);
 
-  @BeforeAll
-  public static void setUp() {
-    var conn = NeoConnector.getInstance();
-    conn.connect();
-    session = conn.getNeo4jSession();
-  }
-
-  private static Result query(Statement statement) {
-    var cypherQuery = cypherRenderer.render(statement);
-    return session.query(cypherQuery, Collections.emptyMap());
-  }
+  private static final TestV12 testV12 = new TestV12();
 
   private static void testNodeMigrated(Node old, Node migrated) {
-    assertEquals(0, match(old).size());
-    assertEquals(1, match(migrated).size());
+    assertEquals(0, q.match(old).size());
+    assertEquals(1, q.match(migrated).size());
   }
 
   private static void runMigrations(String targetVersion) {
     new MigrationsRunner(targetVersion).apply();
-  }
-
-  private static void create(Node node) {
-    var statement = Cypher.create(node).build();
-    query(statement);
-  }
-
-  private static List<Object> match(Node node) {
-    var statement = Cypher.match(node).returning(node).build();
-    var result = query(statement);
-    return StreamSupport.stream(result.spliterator(), false).map(Map::values).flatMap(Collection::stream).toList();
   }
 
   private static <K, V> void assertEqualsMaps(Map<K, V> expected, Map<K, V> actual) {
@@ -75,7 +58,7 @@ public class TestNeo4jMigrations {
       "attributes.b.c",
       Cypher.literalOf(1)
     );
-    create(collectionWithBadAttributes);
+    q.create(collectionWithBadAttributes);
 
     runMigrations("V9");
 
@@ -91,9 +74,7 @@ public class TestNeo4jMigrations {
     testNodeMigrated(collectionWithBadAttributes, collectionWithGoodAttributes);
 
     // test that the migration has not touched the attribute values
-    var migratedCollection = (de.dlr.shepard.context.collection.entities.Collection) match(
-      collectionWithGoodAttributes
-    ).getFirst();
+    var migratedCollection = q.match(collectionWithGoodAttributes, Collection.class).getFirst();
     assertEqualsMaps(Map.of("a", "0", "b.c", "1"), migratedCollection.getAttributes());
   }
 
@@ -107,7 +88,7 @@ public class TestNeo4jMigrations {
       "valueIRI",
       Cypher.literalOf("viri")
     );
-    create(legacyAnnotation);
+    q.create(legacyAnnotation);
 
     runMigrations("V10");
 
@@ -119,5 +100,427 @@ public class TestNeo4jMigrations {
     );
 
     testNodeMigrated(legacyAnnotation, migratedAnnotation);
+  }
+
+  /**
+   * Prepare the test data, run the migrations and assert they run without aborting.
+   */
+  @Test
+  public void testV11_0_NoException() {
+    create2References1Timeseries2Containers();
+    createSingleReferencedTimeseries();
+    create2References1Timeseries1Container();
+    create3References2Timeseries2Containers();
+    create3References1Container();
+    create2ReferencesOneContainer2Timeseries();
+    create3References3Containers1Timeseries();
+    createEmptyReference();
+    runMigrations("V11");
+    assertTrue(true);
+  }
+
+  /**
+   * Assert that now each timeseries has a relationship to exactly one container.
+   */
+  @Test
+  public void testV11_EachTimeseriesHasOneContainer() {
+    var tsWithoutContainer = q.queryResults(
+      "match(ts:Timeseries) where not exists((ts)-[]->(:TimeseriesContainer)) return ts"
+    );
+    assertEquals(0, tsWithoutContainer.size());
+    var tsWithExactlyOneContainer = q.queryResults(
+      "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount = 1 return ts"
+    );
+    var numTs = q.queryResults("match(ts:Timeseries) with count(ts) as c return c", Long.class).getFirst();
+    assertEquals(numTs, tsWithExactlyOneContainer.size());
+    var tsWithSeveralContainers = q.queryResults(
+      "match(ts:Timeseries)-[r:is_in_container]->() with ts, count(r) as relcount where relcount > 1 return ts"
+    );
+    assertEquals(0, tsWithSeveralContainers.size());
+  }
+
+  @Test
+  public void testV11_EachReferenceHasTimeseriesExceptEmptyRef() {
+    assertEquals(
+      1,
+      q
+        .queryResults(
+          "match(tsr:TimeseriesReference) where not exists " +
+          "{ match(tsr)-[:has_payload]->(:Timeseries) } " +
+          "return count(tsr)",
+          Long.class
+        )
+        .getFirst()
+    );
+  }
+
+  private static void createSingleReferencedTimeseries() {
+    var c = sample.instance("SingleReferencedTimeseries");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
+    );
+  }
+
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by a single reference.
+   * In this case the timeseries should get a reference towards the container of its reference.
+   */
+  @Test
+  public void testV11_SingleReferencedTimeseriesMigrated() {
+    var c = sample.instance("SingleReferencedTimeseries");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
+    )
+      .returning(tsNode)
+      .build();
+    var results = q.queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
+  private static void create2References1Timeseries1Container() {
+    var c = sample.instance("References1Timeseries1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer().named("container");
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
+    );
+  }
+
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references which however all lie within one container.
+   * In this case the timeseries should get a reference towards this container.
+   */
+  @Test
+  public void testV11_References1Timeseries1ContainerMigrated() {
+    var c = sample.instance("References1Timeseries1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container = c.timeseriesContainer();
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
+    )
+      .returning(tsNode)
+      .build();
+    var results = q.queryResults(result, Object.class);
+    assertEquals(1, results.size());
+  }
+
+  private static void create2References1Timeseries2Containers() {
+    var c = sample.instance("2References1Timeseries2Containers");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION)
+    );
+  }
+
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references and these references lie within different containers.
+   * In that case multiple timeseries, one for each container, should be created and each timeseries should reference its container.
+   */
+  @Test
+  public void testV11_2References1Timeseries2ContainersMigrated() {
+    var c = sample.instance("2References1Timeseries2Containers");
+    var tsNode1 = c.timeseries().named("tsNode1");
+    var tsNode2 = c.timeseries().named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var annotation = c.annotation();
+    var container1 = c.timeseriesContainer(1);
+    var container2 = c.timeseriesContainer(2);
+    var result = Cypher.match(
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref1.relationshipTo(annotation, HAS_ANNOTATION),
+      tsNode1.relationshipTo(container1, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(container2, IS_IN_CONTAINER)
+    )
+      .returning(tsNode1, tsNode2)
+      .build();
+    var results = q.queryResults(result, Object.class);
+    assertEquals(2, results.size());
+  }
+
+  private static void create3References2Timeseries2Containers() {
+    var c = sample.instance("3References2Timeseries2Containers");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container1 = c.timeseriesContainer(1).named("c1");
+    var container2 = c.timeseriesContainer(2).named("c2");
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref3.relationshipTo(container2, IS_IN_CONTAINER)
+    );
+  }
+
+  /**
+   * Assert that a timeseries migrated correctly if it is referenced by multiple references by three references sharing two containers.
+   * In this case the two timeseries, one for each container should be created.
+   */
+  @Test
+  public void testV11_3References2Timeseries2ContainersMigrated() {
+    var c = sample.instance("3References2Timeseries2Containers");
+    var tsNode1 = c.timeseries().named("tsNode1");
+    var tsNode2 = c.timeseries().named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container1 = c.timeseriesContainer(1).named("c1");
+    var container2 = c.timeseriesContainer(2).named("c2");
+    var queryTs1 = Cypher.match(
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref1.relationshipTo(container1, IS_IN_CONTAINER),
+      tsNode1.relationshipTo(container1, IS_IN_CONTAINER)
+    )
+      .returning(tsNode1)
+      .build();
+    assertEquals(1, q.queryResults(queryTs1).size());
+    var queryTs2 = Cypher.match(
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref2.relationshipTo(container2, IS_IN_CONTAINER),
+      ref3.relationshipTo(container2, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(container2, IS_IN_CONTAINER)
+    )
+      .returning(tsNode2)
+      .build();
+    assertEquals(1, q.queryResults(queryTs2).size());
+  }
+
+  private static void create3References1Container() {
+    var c = sample.instance("3References1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container = c.timeseriesContainer().named("c1");
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref3.relationshipTo(container, IS_IN_CONTAINER)
+    );
+  }
+
+  @Test
+  public void testV11_3References1ContainerMigrated() {
+    var c = sample.instance("3References1Container");
+    var tsNode = c.timeseries().named("tsNode");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var ref3 = c.timeseriesReference("ref3").named("ref3");
+    var container = c.timeseriesContainer().named("c1");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER),
+      ref3.relationshipTo(container, IS_IN_CONTAINER),
+      tsNode.relationshipTo(container, IS_IN_CONTAINER)
+    )
+      .returning(tsNode)
+      .build();
+    assertEquals(1, q.queryResults(query).size());
+  }
+
+  private static void create2ReferencesOneContainer2Timeseries() {
+    var c = sample.instance("2ReferencesOneContainer2Timeseries");
+    var tsNode1 = c.timeseries("ts1").named("tsNode1");
+    var tsNode2 = c.timeseries("ts2").named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var container = c.timeseriesContainer().named("c1");
+    q.create(
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER)
+    );
+  }
+
+  @Test
+  public void testV11_2ReferencesOneContainer2TimeseriesMigrated() {
+    var c = sample.instance("2ReferencesOneContainer2Timeseries");
+    var tsNode1 = c.timeseries("ts1").named("tsNode1");
+    var tsNode2 = c.timeseries("ts2").named("tsNode2");
+    var ref1 = c.timeseriesReference("ref1").named("ref1");
+    var ref2 = c.timeseriesReference("ref2").named("ref2");
+    var container = c.timeseriesContainer().named("c");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref1.relationshipTo(container, IS_IN_CONTAINER),
+      ref2.relationshipTo(container, IS_IN_CONTAINER)
+    )
+      .returning(tsNode1, tsNode2)
+      .build();
+    assertEquals(2, q.queryResults(query).size());
+  }
+
+  private static void create3References3Containers1Timeseries() {
+    var c = sample.instance("3References3Containers1Timeseries");
+    var tsNode = c.timeseries().named("ts");
+    var ref1 = c.timeseriesReference(1).named("r1");
+    var ref2 = c.timeseriesReference(2).named("r2");
+    var ref3 = c.timeseriesReference(3).named("r3");
+    var c1 = c.timeseriesContainer(1).named("c1");
+    var c2 = c.timeseriesContainer(2).named("c2");
+    var c3 = c.timeseriesContainer(3).named("c3");
+    q.create(
+      ref1.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode, HAS_PAYLOAD),
+      ref1.relationshipTo(c1, IS_IN_CONTAINER),
+      ref2.relationshipTo(c2, IS_IN_CONTAINER),
+      ref3.relationshipTo(c3, IS_IN_CONTAINER)
+    );
+  }
+
+  @Test
+  public void testV11_3References3Containers1TimeseriesMigrated() {
+    var c = sample.instance("3References3Containers1Timeseries");
+    var tsNode1 = c.timeseries().named("ts1");
+    var tsNode2 = c.timeseries().named("ts2");
+    var tsNode3 = c.timeseries().named("ts3");
+    var ref1 = c.timeseriesReference(1).named("r1");
+    var ref2 = c.timeseriesReference(2).named("r2");
+    var ref3 = c.timeseriesReference(3).named("r3");
+    var c1 = c.timeseriesContainer(1).named("c1");
+    var c2 = c.timeseriesContainer(2).named("c2");
+    var c3 = c.timeseriesContainer(3).named("c3");
+    var query = Cypher.match(
+      ref1.relationshipTo(tsNode1, HAS_PAYLOAD),
+      ref2.relationshipTo(tsNode2, HAS_PAYLOAD),
+      ref3.relationshipTo(tsNode3, HAS_PAYLOAD),
+      ref1.relationshipTo(c1, IS_IN_CONTAINER),
+      ref2.relationshipTo(c2, IS_IN_CONTAINER),
+      ref3.relationshipTo(c3, IS_IN_CONTAINER),
+      tsNode1.relationshipTo(c1, IS_IN_CONTAINER),
+      tsNode2.relationshipTo(c2, IS_IN_CONTAINER),
+      tsNode3.relationshipTo(c3, IS_IN_CONTAINER)
+    )
+      .returning(tsNode1, tsNode2, tsNode3)
+      .build();
+    assertEquals(3, q.queryResults(query).size());
+  }
+
+  private static void createEmptyReference() {
+    var c = sample.instance("EmptyReference");
+    var ref = c.timeseriesReference();
+    var container = c.timeseriesContainer();
+    q.create(ref.relationshipTo(container, IS_IN_CONTAINER));
+  }
+
+  @Test
+  public void testV11_EmptyReferenceUntouched() {
+    var c = sample.instance("EmptyReference");
+    var ref = c.timeseriesReference();
+    var container = c.timeseriesContainer();
+    var query = Cypher.match(ref.relationshipTo(container, IS_IN_CONTAINER)).returning(ref).build();
+    assertEquals(1, q.queryResults(query).size());
+  }
+
+  @Test
+  public void testV12_0_NoException() throws CsvValidationException, IOException, ClassNotFoundException {
+    testV12.setupPreMigrationData();
+    testV12.runMigration();
+  }
+
+  @Test
+  public void testV12_TimeseriesPresentInGraphDb() {
+    testV12.assertTimeseriesPresentInGraphDb();
+  }
+
+  @Test
+  public void testV12_MetadataDeletedInTimeseriesDb() throws SQLException, ClassNotFoundException {
+    testV12.assertMetadataDeletedInTimeseriesDb();
+  }
+
+  @Test
+  public void testV12_TimeseriesDatapointsIntact() throws SQLException, ClassNotFoundException {
+    testV12.assertTimeseriesDatapointsIntact();
+  }
+
+  @Test
+  public void testV12_NewTimeseriesMergedWithPreexisting() {
+    testV12.assertNewTimeseriesMergedWithPreexisting();
+  }
+
+  @Test
+  public void testV13_0_NoException() {
+    createAnnotatedTimeseries();
+    runMigrations("V13");
+  }
+
+  private void createAnnotatedTimeseries() {
+    var s = sample.instance("V13");
+
+    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotatedTs = node("AnnotatableTimeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotation = s.annotation();
+
+    q.create(annotatedTs.relationshipTo(annotation, "has_annotation"));
+    q.create(ts);
+  }
+
+  @Test
+  public void testV13_AnnotatedTimeseriesMigrated() {
+    var s = sample.instance("V13");
+
+    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
+    var annotation = s.annotation();
+    var query = Cypher.match(ts.relationshipTo(annotation, "has_annotation")).returning(ts).build();
+    assertEquals(1, q.queryResults(query).size());
+  }
+
+  @Test
+  public void testV13_LegacyAnnotatedTimeseriesDeleted() {
+    var ts = node("AnnotatableTimeseries");
+    assertEquals(0, q.match(ts).size());
   }
 }
