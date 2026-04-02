@@ -1,6 +1,7 @@
 services:
   neo4j:
     image: neo4j:5.24
+    container_name: neo4j
     environment:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PW}
     networks:
@@ -9,16 +10,16 @@ services:
       - 7474:7474
       - 7687:7687
     volumes:
-      - /opt/shepard/neo4j/logs:/logs
-      - /opt/shepard/neo4j/plugins:/plugins
-      - /opt/shepard/neo4j/data:/var/lib/neo4j/data
-    restart: unless-stopped
+      - neo4j-logs:/logs
+      - neo4j-plugins:/plugins
+      - neo4j-data:/var/lib/neo4j/data
     profiles:
       - dev
       - tryout
 
   mongodb:
     image: mongo:8.0
+    container_name: mongo
     networks:
       - shepard
     ports:
@@ -29,10 +30,9 @@ services:
       - MONGO_USERNAME=${MONGO_USERNAME-username}
       - MONGO_PASSWORD=${MONGO_PASSWORD-password}
       - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE-database}
-    restart: unless-stopped
     volumes:
-      - /opt/shepard/mongodb/db:/data/db
-      - /opt/shepard/mongodb/configdb:/data/configdb
+      - mongodb-db:/data/db
+      - mongodb-configdb:/data/configdb
       - ../infrastructure/docker-entrypoint-initdb.d/mongodb/00-create-mongo-user.js:/docker-entrypoint-initdb.d/00-create-mongo-user.js
     profiles:
       - dev
@@ -40,6 +40,7 @@ services:
 
   mongoexpress:
     image: mongo-express:latest
+    container_name: mongoexpress
     networks:
       - shepard
     ports:
@@ -51,7 +52,6 @@ services:
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
       - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_INITDB_ROOT_USERNAME-mongo}
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_INITDB_ROOT_PASSWORD-shepard}
-    restart: unless-stopped
     depends_on:
       - mongodb
     profiles:
@@ -59,6 +59,7 @@ services:
 
   timescaledb:
     image: timescale/timescaledb:2.18.1-pg16
+    container_name: timescale
     networks:
       - shepard
     ports:
@@ -69,9 +70,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
       POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
-    restart: unless-stopped
     volumes:
-      - /opt/shepard/timescaledb:/var/lib/postgres/data
+      - timescaledb:/var/lib/postgres/data
       - ../infrastructure/docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
     profiles:
       - dev
@@ -91,16 +91,17 @@ services:
       - "5433:5432"
     volumes:
       - ../infrastructure/docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
+      - postgis:/var/lib/postgresql/data
     profiles:
       - dev
 
   keycloak:
     image: keycloak/keycloak:latest
+    container_name: keycloak
     networks:
       - shepard
     ports:
       - "8082:8082"
-    restart: unless-stopped
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
       KC_BOOTSTRAP_ADMIN_PASSWORD: "admin"
@@ -109,7 +110,7 @@ services:
       KC_HEALTH_ENABLED: "true"
       KC_HTTP_PORT: 8082
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/health/ready"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/health/ready" ]
       interval: 15s
       timeout: 2s
       retries: 15
@@ -122,6 +123,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
+    container_name: prometheus
     command:
       - --web.enable-remote-write-receiver
       - --enable-feature=native-histograms
@@ -132,12 +134,12 @@ services:
       - "9090:9090"
     volumes:
       - ../infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    restart: unless-stopped
     profiles:
       - monitoring
 
   grafana:
     image: grafana/grafana:latest
+    container_name: grafana
     networks:
       - shepard
     ports:
@@ -148,12 +150,12 @@ services:
       - GF_AUTH_BASIC_ENABLED=false
     volumes:
       - grafana:/etc/grafana/provisioning/
-    restart: unless-stopped
     profiles:
       - monitoring
 
   frontend:
     image: registry.gitlab.com/dlr-shepard/shepard/frontend:latest
+    container_name: frontend
     depends_on:
       - backend
     environment:
@@ -164,7 +166,6 @@ services:
       NUXT_OIDC_CLIENT_ID: "frontend-dev"
     ports:
       - 3000:3000
-    restart: unless-stopped
     networks:
       - shepard
     profiles:
@@ -172,7 +173,7 @@ services:
 
   backend:
     image: registry.gitlab.com/dlr-shepard/shepard/backend:latest
-    restart: unless-stopped
+    container_name: backend
     environment:
       OIDC_PUBLIC: ${OIDC_PUBLIC}
       OIDC_AUTHORITY: ${OIDC_AUTHORITY}
@@ -198,6 +199,12 @@ services:
       - tryout
 
 volumes:
+  neo4j-logs:
+  neo4j-plugins:
+  neo4j-data:
+  mongodb-db:
+  mongodb-configdb:
+  timescaledb:
   keycloak:
   grafana:
 
