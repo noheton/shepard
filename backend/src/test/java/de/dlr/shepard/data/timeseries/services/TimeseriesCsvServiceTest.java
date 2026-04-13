@@ -224,7 +224,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
 
     List<TimeseriesTuple> expTimeseries = new ArrayList<TimeseriesTuple>();
 
@@ -295,7 +295,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
 
     assertEquals(
       0,

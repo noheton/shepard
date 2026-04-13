@@ -21,7 +21,6 @@ import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -49,7 +48,6 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
 import java.util.Collections;
-import java.util.List;
 import java.util.NoSuchElementException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -224,20 +222,15 @@ public class TimeseriesRest {
   public Response getTimeseriesAvailable(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
   ) {
-    List<Timeseries> timeseriesList;
-
     try {
-      timeseriesList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+      var timeseriesListWithoutId = timeseriesService
+        .getTimeseriesAvailable(timeseriesContainerId)
+        .map(Timeseries::getTimeseriesTuple)
+        .toList();
+      return Response.ok(timeseriesListWithoutId).build();
     } catch (InvalidPathException | InvalidAuthException e) {
       return Response.ok(Collections.emptyList()).build();
     }
-
-    List<TimeseriesTuple> timeseriesListWithoutId = timeseriesList
-      .stream()
-      .map(Timeseries::getTimeseriesTuple)
-      .toList();
-
-    return Response.ok(timeseriesListWithoutId).build();
   }
 
   @GET
@@ -267,9 +260,8 @@ public class TimeseriesRest {
     @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
     @QueryParam(Constants.FIELD) String field
   ) {
-    var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
-    var timeseriesList = timeseriesEntityList
-      .stream()
+    var timeseriesList = timeseriesService
+      .getTimeseriesAvailable(timeseriesContainerId)
       .map(TimeseriesIO::new)
       .filter(
         entity ->
