@@ -290,7 +290,7 @@ public class TimeseriesServiceTest {
 
     this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
-    var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
+    var actual = this.timeseriesService.getTimeseriesAvailable(container.getId()).toList();
     assertEquals(1, actual.size());
     assertEquals("temperature", actual.getFirst().getTimeseriesTuple().getMeasurement());
   }

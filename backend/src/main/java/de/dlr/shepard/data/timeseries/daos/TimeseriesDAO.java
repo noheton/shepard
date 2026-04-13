@@ -10,9 +10,9 @@ import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
@@ -25,7 +25,7 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
     return Timeseries.class;
   }
 
-  public List<Timeseries> getAllTimeseriesInContainer(long containerId) {
+  public Stream<Timeseries> getAllTimeseriesInContainer(long containerId) {
     var tsc = node(TIMESERIES_CONTAINER);
     var ts = node(TIMESERIES);
     var tsTuple = node(TIMESERIES_TUPLE);
@@ -36,7 +36,7 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
       .returning(ts, tsc, tsTuple)
       .build()
       .getCypher();
-    return this.findByQuery(query).toList();
+    return this.findByQuery(query);
   }
 
   public long getCurrentMaximumTimeseriesId() {

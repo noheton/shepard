@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 @RequestScoped
@@ -56,7 +57,7 @@ public class TimeseriesService {
    * @param containerId of the given timeseries container
    * @return a list of timeseries entities
    */
-  public List<Timeseries> getTimeseriesAvailable(long containerId) {
+  public Stream<Timeseries> getTimeseriesAvailable(long containerId) {
     timeseriesContainerService.getContainer(containerId);
     return timeseriesDAO.getAllTimeseriesInContainer(containerId);
   }
