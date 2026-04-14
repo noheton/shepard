@@ -25,12 +25,14 @@ public class Timeseries implements HasId {
   private Long id;
 
   @NotBlank
+  @NonNull
   @Relationship(type = Constants.IS_IN_CONTAINER, direction = Direction.OUTGOING)
-  private final TimeseriesContainer container;
+  private TimeseriesContainer container;
 
   @NotBlank
+  @NonNull
   @Relationship(type = Constants.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
-  private final TimeseriesTuple timeseriesTuple;
+  private TimeseriesTuple timeseriesTuple;
 
   @NotBlank
   @Enumerated(EnumType.STRING)
