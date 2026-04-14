@@ -7,12 +7,15 @@ import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
@@ -25,10 +28,29 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
     return Timeseries.class;
   }
 
+  /**
+   * Run a custom Cypher query to get a Stream of Timeseries including
+   * @param query  The cypher query.
+   *               It needs to return a TimeseriesContainer named "tsc", a Timeseries "ts" and a TimeseriesTuple named "tst".
+   *                  The Objects are required to be node entities known to neo4j ogm.
+   * @return Stream of Timeseries with related Objects.
+   */
+  private Stream<Timeseries> queryCypherWithRelations(String query) {
+    var result = session.query(query, Map.of(), true);
+    return StreamSupport.stream(result.spliterator(), false).map(map -> {
+      Timeseries tsObj = (Timeseries) map.get("ts");
+      TimeseriesContainer tscObj = (TimeseriesContainer) map.get("tsc");
+      TimeseriesTuple tsTupleObj = (TimeseriesTuple) map.get("tst");
+      tsObj.setContainer(tscObj);
+      tsObj.setTimeseriesTuple(tsTupleObj);
+      return tsObj;
+    });
+  }
+
   public Stream<Timeseries> getAllTimeseriesInContainer(long containerId) {
-    var tsc = node(TIMESERIES_CONTAINER);
-    var ts = node(TIMESERIES);
-    var tsTuple = node(TIMESERIES_TUPLE);
+    var tsc = node(TIMESERIES_CONTAINER).named("tsc");
+    var ts = node(TIMESERIES).named("ts");
+    var tsTuple = node(TIMESERIES_TUPLE).named("tst");
     var isInContainer = ts.relationshipTo(tsc, IS_IN_CONTAINER);
     var hasTuple = ts.relationshipTo(tsTuple, HAS_TIMESERIES_TUPLE);
     var query = match(isInContainer, hasTuple)
@@ -36,7 +58,7 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
       .returning(ts, tsc, tsTuple)
       .build()
       .getCypher();
-    return this.findByQuery(query);
+    return queryCypherWithRelations(query);
   }
 
   public long getCurrentMaximumTimeseriesId() {
@@ -56,27 +78,29 @@ public class TimeseriesDAO extends GenericDAO<Timeseries> {
   }
 
   public Optional<Timeseries> findTimeseries(long containerId, TimeseriesTuple tsTuple) {
-    var tsTupleNode = node(TIMESERIES_TUPLE).withProperties(
-      "measurement",
-      Cypher.literalOf(tsTuple.getMeasurement()),
-      "device",
-      Cypher.literalOf(tsTuple.getDevice()),
-      "location",
-      Cypher.literalOf(tsTuple.getLocation()),
-      "symbolicName",
-      Cypher.literalOf(tsTuple.getSymbolicName()),
-      "field",
-      Cypher.literalOf(tsTuple.getField())
-    );
-    var tsc = node(TIMESERIES_CONTAINER);
-    var ts = node(TIMESERIES);
+    var tsTupleNode = node(TIMESERIES_TUPLE)
+      .withProperties(
+        "measurement",
+        Cypher.literalOf(tsTuple.getMeasurement()),
+        "device",
+        Cypher.literalOf(tsTuple.getDevice()),
+        "location",
+        Cypher.literalOf(tsTuple.getLocation()),
+        "symbolicName",
+        Cypher.literalOf(tsTuple.getSymbolicName()),
+        "field",
+        Cypher.literalOf(tsTuple.getField())
+      )
+      .named("tst");
+    var tsc = node(TIMESERIES_CONTAINER).named("tsc");
+    var ts = node(TIMESERIES).named("ts");
     var query = match(tsTupleNode.relationshipFrom(ts, HAS_TIMESERIES_TUPLE).relationshipTo(tsc, IS_IN_CONTAINER))
       .where(internalIdIs(tsc, containerId).and(notDeleted(ts)))
       .returning(tsTupleNode, tsc, ts)
       .build()
       .getCypher();
 
-    return this.findByQuery(query).findFirst();
+    return queryCypherWithRelations(query).findFirst();
   }
 
   public Optional<Timeseries> findByTimeseriesId(long timeseriesId) {
