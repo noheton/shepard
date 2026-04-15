@@ -13,12 +13,12 @@ import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReferen
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
-import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
+import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.quarkus.logging.Log;
 import java.util.Collections;
@@ -76,7 +76,6 @@ public class NeoConnector implements IConnector {
       try {
         sessionFactory = new SessionFactory(
           configuration,
-          AnnotatableTimeseries.class.getPackageName(),
           ApiKey.class.getPackageName(),
           Collection.class.getPackageName(),
           CollectionReference.class.getPackageName(),
@@ -92,6 +91,7 @@ public class NeoConnector implements IConnector {
           Subscription.class.getPackageName(),
           TimeseriesTuple.class.getPackageName(),
           TimeseriesReference.class.getPackageName(),
+          Timeseries.class.getPackageName(),
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
           Version.class.getPackageName()

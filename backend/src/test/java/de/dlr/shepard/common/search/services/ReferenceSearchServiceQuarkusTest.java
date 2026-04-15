@@ -26,7 +26,6 @@ import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.io.SemanticRepositoryIO;
-import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
@@ -64,9 +63,6 @@ public class ReferenceSearchServiceQuarkusTest {
 
   @Inject
   TimeseriesService timeseriesService;
-
-  @Inject
-  AnnotatableTimeseriesService annotatableTimeseriesService;
 
   @Inject
   SemanticRepositoryService semanticRepositoryService;
