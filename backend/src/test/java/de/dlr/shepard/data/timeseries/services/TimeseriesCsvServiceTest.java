@@ -224,43 +224,30 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
-
-    List<TimeseriesTuple> expTimeseries = new ArrayList<TimeseriesTuple>();
-
-    for (var currTimeseries : availTimeseriesList) {
-      expTimeseries.add(
-        new TimeseriesTuple(
-          currTimeseries.getTimeseriesTuple().getMeasurement(),
-          currTimeseries.getTimeseriesTuple().getDevice(),
-          currTimeseries.getTimeseriesTuple().getLocation(),
-          currTimeseries.getTimeseriesTuple().getSymbolicName(),
-          currTimeseries.getTimeseriesTuple().getField()
-        )
-      );
-    }
+    List<TimeseriesTuple> expTimeseries = timeseriesService
+      .getTimeseriesAvailable(container.getId())
+      .map(Timeseries::getTimeseriesTuple)
+      .toList();
 
     var actualTimeseriesDataMap = new ArrayList<TimeseriesWithDataPoints>();
-    expTimeseries
-      .stream()
-      .forEach(timeseries -> {
-        actualTimeseriesDataMap.add(
-          new TimeseriesWithDataPoints(
+    expTimeseries.forEach(timeseries -> {
+      actualTimeseriesDataMap.add(
+        new TimeseriesWithDataPoints(
+          timeseries,
+          timeseriesService.getDataPointsByTimeseries(
+            container.getId(),
             timeseries,
-            timeseriesService.getDataPointsByTimeseries(
-              container.getId(),
-              timeseries,
-              new TimeseriesDataPointsQueryParams(
-                InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
-                InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
-                null,
-                null,
-                null
-              )
+            new TimeseriesDataPointsQueryParams(
+              InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
+              InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
+              null,
+              null,
+              null
             )
           )
-        );
-      });
+        )
+      );
+    });
 
     var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap, CsvFormat.ROW);
 
