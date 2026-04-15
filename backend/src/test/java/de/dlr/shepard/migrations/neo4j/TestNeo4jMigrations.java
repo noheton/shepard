@@ -26,6 +26,7 @@ public class TestNeo4jMigrations {
   private static final String randomElement = RandomStringUtils.insecure().next(6, true, true);
   private static final QueryHelper q = new QueryHelper();
   private static final TestV12 testV12 = new TestV12();
+  private static final TestV13 testV13 = new TestV13();
 
   private static void testNodeMigrated(Node old, Node migrated) {
     assertEquals(0, q.match(old).size());
@@ -131,34 +132,17 @@ public class TestNeo4jMigrations {
 
   @Test
   public void testV13_0_NoException() {
-    createAnnotatedTimeseries();
+    testV13.setupPreMigrationData();
     runMigrations("V13");
-  }
-
-  private void createAnnotatedTimeseries() {
-    var s = sample.instance("V13");
-
-    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
-    var annotatedTs = node("AnnotatableTimeseries").withProperties("timeseriesId", Cypher.literalOf(999));
-    var annotation = s.annotation();
-
-    q.create(annotatedTs.relationshipTo(annotation, "has_annotation"));
-    q.create(ts);
   }
 
   @Test
   public void testV13_AnnotatedTimeseriesMigrated() {
-    var s = sample.instance("V13");
-
-    var ts = node("Timeseries").withProperties("timeseriesId", Cypher.literalOf(999));
-    var annotation = s.annotation();
-    var query = Cypher.match(ts.relationshipTo(annotation, "has_annotation")).returning(ts).build();
-    assertEquals(1, q.queryResults(query).size());
+    testV13.assertAnnotatedTimeseriesMigrated();
   }
 
   @Test
   public void testV13_LegacyAnnotatedTimeseriesDeleted() {
-    var ts = node("AnnotatableTimeseries");
-    assertEquals(0, q.match(ts).size());
+    testV13.assertLegacyAnnotatedTimeseriesDeleted();
   }
 }
