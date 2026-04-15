@@ -19,7 +19,7 @@ import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.quarkus.logging.Log;
 import java.util.Collections;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -90,7 +90,7 @@ public class NeoConnector implements IConnector {
           StructuredData.class.getPackageName(),
           StructuredDataReference.class.getPackageName(),
           Subscription.class.getPackageName(),
-          Timeseries.class.getPackageName(),
+          TimeseriesTuple.class.getPackageName(),
           TimeseriesReference.class.getPackageName(),
           URIReference.class.getPackageName(),
           User.class.getPackageName(),

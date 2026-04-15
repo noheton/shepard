@@ -1,37 +1,48 @@
 package de.dlr.shepard.data.timeseries.model;
 
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
+@NodeEntity
 @Data
-@EqualsAndHashCode
 @NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class Timeseries {
+@RequiredArgsConstructor
+public class Timeseries implements HasId {
+
+  @Id
+  @GeneratedValue
+  @EqualsAndHashCode.Exclude
+  private Long id;
 
   @NotBlank
-  private final String measurement;
+  @NonNull
+  @Relationship(type = Constants.IS_IN_CONTAINER, direction = Direction.OUTGOING)
+  private TimeseriesContainer container;
 
   @NotBlank
-  private final String device;
+  @NonNull
+  @Relationship(type = Constants.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
+  private TimeseriesTuple timeseriesTuple;
 
   @NotBlank
-  private final String location;
+  @Enumerated(EnumType.STRING)
+  private final DataPointValueType valueType;
 
   @NotBlank
-  private final String symbolicName;
+  private final Long timeseriesId;
 
-  @NotBlank
-  private final String field;
-
-  public Timeseries(TimeseriesEntity timeseriesEntity) {
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
+  @Override
+  public String getUniqueId() {
+    return "timeseries-" + getTimeseriesId();
   }
 }

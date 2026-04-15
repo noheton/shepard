@@ -4,47 +4,33 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
-import io.agroal.api.AgroalDataSource;
 import io.micrometer.core.annotation.Timed;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hibernate.exception.DataException;
-import org.postgresql.PGConnection;
-import org.postgresql.copy.CopyManager;
 
 @RequestScoped
 public class TimeseriesDataPointRepository {
 
-  private final int INSERT_BATCH_SIZE = 20000;
+  private static final int INSERT_BATCH_SIZE = 20000;
 
   @PersistenceContext
   EntityManager entityManager;
-
-  @Inject
-  AgroalDataSource defaultDataSource;
 
   /**
    * Insert a list of timeseries data points into the database.
    *
    * @param entities         list of timeseries data points
-   * @param timeseriesEntity
+   * @param timeseriesId The ID of the timeseries
    * @throws InvalidBodyException can be thrown when 'entities' contains the same
    *                              timestamp more than once (read more in
    *                              architectural documentation: 'Building Block
@@ -52,10 +38,14 @@ public class TimeseriesDataPointRepository {
    *                              Timestamp')
    */
   @Timed(value = "shepard.timeseries-data-point.batch-insert")
-  public void insertManyDataPoints(List<TimeseriesDataPoint> entities, TimeseriesEntity timeseriesEntity) {
+  public void insertManyDataPoints(
+    List<TimeseriesDataPoint> entities,
+    long timeseriesId,
+    DataPointValueType valueType
+  ) {
     for (int i = 0; i < entities.size(); i += INSERT_BATCH_SIZE) {
       int currentLimit = Math.min(i + INSERT_BATCH_SIZE, entities.size());
-      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesEntity);
+      Query query = buildInsertQueryObject(entities, i, currentLimit, timeseriesId, valueType);
 
       try {
         query.executeUpdate();
@@ -70,63 +60,6 @@ public class TimeseriesDataPointRepository {
     }
   }
 
-  /**
-   * Insert a list of timeseries data points into the database using the COPY command.
-   * This is used by the influxdb migration but can also be used for csv import or
-   * similar scenarios.
-   * @param entities
-   * @param timeseriesEntity
-   */
-  @Timed(value = "shepard.timeseries-data-point.copy-insert")
-  public void insertManyDataPointsWithCopyCommand(
-    List<TimeseriesDataPoint> entities,
-    TimeseriesEntity timeseriesEntity
-  ) throws SQLException {
-    try (Connection conn = defaultDataSource.getConnection()) {
-      PGConnection pgConn = (PGConnection) conn.unwrap(PGConnection.class);
-      CopyManager copyManager = pgConn.getCopyAPI();
-
-      var columnName = getColumnName(timeseriesEntity.getValueType());
-      var sb = new StringBuilder();
-
-      timeseriesEntity.getId();
-
-      // Strings must be quoted in double quotes in case they contain a comma which is also the delimiter
-      if (timeseriesEntity.getValueType() == DataPointValueType.String) {
-        for (int i = 0; i < entities.size(); i++) {
-          TimeseriesDataPoint entity = entities.get(i);
-          sb
-            .append(timeseriesEntity.getId())
-            .append(",")
-            .append(entity.getTimestamp())
-            .append(",\"")
-            .append(entity.getValue())
-            .append("\"\n");
-        }
-      } else {
-        for (int i = 0; i < entities.size(); i++) {
-          TimeseriesDataPoint entity = entities.get(i);
-          sb
-            .append(timeseriesEntity.getId())
-            .append(",")
-            .append(entity.getTimestamp())
-            .append(",")
-            .append(entity.getValue())
-            .append("\n");
-        }
-      }
-
-      InputStream input = new ByteArrayInputStream(sb.toString().getBytes());
-      String sql =
-        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);".formatted(columnName);
-
-      copyManager.copyIn(sql, input);
-    } catch (IOException ex) {
-      Log.errorf("IOException during copy insert: %s", ex.getMessage());
-      throw new RuntimeException("IO Error while inserting data points", ex);
-    }
-  }
-
   @Timed(value = "shepard.timeseries-data-point.compression")
   public void compressAllChunks() {
     var sqlString = "SELECT compress_chunk(c) FROM show_chunks('timeseries_data_points') c;";
@@ -134,9 +67,23 @@ public class TimeseriesDataPointRepository {
     query.getResultList();
   }
 
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
+   * <p />
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
+   *
+   * @param timeseriesId timeseriesId identifying a timeseries
+   * @param valueType type of the timeseries values for column lookup
+   * @param queryParams additional query parameters
+   * @return List<TimeseriesDataPoint>
+   */
   @Timed(value = "shepard.timeseries-data-point.query")
   public List<TimeseriesDataPoint> queryDataPoints(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -159,7 +106,7 @@ public class TimeseriesDataPointRepository {
 
   @Timed(value = "shepard.timeseries-data-point-aggregate.query")
   public List<TimeseriesDataPoint> queryAggregationFunction(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -177,13 +124,12 @@ public class TimeseriesDataPointRepository {
     List<TimeseriesDataPoint> entities,
     int startInclusive,
     int endExclusive,
-    TimeseriesEntity timeseriesEntity
+    long timeseriesId,
+    DataPointValueType valueType
   ) {
     StringBuilder queryString = new StringBuilder();
     queryString.append(
-      "INSERT INTO timeseries_data_points (timeseries_id, time, " +
-      getColumnName(timeseriesEntity.getValueType()) +
-      ") values "
+      "INSERT INTO timeseries_data_points (timeseries_id, time, " + getColumnName(valueType) + ") values "
     );
     queryString.append(
       IntStream.range(startInclusive, endExclusive)
@@ -192,16 +138,16 @@ public class TimeseriesDataPointRepository {
     );
     queryString.append(
       " ON CONFLICT (timeseries_id, time) DO UPDATE SET time = EXCLUDED.time, timeseries_id = EXCLUDED.timeseries_id, " +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(valueType) +
       " = " +
       "EXCLUDED." +
-      getColumnName(timeseriesEntity.getValueType()) +
+      getColumnName(valueType) +
       ";"
     );
 
     Query query = entityManager.createNativeQuery(queryString.toString());
 
-    query.setParameter("timeseriesid", timeseriesEntity.getId());
+    query.setParameter("timeseriesid", timeseriesId);
 
     IntStream.range(startInclusive, endExclusive).forEach(index -> {
       query.setParameter("time" + index, entities.get(index).getTimestamp());
@@ -212,7 +158,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
@@ -286,7 +232,7 @@ public class TimeseriesDataPointRepository {
   }
 
   private Query buildSelectAggregationFunctionQueryObject(
-    int timeseriesId,
+    long timeseriesId,
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {

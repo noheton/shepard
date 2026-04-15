@@ -13,7 +13,7 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import io.quarkus.test.InjectMock;
@@ -224,18 +224,18 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
 
-    List<Timeseries> expTimeseries = new ArrayList<Timeseries>();
+    List<TimeseriesTuple> expTimeseries = new ArrayList<TimeseriesTuple>();
 
     for (var currTimeseries : availTimeseriesList) {
       expTimeseries.add(
-        new Timeseries(
-          currTimeseries.getMeasurement(),
-          currTimeseries.getDevice(),
-          currTimeseries.getLocation(),
-          currTimeseries.getSymbolicName(),
-          currTimeseries.getField()
+        new TimeseriesTuple(
+          currTimeseries.getTimeseriesTuple().getMeasurement(),
+          currTimeseries.getTimeseriesTuple().getDevice(),
+          currTimeseries.getTimeseriesTuple().getLocation(),
+          currTimeseries.getTimeseriesTuple().getSymbolicName(),
+          currTimeseries.getTimeseriesTuple().getField()
         )
       );
     }
@@ -295,7 +295,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
 
     assertEquals(
       0,

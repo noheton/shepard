@@ -3,7 +3,7 @@ package de.dlr.shepard.context.references.timeseriesreference.endpoints;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.references.timeseriesreference.io.MetricsIO;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceMetricsService;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -86,7 +86,7 @@ public class TimeseriesReferenceMetricsRest {
     if (versionUID != null) {
       versionUUID = UUID.fromString(versionUID);
     }
-    Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesTuple timeseries = new TimeseriesTuple(measurement, device, location, symbolicName, field);
 
     List<MetricsIO> result = timeseriesReferenceMetricsService.getTimeseriesReferenceMetrics(
       collectionId,
@@ -136,7 +136,7 @@ public class TimeseriesReferenceMetricsRest {
       versionUUID = UUID.fromString(versionUID);
     }
 
-    Timeseries timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesTuple timeseries = new TimeseriesTuple(measurement, device, location, symbolicName, field);
 
     MetricsIO result = timeseriesReferenceMetricsService
       .getTimeseriesReferenceMetrics(
