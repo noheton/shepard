@@ -43,7 +43,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   Constants.SEMANTIC_ANNOTATIONS
 )
 @RequestScoped
-public class AnnotatableTimeseriesRest {
+public class TimeseriesSemanticAnnotationRest {
 
   @Inject
   AnnotatableTimeseriesService annotatableTimeseriesService;
