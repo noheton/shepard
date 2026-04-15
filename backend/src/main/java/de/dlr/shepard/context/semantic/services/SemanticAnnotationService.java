@@ -39,11 +39,11 @@ public class SemanticAnnotationService {
   }
 
   /**
-   * Gets semantic annotation by neo4j id
+   * Get semantic annotation by neo4j id
    *
-   * @param id
-   * @return
-   * @throws NotFoundException if semantic annotation is null or deleted
+   * @param id The Neo4j-ID of the semantic annotation
+   * @return Semantic annotation
+   * @throws NotFoundException Semantic annotation is null or deleted
    */
   public SemanticAnnotation getAnnotationByNeo4jId(long id) {
     var annotation = semanticAnnotationDAO.findByNeo4jId(id);
@@ -80,9 +80,7 @@ public class SemanticAnnotationService {
 
   public boolean deleteAnnotationByNeo4jId(long id) {
     getAnnotationByNeo4jId(id);
-
-    var result = semanticAnnotationDAO.deleteByNeo4jId(id);
-    return result;
+    return semanticAnnotationDAO.deleteByNeo4jId(id);
   }
 
   private SemanticRepository getRepository(long id) {
