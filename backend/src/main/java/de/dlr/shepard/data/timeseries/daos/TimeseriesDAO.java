@@ -1,8 +1,8 @@
 package de.dlr.shepard.data.timeseries.daos;
 
-import static de.dlr.shepard.common.util.Constants.HAS_TIMESERIES_TUPLE;
-import static de.dlr.shepard.common.util.Constants.IS_IN_CONTAINER;
 import static de.dlr.shepard.common.util.Neo4jLabels.*;
+import static de.dlr.shepard.common.util.Neo4jLabels.HAS_TIMESERIES_TUPLE;
+import static de.dlr.shepard.common.util.Neo4jLabels.IS_IN_CONTAINER;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;

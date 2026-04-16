@@ -1,8 +1,8 @@
 package de.dlr.shepard.common.neo4j.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.Date;
 import java.util.Objects;
 import lombok.Getter;
@@ -38,14 +38,14 @@ public abstract class AbstractEntity implements HasId, Deletable, HasProvenance 
   protected Date createdAt;
 
   @ToString.Exclude
-  @Relationship(type = Constants.CREATED_BY)
+  @Relationship(type = Neo4jLabels.CREATED_BY)
   protected User createdBy;
 
   @DateLong
   protected Date updatedAt;
 
   @ToString.Exclude
-  @Relationship(type = Constants.UPDATED_BY)
+  @Relationship(type = Neo4jLabels.UPDATED_BY)
   protected User updatedBy;
 
   /**

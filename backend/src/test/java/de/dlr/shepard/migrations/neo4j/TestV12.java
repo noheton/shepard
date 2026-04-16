@@ -1,14 +1,14 @@
 package de.dlr.shepard.migrations.neo4j;
 
-import static de.dlr.shepard.common.util.Constants.HAS_TIMESERIES_TUPLE;
-import static de.dlr.shepard.common.util.Constants.IS_IN_CONTAINER;
+import static de.dlr.shepard.common.util.Neo4jLabels.HAS_TIMESERIES_TUPLE;
+import static de.dlr.shepard.common.util.Neo4jLabels.IS_IN_CONTAINER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.neo4j.cypherdsl.core.Cypher.literalOf;
 import static org.neo4j.cypherdsl.core.Cypher.node;
 
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
-import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
@@ -84,7 +84,7 @@ public class TestV12 extends MigrationTest {
               "measurement",
               Cypher.literalOf(ts.getTimeseriesTuple().getMeasurement())
             ),
-            Constants.HAS_TIMESERIES_TUPLE
+            Neo4jLabels.HAS_TIMESERIES_TUPLE
           )
           .getLeft()
       );

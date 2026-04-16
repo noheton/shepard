@@ -3,8 +3,8 @@ package de.dlr.shepard.auth.apikey.entities;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.entities.HasCreationDate;
 import de.dlr.shepard.common.neo4j.entities.Named;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -38,7 +38,7 @@ public class ApiKey implements HasId, Named, HasCreationDate {
   private String jws;
 
   @ToString.Exclude
-  @Relationship(type = Constants.BELONGS_TO)
+  @Relationship(type = Neo4jLabels.BELONGS_TO)
   private User belongsTo;
 
   public ApiKey(String name, Date createdAt, User belongsTo) {

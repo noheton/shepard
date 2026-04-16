@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.common.exceptions.ShepardParserException;
 import de.dlr.shepard.common.neo4j.entities.ContainerType;
 import de.dlr.shepard.common.search.io.SearchScope;
-import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.common.util.CypherQueryHelper;
-import de.dlr.shepard.common.util.SortingHelper;
-import de.dlr.shepard.common.util.TraversalRules;
+import de.dlr.shepard.common.util.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -409,7 +406,7 @@ public class Neo4jQueryBuilder {
       "EXISTS {MATCH (" +
       variable +
       ")-[:" +
-      Constants.IS_IN_CONTAINER +
+      Neo4jLabels.IS_IN_CONTAINER +
       "]->(refCon:" +
       containerType +
       ") WHERE id(refCon) ";
@@ -421,7 +418,8 @@ public class Neo4jQueryBuilder {
 
   private static String referencedDataObjectNeo4jIdPart(JsonNode node, String variable) {
     String ret = "(";
-    ret = ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO + "]->(refDo:DataObject) WHERE id(refDo) ";
+    ret =
+      ret + "EXISTS {MATCH (" + variable + ")-[:" + Neo4jLabels.POINTS_TO + "]->(refDo:DataObject) WHERE id(refDo) ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";
@@ -431,7 +429,7 @@ public class Neo4jQueryBuilder {
   private static String referencedCollectionNeo4jIdPart(JsonNode node, String variable) {
     String ret = "(";
     ret =
-      ret + "EXISTS {MATCH (" + variable + ")-[:" + Constants.POINTS_TO + "]->(refCol:Collection) WHERE id(refCol) ";
+      ret + "EXISTS {MATCH (" + variable + ")-[:" + Neo4jLabels.POINTS_TO + "]->(refCol:Collection) WHERE id(refCol) ";
     ret = ret + operatorString(node.get(Constants.OP_OPERATOR)) + " ";
     ret = ret + node.get(Constants.OP_VALUE) + " ";
     ret = ret + "})";

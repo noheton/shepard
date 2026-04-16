@@ -1,7 +1,7 @@
 package de.dlr.shepard.context.references.file.entities;
 
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
@@ -19,11 +19,11 @@ import org.neo4j.ogm.annotation.Relationship;
 @NoArgsConstructor
 public class FileReference extends BasicReference {
 
-  @Relationship(type = Constants.HAS_PAYLOAD)
+  @Relationship(type = Neo4jLabels.HAS_PAYLOAD)
   private List<ShepardFile> files = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.IS_IN_CONTAINER)
+  @Relationship(type = Neo4jLabels.IS_IN_CONTAINER)
   private FileContainer fileContainer;
 
   /**

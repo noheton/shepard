@@ -1,7 +1,7 @@
 package de.dlr.shepard.context.references.basicreference.entities;
 
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.version.entities.VersionableEntity;
 import lombok.Data;
@@ -17,7 +17,7 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @NoArgsConstructor
 public class BasicReference extends VersionableEntity {
 
-  @Relationship(type = Constants.HAS_REFERENCE, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.HAS_REFERENCE, direction = Direction.INCOMING)
   private DataObject dataObject;
 
   /**

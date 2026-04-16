@@ -4,7 +4,7 @@ import static org.neo4j.cypherdsl.core.Cypher.node;
 
 import ac.simons.neo4j.migrations.core.JavaBasedMigration;
 import ac.simons.neo4j.migrations.core.MigrationContext;
-import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -105,8 +105,8 @@ public class V12__Timescale2Neo4j implements JavaBasedMigration {
       .with(TSC_NODE)
       .create(tsNodeToCreate)
       .merge(tsTupleNode)
-      .merge(tsNodeToCreate.relationshipTo(tsTupleNode, Constants.HAS_TIMESERIES_TUPLE))
-      .merge(tsNodeToCreate.relationshipTo(TSC_NODE, Constants.IS_IN_CONTAINER))
+      .merge(tsNodeToCreate.relationshipTo(tsTupleNode, Neo4jLabels.HAS_TIMESERIES_TUPLE))
+      .merge(tsNodeToCreate.relationshipTo(TSC_NODE, Neo4jLabels.IS_IN_CONTAINER))
       .build()
       .getCypher();
   }

@@ -1,8 +1,8 @@
 package de.dlr.shepard.data.timeseries.model;
 
 import de.dlr.shepard.common.neo4j.entities.Annotatable;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
 import jakarta.persistence.EnumType;
@@ -30,12 +30,12 @@ public class Timeseries implements HasId, Annotatable {
 
   @NotBlank
   @NonNull
-  @Relationship(type = Constants.IS_IN_CONTAINER, direction = Direction.OUTGOING)
+  @Relationship(type = Neo4jLabels.IS_IN_CONTAINER, direction = Direction.OUTGOING)
   private TimeseriesContainer container;
 
   @NotBlank
   @NonNull
-  @Relationship(type = Constants.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
+  @Relationship(type = Neo4jLabels.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
   private TimeseriesTuple timeseriesTuple;
 
   @NotBlank
@@ -46,7 +46,7 @@ public class Timeseries implements HasId, Annotatable {
   private final Long timeseriesId;
 
   @NotBlank
-  @Relationship(type = Constants.HAS_ANNOTATION, direction = Direction.OUTGOING)
+  @Relationship(type = Neo4jLabels.HAS_ANNOTATION, direction = Direction.OUTGOING)
   private final List<SemanticAnnotation> annotations = new ArrayList<>();
 
   @Override

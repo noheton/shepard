@@ -3,6 +3,7 @@ package de.dlr.shepard.context.collection.daos;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
@@ -112,7 +113,7 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       successorShepardId,
       getEntityType().getSimpleName(),
       getEntityType().getSimpleName(),
-      Constants.HAS_SUCCESSOR
+      Neo4jLabels.HAS_SUCCESSOR
     );
   }
 
@@ -125,7 +126,7 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       childShepardId,
       getEntityType().getSimpleName(),
       getEntityType().getSimpleName(),
-      Constants.HAS_CHILD
+      Neo4jLabels.HAS_CHILD
     );
   }
 

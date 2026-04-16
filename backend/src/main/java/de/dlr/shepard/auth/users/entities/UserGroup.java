@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +21,7 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @NoArgsConstructor
 public class UserGroup extends BasicEntity {
 
-  @Relationship(type = Constants.IS_IN_GROUP, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.IS_IN_GROUP, direction = Direction.INCOMING)
   private List<User> users = new ArrayList<>();
 
   @ToString.Exclude

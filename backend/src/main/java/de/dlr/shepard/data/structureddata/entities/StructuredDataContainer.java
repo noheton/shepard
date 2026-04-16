@@ -1,7 +1,7 @@
 package de.dlr.shepard.data.structureddata.entities;
 
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
-import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -18,7 +18,7 @@ public class StructuredDataContainer extends BasicContainer {
 
   private String mongoId;
 
-  @Relationship(type = Constants.STRUCTUREDDATA_IN_CONTAINER)
+  @Relationship(type = Neo4jLabels.STRUCTUREDDATA_IN_CONTAINER)
   private List<StructuredData> structuredDatas = new ArrayList<>();
 
   /**
