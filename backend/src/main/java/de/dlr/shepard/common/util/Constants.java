@@ -141,7 +141,7 @@ public class Constants {
   public static final String USER_IN_QUERY = "user";
   public static final String USERGROUP_IN_QUERY = "userGroup";
 
-  // Influx
+  // Time series
   public static final String MEASUREMENT = "measurement";
   public static final String LOCATION = "location";
   public static final String DEVICE = "device";
