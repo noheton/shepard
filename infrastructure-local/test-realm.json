@@ -1,0 +1,104 @@
+{
+  "id": "master",
+  "realm": "master",
+  "sslRequired": "none",
+  "enabled": true,
+  "requiredActions": [],
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "rsa-key",
+        "providerId": "rsa",
+        "subType": "rsa-generated",
+        "config": {
+          "privateKey": [
+            "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC4WYw0m8iPaywMlFQj0e5G1S8iAlYDFLpscwRBxAXcB/0spLEHnjpXA7qT67YJ284GnBN0untOLBG/rlFShbBO6SyctEKPEoY1pWY3eY/CIh5+GsdyRF5Md03iyey31FAr8TpF714p7iwOR2SQgfvAbXqOTBpiTPrH7xEmqyRW9c7/SwW8tui7xi/PzYKmN5sjxGKB581QbKzPACSYrr1YCZlk8+wg9mWyPSVCUUyQ6e1JWTMgK8Lk/v4Y+pwOUHdo4CeZPG5ISaO78BzzBgUXlnRqw356U+u3jUzF0bjFhGD0bbDJnkYpd1zNxSkeffY8LNid1sKWZTpvszwYc+ztAgMBAAECggEAUdZi8PnVQ6HCmMUCQzKPMj+yYEkkMNLzXXCDy8Q/C6o6QKbN9gFOidFccw05L1A2OmXwFyov0girSmoSrO0vUyCdTuWRBJ2nGcqWwXrEEF0AJ2Aw+S+ToyN1Xn/gh80HWDKK+X/lT/zs7tvPr30cqxSOyvvK3KeqzrX46a8g/z72uSWMd8Paiw4TDHrXkDO39XxUBec8LhCF5QOw7SZ2rM3K+0vRykEAGThQX8E6DxbhNU74DkptNfTO2DGcLT/7rDI5N4ExSqgfglqTUP7ZS8gnS850z9qlD8owe3LgG9UqpsFRhO3e2LOXWhwbdwLVccEtR0iU0zA+FYzqgtTo+wKBgQD1X/n0BoKjhZ0vRwL6Q4ry7BUArAWP9EdkghNWJj/RzRzHGk6kGDSR8qdCTRO8zn34slB6c9rGH6LcPdYBTwPzP/mqFC6rRtXLjBhdJq4fHpDOBO4s8lVrB+FLfNE5IKl37km/Q2Dt0s1Pd81jGnW+/Ozc/pw2PyxWqh25dJE88wKBgQDAVRjoPP8dsNDYokHNJYNUhaBCuUwW0RXe9vk4/4Q4WmOOOXZnHeYrUPVHLRDzgAy8iq2sNOyh3yVVHagbAqEL7hra70LXJN2fb8FQaad/dNGVl3VpDr7oNsb6BAsyrOZKzBMbrwMDPHy1khbAH6Zz15OVfoXzvymRYdYLEMEmnwKBgAoXG0k8p0ygJvmVuvqdom4g5TA04rmruu/YJYFqaz9uZtuNKmS3FhpWVyhz0Pb3qth6RLL0Zq+1B1Z1OIKvRCNRoyuqTsz+SbZoGWxjNc/TyvKd40l34alYFpyrElN+E1n6M5Ao7ih5fbXh4FFN+j+TWQ4xbi0Q5freXgCNWZefAoGARfFsamBsQkbf3Dg9h7YhqWYi3sD1+8Izmu7juSeq1LeCRuF8vokwAAaj/CtWY8boWtRvzhU9DKzSrb5oONJe8LC5UW77NrQwaF/CxFR31jEMWsNGrlrvcBEjkR5RWC9qXD8Un9eoV8/yZjFnVpzr8mquQApP+lFFc5pJtaJ1K28CgYAPhVeLsFTqGIiSY5cLZMxemN3zrg/Ga9sn4QI862gEKc3GwoaysnBZWvn9AiC+lt4DfunHk5/G8B/AML+Cf1DDUBztaV+Rv7W42vsGBniVpAa8jaWyD2uWsrBGrt/rnY3huWOcNhd770xts7btkKJHM8rfeWXatcOo/nv897Oe3g==\n-----END PRIVATE KEY-----"
+          ],
+          "priority": ["100"],
+          "enabled": ["true"],
+          "algorithm": ["RS256"]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "frontend-dev",
+      "name": "",
+      "description": "",
+      "rootUrl": "http://frontend:3000",
+      "adminUrl": "",
+      "baseUrl": "/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": ["http://127.0.0.1:3000/*", "http://localhost:3000/*", "http://frontend:3000/*"],
+      "webOrigins": ["http://127.0.0.1:3000/*", "http://localhost:3000/*", "http://frontend:3000/*"],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "false",
+        "standard.token.exchange.enabled": "false",
+        "post.logout.redirect.uris": "+",
+        "frontchannel.logout.session.required": "true",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "display.on.consent.screen": "false",
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "dpop.bound.access.tokens": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": ["web-origins", "acr", "profile", "roles", "basic", "email"],
+      "optionalClientScopes": ["address", "phone", "organization", "offline_access", "microprofile-jwt"],
+      "access": {
+        "view": true,
+        "configure": true,
+        "manage": true
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "0f3fc521-d64e-4ff9-b78d-e8549a281ea5",
+      "username": "patrik",
+      "email": "patrik@test.dlr.de",
+      "firstName": "Patrik",
+      "lastName": "Kauffrau",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asdf",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "53be19f4-cc4f-41ff-a8f3-4483ab999454",
+      "username": "ronald",
+      "email": "ronald@test.dlr.de",
+      "firstName": "Ronald",
+      "lastName": "Pech",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asdf",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

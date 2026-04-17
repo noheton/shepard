@@ -14,25 +14,20 @@ To do this execute the following steps:
 
 2. Copy `.env.example` in this directory and name the copy `.env`.
 
-3. Run the databases and identity provider (keycloak) using:
+3. If you want to quickly try out shepard (i.e. run frontend and backend) run:
+
+   `docker compose --profile tryout up -d`
+
+   Alternatively if you want to start frontend and backend and only start keycloak and the databases run
 
    `docker compose --profile dev up -d`
 
-   As of writing podman does not support profiles as docker does.
-   If using podman you may have to comment out the `backend` and `frontend` section in the `docker-compose.yml` since those will not work without keycloak configured.
-
-4. Create a new [client](https://www.keycloak.org/docs/latest/server_admin/index.html#assembly-managing-clients_server_administration_guide) "frontend-dev" at the keycloak master realm using the [admin console](https://www.keycloak.org/docs/latest/server_admin/index.html#using-the-admin-console) (http://localhost:8082/). Username and password are "admin" each.
-   Go to "Clients", "Import client" and use the source file `keycloak_frontend-dev.json`.
-
-5. [Create a user](https://www.keycloak.org/docs/latest/server_admin/index.html#proc-creating-user_server_administration_guide) in keycloak.
-
-6. Set the environment variable `OIDC_PUBLIC` in `.env` to the public key obtained from <http://localhost:8082/realms/master/>.
+4. There are now two users ready to use in shepard with usernames `ronald` and `patrik`.
+   Password is `asdf` each.
 
 ## Trying / testing shepard
 
 After following the steps in the previous section you can now run
-
-`docker compose --profile tryout up -d`
 
 to start the shepard backend and frontend.
 The frontend is then accessible at <http://localhost:3000/>.
