@@ -1,8 +1,8 @@
 package de.dlr.shepard.context.collection.entities;
 
 import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
@@ -21,28 +21,28 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @NoArgsConstructor
 public class DataObject extends AbstractDataObject {
 
-  @Relationship(type = Constants.HAS_DATAOBJECT, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.HAS_DATAOBJECT, direction = Direction.INCOMING)
   private Collection collection;
 
-  @Relationship(type = Constants.HAS_REFERENCE)
+  @Relationship(type = Neo4jLabels.HAS_REFERENCE)
   private List<BasicReference> references = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.OUTGOING)
+  @Relationship(type = Neo4jLabels.HAS_SUCCESSOR, direction = Direction.OUTGOING)
   private List<DataObject> successors = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_SUCCESSOR, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.HAS_SUCCESSOR, direction = Direction.INCOMING)
   private List<DataObject> predecessors = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_CHILD, direction = Direction.OUTGOING)
+  @Relationship(type = Neo4jLabels.HAS_CHILD, direction = Direction.OUTGOING)
   private List<DataObject> children = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_CHILD, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.HAS_CHILD, direction = Direction.INCOMING)
   private DataObject parent;
 
-  @Relationship(type = Constants.POINTS_TO, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.POINTS_TO, direction = Direction.INCOMING)
   private List<DataObjectReference> incoming = new ArrayList<>();
 
-  @Relationship(type = Constants.HAS_LABJOURNAL_ENTRY)
+  @Relationship(type = Neo4jLabels.HAS_LABJOURNAL_ENTRY)
   private List<LabJournalEntry> labJournalEntries = new ArrayList<>();
 
   /**

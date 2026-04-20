@@ -26,14 +26,13 @@ import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.semantic.io.SemanticRepositoryIO;
-import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.integrationtests.WireMockResource;
@@ -66,9 +65,6 @@ public class ReferenceSearchServiceQuarkusTest {
   TimeseriesService timeseriesService;
 
   @Inject
-  AnnotatableTimeseriesService annotatableTimeseriesService;
-
-  @Inject
   SemanticRepositoryService semanticRepositoryService;
 
   @Inject
@@ -88,8 +84,8 @@ public class ReferenceSearchServiceQuarkusTest {
   private static TimeseriesReference annoReference;
   private static TimeseriesReference noAnnoReference;
   private static TimeseriesContainer tsCon;
-  private static TimeseriesEntity timeseriesEntity1;
-  private static TimeseriesEntity timeseriesEntity2;
+  private static Timeseries timeseries1;
+  private static Timeseries timeseries2;
   private static SemanticRepository repository;
   private static User user;
   private static SemanticAnnotationIO AnnoToCreate;
@@ -130,10 +126,10 @@ public class ReferenceSearchServiceQuarkusTest {
       TimeseriesDataPoint dataPoint = new TimeseriesDataPoint(4l, true);
       List<TimeseriesDataPoint> points = new ArrayList<TimeseriesDataPoint>();
       points.add(dataPoint);
-      Timeseries ts1 = new Timeseries("m1", "d1", "l1", "s1", "f1");
-      Timeseries ts2 = new Timeseries("m2", "d2", "l2", "s2", "f2");
-      timeseriesEntity1 = timeseriesService.saveDataPoints(tsCon.getId(), ts1, points);
-      timeseriesEntity2 = timeseriesService.saveDataPoints(tsCon.getId(), ts2, points);
+      TimeseriesTuple ts1 = new TimeseriesTuple("m1", "d1", "l1", "s1", "f1");
+      TimeseriesTuple ts2 = new TimeseriesTuple("m2", "d2", "l2", "s2", "f2");
+      timeseries1 = timeseriesService.saveDataPoints(tsCon.getId(), ts1, points);
+      timeseries2 = timeseriesService.saveDataPoints(tsCon.getId(), ts2, points);
       //create annotation for first timeseries
       SemanticRepositoryIO repToCreate = new SemanticRepositoryIO();
       repToCreate.setName("SemanticRepository");
@@ -145,7 +141,7 @@ public class ReferenceSearchServiceQuarkusTest {
       ref1IO.setName("refAnno");
       ref1IO.setStart(0l);
       ref1IO.setEnd(9l);
-      List<Timeseries> timeseries1 = new ArrayList<Timeseries>();
+      List<TimeseriesTuple> timeseries1 = new ArrayList<TimeseriesTuple>();
       timeseries1.add(ts1);
       ref1IO.setTimeseries(timeseries1);
       ref1IO.setTimeseriesContainerId(tsCon.getId());
@@ -159,7 +155,7 @@ public class ReferenceSearchServiceQuarkusTest {
       ref2IO.setName("refWithoutAnno");
       ref2IO.setStart(0l);
       ref2IO.setEnd(9l);
-      List<Timeseries> timeseries2 = new ArrayList<Timeseries>();
+      List<TimeseriesTuple> timeseries2 = new ArrayList<TimeseriesTuple>();
       timeseries2.add(ts2);
       ref2IO.setTimeseries(timeseries2);
       ref2IO.setTimeseriesContainerId(tsCon.getId());

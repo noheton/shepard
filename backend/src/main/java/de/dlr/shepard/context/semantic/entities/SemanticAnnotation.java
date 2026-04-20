@@ -1,8 +1,8 @@
 package de.dlr.shepard.context.semantic.entities;
 
 import de.dlr.shepard.common.neo4j.entities.Named;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,11 +35,11 @@ public class SemanticAnnotation implements HasId, Named {
   private String valueIRI;
 
   @ToString.Exclude
-  @Relationship(type = Constants.PROPERTY_REPOSITORY)
+  @Relationship(type = Neo4jLabels.PROPERTY_REPOSITORY)
   private SemanticRepository propertyRepository;
 
   @ToString.Exclude
-  @Relationship(type = Constants.VALUE_REPOSITORY)
+  @Relationship(type = Neo4jLabels.VALUE_REPOSITORY)
   private SemanticRepository valueRepository;
 
   /**

@@ -17,27 +17,21 @@ import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
-import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
 import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.references.file.services.FileReferenceService;
-import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
-import de.dlr.shepard.context.version.daos.VersionDAO;
-import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileContainerService;
-import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
-import de.dlr.shepard.data.structureddata.services.StructuredDataService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -76,16 +70,10 @@ public class ExportServiceQuarkusTest {
   TimeseriesService timeseriesService;
 
   @Inject
-  StructuredDataContainerService structuredDataContainerService;
-
-  @Inject
   FileContainerService fileContainerService;
 
   @Inject
   FileReferenceService fileReferenceService;
-
-  @Inject
-  VersionDAO versionDAO;
 
   @Inject
   TimeseriesReferenceService timeseriesReferenceService;
@@ -97,22 +85,10 @@ public class ExportServiceQuarkusTest {
   TimeseriesContainerService timeseriesContainerService;
 
   @Inject
-  StructuredDataService structuredDataService;
-
-  @Inject
-  StructuredDataReferenceService structuredDataReferenceService;
-
-  @Inject
   DataObjectService dataObjectService;
 
   @Inject
   DataObjectReferenceService dataObjectReferenceService;
-
-  @Inject
-  VersionService versionService;
-
-  @Inject
-  CollectionReferenceService collectionReferenceService;
 
   private Collection collection;
   private User user;
@@ -123,7 +99,7 @@ public class ExportServiceQuarkusTest {
   private FileReference fileReference;
   private DataObjectReference dataObjectReference;
   private ShepardFile shepardFile;
-  private Timeseries timeseries;
+  private TimeseriesTuple timeseries;
   private TimeseriesReference timeseriesReference;
   private TimeseriesContainer timeseriesContainer;
   private final String userName = "user_name";
@@ -224,8 +200,8 @@ public class ExportServiceQuarkusTest {
       points.add(dataPoint1);
       points.add(dataPoint2);
       points.add(dataPoint3);
-      timeseries = new Timeseries("m", "d", "l", "s", "f");
-      ArrayList<Timeseries> timeseriesList = new ArrayList<Timeseries>();
+      timeseries = new TimeseriesTuple("m", "d", "l", "s", "f");
+      ArrayList<TimeseriesTuple> timeseriesList = new ArrayList<TimeseriesTuple>();
       timeseriesList.add(timeseries);
       timeseriesService.saveDataPoints(timeseriesContainer.getId(), timeseries, points);
 

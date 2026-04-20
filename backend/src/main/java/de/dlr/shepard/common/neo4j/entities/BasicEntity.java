@@ -1,7 +1,7 @@
 package de.dlr.shepard.common.neo4j.entities;
 
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +21,7 @@ public class BasicEntity extends AbstractEntity implements Annotatable, Named {
   protected String name;
 
   @ToString.Exclude
-  @Relationship(type = Constants.HAS_ANNOTATION)
+  @Relationship(type = Neo4jLabels.HAS_ANNOTATION)
   private List<SemanticAnnotation> annotations = new ArrayList<>();
 
   /**

@@ -1,9 +1,10 @@
 package de.dlr.shepard.context.references.timeseriesreference.model;
 
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -22,11 +23,11 @@ public class TimeseriesReference extends BasicReference {
 
   private long end;
 
-  @Relationship(type = Constants.HAS_PAYLOAD)
-  private List<ReferencedTimeseriesNodeEntity> referencedTimeseriesList = new ArrayList<>();
+  @Relationship(type = Neo4jLabels.HAS_PAYLOAD)
+  private List<TimeseriesTuple> referencedTimeseriesList = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.IS_IN_CONTAINER)
+  @Relationship(type = Neo4jLabels.IS_IN_CONTAINER)
   private TimeseriesContainer timeseriesContainer;
 
   /**
@@ -38,7 +39,7 @@ public class TimeseriesReference extends BasicReference {
     super(id);
   }
 
-  public void addTimeseries(ReferencedTimeseriesNodeEntity timeseries) {
+  public void addTimeseries(TimeseriesTuple timeseries) {
     this.referencedTimeseriesList.add(timeseries);
   }
 

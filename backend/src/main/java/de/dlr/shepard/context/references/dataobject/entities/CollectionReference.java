@@ -1,7 +1,7 @@
 package de.dlr.shepard.context.references.dataobject.entities;
 
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import java.util.Objects;
@@ -17,7 +17,7 @@ import org.neo4j.ogm.annotation.Relationship;
 public class CollectionReference extends BasicReference {
 
   @ToString.Exclude
-  @Relationship(type = Constants.POINTS_TO)
+  @Relationship(type = Neo4jLabels.POINTS_TO)
   private Collection referencedCollection;
 
   private String relationship;

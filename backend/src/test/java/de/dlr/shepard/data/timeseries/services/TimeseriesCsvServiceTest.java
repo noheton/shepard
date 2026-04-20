@@ -13,7 +13,7 @@ import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.utilities.CsvConverter;
 import io.quarkus.test.InjectMock;
@@ -224,43 +224,30 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
-
-    List<Timeseries> expTimeseries = new ArrayList<Timeseries>();
-
-    for (var currTimeseries : availTimeseriesList) {
-      expTimeseries.add(
-        new Timeseries(
-          currTimeseries.getMeasurement(),
-          currTimeseries.getDevice(),
-          currTimeseries.getLocation(),
-          currTimeseries.getSymbolicName(),
-          currTimeseries.getField()
-        )
-      );
-    }
+    List<TimeseriesTuple> expTimeseries = timeseriesService
+      .getTimeseriesAvailable(container.getId())
+      .map(Timeseries::getTimeseriesTuple)
+      .toList();
 
     var actualTimeseriesDataMap = new ArrayList<TimeseriesWithDataPoints>();
-    expTimeseries
-      .stream()
-      .forEach(timeseries -> {
-        actualTimeseriesDataMap.add(
-          new TimeseriesWithDataPoints(
+    expTimeseries.forEach(timeseries -> {
+      actualTimeseriesDataMap.add(
+        new TimeseriesWithDataPoints(
+          timeseries,
+          timeseriesService.getDataPointsByTimeseries(
+            container.getId(),
             timeseries,
-            timeseriesService.getDataPointsByTimeseries(
-              container.getId(),
-              timeseries,
-              new TimeseriesDataPointsQueryParams(
-                InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
-                InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
-                null,
-                null,
-                null
-              )
+            new TimeseriesDataPointsQueryParams(
+              InstantHelper.fromGermanDate("01.01.2024").addHours(-1).toNano(),
+              InstantHelper.fromGermanDate("01.01.2024").addHours(1).toNano(),
+              null,
+              null,
+              null
             )
           )
-        );
-      });
+        )
+      );
+    });
 
     var actualTimeSeriesStream = CsvConverter.convertToCsv(actualTimeseriesDataMap, CsvFormat.ROW);
 
@@ -295,7 +282,7 @@ public class TimeseriesCsvServiceTest {
 
     timeseriesCsvService.importTimeseriesFromCsv(container.getId(), importCSVFile.toPath().toString());
 
-    List<TimeseriesEntity> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId());
+    List<Timeseries> availTimeseriesList = timeseriesService.getTimeseriesAvailable(container.getId()).toList();
 
     assertEquals(
       0,

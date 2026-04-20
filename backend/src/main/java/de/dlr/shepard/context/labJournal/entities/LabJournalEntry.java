@@ -1,8 +1,8 @@
 package de.dlr.shepard.context.labJournal.entities;
 
 import de.dlr.shepard.common.neo4j.entities.AbstractEntity;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +21,7 @@ public class LabJournalEntry extends AbstractEntity {
 
   private String content;
 
-  @Relationship(type = Constants.HAS_LABJOURNAL_ENTRY, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.HAS_LABJOURNAL_ENTRY, direction = Direction.INCOMING)
   private DataObject dataObject;
 
   @Override

@@ -2,8 +2,8 @@ package de.dlr.shepard.auth.users.entities;
 
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.common.subscription.entities.Subscription;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,11 +30,11 @@ public class User implements HasId {
   private String email;
 
   @ToString.Exclude
-  @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
 
   @ToString.Exclude
-  @Relationship(type = Constants.BELONGS_TO, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.BELONGS_TO, direction = Direction.INCOMING)
   private List<ApiKey> apiKeys = new ArrayList<>();
 
   /**

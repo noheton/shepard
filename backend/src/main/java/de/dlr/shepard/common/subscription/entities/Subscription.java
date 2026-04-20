@@ -3,8 +3,8 @@ package de.dlr.shepard.common.subscription.entities;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.neo4j.entities.UserCreated;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.common.util.RequestMethod;
 import java.util.Date;
 import java.util.Objects;
@@ -37,7 +37,7 @@ public class Subscription implements HasId, UserCreated, Named {
   private RequestMethod requestMethod;
 
   @ToString.Exclude
-  @Relationship(type = Constants.SUBSCRIBED_BY)
+  @Relationship(type = Neo4jLabels.SUBSCRIBED_BY)
   private User createdBy;
 
   @DateLong

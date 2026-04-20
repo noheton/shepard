@@ -3,8 +3,8 @@ package de.dlr.shepard.context.version.entities;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.neo4j.entities.UserCreated;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -40,10 +40,10 @@ public class Version implements HasId, UserCreated, Named {
   private Date createdAt;
 
   @ToString.Exclude
-  @Relationship(type = Constants.CREATED_BY)
+  @Relationship(type = Neo4jLabels.CREATED_BY)
   private User createdBy;
 
-  @Relationship(type = Constants.HAS_PREDECESSOR)
+  @Relationship(type = Neo4jLabels.HAS_PREDECESSOR)
   private Version predecessor;
 
   /**

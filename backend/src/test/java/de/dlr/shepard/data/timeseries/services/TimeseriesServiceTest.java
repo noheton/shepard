@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -13,26 +14,30 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response.Status;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -51,21 +56,27 @@ public class TimeseriesServiceTest {
   @InjectMock
   AuthenticationContext authenticationContext;
 
-  private final String containerName = "AnotherContainer";
+  private final String containerName = "TimeseriesServiceTestContainer";
   private final long startDate = InstantHelper.fromGermanDate("01.01.2024").toNano();
   private final long endDate = InstantHelper.now().addHours(1).toNano();
 
-  @Test
-  @Transactional
-  public void saveDataPoints_addDoubleValue_success() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
+  private TimeseriesContainer container;
 
+  @BeforeEach
+  public void setUpEach() {
+    User user = new User("Testuser");
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
 
-    var container = timeseriesContainerService.createContainer(containerIO);
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+
+    container = timeseriesContainerService.createContainer(containerIO);
+  }
+
+  @Test
+  @Transactional
+  public void saveDataPoints_addDoubleValue_success() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointDouble(123.456);
@@ -84,21 +95,13 @@ public class TimeseriesServiceTest {
     assertNotNull(actual);
     assertEquals(1, actual.size());
     TimeseriesDataPoint actualPoint = actual.getFirst();
-    assertTrue(actualPoint.getValue() instanceof Double, "DataPoint value must be a double");
+    assertInstanceOf(Double.class, actualPoint.getValue(), "DataPoint value must be a double");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
 
   @Test
   @Transactional
-  public void saveDataPoints_addBooleanValue_success() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
+  public void saveDataPoints_addBooleanValue_success() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointBoolean(true);
@@ -117,20 +120,13 @@ public class TimeseriesServiceTest {
     assertNotNull(actual);
     assertEquals(1, actual.size());
     TimeseriesDataPoint actualPoint = actual.getFirst();
-    assertTrue(actualPoint.getValue() instanceof Boolean, "DataPoint value must be a boolean");
+    assertInstanceOf(Boolean.class, actualPoint.getValue(), "DataPoint value must be a boolean");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
 
   @Test
   @Transactional
-  public void saveDataPoints_addStringValue_success() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    var container = timeseriesContainerService.createContainer(containerIO);
+  public void saveDataPoints_addStringValue_success() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointString("Hello World");
@@ -149,21 +145,13 @@ public class TimeseriesServiceTest {
     assertNotNull(actual);
     assertEquals(1, actual.size());
     TimeseriesDataPoint actualPoint = actual.getFirst();
-    assertTrue(actualPoint.getValue() instanceof String, "DataPoint value must be a string");
+    assertInstanceOf(String.class, actualPoint.getValue(), "DataPoint value must be a string");
     assertEquals(point.getTimestamp(), actualPoint.getTimestamp(), "DataPoint timestamp must be taken over");
   }
 
   @Test
   @Transactional
-  public void saveDataPoints_addIntegerValue_success() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
+  public void saveDataPoints_addIntegerValue_success() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("measurement");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(42);
@@ -188,15 +176,7 @@ public class TimeseriesServiceTest {
 
   @Test
   @Transactional
-  public void saveDataPoints_toExistingTimeseries_success() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
+  public void saveDataPoints_toExistingTimeseries_success() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
@@ -222,38 +202,22 @@ public class TimeseriesServiceTest {
 
   @Test
   @Transactional
-  public void saveDataPoints_requiredFieldsMissing_throwsException() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
-    var timeseries = new Timeseries("", "", "", "", "");
+  public void saveDataPoints_requiredFieldsMissing_throwsException() {
+    var timeseries = new TimeseriesTuple("", "", "", "", "");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
     var point = TimeseriesTestDataGenerator.generateDataPointInteger(5);
     dataPoints.add(point);
 
-    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
-      this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
-    });
+    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () ->
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints)
+    );
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
   @Test
   @Transactional
-  public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_throwsException() throws Exception {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
+  public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_throwsException() {
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
 
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
@@ -265,29 +229,21 @@ public class TimeseriesServiceTest {
     var pointWithDifferentType = TimeseriesTestDataGenerator.generateDataPointInteger(20);
     otherDataPoints.add(pointWithDifferentType);
 
-    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () -> {
-      this.timeseriesService.saveDataPoints(container.getId(), timeseries, otherDataPoints);
-    });
+    InvalidBodyException thrown = assertThrowsExactly(InvalidBodyException.class, () ->
+      this.timeseriesService.saveDataPoints(container.getId(), timeseries, otherDataPoints)
+    );
 
     assertEquals(Status.BAD_REQUEST.getStatusCode(), thrown.getResponse().getStatus());
   }
 
   @Test
   @Transactional
-  public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_autoConversion() throws Exception {
+  public void saveDataPoints_addDataPointToExistingTimeseriesWithDifferentType_autoConversion() {
     try (var configProviderMock = Mockito.mockStatic(ConfigProvider.class)) {
       var config = mock(Config.class);
       configProviderMock.when(ConfigProvider::getConfig).thenReturn(config);
       when(config.getOptionalValue("shepard.autoconvert-int", Boolean.class)).thenReturn(Optional.of(true));
 
-      User user = new User("Testuser");
-      TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-      containerIO.setName(containerName);
-
-      when(userService.getCurrentUser()).thenReturn(user);
-      when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-      var container = timeseriesContainerService.createContainer(containerIO);
       var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
 
       List<TimeseriesDataPoint> dataPoints = new ArrayList<>();
@@ -304,7 +260,7 @@ public class TimeseriesServiceTest {
       });
 
       var queryParams = new TimeseriesDataPointsQueryParams(
-        0,
+        0L,
         Instant.now().toEpochMilli() * 1_000_000,
         null,
         null,
@@ -327,14 +283,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getTimeseriesAvailable_timeseriesExists_returnsTimeseries() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("temperature");
     List<TimeseriesDataPoint> dataPoints = new ArrayList<>(
       List.of(TimeseriesTestDataGenerator.generateDataPointDouble(22.1))
@@ -342,23 +290,48 @@ public class TimeseriesServiceTest {
 
     this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
 
-    var actual = this.timeseriesService.getTimeseriesAvailable(container.getId());
+    var actual = this.timeseriesService.getTimeseriesAvailable(container.getId()).toList();
     assertEquals(1, actual.size());
-    assertEquals("temperature", actual.getFirst().getMeasurement());
+    assertEquals("temperature", actual.getFirst().getTimeseriesTuple().getMeasurement());
   }
 
   @Test
-  public void getTimeseriesById_timeseriesDoesNotExist_throwsNotFoundException() {
-    int nonExistingTimeseriesId = -1;
+  public void getTimeseriesById_timeseriesDoesNotExist_throwsNoSuchElementException() {
+    var nonExistingTimeseriesId = -1L;
 
-    assertThrowsExactly(InvalidPathException.class, () -> {
-      this.timeseriesService.getTimeseriesById(1234L, nonExistingTimeseriesId);
-    });
+    assertThrowsExactly(NoSuchElementException.class, () ->
+      this.timeseriesService.getTimeseriesById(nonExistingTimeseriesId)
+    );
   }
 
   @Test
-  public void getTimeseries_timeseriesDoesNotExist_throwsNotFoundException() {
-    Timeseries nonExistingTimeseries = new Timeseries(
+  public void getTimeseriesById_timeseriesExists_containerNotReadable_throwsInvalidAuthException() {
+    // Arrange
+    User user1 = new User("u1");
+    when(userService.getCurrentUser()).thenReturn(user1);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user1.getUsername());
+    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
+    containerIO.setName(containerName);
+    var privateContainerId = timeseriesContainerService.createContainer(containerIO).getId();
+    var nonAccessibleTimeseriesId = timeseriesService
+      .saveDataPoints(
+        privateContainerId,
+        new TimeseriesTuple("m", "d", "l", "s", "f"),
+        List.of(new TimeseriesDataPoint(1, 1))
+      )
+      .getTimeseriesId();
+
+    User user2 = new User("u2");
+    when(userService.getCurrentUser()).thenReturn(user2);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user2.getUsername());
+
+    // Act & Assert
+    assertThrows(InvalidAuthException.class, () -> this.timeseriesService.getTimeseriesById(nonAccessibleTimeseriesId));
+  }
+
+  @Test
+  public void getTimeseries_timeseriesDoesNotExist_returnsEmpty() {
+    TimeseriesTuple nonExistingTimeseries = new TimeseriesTuple(
       "nonExisting",
       "nonExisting",
       "nonExisting",
@@ -366,17 +339,7 @@ public class TimeseriesServiceTest {
       "nonExisting"
     );
 
-    User user = new User("Testuser");
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-    var container = timeseriesContainerService.createContainer(containerIO);
-
-    assertThrowsExactly(NotFoundException.class, () -> {
-      this.timeseriesService.getTimeseries(container.getId(), nonExistingTimeseries);
-    });
+    assertEquals(Optional.empty(), this.timeseriesService.getTimeseries(container.getId(), nonExistingTimeseries));
   }
 
   @Test
@@ -392,14 +355,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnsAll() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -428,14 +383,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnsThreeOutOfFive() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -459,14 +406,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void getDataPointsByTimeseries_forGivenDuration_returnNone() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("humidity");
     var start = InstantHelper.now().addDays(-4).toNano();
     var end = InstantHelper.now().addDays(-2).toNano();
@@ -494,14 +433,6 @@ public class TimeseriesServiceTest {
   @Test
   @Transactional
   public void saveDataPoint_non_unique_returnOverwritten() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-1");
 
     // setup batch of distinct timeseries data points
@@ -526,7 +457,7 @@ public class TimeseriesServiceTest {
 
     this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPointsContainingNonUnique);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      1,
+      1L,
       1708067683056880099L,
       null,
       null,
@@ -535,24 +466,16 @@ public class TimeseriesServiceTest {
     var actual = this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
 
     assertEquals(5, actual.size());
-    assertEquals(actual.getFirst().getValue(), "value 1");
-    assertEquals(actual.get(1).getValue(), "value 2");
-    assertEquals(actual.get(2).getValue(), "value 3 UPDATED");
-    assertEquals(actual.get(3).getValue(), "value 4");
-    assertEquals(actual.get(4).getValue(), "value 5");
+    assertEquals("value 1", actual.getFirst().getValue());
+    assertEquals("value 2", actual.get(1).getValue());
+    assertEquals("value 3 UPDATED", actual.get(2).getValue());
+    assertEquals("value 4", actual.get(3).getValue());
+    assertEquals("value 5", actual.get(4).getValue());
   }
 
   @Test
   @Transactional
   public void saveDataPoint_non_unique_batch_returnExceptionOrSilentlyOverwrite() {
-    User user = new User("Testuser");
-    TimeseriesContainerIO containerIO = new TimeseriesContainerIO();
-    containerIO.setName(containerName);
-
-    when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-
-    var container = timeseriesContainerService.createContainer(containerIO);
     var timeseries = TimeseriesTestDataGenerator.generateTimeseries("uniqueness-test-2");
 
     // setup batch of non-unique timestamp values - we expect an exception to be thrown
@@ -565,7 +488,7 @@ public class TimeseriesServiceTest {
     try {
       this.timeseriesService.saveDataPoints(container.getId(), timeseries, dataPoints);
       TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-        1,
+        1L,
         1908067683056880001L,
         null,
         null,
@@ -574,7 +497,7 @@ public class TimeseriesServiceTest {
       var retrievedTimeseries =
         this.timeseriesService.getDataPointsByTimeseries(container.getId(), timeseries, queryParams);
       assertEquals(1, retrievedTimeseries.size());
-      assertEquals(retrievedTimeseries.getFirst().getValue(), "value 2");
+      assertEquals("value 2", retrievedTimeseries.getFirst().getValue());
     } catch (InvalidBodyException ex) {
       assertTrue(true);
     } catch (Exception ex) {

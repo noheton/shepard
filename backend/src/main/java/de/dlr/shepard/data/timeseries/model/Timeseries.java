@@ -1,37 +1,61 @@
 package de.dlr.shepard.data.timeseries.model;
 
+import de.dlr.shepard.common.neo4j.entities.Annotatable;
+import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.*;
+import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Relationship;
+import org.neo4j.ogm.annotation.Relationship.Direction;
 
+@NodeEntity
 @Data
-@EqualsAndHashCode
 @NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class Timeseries {
+@RequiredArgsConstructor
+public class Timeseries implements HasId, Annotatable {
+
+  @Id
+  @GeneratedValue
+  @EqualsAndHashCode.Exclude
+  private Long id;
 
   @NotBlank
-  private final String measurement;
+  @NonNull
+  @Relationship(type = Neo4jLabels.IS_IN_CONTAINER, direction = Direction.OUTGOING)
+  private TimeseriesContainer container;
 
   @NotBlank
-  private final String device;
+  @NonNull
+  @Relationship(type = Neo4jLabels.HAS_TIMESERIES_TUPLE, direction = Direction.OUTGOING)
+  private TimeseriesTuple timeseriesTuple;
 
   @NotBlank
-  private final String location;
+  @Enumerated(EnumType.STRING)
+  private final DataPointValueType valueType;
 
   @NotBlank
-  private final String symbolicName;
+  private final Long timeseriesId;
 
   @NotBlank
-  private final String field;
+  @Relationship(type = Neo4jLabels.HAS_ANNOTATION, direction = Direction.OUTGOING)
+  private final List<SemanticAnnotation> annotations = new ArrayList<>();
 
-  public Timeseries(TimeseriesEntity timeseriesEntity) {
-    this.measurement = timeseriesEntity.getMeasurement();
-    this.device = timeseriesEntity.getDevice();
-    this.location = timeseriesEntity.getLocation();
-    this.symbolicName = timeseriesEntity.getSymbolicName();
-    this.field = timeseriesEntity.getField();
+  @Override
+  public String getUniqueId() {
+    return "timeseries-" + getTimeseriesId();
+  }
+
+  @Override
+  public void addAnnotation(SemanticAnnotation annotation) {
+    annotations.add(annotation);
   }
 }

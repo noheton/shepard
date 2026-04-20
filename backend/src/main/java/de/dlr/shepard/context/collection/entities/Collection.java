@@ -5,6 +5,7 @@ import de.dlr.shepard.common.neo4j.entities.AbstractDataObject;
 import de.dlr.shepard.common.neo4j.entities.HasPermissions;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.ArrayList;
@@ -22,16 +23,16 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @NoArgsConstructor
 public class Collection extends AbstractDataObject implements HasPermissions {
 
-  @Relationship(type = Constants.HAS_DATAOBJECT)
+  @Relationship(type = Neo4jLabels.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();
 
-  @Relationship(type = Constants.POINTS_TO, direction = Direction.INCOMING)
+  @Relationship(type = Neo4jLabels.POINTS_TO, direction = Direction.INCOMING)
   private List<CollectionReference> incoming = new ArrayList<>();
 
   @Relationship(type = Constants.HAS_PERMISSIONS)
   private Permissions permissions;
 
-  @Relationship(type = Constants.HAS_DEFAULT_FILE_CONTAINER)
+  @Relationship(type = Neo4jLabels.HAS_DEFAULT_FILE_CONTAINER)
   private FileContainer fileContainer;
 
   /**

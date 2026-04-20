@@ -1,6 +1,6 @@
 package de.dlr.shepard.context.references.spatialdata.entities;
 
-import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.Neo4jLabels;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.data.spatialdata.endpoints.SpatialDataParamParser;
 import de.dlr.shepard.data.spatialdata.io.SpatialDataQueryParams;
@@ -37,7 +37,7 @@ public class SpatialDataReference extends BasicReference {
   private Integer skip;
 
   @ToString.Exclude
-  @Relationship(type = Constants.IS_IN_CONTAINER)
+  @Relationship(type = Neo4jLabels.IS_IN_CONTAINER)
   private SpatialDataContainer spatialDataContainer;
 
   public SpatialDataQueryParams toSpatialDataQueryParams() {

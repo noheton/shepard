@@ -2,24 +2,17 @@ package de.dlr.shepard.context.semantic.endpoints;
 
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
-import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
+import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
+import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -43,10 +36,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
   Constants.SEMANTIC_ANNOTATIONS
 )
 @RequestScoped
-public class AnnotatableTimeseriesRest {
+public class TimeseriesSemanticAnnotationRest extends SemanticAnnotationRest {
 
   @Inject
-  AnnotatableTimeseriesService annotatableTimeseriesService;
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
 
   @GET
   @Tag(name = Constants.TIMESERIES_CONTAINER)
@@ -63,14 +59,14 @@ public class AnnotatableTimeseriesRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
-  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID, deprecated = true)
   @Parameter(name = Constants.TIMESERIES_ID)
   public Response getAllAnnotations(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero @Deprecated Long timeseriesContainerId,
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
   ) {
-    var annotations = annotatableTimeseriesService.getAnnotations(containerId, timeseriesId);
-    return Response.ok(annotations.stream().map(SemanticAnnotationIO::new).collect(Collectors.toList())).build();
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId.longValue());
+    return getAllByShepardId(timeseries.getId());
   }
 
   @GET
@@ -89,16 +85,23 @@ public class AnnotatableTimeseriesRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
-  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID, deprecated = true)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   public Response getAnnotationById(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero @Deprecated Long timeseriesContainerId,
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long annotationId
   ) {
-    var annotation = annotatableTimeseriesService.getAnnotationById(containerId, timeseriesId, annotationId);
-    return Response.ok(new SemanticAnnotationIO(annotation)).build();
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId.longValue());
+    var annotation = timeseries
+      .getAnnotations()
+      .stream()
+      .filter(a -> a.getId().equals(annotationId))
+      .findFirst()
+      .map(SemanticAnnotationIO::new)
+      .orElseThrow(NotFoundException::new);
+    return Response.ok(annotation).build();
   }
 
   @POST
@@ -113,19 +116,19 @@ public class AnnotatableTimeseriesRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
-  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID, deprecated = true)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Transactional
   public Response createAnnotation(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero @Deprecated Long timeseriesContainerId,
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
     @RequestBody(
       required = true,
       content = @Content(schema = @Schema(implementation = SemanticAnnotationIO.class))
     ) @Valid SemanticAnnotationIO annotation
   ) {
-    var result = annotatableTimeseriesService.createAnnotation(containerId, timeseriesId, annotation);
-    return Response.ok(new SemanticAnnotationIO(result)).status(Status.CREATED).build();
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId.longValue());
+    return createByShepardId(timeseries.getId(), annotation);
   }
 
   @DELETE
@@ -137,16 +140,23 @@ public class AnnotatableTimeseriesRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
-  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID, deprecated = true)
   @Parameter(name = Constants.TIMESERIES_ID)
   @Parameter(name = Constants.SEMANTIC_ANNOTATION_ID)
   @Transactional
   public Response deleteAnnotation(
-    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero @Deprecated Long timeseriesContainerId,
     @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId,
     @PathParam(Constants.SEMANTIC_ANNOTATION_ID) @NotNull @PositiveOrZero Long annotationId
   ) {
-    annotatableTimeseriesService.deleteAnnotation(containerId, timeseriesId, annotationId);
-    return Response.status(Status.NO_CONTENT).build();
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesId.longValue());
+    timeseriesContainerService.assertIsAllowedToEditContainer(timeseries.getContainer().getId());
+    var annotation = timeseries
+      .getAnnotations()
+      .stream()
+      .filter(a -> a.getId().equals(annotationId))
+      .findFirst()
+      .orElseThrow(NotFoundException::new);
+    return delete(annotation.getId());
   }
 }

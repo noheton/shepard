@@ -17,19 +17,15 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.DataObjectService;
-import de.dlr.shepard.context.references.timeseriesreference.daos.ReferencedTimeseriesNodeEntityDAO;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
+import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesTupleDAO;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
-import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.model.*;
 import de.dlr.shepard.data.timeseries.model.enums.AggregateFunction;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
@@ -65,7 +61,7 @@ public class TimeseriesReferenceServiceTest {
   DataObjectService dataObjectService;
 
   @InjectMock
-  ReferencedTimeseriesNodeEntityDAO timeseriesDAO;
+  TimeseriesTupleDAO timeseriesDAO;
 
   @InjectMock
   UserService userService;
@@ -183,7 +179,7 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+    TimeseriesTuple timeseries = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
 
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
@@ -202,7 +198,7 @@ public class TimeseriesReferenceServiceTest {
         setName(input.getName());
         setStart(input.getStart());
         setEnd(input.getEnd());
-        setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(timeseries)));
+        setReferencedTimeseriesList(List.of(timeseries));
         setTimeseriesContainer(container);
       }
     };
@@ -245,7 +241,7 @@ public class TimeseriesReferenceServiceTest {
         timeseries.getSymbolicName(),
         timeseries.getField()
       )
-    ).thenReturn(new ReferencedTimeseriesNodeEntity(timeseries));
+    ).thenReturn(timeseries);
     when(timeseriesReferenceDAO.createOrUpdate(toCreate)).thenReturn(created);
     when(timeseriesReferenceDAO.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -266,7 +262,7 @@ public class TimeseriesReferenceServiceTest {
     dataObject.setShepardId(2005L);
     TimeseriesContainer container = new TimeseriesContainer(300L);
     Date date = new Date(30L);
-    Timeseries timeseries = new Timeseries("meas", "dev", "loc", "symName", "field");
+    TimeseriesTuple timeseries = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReferenceIO input = new TimeseriesReferenceIO() {
       {
         setName("MyName");
@@ -284,7 +280,7 @@ public class TimeseriesReferenceServiceTest {
         setName(input.getName());
         setStart(input.getStart());
         setEnd(input.getEnd());
-        setReferencedTimeseriesList(List.of(new ReferencedTimeseriesNodeEntity(timeseries)));
+        setReferencedTimeseriesList(List.of(timeseries));
         setTimeseriesContainer(container);
       }
     };
@@ -354,7 +350,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("me.as", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesTuple("me.as", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -387,7 +383,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesTuple("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(container.getId());
       }
     };
@@ -415,7 +411,7 @@ public class TimeseriesReferenceServiceTest {
         setName("MyName");
         setStart(123L);
         setEnd(321L);
-        setTimeseries(List.of(new Timeseries("meas", "dev", "loc", "symName", "field")));
+        setTimeseries(List.of(new TimeseriesTuple("meas", "dev", "loc", "symName", "field")));
         setTimeseriesContainerId(containerShepardId);
       }
     };
@@ -458,7 +454,7 @@ public class TimeseriesReferenceServiceTest {
   @Test
   public void getPayloadByShepardIdTest() {
     TimeseriesContainer container = new TimeseriesContainer(2L);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -476,7 +472,7 @@ public class TimeseriesReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     TimeseriesWithDataPoints timeseriesWithDataPoints = new TimeseriesWithDataPoints(
-      ts.toTimeseries(),
+      ts,
       List.of(new TimeseriesDataPoint(50L, 7))
     );
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
@@ -487,9 +483,9 @@ public class TimeseriesReferenceServiceTest {
       AggregateFunction.MEAN
     );
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(
-      timeseriesService.getManyTimeseriesWithDataPoints(container.getId(), List.of(ts.toTimeseries()), queryParams)
-    ).thenReturn(List.of(timeseriesWithDataPoints));
+    when(timeseriesService.getManyTimeseriesWithDataPoints(container.getId(), List.of(ts), queryParams)).thenReturn(
+      List.of(timeseriesWithDataPoints)
+    );
     when(
       permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
     ).thenReturn(true);
@@ -519,7 +515,7 @@ public class TimeseriesReferenceServiceTest {
   public void getPayloadByShepardIdTest_ContainerIsDeleted() {
     TimeseriesContainer container = new TimeseriesContainer(2L);
     container.setDeleted(true);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -567,7 +563,7 @@ public class TimeseriesReferenceServiceTest {
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsNull() {
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -612,7 +608,7 @@ public class TimeseriesReferenceServiceTest {
   @Test
   public void getPayloadByShepardIdTest_notAllowed() {
     TimeseriesContainer container = new TimeseriesContainer(2L);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -658,7 +654,7 @@ public class TimeseriesReferenceServiceTest {
   public void exportByShepardIdTest() throws IOException, InvalidAuthException {
     ByteArrayInputStream exportedFileStream = new ByteArrayInputStream("Hello World".getBytes());
     TimeseriesContainer container = new TimeseriesContainer(2L);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -690,7 +686,7 @@ public class TimeseriesReferenceServiceTest {
     when(
       timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
         container.getId(),
-        List.of(ts.toTimeseries()),
+        List.of(ts),
         queryParams,
         CsvFormat.ROW
       )
@@ -724,7 +720,7 @@ public class TimeseriesReferenceServiceTest {
   public void exportByShepardIdTest_lessParams() throws IOException, InvalidAuthException {
     ByteArrayInputStream is = new ByteArrayInputStream("Hello World".getBytes());
     TimeseriesContainer container = new TimeseriesContainer(2L);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    var ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -778,7 +774,7 @@ public class TimeseriesReferenceServiceTest {
   @Test
   public void exportByShepardIdTest_notAllowed() throws IOException, InvalidAuthException {
     TimeseriesContainer container = new TimeseriesContainer(2L);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    TimeseriesTuple ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -826,7 +822,7 @@ public class TimeseriesReferenceServiceTest {
   public void exportByShepardIdTest_ContainerIsDeleted() throws IOException {
     TimeseriesContainer container = new TimeseriesContainer(2L);
     container.setDeleted(true);
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    TimeseriesTuple ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
@@ -872,7 +868,7 @@ public class TimeseriesReferenceServiceTest {
 
   @Test
   public void exportByShepardIdTest_ContainerIsNull() throws IOException {
-    ReferencedTimeseriesNodeEntity ts = new ReferencedTimeseriesNodeEntity("meas", "dev", "loc", "symName", "field");
+    TimeseriesTuple ts = new TimeseriesTuple("meas", "dev", "loc", "symName", "field");
     TimeseriesReference ref = new TimeseriesReference() {
       {
         setId(1L);
