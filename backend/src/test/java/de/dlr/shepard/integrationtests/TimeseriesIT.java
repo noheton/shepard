@@ -8,8 +8,8 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.timeseries.TimeseriesTestDataGenerator;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
+import de.dlr.shepard.data.timeseries.model.TimeseriesTuple;
 import de.dlr.shepard.data.timeseries.services.InstantHelper;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .then()
       .statusCode(201)
       .extract()
-      .as(Timeseries.class);
+      .as(TimeseriesTuple.class);
 
     assertThat(actual).isEqualTo(payload.getTimeseries());
   }
@@ -160,9 +160,15 @@ public class TimeseriesIT extends BaseTestCaseIT {
       .then()
       .statusCode(200)
       .extract()
-      .as(Timeseries[].class);
+      .as(TimeseriesTuple[].class);
 
-    Timeseries expectedTimeseriesIO = new Timeseries("temperature", "device", "location", "symbolicName", "field");
+    TimeseriesTuple expectedTimeseriesIO = new TimeseriesTuple(
+      "temperature",
+      "device",
+      "location",
+      "symbolicName",
+      "field"
+    );
 
     assertThat(actual).contains(expectedTimeseriesIO);
   }

@@ -30,10 +30,7 @@ import de.dlr.shepard.context.semantic.services.AnnotatableTimeseriesService;
 import de.dlr.shepard.context.semantic.services.SemanticAnnotationService;
 import de.dlr.shepard.context.semantic.services.SemanticRepositoryService;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
-import de.dlr.shepard.data.timeseries.model.Timeseries;
-import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.model.*;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.integrationtests.WireMockResource;
@@ -130,8 +127,8 @@ public class ReferenceSearchServiceQuarkusTest {
       TimeseriesDataPoint dataPoint = new TimeseriesDataPoint(4l, true);
       List<TimeseriesDataPoint> points = new ArrayList<TimeseriesDataPoint>();
       points.add(dataPoint);
-      Timeseries ts1 = new Timeseries("m1", "d1", "l1", "s1", "f1");
-      Timeseries ts2 = new Timeseries("m2", "d2", "l2", "s2", "f2");
+      TimeseriesTuple ts1 = new TimeseriesTuple("m1", "d1", "l1", "s1", "f1");
+      TimeseriesTuple ts2 = new TimeseriesTuple("m2", "d2", "l2", "s2", "f2");
       timeseriesEntity1 = timeseriesService.saveDataPoints(tsCon.getId(), ts1, points);
       timeseriesEntity2 = timeseriesService.saveDataPoints(tsCon.getId(), ts2, points);
       //create annotation for first timeseries
@@ -145,7 +142,7 @@ public class ReferenceSearchServiceQuarkusTest {
       ref1IO.setName("refAnno");
       ref1IO.setStart(0l);
       ref1IO.setEnd(9l);
-      List<Timeseries> timeseries1 = new ArrayList<Timeseries>();
+      List<TimeseriesTuple> timeseries1 = new ArrayList<TimeseriesTuple>();
       timeseries1.add(ts1);
       ref1IO.setTimeseries(timeseries1);
       ref1IO.setTimeseriesContainerId(tsCon.getId());
@@ -159,7 +156,7 @@ public class ReferenceSearchServiceQuarkusTest {
       ref2IO.setName("refWithoutAnno");
       ref2IO.setStart(0l);
       ref2IO.setEnd(9l);
-      List<Timeseries> timeseries2 = new ArrayList<Timeseries>();
+      List<TimeseriesTuple> timeseries2 = new ArrayList<TimeseriesTuple>();
       timeseries2.add(ts2);
       ref2IO.setTimeseries(timeseries2);
       ref2IO.setTimeseriesContainerId(tsCon.getId());
