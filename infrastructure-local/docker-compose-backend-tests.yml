@@ -19,7 +19,7 @@ services:
       MONGO_INITDB_DATABASE: test
 
   timescaledb:
-    image: timescale/timescaledb:2.18.1-pg16
+    image: timescale/timescaledb:2.26.3-pg16
     container_name: timescale
     environment:
       POSTGRES_DB: postgres
