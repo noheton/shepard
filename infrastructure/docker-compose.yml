@@ -115,7 +115,7 @@ services:
       - mongo
 
   timescaledb:
-    image: timescale/timescaledb:2.24.0-pg16
+    image: timescale/timescaledb:2.26.3-pg16
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -185,7 +185,7 @@ services:
       - timescale-migration-preparation
 
   prometheus:
-    image: prom/prometheus:v3.9.1
+    image: prom/prometheus:v3.11.2
     command:
       - --web.enable-remote-write-receiver
       - --enable-feature=native-histograms
@@ -199,7 +199,7 @@ services:
       - monitoring
 
   grafana:
-    image: grafana/grafana:12.2.1-security-01
+    image: grafana/grafana:12.3.6-security-01
     networks:
       - shepard
     environment:
