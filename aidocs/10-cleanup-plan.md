@@ -31,7 +31,7 @@ The project is in a **handover / wind-down phase**: active milestones include `H
 | C4 | Critical | `common/filters/SubscriptionFilter.java:63-78` | SSRF (no URL allowlist) + ReDoS (no regex timeout) on every successful response |
 | C5 | Critical | `common/search/query/Neo4jQueryBuilder.java` | Cypher injection via user-controlled property names and IRI types |
 
-See `security-issues.md` for full detail and remediations.
+See `07-security-issues.md` for full detail and remediations.
 
 ## Phased plan (high level)
 
@@ -45,7 +45,7 @@ See `security-issues.md` for full detail and remediations.
 | **5** | Dependency / code quality | Drain 19 Renovate MRs in batches sequenced around feature work; close code-quality TODOs |
 | **6** | Backlog closure | Bulk-close UX cluster #642-#645, ~70 long-tail research/refactoring items, !498 bit-rotted MR, low-value versioning items |
 
-See `implementation-plan.md` for full detail.
+See `11-implementation-plan.md` for full detail.
 
 ## Recommended immediate actions
 
@@ -67,7 +67,7 @@ Consolidating ~80-90 issues to recover backlog signal:
 - 1 bit-rotted MR (!498)
 - 1-2 likely-superseded drafts (!80)
 
-Closing comments and confidence levels in `ready-to-close.md`.
+Closing comments and confidence levels in `09-ready-to-close.md`.
 
 ## Risks worth flagging to stakeholders
 
@@ -82,14 +82,14 @@ Closing comments and confidence levels in `ready-to-close.md`.
 
 | File | Contents |
 |---|---|
-| `repo-overview.md` | Codebase structure, tech stack, CI/CD baseline, architecture + wiki synthesis, gaps |
-| `issues-status.md` | Full open-issue gauging by cluster (effort / complexity / value / confidence / test risk / staleness / impl status) |
-| `reconciliation.md` | GitHub vs GitLab table, mirror gaps, sync actions |
-| `security-issues.md` | All findings by severity (5 critical, 8 high, 12 medium, ~8 low/info) |
-| `dependency-report.md` | Outdated, deprecated, CVE-affected packages with recommended actions; Renovate analysis |
-| `code-quality.md` | Dead code, TODOs, test coverage map, frontend zero-tests, cross-references |
-| `cluster-map.md` | Issue/MR clusters with dependency graph, epics, sequencing recommendations, risk callouts |
-| `ready-to-close.md` | Items to close on GitHub with evidence and closing-comment drafts |
-| `first-issues.md` | Ranked entry-point shortlist for new contributors |
-| `implementation-plan.md` | Full phased plan with effort totals, risks, cluster references, suggested order |
-| `cleanup-plan.md` | This document — executive summary |
+| `01-repo-overview.md` | Codebase structure, tech stack, CI/CD baseline, architecture + wiki synthesis, gaps |
+| `03-issues-status.md` | Full open-issue gauging by cluster (effort / complexity / value / confidence / test risk / staleness / impl status) |
+| `04-reconciliation.md` | GitHub vs GitLab table, mirror gaps, sync actions |
+| `07-security-issues.md` | All findings by severity (5 critical, 8 high, 12 medium, ~8 low/info) |
+| `05-dependency-report.md` | Outdated, deprecated, CVE-affected packages with recommended actions; Renovate analysis |
+| `06-code-quality.md` | Dead code, TODOs, test coverage map, frontend zero-tests, cross-references |
+| `02-cluster-map.md` | Issue/MR clusters with dependency graph, epics, sequencing recommendations, risk callouts |
+| `09-ready-to-close.md` | Items to close on GitHub with evidence and closing-comment drafts |
+| `08-first-issues.md` | Ranked entry-point shortlist for new contributors |
+| `11-implementation-plan.md` | Full phased plan with effort totals, risks, cluster references, suggested order |
+| `10-cleanup-plan.md` | This document — executive summary |

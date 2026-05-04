@@ -182,13 +182,13 @@ Fold into Phase 5 cleanup unless adjacent to a Phase 1 fix. Notable inline fixes
 
 ### 4.3 — Cluster B: Versioning frontend (#46, #127, #150, #155, #271)
 - Gated on Epic 6 (Phase 2 enabler) being live.
-- Owner-confirm scope; scope-reduce per `ready-to-close.md` recommendation.
+- Owner-confirm scope; scope-reduce per `09-ready-to-close.md` recommendation.
 
 ### 4.4 — Cluster C: Spatial-data product decision (#441-#447, #530, #557)
 - Product decision: graduate (remove feature flag) OR deprecate.
 - C1 (SQL injection) is fixed in Phase 1 regardless.
 - If graduate: implement #441-#447 / #530 / #557 with spatial test suite.
-- If deprecate: bulk-close per `ready-to-close.md`.
+- If deprecate: bulk-close per `09-ready-to-close.md`.
 
 **Phase 4 effort**: XL. **Phase 4 risks**: ownership in handover phase; do not start without an explicit assignee.
 
@@ -239,13 +239,13 @@ Fold into Phase 5 cleanup unless adjacent to a Phase 1 fix. Notable inline fixes
 **Goal**: get the remaining 100+ open issues to a state where the next planning round can read them.
 
 ### 6.1 — UX cluster (#642-#645)
-Bulk-close per `ready-to-close.md`. **Effort**: S (closure pass).
+Bulk-close per `09-ready-to-close.md`. **Effort**: S (closure pass).
 
 ### 6.2 — Bit-rotted MR !498
 Close (or reassign for rebase if anyone volunteers). **Effort**: XS.
 
 ### 6.3 — Long-tail research / refactoring (~70 items)
-Bulk close-with-comment per `ready-to-close.md` template, excluding owner-assigned items. **Effort**: S (closure pass).
+Bulk close-with-comment per `09-ready-to-close.md` template, excluding owner-assigned items. **Effort**: S (closure pass).
 
 ### 6.4 — Spatial cluster (if Phase 4 product decision = deprecate)
 Bulk-close #441-#447 / #530 / #557. **Effort**: XS.

@@ -18,7 +18,7 @@
     },
     {
       "matchPackageNames": ["ruff"],
-      "natchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
     },
     {

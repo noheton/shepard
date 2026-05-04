@@ -94,7 +94,7 @@ All blocked on frontend capacity in handover. `frontend/components/context/` has
 | #483 | M | med | high | med | MED | stale | xit-* assigned; permission UX |
 | #667 | S | med | high | high | MED | fresh | Recent permission bug; tied to C3 |
 
-Treat as a single security workstream alongside C3/H1/H2/H7 (Permissions Hardening epic — see `cluster-map.md`).
+Treat as a single security workstream alongside C3/H1/H2/H7 (Permissions Hardening epic — see `02-cluster-map.md`).
 
 ## Cluster: UX cluster (2025-06-06 batch)
 
@@ -151,7 +151,7 @@ Open: `!636`, `!647`, `!695`, `!722`, `!723`, `!734`, `!740`, `!758`, `!766`, `!
 
 ## Top 20 highest value-per-effort
 
-Ranked by (value / effort) with security tiebreakers. Note: untracked critical security findings (C1, C2, C4, C5) outrank everything below — see `security-issues.md`.
+Ranked by (value / effort) with security tiebreakers. Note: untracked critical security findings (C1, C2, C4, C5) outrank everything below — see `07-security-issues.md`.
 
 1. **#710** — XS, already DONE; verify-and-close
 2. **#711** — XS, already DONE; verify-and-close
@@ -188,4 +188,4 @@ Ranked by (value / effort) with security tiebreakers. Note: untracked critical s
 
 ## Recommended for closure (staleness / superseded / done)
 
-Detailed list and closing comment drafts in `ready-to-close.md`.
+Detailed list and closing comment drafts in `09-ready-to-close.md`.
