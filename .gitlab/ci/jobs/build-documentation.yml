@@ -1,5 +1,5 @@
 build_documentation:
-  image: doctoolchain/doctoolchain:v3.4.2
+  image: doctoolchain/doctoolchain:v3.5.0
   stage: build
   needs: [get_version]
   script:

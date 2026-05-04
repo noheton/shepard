@@ -51,7 +51,7 @@ test_backend:
         MONGO_INITDB_ROOT_USERNAME: mongo
         MONGO_INITDB_ROOT_PASSWORD: shepard
         MONGO_INITDB_DATABASE: test
-    - name: timescale/timescaledb:2.18.1-pg16
+    - name: timescale/timescaledb:2.26.3-pg16
       alias: timescaledb
     - name: postgis/postgis:16-3.5
       alias: postgis

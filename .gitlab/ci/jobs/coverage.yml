@@ -1,6 +1,6 @@
 coverage:
   stage: test
-  image: haynes/jacoco2cobertura:1.0.10
+  image: haynes/jacoco2cobertura:1.0.11
   needs: [test_backend]
   script:
     - ls -hal backend/target/site/jacoco
