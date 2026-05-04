@@ -48,19 +48,19 @@
     <quarkus.platform.version>3.27.2</quarkus.platform.version>
     <surefire-plugin.version>3.5.5</surefire-plugin.version>
     <assertj.version>3.27.7</assertj.version>
-    <commons.version>2.21.0</commons.version>
-    <equalsverifier.version>4.4.1</equalsverifier.version>
-    <hibernate.spatial.version>7.2.6.Final</hibernate.spatial.version>
+    <commons.version>2.22.0</commons.version>
+    <equalsverifier.version>4.5</equalsverifier.version>
+    <hibernate.spatial.version>7.3.1.Final</hibernate.spatial.version>
     <janino.version>3.1.12</janino.version>
     <jjwt.version>0.11.5</jjwt.version>
     <junit.version>5.10.5</junit.version>
     <lombok.version>1.18.44</lombok.version>
-    <mockito.version>5.22.0</mockito.version>
+    <mockito.version>5.23.0</mockito.version>
     <mongodb.version>5.1.1</mongodb.version>
     <neo4j-ogm.version>5.0.3</neo4j-ogm.version>
     <opencsv.version>5.12.0</opencsv.version>
     <apache.commons.version>3.20.0</apache.commons.version>
-    <neo4j-cypher-dsl.version>2025.2.4</neo4j-cypher-dsl.version>
+    <neo4j-cypher-dsl.version>2025.2.6</neo4j-cypher-dsl.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -244,7 +244,7 @@
     <dependency>
       <groupId>eu.michael-simons.neo4j</groupId>
       <artifactId>neo4j-migrations</artifactId>
-      <version>3.2.1</version>
+      <version>3.3.1</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -419,7 +419,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.9.8.2</version>
+        <version>4.9.8.3</version>
       </plugin>
     </plugins>
   </build>
