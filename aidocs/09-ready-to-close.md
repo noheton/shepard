@@ -86,7 +86,7 @@ The following GH PRs were closed on GitHub while their GitLab MR counterpart is 
 
 ## F. Top-level mirror operations (not closure, but related)
 
-1. Re-import GitLab issue **#557** (only open GitLab issue not on GitHub).
+1. ~~Re-import GitLab issue #557~~ — **ignore**, confirmed by maintainer 2026-05-04; superseded by spatial-cluster closure candidacy.
 2. Re-enable MR mirroring (last MR-as-issue body dated 2024-09-16; ~23 open and 80–100 closed/merged MRs since are not represented).
 
 ## Closure plan summary

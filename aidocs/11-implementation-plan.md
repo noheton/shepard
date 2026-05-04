@@ -21,7 +21,7 @@ Snapshot date: 2026-05-04. Phased plan derived from Wave 1-3 outputs and Wave 4 
 **Goal**: get the GitHub mirror state honest, file untracked findings, fix small documentation/config drift.
 
 ### 0.1 — Mirror reconciliation
-- Re-import GitLab issue **#557** (only open GitLab issue not on GitHub mirror).
+- ~~Re-import GitLab issue #557~~ — **ignored** per maintainer 2026-05-04; superseded by spatial-cluster closure candidacy.
 - Re-enable MR mirroring (broken since 2024-09-16; ~23 open + 80-100 closed/merged MRs missing).
 - Add confirmation comments to GH PRs #995, #994, #963, #946 pointing to authoritative GitLab MRs.
 - Document gh#683 as a mirror artifact (orphan since GL #684 was deleted upstream).

@@ -19,7 +19,7 @@ The project is in a **handover / wind-down phase**: active milestones include `H
 | **Test coverage** | Backend overall 0.74 ratio. HIGH risk: timeseries 0.37, spatialdata 0.26, neo4j 0.29, search 0.38, labJournal 0.20. **Frontend has zero tests.** |
 | **Dependencies** | 19 open Renovate MRs. `dotenv` (PyPI orphan) declared in `scripts/` — supply-chain risk. jjwt 0.11 (EOL) still in use. JWT API-key tokens minted without expiration. Nuxt 4, ESLint 9 not adopted. Renovate config has a silent typo (`natchUpdateTypes`). |
 | **Issues / MRs** | 166 open issues (35 fresh, 86 stale, 45 very stale). 23 open MRs (only !498 bit-rotted at 402 days). Sprint 23 / shepard 5.4.2 milestone is in flight (timeseries refactor). |
-| **Mirror** | 1 issue gap (#557), 23 open + many closed MR gaps; 4 PRs closed on GitHub while their GitLab MR is still open; 1 orphan GH issue (gh#683). |
+| **Mirror** | 23 open + many closed MR gaps (last MR-as-issue body dated 2024-09-16); 4 PRs closed on GitHub while their GitLab MR is still open; 1 orphan GH issue (gh#683). The previously-flagged GL #557 issue gap is **ignored** per maintainer 2026-05-04 (superseded by spatial-cluster closure candidacy). |
 
 ## Critical security findings (no remediation tracked anywhere)
 
@@ -37,7 +37,7 @@ See `07-security-issues.md` for full detail and remediations.
 
 | Phase | Focus | Outcome |
 |---|---|---|
-| **0** | Housekeeping | Mirror re-sync (#557 + MR mirror); file untracked findings; trivial config/doc fixes (Renovate typo, ADR index) |
+| **0** | Housekeeping | MR mirror re-sync; file untracked findings; trivial config/doc fixes (Renovate typo, ADR index) |
 | **1** | Security fixes | Ship C1-C5 (CRITICAL), then H1-H8 (HIGH); activate SpotBugs+findsecbugs in CI; add Trivy + lint-security |
 | **2** | First issues | Verify-close #710 / #711; fix #721 race condition, #717 metadata permission, #667 permission bug; replace `dotenv`; scaffold Vitest; ship #720 frontend column export |
 | **3** | Core improvements | Permissions Hardening epic; Subscription Hardening; close out Sprint 23 / 5.4.2; medium security findings |

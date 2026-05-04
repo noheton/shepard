@@ -49,8 +49,8 @@ The aidocs directory is now numbered (01-…14, plus this file as
 
 | Item | Why deferred |
 |---|---|
-| Re-import GitLab issue #557 | Requires the upstream mirror tool / GitLab → GitHub bridge to be re-run; not an in-repo change |
-| Re-enable MR mirroring (broken since 2024-09-16) | Same — operational, not code |
+| ~~Re-import GitLab issue #557~~ | **Resolved 2026-05-04**: maintainer confirmed GL #557 can be safely ignored — superseded by spatial-cluster closure candidacy (gated behind `SHEPARD_SPATIAL_DATA_ENABLED`, no active investment). Will resolve when the cluster decision lands on GitLab. |
+| Re-enable MR mirroring (broken since 2024-09-16) | Operational, not code; needs upstream mirror tool re-config |
 | Confirmation comments on GH PRs #995, #994, #963, #946 pointing to authoritative GitLab MRs | "Be frugal about posting replies on GitHub" — wanted explicit owner go-ahead before adding 4 PR comments |
 | Document gh#683 as mirror artifact | Same |
 
@@ -95,8 +95,8 @@ for the maintainer's closure pass.
    templates in `09-ready-to-close.md`.
 2. Decide on filing strategy for 0.2 / 0.3 (one-tracker meta-issue
    per cluster, or per-finding issues).
-3. Operations: re-enable MR mirroring on the GitHub side; re-import
-   GL #557.
+3. Operations: re-enable MR mirroring on the GitHub side. (GL #557
+   re-import is ~~no longer required~~ per maintainer 2026-05-04.)
 4. Begin Phase 1 (security fixes) per the implementation plan;
    the C1-C5 findings are documented in
    `07-security-issues.md`.

@@ -48,7 +48,7 @@ State mismatches: **0**. Every GitHub item that is open has an open GitLab count
 
 | GL iid | Title | Action |
 |---|---|---|
-| 557 | spatial data: Out of (heap) memory while getting larger datasets | Re-import via the mirror tool, or open a corresponding GitHub issue manually |
+| 557 | spatial data: Out of (heap) memory while getting larger datasets | **Ignore** — confirmed by maintainer 2026-05-04; superseded by spatial-cluster closure candidacy (gated behind `SHEPARD_SPATIAL_DATA_ENABLED`, no active investment). Will resolve when the cluster decision lands on GitLab. |
 
 ### MRs (23)
 
@@ -108,7 +108,7 @@ All closed; all correspond to closed/merged/abandoned GitLab MRs. No action.
 ## Recommended sync actions (top-level)
 
 1. **Fix MR mirroring** — last MR-as-issue body dated 2024-09-16; reconfigure or replace the mirror tool to resume MR ingestion. ~23 open and 80–100 closed/merged MRs since 2024-09 are not represented on GitHub.
-2. **Re-import GitLab issue iid 557** — only open GitLab issue not on GitHub.
+2. **GL #557 — ignore** (spatial heap-memory). Confirmed by maintainer 2026-05-04; superseded by spatial-cluster closure candidacy. Do not re-import.
 3. **Document gh#683** — orphan since GL iid 684 was deleted; leave closed.
 4. **Review PRs #995/#994/#963/#946** — closed on GH while GitLab MR open. Treat GitLab as canonical; close-and-leave is acceptable.
 5. **No close-on-GitHub state-mismatch actions** are needed today.
