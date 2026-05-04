@@ -1,6 +1,6 @@
 # First Issues — shepard
 
-Snapshot date: 2026-05-04. Ranked entry-points for new contributors. Excludes security findings (handled separately in `security-issues.md` and Phase 1 of `implementation-plan.md`).
+Snapshot date: 2026-05-04. Ranked entry-points for new contributors. Excludes security findings (handled separately in `07-security-issues.md` and Phase 1 of `11-implementation-plan.md`).
 
 ## Selection criteria
 
@@ -40,7 +40,7 @@ Each pick is one or more of:
 - **Effort**: S.
 - **Value**: high — security-adjacent, fresh, in active milestone.
 - **Tests needed**: negative-path tests for unauthenticated and unprivileged access to metadata endpoints.
-- **Dependencies**: aligns with Permissions Hardening epic (`cluster-map.md` Epic 2).
+- **Dependencies**: aligns with Permissions Hardening epic (`02-cluster-map.md` Epic 2).
 
 ### 5. #667 — Recent permission bug (fresh)
 - **Status**: NOT_IMPLEMENTED, fresh.
@@ -118,7 +118,7 @@ Each pick is one or more of:
 
 ## Items deliberately excluded from "first issues"
 
-- All security CRITICAL findings (C1, C2, C3, C4, C5) — too high blast radius for first-issue work; tracked in `security-issues.md` and Phase 1 of the implementation plan.
+- All security CRITICAL findings (C1, C2, C3, C4, C5) — too high blast radius for first-issue work; tracked in `07-security-issues.md` and Phase 1 of the implementation plan.
 - Cluster E (Neo4j refactor) — XL effort, foundational.
 - Cluster B versioning frontend — gated on Epic 6 frontend test infra.
 - Anything in cluster D (semantic) — blocked on E.

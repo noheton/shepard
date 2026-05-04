@@ -50,6 +50,9 @@ schema changes that block writes.
 | 16 | Ops | No dedicated `quarkus.flyway.connect-retries` / health timeouts for long V1.7.0 migration | 🟨 LOW | 0.1 d |
 | 17 | Schema | Time stored as `bigint` ns, not `timestamptz` — disables several Timescale optimiser paths | 🟪 ARCH | week+ |
 | 18 | Schema | Single-table polymorphic value (`int`/`double`/`text`/`bool` columns) — wastes 30–60% per row | 🟪 ARCH | week+ |
+| 19 | API | Read endpoints materialise the entire result set into a `List` before responding (CSV "stream" only streams serialisation) | 🟥 HIGH | 1-2 d |
+| 20 | API | No `hibernate.jdbc.fetch_size` set → PG JDBC buffers full result client-side regardless of code path | 🟧 MED | 0.1 d |
+| 21 | API | Dual identity: data endpoints address timeseries via 5-tuple, semantic annotations via numeric `timeseries_id` | 🟧 MED → 🟪 ARCH | M (compat-aware rollout) |
 
 ---
 
@@ -567,7 +570,269 @@ Recommended steps after each mitigation lands:
 
 ---
 
-## 11. Appendix — paths referenced
+## 11. Data access through the API — streaming and identifier alignment
+
+This section was added in a follow-up review focused on the read path as it
+appears to API consumers, not just the database. Two themes:
+
+- **(11.A) Streaming reads without materialising the whole result set** —
+  closing the heap-blow-up vector flagged in §5.5 properly, end-to-end.
+- **(11.B) Aligning the numeric `timeseries_id` (used by semantic
+  annotations on a `TimeseriesContainer`) with the 5-tuple addressing used
+  by every data-point endpoint** — needed for any future search /
+  cross-reference work and to remove the dual-identifier hazard.
+
+### 11.A Streaming the read path end-to-end
+
+#### 11.A.1 Where data is materialised today 🟥 HIGH
+
+Following the request through `TimeseriesRest`:
+
+| Endpoint | Method | Repo call | Materialisation |
+|---|---|---|---|
+| `GET /timeseries-containers/{id}/payload` | `getDataPointsByTimeseries` | `queryDataPoints` | full `List<TimeseriesDataPoint>` (`.getResultList()`) |
+| `GET /timeseries-containers/{id}/export` (CSV) | `getDataPointsByTimeseries` then `CsvConverter.convertToCsv` | same | full list, then CSV serialised line-by-line on top of the materialised list |
+| `GET …/payload` (multi-series) | `getManyTimeseriesWithDataPoints` | parallel-stream over `getDataPointsByTimeseriesActivatedRequestContext` | one full list per series, all kept until the response is assembled |
+
+**`TimeseriesDataPointRepository.queryDataPoints` (lines 138-158)** is the
+single bottleneck. It calls `query.getResultList()`. Every read endpoint
+goes through it.
+
+The CSV path looks like it streams (`CsvInputStream` extends `InputStream`),
+but the constructor receives an already-materialised list — the stream
+flows from the in-memory list into the HTTP response, not from the database
+into the response. This is the heap vector flagged in §5.5; a 90-day
+1 Hz export is ~7.8 M rows ≈ 200 MB of `TimeseriesDataPoint` objects on
+heap before the first byte goes out.
+
+`application.properties` does **not** set `hibernate.jdbc.fetch_size`, so
+the JDBC fetch size is the PG JDBC default (0 = "all rows"). Even if the
+code switched to a stream API, without a fetch size the driver would still
+buffer the entire result set client-side.
+
+#### 11.A.2 Mitigation — streaming end-to-end 🟥 HIGH
+
+The smallest viable change set is:
+
+1. **Add a streaming repository method** alongside `queryDataPoints`:
+
+   ```java
+   public Stream<TimeseriesDataPoint> streamDataPoints(int timeseriesId,
+                                                       DataPointValueType type,
+                                                       TimeseriesDataPointsQueryParams qp) {
+     Query q = buildSelectQueryObject(timeseriesId, type, qp);
+     q.setHint(QueryHints.HINT_FETCH_SIZE, 5_000);
+     q.unwrap(org.hibernate.query.Query.class).setFetchSize(5_000);
+     return q.getResultStream(); // jakarta.persistence.Query#getResultStream
+   }
+   ```
+
+   `getResultStream()` returns a JDBC-backed `Stream` that pulls rows in
+   `fetchSize`-sized blocks. On PostgreSQL the underlying cursor needs
+   autocommit off; with Hibernate inside a `@Transactional` boundary this
+   is handled automatically.
+
+2. **Switch the CSV path to the stream**. `CsvConverter` and
+   `CsvRowLineProvider` already iterate row-by-row; they only need a
+   `Stream` (or `Iterator`) handle instead of a `List`. JAX-RS exposes
+   the response body as a `StreamingOutput`:
+
+   ```java
+   StreamingOutput body = out -> {
+     try (var rows = repo.streamDataPoints(id, type, qp);
+          var w = new OutputStreamWriter(out, UTF_8)) {
+       w.write(header);
+       rows.forEach(p -> writeCsvRow(w, p));
+     }
+   };
+   return Response.ok(body).type("text/csv").build();
+   ```
+
+   The transactional boundary must wrap the `forEach`, not the resource
+   method — Quarkus's `@ActivateRequestContext` + a service-layer
+   `@Transactional` on a method that *takes a `Consumer<TimeseriesDataPoint>`*
+   keeps the cursor open while JAX-RS writes bytes.
+
+3. **For JSON responses**, streaming is constrained because clients today
+   expect a single JSON object with a `dataPoints` array. Two options:
+
+   - **Stream the array** with Jackson's `JsonGenerator`: write the wrapper
+     start, stream each point, write the wrapper end. Same pattern as CSV.
+     Backwards-compatible; just changes how the bytes flow.
+   - **Add a hard row cap** (e.g. 1 M rows) and return `413 Payload Too
+     Large` with a `groupBy` hint when exceeded. Recommended *in
+     addition* to streaming so a buggy client cannot DoS the JVM with a
+     90-day request on a 1 kHz series.
+
+4. **Multi-series fan-out (`getManyTimeseriesWithDataPoints`).** Today this
+   spawns N parallel queries each materialising a `List`. After streaming
+   lands per-series, a multi-series stream is just a flat-map over the
+   timeseries IDs — but the better fix (from §5.4) is a single SQL query
+   with `timeseries_id IN (?)` and `ORDER BY timeseries_id, time`, then a
+   server-side group-by-key while writing the response.
+
+5. **Set `hibernate.jdbc.fetch_size` globally** as a backstop:
+
+   ```properties
+   quarkus.hibernate-orm.jdbc.statement-fetch-size=2000
+   ```
+
+   Affects every Hibernate query in the app; safe value for a backend
+   that does not pull arbitrarily wide rows. Per-query hints override it.
+
+6. **Pagination as a public API.** Independent of streaming, the JSON
+   endpoint should accept `pageSize` / `cursor` query params.
+   Cursor = `(time, timeseries_id)` of the last returned row. No `OFFSET`
+   — TimescaleDB handles `WHERE (time, ts_id) > (?, ?) ORDER BY time
+   LIMIT n` cleanly via the composite index restored in V1.8.0.
+
+Expected impact: **constant heap** independent of window size, no more
+GC-pause-driven "sluggish" reports on big exports, and a safety rail
+for JSON responses that doesn't need every client to update.
+
+#### 11.A.3 Quarkus reactive vs. blocking — a note 🟨 LOW
+
+Quarkus has a reactive REST stack. Tempting to switch the read path to
+`Multi<TimeseriesDataPoint>`. **Don't, in this iteration.** Hibernate ORM
++ Agroal is blocking; mixing reactive at the HTTP edge with blocking at
+the JDBC edge yields the worst of both (event-loop starvation, opaque
+back-pressure). Stay blocking; rely on `StreamingOutput` + a worker
+thread. Consider Hibernate Reactive only as a coordinated effort with
+the rest of the app.
+
+### 11.B Aligning `timeseries_id` (annotations) with the 5-tuple (data)
+
+#### 11.B.1 The current dual-identity problem 🟧 MED → 🟪 ARCH
+
+The system addresses an individual timeseries two different ways:
+
+- **Numeric ID path.** `TimeseriesEntity.id` (Postgres `bigint`) is the
+  primary key and the value Neo4j uses for semantic annotations. The
+  `AnnotatableTimeseries` Neo4j node stores
+  `(containerId, timeseriesId)` as the unique tuple, and the semantic
+  annotation REST surface is keyed by it
+  (`/timeseries-containers/{cid}/timeseries/{tsid}/semantic-annotations`,
+  `AnnotatableTimeseriesRest.java`).
+- **5-tuple path.** Every data-point endpoint (`/payload`, `/export`,
+  list / filter under `/timeseries`) takes
+  `(measurement, field, symbolicName, device, location)` as query
+  parameters and resolves them to the numeric ID via
+  `TimeseriesRepository.findTimeseries` (lines 21-42) on each request.
+
+Consequences:
+
+- **Duplicate index work.** The 5-tuple lookup is a string-heavy btree
+  probe before *every* read; the numeric ID is what the hot path
+  actually needs (§5.1).
+- **Cross-feature mismatch.** A user who annotates a series via the
+  Neo4j path then queries it via the data path has two unrelated
+  identifiers in flight. The frontend has to round-trip through
+  "list timeseries → match by 5-tuple → get id" to bridge them.
+- **No stable external identifier.** The 5-tuple is part of the public
+  contract; the numeric ID is not exposed as a primary lookup
+  parameter on data endpoints. Client libraries that cache a
+  numeric ID today have to hope it stays valid (it does, but isn't
+  documented).
+- **Semantic-search blocker.** Any future "find timeseries annotated
+  with X and aggregate its data" workflow has to translate the
+  Neo4j query result (a list of `(containerId, timeseriesId)` pairs)
+  back to 5-tuples to call the data endpoints — gratuitous.
+
+#### 11.B.2 Target state — numeric ID is the canonical address
+
+The endgame is: a `TimeseriesEntity.id` is the public, stable
+identifier for a timeseries. The 5-tuple stays as a *creation-time*
+descriptor (a label set), not as a routing key.
+
+```text
+Today:   client → /payload?measurement=…&field=…&… → DB lookup → numeric id → data
+Target:  client → /payload?timeseriesId=12345 → data
+                                    ↑
+                              same id used by /semantic-annotations
+```
+
+Concretely:
+
+1. **Expose `id` on every timeseries response.** The `TimeseriesIO`
+   DTO returned from `/timeseries` already carries it; verify it is
+   serialised (not just used internally). If not, add it.
+2. **Accept `timeseriesId` as an alternative on every data endpoint.**
+   New optional query parameter `timeseriesId` on `/payload`,
+   `/export`, `getManyTimeseriesWithDataPoints`. When present, skip
+   the 5-tuple resolve. When absent, fall back to today's behaviour.
+3. **Document numeric-id as preferred** in OpenAPI and clients.
+4. **Add the same dual-identity affordance to semantic annotations.**
+   Where today `/timeseries-containers/{cid}/timeseries/{tsid}/…`
+   takes only `tsid`, also accept the 5-tuple as query parameters
+   on the parent `/timeseries-containers/{cid}/semantic-annotations`
+   (or on a new `…/timeseries:lookup` endpoint that returns the id).
+   Keeps the IRI shape stable while letting clients that only have
+   the 5-tuple use it.
+5. **Container ↔ container alignment.** `TimeseriesContainer` (Neo4j)
+   does *not* hold the list of `timeseriesId`s today; the join lives
+   implicitly in Postgres via `timeseries.containerId`. Two options
+   when this becomes painful:
+   - **Materialised list on the container.** Add
+     `@Relationship(type=HAS_TIMESERIES) List<AnnotatableTimeseries>`
+     so the Neo4j-side queries (annotation searches, see
+     `/aidocs/13-search-improvements.md`) don't need a Postgres join.
+     Maintain on create/delete; rebuild via migration. Storage is
+     small (one node + edge per timeseries).
+   - **Status quo + lookup view.** Keep the join in Postgres and
+     just expose a Neo4j projection in the search API. Simpler.
+     Pick this unless the search workload demands otherwise.
+
+Recommendation: start with (1)–(3); they are additive and
+backwards-compatible. (4) follows once at least one client has
+adopted (2). (5) is a search-driven decision — defer until
+`13-search-improvements.md` is acted on.
+
+#### 11.B.3 Backwards compatibility plan 🟧 MED
+
+The 5-tuple is part of the public REST contract — current clients
+(Python, frontend, manual cURL users) rely on it. Plan:
+
+| Step | Visible change | Breaking? |
+|---|---|---|
+| 1 | `TimeseriesIO` always carries `id`; OpenAPI updated | No |
+| 2 | All read endpoints accept **either** `timeseriesId` or the 5-tuple. If both are passed, `timeseriesId` wins; if neither, return 400 | No (5-tuple still works) |
+| 3 | Clients (`@dlr-shepard/shepard-client`, `scripts/`) updated to prefer `timeseriesId`. Bump minor version | No |
+| 4 | Deprecation banner in OpenAPI on the 5-tuple parameters of read endpoints (`@deprecated`); release notes call out the migration | No |
+| 5 | After ≥ 2 minor releases with the deprecation visible: 5-tuple removed from read endpoints; remains on **create**, where it is the actual descriptor of the series | **Yes — major version bump** |
+
+Step 5 is gated on telemetry: log a one-line warning each time a
+read endpoint is called without `timeseriesId`. Don't proceed until
+the rate is below an agreed threshold.
+
+#### 11.B.4 What this unlocks
+
+- **Caching becomes trivial.** §5.1 already proposes Caffeine on
+  `(containerId, 5-tuple) → TimeseriesEntity`. Switching to id-keyed
+  reads removes the cache from the hot path entirely; the entity
+  doesn't need to be loaded for a data query at all (the id alone
+  is enough to hit the composite index in §3.1).
+- **Streaming and id-addressing are independent**, but they
+  compose: a streaming export keyed by numeric id is the cleanest
+  call shape for high-volume consumers (DataLad/MLflow integrations,
+  external dashboards).
+- **Annotations and data converge.** Search by annotation returns
+  numeric ids; the same ids are valid arguments to data endpoints.
+  No translation step. This is a precondition for the
+  unified-search proposal in `13-search-improvements.md`.
+
+### 11.C Cross-reference
+
+- §3.1, §5.1 — composite index and 5-tuple lookup; this section
+  generalises the fix.
+- §5.5 — unbounded result sets; §11.A is the concrete remediation.
+- §5.4 — multi-series fan-out; §11.A.2 step 4 supersedes the
+  parallel-stream proposal.
+- `aidocs/13-search-improvements.md` — depends on §11.B for
+  cross-store id alignment.
+
+---
+
+## 12. Appendix — paths referenced
 
 - Migrations: `backend/src/main/resources/db/migration/V1.0.0…V1.8.0`,
   `backend/src/main/java/de/dlr/shepard/data/timeseries/migrations/V1_7_0__int_to_bigint.java`

@@ -40,3 +40,7 @@ include::016-request-validation.adoc[]
 include::017-spatial-database-partitioning.adoc[]
 
 include::018-semantic-annotations-on-data.adoc[]
+
+include::019-prefer-member-injection.adoc[]
+
+include::020-use-single-relation-for-default-container.adoc[]
