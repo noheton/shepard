@@ -10,6 +10,575 @@ very ui specific but:  search-as-you-type first --> not a dropdown. you see a tr
 
 Templates we need an idea how we can generate collection, dataobject or reference templates so users can create a defined ZUgprüfungsobject with icon (maybe even with a form) than a empty (scary) dataobject . also more complex strcutures like sub trees of dataobjects and references up to complete collection layouts. mandatory attributes, annotatioons etc maybe limits, eg abstract 300-500 words. Definable by a admin or projectmanager role (t.b.d.) probably in yaml or similar. compatibility with https://gitlab.com/dlr-shepard/shepard-process-wizard would be a plus (by the way then we need some idea how to deal with the scary spwmodel objcts.
 
+further tools for shepard https://gitlab.com/dlr-shepard/shepard-timeseries-collector , https://gitlab.com/dlr-shepard/processcontrol , https://gitlab.com/dlr-shepard/shepard-process-wizard
+check repos in https://gitlab.com/dlr-shepard
+file collector not public but basically a node red flow:
+[
+    {
+        "id": "0bbe4ec0a4a5b7ce",
+        "type": "tab",
+        "label": "naive shepard file upload",
+        "disabled": true,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "1751f8c7834f1e3c",
+        "type": "tab",
+        "label": "shepard file upload only base nodes",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "3b8925f58ea04a7f",
+        "type": "tab",
+        "label": "Configuration and Flow Generator",
+        "disabled": false,
+        "info": "Do not change, if you dont know what you are doing.",
+        "env": []
+    },
+    {
+        "id": "bcccb32d8608e499",
+        "type": "watch-directory",
+        "z": "0bbe4ec0a4a5b7ce",
+        "folder": "/ingress",
+        "recursive": 0,
+        "typeEvent": "create",
+        "ignoreInitial": false,
+        "ignoredFiles": "",
+        "ignoredFilesType": "re",
+        "name": "",
+        "x": 130,
+        "y": 100,
+        "wires": [
+            [
+                "eb527756a96f05f5"
+            ]
+        ]
+    },
+    {
+        "id": "eb527756a96f05f5",
+        "type": "file in",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 200,
+        "y": 160,
+        "wires": [
+            [
+                "fed145f9f8ac50c4"
+            ]
+        ]
+    },
+    {
+        "id": "db7004b8a989ba78",
+        "type": "function",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "prepare payload",
+        "func": "//Build shepard API URL\nmsg.url = msg.shepard_api_base_url + \"/fileContainers/\"+msg.shepard_filecontainer_id+\"/payload\"\n//set headers for file upload and authencication\nmsg.headers = {\n    \"content-type\":\"multipart/form-data\",\n    \"X-API-KEY\": env.get(\"SHEPARD_API_KEY\")\n}\n//reformat the message payload (as it is used as body)\nmsg.payload =\n{\n    \"file\": {\n        \"value\": msg.payload,\n        \"options\": {\n            \"filename\": msg.file,\n        }\n    }\n}\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 280,
+        "wires": [
+            [
+                "21cf5f8986ff14f3",
+                "325386cb7399f021"
+            ]
+        ]
+    },
+    {
+        "id": "94a4d6400f38e9e1",
+        "type": "comment",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "https://frontend.bt-au-cube2.intra.dlr.de/files/245040",
+        "info": "https://frontend.bt-au-cube2.intra.dlr.de/files/245040",
+        "x": 430,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "21cf5f8986ff14f3",
+        "type": "http request",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "other",
+                "keyValue": "X-API-KEY",
+                "valueType": "other",
+                "valueValue": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrcmViX2ZsIiwiaXNzIjoiaHR0cDovL2JhY2tlbmQuYnQtYXUtY3ViZTIuaW50cmEuZGxyLmRlL3NoZXBhcmQvYXBpLyIsIm5iZiI6MTczOTg5MjgwMCwiaWF0IjoxNzM5ODkyODAwLCJqdGkiOiIwMmRhYjM3ZS02M2E1LTRlYmQtYmUxYy0wOTllYjNjNzdlZTUifQ.xC4D2euvrs9Paq5MTFo4Yy1aUlMX5PL-gHw60OETHoReNX4S5jRXUXaOyZnjyHC_h3_oHmcy1A295iN0xQvmQnhwTVxd6JcC9-BdiMJHeraEUnXpEgp1toNLsRqe6y6XI5K4Wt_Q4fFjaGZHfsrEej4ebc89qfBXlHnhz4PYPxQgLqGq37G4MZVYZ8AUi3Wuoqn17H7IyGkKFTTqveZYd8hq9nQpsU0IxVLkvfCsfEkrMnIpcld9Inz8T9JmUVQRPxP1K8BZKSN_YMO3hLTF6_qJGuju-_F1ew1ug5cmidZRBklVkvRHEu5h4Y_Z9ns4LrSfvZ2v-kbelkfwBH7Mug"
+            }
+        ],
+        "x": 590,
+        "y": 340,
+        "wires": [
+            [
+                "325386cb7399f021"
+            ]
+        ]
+    },
+    {
+        "id": "fed145f9f8ac50c4",
+        "type": "change",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "Set shepard parameters",
+        "rules": [
+            {
+                "t": "set",
+                "p": "shepard_filecontainer_id",
+                "pt": "msg",
+                "to": "245040",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "shepard_api_base_url",
+                "pt": "msg",
+                "to": "https://backend.bt-au-cube2.intra.dlr.de/shepard/api",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 330,
+        "y": 220,
+        "wires": [
+            [
+                "db7004b8a989ba78"
+            ]
+        ]
+    },
+    {
+        "id": "325386cb7399f021",
+        "type": "debug",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "d804807b8e8f98e3",
+        "type": "watch",
+        "z": "0bbe4ec0a4a5b7ce",
+        "name": "",
+        "files": "/ingress/",
+        "recursive": "",
+        "x": 60,
+        "y": 500,
+        "wires": [
+            [
+                "eb527756a96f05f5",
+                "325386cb7399f021"
+            ]
+        ]
+    },
+    {
+        "id": "0778588692e9266e",
+        "type": "file in",
+        "z": "1751f8c7834f1e3c",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 460,
+        "y": 340,
+        "wires": [
+            [
+                "0db2de3719e1641d"
+            ]
+        ]
+    },
+    {
+        "id": "76be34599c0f9704",
+        "type": "function",
+        "z": "1751f8c7834f1e3c",
+        "name": "prepare payload",
+        "func": "//Build shepard API URL\nmsg.url = msg.shepard_api_base_url + \"/fileContainers/\"+msg.shepard_filecontainer_id+\"/payload\"\n//set headers for file upload and authencication\nmsg.headers = {\n    \"content-type\":\"multipart/form-data\",\n    \"X-API-KEY\": env.get(\"SHEPARD_API_KEY\")\n}\n//reformat the message payload (as it is used as body)\nmsg.payload =\n{\n    \"file\": {\n        \"value\": msg.payload,\n        \"options\": {\n            \"filename\": msg.file,\n        }\n    }\n}\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 740,
+        "y": 460,
+        "wires": [
+            [
+                "187256b4d436477b"
+            ]
+        ]
+    },
+    {
+        "id": "187256b4d436477b",
+        "type": "http request",
+        "z": "1751f8c7834f1e3c",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [
+            {
+                "keyType": "other",
+                "keyValue": "X-API-KEY",
+                "valueType": "other",
+                "valueValue": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrcmViX2ZsIiwiaXNzIjoiaHR0cDovL2JhY2tlbmQuYnQtYXUtY3ViZTMuaW50cmEuZGxyLmRlL3NoZXBhcmQvYXBpLyIsIm5iZiI6MTc0NTMxMzE1MCwiaWF0IjoxNzQ1MzEzMTUwLCJqdGkiOiJmZjM2Y2FkOC03YjJmLTRlZjYtYTE1Ny1lYWZjZWExZDE3ZjMifQ.cPrXIIgYx9eLenMqci7KOGx2YTCFk2KtGHcczmOB1_tfrFwVclNvcihmskazHbposooaI1XKv2sj4LrxgxtrqDZ2mGfG0_75ztQs6tGQb69OMtEMVhHh_ge4xaVj8DbnJUxnox73j4FnNJI1DvS3Vp7HYJeUcEok09_4UCV8tWUGeAz2libcHeQlYRMTobttcmCZRLO7ft35LU8RD-tsx0PAoIpgqQFyg4qsOohv3GRBFX0wuNGZ4hLIAQuP-n5kopSj8TB7lX1ID5UTeltoEQlPaZcR1-JEpSegpSOCh0yCySIAQ4QUCAVanb8xfBEn5J7SuPiKsiU_SC5KTV3oQQ"
+            }
+        ],
+        "x": 850,
+        "y": 520,
+        "wires": [
+            [
+                "e3e40f9fa0e48186",
+                "087f029665dc8e7c"
+            ]
+        ]
+    },
+    {
+        "id": "0db2de3719e1641d",
+        "type": "change",
+        "z": "1751f8c7834f1e3c",
+        "name": "Set shepard parameters",
+        "rules": [
+            {
+                "t": "set",
+                "p": "shepard_filecontainer_id",
+                "pt": "msg",
+                "to": "704671",
+                "tot": "str"
+            },
+            {
+                "t": "set",
+                "p": "shepard_api_base_url",
+                "pt": "msg",
+                "to": "https://backend.bt-au-cube3.intra.dlr.de/shepard/api",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 590,
+        "y": 400,
+        "wires": [
+            [
+                "76be34599c0f9704"
+            ]
+        ]
+    },
+    {
+        "id": "e3e40f9fa0e48186",
+        "type": "debug",
+        "z": "1751f8c7834f1e3c",
+        "name": "Debug request",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1100,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "8540a362d0c1076c",
+        "type": "watch",
+        "z": "1751f8c7834f1e3c",
+        "name": "",
+        "files": "/ingress/",
+        "recursive": "",
+        "x": 320,
+        "y": 220,
+        "wires": [
+            [
+                "30906dcb6375c795",
+                "76f3c7d13babd425"
+            ]
+        ]
+    },
+    {
+        "id": "30906dcb6375c795",
+        "type": "switch",
+        "z": "1751f8c7834f1e3c",
+        "name": "",
+        "property": "event",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "update",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 390,
+        "y": 280,
+        "wires": [
+            [
+                "0778588692e9266e"
+            ]
+        ]
+    },
+    {
+        "id": "76f3c7d13babd425",
+        "type": "debug",
+        "z": "1751f8c7834f1e3c",
+        "name": "Debug ingress",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 540,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "782d080f106cd891",
+        "type": "exec",
+        "z": "1751f8c7834f1e3c",
+        "command": "",
+        "addpay": "cmd",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "",
+        "x": 1050,
+        "y": 660,
+        "wires": [
+            [
+                "d24a7e109abb1484"
+            ],
+            [
+                "d24a7e109abb1484"
+            ],
+            [
+                "d24a7e109abb1484"
+            ]
+        ]
+    },
+    {
+        "id": "d24a7e109abb1484",
+        "type": "debug",
+        "z": "1751f8c7834f1e3c",
+        "name": "Debug move",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1330,
+        "y": 700,
+        "wires": []
+    },
+    {
+        "id": "087f029665dc8e7c",
+        "type": "function",
+        "z": "1751f8c7834f1e3c",
+        "name": "set move command",
+        "func": "msg.cmd = \"mv \"+ msg.filename+ \" /ingress/archive\"\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 970,
+        "y": 580,
+        "wires": [
+            [
+                "782d080f106cd891"
+            ]
+        ]
+    },
+    {
+        "id": "a45906767f70b89a",
+        "type": "yaml",
+        "z": "3b8925f58ea04a7f",
+        "property": "payload",
+        "name": "",
+        "x": 610,
+        "y": 280,
+        "wires": [
+            [
+                "62b13d70f2fe40a2"
+            ]
+        ]
+    },
+    {
+        "id": "aee73cb2ef1e800d",
+        "type": "file in",
+        "z": "3b8925f58ea04a7f",
+        "name": "",
+        "filename": "filename",
+        "filenameType": "msg",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 360,
+        "y": 280,
+        "wires": [
+            [
+                "a45906767f70b89a"
+            ]
+        ]
+    },
+    {
+        "id": "62b13d70f2fe40a2",
+        "type": "debug",
+        "z": "3b8925f58ea04a7f",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 900,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "c263eb3abb68a7b2",
+        "type": "file in",
+        "z": "3b8925f58ea04a7f",
+        "name": "",
+        "filename": "/config/templates/basic_file_collection_flow.json",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 500,
+        "y": 380,
+        "wires": [
+            [
+                "62b13d70f2fe40a2",
+                "350b28a18e1cc3b2"
+            ]
+        ]
+    },
+    {
+        "id": "3a306e500fb8b53a",
+        "type": "inject",
+        "z": "3b8925f58ea04a7f",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 380,
+        "wires": [
+            [
+                "c263eb3abb68a7b2"
+            ]
+        ]
+    },
+    {
+        "id": "350b28a18e1cc3b2",
+        "type": "function",
+        "z": "3b8925f58ea04a7f",
+        "name": "function 1",
+        "func": "msg.payload = \n{\n  \"id\": \"91ad451.f6e52b8\",\n  \"label\": \"Sheet 1\",\n  \"nodes\": JSON.parse(msg.payload),\n  \"configs\": [ ]\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 760,
+        "y": 560,
+        "wires": [
+            [
+                "62b13d70f2fe40a2"
+            ]
+        ]
+    }
+]
+
+data prcessing pipelines python driven would be great
+maybe preliminary ai analysis (anomalies, correllation.... ) notifiaction of findings
+notification of users with bigger tasks
+maybe feature creep and this is a seperate analysis platform
+
+
 by the way this was our internal roadmap
 ## Culture
 
@@ -182,6 +751,422 @@ Florian
 genau ...
 
 mein quellcode sollte hier zu finden sein: https://gitlab.dlr.de/zlp-augsburg/inner-source/shepard-dataship
+
+WHat it does:
+# User Guide
+
+This guide walks through the Dataship wizard step by step.
+
+---
+
+## Overview
+
+The wizard starts with a **source picker** where you choose where your data comes from. The subsequent steps depend on the source:
+
+| Source | Steps |
+|--------|-------|
+| **Shepard** | Collection → References → Configure Form → Review & Submit |
+| **Filesystem** | Upload Files → Configure Form → Review & Submit |
+
+---
+
+## Source picker
+
+On page load the wizard shows two source cards. Click one to build the wizard for that source. You can switch sources at any time — doing so clears any in-progress work.
+
+---
+
+## Shepard source
+
+### Step 1 — Collection
+
+1. Open the **Select Collection** dropdown and start typing to filter.
+2. Click **Load Collection**.
+
+The wizard advances to step 2 and fetches the collection's object tree.
+
+> If the dropdown is empty, check that `SHEPARD_TOKEN` is set and that the token has read access to the target workspace.
+
+### Step 2 — References
+
+The tree shows all data objects in the collection. Each object may contain one or more **references** (StructuredData, Timeseries, or File).
+
+**Selecting references:** Check the box next to any reference you want to include. The badge in the header counts the current selection.
+
+**Downloading reference data:** Each reference row has a download icon:
+
+| Icon colour | Reference type | Action |
+|-------------|---------------|--------|
+| Green | StructuredDataReference | Downloads JSON |
+| Blue | TimeseriesReference | Downloads CSV |
+| Purple | FileReference | Opens a modal with individual file download links |
+
+**Navigation:** Back returns to step 1; Configure Form requires at least one reference to be selected.
+
+---
+
+## Filesystem source
+
+### Step 1 — Upload Files
+
+1. Drop one or more files onto the upload area (or click to browse).
+2. For each file, optionally paste a **Download URL** — the public URL where the file is hosted. This becomes `downloadURL` in the Databus JSON-LD. Leave blank if the URL is not yet known (the Review step will flag it as a validation warning).
+3. YAML/JSON files are automatically parsed as **sidecar metadata** to pre-fill the Configure form.
+4. Click **Configure Form** when ready.
+
+---
+
+## Configure Form (all sources)
+
+This step shows two areas:
+
+### Context panel
+
+A collapsible summary of the selected references or uploaded files. This is the context the AI reads when generating field suggestions.
+
+### Metadata form
+
+| Field | Description |
+|-------|-------------|
+| **Title** | Short human-readable name for the dataset |
+| **Description** | 2–3 sentence summary of what the data contains |
+| **Version** | Pre-filled with today's date (`YYYY-MM-DD`); edit freely |
+| **License** | DALICC license selected from a searchable dropdown; defaults to CDLA-Permissive-2.0 |
+
+**AI field-fill:** Title and Description each have a **auto_awesome** (sparkle) button. Clicking it asks the LLM to suggest a value based on the context panel. You can edit the suggestion before proceeding.
+
+Click **Generate & Review** to assemble the JSON-LD and advance to step 4.
+
+---
+
+## Review & Submit (all sources)
+
+| Section | Description |
+|---------|-------------|
+| **Validation** | Green badge = valid; red list = errors that must be fixed before submitting |
+| **Version metadata** | `@id`, `@type`, title, description, license |
+| **Distributions** | One entry per selected reference or uploaded file |
+| **Full JSON-LD** | Complete payload in a syntax-highlighted code block |
+
+### Actions
+
+| Button | Action |
+|--------|--------|
+| **Export JSON** | Downloads the JSON-LD as a `.json` file |
+| **Export JSON-LD** | Downloads the JSON-LD with `.jsonld` extension |
+| **Export TTL** | Downloads in Turtle RDF format |
+| **Submit to Databus** | Opens a confirmation dialog; POSTs to `{DATABUS_API_URL}/publish` |
+
+### Success state
+
+After a successful submission, the step shows a green card with the dataset `@id`. Two buttons appear:
+
+- **Start New Deposition** — clears all state and returns to the source picker
+- **Export JSON-LD** — saves a local copy of the submitted deposition
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| Empty collection dropdown | Missing or expired `SHEPARD_TOKEN` | Set a valid token in `.env` |
+| Tree shows no data objects | Collection is empty or token lacks object-read access | Check Shepard permissions |
+| AI buttons produce errors | `LLM_API_KEY` not set or model unavailable | Set `LLM_API_KEY` in `.env` |
+| License dropdown is empty | DALICC API unreachable | Check network; a fallback list is used automatically |
+| Submit returns 401 | `DATABUS_API_KEY` invalid or expired | Renew the key on the Databus portal |
+| Submit returns SSL error | Self-signed certificate on a private Databus instance | Set `DATABUS_VERIFY_SSL=false` in `.env` |
+| Submit returns 404 | Wrong `DATABUS_API_URL` | Check the URL points to the correct Databus instance |
+| Distribution has no downloadURL | Filesystem source: URL field left blank | Fill in the Download URL field in the Upload step, or accept the validation warning |
+
+---
+Where its going:
+# Long-Term Implementation Plan: Shepard Dataship
+
+## Context
+
+The application is a working NiceGUI wizard that connects Shepard (research data repository) and Databus (linked-data registry). The current state covers datasource plugins (Shepard + Filesystem), the Configure/Review wizard, Databus JSON-LD submission, and LLM-assisted metadata. The missing-features.md defines what is needed to make this production-ready for DLR research data management. All features below are derived from that document.
+
+---
+
+## Milestone 1 — Identity & Session (IDP Integration)
+
+**Why first:** User identity is load-bearing for the approval workflow, per-user submission history, ORCID profiles, and access control. Everything downstream that requires "who is submitting" depends on this.
+
+**Scope:**
+- Integrate an OIDC/OAuth2 provider (Keycloak or compatible DLR IDP) via FastAPI middleware (NiceGUI exposes the underlying FastAPI app as `nicegui_app`)
+- Protect all routes; redirect unauthenticated users to the IDP login page
+- Inject authenticated user info (sub, name, email, groups/roles) into `AppState` on session start
+- Add user profile page: display name, email, allow user to set their ORCID iD
+- Store ORCID in a lightweight user-preference store (SQLite `users` table keyed by IDP sub)
+
+**Files to create / modify:**
+- `src/auth.py` — OIDC middleware, token validation, session injection
+- `src/db.py` — SQLite connection + schema (users, submissions tables — schema evolves in M2)
+- `src/state.py` — add `user: Optional[Dict]` field
+- `src/ui/app.py` — wire auth middleware; add profile UI
+- `pyproject.toml` — add `authlib` or `python-jose`, `httpx` (for token introspection)
+
+**Verification:** Unauthenticated request → redirected to IDP. After login, user name visible in header. ORCID saved and reloaded on next login.
+
+---
+
+## Milestone 2 — Async Processing Pipeline + Submission Status
+
+**Why second:** The current flow blocks the UI while data is fetched and submitted. Large datasets make this unusable. This milestone introduces background jobs and a persistent submission list.
+
+**Scope:**
+
+### 2a — Persistent Submission Store
+
+Add a `submissions` table (SQLite → upgradeable to PostgreSQL):
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| id | UUID PK | |
+| user_sub | TEXT | FK to users |
+| title | TEXT | |
+| databus_uri | TEXT | target URI |
+| status | TEXT | DRAFT, PROCESSING, REGISTERED, ERROR |
+| error_msg | TEXT | nullable |
+| payload_json | TEXT | serialised JSON-LD form |
+| created_at | DATETIME | |
+| updated_at | DATETIME | |
+
+- On "Submit" the wizard writes a `DRAFT` record and hands off to the background worker
+- UI shows a persistent "My Submissions" panel (accessible from the header) listing all records with live status badges
+
+### 2b — Background Worker
+
+- In-process worker using Python `threading` + `queue.Queue` (no external broker required for v1)
+- Worker thread picks up DRAFT jobs, calls Shepard to fetch/package data, uploads to S3, then calls Databus `/api/register`
+- Status transitions: DRAFT → PROCESSING → REGISTERED | ERROR
+- NiceGUI `ui.timer` (or periodic refresh) polls the DB and updates status badges without page reload
+
+### 2c — S3 Storage (RUSTFS / MinIO-compatible)
+
+- Upload packaged data files to S3 before registering with Databus (so Databus can serve real download URLs)
+- `src/storage.py` — thin wrapper around `boto3` for upload, presigned URL, delete
+- Configuration: `S3_ENDPOINT_URL`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET` in `.env` / `config.py`
+- The Databus distribution `downloadURL` becomes the S3 object URL
+
+**Files to create / modify:**
+- `src/db.py` — submission CRUD
+- `src/worker.py` — background thread + job queue
+- `src/storage.py` — S3 client wrapper
+- `src/ui/submissions_panel.py` — "My Submissions" UI component
+- `src/ui/app.py` — add submissions panel to header
+- `src/config.py` — S3 env vars
+- `src/ui/review_step.py` — replace blocking submit with enqueue + redirect to submissions panel
+- `pyproject.toml` — add `boto3`
+
+**Verification:** Submit a large dataset. Wizard returns immediately. Submissions panel shows PROCESSING → REGISTERED. Databus record has a real S3 download URL.
+
+---
+
+## Milestone 3 — Enriched Shepard Metadata
+
+Four sub-features that enrich the context shown in the Configure step and passed to the LLM. All touch `src/shepard_adapter.py`, `src/datasources/shepard/source.py`, and `src/datasources/shepard/tree_view.py`.
+
+### 3a — Semantic Annotations + Ontology Resolution
+
+- Add adapter methods: `get_annotations(collection_id, data_object_id, reference_id=None)` — calls `semantic_annotation_api.get_all_*_annotations()`
+- Add adapter method: `search_semantic_repositories(query)` — calls `semantic_repository_api`
+- Populate `payload['semantic_annotations']` in `fetch_rich_context` (field exists in `normalize_payload` but is always empty)
+- `DatabusFormatter` already emits `semanticAnnotations` in distribution output — no change needed
+- Configure step: add "Semantic Annotations" expansion; allow user to add/remove annotation triples
+
+### 3b — Lab Journal
+
+- Add adapter method: `get_lab_journals(collection_id, data_object_id)` — calls `lab_journal_entry_api.get_lab_journals_by_collection()` filtered by `data_object_id`
+- Populate `context['lab_journals']` in `fetch_rich_context`
+- `render_context()` in `ShepardDataSource`: add "Lab Journal" expansion showing journal entries with timestamps and authors
+
+### 3c — Linked Objects / Data Lineage
+
+- Add adapter method: `get_related_objects(collection_id, data_object_id, depth=1)` — traverses `predecessor_ids`, `successor_ids`, `children_ids`, `parent_id` fields already present on `DataObject`
+- Populate `context['related_objects']` in `fetch_rich_context`
+- Pass through to `payload['parent_objects']` (field exists in `normalize_payload`; `DatabusFormatter` already emits `parentObjects` in distribution)
+- `render_context()`: add "Related Data Objects" expansion with relationship type labels
+
+### 3d — URI Reference Crawling
+
+- Add adapter method: `get_uri_references(collection_id, data_object_id)` — calls `uri_reference_api.get_all_uri_references()`
+- Show in tree_view alongside other reference types
+- Optional HEAD-check to show link validity status
+- Include URI references in rich context
+
+### 3e — Selectable Context Inclusion
+
+- Add a checkbox panel in the Configure step: "Include in context: ☑ Lab Journal  ☑ Semantic Annotations  ☑ Linked Objects  ☑ URI References"
+- Checked items are fetched and included; unchecked items are skipped
+- Preference persisted in SQLite user store (from M1)
+
+**Files to modify:**
+- `src/shepard_adapter.py`
+- `src/datasources/shepard/source.py`
+- `src/datasources/shepard/tree_view.py`
+- `src/ui/configure_step.py`
+
+**Verification:** Select a data object with known lab journal entries. Configure step shows journal entries. Disable lab journal inclusion → entries absent. Databus distribution contains `semanticAnnotations`.
+
+---
+
+## Milestone 4 — Granular Data Selection
+
+### 4a — Column-level selection for TimeseriesReference
+
+- Add adapter method: `get_timeseries_columns(collection_id, data_object_id, reference_id)` — calls `timeseries_reference_api.get_metrics_of_timeseries_reference()`
+- In `tree_view.py`, after expanding a TimeseriesReference, render a checklist of columns
+- Store `selected_columns: List[str]` in `payload['_source_data']`
+- `download_timeseries_data()` in `downloads.py` passes selected columns to export call
+
+### 4b — File-level selection for FileReference
+
+- `get_files()` already exists in `ShepardAdapter`
+- Replace all-or-nothing FileReference checkbox in `tree_view.py` with an expandable file list showing per-file checkboxes
+- Store `selected_file_oids: List[str]` in `payload['_source_data']`
+- `show_file_download_modal()` and background packaging use only selected OIDs
+
+**Files to modify:**
+- `src/shepard_adapter.py` (4a only)
+- `src/datasources/shepard/tree_view.py`
+- `src/datasources/shepard/downloads.py`
+- `src/datasources/base.py` — extend `normalize_payload` schema docs
+
+**Verification:** Select a timeseries with 10 columns. Choose 3. Download CSV contains only 3 columns. Select FileReference with 5 files. Choose 2. Package contains only 2 files.
+
+---
+
+## Milestone 5 — Approval Workflow
+
+**Why after M1 + M2:** Requires user identity (M1) and the submission status store (M2).
+
+**Scope:**
+- Add `approver_sub` and `approved_at` columns to the `submissions` table
+- New status value: `PENDING_APPROVAL` inserted between DRAFT and PROCESSING
+- When user submits, status is set to `PENDING_APPROVAL`; worker does not process until approved
+- Approver role determined by IDP group membership (e.g., Keycloak role `dataship-approver`)
+- Approvers see a separate "Pending Approvals" view listing all PENDING_APPROVAL submissions with preview of JSON-LD metadata
+- Approve action → status transitions to DRAFT → picked up by worker
+- Reject action → status set to ERROR with reviewer comment; submitter notified (email or in-app notification)
+
+**Files to create / modify:**
+- `src/db.py` — approval columns + queries
+- `src/ui/approvals_panel.py` — approver UI
+- `src/ui/app.py` — show approvals panel only to users with approver role
+- `src/ui/review_step.py` — show "Awaiting Approval" state instead of PROCESSING for non-approvers
+
+**Verification:** User submits; submission enters PENDING_APPROVAL. Approver logs in, sees the pending submission, approves it. Status moves to PROCESSING → REGISTERED.
+
+---
+
+## Milestone 6 — Output Format Options
+
+Allow users to choose how their data package is structured before upload to S3.
+
+**Options:**
+- **Individual parts** (current default): each reference uploaded as a separate S3 object
+- **Single ZIP**: all selected references bundled into one archive
+- **RO-Crate**: build a Research Object Crate (`ro-crate-metadata.json` + files), upload as ZIP
+  - Evaluate [NovaCrate](https://novacrate.datamanager.kit.edu/editor) integration for metadata editing
+
+**Scope:**
+- Add format selector to the Configure step (radio group)
+- `src/packaging.py` — new module with `package_as_zip()`, `package_as_rocrate()`, `package_as_parts()` functions
+- `src/storage.py` — upload accepts either a single bytes object or a list of (key, bytes) pairs
+- RO-Crate: add `rocrate` Python library; generate `ro-crate-metadata.json` from the Databus JSON-LD form
+
+**Files to create / modify:**
+- `src/packaging.py` (new)
+- `src/worker.py` — call appropriate packaging function
+- `src/ui/configure_step.py` — format selector
+- `pyproject.toml` — add `rocrate` library
+
+**Verification:** Publish same dataset in all three modes. ZIP mode → single S3 object, one distribution part. RO-Crate mode → ZIP with `ro-crate-metadata.json` inside. Individual parts → N S3 objects, N distribution entries in Databus.
+
+---
+
+## Milestone 7 — Joint Publications
+
+Allow a single Databus version to combine payloads from multiple datasources (e.g. a Shepard reference + a local file).
+
+**Scope:**
+- Refactor source picker to allow multi-source selection (currently resets state on each pick)
+- `AppState.selected_payloads` already aggregates all payloads — it just needs to survive switching sources
+- Configure step renders a unified payload list from all sources
+- `DatabusFormatter.generate_form()` builds distributions from the combined list (already does this)
+- Packaging respects `_source_id` to call the correct download handler per payload
+
+**Files to modify:**
+- `src/state.py` — separate `active_source` from `selected_payloads` accumulation
+- `src/ui/app.py` / `src/ui/source_picker.py` — multi-source selection mode
+- `src/ui/configure_step.py` — show mixed payload list with source badges
+
+---
+
+## Milestone 8 — Shepard Back-Reference
+
+After a successful Databus registration, write a URI reference back into Shepard pointing at the published Databus URI. This closes the provenance loop: the data object in Shepard knows where its published version lives.
+
+**Scope:**
+- `src/shepard_adapter.py` — add `create_uri_reference(collection_id, data_object_id, name, uri)`
+- `src/worker.py` — after REGISTERED status confirmed, call `create_uri_reference` for each source payload that came from Shepard
+- Success state in UI: show "Back-reference created in Shepard" confirmation
+
+**Files to modify:**
+- `src/shepard_adapter.py`
+- `src/worker.py`
+- `src/ui/submissions_panel.py` — show back-reference status
+
+---
+
+## Milestone 9 — MOSS Integration
+
+*(Requires clarification of MOSS scope — HMC or FDM module. Plan this milestone in a dedicated session once requirements are defined.)*
+
+---
+
+## Dependency Graph
+
+```
+M1 (IDP)
+  └─► M2 (Async + S3 + Status)
+        └─► M5 (Approval workflow)
+M3 (Enriched Metadata)     ← independent of M1/M2
+M4 (Granular Selection)    ← independent of M1/M2
+M6 (Output Formats)        ← depends on M2 (packaging runs in worker)
+M7 (Joint Publications)    ← independent
+M8 (Back-reference)        ← depends on M2 (runs post-registration)
+M9 (MOSS)                  ← TBD
+```
+
+---
+
+## Suggested Delivery Order
+
+| # | Milestone | Rationale |
+| --- | --- | --- |
+| 1 | M4 — Granular Selection | High user value, self-contained, no infra changes |
+| 2 | M3 — Enriched Metadata | High user value, no infra changes |
+| 3 | M1 — IDP | Foundational; unblocks M2 + M5 |
+| 4 | M2 — Async + S3 | Core infra for production scale |
+| 5 | M5 — Approval | Governance requirement |
+| 6 | M6 — Output Formats | Research usability |
+| 7 | M7 — Joint Publications | Power-user feature |
+| 8 | M8 — Back-reference | Provenance closure |
+| 9 | M9 — MOSS | TBD |
+
+---
+
+## Open Questions
+
+1. **MOSS** — which module (HMC or FDM)? What does integration mean operationally?
+2. **Provenance** — should provenance be captured as OpenLineage events, W3C PROV triples in the RO-Crate, or both?
+3. **IDP** — which provider (Keycloak, Azure AD, DLR SSO)? Is a mock/dev IDP available for local development?
+4. **S3 / RUSTFS** — is a staging RUSTFS instance available for development?
+
+
 
 GitLab
 Sign in · GitLab
@@ -7279,9 +8264,49 @@ https://mb4se.esa.int/OSMOSE_Space%20System%20Ontology.html
 
 - [ ] @Witold High level at HMC (Hamacher) 🆔 20260407-021
 
+plugin interface für payloads.
+
+Project website (gitlab/github pages, flashy like https://www.researchspace.com/)
+use colors scheme from project files. 
+sections should include: 
+about shepard: general description link to repo and publication, 
+Core features.
+getting started: -> intro document
+admin and user doc
+FAQ: (interactive - how) user and dev driven knowledgebase of use cases, tipps, tweaks and solution sharing
+Imprint
+
+Find and Compare shepard with competitors find USPs and Weaknesses
+https://about.coscine.de/en/
+https://www.dglr.de/publikationen/2023/570104.pdf
+https://inveniordm.docs.cern.ch/
+
+
+shepard concern:
+implement a reference in shepard to foreign systems using the data indexing service --> databus reference
+Maybe the (ro-crate) export endpoint could be improved to enable more selective data export?
+Open Questions
+
+
+
+Should we capture provenance information about the exported data? (if so how, maybe OpenLinage, PROV)
+
+
+Maybe we can integrate NovaCrate?
+
 Perform research as necessary. Document.
+
+set up a test environment
+improve testing 
+introduce ui tests
+documentation of REST API examples
+
+Admin CLI und static admin user (DISABLE user through env)
+
 
 extend and match These to the existing issues Group them and put them in the most effective order.
 Create concern log integrating existing (unsoved) issues and this data.
 resync everything with index.md
 provide a synopsis of most important directions to take.
+reorganise all info in a single source of truth. a developmen bible.
+if you find conflicts make a note. decisions-on-conflicts.md
