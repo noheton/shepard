@@ -37,6 +37,7 @@ to **11** for the plan, then dip into A or C as needed.
 |---|---|---|
 | 11 | [`11-implementation-plan.md`](11-implementation-plan.md) | Phased plan (Phase 0 housekeeping → Phase 6 backlog closure). The single document the team should drive against. |
 | 15 | [`15-phase-0-status.md`](15-phase-0-status.md) | Progress note for Phase 0 housekeeping (what was done, what remains, research-closure check) |
+| 16 | [`16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | Working backlog of items extracted from `input/input_raw.md`, with scope filter, parked items, open decisions, and per-round dispatch log |
 
 ## C. Forward-looking design notes
 
