@@ -68,7 +68,7 @@ Status legend:
 
 | ID | Item | input_raw refs | Size | Status | Notes |
 |---|---|---|---|---|---|
-| L1 | Admin CLI: cleanup of data marked for deletion, import/export of collections as RO-Crate | 705–708 | M | queued | New scripts/ tool |
+| L1 | Admin CLI: cleanup of data marked for deletion, import/export of collections as RO-Crate | 705–708 | M–L | queued | Now backed by `aidocs/22-admin-cli-draft.md`. Phase 1 (read-only — features list / health / migrations status) is unblocked once **A0** lands. Phase 2 (cleanup deleted-entities) needs explicit `--dry-run` semantics + TTL design. Recommended framework: Java + Picocli. |
 | L2 | Neo4J: stop using deprecated `id()` function, migration to custom ID scheme | 90, 715–717 | M | queued | Touches a lot of Cypher |
 | L3 | Templates system: YAML-defined templates for collections / data objects / refs (admin role) | 98–137 | L | queued | Backend storage + frontend forms; SPW compat goal |
 | L4 | Search-as-you-type with tree/graph view of ontology | 96, 869 | M | queued | Frontend; intersects with `13-search-improvements.md` and `14-semantic-improvements.md` |
@@ -220,7 +220,7 @@ agents produced strategic / design docs requested by the maintainer:
 | `aidocs/19-architecture-feedback.md` | Critical review of post-Round-3 architecture | done | `879ffc0` |
 | `aidocs/20-epic-roadmap.md` | 14-epic catalogue with Mermaid dependency graph + 2-track 6-month plan | done | `fc4ae3b` |
 | `aidocs/21-user-interest-gauge.md` | Demand signals for HDF5/HSDS, tabular, KG interfaces + survey plan | done | `362712e` |
-| `aidocs/22-admin-cli-draft.md` | Candidate functions for a future `shepard-admin` CLI | dispatched | — |
+| `aidocs/22-admin-cli-draft.md` | Candidate functions for a future `shepard-admin` CLI | done | `452eded` |
 
 **Key findings from these docs that should drive Round 4 priorities:**
 
