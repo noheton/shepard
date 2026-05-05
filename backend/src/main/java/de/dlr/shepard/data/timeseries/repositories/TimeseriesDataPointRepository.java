@@ -127,6 +127,37 @@ public class TimeseriesDataPointRepository {
     }
   }
 
+  /**
+   * Batched COPY insert used by the InfluxDB->TimescaleDB migration tool.
+   * Each batch is committed separately so progress callbacks observe persistent state.
+   * The reporter is invoked after every successful batch with (batchIndex, rowsInBatch).
+   * If a batch fails the errorReporter is invoked and the exception is rethrown so the
+   * caller can mark the migration FAILED; on retry, callers should pass startBatchIndex
+   * equal to the last successfully reported batch index + 1.
+   */
+  @Timed(value = "shepard.timeseries-data-point.copy-insert-batched")
+  public void insertManyDataPointsWithCopyCommandBatched(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity,
+    int startBatchIndex,
+    java.util.function.BiConsumer<Integer, Integer> batchReporter,
+    java.util.function.BiConsumer<Integer, Throwable> errorReporter
+  ) throws SQLException {
+    int totalBatches = (entities.size() + INSERT_BATCH_SIZE - 1) / INSERT_BATCH_SIZE;
+    for (int batchIndex = startBatchIndex; batchIndex < totalBatches; batchIndex++) {
+      int from = batchIndex * INSERT_BATCH_SIZE;
+      int to = Math.min(from + INSERT_BATCH_SIZE, entities.size());
+      List<TimeseriesDataPoint> batch = entities.subList(from, to);
+      try {
+        insertManyDataPointsWithCopyCommand(batch, timeseriesEntity);
+      } catch (SQLException | RuntimeException ex) {
+        if (errorReporter != null) errorReporter.accept(batchIndex, ex);
+        throw ex;
+      }
+      if (batchReporter != null) batchReporter.accept(batchIndex, batch.size());
+    }
+  }
+
   @Timed(value = "shepard.timeseries-data-point.compression")
   public void compressAllChunks() {
     var sqlString = "SELECT compress_chunk(c) FROM show_chunks('timeseries_data_points') c;";
