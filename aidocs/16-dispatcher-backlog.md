@@ -28,6 +28,12 @@ Status legend:
 
 ## Backlog (this repo only)
 
+### Cross-cutting auth (added 2026-05-05)
+
+| ID | Item | input_raw refs | Size | Status | Notes |
+|---|---|---|---|---|---|
+| A0 | Admin role mechanism: configurable `shepard.admin.role`, populate `JWTPrincipal.roles` from realm-access claims (in `JWTFilter`), mirror for API-key path, so `@RolesAllowed("admin")` actually works | — | S–M | **needs decision** | Unblocker for A3b and P3c. Three options offered to user (full role mechanism / dev-profile-only / scope-shift to `/temp/admin/...`). |
+
 ### Architectural / performance (lines 1387–7000)
 
 | ID | Item | input_raw refs | Size | Status | Notes |
@@ -35,7 +41,7 @@ Status legend:
 | A1 | Async DB init: bounded timeout + exponential backoff in `MigrationsRunner.waitForConnection` | 1395–1440, 1599–1644 | S | done | Round 1, commit `a74d278`. Also fixed second infinite-loop in `NeoConnector`. Config: `shepard.migrations.connection-wait-timeout` (default `PT60S`). |
 | A1b | Health checks: distinguish startup readiness vs runtime; per-DB status | 1420–1428 | S–M | done | Round 2, commit `8f40156` |
 | A1c | Async DB init: graceful degradation when optional DBs (PostGIS) unavailable | 1408–1414, 1625–1627 | M | queued | Annotation-driven endpoint gating |
-| A1f | Automated DB recovery scheduler on top of `DbHealthState` | 1427 | M | queued | Follow-up from A1b — infra now in place; a `@Scheduled` recovery loop is straightforward |
+| A1f | Automated DB recovery scheduler on top of `DbHealthState` | 1427 | M | done | Round 3, commit `2f80600`. `@Scheduled(every="{shepard.health.recovery.interval}")` default `PT15S`. Adds `quarkus-scheduler` dep. 4 tests passing. |
 | A1d | Audit MongoDB / Flyway / Quarkus JDBC startup wait/retry semantics | — | S–M | queued | Follow-up from A1: only Neo4j had explicit infinite waits; confirm the Quarkus extensions fail fast within the same timeout philosophy |
 | A1e | `MigrationsRunner.apply()` swallows `ServiceUnavailableException` / `MigrationsException` — surface failed migrations as a startup error rather than continuing | — | S | done | Round 2, commit `0f2f512` |
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` | 1443–1489 | L | queued | JAX-RS sub-resources, breaking only for code, not API |
@@ -75,6 +81,21 @@ Status legend:
 | S1 | Streaming OpenAPI compatible read path → client generation | 4 | M–L | queued | Already covered in `12-timescaledb-performance-analysis.md` §11 |
 | S2 | Databus publication service (in dataship, but back-reference URI lands here) | 1199–1214, 721 | S | parked | Dataship-side; this repo only needs to accept a URI reference |
 
+### Newly surfaced (second-pass analysis of `input_raw.md` lines 1840–8409)
+
+These come from a re-read of regions the first scan missed. `R7` deduplicates with existing `L1`. `R2` (RO-Crate) is **already implemented** in this repo (`ExportConstants.ROCRATE_METADATA`); only the per-payload selection enhancement remains. Most others are blocked on user/maintainer decisions.
+
+| ID | Item | input_raw refs | Size | Status | Notes |
+|---|---|---|---|---|---|
+| R1 | Databus integration for referencing foreign systems | 8380 | M | **needs decision** | Wait for Databus API spec stabilisation; sister repo `shepard-dataship` already has a prototype |
+| R2 | Per-payload selective RO-Crate export (refinement of existing export) | 8381 | S–M | queued | Base is implemented; this is the column/file selector layer (compare M4 for dataship) |
+| R3 | Provenance capture in exports (OpenLineage / W3C PROV-O / both) | 8386 | M | **needs decision** | Ontology choice; aligns with `aidocs/14-semantic-improvements.md` |
+| R4 | Evaluate NovaCrate library for RO-Crate metadata editing | 8389 | S | queued | Pre-decision assessment task |
+| R5 | Frontend UI / component test suite | 8393–8395 | L | **needs decision** | Framework choice (Cypress / Playwright); no UI tests exist today |
+| R6 | Comprehensive REST API examples in docs (Postman / OpenAPI examples / live) | 8396 | S–M | **needs decision** | Format choice |
+| R8 | DLR Corporate-Design theming pass on frontend | 8400 | M | **needs decision** | Needs design assets + brand guidelines (the `aidocs/input/*.htm` files are the CD-Handbuch reference) |
+| R9 | Git repo references as payload type (with pinned commits) | 8402 | L | **needs decision** | Versioning + payload-schema design |
+
 ### Parked (out of repo or superseded)
 
 | ID | Item | input_raw refs | Why parked |
@@ -97,6 +118,17 @@ Status legend:
    design before implementation.
 4. **Neo4J ID migration (L2)** is large and touches a lot of code — needs
    a written design before implementation.
+5. **Admin role mechanism (A0)** — A3b discovered there is no admin auth
+   in shepard today. JWT roles are always `new String[0]`, so
+   `@RolesAllowed("admin")` denies everyone. Three paths offered:
+   (a) full admin-role mechanism populating roles from OIDC claims
+   (~50 lines + config), (b) dev-profile-only exposure of admin
+   endpoints, (c) scope-shift admin endpoints to `/temp/admin/*` with
+   the same auth as the existing `/temp/migrations/*` carve-out and
+   harden later. Affects A3b, P3c.
+6. **R-series items (R1–R9)** from the second-pass input analysis are
+   mostly blocked on design / framework / asset decisions — see
+   "Newly surfaced" table.
 
 ## Round log
 
@@ -166,10 +198,10 @@ Non-overlap clauses included in each prompt:
 
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
-| A1f | DB recovery scheduler on top of `DbHealthState` | dispatched | — | `@Scheduled` cadence default `PT15S`; per-pinger exception-isolated |
+| A1f | DB recovery scheduler on top of `DbHealthState` | done | `2f80600` | `@Scheduled` `PT15S`; adds `quarkus-scheduler` dep; 4 tests passing |
 | A4c | Opt-in permission cache warming on `StartupEvent` | dispatched | — | Disabled by default (`shepard.permissions.cache.warm.enabled=false`); capped at 500 entries |
 | A4d | Enable Micrometer metrics on `permissions-service-cache` | dispatched | — | One-line property + smoke test |
-| A3b | Read-only `GET /admin/features` endpoint | dispatched | — | Discovers toggles by scanning SmallRye Config; mutation deferred |
+| A3b | Read-only `GET /admin/features` endpoint | **blocked** | — | Agent stopped per scope guard: **no admin auth model exists**. JWT roles always `new String[0]`; `@RolesAllowed("admin")` would deny everyone. New unblocker item **A0** added. |
 | A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | dispatched | — | Config + audit doc only |
 | P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | dispatched | — | Other call sites tracked as follow-ups |
 | L6 | Pagination inventory + sized rollout plan (research) | dispatched | — | Produces `aidocs/18-pagination-inventory.md` |
