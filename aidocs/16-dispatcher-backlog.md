@@ -203,12 +203,25 @@ Non-overlap clauses included in each prompt:
 |---|---|---|---|---|
 | A1f | DB recovery scheduler on top of `DbHealthState` | done | `2f80600` | `@Scheduled` `PT15S`; adds `quarkus-scheduler` dep; 4 tests passing |
 | A4c | Opt-in permission cache warming on `StartupEvent` | done | `a7167ff` | `shepard.permissions.cache.warm.enabled=false` default. `DefaultMostUsedEntityProvider` runs Cypher for top-N most-recently-updated entities. 3 tests passing. Conflict with A4's properties block resolved (kept both). |
-| A4d | Enable Micrometer metrics on `permissions-service-cache` | dispatched | — | One-line property + smoke test |
+| A4d | Enable Micrometer metrics on `permissions-service-cache` | done (partial) | `cf1e374` | Salvaged from rate-limited agent worktree. Property change landed; smoke test marked `@Disabled` because `@QuarkusTest` boots the full stack and hangs on `MigrationsRunner.awaitConnectivity` without live DBs. Spawned **A4e**. |
+| A4e | Convert `PermissionsServiceCacheMetricsTest` to a `HealthzIT`-style integration test that runs against the docker-compose stack in CI | — | S | queued | Follow-up from A4d salvage. The disabled `@Test` in `PermissionsServiceCacheMetricsTest` is the proof-of-shape; needs to move to integration-test phase or to be re-keyed onto a `@QuarkusComponentTest` variant once a working pattern emerges. |
 | A3b | Read-only `GET /admin/features` endpoint | **blocked** | — | Agent stopped per scope guard: **no admin auth model exists**. JWT roles always `new String[0]`; `@RolesAllowed("admin")` would deny everyone. New unblocker item **A0** added. |
 | A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | done | `e1c3635` | Adds `quarkus.flyway.connect-retries=10` + `connect-retries-interval=PT5S` (default was 120s, exceeded ceiling). Mongo/JDBC defaults already fail fast — no redundant config added. New `aidocs/17-startup-wait-audit.md`. |
 | P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | done | `22f78b3` | **Stale assumption corrected:** the `parallelStream` cited at `input_raw.md:1668-1678` is actually a *data-fetching* stream, not an N+1 permission check. No N+1 permission-check site exists in the repo. Primitive landed (8 new tests; `PermissionsService.filterAllowedForUser` + `PermissionsDAO.findByEntityNeo4jIds`); call-site rewire is a noop until a downstream caller emerges. |
 | P2c | `filterAllowedUsers(entityId, AccessType, Collection<String> usernames)` for `SubscriptionFilter.filter` | — | S | queued | Follow-up from P2 — symmetric to `filterAllowedForUser` |
 | L6 | Pagination inventory + sized rollout plan (research) | done | `c896fd9` | New `aidocs/18-pagination-inventory.md`. 38 list endpoints inventoried, 11 paginated today (29%). Recommends extending the existing `?page&size` convention rather than the cursor proposal in §2.6 of `13-search-improvements.md` for the existing 27 unpaginated list endpoints — coexistence with cursor for `POST /search/v2`. |
+
+**Rate-limited agents (2026-05-05, ~10:48 UTC):** Three background
+agents hit the global usage cap (resets 15:20 UTC) before pushing.
+Outcomes:
+
+- **A4d (cache metrics):** worktree had partial work (property + a
+  smoke test). Salvaged manually as `cf1e374`; test marked `@Disabled`
+  pending integration-test conversion (A4e).
+- **`aidocs/23-api-critique.md`:** worktree empty; nothing salvageable.
+  Need to redispatch after limit resets.
+- **`aidocs/24-permission-system-review.md`:** worktree empty; nothing
+  salvageable. Need to redispatch after limit resets.
 
 ### Round 4 — 2026-05-05 (analysis layer)
 
