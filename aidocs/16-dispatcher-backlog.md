@@ -144,6 +144,36 @@ Three stale spots in `input_raw.md` were corrected during dispatch:
 - P3: orchestrator image source lives outside this repo; only the
   COPY path was instrumentable here.
 
+### Round 3 — 2026-05-05
+
+Dispatched 7 agents in parallel worktrees. Most are small/additive
+follow-ups from Rounds 1–2; P2 is medium; L6 is research-only.
+Non-overlap clauses included in each prompt:
+
+- A1f owns new files in `common/healthz/` only; cannot modify A1b's surface.
+- A4c owns a new `PermissionsCacheWarmer` startup observer; cannot add
+  public methods to `PermissionsService` (P2's territory) or modify
+  cache config (A4d's territory).
+- A4d owns the `metrics-enabled` config key and a smoke test only;
+  cannot touch `PermissionsService` or other cache config.
+- A3b owns a new `FeaturesAdminRest` resource; cannot modify A3 surface.
+- A1d owns `application.properties` config additions + a new
+  `aidocs/17-startup-wait-audit.md`; **no source changes**.
+- P2 owns the new `filterAllowedForUser` method on `PermissionsService`
+  + rewiring **one** call site; cannot warm the cache or change config.
+- L6 is research-only, producing `aidocs/18-pagination-inventory.md`
+  and an index update; **no source changes**.
+
+| ID | Agent description | Status | Commit | Notes |
+|---|---|---|---|---|
+| A1f | DB recovery scheduler on top of `DbHealthState` | dispatched | — | `@Scheduled` cadence default `PT15S`; per-pinger exception-isolated |
+| A4c | Opt-in permission cache warming on `StartupEvent` | dispatched | — | Disabled by default (`shepard.permissions.cache.warm.enabled=false`); capped at 500 entries |
+| A4d | Enable Micrometer metrics on `permissions-service-cache` | dispatched | — | One-line property + smoke test |
+| A3b | Read-only `GET /admin/features` endpoint | dispatched | — | Discovers toggles by scanning SmallRye Config; mutation deferred |
+| A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | dispatched | — | Config + audit doc only |
+| P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | dispatched | — | Other call sites tracked as follow-ups |
+| L6 | Pagination inventory + sized rollout plan (research) | dispatched | — | Produces `aidocs/18-pagination-inventory.md` |
+
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
 | P3 | InfluxDB→TimescaleDB migration progress monitoring + persisted resume | done | `7cc74b8` | Found split: orchestrator is the external `timescale-migration-preparation` image (source not in this repo); the COPY path lives in `TimeseriesDataPointRepository`. Landed: Flyway `V1.9.0__add_migration_progress_table.sql`, `MigrationProgress` entity + repo + service, `MigrationRunner`, `MigrationProgressIO`, `GET /temp/migrations/state` and `GET /temp/migrations/{containerId}` endpoints. New COPY method `insertManyDataPointsWithCopyCommandBatched` with batch index + reporter callbacks (existing method untouched). 17 new tests passing. |
