@@ -103,12 +103,18 @@ public class MigrationsRunner {
   }
 
   public void apply() {
+    runMigrations(migrations::apply);
+  }
+
+  static void runMigrations(Runnable migrationsApply) {
     try {
-      migrations.apply();
+      migrationsApply.run();
     } catch (ServiceUnavailableException e) {
-      Log.error("Migrations cannot be executed because the neo4j database is not available");
+      Log.error("Migrations cannot be executed because the neo4j database is not available", e);
+      throw new RuntimeException("Aborting startup: neo4j became unavailable during migrations", e);
     } catch (MigrationsException e) {
       Log.error("An error occurred during the execution of the migrations: ", e);
+      throw new RuntimeException("Aborting startup: neo4j migration failed", e);
     }
   }
 

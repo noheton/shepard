@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import ac.simons.neo4j.migrations.core.MigrationsException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.neo4j.driver.exceptions.ServiceUnavailableException;
 
 public class MigrationsRunnerTest {
 
@@ -131,6 +133,41 @@ public class MigrationsRunnerTest {
     } finally {
       Thread.interrupted();
     }
+  }
+
+  @Test
+  public void runMigrations_propagatesMigrationsExceptionAsRuntimeException() {
+    MigrationsException failure = new MigrationsException("boom");
+    Runnable failing = () -> {
+      throw failure;
+    };
+
+    RuntimeException ex = assertThrows(
+      RuntimeException.class,
+      () -> MigrationsRunner.runMigrations(failing)
+    );
+
+    assertSame(failure, ex.getCause(), "underlying MigrationsException should be chained as cause");
+  }
+
+  @Test
+  public void runMigrations_propagatesServiceUnavailableAsRuntimeException() {
+    ServiceUnavailableException failure = new ServiceUnavailableException("db gone");
+    Runnable failing = () -> {
+      throw failure;
+    };
+
+    RuntimeException ex = assertThrows(
+      RuntimeException.class,
+      () -> MigrationsRunner.runMigrations(failing)
+    );
+
+    assertSame(failure, ex.getCause(), "underlying ServiceUnavailableException should be chained as cause");
+  }
+
+  @Test
+  public void runMigrations_returnsNormallyOnSuccess() {
+    MigrationsRunner.runMigrations(() -> {});
   }
 
   private static MigrationsRunner.NanoClock virtualClock(long startNanos) {
