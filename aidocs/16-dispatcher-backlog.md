@@ -128,6 +128,8 @@ The MVP "minimum-viable clunkiness fix" is **P5 + P6 + P7 + P10 + P12 + P16 + P1
 | P19 | Cursor pagination on the unified search; offset elsewhere stays for now | M (in P7) | queued | Dovetails with **L6**. |
 | P20 | Reactive (Mutiny) migration for the timeseries read path as the first slice | M | queued | Dovetails with **A2**. |
 | P21 | Introduce PATCH for partial-update endpoints (currently every update is PUT despite partial DTOs — `DataObjectRest:162`, `TimeseriesRest:472`, etc.) | M | queued | Surfaced by `aidocs/26-crud-consistency.md` §3 finding #1: **0 PATCH endpoints across 153**. Strategy choice belongs to maintainer: (a) keep PUT as partial-update for backwards compat (REST-violating but non-breaking), (b) flip PUT to full-replace and add PATCH for partial (breaking — bundle with **P4**), or (c) ship PATCH additively in `/v1/` and deprecate the partial-PUT semantics in `/v2/` (cleanest). Recommend (c). Per-resource cost: small once a `@PATCH` test pattern is established. |
+| P22 | SSE proxy-compatibility integration test — confirm `GET /collections/{id}/events` (P13) survives the existing reverse-proxy stack (Caddy / Keycloak) | S | queued | Tripwire from `aidocs/28-paradigms-and-clients-synthesis.md`. Must run before P13 default-on. |
+| P23 | Presign-vs-cache TTL invariant validator — bound presigned-URL TTL by `shepard.permissions.cache.ttl` so a permission revoked while a URL is live cannot keep granting access | S | queued | Tripwire from `aidocs/28-paradigms-and-clients-synthesis.md`. Bundles with P12 (S3-presigned blob payloads). |
 
 ### Permission-system evolutions (from `aidocs/24`, 2026-05-05)
 
