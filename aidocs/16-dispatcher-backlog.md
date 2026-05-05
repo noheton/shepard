@@ -33,8 +33,9 @@ Status legend:
 | ID | Item | input_raw refs | Size | Status | Notes |
 |---|---|---|---|---|---|
 | A1 | Async DB init: bounded timeout + exponential backoff in `MigrationsRunner.waitForConnection` | 1395–1440, 1599–1644 | S | done | Round 1, commit `a74d278`. Also fixed second infinite-loop in `NeoConnector`. Config: `shepard.migrations.connection-wait-timeout` (default `PT60S`). |
-| A1b | Health checks: distinguish startup readiness vs runtime; per-DB status | 1420–1428 | S–M | queued | Quarkus health check enhancement |
+| A1b | Health checks: distinguish startup readiness vs runtime; per-DB status | 1420–1428 | S–M | done | Round 2, commit `8f40156` |
 | A1c | Async DB init: graceful degradation when optional DBs (PostGIS) unavailable | 1408–1414, 1625–1627 | M | queued | Annotation-driven endpoint gating |
+| A1f | Automated DB recovery scheduler on top of `DbHealthState` | 1427 | M | queued | Follow-up from A1b — infra now in place; a `@Scheduled` recovery loop is straightforward |
 | A1d | Audit MongoDB / Flyway / Quarkus JDBC startup wait/retry semantics | — | S–M | queued | Follow-up from A1: only Neo4j had explicit infinite waits; confirm the Quarkus extensions fail fast within the same timeout philosophy |
 | A1e | `MigrationsRunner.apply()` swallows `ServiceUnavailableException` / `MigrationsException` — surface failed migrations as a startup error rather than continuing | — | S | done | Round 2, commit `0f2f512` |
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` | 1443–1489 | L | queued | JAX-RS sub-resources, breaking only for code, not API |
@@ -48,7 +49,9 @@ Status legend:
 | P1 | Parallelize DB connection checks (CompletableFuture / virtual threads) | 1599–1644 | M | queued | Bundles with A1 |
 | P2 | Batch permission checks: `checkPermissionsBatch(List<Long>)` | 1672–1678 | S–M | queued | One Cypher query per request, not N |
 | P2b | TimescaleDB continuous aggregates / materialized views | 1690–1698 | M | queued | Already partly tracked in `12-timescaledb-performance-analysis.md` |
-| P3 | Migration progress monitoring endpoint | 1720–1737 | S | queued | Additive, low-risk |
+| P3 | Migration progress monitoring endpoint | 1720–1737 | S | done | Round 2, commit `7cc74b8`. Side-finding: the existing legacy `migration_tasks` table (V1.1.0) is unreferenced from Java; left untouched as lower-risk than consolidating. |
+| P3b | Wire the external `timescale-migration-preparation` image to write `migration_progress` rows (or call `MigrationRunner.migrateContainer` over JDBC) | — | M | queued | Follow-up from P3 — image source lives outside this repo |
+| P3c | Tighten authorisation on `/temp/migrations/*` (currently in `PermissionsService.java:202-205` always-allowed carve-out) | — | S | queued | Follow-up from P3 |
 | P4 | API versioning prefix (`/shepard/api/v1`) | 1760–1764 | S | queued | **Breaking** — needs strategy decision |
 | P4b | OpenAPI client tree-shaking / code splitting | 1765–1774 | S | queued | Frontend / clients |
 
@@ -107,8 +110,6 @@ Their output lands as separate commits on this branch.
 | A1 | Bounded-timeout DB connection wait with exponential backoff | done | `a74d278` | Replaces infinite loops in `MigrationsRunner.waitForConnection` and `NeoConnector`. Adds `ConnectionWaitTimeoutException`, 5-test `MigrationsRunnerTest` (deterministic via injected clock+sleeper). Spawned follow-ups A1d, A1e. |
 | A4 | Caffeine-backed permission cache with TTL/LRU | done | `53996a3` | Cache was already Caffeine via `quarkus-cache`; landed per-cache TTL/max-size config + 5-test behavioural contract. Spawned follow-ups A4c (warming), A4d (metrics). |
 
-A1 and A4 do not overlap (DB init vs permission service).
-
 **Round 1 outcome:** both items landed cleanly on the dispatcher branch.
 A1 + A4 land 357 lines added across 7 files (5 prod, 2 test) with 9 new
 unit tests, all passing. Two stale assumptions in `input_raw.md` were
@@ -130,10 +131,23 @@ possible — explicit non-overlap clauses included in each prompt:
 
 L5 (API keys) and A3 (feature toggles) are independent of all of the above.
 
+**Round 2 outcome:** all 5 items landed on the dispatcher branch.
+~3,200 lines added across ~60 files, **102 new unit tests** all passing
+on the merged branch (8 `MigrationsRunner` + 21 health-check + 9 API-key
++ 2 versioning toggle + 17 migration progress + 5 from earlier round +
+existing regressions). Two cherry-pick conflicts resolved manually:
+- `MigrationsRunnerTest.java` (A1 vs A1e — combined test sets).
+- `application.properties` (A1 vs A3 — kept both new keys).
+Three stale spots in `input_raw.md` were corrected during dispatch:
+- A1: only Neo4j had infinite waits, not Mongo/Timescale/PostGIS.
+- A4: cache was already Caffeine, not a basic Map.
+- P3: orchestrator image source lives outside this repo; only the
+  COPY path was instrumentable here.
+
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
-| P3 | InfluxDB→TimescaleDB migration progress monitoring + persisted resume | dispatched | — | Find the migration module first; report-and-stop if it's structured differently from `input_raw.md:1702-1737` |
-| A1b | Split health checks into Startup / Readiness / Liveness with per-DB detail | dispatched | — | PostGIS readiness no-ops when toggle is off; recovery item out of scope |
+| P3 | InfluxDB→TimescaleDB migration progress monitoring + persisted resume | done | `7cc74b8` | Found split: orchestrator is the external `timescale-migration-preparation` image (source not in this repo); the COPY path lives in `TimeseriesDataPointRepository`. Landed: Flyway `V1.9.0__add_migration_progress_table.sql`, `MigrationProgress` entity + repo + service, `MigrationRunner`, `MigrationProgressIO`, `GET /temp/migrations/state` and `GET /temp/migrations/{containerId}` endpoints. New COPY method `insertManyDataPointsWithCopyCommandBatched` with batch index + reporter callbacks (existing method untouched). 17 new tests passing. |
+| A1b | Split health checks into Startup / Readiness / Liveness with per-DB detail | done | `8f40156` | New `common/healthz/` infra: `DbHealthState`, `DbPinger`, `ReadinessConfig`, `AbstractDb*Check`, `JvmLivenessCheck`. Per-DB pingers + startup checks for Neo4j/Mongo/Timescale/PostGIS. PostGIS short-circuits to UP when toggle off via existing `SpatialDataFeatureToggle.isActive()`. `shepard.health.readiness.max-staleness=PT30S` configurable. `HealthzIT` updated. 21 new unit tests passing. |
 | A1e | `MigrationsRunner.apply()` fail-fast on swallowed exceptions | done | `0f2f512` | Worktree was forked from before A1; merge conflict in `MigrationsRunnerTest.java` resolved by combining both test sets. Adds 3 tests to A1's 5 → 8 tests total on `MigrationsRunner`, all passing. |
 | L5 | Optional `validUntil` on API keys; auth rejects expired | done | `30c687a` | Hybrid system (Neo4j `ApiKey` row + JJWT-encoded). Filter rejects expired keys with 401 + `WWW-Authenticate: ApiKey error="expired"`. Existing keys without `validUntil` keep working. Schema impact additive nullable. 9 new tests across 3 test classes, all passing. |
 | A3 | Runtime feature toggle mechanism + migrate the `versioning` toggle | done | `ddeeb31` | One `@IfBuildProperty` use found (`versioning`) and migrated. Adds `@ConditionalOnFeature` qualifier + `FeatureBeanProducer`; renames property to `shepard.features.versioning.enabled`. Conflict with A1's added property in `application.properties` resolved trivially. 2 new tests (enabled/disabled profiles), passing. |
