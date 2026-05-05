@@ -33,7 +33,7 @@ Status legend:
 | ID | Item | input_raw refs | Size | Status | Notes |
 |---|---|---|---|---|---|
 | A0 | Admin role mechanism: configurable `shepard.admin.role`, populate `JWTPrincipal.roles` from realm-access claims (in `JWTFilter`), mirror for API-key path, so `@RolesAllowed("admin")` actually works | — | S–M | **needs decision** | Unblocker for A3b and P3c. Three options offered to user (full role mechanism / dev-profile-only / scope-shift to `/temp/admin/...`). |
-| C3 | Remove the full-access fallback in `PermissionsService.isAllowed` when the permissions node is missing — currently grants Reader+Writer+Manager (full-access backdoor) | `aidocs/07-security-issues.md` C3, `aidocs/19-architecture-feedback.md` §2 | S | **escalated** | Was tracked in `07` but not in this backlog. Promoted because `19` ranks it as a top fragility. Concrete fix: deny by default; add explicit exception only for endpoints that legitimately operate without a permissions node. |
+| C3 | Remove the full-access fallback in `PermissionsService.getRoles` when the permissions node is missing — `PermissionsService.java:258-262` returns `new Roles(false, true, true, true)` (full-access backdoor) | `aidocs/07-security-issues.md` C3, `aidocs/19-architecture-feedback.md` §2, `aidocs/24-permission-system-review.md` §3 | S | **escalated** | Concrete fix: invert the default to deny; add explicit allow only for endpoints that legitimately operate without a permissions node. Per `aidocs/24`, depends on **A0** because the inverse default needs a way to authorize legitimate admin paths. |
 | C5 | Replace string-concatenated Cypher query construction in `Neo4jQueryBuilder.java:198-244` and `PermissionsDAO.java:14` with parameterised queries | `aidocs/07-security-issues.md` C5, `aidocs/19-architecture-feedback.md` §2, `aidocs/25-neo4j-id-migration-design.md` §5 | M | **escalated — now also gates L2c** | Was tracked in `07`. Cross-cuts every search endpoint and gates `aidocs/13-search-improvements.md`'s unified search proposal. **Now also gates L2c (Phase 3 of Neo4j ID migration):** when entity ids become UUID strings, any string-concatenated `id()` Cypher becomes injectable. Fix C5 *before* `/search/v2` **and** before L2c. |
 | H4 | Surface RFC 7807-shape error responses (existing high-finding from `07`) | `aidocs/07-security-issues.md` H4, `aidocs/19-architecture-feedback.md` §3 | M | **needs decision** | Bundles with API-versioning P4 — the response-shape change should land at the same time as the `/v1/` prefix to avoid two breaking changes in close succession. |
 
@@ -80,7 +80,7 @@ Status legend:
 | L5 | Semi-permanent API keys with expiry | 694 | S | done | Round 2, commit `30c687a`. API keys are hybrid Neo4j-row + JJWT-encoded; landed `validUntil` field, JWT `exp` claim, distinguishable 401 on expiry. |
 | L6 | Output control: pagination on more endpoints | 689–691 | S | queued | Aligns with `13-search-improvements.md` cursor pagination |
 | L7 | (Semantically) annotate everything: extend semantic annotations to file/structured/spatial payloads | 692, lines 0+ in `14-semantic-improvements.md` | L | queued | Already designed in §14 |
-| L8 | Review permissions model | 693 | M | queued | Needs design first |
+| L8 | Review permissions model — umbrella | 693 | M | **design done** | `aidocs/24-permission-system-review.md` is the deliverable. Concrete unpacking is **F1 + F2 + F3** plus the C3 / A0 / F4 / F5 fixes. F6 (OPA seam) and F7 (row-level security) deferred. |
 
 ### Streaming / publication
 
@@ -103,6 +103,42 @@ These come from a re-read of regions the first scan missed. `R7` deduplicates wi
 | R6 | Comprehensive REST API examples in docs (Postman / OpenAPI examples / live) | 8396 | S–M | **needs decision** | Format choice |
 | R8 | DLR Corporate-Design theming pass on frontend | 8400 | M | **needs decision** | Needs design assets + brand guidelines (the `aidocs/input/*.htm` files are the CD-Handbuch reference) |
 | R9 | Git repo references as payload type (with pinned commits) | 8402 | L | **needs decision** | Versioning + payload-schema design |
+
+### API critique series (from `aidocs/23`, 2026-05-05)
+
+The MVP "minimum-viable clunkiness fix" is **P5 + P6 + P7 + P10 + P12 + P16 + P18** (≈ 2 sprints).
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| P5 | Replace path-segment switching in `PermissionsService.isAllowed` with annotation-based authz on each handler | M | queued | **Same proposal as F1** in `aidocs/24`. Use F1 as the canonical ID; P5 is its API-critique counterpart. |
+| P6 | Fold `X-API-KEY` into `Authorization: Bearer`, deprecate the second header | S | queued | Breaking; bundles with P4 versioning. |
+| P7 | Ship the unified `POST /search/v2` from `aidocs/13 §2`; deprecate the five legacy search routes | L | queued | Maps to epic E2 in `aidocs/20`. **Gated on C5** (Cypher injection). |
+| P8 | Polymorphic `/annotations` endpoint replacing the four per-kind annotation rests | M | queued | Depends on `aidocs/14` model unification. |
+| P9 | Single `/entities/{kind}/{id}/permissions` route replacing per-container permissions endpoints | M | queued | Overlaps **A2**. |
+| P10 | `POST /sql/timeseries` curated SQL-over-HTTP for bulk reads — **answers the "timeseries to Excel" prompt** | M | queued | New paradigm slice; `text/csv` content negotiation. |
+| P11 | Apache Arrow Flight / DuckDB read endpoint for analytical workloads | L (ARCH) | queued — deferred | Heavier analytics path; consider after P10 ships. |
+| P12 | S3-presigned URLs for File and StructuredData payloads | M | queued | Dovetails with `input_raw.md:703`. |
+| P13 | SSE change-feed (`GET /collections/{id}/events`) | M | queued | Replaces polling; bidirectional via WebSockets only if needed. |
+| P14 | NDJSON streaming ingest for high-throughput timeseries imports | S | queued | Avoids 1k-request import storms. |
+| P15 | Migrate spec to OpenAPI 3.1 once `smallrye-open-api 4.x` is stable | M | **blocked on tooling** | Wait for upstream. |
+| P16 | `shepard-py` and `shepard-ts` convenience layers — 30-LoC hand-written wrapper to fix the 14-line client boilerplate | S per language | queued | Top-of-list user-friendliness win. |
+| P17 | Pin `openapi-generator-cli` version across languages, add Microsoft Kiota PoC | S | queued | Dovetails with **P4b**. |
+| P17b | CI lint: every IO class has `@Schema(name=…)` | XS | queued | Dovetails with P4b; enforces stable client model names. |
+| P18 | RFC 7807 error envelope (`application/problem+json`) | S | queued | **Same proposal as H4**; use H4 as the canonical ID. |
+| P19 | Cursor pagination on the unified search; offset elsewhere stays for now | M (in P7) | queued | Dovetails with **L6**. |
+| P20 | Reactive (Mutiny) migration for the timeseries read path as the first slice | M | queued | Dovetails with **A2**. |
+
+### Permission-system evolutions (from `aidocs/24`, 2026-05-05)
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| F1 | Declarative `@Authz(action, resource)` annotation seam replacing the path-segment switch in `PermissionsService.isAllowed` | M | queued | **Same proposal as P5.** Designed so a future `PolicyDecisionPoint` (OPA / Cedar) is a drop-in (~½-day add). Unblocks the path-segment-switch problem that L2c also needs to solve. |
+| F2 | Group / sharing model: `Group` Neo4j node with `(User)-[:member_of]->(Group)-[:has_permissions]->(Permissions)-[:has_permissions]->(Entity)` | L | queued | Major gap for a research-data platform. Includes manager-groups + grant inheritance. |
+| F3 | Permission audit log (Postgres table) for grants/revokes | S–M | queued | Postgres for query simplicity; not Mongo or Neo4j. Required before "who deleted my data" is answerable. |
+| F4 | Versioned cache invalidation key: `(entityId, AccessType, userSub, permissionsVersion)` | S | queued | Mitigates cache blindness to context flips (project membership, group claim flips, role rotation). |
+| F5 | Explicit fail-closed invariant when Neo4j is degraded | S | queued | Ties to A1b readiness signal: today probably 500s; recommend explicit DENY when Neo4j is DOWN, with an integration test. |
+| F6 | Design F1's seam so a future OPA / Cedar `PolicyDecisionPoint` is a drop-in | XS (within F1) | queued | **Verdict from `aidocs/24`:** No to OPA/Cedar adoption now (overkill for a single Quarkus service with small graph-shaped policy); yes to making the seam future-proof at half-day cost. |
+| F7 | Row-level security in TimescaleDB / PostGIS — denormalise ACLs into the data DBs | L | parked — conditions for unparking listed in `aidocs/24` | **Verdict:** No for v1. Backend is the only enforcement point; replicating ACLs into Postgres adds a second source of truth with no current threat-model justification. Conditions for a flip: more than one client bypasses the backend, or read fanout becomes the dominant cost. |
 
 ### Parked (out of repo or superseded)
 
