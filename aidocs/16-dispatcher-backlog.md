@@ -199,12 +199,12 @@ Non-overlap clauses included in each prompt:
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
 | A1f | DB recovery scheduler on top of `DbHealthState` | done | `2f80600` | `@Scheduled` `PT15S`; adds `quarkus-scheduler` dep; 4 tests passing |
-| A4c | Opt-in permission cache warming on `StartupEvent` | dispatched | — | Disabled by default (`shepard.permissions.cache.warm.enabled=false`); capped at 500 entries |
+| A4c | Opt-in permission cache warming on `StartupEvent` | done | `a7167ff` | `shepard.permissions.cache.warm.enabled=false` default. `DefaultMostUsedEntityProvider` runs Cypher for top-N most-recently-updated entities. 3 tests passing. Conflict with A4's properties block resolved (kept both). |
 | A4d | Enable Micrometer metrics on `permissions-service-cache` | dispatched | — | One-line property + smoke test |
 | A3b | Read-only `GET /admin/features` endpoint | **blocked** | — | Agent stopped per scope guard: **no admin auth model exists**. JWT roles always `new String[0]`; `@RolesAllowed("admin")` would deny everyone. New unblocker item **A0** added. |
-| A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | dispatched | — | Config + audit doc only |
+| A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | done | `e1c3635` | Adds `quarkus.flyway.connect-retries=10` + `connect-retries-interval=PT5S` (default was 120s, exceeded ceiling). Mongo/JDBC defaults already fail fast — no redundant config added. New `aidocs/17-startup-wait-audit.md`. |
 | P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | dispatched | — | Other call sites tracked as follow-ups |
-| L6 | Pagination inventory + sized rollout plan (research) | dispatched | — | Produces `aidocs/18-pagination-inventory.md` |
+| L6 | Pagination inventory + sized rollout plan (research) | done | `c896fd9` | New `aidocs/18-pagination-inventory.md`. 38 list endpoints inventoried, 11 paginated today (29%). Recommends extending the existing `?page&size` convention rather than the cursor proposal in §2.6 of `13-search-improvements.md` for the existing 27 unpaginated list endpoints — coexistence with cursor for `POST /search/v2`. |
 
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
