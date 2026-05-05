@@ -32,9 +32,11 @@ Status legend:
 
 | ID | Item | input_raw refs | Size | Status | Notes |
 |---|---|---|---|---|---|
-| A1 | Async DB init: bounded timeout + exponential backoff in `MigrationsRunner.waitForConnection` | 1395–1440, 1599–1644 | S | queued | Replace infinite-loop wait |
+| A1 | Async DB init: bounded timeout + exponential backoff in `MigrationsRunner.waitForConnection` | 1395–1440, 1599–1644 | S | done | Round 1, commit `a74d278`. Also fixed second infinite-loop in `NeoConnector`. Config: `shepard.migrations.connection-wait-timeout` (default `PT60S`). |
 | A1b | Health checks: distinguish startup readiness vs runtime; per-DB status | 1420–1428 | S–M | queued | Quarkus health check enhancement |
 | A1c | Async DB init: graceful degradation when optional DBs (PostGIS) unavailable | 1408–1414, 1625–1627 | M | queued | Annotation-driven endpoint gating |
+| A1d | Audit MongoDB / Flyway / Quarkus JDBC startup wait/retry semantics | — | S–M | queued | Follow-up from A1: only Neo4j had explicit infinite waits; confirm the Quarkus extensions fail fast within the same timeout philosophy |
+| A1e | `MigrationsRunner.apply()` swallows `ServiceUnavailableException` / `MigrationsException` — surface failed migrations as a startup error rather than continuing | — | S | queued | Follow-up from A1 |
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` | 1443–1489 | L | queued | JAX-RS sub-resources, breaking only for code, not API |
 | A3 | Runtime feature toggles via CDI `@Produces` + `@ConditionalOnFeature` | 1492–1543 | M | queued | Replace `@IfBuildProperty` |
 | A3b | `/admin/features` endpoint to view/modify runtime toggles | 1519–1523 | S | queued | After A3 |
@@ -99,7 +101,7 @@ Their output lands as separate commits on this branch.
 
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
-| A1 | Bounded-timeout DB connection wait with exponential backoff | dispatched | — | Replaces infinite loop in `MigrationsRunner.waitForConnection` |
+| A1 | Bounded-timeout DB connection wait with exponential backoff | done | `a74d278` | Replaces infinite loops in `MigrationsRunner.waitForConnection` and `NeoConnector`. Adds `ConnectionWaitTimeoutException`, 5-test `MigrationsRunnerTest` (deterministic via injected clock+sleeper). Spawned follow-ups A1d, A1e. |
 | A4 | Caffeine-backed permission cache with TTL/LRU | dispatched | — | Existing cache is basic Map |
 
 A1 and A4 do not overlap (DB init vs permission service).
