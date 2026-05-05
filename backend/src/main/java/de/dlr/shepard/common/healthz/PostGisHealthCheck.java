@@ -6,10 +6,10 @@ import org.eclipse.microprofile.health.Readiness;
 
 @Readiness
 @ApplicationScoped
-public class MongoHealthCheck extends AbstractDbReadinessCheck {
+public class PostGisHealthCheck extends AbstractDbReadinessCheck {
 
   @Inject
-  MongoPinger pinger;
+  PostGisPinger pinger;
 
   @Inject
   ReadinessConfig config;

@@ -2,25 +2,17 @@ package de.dlr.shepard.common.healthz;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.health.Readiness;
+import org.eclipse.microprofile.health.Startup;
 
-@Readiness
+@Startup
 @ApplicationScoped
-public class NeoHealthCheck extends AbstractDbReadinessCheck {
+public class NeoStartupCheck extends AbstractDbStartupCheck {
 
   @Inject
   NeoPinger pinger;
 
-  @Inject
-  ReadinessConfig config;
-
   @Override
   protected DbPinger pinger() {
     return pinger;
-  }
-
-  @Override
-  protected ReadinessConfig config() {
-    return config;
   }
 }
