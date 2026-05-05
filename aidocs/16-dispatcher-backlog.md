@@ -114,3 +114,25 @@ unit tests, all passing. Two stale assumptions in `input_raw.md` were
 corrected on the way (A1: the analysis flagged Mongo/Timescale/PostGIS
 infinite waits, but only Neo4j had them in this codebase; A4: the
 permission cache was already Caffeine-backed, not a basic Map).
+
+### Round 2 — 2026-05-05
+
+Dispatched 5 agents in parallel worktrees. P3, A1b, and A1e all sit in
+the migrations / startup / health area, so cherry-pick conflicts are
+possible — explicit non-overlap clauses included in each prompt:
+
+- A1e owns `MigrationsRunner.java` (just the catch blocks).
+- A1b owns health-check classes; explicitly told **not** to touch
+  `MigrationsRunner` / `NeoConnector` / Neo4j common.
+- P3 owns the InfluxDB→TimescaleDB migration tool (separate module);
+  expected to be disjoint from A1b/A1e.
+
+L5 (API keys) and A3 (feature toggles) are independent of all of the above.
+
+| ID | Agent description | Status | Commit | Notes |
+|---|---|---|---|---|
+| P3 | InfluxDB→TimescaleDB migration progress monitoring + persisted resume | dispatched | — | Find the migration module first; report-and-stop if it's structured differently from `input_raw.md:1702-1737` |
+| A1b | Split health checks into Startup / Readiness / Liveness with per-DB detail | dispatched | — | PostGIS readiness no-ops when toggle is off; recovery item out of scope |
+| A1e | `MigrationsRunner.apply()` fail-fast on swallowed exceptions | dispatched | — | Follow-up from A1; tightly scoped to that file + its test |
+| L5 | Optional `validUntil` on API keys; auth rejects expired | dispatched | — | Detect JWT vs DB-row storage and adapt |
+| A3 | Runtime feature toggle mechanism + migrate the `versioning` toggle | dispatched | — | Scope-guarded to **one** toggle migration; namespace split + `/admin/features` are follow-ups |
