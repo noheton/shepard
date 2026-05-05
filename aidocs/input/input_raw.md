@@ -2,13 +2,103 @@ Read all of this first then plan and dispatch accordingly:
 
 streaming openapi compatible -> client generation?
 rest api improvements? feels clunky. maybe even other apis that are faster or easier to integrate eg timeseries to excel via sql
+current client pip install shepard-client --index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple
+from shepard_client.api_client import ApiClient
+from shepard_client.configuration import Configuration
+
+HOST = "https://backend.shepard.example.com/shepard/api"
+APIKEY = "Your api key"
+
+# Set up configuration
+conf = Configuration(host=HOST, api_key={"apikey": APIKEY})
+client = ApiClient(configuration=conf)
+
+from shepard_client.api.collection_api import CollectionApi
+from shepard_client.models.collection import Collection
+
+# Get all collections
+collection_api = CollectionApi(client)
+collections = collection_api.get_all_collections()
+
+# Create a collection
+collection_api = CollectionApi(client)
+collection_to_create = Collection(
+    name="MyFirstCollection",
+    description="This is my first collection",
+    attributes={
+        "attribute1": "firstAttribute",
+        "attribute2": "secondAttribute",
+    },
+)
+created_collection = collection_api.create_collection(collection=collection_to_create)
+print(created_collection)
+
+from shepard_client.api.data_object_api import DataObjectApi
+from shepard_client.models.data_object import DataObject
+
+if created_collection.id is None:
+    raise RuntimeError("Created Collection is None")
+
+# Create a data object
+dataobject_api = DataObjectApi(client)
+dataobject_to_create = DataObject(
+    name="MyFirstDataObject", description="This is my first data object"
+)
+created_dataobject = dataobject_api.create_data_object(
+    collection_id=created_collection.id, data_object=dataobject_to_create
+)
+print(created_dataobject)
+
+# Create another data object as a child to the first one
+
+if created_dataobject.id is None:
+    raise RuntimeError("Created DataObject is None")
+
+child_to_create = DataObject(
+    name="Child",
+    description="This is my second data object",
+    parentId=created_dataobject.id,
+)
+created_child = dataobject_api.create_data_object(
+    collection_id=created_collection.id, data_object=child_to_create
+)
+print(created_child)
+
+# Create another data object as a successor to the child
+
+if created_child.id is None:
+    raise RuntimeError("Created DataObject is None")
+
+successor_to_create = DataObject(
+    name="Successor",
+    description="This is my third data object",
+    parentId=created_dataobject.id,
+    predecessorIds=[created_child.id],
+)
+created_successor = dataobject_api.create_data_object(
+    collection_id=created_collection.id, data_object=successor_to_create
+)
+print(created_successor)
+
+# Read the first data object again to see the changes
+updated_dataobject = dataobject_api.get_data_object(
+    collection_id=created_collection.id, data_object_id=created_dataobject.id
+)
+print(updated_dataobject)
+
 approach to neo4j ID issue deprecated id fucntion https://neo4j.com/docs/cypher-manual/current/functions/scalar/#functions-id - a migration?
 UI Critique - improvements in workflows. quicker. easier. acces to measurement data. current lots of clicking. 
 Idea integration of user profile. avatar. orcid, for now.  effort?
 
+Automated through BYOK (user profile) integration openapi compatible (chat with shepard, analyze data, gen / run analysis code, automated semantic annotations and meta-data enrichment)
+
 very ui specific but:  search-as-you-type first --> not a dropdown. you see a tree or maybe even a graph or you can switch views between the three to navigate the ontology
 
 Templates we need an idea how we can generate collection, dataobject or reference templates so users can create a defined ZUgprüfungsobject with icon (maybe even with a form) than a empty (scary) dataobject . also more complex strcutures like sub trees of dataobjects and references up to complete collection layouts. mandatory attributes, annotatioons etc maybe limits, eg abstract 300-500 words. Definable by a admin or projectmanager role (t.b.d.) probably in yaml or similar. compatibility with https://gitlab.com/dlr-shepard/shepard-process-wizard would be a plus (by the way then we need some idea how to deal with the scary spwmodel objcts.
+
+check https://gitlab.com/groups/dlr-shepard/-/epic_boards fdor completeion or new features
+
+
 
 further tools for shepard https://gitlab.com/dlr-shepard/shepard-timeseries-collector , https://gitlab.com/dlr-shepard/processcontrol , https://gitlab.com/dlr-shepard/shepard-process-wizard
 check repos in https://gitlab.com/dlr-shepard
@@ -8307,6 +8397,8 @@ documentation of REST API examples
 Admin CLI und static admin user (DISABLE user through env)
 
 Theming a DLR CD approved theme / desing (see html files)
+
+code is impoertant when working with data - debelop an integration for referncing git repos as a (self updating) payload or pin to commit / tag?
 
 extend and match These to the existing issues Group them and put them in the most effective order.
 Create concern log integrating existing (unsoved) issues and this data.
