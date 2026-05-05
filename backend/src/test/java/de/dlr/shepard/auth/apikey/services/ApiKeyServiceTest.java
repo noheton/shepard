@@ -3,6 +3,7 @@ package de.dlr.shepard.auth.apikey.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -14,6 +15,7 @@ import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
@@ -158,5 +160,57 @@ public class ApiKeyServiceTest extends BaseTestCase {
 
     var actual = service.createApiKey(input, "bob", "uri");
     assertEquals(signed, actual);
+  }
+
+  @Test
+  public void createApiKeyTest_withValidUntil() {
+    var uid = UUID.randomUUID();
+    var user = new User("bob");
+    var date = new Date(30L);
+    var validUntil = new Date(date.getTime() + 60_000L);
+    var input = new ApiKeyIO();
+    input.setName("MyKey");
+    input.setValidUntil(validUntil);
+    var toCreate = new ApiKey() {
+      {
+        setBelongsTo(user);
+        setCreatedAt(date);
+        setName("MyKey");
+        setValidUntil(validUntil);
+      }
+    };
+    var created = new ApiKey() {
+      {
+        setUid(uid);
+        setBelongsTo(user);
+        setCreatedAt(date);
+        setName("MyKey");
+        setValidUntil(validUntil);
+      }
+    };
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("bob")).thenReturn(user);
+    when(dao.createOrUpdate(toCreate)).thenReturn(created);
+    when(dao.createOrUpdate(any(ApiKey.class))).thenReturn(created);
+    when(pkiHelper.getPrivateKey()).thenReturn(key);
+
+    var actual = service.createApiKey(input, "bob", "uri");
+    assertEquals(validUntil, actual.getValidUntil());
+  }
+
+  @Test
+  public void createApiKeyTest_validUntilInPastRejected() {
+    var user = new User("bob");
+    var now = new Date(1_000_000L);
+    var past = new Date(now.getTime() - 60_000L);
+    var input = new ApiKeyIO();
+    input.setName("MyKey");
+    input.setValidUntil(past);
+
+    when(dateHelper.getDate()).thenReturn(now);
+    when(userService.getUser("bob")).thenReturn(user);
+
+    assertThrows(InvalidRequestException.class, () -> service.createApiKey(input, "bob", "uri"));
   }
 }

@@ -10,6 +10,7 @@ import de.dlr.shepard.common.exceptions.ApiError;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -108,7 +109,20 @@ public class JWTFilter implements ContainerRequestFilter {
     if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
       principal = parseAccessToken(authorizationHeader);
     } else if (apiKeyHeader != null) {
-      principal = parseApiKey(apiKeyHeader);
+      try {
+        principal = parseApiKey(apiKeyHeader);
+      } catch (ExpiredJwtException ex) {
+        Log.warnf("API key expired: %s", ex.getMessage());
+        requestContext.abortWith(
+          Response.status(Status.UNAUTHORIZED)
+            .header(HttpHeaders.WWW_AUTHENTICATE, "ApiKey error=\"expired\", error_description=\"API key expired\"")
+            .entity(
+              new ApiError(Status.UNAUTHORIZED.getStatusCode(), "AuthenticationException", "API key expired")
+            )
+            .build()
+        );
+        return;
+      }
     } else {
       Log.warnf(
         "Invalid/missing authorization header (Authorization: %s, X-API-KEY: %s) on endpoint %s",
@@ -214,6 +228,9 @@ public class JWTFilter implements ContainerRequestFilter {
     try {
       jws = Jwts.parserBuilder().setSigningKey(jwtPublicKey).build().parseClaimsJws(token);
       Log.debugf("Valid token: %s", jws.getBody().getId());
+    } catch (ExpiredJwtException ex) {
+      // surfaced to the filter so it can emit a distinct "expired" 401
+      throw ex;
     } catch (JwtException ex) {
       Log.warnf("Invalid token: %s", ex.getMessage());
       return null;
