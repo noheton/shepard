@@ -40,8 +40,10 @@ Status legend:
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` | 1443–1489 | L | queued | JAX-RS sub-resources, breaking only for code, not API |
 | A3 | Runtime feature toggles via CDI `@Produces` + `@ConditionalOnFeature` | 1492–1543 | M | queued | Replace `@IfBuildProperty` |
 | A3b | `/admin/features` endpoint to view/modify runtime toggles | 1519–1523 | S | queued | After A3 |
-| A4 | Permission cache: TTL/LRU (Caffeine), user+entity keying, warming | 1581–1592, 1679–1684 | S–M | queued | Existing cache is basic Map |
+| A4 | Permission cache: TTL/LRU (Caffeine), user+entity keying | 1581–1592, 1679–1684 | S–M | done | Round 1, commit `53996a3`. **Correction:** the cache was already Caffeine-backed (via `quarkus-cache`) and keyed by user × entity × access type via `CompositeCacheKey`. The input_raw.md "basic Map" critique was stale. Landed change is per-cache TTL/max-size config (`shepard.permissions.cache.ttl` default `PT5M`, `.max-size` default `10000`) overriding the global 3h / 8192 defaults, plus a behaviour-pinning test (hit/miss/TTL/invalidation/LRU). |
 | A4b | TimescaleDB + PostGIS instance consolidation | 1564–1580 | M | parked | Infra/ops decision; defer |
+| A4c | Permission cache warming on `StartupEvent` for top-N entities | 1684 | S | queued | Follow-up from A4 |
+| A4d | Enable Micrometer metrics on `permissions-service-cache` | — | S | queued | Follow-up from A4; needs `quarkus.cache.caffeine.*.metrics-enabled=true` once Micrometer registry route is wired |
 | P1 | Parallelize DB connection checks (CompletableFuture / virtual threads) | 1599–1644 | M | queued | Bundles with A1 |
 | P2 | Batch permission checks: `checkPermissionsBatch(List<Long>)` | 1672–1678 | S–M | queued | One Cypher query per request, not N |
 | P2b | TimescaleDB continuous aggregates / materialized views | 1690–1698 | M | queued | Already partly tracked in `12-timescaledb-performance-analysis.md` |
@@ -102,6 +104,13 @@ Their output lands as separate commits on this branch.
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|
 | A1 | Bounded-timeout DB connection wait with exponential backoff | done | `a74d278` | Replaces infinite loops in `MigrationsRunner.waitForConnection` and `NeoConnector`. Adds `ConnectionWaitTimeoutException`, 5-test `MigrationsRunnerTest` (deterministic via injected clock+sleeper). Spawned follow-ups A1d, A1e. |
-| A4 | Caffeine-backed permission cache with TTL/LRU | dispatched | — | Existing cache is basic Map |
+| A4 | Caffeine-backed permission cache with TTL/LRU | done | `53996a3` | Cache was already Caffeine via `quarkus-cache`; landed per-cache TTL/max-size config + 5-test behavioural contract. Spawned follow-ups A4c (warming), A4d (metrics). |
 
 A1 and A4 do not overlap (DB init vs permission service).
+
+**Round 1 outcome:** both items landed cleanly on the dispatcher branch.
+A1 + A4 land 357 lines added across 7 files (5 prod, 2 test) with 9 new
+unit tests, all passing. Two stale assumptions in `input_raw.md` were
+corrected on the way (A1: the analysis flagged Mongo/Timescale/PostGIS
+infinite waits, but only Neo4j had them in this codebase; A4: the
+permission cache was already Caffeine-backed, not a basic Map).
