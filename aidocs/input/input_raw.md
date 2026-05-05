@@ -8303,6 +8303,7 @@ documentation of REST API examples
 
 Admin CLI und static admin user (DISABLE user through env)
 
+Theming a DLR CD approved theme / desing (see html files)
 
 extend and match These to the existing issues Group them and put them in the most effective order.
 Create concern log integrating existing (unsoved) issues and this data.
