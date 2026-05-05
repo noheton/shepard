@@ -306,6 +306,28 @@ them through HSDS (Highly Scalable Data Service) endpoints — exposing
 HDF5 datasets as REST resources without round-tripping the whole
 container.
 
+**Hard constraint (maintainer-confirmed, 2026-05-05).**
+**Compatibility with the existing Python ecosystem is mandatory.**
+End-users have existing analysis code built on `h5py`, `PyTables`,
+and `pandas.read_hdf`; that code must keep working against shepard
+without translation layers. Practically this means:
+
+- **`h5pyd` is the canonical access path** (it is the HSDS-specific
+  drop-in for `h5py`; the user-facing API surface is identical).
+  Any HDF5 surface shepard ships must be reachable via `h5pyd.File(...)`
+  with the same group / dataset / attribute / slicing semantics.
+- **A "download the whole file" fallback** must keep returning the
+  byte-identical HDF5 file so plain `h5py.File(local_path)` keeps
+  working when network access to HSDS isn't viable.
+- **A custom JSON-over-REST representation** of HDF5 structure
+  (without an `h5py(d)`-compatible client wrapper) is **not
+  acceptable** — it would force users to migrate their existing code
+  and is a non-starter under this constraint.
+- This rules out option (a) "HDF5 as opaque payload only" from
+  `aidocs/21-user-interest-gauge.md:68-69` as a sufficient answer
+  and elevates option (b) "HSDS as a backing store"
+  (`aidocs/21-user-interest-gauge.md:71-78`) to the required path.
+
 **Scope.**
 - New `HdfContainer` and `HdfReference` types alongside today's
   file / timeseries / structured / spatial. Lives in `data/hdf` per
@@ -314,19 +336,31 @@ container.
   Container creation provisions an HSDS group; reads proxy through.
   Aligns with `input_raw.md:699` and `input_raw.md:8336-8338`.
 - OpenAPI: `GET /hdf-containers/{id}/datasets/{path}/value` etc.,
-  shaped to mirror HSDS.
+  shaped to mirror HSDS so `h5pyd` keeps working transparently.
+- An `h5pyd`-compatible auth bridge so a user can do
+  `h5pyd.File("/<container-id>/...", endpoint=..., api_key=...)`
+  using the same shepard API key flow as other clients (see L5).
+- A "download original file" endpoint that returns the underlying
+  HDF5 bytes for `h5py.File(local_path)` consumers — independent of
+  HSDS availability, so users without HSDS connectivity still work.
 - Annotation hookup via E6 (`AnnotatableHdfDataset`, dataset path
   is the payload id).
+- A small `clients/python` example notebook showing
+  `h5pyd.File` + shepard auth side-by-side with the existing client,
+  so the compatibility story is demonstrable end-to-end.
 
 **Out of scope.**
-- Embedding `h5pyd`-style query language into the unified search
+- Embedding an `h5pyd`-style query language into the unified search
   (defer; HDF5 datasets are addressed by path, not searched by
   content).
+- A bespoke (non-`h5py`-compatible) shepard-flavoured HDF5 client.
 - Migration of existing files to HDF5 (none expected).
 
 **Maps to backlog IDs.** A5 (HDF5 / HSDS support — proposed new
-backlog series). Likely an **A5a** (read path), **A5b** (write
-path), **A5c** (bulk import).
+backlog series). Likely an **A5a** (read path via HSDS + `h5pyd`
+parity test), **A5b** (write path), **A5c** (bulk import),
+**A5d** (download-original-file fallback), **A5e** (auth bridge so
+shepard API keys work for `h5pyd`).
 
 **Estimated size.** L.
 
@@ -334,12 +368,17 @@ path), **A5c** (bulk import).
 only), E6 (annotations ride on the generalised bridge).
 
 **Open decisions.**
-- Whether HSDS is mandatory or optional. Recommend optional, behind
-  a feature flag per `infrastructure/.env.example`, like
+- Whether HSDS is mandatory or optional. Given the hard constraint
+  above, "no HSDS at all" reduces this epic to the
+  download-original-file fallback (A5d) only — which is a useful
+  but partial answer. Recommend HSDS is **optional but supported**
+  via a feature flag per `infrastructure/.env.example`, like
   `SHEPARD_HDF_HSDS_ENABLED`. Aligns with the build-time / runtime
   toggle question in `input_raw.md:1493-1530`.
 - Whether HSDS runs as a sidecar or external dependency. Affects
   the all-in-one Docker image (ADR-003).
+- Auth bridge shape (forwarded API key vs. minted HSDS-local token).
+  Needs an `h5pyd`-side prototype before the API contract is frozen.
 
 ---
 

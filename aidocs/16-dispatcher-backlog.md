@@ -240,7 +240,7 @@ agents produced strategic / design docs requested by the maintainer:
   - Three "blocked on user decision" epics: **E14** (Neo4j ID migration owner), **E9** (spatial graduate vs deprecate), **E4** (default ontology + reasoning profile + n10s deployment).
 - **`aidocs/21` ranks the three candidate development directions:**
   - **KG interfaces:** strongest evidence (4 open GitLab issues, partial `SparqlConnector` already, two independent user groups). Ready to act once #274 unblocks.
-  - **HDF5/HSDS:** low-medium; one named asker, no GitLab issue, TimescaleDB satisfies the temporal subset.
+  - **HDF5/HSDS:** low-medium; one named asker, no GitLab issue, TimescaleDB satisfies the temporal subset. **Maintainer-confirmed hard constraint (2026-05-05):** any HDF5 surface must be compatible with the existing Python ecosystem (`h5py` / `PyTables` / `pandas.read_hdf`) — `h5pyd` over HSDS is the canonical access path; "download original file" is the fallback. Recorded in epic E7 (`aidocs/20-epic-roadmap.md:309-329`) and §3.6 of `aidocs/21-user-interest-gauge.md`.
   - **Tabular/relational:** thin; the ask hides two distinct products (interface vs storage). Defer until separated.
 
 | ID | Agent description | Status | Commit | Notes |

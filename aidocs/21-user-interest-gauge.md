@@ -152,6 +152,22 @@ The interesting ask is (2). (1) is already supported.
 Threshold for action: ≥3 distinct user groups with non-trivial
 corpora (≥100 GB each), or ≥1 group with TB-scale.
 
+### 3.6 Maintainer-confirmed constraint (added 2026-05-05)
+
+**Compatibility with the existing Python ecosystem (`h5py`,
+`PyTables`, `pandas.read_hdf`) is mandatory.** Users have analysis
+code that already runs against those libraries; shepard's HDF5
+surface must be reachable via `h5pyd.File(...)` (the HSDS-specific
+drop-in for `h5py`) **or** by retrieving the byte-identical HDF5
+file for `h5py.File(local_path)`. A bespoke JSON-over-REST
+representation of HDF5 structure is not acceptable.
+
+This collapses the "HDF5 as opaque payload" option (§3.1 item 1)
+as a sufficient answer and makes the §3.1 item 2 path (HSDS as
+backing store, `h5pyd`-compatible) the required shape of any future
+work. Tracked as the **hard constraint** in epic E7
+(`aidocs/20-epic-roadmap.md:309-329`).
+
 ---
 
 ## 4. Tabular / relational storage in shepard
