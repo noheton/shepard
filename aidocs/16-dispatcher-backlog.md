@@ -36,10 +36,11 @@ Status legend:
 | A1b | Health checks: distinguish startup readiness vs runtime; per-DB status | 1420–1428 | S–M | queued | Quarkus health check enhancement |
 | A1c | Async DB init: graceful degradation when optional DBs (PostGIS) unavailable | 1408–1414, 1625–1627 | M | queued | Annotation-driven endpoint gating |
 | A1d | Audit MongoDB / Flyway / Quarkus JDBC startup wait/retry semantics | — | S–M | queued | Follow-up from A1: only Neo4j had explicit infinite waits; confirm the Quarkus extensions fail fast within the same timeout philosophy |
-| A1e | `MigrationsRunner.apply()` swallows `ServiceUnavailableException` / `MigrationsException` — surface failed migrations as a startup error rather than continuing | — | S | queued | Follow-up from A1 |
+| A1e | `MigrationsRunner.apply()` swallows `ServiceUnavailableException` / `MigrationsException` — surface failed migrations as a startup error rather than continuing | — | S | done | Round 2, commit `0f2f512` |
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` | 1443–1489 | L | queued | JAX-RS sub-resources, breaking only for code, not API |
-| A3 | Runtime feature toggles via CDI `@Produces` + `@ConditionalOnFeature` | 1492–1543 | M | queued | Replace `@IfBuildProperty` |
+| A3 | Runtime feature toggles via CDI `@Produces` + `@ConditionalOnFeature` | 1492–1543 | M | done | Round 2, commit `ddeeb31`. Mechanism in place; `versioning` migrated (the only `@IfBuildProperty` use found). Other toggles (`SpatialDataFeatureToggle`, `MigrationModeToggle`) were already runtime via `ConfigProvider`. |
 | A3b | `/admin/features` endpoint to view/modify runtime toggles | 1519–1523 | S | queued | After A3 |
+| A3c | Namespace split: catalog/migrate `shepard.spatial-data.*` etc. as `shepard.infrastructure.*`; document toggle naming convention | 1514–1518 | S–M | queued | Follow-up from A3 |
 | A4 | Permission cache: TTL/LRU (Caffeine), user+entity keying | 1581–1592, 1679–1684 | S–M | done | Round 1, commit `53996a3`. **Correction:** the cache was already Caffeine-backed (via `quarkus-cache`) and keyed by user × entity × access type via `CompositeCacheKey`. The input_raw.md "basic Map" critique was stale. Landed change is per-cache TTL/max-size config (`shepard.permissions.cache.ttl` default `PT5M`, `.max-size` default `10000`) overriding the global 3h / 8192 defaults, plus a behaviour-pinning test (hit/miss/TTL/invalidation/LRU). |
 | A4b | TimescaleDB + PostGIS instance consolidation | 1564–1580 | M | parked | Infra/ops decision; defer |
 | A4c | Permission cache warming on `StartupEvent` for top-N entities | 1684 | S | queued | Follow-up from A4 |
@@ -59,7 +60,7 @@ Status legend:
 | L2 | Neo4J: stop using deprecated `id()` function, migration to custom ID scheme | 90, 715–717 | M | queued | Touches a lot of Cypher |
 | L3 | Templates system: YAML-defined templates for collections / data objects / refs (admin role) | 98–137 | L | queued | Backend storage + frontend forms; SPW compat goal |
 | L4 | Search-as-you-type with tree/graph view of ontology | 96, 869 | M | queued | Frontend; intersects with `13-search-improvements.md` and `14-semantic-improvements.md` |
-| L5 | Semi-permanent API keys with expiry | 694 | S | queued | Auth model change |
+| L5 | Semi-permanent API keys with expiry | 694 | S | done | Round 2, commit `30c687a`. API keys are hybrid Neo4j-row + JJWT-encoded; landed `validUntil` field, JWT `exp` claim, distinguishable 401 on expiry. |
 | L6 | Output control: pagination on more endpoints | 689–691 | S | queued | Aligns with `13-search-improvements.md` cursor pagination |
 | L7 | (Semantically) annotate everything: extend semantic annotations to file/structured/spatial payloads | 692, lines 0+ in `14-semantic-improvements.md` | L | queued | Already designed in §14 |
 | L8 | Review permissions model | 693 | M | queued | Needs design first |
@@ -133,6 +134,6 @@ L5 (API keys) and A3 (feature toggles) are independent of all of the above.
 |---|---|---|---|---|
 | P3 | InfluxDB→TimescaleDB migration progress monitoring + persisted resume | dispatched | — | Find the migration module first; report-and-stop if it's structured differently from `input_raw.md:1702-1737` |
 | A1b | Split health checks into Startup / Readiness / Liveness with per-DB detail | dispatched | — | PostGIS readiness no-ops when toggle is off; recovery item out of scope |
-| A1e | `MigrationsRunner.apply()` fail-fast on swallowed exceptions | dispatched | — | Follow-up from A1; tightly scoped to that file + its test |
-| L5 | Optional `validUntil` on API keys; auth rejects expired | dispatched | — | Detect JWT vs DB-row storage and adapt |
-| A3 | Runtime feature toggle mechanism + migrate the `versioning` toggle | dispatched | — | Scope-guarded to **one** toggle migration; namespace split + `/admin/features` are follow-ups |
+| A1e | `MigrationsRunner.apply()` fail-fast on swallowed exceptions | done | `0f2f512` | Worktree was forked from before A1; merge conflict in `MigrationsRunnerTest.java` resolved by combining both test sets. Adds 3 tests to A1's 5 → 8 tests total on `MigrationsRunner`, all passing. |
+| L5 | Optional `validUntil` on API keys; auth rejects expired | done | `30c687a` | Hybrid system (Neo4j `ApiKey` row + JJWT-encoded). Filter rejects expired keys with 401 + `WWW-Authenticate: ApiKey error="expired"`. Existing keys without `validUntil` keep working. Schema impact additive nullable. 9 new tests across 3 test classes, all passing. |
+| A3 | Runtime feature toggle mechanism + migrate the `versioning` toggle | done | `ddeeb31` | One `@IfBuildProperty` use found (`versioning`) and migrated. Adds `@ConditionalOnFeature` qualifier + `FeatureBeanProducer`; renames property to `shepard.features.versioning.enabled`. Conflict with A1's added property in `application.properties` resolved trivially. 2 new tests (enabled/disabled profiles), passing. |
