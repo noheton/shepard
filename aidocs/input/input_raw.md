@@ -7226,6 +7226,60 @@ Federation is a journey into distributed systems, but once established, it can t
 
 DATABUS is current direction for repo interop.
 
+# HMC 2
+
+Das Vorhaben 11001989 (2712100) "HMC Hub Aeronautics, Space and Transport, Phase 2" mit der Laufzeit vom 01.01.2025 bis zum 31.12.2029 ist ein essentieller Beitrag zur dauerhaften Integration der Daten, Software, Prozesse und letztlich des domänenspezifischen Wissens des Forschungsbereiches Luft-, Raumfahrt und Verkehr in die Helmholtz-Gesellschaft (HGF).
+
+Das Vorhaben leistet sowohl bei der Entwicklung von forschungsbereichsspezifischen, wissenschaftlichen und technischen Beiträgen zum Datenmanagement, als auch bei der Einbindung und Inwertsetzung bereits bestehender Infrastrukturen des DLR wesentliche Beiträge für die Vertretung und Weiterentwicklung der DLR-Institute und ihrer Produkte innerhalb des Forschungsbereiches der HGF.
+
+Die in Berechtigungen und Datensichtbarkeit abgestufte Integration bestehender und aktuell im Aufbau befindlicher Systeme (z.B. verteilte Shepard-Instanzen, das eData-Repositorium, inst.dlr, twinstash, Digitaler Atlas 2.0, ODIX) leistet hier einen zentralen Beitrag für die sichere und FAIRe Nachnutzung und Technologietransfer von DLR-Produkten auch über die HGF hinaus.
+
+Diese Beiträge sind somit nicht nur innerhalb der Stoßrichtungen Daten und Digitalisierung der Organisation der Digitalisierungsstrategie zu sehen, sondern auch als unmittelbare Teile eines DLR-as-a-service-Angebotes.
+
+Ferner sind diese Services maßgebliche Beiträge für die interoperable und ressourceneffiziente Integration von DLR-Produkten in nachfolgende Projekte im Sinne der Stoßrichtungen Künstliche Intelligenz, Cyberphysisches Engineering und Innovative Autonome Systeme.
+
+https://wiki.dlr.de/display/FDM/Workpackages+BT-ZAP
+
+- [ ] Read https://zenodo.org/records/14161466 🆔 20260407-bb6
+
+---
+
+## HMC Project Idea:
+
+- Semantic Satellite Data Storage System SSDSS
+
+- Topics:
+
+  - joint data model development
+  - data integration (import tooling)
+  - shepard features:
+
+	- shepard Spatial erweiterung für geospatial + height
+	- HDF5 container?
+	- ro-crate import (collection)
+  - semantic annotation of space relevant data
+  - data provider
+  - analytics use-case (e.g. semantics based visualisation)
+
+https://data.esa.int/esado/en/
+
+- [ ] HMC Project mit RY - Ende März 🆔 20260407-da2
+
+---
+
+evtl neue INF Linie 7.3.2025 lt. Witold 100-150k€ in einem Jahr
+
+[01_CALL_HMC_PROPOSALS_2025.pdf](assets/01_CALL_HMC_PROPOSALS_2025-20250311104714-rjznjn1.pdf)
+
+https://indico.esa.int/event/407/contributions/7377/attachments/4782/7835/1140%20-%20Presentation%20-%20Domain-specific%20ontology%20for%20digital%20continuity%20Thermal%20Engineering%20case.pdf
+
+https://mb4se.esa.int/OSMOSE_Space%20System%20Ontology.html
+
+---
+
+- [ ] @Witold High level at HMC (Hamacher) 🆔 20260407-021
+
+Perform research as necessary. Document.
 
 extend and match These to the existing issues Group them and put them in the most effective order.
 Create concern log integrating existing (unsoved) issues and this data.
