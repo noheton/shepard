@@ -21,6 +21,7 @@ import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import io.quarkus.logging.Log;
+import java.time.Duration;
 import java.util.Collections;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.config.Configuration;
@@ -72,8 +73,11 @@ public class NeoConnector implements IConnector {
       .verifyConnection(true)
       .useNativeTypes()
       .build();
-    while (true) {
-      try {
+    Duration timeout = ConfigProvider.getConfig()
+      .getOptionalValue(MigrationsRunner.CONNECTION_WAIT_TIMEOUT_PROPERTY, Duration.class)
+      .orElse(MigrationsRunner.DEFAULT_CONNECTION_WAIT_TIMEOUT);
+    MigrationsRunner.awaitConnectivity(
+      () -> {
         sessionFactory = new SessionFactory(
           configuration,
           AnnotatableTimeseries.class.getPackageName(),
@@ -96,17 +100,12 @@ public class NeoConnector implements IConnector {
           User.class.getPackageName(),
           Version.class.getPackageName()
         );
-        return true;
-      } catch (ConnectionException ex) {
-        Log.warn("Cannot connect to neo4j database. Retrying...");
-      }
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        Log.error("Cannot sleep while waiting for neo4j Connection");
-        Thread.currentThread().interrupt();
-      }
-    }
+      },
+      timeout,
+      Thread::sleep,
+      System::nanoTime
+    );
+    return true;
   }
 
   @Override
