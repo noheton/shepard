@@ -56,6 +56,7 @@ are subsequent design / research / strategic notes.
 | 20 | [`20-epic-roadmap.md`](20-epic-roadmap.md) | Strategic catalogue of 14 candidate epics across foundations, search/semantics, data types, performance, UX/ecosystem, KG interfaces — each with goal, scope, dependencies, T-shirt size, and a map to backlog IDs in `16`. Includes a Mermaid dependency graph and a two-track 6-month plan | Roadmap |
 | 21 | [`21-user-interest-gauge.md`](21-user-interest-gauge.md) | Gauge of repo-internal demand signals (open issues, design notes, Slack/Mattermost in `input_raw.md`) for HDF5/HSDS, tabular/relational storage, and knowledge-graph interfaces. Recommends a lightweight survey + interview plan to convert unknowns into evidence | Research |
 | 22 | [`22-admin-cli-draft.md`](22-admin-cli-draft.md) | Candidate-function design for a future `shepard-admin` CLI: goals/non-goals, auth model (blocked on A0), per-command catalogue (features/health/migrations/cleanup/cache/apikey/import-export), framework recommendation (Java + Picocli), distribution, 4-phase rollout, open maintainer decisions | Draft |
+| 25 | [`25-neo4j-id-migration-design.md`](25-neo4j-id-migration-design.md) | Migration plan from deprecated `id()` (and `elementId()`) to application-generated IDs (UUID v7 chosen). 5-phase rollout (instrument → additive `appId` → backfill → read-path switch → `/v2` native → drop legacy) with Cypher-injection / cache-key / path-segment-switch interlocks. Spawns sub-IDs L2a–L2e | Design |
 
 ### Dependency graph among C-section docs
 
