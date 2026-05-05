@@ -95,3 +95,6 @@ build/
 # environment files except .env.example
 *.env
 !.env.example
+
+# Claude Code agent worktrees and local session state
+.claude/

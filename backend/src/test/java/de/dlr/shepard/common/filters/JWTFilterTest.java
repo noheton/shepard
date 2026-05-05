@@ -520,6 +520,90 @@ public class JWTFilterTest extends BaseTestCase {
   }
 
   @Test
+  public void testFilterApiKeyValidUntilFuture() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID uid = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("MyUserName")
+      .setNotBefore(now)
+      .setIssuedAt(now)
+      .setExpiration(future)
+      .setId(uid.toString())
+      .signWith(privateKey)
+      .compact();
+
+    User user = new User("MyUserName");
+    ApiKey apiKey = new ApiKey(uid);
+    apiKey.setName("MyApiKey");
+    apiKey.setJws(jws);
+    apiKey.setValidUntil(future);
+    apiKey.setBelongsTo(user);
+
+    when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    verify(apiKeyLastSeenCache).cacheKey(uid.toString());
+  }
+
+  @Test
+  public void testFilterApiKeyExpired() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    Date past = DateUtils.addMinutes(new Date(), -5);
+    Date issued = DateUtils.addMinutes(new Date(), -10);
+    UUID uid = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("MyUserName")
+      .setNotBefore(issued)
+      .setIssuedAt(issued)
+      .setExpiration(past)
+      .setId(uid.toString())
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+
+    filter.filter(context);
+    verify(context).abortWith(responseCaptor.capture());
+    Response response = responseCaptor.getValue();
+    assertEquals(401, response.getStatus());
+    String wwwAuthenticate = response.getHeaderString("WWW-Authenticate");
+    org.junit.jupiter.api.Assertions.assertNotNull(wwwAuthenticate);
+    org.junit.jupiter.api.Assertions.assertTrue(wwwAuthenticate.contains("expired"));
+  }
+
+  @Test
+  public void testFilterApiKeyNoValidUntilStillAccepted() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    Date now = new Date();
+    UUID uid = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("MyUserName")
+      .setNotBefore(now)
+      .setIssuedAt(now)
+      .setId(uid.toString())
+      .signWith(privateKey)
+      .compact();
+
+    User user = new User("MyUserName");
+    ApiKey apiKey = new ApiKey(uid);
+    apiKey.setName("MyApiKey");
+    apiKey.setJws(jws);
+    apiKey.setBelongsTo(user);
+
+    when(context.getHeaderString("X-API-KEY")).thenReturn(jws);
+    when(apiKeyService.getApiKey(uid)).thenReturn(apiKey);
+
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+  }
+
+  @Test
   public void testFilterGracePeriod() throws InvalidKeySpecException, NoSuchAlgorithmException {
     Date now = new Date();
     UUID uid = UUID.randomUUID();

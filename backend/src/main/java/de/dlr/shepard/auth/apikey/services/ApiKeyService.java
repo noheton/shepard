@@ -7,6 +7,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
@@ -99,10 +100,17 @@ public class ApiKeyService {
     var user = userService.getUser(username);
     userService.assertCurrentUserEquals(username);
 
+    var now = dateHelper.getDate();
+    var validUntil = apiKey.getValidUntil();
+    if (validUntil != null && !validUntil.after(now)) {
+      throw new InvalidRequestException("validUntil must be in the future");
+    }
+
     var toCreate = new ApiKey();
     toCreate.setBelongsTo(user);
-    toCreate.setCreatedAt(dateHelper.getDate());
+    toCreate.setCreatedAt(now);
     toCreate.setName(apiKey.getName());
+    toCreate.setValidUntil(validUntil);
 
     var createdApiKey = apiKeyDAO.createOrUpdate(toCreate);
     createdApiKey.setJws(generateJws(createdApiKey, baseUri));
@@ -138,14 +146,15 @@ public class ApiKeyService {
   private String generateJws(ApiKey apiKey, String baseUri) {
     pkiHelper.init();
     var currentDate = dateHelper.getDate();
-    var jws = Jwts.builder()
+    var builder = Jwts.builder()
       .setSubject(apiKey.getBelongsTo().getUsername())
       .setIssuer(baseUri)
       .setNotBefore(currentDate)
       .setIssuedAt(currentDate)
-      .setId(apiKey.getUid().toString())
-      .signWith(pkiHelper.getPrivateKey())
-      .compact();
-    return jws;
+      .setId(apiKey.getUid().toString());
+    if (apiKey.getValidUntil() != null) {
+      builder.setExpiration(apiKey.getValidUntil());
+    }
+    return builder.signWith(pkiHelper.getPrivateKey()).compact();
   }
 }

@@ -1,20 +1,26 @@
 package de.dlr.shepard.common.healthz;
 
-import de.dlr.shepard.common.neo4j.NeoConnector;
-import de.dlr.shepard.common.util.IConnector;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.Readiness;
 
 @Readiness
 @ApplicationScoped
-public class NeoHealthCheck implements HealthCheck {
+public class NeoHealthCheck extends AbstractDbReadinessCheck {
 
-  private static IConnector neo4j = NeoConnector.getInstance();
+  @Inject
+  NeoPinger pinger;
+
+  @Inject
+  ReadinessConfig config;
 
   @Override
-  public HealthCheckResponse call() {
-    return HealthCheckResponse.named("Neo4J connection health check").status(neo4j.alive()).build();
+  protected DbPinger pinger() {
+    return pinger;
+  }
+
+  @Override
+  protected ReadinessConfig config() {
+    return config;
   }
 }

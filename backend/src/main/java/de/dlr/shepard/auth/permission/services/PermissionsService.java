@@ -18,6 +18,7 @@ import de.dlr.shepard.common.util.PermissionType;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheName;
 import io.quarkus.cache.CacheResult;
+import io.quarkus.cache.CaffeineCache;
 import io.quarkus.cache.CompositeCacheKey;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -26,10 +27,15 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.PathSegment;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
 
 @RequestScoped
@@ -114,17 +120,75 @@ public class PermissionsService {
   @CacheResult(cacheName = "permissions-service-cache")
   public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
     Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
+    return rolesGrantAccess(userRolesOnEntity, accessType);
+  }
 
-    if (userRolesOnEntity.isOwner()) {
-      return true;
-    } else {
-      return switch (accessType) {
-        case Read -> userRolesOnEntity.isReader() || userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
-        case Write -> userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
-        case Manage -> userRolesOnEntity.isManager();
-        case None -> false;
-      };
+  /**
+   * Returns the subset of {@code entityIds} for which {@code (entityId, accessType, username)} is
+   * allowed. Implemented as one batched Cypher round-trip for the uncached subset; cached results
+   * are read from {@code permissions-service-cache} via {@link CaffeineCache#getIfPresent(Object)}
+   * so {@link CacheResult @CacheResult}-managed semantics are preserved. Subsequent single-entry
+   * calls to {@link #isAccessTypeAllowedForUser(long, AccessType, String)} re-use the populated
+   * entries.
+   */
+  public Set<Long> filterAllowedForUser(Collection<Long> entityIds, AccessType accessType, String username) {
+    if (entityIds == null || entityIds.isEmpty()) return Collections.emptySet();
+
+    LinkedHashSet<Long> deduped = new LinkedHashSet<>(entityIds);
+    Set<Long> allowed = new HashSet<>();
+    List<Long> uncachedIds = new ArrayList<>();
+
+    CaffeineCache caffeine = caffeineCache();
+    for (Long id : deduped) {
+      if (id == null) continue;
+      Boolean cached = caffeine == null ? null : peekCached(caffeine, id, accessType, username);
+      if (cached == null) {
+        uncachedIds.add(id);
+      } else if (Boolean.TRUE.equals(cached)) {
+        allowed.add(id);
+      }
     }
+
+    if (uncachedIds.isEmpty()) return allowed;
+
+    Log.debugf("filterAllowedForUser: batch resolving %d uncached ids for %s", uncachedIds.size(), username);
+    Map<Long, Permissions> permsById = permissionsDAO.findByEntityNeo4jIds(uncachedIds);
+    for (Long id : uncachedIds) {
+      Optional<Permissions> perms = Optional.ofNullable(permsById.get(id));
+      Roles roles = getRoles(perms, username);
+      boolean isAllowed = rolesGrantAccess(roles, accessType);
+      if (isAllowed) allowed.add(id);
+      if (caffeine != null) {
+        caffeine.put(new CompositeCacheKey(id, accessType, username), CompletableFuture.completedFuture(isAllowed));
+      }
+    }
+    return allowed;
+  }
+
+  private CaffeineCache caffeineCache() {
+    if (cache == null) return null;
+    try {
+      return cache.as(CaffeineCache.class);
+    } catch (RuntimeException e) {
+      Log.debugf("Permissions cache is not Caffeine-backed; batch peek disabled: %s", e.getMessage());
+      return null;
+    }
+  }
+
+  private Boolean peekCached(CaffeineCache caffeine, long entityId, AccessType accessType, String username) {
+    CompletableFuture<Boolean> future = caffeine.getIfPresent(new CompositeCacheKey(entityId, accessType, username));
+    if (future == null || !future.isDone() || future.isCompletedExceptionally()) return null;
+    return future.getNow(null);
+  }
+
+  private boolean rolesGrantAccess(Roles roles, AccessType accessType) {
+    if (roles.isOwner()) return true;
+    return switch (accessType) {
+      case Read -> roles.isReader() || roles.isWriter() || roles.isManager();
+      case Write -> roles.isWriter() || roles.isManager();
+      case Manage -> roles.isManager();
+      case None -> false;
+    };
   }
 
   /**

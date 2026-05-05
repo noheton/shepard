@@ -1,11 +1,11 @@
 package de.dlr.shepard.context.collection.endpoints;
 
-import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
+import de.dlr.shepard.common.configuration.feature.runtime.ConditionalOnFeature;
+import de.dlr.shepard.common.configuration.feature.runtime.VersioningFeature;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.context.version.io.VersionIO;
 import de.dlr.shepard.context.version.services.VersionService;
-import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -36,14 +36,21 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-@IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
 public class CollectionVersioningRest {
 
   @Inject
   VersionService versionService;
 
+  @Inject
+  @ConditionalOnFeature("versioning")
+  VersioningFeature versioning;
+
   @Context
   private SecurityContext securityContext;
+
+  private Response disabledResponse() {
+    return Response.status(Status.NOT_FOUND).build();
+  }
 
   @GET
   @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.VERSIONS)
@@ -57,6 +64,7 @@ public class CollectionVersioningRest {
   @APIResponse(description = "not found", responseCode = "404")
   @Parameter(name = Constants.COLLECTION_ID)
   public Response getVersions(@PathParam(Constants.COLLECTION_ID) long collectionId) {
+    if (!versioning.isEnabled()) return disabledResponse();
     List<Version> versions = versionService.getAllVersions(collectionId);
     var result = new ArrayList<VersionIO>(versions.size());
     for (var version : versions) {
@@ -81,6 +89,7 @@ public class CollectionVersioningRest {
     @PathParam(Constants.COLLECTION_ID) long collectionId,
     @PathParam(Constants.VERSION_UID) UUID versionUID
   ) {
+    if (!versioning.isEnabled()) return disabledResponse();
     Version version = versionService.getVersion(versionUID);
     return Response.ok(new VersionIO(version)).build();
   }
@@ -102,6 +111,7 @@ public class CollectionVersioningRest {
       content = @Content(schema = @Schema(implementation = VersionIO.class))
     ) @Valid VersionIO version
   ) {
+    if (!versioning.isEnabled()) return disabledResponse();
     Version newVersion = versionService.createVersion(
       collectionId,
       version,

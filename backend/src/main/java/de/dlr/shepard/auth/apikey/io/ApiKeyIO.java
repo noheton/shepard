@@ -25,6 +25,16 @@ public class ApiKeyIO {
   @Schema(readOnly = true, required = true, format = "date-time", example = "2024-08-15T11:18:44.632+00:00")
   private Date createdAt;
 
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
+  @Schema(
+    required = false,
+    nullable = true,
+    format = "date-time",
+    example = "2025-08-15T11:18:44.632+00:00",
+    description = "Optional expiry of this api key. If null, the key never expires."
+  )
+  private Date validUntil;
+
   @Schema(readOnly = true, required = true)
   private String belongsTo;
 
@@ -32,6 +42,7 @@ public class ApiKeyIO {
     this.uid = key.getUid();
     this.name = key.getName();
     this.createdAt = key.getCreatedAt();
+    this.validUntil = key.getValidUntil();
     this.belongsTo = key.getBelongsTo() != null ? key.getBelongsTo().getUsername() : null;
   }
 }

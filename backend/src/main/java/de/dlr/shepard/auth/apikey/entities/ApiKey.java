@@ -35,6 +35,9 @@ public class ApiKey implements HasId, Named, HasCreationDate {
   @DateLong
   private Date createdAt;
 
+  @DateLong
+  private Date validUntil;
+
   private String jws;
 
   @ToString.Exclude
@@ -65,7 +68,7 @@ public class ApiKey implements HasId, Named, HasCreationDate {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(createdAt, jws, name, uid);
+    result = prime * result + Objects.hash(createdAt, jws, name, uid, validUntil);
     result = prime * result + HasId.hashcodeHelper(belongsTo);
     return result;
   }
@@ -80,7 +83,8 @@ public class ApiKey implements HasId, Named, HasCreationDate {
       Objects.equals(createdAt, other.createdAt) &&
       Objects.equals(jws, other.jws) &&
       Objects.equals(name, other.name) &&
-      Objects.equals(uid, other.uid)
+      Objects.equals(uid, other.uid) &&
+      Objects.equals(validUntil, other.validUntil)
     );
   }
 }

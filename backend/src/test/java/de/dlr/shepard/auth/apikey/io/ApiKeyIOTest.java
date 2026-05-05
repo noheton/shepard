@@ -21,17 +21,28 @@ public class ApiKeyIOTest {
   public void testConversion() {
     var user = new User("bob");
     var date = new Date();
+    var validUntil = new Date(date.getTime() + 60_000L);
     var key = new ApiKey(UUID.randomUUID());
     key.setBelongsTo(user);
     key.setCreatedAt(date);
+    key.setValidUntil(validUntil);
     key.setJws("MyJWS");
     key.setName("MyKey");
 
     var converted = new ApiKeyIO(key);
     assertEquals(user.getUsername(), converted.getBelongsTo());
     assertEquals(date, converted.getCreatedAt());
+    assertEquals(validUntil, converted.getValidUntil());
     assertEquals("MyKey", converted.getName());
     assertEquals(key.getUid(), converted.getUid());
+  }
+
+  @Test
+  public void testConversionNoValidUntil() {
+    var key = new ApiKey(UUID.randomUUID());
+
+    var converted = new ApiKeyIO(key);
+    assertNull(converted.getValidUntil());
   }
 
   @Test

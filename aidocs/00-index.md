@@ -37,17 +37,28 @@ to **11** for the plan, then dip into A or C as needed.
 |---|---|---|
 | 11 | [`11-implementation-plan.md`](11-implementation-plan.md) | Phased plan (Phase 0 housekeeping → Phase 6 backlog closure). The single document the team should drive against. |
 | 15 | [`15-phase-0-status.md`](15-phase-0-status.md) | Progress note for Phase 0 housekeeping (what was done, what remains, research-closure check) |
+| 16 | [`16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | Working backlog of items extracted from `input/input_raw.md`, with scope filter, parked items, open decisions, and per-round dispatch log |
+| 17 | [`17-startup-wait-audit.md`](17-startup-wait-audit.md) | Audit of Mongo / Flyway / JDBC startup wait/retry semantics against the Neo4j 60s ceiling from A1 (configuration-only follow-up) |
 
 ## C. Forward-looking design notes
 
-These three are designed as a triplet; read in order. Each builds on
-the identifier-discipline groundwork laid in §11.B of the perf doc.
+12–14 are designed as a triplet; read in order. Each builds on the
+identifier-discipline groundwork laid in §11.B of the perf doc. 18–22
+are subsequent design / research / strategic notes.
 
 | # | File | Topic | Status |
 |---|---|---|---|
 | 12 | [`12-timescaledb-performance-analysis.md`](12-timescaledb-performance-analysis.md) | Schema, ingest, query, JDBC, ops; **§11** covers streaming the read path end-to-end and aligning the timeseries `id` (used by semantic annotations) with the 5-tuple (used by data endpoints) | Active — V1.8.0 schema fixes merged; sprint-1 mitigations open |
 | 13 | [`13-search-improvements.md`](13-search-improvements.md) | One unified search endpoint replacing today's five; richer query syntax (predicate JSON + fulltext + raw escape hatches: SPARQL/SQL); searching by semantic annotation; cursor pagination + streaming | Proposal |
 | 14 | [`14-semantic-improvements.md`](14-semantic-improvements.md) | Generalising semantic annotations to file / structured / spatial payloads; label vs IRI discipline; search-as-you-type for terms; triplestore (n10s on Neo4j → GraphDB / RDF4J) for SPARQL, reasoning, KG export, FAIR | Proposal |
+| 18 | [`18-pagination-inventory.md`](18-pagination-inventory.md) | Inventory of every list-returning REST endpoint with current pagination state, row-count risk, frontend usage, and a sized rollout plan; convention recommendation that diverges from `13-search-improvements.md`'s cursor proposal for the existing list surface | Research |
+| 19 | [`19-architecture-feedback.md`](19-architecture-feedback.md) | Critical architectural review: where shepard is strong vs fragile; cross-cutting concerns; risks for the proposed `13` / `14` work; 6-month recommendation list mapped to backlog IDs in `16`; "deliberately don't do" list. Ground-truthed against post-Round-3 code state | Review |
+| 20 | [`20-epic-roadmap.md`](20-epic-roadmap.md) | Strategic catalogue of 14 candidate epics across foundations, search/semantics, data types, performance, UX/ecosystem, KG interfaces — each with goal, scope, dependencies, T-shirt size, and a map to backlog IDs in `16`. Includes a Mermaid dependency graph and a two-track 6-month plan | Roadmap |
+| 21 | [`21-user-interest-gauge.md`](21-user-interest-gauge.md) | Gauge of repo-internal demand signals (open issues, design notes, Slack/Mattermost in `input_raw.md`) for HDF5/HSDS, tabular/relational storage, and knowledge-graph interfaces. Recommends a lightweight survey + interview plan to convert unknowns into evidence | Research |
+| 22 | [`22-admin-cli-draft.md`](22-admin-cli-draft.md) | Candidate-function design for a future `shepard-admin` CLI: goals/non-goals, auth model (blocked on A0), per-command catalogue (features/health/migrations/cleanup/cache/apikey/import-export), framework recommendation (Java + Picocli), distribution, 4-phase rollout, open maintainer decisions | Draft |
+| 23 | [`23-api-critique.md`](23-api-critique.md) | API critique: clunkiness pain points (resource model leaks storage, path/query-param non-uniformity, 40+ endpoints in one Rest, five search endpoints, permission-semantics-leak, error envelope, pagination, auth headers, Python boilerplate); per-slice paradigm fit (SQL-over-HTTP for bulk timeseries reads, S3-presigned for blobs, SSE for change-feeds); client generation (stay openapi-generator + pin + 30-LoC `shepard-py`/`shepard-ts` convenience layer) and schema source-of-truth (stay annotation-generated OpenAPI; OpenAPI 3.1 once tooling stabilises). Spawns IDs P5–P20 | Review |
+| 24 | [`24-permission-system-review.md`](24-permission-system-review.md) | Permission system review and room for development: per-entity discretionary access model in Neo4j (`(:Permissions)`-sibling pattern); fragilities ranked by blast-radius (C3 fail-open default, path-segment-switch dispatch, missing admin role, no group sharing, cache-key blindness, no audit trail, cross-DB consistency under degraded Neo4j); sized evolutions F1–F7 + L8 unpacking; verdicts on policy-as-code (no, but design F1 to allow drop-in) and row-level security in data DBs (no for v1) | Review |
+| 25 | [`25-neo4j-id-migration-design.md`](25-neo4j-id-migration-design.md) | Migration plan from deprecated `id()` (and `elementId()`) to application-generated IDs (UUID v7 chosen). 5-phase rollout (instrument → additive `appId` → backfill → read-path switch → `/v2` native → drop legacy) with Cypher-injection / cache-key / path-segment-switch interlocks. Spawns sub-IDs L2a–L2e | Design |
 
 ### Dependency graph among C-section docs
 
