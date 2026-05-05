@@ -1,4 +1,5 @@
-Read all of this first then plan and dispatch accordingly:
+Read all of this first then pritirizem plan and dispatch accordingly:
+regular commits for status updates.
 
 streaming openapi compatible -> client generation?
 rest api improvements? feels clunky. maybe even other apis that are faster or easier to integrate eg timeseries to excel via sql
