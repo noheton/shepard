@@ -28,11 +28,14 @@ Status legend:
 
 ## Backlog (this repo only)
 
-### Cross-cutting auth (added 2026-05-05)
+### Cross-cutting auth and security (added / promoted 2026-05-05)
 
 | ID | Item | input_raw refs | Size | Status | Notes |
 |---|---|---|---|---|---|
 | A0 | Admin role mechanism: configurable `shepard.admin.role`, populate `JWTPrincipal.roles` from realm-access claims (in `JWTFilter`), mirror for API-key path, so `@RolesAllowed("admin")` actually works | — | S–M | **needs decision** | Unblocker for A3b and P3c. Three options offered to user (full role mechanism / dev-profile-only / scope-shift to `/temp/admin/...`). |
+| C3 | Remove the full-access fallback in `PermissionsService.isAllowed` when the permissions node is missing — currently grants Reader+Writer+Manager (full-access backdoor) | `aidocs/07-security-issues.md` C3, `aidocs/19-architecture-feedback.md` §2 | S | **escalated** | Was tracked in `07` but not in this backlog. Promoted because `19` ranks it as a top fragility. Concrete fix: deny by default; add explicit exception only for endpoints that legitimately operate without a permissions node. |
+| C5 | Replace string-concatenated Cypher query construction in `Neo4jQueryBuilder.java:198-244` with parameterised queries | `aidocs/07-security-issues.md` C5, `aidocs/19-architecture-feedback.md` §2 | M | **escalated** | Was tracked in `07`. Cross-cuts every search endpoint and gates `aidocs/13-search-improvements.md`'s unified search proposal — fix this *before* shipping `/search/v2`. |
+| H4 | Surface RFC 7807-shape error responses (existing high-finding from `07`) | `aidocs/07-security-issues.md` H4, `aidocs/19-architecture-feedback.md` §3 | M | **needs decision** | Bundles with API-versioning P4 — the response-shape change should land at the same time as the `/v1/` prefix to avoid two breaking changes in close succession. |
 
 ### Architectural / performance (lines 1387–7000)
 
@@ -203,8 +206,42 @@ Non-overlap clauses included in each prompt:
 | A4d | Enable Micrometer metrics on `permissions-service-cache` | dispatched | — | One-line property + smoke test |
 | A3b | Read-only `GET /admin/features` endpoint | **blocked** | — | Agent stopped per scope guard: **no admin auth model exists**. JWT roles always `new String[0]`; `@RolesAllowed("admin")` would deny everyone. New unblocker item **A0** added. |
 | A1d | Audit Mongo/Flyway/JDBC startup wait/retry; align with 60s ceiling | done | `e1c3635` | Adds `quarkus.flyway.connect-retries=10` + `connect-retries-interval=PT5S` (default was 120s, exceeded ceiling). Mongo/JDBC defaults already fail fast — no redundant config added. New `aidocs/17-startup-wait-audit.md`. |
-| P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | dispatched | — | Other call sites tracked as follow-ups |
+| P2 | `PermissionsService.filterAllowedForUser` (single Cypher for N ids) + rewire one call site | done | `22f78b3` | **Stale assumption corrected:** the `parallelStream` cited at `input_raw.md:1668-1678` is actually a *data-fetching* stream, not an N+1 permission check. No N+1 permission-check site exists in the repo. Primitive landed (8 new tests; `PermissionsService.filterAllowedForUser` + `PermissionsDAO.findByEntityNeo4jIds`); call-site rewire is a noop until a downstream caller emerges. |
+| P2c | `filterAllowedUsers(entityId, AccessType, Collection<String> usernames)` for `SubscriptionFilter.filter` | — | S | queued | Follow-up from P2 — symmetric to `filterAllowedForUser` |
 | L6 | Pagination inventory + sized rollout plan (research) | done | `c896fd9` | New `aidocs/18-pagination-inventory.md`. 38 list endpoints inventoried, 11 paginated today (29%). Recommends extending the existing `?page&size` convention rather than the cursor proposal in §2.6 of `13-search-improvements.md` for the existing 27 unpaginated list endpoints — coexistence with cursor for `POST /search/v2`. |
+
+### Round 4 — 2026-05-05 (analysis layer)
+
+While Round 3 implementation agents ran, four parallel **analysis-only**
+agents produced strategic / design docs requested by the maintainer:
+
+| Doc | Purpose | Status | Commit |
+|---|---|---|---|
+| `aidocs/19-architecture-feedback.md` | Critical review of post-Round-3 architecture | done | `879ffc0` |
+| `aidocs/20-epic-roadmap.md` | 14-epic catalogue with Mermaid dependency graph + 2-track 6-month plan | done | `fc4ae3b` |
+| `aidocs/21-user-interest-gauge.md` | Demand signals for HDF5/HSDS, tabular, KG interfaces + survey plan | done | `362712e` |
+| `aidocs/22-admin-cli-draft.md` | Candidate functions for a future `shepard-admin` CLI | dispatched | — |
+
+**Key findings from these docs that should drive Round 4 priorities:**
+
+- **`aidocs/19` flags two security fragilities at the top:**
+  - **C3 fallback** at `PermissionsService.java:262+` — when the
+    permissions node is missing, the fallback grants Reader+Writer+Manager.
+    This is a full-access backdoor catalogued in
+    `aidocs/07-security-issues.md` C3 — **not new, but not yet fixed**.
+  - **C5 Cypher injection** at `Neo4jQueryBuilder.java:198-244` —
+    string-concatenated query construction; cross-cuts every search
+    endpoint and gates `aidocs/13-search-improvements.md`.
+  - Plus **A0** (admin role) — already in our backlog.
+- **`aidocs/20` recommends two parallel tracks:**
+  - **Foundations track:** E1 (foundations: A0 + observability + P4 + L6 + S1) → E5 (streaming + ID alignment) → E11 (permissions + admin CLI) → E2 (unified search v2).
+  - **User-value track:** E12 (UX & ecosystem) → E6 (annotation generalisation) → E9 (spatial graduate/deprecate) → E4 (triplestore + SPARQL).
+  - Three "could start tomorrow" epics: **E1, E5, E12**.
+  - Three "blocked on user decision" epics: **E14** (Neo4j ID migration owner), **E9** (spatial graduate vs deprecate), **E4** (default ontology + reasoning profile + n10s deployment).
+- **`aidocs/21` ranks the three candidate development directions:**
+  - **KG interfaces:** strongest evidence (4 open GitLab issues, partial `SparqlConnector` already, two independent user groups). Ready to act once #274 unblocks.
+  - **HDF5/HSDS:** low-medium; one named asker, no GitLab issue, TimescaleDB satisfies the temporal subset.
+  - **Tabular/relational:** thin; the ask hides two distinct products (interface vs storage). Defer until separated.
 
 | ID | Agent description | Status | Commit | Notes |
 |---|---|---|---|---|

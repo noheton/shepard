@@ -42,8 +42,9 @@ to **11** for the plan, then dip into A or C as needed.
 
 ## C. Forward-looking design notes
 
-These three are designed as a triplet; read in order. Each builds on
-the identifier-discipline groundwork laid in §11.B of the perf doc.
+12–14 are designed as a triplet; read in order. Each builds on the
+identifier-discipline groundwork laid in §11.B of the perf doc. 18–22
+are subsequent design / research / strategic notes.
 
 | # | File | Topic | Status |
 |---|---|---|---|
@@ -51,6 +52,9 @@ the identifier-discipline groundwork laid in §11.B of the perf doc.
 | 13 | [`13-search-improvements.md`](13-search-improvements.md) | One unified search endpoint replacing today's five; richer query syntax (predicate JSON + fulltext + raw escape hatches: SPARQL/SQL); searching by semantic annotation; cursor pagination + streaming | Proposal |
 | 14 | [`14-semantic-improvements.md`](14-semantic-improvements.md) | Generalising semantic annotations to file / structured / spatial payloads; label vs IRI discipline; search-as-you-type for terms; triplestore (n10s on Neo4j → GraphDB / RDF4J) for SPARQL, reasoning, KG export, FAIR | Proposal |
 | 18 | [`18-pagination-inventory.md`](18-pagination-inventory.md) | Inventory of every list-returning REST endpoint with current pagination state, row-count risk, frontend usage, and a sized rollout plan; convention recommendation that diverges from `13-search-improvements.md`'s cursor proposal for the existing list surface | Research |
+| 19 | [`19-architecture-feedback.md`](19-architecture-feedback.md) | Critical architectural review: where shepard is strong vs fragile; cross-cutting concerns; risks for the proposed `13` / `14` work; 6-month recommendation list mapped to backlog IDs in `16`; "deliberately don't do" list. Ground-truthed against post-Round-3 code state | Review |
+| 20 | [`20-epic-roadmap.md`](20-epic-roadmap.md) | Strategic catalogue of 14 candidate epics across foundations, search/semantics, data types, performance, UX/ecosystem, KG interfaces — each with goal, scope, dependencies, T-shirt size, and a map to backlog IDs in `16`. Includes a Mermaid dependency graph and a two-track 6-month plan | Roadmap |
+| 21 | [`21-user-interest-gauge.md`](21-user-interest-gauge.md) | Gauge of repo-internal demand signals (open issues, design notes, Slack/Mattermost in `input_raw.md`) for HDF5/HSDS, tabular/relational storage, and knowledge-graph interfaces. Recommends a lightweight survey + interview plan to convert unknowns into evidence | Research |
 
 ### Dependency graph among C-section docs
 
