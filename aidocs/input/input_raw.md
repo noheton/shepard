@@ -8059,7 +8059,10 @@ Stoßrichtungen
 
 ‍
 Realistic reporducible testdataset(s) for shpeard to check for scaling problems. 
-Showcase datasets for showcasing shepards features
+Showcase datasets for showcasing shepards features (in every capacity upto semantics)
+best case aligned with STORT (Hyperschall-Experiment) Und LUMEN (Triebwerkstest)
+
+
 
 # shepard federation
 
