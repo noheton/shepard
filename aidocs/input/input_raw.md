@@ -3822,6 +3822,8 @@ Somebody has an idea?
 Errors | NextAuth.js
 This is a list of errors output from NextAuth.js.
 
+-  shepard wie "rdf:Class" als property IRI verwenden?
+  [22-rdf-syntax-ns](https://www.w3.org/1999/02/22-rdf-syntax-ns#class) quasi ein ~"is a"
 
 
 
@@ -3830,8 +3832,3402 @@ Gefolgt
 Letzte Antwort 13. Februar
 25. Februar
 
+# Architecture and Performance Analysis: Shepard Research Data Management Platform
+
+## Executive Summary
+
+Based on a comprehensive analysis of the Shepard platform codebase, I've identified critical architectural and performance improvement opportunities across database management, API design, feature toggles, and system startup. This analysis is grounded in the actual implementation and provides actionable recommendations with priority rankings.
+
+---
+
+## 1. ARCHITECTURAL ISSUES AND IMPROVEMENTS
+
+### 1.1 Database Connection Management
+
+#### **Issue A1: Blocking Sequential Startup with No Graceful Degradation**
+
+**Priority: HIGH**
+
+The current implementation forces all databases to be available before the application starts, creating a single point of failure. shepard:20-37 shepard:49-64
+
+**Problem Details:**
+
+- The `MigrationsRunner.waitForConnection()` uses an infinite loop with 1-second sleeps
+- If any database (Neo4j, MongoDB, TimescaleDB, or PostGIS when enabled) is unavailable, the entire application fails to start
+- No timeout mechanism exists
+- No partial degradation mode for non-critical features
+
+**Recommendations:**
+
+1. **Implement Asynchronous Database Initialization**
+
+   - Use Quarkus `@Startup` beans with different priorities for critical vs. non-critical databases
+   - Allow the REST API to start with degraded functionality if optional databases are unavailable
+   - Mark endpoints that require specific databases with custom annotations
+2. **Add Connection Timeout and Retry Limits**
+
+   - Replace infinite loops with configurable timeout values (e.g., 60 seconds)
+   - Implement exponential backoff for retry attempts
+   - Log detailed failure reasons to aid debugging
+3. **Enhance Health Checks for Runtime Monitoring**  
+   The current health checks are passive: shepard:10-19
+
+   These should be enhanced to:
+
+   - Distinguish between startup readiness and runtime health
+   - Provide detailed status for each database connection
+   - Support automated recovery attempts
+
+**Trade-offs:**
+
+- Increased complexity in managing partial system states
+- Need for careful handling of cross-database transactions
+- Potential confusion for users when certain features are unavailable
+
+**Risk Mitigation:**
+
+- Implement feature flags to control degraded mode behavior
+- Provide clear API error messages when features are unavailable
+- Add metrics to track partial availability incidents
+
+---
+
+### 1.2 API Endpoint Organization
+
+#### **Issue A2: Monolithic REST Endpoint Classes**
+
+**Priority: MEDIUM**
+
+The `TimeseriesRest` class contains 40+ endpoints in a single file, creating maintenance challenges: shepard:61-529
+
+**Problem Details:**
+
+- Single responsibility principle violation
+- Mixing concerns: CRUD operations, permissions, import/export, and data retrieval
+- Difficult to navigate and test
+- Similar patterns repeated across `FileRest`​ (32 endpoints) and `CollectionRest` (24 endpoints)
+
+**Identified Cross-Cutting Concerns:**
+
+1. **Permissions Management** - Repeated in multiple classes: shepard:442-512
+2. **Import/Export Operations** - Could be standardized: shepard:360-440
+3. **Pagination and Query Parameters** - Duplicated logic: shepard:99-114
+
+**Recommendations:**
+
+1. **Decompose into Sub-Resources**
+
+   ```
+   /timeseries-containers/{id}              -> TimeseriesContainerRest
+   /timeseries-containers/{id}/timeseries   -> TimeseriesDataRest
+   /timeseries-containers/{id}/permissions  -> PermissionsSubResource (shared)
+   /timeseries-containers/{id}/export       -> ExportSubResource (shared)
+   /timeseries-containers/{id}/import       -> ImportSubResource (shared)
+   ```
+2. **Extract Shared Permission Handling**
+
+   - Create a generic `PermissionsSubResource<T>` that can be composed into different endpoints
+   - Use JAX-RS sub-resource locators to delegate permission endpoints
+3. **Standardize Pagination and Filtering**
+
+   - Create a `@QueryParamsBean` class to encapsulate common query parameters
+   - Move `QueryParamHelper` logic into a reusable service layer
+
+**Trade-offs:**
+
+- More files to maintain (but each simpler)
+- Need to update OpenAPI generation configuration
+- Existing API clients would need regeneration but no breaking changes to API contracts
+
+---
+
+### 1.3 Feature Toggle Complexity
+
+#### **Issue A3: Build-time vs Runtime Toggle Confusion**
+
+**Priority: MEDIUM-HIGH**
+
+The current feature toggle system mixes build-time and runtime decisions, creating deployment complexity: shepard:120-125 shepard:1-13 shepard:39-39
+
+**Problem Details:**
+
+- ​`@IfBuildProperty` requires features to be enabled at build time, making it impossible to toggle features in production without rebuilding
+- The versioning feature toggle at build-time conflicts with the desire for runtime flexibility
+- Database configurations are coupled to feature toggles (e.g., spatial database activated based on toggle)
+- No clear documentation on which toggles are build-time vs runtime
+
+**Recommendations:**
+
+1. **Migrate to Runtime-Only Feature Toggles**
+
+   - Replace `@IfBuildProperty`​ with custom `@ConditionalOnFeature` annotation that checks at runtime
+   - Use CDI `@Produces`​ methods with `@ApplicationScoped` to create beans conditionally
+   - Implement feature flag service that reads from configuration or database
+2. **Separate Infrastructure Toggles from Feature Toggles**
+
+   - Infrastructure toggles (spatial-data.enabled) should control database connections - keep these
+   - Feature toggles (versioning.enabled) should only control business logic - make these runtime
+   - Use separate configuration namespaces: `shepard.infrastructure.*`​ vs `shepard.features.*`
+3. **Add Feature Toggle Administration Endpoint**
+
+   - Create `/admin/features` endpoint to view and modify runtime toggles
+   - Store toggle state in Neo4j or external configuration service
+   - Implement toggle change audit logging
+
+**Trade-offs:**
+
+- Runtime toggles add complexity to dependency injection
+- Need to handle scenarios where features are toggled while system is running
+- Potential for inconsistent state if toggles change during requests
+
+**Example Implementation Pattern:**
+
+```java
+// Instead of @IfBuildProperty
+@ApplicationScoped
+public class FeatureBeanProducer {
+    @Produces
+    @ConditionalOnFeature("versioning")
+    public VersioningService versioningService() {
+        return new VersioningServiceImpl();
+    }
+}
+```
+
+---
+
+### 1.4 Multi-Database Coordination
+
+#### **Issue A4: Justified Polyglot Persistence but with Optimization Opportunities**
+
+**Priority: LOW-MEDIUM**
+
+The system uses four databases, which was a deliberate architectural decision: shepard:1-139
+
+**Analysis:**   
+The ADR-008 decision was well-reasoned:
+
+- **Neo4j**: Chosen for graph relationships and permissions (despite Postgres alternative)
+- **MongoDB**: Required for large file storage (>32TB Postgres limitation)
+- **TimescaleDB**: Chosen for timeseries performance (replaced InfluxDB)
+- **PostGIS**: Selected for 3D spatial data (significant performance advantage over pgvector) shepard:100-128
+
+**However, optimization opportunities exist:**
+
+1. **Consider TimescaleDB + PostGIS Consolidation**
+
+   - Both are PostgreSQL extensions running on separate instances
+   - Could run on same instance with different databases/schemas shepard:117-152
+
+   **Benefits:**
+
+   - Reduced infrastructure complexity (3 databases instead of 4)
+   - Potential for cross-schema queries between timeseries and spatial data
+   - Simplified backup procedures
+
+   **Trade-offs:**
+
+   - Shared resource contention between timeseries and spatial workloads
+   - Need to carefully tune memory allocation
+   - Risk of one workload impacting the other
+2. **Optimize Cross-Database Permission Checks**
+
+   The current pattern requires Neo4j queries for every data access: shepard:110-132
+
+   **Problem:**  Every timeseries query must first check permissions in Neo4j, then fetch data from TimescaleDB
+
+   **Recommendations:**
+
+   - Implement permission caching with TTL (current cache exists but is basic)
+   - Denormalize permissions into TimescaleDB/PostGIS for read-heavy workloads
+   - Use database-level row security policies where possible
+
+---
+
+## 2. PERFORMANCE BOTTLENECKS AND IMPROVEMENTS
+
+### 2.1 Startup Time Optimization
+
+#### **Performance Issue P1: Sequential Database Initialization**
+
+**Priority: HIGH**
+
+The four-phase startup is entirely sequential: shepard:20-37
+
+**Measured Impact:**
+
+- PKI initialization: minimal
+- Database connection waiting: **variable, potentially minutes if databases are slow to start**
+- Migrations: **can take significant time with large datasets**
+- Neo4j connection: minimal
+
+**Bottleneck Analysis:**
+
+1. **Migration Runner Waits for ALL Databases** shepard:49-64
+
+   This only waits for Neo4j, but Flyway migrations run serially and block startup: shepard:50-64
+
+2. **No Parallel Database Initialization**  
+   All databases could be checked and migrated in parallel
+
+**Recommendations:**
+
+1. **Parallelize Database Connection Checks**
+
+   - Use `CompletableFuture` or virtual threads to check all databases simultaneously
+   - Fail fast if any critical database is unavailable
+   - Continue if optional databases (PostGIS) are unavailable
+2. **Lazy Migration Execution**
+
+   - Move Flyway migrations to background threads
+   - Use database-level locks to prevent concurrent migrations
+   - Allow REST API to start before migrations complete for read-only operations
+   - Return 503 Service Unavailable for write operations during migration
+3. **Optimize Flyway Migration Performance** shepard:53-55
+
+   - Enable Flyway parallel execution for independent migrations
+   - Consider using Java-based migrations for performance-critical changes
+   - Implement migration progress monitoring endpoint
+
+**Expected Improvement:**
+
+- Parallel connection checks: 60-80% reduction in wait time
+- Background migrations: Application available in seconds instead of minutes
+
+---
+
+### 2.2 Database Query Performance
+
+#### **Performance Issue P2: Cross-Database Query Coordination**
+
+**Priority: HIGH**
+
+Every data access requires coordinating queries across multiple databases:
+
+**Example Flow for Timeseries Retrieval:**
+
+1. Check permissions in Neo4j
+2. Verify container exists in Neo4j
+3. Fetch timeseries metadata from TimescaleDB
+4. Query data points from TimescaleDB shepard:148-189
+
+**Performance Analysis:**
+
+1. **Permission Check Latency**
+
+   - Each request makes at least one Neo4j query
+   - Cache exists but implementation is basic: shepard:111-112
+2. **N+1 Query Problem in Parallel Streams** shepard:191-212
+
+   This creates N permission checks for N timeseries in parallel, overwhelming Neo4j
+
+**Recommendations:**
+
+1. **Implement Batch Permission Checks**
+
+   - Add `checkPermissionsBatch(List<Long> entityIds)` method
+   - Execute single Cypher query to check all entities at once
+   - Reduces N queries to 1 query
+2. **Enhance Permission Cache**
+
+   - Use proper cache eviction policy (LRU, TTL-based)
+   - Consider Redis or Caffeine cache instead of in-memory Map
+   - Cache at user+entity level, not just key string
+   - Implement cache warming for frequently accessed entities
+3. **Add Database-Level Read Replicas**
+
+   - Configure read replicas for Neo4j and TimescaleDB
+   - Route permission checks to replicas to reduce load on primary
+   - Particularly important for Neo4j which handles all permission queries
+4. **Optimize TimescaleDB Query Performance**
+
+   The repository uses native queries with proper TimescaleDB functions: shepard:139-150
+
+   Current optimizations are good (hypertables, compression), but consider:
+
+   - Pre-aggregate common query patterns into materialized views
+   - Implement query result caching for frequently accessed time ranges
+   - Use TimescaleDB continuous aggregates for common aggregation functions
+
+---
+
+### 2.3 Migration Process Performance
+
+#### **Performance Issue P3: InfluxDB to TimescaleDB Migration Efficiency**
+
+**Priority: MEDIUM** (historical, but important for future migrations)
+
+The migration runs in a separate container: shepard:173-185
+
+**Analysis:**
+
+The repository uses PostgreSQL COPY command for bulk inserts, which is optimal: shepard:73-130
+
+**Strengths:**
+
+- COPY command is the fastest method for PostgreSQL bulk inserts
+- Separate container prevents impacting production system
+- Batch processing with 20,000 rows per batch
+
+**Recommendations for Future Migrations:**
+
+1. **Add Migration Progress Monitoring**
+
+   - Expose migration progress via HTTP endpoint
+   - Track rows migrated, errors encountered, time remaining
+   - Store progress in database to support resume on failure
+2. **Implement Parallel Migration Workers**
+
+   - Partition data by container_id or time range
+   - Run multiple migration workers in parallel
+   - Use connection pooling to prevent overwhelming target database
+3. **Add Data Validation Steps**
+
+   - Implement row count verification
+   - Add checksum validation for critical data
+   - Create rollback capability for failed migrations
+
+---
+
+### 2.4 Frontend-Backend Communication
+
+#### **Performance Issue P4: OpenAPI Client Generation Overhead**
+
+**Priority: LOW-MEDIUM**
+
+The frontend uses a locally generated TypeScript client: shepard:16-16
+
+**Analysis:**
+
+The client is generated from OpenAPI spec, which ensures type safety but has considerations:
+
+**Current Approach:**
+
+- File-based dependency on locally generated client
+- Regeneration required whenever backend API changes
+- No versioning between frontend and backend client
+
+**Recommendations:**
+
+1. **Implement API Versioning**
+
+   - Add version prefix to API paths (e.g., `/shepard/api/v1`)
+   - Support multiple API versions simultaneously during transitions
+   - Use OpenAPI version field properly
+2. **Optimize Client Bundle Size**
+
+   - Current client likely includes all 100+ endpoints
+   - Implement tree-shaking friendly exports
+   - Consider code-splitting API modules (timeseries, files, collections)
+3. **Add Response Caching Strategy**
+
+   - Implement HTTP cache headers for GET requests
+   - Use ETags for conditional requests
+   - Add client-side caching layer for frequently accessed data
+4. **Consider GraphQL for Complex Queries**
+
+   - For queries that need data from multiple containers/timeseries
+   - Reduces over-fetching and under-fetching
+   - Single request instead of multiple REST calls
+   - **Trade-off:**  Adds complexity, requires GraphQL infrastructure
+
+---
+
+## 3. SUMMARY OF RECOMMENDATIONS
+
+### High Priority (Implement First)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| ------------------------------------------------------------------| ------------------------------------------------| --------|
+|**A1**|Implement async database initialization with timeouts|Improved reliability, faster failure detection|Medium|
+|**P1**|Parallelize database connection checks and migrate to background|60-80% startup time reduction|Medium|
+|**P2**|Batch permission checks and enhance caching|50-70% reduction in Neo4j load|Medium|
+
+### Medium Priority (Implement Next)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| ---------------------------------------------| ----------------------------------------------| -------------|
+|**A2**|Decompose REST endpoints into sub-resources|Improved maintainability|Medium-High|
+|**A3**|Migrate to runtime feature toggles|Deployment flexibility|Medium|
+|**P2**|Add TimescaleDB continuous aggregates|Faster query performance for common patterns|Medium|
+|**A4**|Consolidate TimescaleDB + PostGIS instances|Reduced infrastructure complexity|Low-Medium|
+
+### Low Priority (Future Enhancements)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| -----------------------------------| -------------------------------------------| --------|
+|**P3**|Add migration progress monitoring|Better visibility for future migrations|Low|
+|**P4**|Implement API versioning|Smoother API evolution|Medium|
+|**P4**|Optimize client bundle size|Marginal frontend performance improvement|Low|
+
+---
+
+## 4. IMPLEMENTATION ROADMAP
+
+### Phase 1: Reliability Improvements (2-3 weeks)
+
+1. Add database connection timeouts
+2. Implement parallel connection checks
+3. Enhance health check endpoints
+4. Add batch permission checking
+
+### Phase 2: Performance Optimization (3-4 weeks)
+
+1. Improve permission caching
+2. Implement background migrations
+3. Add TimescaleDB continuous aggregates
+4. Optimize query patterns
+
+### Phase 3: Architectural Refactoring (4-6 weeks)
+
+1. Decompose large REST endpoint classes
+2. Migrate to runtime feature toggles
+3. Consolidate PostgreSQL instances
+4. Implement API versioning
+
+---
+
+## 5. RISK ASSESSMENT
+
+### Critical Risks
+
+1. **Backwards Compatibility**
+
+   - Risk: API changes breaking existing clients
+   - Mitigation: Implement versioning before major changes
+2. **Data Consistency During Async Initialization**
+
+   - Risk: Partial system state leading to inconsistent data
+   - Mitigation: Implement proper transaction boundaries and state validation
+3. **Cache Invalidation Complexity**
+
+   - Risk: Stale permission data leading to security issues
+   - Mitigation: Conservative TTLs, explicit invalidation on permission changes
+
+### Medium Risks
+
+1. **Database Consolidation Performance**
+
+   - Risk: Resource contention between TimescaleDB and PostGIS
+   - Mitigation: Thorough load testing before production deployment
+2. **Feature Toggle State Management**
+
+   - Risk: Inconsistent behavior across instances
+   - Mitigation: Centralized feature flag service, audit logging
+
+---
+
+## Notes
+
+This analysis is based on the current state of the Shepard platform as of the main branch. The recommendations prioritize:
+
+1. **Reliability over features** - Ensuring system stability during database outages
+2. **Incremental improvements** - Changes can be implemented independently
+3. **Backwards compatibility** - No breaking changes to existing APIs unless versioned
+4. **Evidence-based decisions** - All recommendations reference existing ADRs and implementation patterns
+
+The polyglot persistence architecture is well-justified per ADR-008, and the main opportunities lie in optimizing coordination between databases rather than consolidation. The TimescaleDB migration from InfluxDB shows the team's capability to execute major architectural changes successfully.
+
+### Citations
+
+**File:**  backend/src/main/java/de/dlr/shepard/ShepardMain.java (L20-37)
+
+```java
+  @Startup
+  void init() {
+    Log.info("Starting shepard backend");
+
+    var pkiHelper = new PKIHelper();
+    var migrationRunner = new MigrationsRunner();
+    pkiHelper.init();
+
+    Log.info("Waiting for databases");
+    migrationRunner.waitForConnection();
+
+    Log.info("Run database migrations");
+    migrationRunner.apply();
+
+    Log.info("Initialize databases");
+    neo4j.connect();
+    Log.info("Connection established to neo4j database.");
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/neo4j/MigrationsRunner.java (L49-64)
+
+```java
+  public void waitForConnection() {
+    while (true) {
+      try {
+        driver.verifyConnectivity();
+        break;
+      } catch (Exception e) {
+        Log.warn("Cannot connect to neo4j database. Retrying...");
+      }
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        Log.error("Cannot sleep while waiting for neo4j Connection");
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/healthz/NeoHealthCheck.java (L10-19)
+
+```java
+@Readiness
+@ApplicationScoped
+public class NeoHealthCheck implements HealthCheck {
+
+  private static IConnector neo4j = NeoConnector.getInstance();
+
+  @Override
+  public HealthCheckResponse call() {
+    return HealthCheckResponse.named("Neo4J connection health check").status(neo4j.alive()).build();
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/endpoints/TimeseriesRest.java (L61-529)
+
+```java
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path(Constants.TIMESERIES_CONTAINERS)
+@RequestScoped
+public class TimeseriesRest {
+
+  @Inject
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesCsvService timeseriesCsvService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Context
+  private SecurityContext securityContext;
+
+  @GET
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get all timeseries containers")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
+  public Response getAllTimeseriesContainers(
+    @QueryParam(Constants.QP_NAME) String name,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+  ) {
+    var params = new QueryParamHelper();
+    if (name != null) params = params.withName(name);
+    if (page != null && size != null) params = params.withPageAndSize(page, size);
+    if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
+    var containers = timeseriesContainerService.getAllContainers(params);
+    var result = TimeseriesContainerIOMapper.map(containers);
+
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries container")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var container = timeseriesContainerService.getContainer(timeseriesContainerId);
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).build();
+  }
+
+  @POST
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Create a new timeseries container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Transactional
+  public Response createTimeseriesContainer(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+    ) @Valid TimeseriesContainerIO timeseriesContainer
+  ) {
+    var container = timeseriesContainerService.createContainer(timeseriesContainer);
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).status(Status.CREATED).build();
+  }
+
+  @DELETE
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Delete timeseries container")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response deleteTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    timeseriesContainerService.deleteContainer(timeseriesContainerId);
+    return Response.status(Status.NO_CONTENT).build();
+  }
+
+  @POST
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Upload timeseries to container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = Timeseries.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response createTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+    ) @Valid TimeseriesWithDataPoints payload
+  ) {
+    TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
+      containerId,
+      payload.getTimeseries(),
+      payload.getPoints()
+    );
+
+    return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
+  }
+
+  @Deprecated(forRemoval = true)
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(
+    description = "Get timeseries available. Deprecated, use /timeseriesContainers/{containerId}/timeseries instead."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesAvailable(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    List<TimeseriesEntity> timeseriesEntityList;
+
+    try {
+      timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    } catch (InvalidPathException | InvalidAuthException e) {
+      return Response.ok(Collections.emptyList()).build();
+    }
+
+    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
+      .stream()
+      .map(entity -> new Timeseries(entity))
+      .toList();
+
+    return Response.ok(timeseriesListWithoutId).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get all available timeseries for that container.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT)
+  @Parameter(name = Constants.DEVICE)
+  @Parameter(name = Constants.LOCATION)
+  @Parameter(name = Constants.SYMBOLICNAME)
+  @Parameter(name = Constants.FIELD)
+  public Response getTimeseriesOfContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) String measurement,
+    @QueryParam(Constants.DEVICE) String device,
+    @QueryParam(Constants.LOCATION) String location,
+    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
+    @QueryParam(Constants.FIELD) String field
+  ) {
+    var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    var timeseriesList = timeseriesEntityList
+      .stream()
+      .map(entity -> new TimeseriesIO(entity))
+      .filter(
+        entity ->
+          (measurement == null || measurement.isEmpty() || entity.getMeasurement().equals(measurement)) &&
+          (device == null || device.isEmpty() || entity.getDevice().equals(device)) &&
+          (location == null || location.isEmpty() || entity.getLocation().equals(location)) &&
+          (symbolicName == null || symbolicName.isEmpty() || entity.getSymbolicName().equals(symbolicName)) &&
+          (field == null || field.isEmpty() || entity.getField().equals(field))
+      )
+      .toList();
+    return Response.ok(timeseriesList).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES + "/{" + Constants.TIMESERIES_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries by id.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesById(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
+  ) {
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
+    return Response.ok(new TimeseriesIO(timeseries)).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries payload")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  public Response getTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
+    @QueryParam(Constants.GROUP_BY) Long groupBy,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+  ) throws Exception {
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
+      start,
+      end,
+      groupBy,
+      fillOption,
+      function
+    );
+    var timeseriesData = timeseriesService.getDataPointsByTimeseries(timeseriesContainerId, timeseries, queryParams);
+    TimeseriesWithDataPoints timeseriesWithData = new TimeseriesWithDataPoints(timeseries, timeseriesData);
+    return Response.ok(timeseriesWithData).build();
+  }
+
+  @GET
+  @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Export timeseries payload")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_OCTET_STREAM,
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
+    )
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  public Response exportTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
+    @QueryParam(Constants.GROUP_BY) Long groupBy,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+  ) throws IOException {
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
+      start,
+      end,
+      groupBy,
+      fillOption,
+      function
+    );
+    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(timeseriesContainerId, timeseries, queryParams);
+
+    return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
+      .build();
+  }
+
+  @POST
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Import timeseries payload")
+  @APIResponse(description = "ok", responseCode = "200")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Subscribable
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response importTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    MultipartBodyFileUpload body
+  ) throws IOException {
+    String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
+
+    if (filePath == null) {
+      throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+    }
+
+    timeseriesCsvService.importTimeseriesFromCsv(timeseriesContainerId, filePath);
+    return Response.ok().build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public PermissionsIO getTimeseriesPermissions(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var permissions = permissionsService.getPermissionsOfEntity(timeseriesContainerId);
+    return new PermissionsIO(permissions);
+  }
+
+  @PUT
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Edit permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public PermissionsIO editTimeseriesPermissions(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+    ) @Valid PermissionsIO permissions
+  ) {
+    var updatedPermissions = permissionsService.updatePermissionsByNeo4jId(permissions, timeseriesContainerId);
+    if (updatedPermissions == null) throw new NotFoundException();
+    return new PermissionsIO(updatedPermissions);
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get roles")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Roles getTimeseriesRoles(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var roles = permissionsService.getUserRolesOnEntity(
+      timeseriesContainerId,
+      securityContext.getUserPrincipal().getName()
+    );
+    if (roles == null) throw new NotFoundException();
+    return roles;
+  }
+
+  @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
+  public interface UploadItemSchema {}
+
+  public class UploadFormSchema {
+
+    @Schema(required = true)
+    public UploadItemSchema file;
+  }
+
+  @Schema(implementation = UploadFormSchema.class)
+  public static class MultipartBodyFileUpload {
+
+    @RestForm(Constants.FILE)
+    public FileUpload fileUpload;
+  }
+}
+```
+
+**File:**  backend/src/main/resources/application.properties (L50-64)
+
+```properties
+# TimescaleDB
+
+quarkus.datasource.db-kind=postgresql
+quarkus.flyway.baseline-on-migrate=true
+quarkus.flyway.migrate-at-start=true
+quarkus.flyway.locations=db/migration,classpath:de/dlr/shepard/data/timeseries/migrations
+quarkus.hibernate-orm.packages=de.dlr.shepard.data.timeseries
+
+# Spatial Database
+# https://quarkus.io/guides/flyway#multiple-datasources
+quarkus.datasource.spatial.db-kind=postgresql
+quarkus.flyway.spatial.active=${shepard.spatial-data.enabled}
+quarkus.flyway.spatial.baseline-on-migrate=true
+quarkus.flyway.spatial.locations=db/spatial/migration
+quarkus.flyway.spatial.migrate-at-start=true
+```
+
+**File:**  backend/src/main/resources/application.properties (L120-125)
+
+```properties
+# Versioning Feature Toggle
+shepard.versioning.enabled=false
+
+# Spatial Data Feature Toggle
+shepard.spatial-data.enabled=false
+
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/configuration/feature/toggles/VersioningFeatureToggle.java (L1-13)
+
+```java
+package de.dlr.shepard.common.configuration.feature.toggles;
+
+public class VersioningFeatureToggle {
+
+  public static final String TOGGLE_PROPERTY = "shepard.versioning.enabled";
+
+  public static final String IS_ENABLED_METHOD_ID =
+    "de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle#isEnabled";
+
+  public static boolean isEnabled() {
+    return TogglePropertyUtil.isToggleEnabled(TOGGLE_PROPERTY);
+  }
+}
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/context/collection/endpoints/CollectionVersioningRest.java (L39-39)
+
+```java
+@IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
+```
+
+**File:**  architecture/src/09_architecture_decisions/008-database-target-architecture.adoc (L1-139)
+
+```text
+ifndef::imagesdir[:imagesdir: ../../images]
+
+[[adr008]]
+=== ADR-008 Database Target Architecture
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|17.09.2024
+|Status|Done
+
+|Context|
+*Current state*
+
+At the moment shepard uses three different databases:
+
+* Neo4j (graph db)
+* MongoDB (document db)
+* InfluxDB (timeseries db)
+
+*What was the reason for choosing different databases?*
+
+* In the very beginning the data was directly stored into the databases (influxdb, neo4j and mongodb), no domain model, just the data
+* In the second step the backend was created, the REST api was created and also the domain model
+* Special features of timeseries database are already in use (min, max, sum, etc.)
+* From a user perspective it feels easier to navigate through a graph database instead of a relational database
+
+*Known issues*
+
+* We have to use three different database query languages
+* Maintenance of three different databases and their libraries
+* For backup you have to consider all three databases
+* Issues with Neo4j
+** When to load relationships with data objects and how many and how does it influence performance.
+You have to know how the ogm works.
+** We had some issues with caching that we do not fully understand.
+** Lack of a large ecosystem (e.g. only one migration library available (private one))
+* Issues with InfluxDb
+** We are using influxdb v1.8 atm.
+** New versions of influxdb are completely different (completely new query language, etc.)
+** Bad feeling about a shift to paid services.
+** The library that we use to communicate with influxdb lacks some important features like query injection prevention.
+* Issues with MongoDB
+** The update process needs manual steps
+
+|Possible Solutions|
+
+1. We leave it as it is
+2. Neo4j + MongoDB
+3. Postgres only (Replace all database technologies with postgres)
+4. Neo4j + MongoDB + Postgres (replace influxdb with postgres timescaledb)
+5. Postgres + MongoDB (Replace influxdb and neo4j)
+6. Neo4j + Postgres (Replace influxdb and mongodb with postgres)
+
+image::adr/possible-database-architectures.png[]
+
+|Decisions|
+*Decision 1: Leave it as it is*
+This is not an option because of known issues with InfluxDB.
+We have to find a solution at least for that database.
+
+*Decision 2: Meta Data in Neo4j or Postgres*
+[cols="1,2,2"]
+!===
+!!Neo4j!Postgres
+!Migration effort!None!Big
+!Onboarding of new developers!Rather big!Rather small
+!Familiarity in the team!The team is familiar with Neo4j!The team is not familiar with Postgres
+!Ecosystem!Not big!Huge ecosystem, frequently used for a long time
+!Maintenance effort!
+Big, as we will have additional databases for data storage!Small to medium, if we use Postgres for all data persistence!
+Performance!Comparable if properly used!Comparable if properly used
+!===
+
+On the green field Postgres might be the better option with less maintenance effort and it’s big ecosystem.
+In the context of shepard we already have Neo4j, we would need to migrate data, the experience in the team is bigger for Neo4j.
+_All in all we decide to continue with Neo4j._
+
+*Decision 3: Database for Timeseries & Spatial Data*
+[cols="1,2,2"]
+!===
+!!MongoDB!Postgres
+!Migration Complexity!
+Rather easy, MongoDB is already there and we only have to migrate timeseries data!
+Medium migration effort
+
+!Performance!Performance is probably worse than Postgres for timeseries and spatial data!
+!Support for spatial data!Only supports 2D spatial data, no trivial and performant way to support 3D!
+
+!Summary!Not an option due to performance and spatial data!
+!===
+
+_As MongoDB does not seem to perform well for timeseries and spatial data we decide to store timeseries (and in the future spatial data) in postgres with timescaledb and PostGIS._
+
+*Decision 4: Database for Files & Structured Data*
+[cols="1,2,2,2"]
+!===
+!!Postgres for structured data + Blob storage (MinIO)(option 5)!
+Keep MongoDB(option 4)!
+Postgres(option 6)
+
+!Migration Complexity!All structured data and files have to be migrated!No migration effort!
+All structured data and files have to be migrated
+
+!Onboarding new Developers!!!
+New developers only have to know how to interact with two databases
+
+!Maintenance effort (updates of databases & clients)!
+We still have three databases to maintain!
+We still have three databases to maintain!
+We only have to maintain one database in addition to Neo4j
+
+!Reliability!
+Probably also very stable!
+MongoDB hasn’t been touched in months, so it reliably does it’s job!
+Probably also very stable
+
+!Performance (file size around 5-8 GB)!Good!Good!Unknown
+
+!Summary!
+This solution is not better than MongoDB, so it’s not feasible given the migration effort!!
+!===
+
+Postgres supports two ways for storing binary data link (https://www.postgresql.org/docs/7.4/jdbc-binary-data.html[bytea column and LargeObject API]).
+
+For large files we have to use the LargeObject API.
+But in both cases the data is stored in a single table.
+For tables we have a limitation of 32 TB (per-table size limitation).
+If we want to store multiple projects in one shepard instance, we might exceed this limit.
+So we are not able to store large objects in postgres.
+_The decision is to stay with MongoDB for files and structured data._
+
+|Consequences|
+
+* We still have to support three different databases.
+* Complexity and maintenance costs are higher than with a single database, but just as high as now.
+* Same applies to the backup up of three databases.
+
+|===
+```
+
+**File:**  architecture/src/09_architecture_decisions/014-spatial-database.adoc (L100-128)
+
+```text
+
+== Performance Tests
+
+Performance tests were executed on an already created dataset that consists of 7Mio data points.
+
+[cols="2a,1a,1a"]
+!===
+!Performance Test Type!postgis!pgvector
+!Create single data points for 1 minute.
+!2148 new data points
+!2106 new data points
+
+!Bounding Box filter (ca. 500 returned points)
+!380ms
+!59000ms
+
+!Bounding Sphere filter (ca. 500 returned points)
+!795ms
+!83000ms
+
+!KNN filter (k = 10)
+!53ms
+!45ms
+
+!Bounding Box with Metadata Filter (ca. 500 returned points)
+!265ms
+!42000ms
+
+!===
+```
+
+**File:**  infrastructure/docker-compose.yml (L117-152)
+
+```yaml
+  timescaledb:
+    image: timescale/timescaledb:2.18.1-pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
+      PGDATA: /var/lib/postgres/data
+    volumes:
+      - /opt/shepard/timescaledb:/var/lib/postgres/data
+      - ./docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
+    restart: unless-stopped
+    networks:
+      - shepard
+
+  postgis:
+    image: postgis/postgis:16-3.5
+    container_name: postgis
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
+    shm_size: "6GB"
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
+      - /opt/shepard/postgis/db:/var/lib/postgresql/data
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles:
+      - spatial
+```
+
+**File:**  infrastructure/docker-compose.yml (L173-185)
+
+```yaml
+  timescale-migration-preparation:
+    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:5.0.0
+    volumes:
+      - ./log:/app/log
+    env_file:
+      - .env
+    depends_on:
+      - influxdb
+      - neo4j
+    networks:
+      - shepard
+    profiles:
+      - timescale-migration-preparation
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/auth/permission/services/PermissionsService.java (L110-132)
+
+```java
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    String cacheKey = String.format("%s,%s,%s", entityId, accessType.toString(), username);
+    if (permissionLastSeenCache.isKeyCached(cacheKey)) return true;
+
+    Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
+
+    boolean isAllowed;
+    if (userRolesOnEntity.isOwner()) {
+      isAllowed = true;
+    } else {
+      isAllowed = switch (accessType) {
+        case Read -> userRolesOnEntity.isReader() || userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
+        case Write -> userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
+        case Manage -> userRolesOnEntity.isManager();
+        case None -> false;
+      };
+    }
+
+    if (isAllowed) {
+      permissionLastSeenCache.cacheKey(cacheKey);
+    }
+    return isAllowed;
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/services/TimeseriesService.java (L148-189)
+
+```java
+  public List<TimeseriesDataPoint> getDataPointsByTimeseries(
+    long containerId,
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    return getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams);
+  }
+
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
+   *
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
+   * The container check relies on an active request context.
+   * However, the 'ActivateRequestContext' annotation does not allow for a
+   * container check.
+   *
+   * @param containerId
+   * @param timeseries
+   * @param queryParams
+   * @return List<TimeseriesDataPoint>
+   */
+  @ActivateRequestContext
+  public List<TimeseriesDataPoint> getDataPointsByTimeseriesActivatedRequestContext(
+    long containerId,
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
+
+    if (timeseriesEntity.isEmpty()) return Collections.emptyList();
+
+    int timeseriesId = timeseriesEntity.get().getId();
+    DataPointValueType valueType = timeseriesEntity.get().getValueType();
+
+    return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/services/TimeseriesService.java (L191-212)
+
+```java
+  public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
+    Long containerId,
+    List<Timeseries> timeseriesList,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<
+      TimeseriesWithDataPoints
+    >();
+    timeseriesList
+      .parallelStream()
+      .forEach(timeseries -> {
+        timeseriesWithDataPointsQueue.add(
+          new TimeseriesWithDataPoints(
+            timeseries,
+            getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
+          )
+        );
+      });
+    return new ArrayList<TimeseriesWithDataPoints>(timeseriesWithDataPointsQueue);
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TimeseriesDataPointRepository.java (L73-130)
+
+```java
+  /**
+   * Insert a list of timeseries data points into the database using the COPY command.
+   * This is used by the influxdb migration but can also be used for csv import or
+   * similar scenarios.
+   * @param entities
+   * @param timeseriesEntity
+   */
+  @Timed(value = "shepard.timeseries-data-point.copy-insert")
+  public void insertManyDataPointsWithCopyCommand(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity
+  ) throws SQLException {
+    try (Connection conn = defaultDataSource.getConnection()) {
+      PGConnection pgConn = (PGConnection) conn.unwrap(PGConnection.class);
+      CopyManager copyManager = pgConn.getCopyAPI();
+
+      var columnName = getColumnName(timeseriesEntity.getValueType());
+      var sb = new StringBuilder();
+
+      timeseriesEntity.getId();
+
+      // Strings must be quoted in double quotes in case they contain a comma which is also the delimiter
+      if (timeseriesEntity.getValueType() == DataPointValueType.String) {
+        for (int i = 0; i < entities.size(); i++) {
+          TimeseriesDataPoint entity = entities.get(i);
+          sb
+            .append(timeseriesEntity.getId())
+            .append(",")
+            .append(entity.getTimestamp())
+            .append(",\"")
+            .append(entity.getValue())
+            .append("\"\n");
+        }
+      } else {
+        for (int i = 0; i < entities.size(); i++) {
+          TimeseriesDataPoint entity = entities.get(i);
+          sb
+            .append(timeseriesEntity.getId())
+            .append(",")
+            .append(entity.getTimestamp())
+            .append(",")
+            .append(entity.getValue())
+            .append("\n");
+        }
+      }
+
+      InputStream input = new ByteArrayInputStream(sb.toString().getBytes());
+      String sql = String.format(
+        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);",
+        columnName
+      );
+
+      copyManager.copyIn(sql, input);
+    } catch (IOException ex) {
+      Log.errorf("IOException during copy insert: %s", ex.getMessage());
+      throw new RuntimeException("IO Error while inserting data points", ex);
+    }
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TimeseriesDataPointRepository.java (L139-150)
+
+```java
+  @Timed(value = "shepard.timeseries-data-point.query")
+  public List<TimeseriesDataPoint> queryDataPoints(
+    int timeseriesId,
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    assertNotIntegral(queryParams.getFunction());
+    assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
+    assertCorrectValueTypesForFillOption(queryParams.getFillOption(), valueType);
+    assertTimeIntervalForFillOption(queryParams.getTimeSliceNanoseconds(), queryParams.getFillOption());
+    assertAggregationSetForFillOrGrouping(
+      queryParams.getFunction(),
+```
+
+**File:**  frontend/package.json (L16-16)
+
+```json
+    "@dlr-shepard/backend-client": "file:../backend-client",
+```
+
+
+
+# DeepWiki Q&A with Code Context for Repository: gitlab.com／dlr-shepard／shepard
+
+# DeepWiki Q&A with Code Context for Repository: gitlab.com/dlr-shepard/shepard
+
+## Q1
+
+# Architecture and Performance Analysis: Shepard Research Data Management Platform
+
+## Executive Summary
+
+Based on a comprehensive analysis of the Shepard platform codebase, I've identified critical architectural and performance improvement opportunities across database management, API design, feature toggles, and system startup. This analysis is grounded in the actual implementation and provides actionable recommendations with priority rankings.
+
+---
+
+## 1. ARCHITECTURAL ISSUES AND IMPROVEMENTS
+
+### 1.1 Database Connection Management
+
+#### **Issue A1: Blocking Sequential Startup with No Graceful Degradation**
+
+**Priority: HIGH**
+
+The current implementation forces all databases to be available before the application starts, creating a single point of failure. shepard:20-37 shepard:49-64
+
+**Problem Details:**
+
+- The `MigrationsRunner.waitForConnection()` uses an infinite loop with 1-second sleeps
+- If any database (Neo4j, MongoDB, TimescaleDB, or PostGIS when enabled) is unavailable, the entire application fails to start
+- No timeout mechanism exists
+- No partial degradation mode for non-critical features
+
+**Recommendations:**
+
+1. **Implement Asynchronous Database Initialization**
+
+   - Use Quarkus `@Startup` beans with different priorities for critical vs. non-critical databases
+   - Allow the REST API to start with degraded functionality if optional databases are unavailable
+   - Mark endpoints that require specific databases with custom annotations
+2. **Add Connection Timeout and Retry Limits**
+
+   - Replace infinite loops with configurable timeout values (e.g., 60 seconds)
+   - Implement exponential backoff for retry attempts
+   - Log detailed failure reasons to aid debugging
+3. **Enhance Health Checks for Runtime Monitoring**  
+   The current health checks are passive: shepard:10-19
+
+   These should be enhanced to:
+
+   - Distinguish between startup readiness and runtime health
+   - Provide detailed status for each database connection
+   - Support automated recovery attempts
+
+**Trade-offs:**
+
+- Increased complexity in managing partial system states
+- Need for careful handling of cross-database transactions
+- Potential confusion for users when certain features are unavailable
+
+**Risk Mitigation:**
+
+- Implement feature flags to control degraded mode behavior
+- Provide clear API error messages when features are unavailable
+- Add metrics to track partial availability incidents
+
+---
+
+### 1.2 API Endpoint Organization
+
+#### **Issue A2: Monolithic REST Endpoint Classes**
+
+**Priority: MEDIUM**
+
+The `TimeseriesRest` class contains 40+ endpoints in a single file, creating maintenance challenges: shepard:61-529
+
+**Problem Details:**
+
+- Single responsibility principle violation
+- Mixing concerns: CRUD operations, permissions, import/export, and data retrieval
+- Difficult to navigate and test
+- Similar patterns repeated across `FileRest`​ (32 endpoints) and `CollectionRest` (24 endpoints)
+
+**Identified Cross-Cutting Concerns:**
+
+1. **Permissions Management** - Repeated in multiple classes: shepard:442-512
+2. **Import/Export Operations** - Could be standardized: shepard:360-440
+3. **Pagination and Query Parameters** - Duplicated logic: shepard:99-114
+
+**Recommendations:**
+
+1. **Decompose into Sub-Resources**
+
+   ```
+   /timeseries-containers/{id}              -> TimeseriesContainerRest
+   /timeseries-containers/{id}/timeseries   -> TimeseriesDataRest
+   /timeseries-containers/{id}/permissions  -> PermissionsSubResource (shared)
+   /timeseries-containers/{id}/export       -> ExportSubResource (shared)
+   /timeseries-containers/{id}/import       -> ImportSubResource (shared)
+   ```
+2. **Extract Shared Permission Handling**
+
+   - Create a generic `PermissionsSubResource<T>` that can be composed into different endpoints
+   - Use JAX-RS sub-resource locators to delegate permission endpoints
+3. **Standardize Pagination and Filtering**
+
+   - Create a `@QueryParamsBean` class to encapsulate common query parameters
+   - Move `QueryParamHelper` logic into a reusable service layer
+
+**Trade-offs:**
+
+- More files to maintain (but each simpler)
+- Need to update OpenAPI generation configuration
+- Existing API clients would need regeneration but no breaking changes to API contracts
+
+---
+
+### 1.3 Feature Toggle Complexity
+
+#### **Issue A3: Build-time vs Runtime Toggle Confusion**
+
+**Priority: MEDIUM-HIGH**
+
+The current feature toggle system mixes build-time and runtime decisions, creating deployment complexity: shepard:120-125 shepard:1-13 shepard:39-39
+
+**Problem Details:**
+
+- ​`@IfBuildProperty` requires features to be enabled at build time, making it impossible to toggle features in production without rebuilding
+- The versioning feature toggle at build-time conflicts with the desire for runtime flexibility
+- Database configurations are coupled to feature toggles (e.g., spatial database activated based on toggle)
+- No clear documentation on which toggles are build-time vs runtime
+
+**Recommendations:**
+
+1. **Migrate to Runtime-Only Feature Toggles**
+
+   - Replace `@IfBuildProperty`​ with custom `@ConditionalOnFeature` annotation that checks at runtime
+   - Use CDI `@Produces`​ methods with `@ApplicationScoped` to create beans conditionally
+   - Implement feature flag service that reads from configuration or database
+2. **Separate Infrastructure Toggles from Feature Toggles**
+
+   - Infrastructure toggles (spatial-data.enabled) should control database connections - keep these
+   - Feature toggles (versioning.enabled) should only control business logic - make these runtime
+   - Use separate configuration namespaces: `shepard.infrastructure.*`​ vs `shepard.features.*`
+3. **Add Feature Toggle Administration Endpoint**
+
+   - Create `/admin/features` endpoint to view and modify runtime toggles
+   - Store toggle state in Neo4j or external configuration service
+   - Implement toggle change audit logging
+
+**Trade-offs:**
+
+- Runtime toggles add complexity to dependency injection
+- Need to handle scenarios where features are toggled while system is running
+- Potential for inconsistent state if toggles change during requests
+
+**Example Implementation Pattern:**
+
+```java
+// Instead of @IfBuildProperty
+@ApplicationScoped
+public class FeatureBeanProducer {
+    @Produces
+    @ConditionalOnFeature("versioning")
+    public VersioningService versioningService() {
+        return new VersioningServiceImpl();
+    }
+}
+```
+
+---
+
+### 1.4 Multi-Database Coordination
+
+#### **Issue A4: Justified Polyglot Persistence but with Optimization Opportunities**
+
+**Priority: LOW-MEDIUM**
+
+The system uses four databases, which was a deliberate architectural decision: shepard:1-139
+
+**Analysis:**   
+The ADR-008 decision was well-reasoned:
+
+- **Neo4j**: Chosen for graph relationships and permissions (despite Postgres alternative)
+- **MongoDB**: Required for large file storage (>32TB Postgres limitation)
+- **TimescaleDB**: Chosen for timeseries performance (replaced InfluxDB)
+- **PostGIS**: Selected for 3D spatial data (significant performance advantage over pgvector) shepard:100-128
+
+**However, optimization opportunities exist:**
+
+1. **Consider TimescaleDB + PostGIS Consolidation**
+
+   - Both are PostgreSQL extensions running on separate instances
+   - Could run on same instance with different databases/schemas shepard:117-152
+
+   **Benefits:**
+
+   - Reduced infrastructure complexity (3 databases instead of 4)
+   - Potential for cross-schema queries between timeseries and spatial data
+   - Simplified backup procedures
+
+   **Trade-offs:**
+
+   - Shared resource contention between timeseries and spatial workloads
+   - Need to carefully tune memory allocation
+   - Risk of one workload impacting the other
+2. **Optimize Cross-Database Permission Checks**
+
+   The current pattern requires Neo4j queries for every data access: shepard:110-132
+
+   **Problem:**  Every timeseries query must first check permissions in Neo4j, then fetch data from TimescaleDB
+
+   **Recommendations:**
+
+   - Implement permission caching with TTL (current cache exists but is basic)
+   - Denormalize permissions into TimescaleDB/PostGIS for read-heavy workloads
+   - Use database-level row security policies where possible
+
+---
+
+## 2. PERFORMANCE BOTTLENECKS AND IMPROVEMENTS
+
+### 2.1 Startup Time Optimization
+
+#### **Performance Issue P1: Sequential Database Initialization**
+
+**Priority: HIGH**
+
+The four-phase startup is entirely sequential: shepard:20-37
+
+**Measured Impact:**
+
+- PKI initialization: minimal
+- Database connection waiting: **variable, potentially minutes if databases are slow to start**
+- Migrations: **can take significant time with large datasets**
+- Neo4j connection: minimal
+
+**Bottleneck Analysis:**
+
+1. **Migration Runner Waits for ALL Databases** shepard:49-64
+
+   This only waits for Neo4j, but Flyway migrations run serially and block startup: shepard:50-64
+
+2. **No Parallel Database Initialization**  
+   All databases could be checked and migrated in parallel
+
+**Recommendations:**
+
+1. **Parallelize Database Connection Checks**
+
+   - Use `CompletableFuture` or virtual threads to check all databases simultaneously
+   - Fail fast if any critical database is unavailable
+   - Continue if optional databases (PostGIS) are unavailable
+2. **Lazy Migration Execution**
+
+   - Move Flyway migrations to background threads
+   - Use database-level locks to prevent concurrent migrations
+   - Allow REST API to start before migrations complete for read-only operations
+   - Return 503 Service Unavailable for write operations during migration
+3. **Optimize Flyway Migration Performance** shepard:53-55
+
+   - Enable Flyway parallel execution for independent migrations
+   - Consider using Java-based migrations for performance-critical changes
+   - Implement migration progress monitoring endpoint
+
+**Expected Improvement:**
+
+- Parallel connection checks: 60-80% reduction in wait time
+- Background migrations: Application available in seconds instead of minutes
+
+---
+
+### 2.2 Database Query Performance
+
+#### **Performance Issue P2: Cross-Database Query Coordination**
+
+**Priority: HIGH**
+
+Every data access requires coordinating queries across multiple databases:
+
+**Example Flow for Timeseries Retrieval:**
+
+1. Check permissions in Neo4j
+2. Verify container exists in Neo4j
+3. Fetch timeseries metadata from TimescaleDB
+4. Query data points from TimescaleDB shepard:148-189
+
+**Performance Analysis:**
+
+1. **Permission Check Latency**
+
+   - Each request makes at least one Neo4j query
+   - Cache exists but implementation is basic: shepard:111-112
+2. **N+1 Query Problem in Parallel Streams** shepard:191-212
+
+   This creates N permission checks for N timeseries in parallel, overwhelming Neo4j
+
+**Recommendations:**
+
+1. **Implement Batch Permission Checks**
+
+   - Add `checkPermissionsBatch(List<Long> entityIds)` method
+   - Execute single Cypher query to check all entities at once
+   - Reduces N queries to 1 query
+2. **Enhance Permission Cache**
+
+   - Use proper cache eviction policy (LRU, TTL-based)
+   - Consider Redis or Caffeine cache instead of in-memory Map
+   - Cache at user+entity level, not just key string
+   - Implement cache warming for frequently accessed entities
+3. **Add Database-Level Read Replicas**
+
+   - Configure read replicas for Neo4j and TimescaleDB
+   - Route permission checks to replicas to reduce load on primary
+   - Particularly important for Neo4j which handles all permission queries
+4. **Optimize TimescaleDB Query Performance**
+
+   The repository uses native queries with proper TimescaleDB functions: shepard:139-150
+
+   Current optimizations are good (hypertables, compression), but consider:
+
+   - Pre-aggregate common query patterns into materialized views
+   - Implement query result caching for frequently accessed time ranges
+   - Use TimescaleDB continuous aggregates for common aggregation functions
+
+---
+
+### 2.3 Migration Process Performance
+
+#### **Performance Issue P3: InfluxDB to TimescaleDB Migration Efficiency**
+
+**Priority: MEDIUM** (historical, but important for future migrations)
+
+The migration runs in a separate container: shepard:173-185
+
+**Analysis:**
+
+The repository uses PostgreSQL COPY command for bulk inserts, which is optimal: shepard:73-130
+
+**Strengths:**
+
+- COPY command is the fastest method for PostgreSQL bulk inserts
+- Separate container prevents impacting production system
+- Batch processing with 20,000 rows per batch
+
+**Recommendations for Future Migrations:**
+
+1. **Add Migration Progress Monitoring**
+
+   - Expose migration progress via HTTP endpoint
+   - Track rows migrated, errors encountered, time remaining
+   - Store progress in database to support resume on failure
+2. **Implement Parallel Migration Workers**
+
+   - Partition data by container_id or time range
+   - Run multiple migration workers in parallel
+   - Use connection pooling to prevent overwhelming target database
+3. **Add Data Validation Steps**
+
+   - Implement row count verification
+   - Add checksum validation for critical data
+   - Create rollback capability for failed migrations
+
+---
+
+### 2.4 Frontend-Backend Communication
+
+#### **Performance Issue P4: OpenAPI Client Generation Overhead**
+
+**Priority: LOW-MEDIUM**
+
+The frontend uses a locally generated TypeScript client: shepard:16-16
+
+**Analysis:**
+
+The client is generated from OpenAPI spec, which ensures type safety but has considerations:
+
+**Current Approach:**
+
+- File-based dependency on locally generated client
+- Regeneration required whenever backend API changes
+- No versioning between frontend and backend client
+
+**Recommendations:**
+
+1. **Implement API Versioning**
+
+   - Add version prefix to API paths (e.g., `/shepard/api/v1`)
+   - Support multiple API versions simultaneously during transitions
+   - Use OpenAPI version field properly
+2. **Optimize Client Bundle Size**
+
+   - Current client likely includes all 100+ endpoints
+   - Implement tree-shaking friendly exports
+   - Consider code-splitting API modules (timeseries, files, collections)
+3. **Add Response Caching Strategy**
+
+   - Implement HTTP cache headers for GET requests
+   - Use ETags for conditional requests
+   - Add client-side caching layer for frequently accessed data
+4. **Consider GraphQL for Complex Queries**
+
+   - For queries that need data from multiple containers/timeseries
+   - Reduces over-fetching and under-fetching
+   - Single request instead of multiple REST calls
+   - **Trade-off:**  Adds complexity, requires GraphQL infrastructure
+
+---
+
+## 3. SUMMARY OF RECOMMENDATIONS
+
+### High Priority (Implement First)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| ------------------------------------------------------------------| ------------------------------------------------| --------|
+|**A1**|Implement async database initialization with timeouts|Improved reliability, faster failure detection|Medium|
+|**P1**|Parallelize database connection checks and migrate to background|60-80% startup time reduction|Medium|
+|**P2**|Batch permission checks and enhance caching|50-70% reduction in Neo4j load|Medium|
+
+### Medium Priority (Implement Next)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| ---------------------------------------------| ----------------------------------------------| -------------|
+|**A2**|Decompose REST endpoints into sub-resources|Improved maintainability|Medium-High|
+|**A3**|Migrate to runtime feature toggles|Deployment flexibility|Medium|
+|**P2**|Add TimescaleDB continuous aggregates|Faster query performance for common patterns|Medium|
+|**A4**|Consolidate TimescaleDB + PostGIS instances|Reduced infrastructure complexity|Low-Medium|
+
+### Low Priority (Future Enhancements)
+
+|Issue|Recommendation|Expected Impact|Effort|
+| -------| -----------------------------------| -------------------------------------------| --------|
+|**P3**|Add migration progress monitoring|Better visibility for future migrations|Low|
+|**P4**|Implement API versioning|Smoother API evolution|Medium|
+|**P4**|Optimize client bundle size|Marginal frontend performance improvement|Low|
+
+---
+
+## 4. IMPLEMENTATION ROADMAP
+
+### Phase 1: Reliability Improvements (2-3 weeks)
+
+1. Add database connection timeouts
+2. Implement parallel connection checks
+3. Enhance health check endpoints
+4. Add batch permission checking
+
+### Phase 2: Performance Optimization (3-4 weeks)
+
+1. Improve permission caching
+2. Implement background migrations
+3. Add TimescaleDB continuous aggregates
+4. Optimize query patterns
+
+### Phase 3: Architectural Refactoring (4-6 weeks)
+
+1. Decompose large REST endpoint classes
+2. Migrate to runtime feature toggles
+3. Consolidate PostgreSQL instances
+4. Implement API versioning
+
+---
+
+## 5. RISK ASSESSMENT
+
+### Critical Risks
+
+1. **Backwards Compatibility**
+
+   - Risk: API changes breaking existing clients
+   - Mitigation: Implement versioning before major changes
+2. **Data Consistency During Async Initialization**
+
+   - Risk: Partial system state leading to inconsistent data
+   - Mitigation: Implement proper transaction boundaries and state validation
+3. **Cache Invalidation Complexity**
+
+   - Risk: Stale permission data leading to security issues
+   - Mitigation: Conservative TTLs, explicit invalidation on permission changes
+
+### Medium Risks
+
+1. **Database Consolidation Performance**
+
+   - Risk: Resource contention between TimescaleDB and PostGIS
+   - Mitigation: Thorough load testing before production deployment
+2. **Feature Toggle State Management**
+
+   - Risk: Inconsistent behavior across instances
+   - Mitigation: Centralized feature flag service, audit logging
+
+---
+
+## Notes
+
+This analysis is based on the current state of the Shepard platform as of the main branch. The recommendations prioritize:
+
+1. **Reliability over features** - Ensuring system stability during database outages
+2. **Incremental improvements** - Changes can be implemented independently
+3. **Backwards compatibility** - No breaking changes to existing APIs unless versioned
+4. **Evidence-based decisions** - All recommendations reference existing ADRs and implementation patterns
+
+The polyglot persistence architecture is well-justified per ADR-008, and the main opportunities lie in optimizing coordination between databases rather than consolidation. The TimescaleDB migration from InfluxDB shows the team's capability to execute major architectural changes successfully.
+
+### Citations
+
+**File:**  backend/src/main/java/de/dlr/shepard/ShepardMain.java (L20-37)
+
+```java
+  @Startup
+  void init() {
+    Log.info("Starting shepard backend");
+
+    var pkiHelper = new PKIHelper();
+    var migrationRunner = new MigrationsRunner();
+    pkiHelper.init();
+
+    Log.info("Waiting for databases");
+    migrationRunner.waitForConnection();
+
+    Log.info("Run database migrations");
+    migrationRunner.apply();
+
+    Log.info("Initialize databases");
+    neo4j.connect();
+    Log.info("Connection established to neo4j database.");
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/neo4j/MigrationsRunner.java (L49-64)
+
+```java
+  public void waitForConnection() {
+    while (true) {
+      try {
+        driver.verifyConnectivity();
+        break;
+      } catch (Exception e) {
+        Log.warn("Cannot connect to neo4j database. Retrying...");
+      }
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        Log.error("Cannot sleep while waiting for neo4j Connection");
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/healthz/NeoHealthCheck.java (L10-19)
+
+```java
+@Readiness
+@ApplicationScoped
+public class NeoHealthCheck implements HealthCheck {
+
+  private static IConnector neo4j = NeoConnector.getInstance();
+
+  @Override
+  public HealthCheckResponse call() {
+    return HealthCheckResponse.named("Neo4J connection health check").status(neo4j.alive()).build();
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/endpoints/TimeseriesRest.java (L61-529)
+
+```java
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path(Constants.TIMESERIES_CONTAINERS)
+@RequestScoped
+public class TimeseriesRest {
+
+  @Inject
+  TimeseriesService timeseriesService;
+
+  @Inject
+  TimeseriesCsvService timeseriesCsvService;
+
+  @Inject
+  TimeseriesContainerService timeseriesContainerService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Context
+  private SecurityContext securityContext;
+
+  @GET
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get all timeseries containers")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.QP_NAME)
+  @Parameter(name = Constants.QP_PAGE)
+  @Parameter(name = Constants.QP_SIZE)
+  @Parameter(name = Constants.QP_ORDER_BY_ATTRIBUTE)
+  @Parameter(name = Constants.QP_ORDER_DESC)
+  public Response getAllTimeseriesContainers(
+    @QueryParam(Constants.QP_NAME) String name,
+    @QueryParam(Constants.QP_PAGE) @PositiveOrZero Integer page,
+    @QueryParam(Constants.QP_SIZE) @PositiveOrZero Integer size,
+    @QueryParam(Constants.QP_ORDER_BY_ATTRIBUTE) ContainerAttributes orderBy,
+    @QueryParam(Constants.QP_ORDER_DESC) Boolean orderDesc
+  ) {
+    var params = new QueryParamHelper();
+    if (name != null) params = params.withName(name);
+    if (page != null && size != null) params = params.withPageAndSize(page, size);
+    if (orderBy != null) params = params.withOrderByAttribute(orderBy, orderDesc);
+    var containers = timeseriesContainerService.getAllContainers(params);
+    var result = TimeseriesContainerIOMapper.map(containers);
+
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries container")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var container = timeseriesContainerService.getContainer(timeseriesContainerId);
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).build();
+  }
+
+  @POST
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Create a new timeseries container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Transactional
+  public Response createTimeseriesContainer(
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesContainerIO.class))
+    ) @Valid TimeseriesContainerIO timeseriesContainer
+  ) {
+    var container = timeseriesContainerService.createContainer(timeseriesContainer);
+    return Response.ok(TimeseriesContainerIOMapper.map(container)).status(Status.CREATED).build();
+  }
+
+  @DELETE
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}")
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Delete timeseries container")
+  @APIResponse(description = "deleted", responseCode = "204")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response deleteTimeseriesContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    timeseriesContainerService.deleteContainer(timeseriesContainerId);
+    return Response.status(Status.NO_CONTENT).build();
+  }
+
+  @POST
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Upload timeseries to container")
+  @APIResponse(
+    description = "created",
+    responseCode = "201",
+    content = @Content(schema = @Schema(implementation = Timeseries.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response createTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+    ) @Valid TimeseriesWithDataPoints payload
+  ) {
+    TimeseriesEntity timeseriesEntity = timeseriesService.saveDataPoints(
+      containerId,
+      payload.getTimeseries(),
+      payload.getPoints()
+    );
+
+    return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
+  }
+
+  @Deprecated(forRemoval = true)
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.AVAILABLE)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(
+    description = "Get timeseries available. Deprecated, use /timeseriesContainers/{containerId}/timeseries instead."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = Timeseries.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesAvailable(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    List<TimeseriesEntity> timeseriesEntityList;
+
+    try {
+      timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    } catch (InvalidPathException | InvalidAuthException e) {
+      return Response.ok(Collections.emptyList()).build();
+    }
+
+    List<Timeseries> timeseriesListWithoutId = timeseriesEntityList
+      .stream()
+      .map(entity -> new Timeseries(entity))
+      .toList();
+
+    return Response.ok(timeseriesListWithoutId).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get all available timeseries for that container.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT)
+  @Parameter(name = Constants.DEVICE)
+  @Parameter(name = Constants.LOCATION)
+  @Parameter(name = Constants.SYMBOLICNAME)
+  @Parameter(name = Constants.FIELD)
+  public Response getTimeseriesOfContainer(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) String measurement,
+    @QueryParam(Constants.DEVICE) String device,
+    @QueryParam(Constants.LOCATION) String location,
+    @QueryParam(Constants.SYMBOLICNAME) String symbolicName,
+    @QueryParam(Constants.FIELD) String field
+  ) {
+    var timeseriesEntityList = timeseriesService.getTimeseriesAvailable(timeseriesContainerId);
+    var timeseriesList = timeseriesEntityList
+      .stream()
+      .map(entity -> new TimeseriesIO(entity))
+      .filter(
+        entity ->
+          (measurement == null || measurement.isEmpty() || entity.getMeasurement().equals(measurement)) &&
+          (device == null || device.isEmpty() || entity.getDevice().equals(device)) &&
+          (location == null || location.isEmpty() || entity.getLocation().equals(location)) &&
+          (symbolicName == null || symbolicName.isEmpty() || entity.getSymbolicName().equals(symbolicName)) &&
+          (field == null || field.isEmpty() || entity.getField().equals(field))
+      )
+      .toList();
+    return Response.ok(timeseriesList).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.TIMESERIES + "/{" + Constants.TIMESERIES_ID + "}")
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries by id.")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TimeseriesIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response getTimeseriesById(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @PathParam(Constants.TIMESERIES_ID) @NotNull @PositiveOrZero Integer timeseriesId
+  ) {
+    var timeseries = timeseriesService.getTimeseriesById(timeseriesContainerId, timeseriesId);
+    return Response.ok(new TimeseriesIO(timeseries)).build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get timeseries payload")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = TimeseriesWithDataPoints.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  public Response getTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
+    @QueryParam(Constants.GROUP_BY) Long groupBy,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+  ) throws Exception {
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
+      start,
+      end,
+      groupBy,
+      fillOption,
+      function
+    );
+    var timeseriesData = timeseriesService.getDataPointsByTimeseries(timeseriesContainerId, timeseries, queryParams);
+    TimeseriesWithDataPoints timeseriesWithData = new TimeseriesWithDataPoints(timeseries, timeseriesData);
+    return Response.ok(timeseriesWithData).build();
+  }
+
+  @GET
+  @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.EXPORT)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Export timeseries payload")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_OCTET_STREAM,
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
+    )
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  @Parameter(name = Constants.START, required = true)
+  @Parameter(name = Constants.END, required = true)
+  @Parameter(name = Constants.FUNCTION)
+  @Parameter(name = Constants.GROUP_BY)
+  @Parameter(name = Constants.FILLOPTION)
+  public Response exportTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    @QueryParam(Constants.START) @NotNull @PositiveOrZero Long start,
+    @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
+    @QueryParam(Constants.FUNCTION) AggregateFunction function,
+    @QueryParam(Constants.GROUP_BY) Long groupBy,
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+  ) throws IOException {
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
+      start,
+      end,
+      groupBy,
+      fillOption,
+      function
+    );
+    var inputStream = timeseriesCsvService.exportTimeseriesDataToCsv(timeseriesContainerId, timeseries, queryParams);
+
+    return Response.ok(inputStream, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"timeseries-export.csv\"")
+      .build();
+  }
+
+  @POST
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.IMPORT)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Import timeseries payload")
+  @APIResponse(description = "ok", responseCode = "200")
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Subscribable
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Response importTimeseries(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    MultipartBodyFileUpload body
+  ) throws IOException {
+    String filePath = body.fileUpload != null ? body.fileUpload.uploadedFile().toString() : null;
+
+    if (filePath == null) {
+      throw new WebApplicationException(Status.INTERNAL_SERVER_ERROR);
+    }
+
+    timeseriesCsvService.importTimeseriesFromCsv(timeseriesContainerId, filePath);
+    return Response.ok().build();
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public PermissionsIO getTimeseriesPermissions(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var permissions = permissionsService.getPermissionsOfEntity(timeseriesContainerId);
+    return new PermissionsIO(permissions);
+  }
+
+  @PUT
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PERMISSIONS)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Edit permissions")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public PermissionsIO editTimeseriesPermissions(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = PermissionsIO.class))
+    ) @Valid PermissionsIO permissions
+  ) {
+    var updatedPermissions = permissionsService.updatePermissionsByNeo4jId(permissions, timeseriesContainerId);
+    if (updatedPermissions == null) throw new NotFoundException();
+    return new PermissionsIO(updatedPermissions);
+  }
+
+  @GET
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.ROLES)
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(description = "Get roles")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = Roles.class))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  public Roles getTimeseriesRoles(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId
+  ) {
+    var roles = permissionsService.getUserRolesOnEntity(
+      timeseriesContainerId,
+      securityContext.getUserPrincipal().getName()
+    );
+    if (roles == null) throw new NotFoundException();
+    return roles;
+  }
+
+  @Schema(type = SchemaType.STRING, format = "binary", description = "Timeseries as CSV")
+  public interface UploadItemSchema {}
+
+  public class UploadFormSchema {
+
+    @Schema(required = true)
+    public UploadItemSchema file;
+  }
+
+  @Schema(implementation = UploadFormSchema.class)
+  public static class MultipartBodyFileUpload {
+
+    @RestForm(Constants.FILE)
+    public FileUpload fileUpload;
+  }
+}
+```
+
+**File:**  backend/src/main/resources/application.properties (L50-64)
+
+```properties
+# TimescaleDB
+
+quarkus.datasource.db-kind=postgresql
+quarkus.flyway.baseline-on-migrate=true
+quarkus.flyway.migrate-at-start=true
+quarkus.flyway.locations=db/migration,classpath:de/dlr/shepard/data/timeseries/migrations
+quarkus.hibernate-orm.packages=de.dlr.shepard.data.timeseries
+
+# Spatial Database
+# https://quarkus.io/guides/flyway#multiple-datasources
+quarkus.datasource.spatial.db-kind=postgresql
+quarkus.flyway.spatial.active=${shepard.spatial-data.enabled}
+quarkus.flyway.spatial.baseline-on-migrate=true
+quarkus.flyway.spatial.locations=db/spatial/migration
+quarkus.flyway.spatial.migrate-at-start=true
+```
+
+**File:**  backend/src/main/resources/application.properties (L120-125)
+
+```properties
+# Versioning Feature Toggle
+shepard.versioning.enabled=false
+
+# Spatial Data Feature Toggle
+shepard.spatial-data.enabled=false
+
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/common/configuration/feature/toggles/VersioningFeatureToggle.java (L1-13)
+
+```java
+package de.dlr.shepard.common.configuration.feature.toggles;
+
+public class VersioningFeatureToggle {
+
+  public static final String TOGGLE_PROPERTY = "shepard.versioning.enabled";
+
+  public static final String IS_ENABLED_METHOD_ID =
+    "de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle#isEnabled";
+
+  public static boolean isEnabled() {
+    return TogglePropertyUtil.isToggleEnabled(TOGGLE_PROPERTY);
+  }
+}
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/context/collection/endpoints/CollectionVersioningRest.java (L39-39)
+
+```java
+@IfBuildProperty(name = VersioningFeatureToggle.TOGGLE_PROPERTY, stringValue = "true")
+```
+
+**File:**  architecture/src/09_architecture_decisions/008-database-target-architecture.adoc (L1-139)
+
+```text
+ifndef::imagesdir[:imagesdir: ../../images]
+
+[[adr008]]
+=== ADR-008 Database Target Architecture
+
+[%autowidth.stretch]
+[cols="h,1a"]
+|===
+|Date|17.09.2024
+|Status|Done
+
+|Context|
+*Current state*
+
+At the moment shepard uses three different databases:
+
+* Neo4j (graph db)
+* MongoDB (document db)
+* InfluxDB (timeseries db)
+
+*What was the reason for choosing different databases?*
+
+* In the very beginning the data was directly stored into the databases (influxdb, neo4j and mongodb), no domain model, just the data
+* In the second step the backend was created, the REST api was created and also the domain model
+* Special features of timeseries database are already in use (min, max, sum, etc.)
+* From a user perspective it feels easier to navigate through a graph database instead of a relational database
+
+*Known issues*
+
+* We have to use three different database query languages
+* Maintenance of three different databases and their libraries
+* For backup you have to consider all three databases
+* Issues with Neo4j
+** When to load relationships with data objects and how many and how does it influence performance.
+You have to know how the ogm works.
+** We had some issues with caching that we do not fully understand.
+** Lack of a large ecosystem (e.g. only one migration library available (private one))
+* Issues with InfluxDb
+** We are using influxdb v1.8 atm.
+** New versions of influxdb are completely different (completely new query language, etc.)
+** Bad feeling about a shift to paid services.
+** The library that we use to communicate with influxdb lacks some important features like query injection prevention.
+* Issues with MongoDB
+** The update process needs manual steps
+
+|Possible Solutions|
+
+1. We leave it as it is
+2. Neo4j + MongoDB
+3. Postgres only (Replace all database technologies with postgres)
+4. Neo4j + MongoDB + Postgres (replace influxdb with postgres timescaledb)
+5. Postgres + MongoDB (Replace influxdb and neo4j)
+6. Neo4j + Postgres (Replace influxdb and mongodb with postgres)
+
+image::adr/possible-database-architectures.png[]
+
+|Decisions|
+*Decision 1: Leave it as it is*
+This is not an option because of known issues with InfluxDB.
+We have to find a solution at least for that database.
+
+*Decision 2: Meta Data in Neo4j or Postgres*
+[cols="1,2,2"]
+!===
+!!Neo4j!Postgres
+!Migration effort!None!Big
+!Onboarding of new developers!Rather big!Rather small
+!Familiarity in the team!The team is familiar with Neo4j!The team is not familiar with Postgres
+!Ecosystem!Not big!Huge ecosystem, frequently used for a long time
+!Maintenance effort!
+Big, as we will have additional databases for data storage!Small to medium, if we use Postgres for all data persistence!
+Performance!Comparable if properly used!Comparable if properly used
+!===
+
+On the green field Postgres might be the better option with less maintenance effort and it’s big ecosystem.
+In the context of shepard we already have Neo4j, we would need to migrate data, the experience in the team is bigger for Neo4j.
+_All in all we decide to continue with Neo4j._
+
+*Decision 3: Database for Timeseries & Spatial Data*
+[cols="1,2,2"]
+!===
+!!MongoDB!Postgres
+!Migration Complexity!
+Rather easy, MongoDB is already there and we only have to migrate timeseries data!
+Medium migration effort
+
+!Performance!Performance is probably worse than Postgres for timeseries and spatial data!
+!Support for spatial data!Only supports 2D spatial data, no trivial and performant way to support 3D!
+
+!Summary!Not an option due to performance and spatial data!
+!===
+
+_As MongoDB does not seem to perform well for timeseries and spatial data we decide to store timeseries (and in the future spatial data) in postgres with timescaledb and PostGIS._
+
+*Decision 4: Database for Files & Structured Data*
+[cols="1,2,2,2"]
+!===
+!!Postgres for structured data + Blob storage (MinIO)(option 5)!
+Keep MongoDB(option 4)!
+Postgres(option 6)
+
+!Migration Complexity!All structured data and files have to be migrated!No migration effort!
+All structured data and files have to be migrated
+
+!Onboarding new Developers!!!
+New developers only have to know how to interact with two databases
+
+!Maintenance effort (updates of databases & clients)!
+We still have three databases to maintain!
+We still have three databases to maintain!
+We only have to maintain one database in addition to Neo4j
+
+!Reliability!
+Probably also very stable!
+MongoDB hasn’t been touched in months, so it reliably does it’s job!
+Probably also very stable
+
+!Performance (file size around 5-8 GB)!Good!Good!Unknown
+
+!Summary!
+This solution is not better than MongoDB, so it’s not feasible given the migration effort!!
+!===
+
+Postgres supports two ways for storing binary data link (https://www.postgresql.org/docs/7.4/jdbc-binary-data.html[bytea column and LargeObject API]).
+
+For large files we have to use the LargeObject API.
+But in both cases the data is stored in a single table.
+For tables we have a limitation of 32 TB (per-table size limitation).
+If we want to store multiple projects in one shepard instance, we might exceed this limit.
+So we are not able to store large objects in postgres.
+_The decision is to stay with MongoDB for files and structured data._
+
+|Consequences|
+
+* We still have to support three different databases.
+* Complexity and maintenance costs are higher than with a single database, but just as high as now.
+* Same applies to the backup up of three databases.
+
+|===
+```
+
+**File:**  architecture/src/09_architecture_decisions/014-spatial-database.adoc (L100-128)
+
+```text
+
+== Performance Tests
+
+Performance tests were executed on an already created dataset that consists of 7Mio data points.
+
+[cols="2a,1a,1a"]
+!===
+!Performance Test Type!postgis!pgvector
+!Create single data points for 1 minute.
+!2148 new data points
+!2106 new data points
+
+!Bounding Box filter (ca. 500 returned points)
+!380ms
+!59000ms
+
+!Bounding Sphere filter (ca. 500 returned points)
+!795ms
+!83000ms
+
+!KNN filter (k = 10)
+!53ms
+!45ms
+
+!Bounding Box with Metadata Filter (ca. 500 returned points)
+!265ms
+!42000ms
+
+!===
+```
+
+**File:**  infrastructure/docker-compose.yml (L117-152)
+
+```yaml
+  timescaledb:
+    image: timescale/timescaledb:2.18.1-pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
+      PGDATA: /var/lib/postgres/data
+    volumes:
+      - /opt/shepard/timescaledb:/var/lib/postgres/data
+      - ./docker-entrypoint-initdb.d/postgres/00-init-postgres-db.sh:/docker-entrypoint-initdb.d/00-init-postgres-db.sh
+    restart: unless-stopped
+    networks:
+      - shepard
+
+  postgis:
+    image: postgis/postgis:16-3.5
+    container_name: postgis
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SHEPARD_USER: ${POSTGRES_SHEPARD_USER}
+      POSTGRES_SHEPARD_USER_PW: ${POSTGRES_SHEPARD_USER_PW}
+    shm_size: "6GB"
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker-entrypoint-initdb.d/postgis/00-init-postgis-db.sh:/docker-entrypoint-initdb.d/00-init-postgis-db.sh
+      - /opt/shepard/postgis/db:/var/lib/postgresql/data
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles:
+      - spatial
+```
+
+**File:**  infrastructure/docker-compose.yml (L173-185)
+
+```yaml
+  timescale-migration-preparation:
+    image: registry.gitlab.com/dlr-shepard/shepard/timescale-migration-preparation:5.0.0
+    volumes:
+      - ./log:/app/log
+    env_file:
+      - .env
+    depends_on:
+      - influxdb
+      - neo4j
+    networks:
+      - shepard
+    profiles:
+      - timescale-migration-preparation
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/auth/permission/services/PermissionsService.java (L110-132)
+
+```java
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    String cacheKey = String.format("%s,%s,%s", entityId, accessType.toString(), username);
+    if (permissionLastSeenCache.isKeyCached(cacheKey)) return true;
+
+    Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
+
+    boolean isAllowed;
+    if (userRolesOnEntity.isOwner()) {
+      isAllowed = true;
+    } else {
+      isAllowed = switch (accessType) {
+        case Read -> userRolesOnEntity.isReader() || userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
+        case Write -> userRolesOnEntity.isWriter() || userRolesOnEntity.isManager();
+        case Manage -> userRolesOnEntity.isManager();
+        case None -> false;
+      };
+    }
+
+    if (isAllowed) {
+      permissionLastSeenCache.cacheKey(cacheKey);
+    }
+    return isAllowed;
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/services/TimeseriesService.java (L148-189)
+
+```java
+  public List<TimeseriesDataPoint> getDataPointsByTimeseries(
+    long containerId,
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    return getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams);
+  }
+
+  /**
+   * Retrieve a list of DataPoints for a time-interval with options to grouping/
+   * time slicing, filling and aggregating.
+   *
+   * This function does not check if the container specified by containerId is
+   * accessible.
+   * We add <code>@ActivateRequestContext</code> in order to call this method in a
+   * parallel stream.
+   * The container check relies on an active request context.
+   * However, the 'ActivateRequestContext' annotation does not allow for a
+   * container check.
+   *
+   * @param containerId
+   * @param timeseries
+   * @param queryParams
+   * @return List<TimeseriesDataPoint>
+   */
+  @ActivateRequestContext
+  public List<TimeseriesDataPoint> getDataPointsByTimeseriesActivatedRequestContext(
+    long containerId,
+    Timeseries timeseries,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    Optional<TimeseriesEntity> timeseriesEntity = this.timeseriesRepository.findTimeseries(containerId, timeseries);
+
+    if (timeseriesEntity.isEmpty()) return Collections.emptyList();
+
+    int timeseriesId = timeseriesEntity.get().getId();
+    DataPointValueType valueType = timeseriesEntity.get().getValueType();
+
+    return this.timeseriesDataPointRepository.queryDataPoints(timeseriesId, valueType, queryParams);
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/services/TimeseriesService.java (L191-212)
+
+```java
+  public List<TimeseriesWithDataPoints> getManyTimeseriesWithDataPoints(
+    Long containerId,
+    List<Timeseries> timeseriesList,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    ConcurrentLinkedQueue<TimeseriesWithDataPoints> timeseriesWithDataPointsQueue = new ConcurrentLinkedQueue<
+      TimeseriesWithDataPoints
+    >();
+    timeseriesList
+      .parallelStream()
+      .forEach(timeseries -> {
+        timeseriesWithDataPointsQueue.add(
+          new TimeseriesWithDataPoints(
+            timeseries,
+            getDataPointsByTimeseriesActivatedRequestContext(containerId, timeseries, queryParams)
+          )
+        );
+      });
+    return new ArrayList<TimeseriesWithDataPoints>(timeseriesWithDataPointsQueue);
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TimeseriesDataPointRepository.java (L73-130)
+
+```java
+  /**
+   * Insert a list of timeseries data points into the database using the COPY command.
+   * This is used by the influxdb migration but can also be used for csv import or
+   * similar scenarios.
+   * @param entities
+   * @param timeseriesEntity
+   */
+  @Timed(value = "shepard.timeseries-data-point.copy-insert")
+  public void insertManyDataPointsWithCopyCommand(
+    List<TimeseriesDataPoint> entities,
+    TimeseriesEntity timeseriesEntity
+  ) throws SQLException {
+    try (Connection conn = defaultDataSource.getConnection()) {
+      PGConnection pgConn = (PGConnection) conn.unwrap(PGConnection.class);
+      CopyManager copyManager = pgConn.getCopyAPI();
+
+      var columnName = getColumnName(timeseriesEntity.getValueType());
+      var sb = new StringBuilder();
+
+      timeseriesEntity.getId();
+
+      // Strings must be quoted in double quotes in case they contain a comma which is also the delimiter
+      if (timeseriesEntity.getValueType() == DataPointValueType.String) {
+        for (int i = 0; i < entities.size(); i++) {
+          TimeseriesDataPoint entity = entities.get(i);
+          sb
+            .append(timeseriesEntity.getId())
+            .append(",")
+            .append(entity.getTimestamp())
+            .append(",\"")
+            .append(entity.getValue())
+            .append("\"\n");
+        }
+      } else {
+        for (int i = 0; i < entities.size(); i++) {
+          TimeseriesDataPoint entity = entities.get(i);
+          sb
+            .append(timeseriesEntity.getId())
+            .append(",")
+            .append(entity.getTimestamp())
+            .append(",")
+            .append(entity.getValue())
+            .append("\n");
+        }
+      }
+
+      InputStream input = new ByteArrayInputStream(sb.toString().getBytes());
+      String sql = String.format(
+        "COPY timeseries_data_points (timeseries_id, time, %s) FROM STDIN WITH (FORMAT csv);",
+        columnName
+      );
+
+      copyManager.copyIn(sql, input);
+    } catch (IOException ex) {
+      Log.errorf("IOException during copy insert: %s", ex.getMessage());
+      throw new RuntimeException("IO Error while inserting data points", ex);
+    }
+  }
+```
+
+**File:**  backend/src/main/java/de/dlr/shepard/data/timeseries/repositories/TimeseriesDataPointRepository.java (L139-150)
+
+```java
+  @Timed(value = "shepard.timeseries-data-point.query")
+  public List<TimeseriesDataPoint> queryDataPoints(
+    int timeseriesId,
+    DataPointValueType valueType,
+    TimeseriesDataPointsQueryParams queryParams
+  ) {
+    assertNotIntegral(queryParams.getFunction());
+    assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
+    assertCorrectValueTypesForFillOption(queryParams.getFillOption(), valueType);
+    assertTimeIntervalForFillOption(queryParams.getTimeSliceNanoseconds(), queryParams.getFillOption());
+    assertAggregationSetForFillOrGrouping(
+      queryParams.getFunction(),
+```
+
+**File:**  frontend/package.json (L16-16)
+
+```json
+    "@dlr-shepard/backend-client": "file:../backend-client",
+```
+
+# FLINT
+
+- Inhalte:
+
+  - vom Bauteil zur Prüfung
+
+	- CAD → Punktewolke (vom zu vermessenden Bauteil) → Programmgenerierung → US-Vermessung → (Abstandsregelung)
+	- shepard als drehscheibe -- databus -- databus reference
+  - US-Steuerung Improvement
+  - Analyse Tooling US-Daten
+  - Shepard Föderation / Teilen / Verlinkung
+
+	- Ideen:
+
+	  - "remote shepard reference"
+	  - databus
+	  - -x Dataspace Ansatz
+Die in Berechtigungen und Datensichtbarkeit abgestufte Integration bestehender und aktuell im Aufbau befindlicher Systeme (z.B. verteilte Shepard-Instanzen, das eData-Repositorium, inst.dlr, twinstash, Digitaler Atlas 2.0, ODIX) leistet hier einen zentralen Beitrag für die sichere und FAIRe Nachnutzung und Technologietransfer von DLR-Produkten auch über die HGF hinaus.
+
+Diese Beiträge sind somit nicht nur innerhalb der Stoßrichtungen Daten und Digitalisierung der Organisation der Digitalisierungsstrategie zu sehen, sondern auch als unmittelbare Teile eines DLR-as-a-service-Angebotes.
+
+Ferner sind diese Services maßgebliche Beiträge für die interoperable und ressourceneffiziente Integration von DLR-Produkten in nachfolgende Projekte im Sinne der Stoßrichtungen Künstliche Intelligenz, Cyberphysisches Engineering und Innovative Autonome Systeme.
+
+https://wiki.dlr.de/display/FDM/Workpackages+BT-ZAP
+
+- [ ] Read https://zenodo.org/records/14161466 🆔 20260407-bb6
+
+---
+
+## HMC Project Idea:
+
+- Semantic Satellite Data Storage System SSDSS
+
+- Topics:
+
+  - joint data model development
+  - data integration (import tooling)
+  - shepard features:
+
+	- shepard Spatial erweiterung für geospatial + height
+	- HDF5 container?
+	- ro-crate import (collection)
+  - semantic annotation of space relevant data
+  - data provider
+  - analytics use-case (e.g. semantics based visualisation)
+
+
+Für experimente:
+# HMI ／ Leitstand
+
+- Eingabe Metadaten für Experiment: Name, Beschreibung, Experimentator, ...
+- Datenerfassung An/Aus
+- Logik / Regeln für Anlegen von shepard Unterelementen (z.B. Layers, Tracks) und entsprechenden Referenzen (→ das machte der DRG)
+- Logik für Einsortieren von diskreten Artefakten: (Files)
+
+  - Roboterprogramme (über OPCUA?)
+  - TrackVideo?
+  - TPS Daten
+- Retry bei Kommunikationsproblemen
+- Wiederaufsetzen des Prozess an bestimmter Stelle (z.b. Track)  (→ das machte der DRG in Teilen)
+- Logik für Programmübertragung und Ausführung(süberwachung)
+
+‍
+
+Idee:
+
+Grafana als Visualisierung
+
+- Plugin BusinessForms --> REST API Anbindung von Teilsystemen
+
+  - STC (on, Off, Reload, Config?)
+  - shepard Context manager
+
+	- Über OPC UA server aktuellen Kontext (dataobject etc) bereit stellen? --> monitored vor allem OPC UA variablen und macht daraufhin was
+	- evlt container?
+	- Über REST aktueller zustand
+  - Cell Run Manager
+
+	- Programmupload / management
+	- Programmaufrufe
+	- Über REST aktueller zustand
+
+Offene Frage: Querbeziehungen, *wer* muss *was* von *wem* wissen
+
+
+LLM / genai based data analytics with shepard
+
+Shepard:
+
+- Anfassbare / annotierbare Zeitreihen --> XITASO
+- Metadaten-Templates --> t.b.d.
+
+- Anbindung Komponenten
+
+  - Infusionsanlage --> OPC UA --> stc
+  - Kamerasystem --> Hotfolder
+  - Netzsch DEA --> OPC UA --> stc
+  - Ofen?
+  - Erweiterung shepard timeseries collector Semantik?
+
+Stoßrichtungen
+
+- Shepard Core:
+
+  - Federation
+  - Manufacturing-X Integration → AAS Adapter
+  - Usability:
+
+	- Frontend
+	- Clients
+- Ingest
+
+  - Data Parsers
+  - shepard collectors improvement
+
+	- easier Machine integration
+  - process wizard
+
+  - Data Formats: 
+
+	- HDF5 + HSDS API
+- Analytics
+
+  - API enhancements (support libraries)
+  - MCP Server for LLM use
+  - MCP Server for visualisation
+  - Superset
+- Other
+
+  - Data Traceability, Provenance
+ 
+# Schulungideen Shepard
+
+- [ ] Schulungs- Workshopkonzept shepard entwickeln 🆔 20260407-6fc
+  Wie gehen daten rein? zum Import  
+  Wie gehen daten raus? zu Analyse  
+  Wie geht man mit daten in shepard um?
+
+‍
+
+- Bedarfserhebung?
+
+- welche Formate?
+
+  - Wiederverwendbarkeit?
+  - Tutorials
+  - Webinar
+  - "Northwind" Datensatz zum Spielen?
+
+	- Szenario im Detail? → Transfer
+
+	  - Tapelegen
+	  - Materialtest
+	- RO-Crate Export zur Publikation z. b. bei Zenodo
+  - Team von Personas?  
+	Kollaboratives datenorientiertes Arbeiten
+
+	Mit klarer Story und Szenario  
+	z.B. "Horst" will daten zum Tapelegen analysen
+
+  - FAQ Plattform?
+- User Journey
+
+  ![image](assets/image-20250212142347-3sjpebr.png)  
+  User Workshop:
+
+  <div>
+						  <style>.kg-card {font-family:'Inter Variable',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-size: 1rem;}.kg-card-main {max-width: 800px;margin: 0 auto;display: flex;justify-content: center;}.kg-card-outer {width: 100%;}.kg-bookmark-card,.kg-bookmark-card * {box-sizing: border-box;}.kg-bookmark-card,.kg-bookmark-publisher {position: relative;/* width: 100%; */}.kg-bookmark-card a.kg-bookmark-container,.kg-bookmark-card a.kg-bookmark-container:hover {display: flex;background: var(--bookmark-background-color);text-decoration: none;border-radius: 6px;border: 1px solid rgb(124 139 154 / 25%);overflow: hidden;color: var(--bookmark-text-color);}.kg-bookmark-content {display: flex;flex-direction: column;flex-grow: 1;flex-basis: 100%;align-items: flex-start;justify-content: flex-start;padding: 20px;overflow: hidden;font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell','Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;}.kg-bookmark-title {font-size: 15px;line-height: 1.4em;font-weight: 600;}.kg-bookmark-description {display: -webkit-box;font-size: 14px;line-height: 1.5em;margin-top: 3px;font-weight: 400;max-height: 44px;overflow-y: hidden;opacity: 0.7;}.kg-bookmark-metadata {display: flex;align-items: center;margin-top: 22px;width: 100%;font-size: 14px;font-weight: 500;white-space: nowrap;}.kg-bookmark-metadata>*:not(img) {opacity: 0.7;}.kg-bookmark-icon {width: 20px;height: 20px;margin-right: 6px;}.kg-bookmark-author,.kg-bookmark-publisher {display: inline;}.kg-bookmark-publisher {text-overflow: ellipsis;overflow: hidden;max-width: 240px;white-space: nowrap;display: block;line-height: 1.65em;}.kg-bookmark-metadata>span:nth-of-type(2) {font-weight: 400;}.kg-bookmark-metadata>span:nth-of-type(2):before {content: '•';margin: 0 6px;}.kg-bookmark-metadata>span:last-of-type {overflow: hidden;text-overflow: ellipsis;}.kg-bookmark-thumbnail {position: relative;flex-grow: 1;min-width: 33%;}.kg-bookmark-thumbnail img {/* width: 100%; */height: 100%;object-fit: cover;/* or contain */position: absolute;top: 0;left: 0;border-radius: 0 2px 2px 0;}</style>
+						  <main class="kg-card-main">
+							  <div class="kg-card-outer">
+								  <div class="kg-card kg-bookmark-card">
+									  <a class="kg-bookmark-container" href="https://metroretro.io/BOI0HEQX5E3M">
+										  <div class="kg-bookmark-content">
+											  <div class="kg-bookmark-title">User Research Presentation | Metro Retro</div>
+											  <div class="kg-bookmark-description">A fabulous Metro Retro board.</div>
+											  <div class="kg-bookmark-metadata">
+												  <img class="kg-bookmark-icon" src="https://static.ghost.org/v5.0.0/images/link-icon.svg" alt="Link icon"/>
+												  <span class="kg-bookmark-author">Deqo Software Ltd</span>
+												  <span class="kg-bookmark-publisher">Metro Retro</span>
+											  </div>
+										  </div>
+										  <div class="kg-bookmark-thumbnail">
+												  <img src="https://d.metroretro.io/thumbs/boi0heqx5e3m/8e442516-8de9-4c6b-960e-05346a397c84.png?e=a7cc7375d46fb2f56b0a20bd607242f3" alt="Link thumbnail"/>
+											  </div>
+									  </a>
+								  </div>
+							  </div>
+						  </main>
+					  </div>
+- welche Highlevel Themen?
+
+  - shepard Grundlagen (Funktionsweise / Bedienung)
+
+	- Trennung "Organisationsdaten" und "Payloads"
+	- Strukturen (Collections, Dataobjects, References)
+  - shepard Geräteanbindung
+
+	- Rohdaten / Payload erfassung
+
+	  - Zeitreihen → stc
+	  - Files → t.b.d. hotfolder tool
+	  - ...
+	- Kontextulaliserung...
+  - shepard Datenimport
+  - shepard Analytics Anbindung
+
+	- jupyterlab / python?
+	- Ergebnisse zurückspielen
+	- Grafana
+
+‍
+Realistic reporducible testdataset(s) for shpeard to check for scaling problems. 
+Showcase datasets for showcasing shepards features
+
+# shepard federation
+
+shepard federation
+
+- enable:
+
+  - (rich) referencing across instances
+  - data search across instances
+- shepard federatoin service
+
+  - register instances
+  - negotiate access permissions
+  - ‍
+
+Federating your research data web application—i.e., linking multiple instances so that data, permissions, and search capabilities span them seamlessly—requires careful planning in both data modeling and distributed systems architecture. Here’s a deep dive into a possible approach:
+
+---
+
+## 1. Define a Canonical Data Model and API
+
+- **Unified Schema:** 
+  Your instances must “speak the same language.” Define a canonical schema (consider JSON-LD or an RDF vocabulary) that describes every research item, including metadata like authorship, citations, and persistent identifiers (DOIs, ORCIDs). This uniformity is the foundation for rich data linking.
+- **Exposed APIs:** 
+  Develop RESTful (or GraphQL) APIs that expose this metadata. Each endpoint should mirror the schema so that any instance can push or pull research items from its peers.
+
+**Example JSON snippet:**
+
+```json
+{
+  "id": "instanceA:research-123",
+  "title": "Innovations in Federated Systems",
+  "authors": ["author1", "author2"],
+  "url": "https://instanceA.example.com/research-123",
+  "metadata": {
+    "doi": "10.1234/example",
+    "keywords": ["federation", "web services"]
+  },
+  "permissions": {
+    "read": ["groupA", "groupB"],
+    "write": ["userA"]
+  }
+}
+```
+
+---
+
+## 2. Implement a Federation Protocol & Discovery Mechanism
+
+- **Mutual Discovery:** 
+  Each instance should be able to discover others. You can adopt a method similar to the Fediverse (e.g., [ActivityPub](https://www.w3.org/TR/activitypub/)) where instances publish a “well-known” URL (e.g., `/.well-known/instance`) that describes the available service endpoints.
+- **Push or Poll?** 
+  Decide between a push model (instances notify each other upon data changes using webhook-like callbacks) and a poll-based model (each instance regularly queries peers for updated metadata).
+
+  - **Push Model:**  More real-time, but requires secured endpoints and bi-directional trust.
+  - **Poll Model:**  Simpler to implement initially and easier to audit.
+
+---
+
+## 3. Consistent Access Permissions & Federated Identity
+
+- **Unified Authentication/Authorization:** 
+  If you want consistent permissions across instances, consider federating your identity. Protocols like [OpenID Connect](https://openid.net/connect/) or SAML can help. For instance, if a user logs into Instance A, a trust relationship with Instance B lets that authentication token get validated there, subject to local policy.
+- **Delegated Trust:** 
+  Ensure that when metadata flows between instances, any access control information (who can read/write) is maintained and verifiable. Cryptographic signing of metadata can help verify that permissions were set by a trusted source.
+
+---
+
+## 4. Rich Data Linking Across Instances
+
+- **Link Relationships Explicitly:** 
+  Include in your data model explicit links (e.g., citations, references, authorship connections) that point to resources on different instances. By using globally unique identifiers (like URIs), instances can resolve and enrich the linked data.
+- **Semantic Web Techniques:** 
+  Utilizing RDF and SPARQL (or triple stores) can enhance the semantic linking and querying. This method makes it easy to write queries that span data from multiple instances, inferring relationships dynamically.
+
+---
+
+## 5. Distributed and Federated Search
+
+- **Build a Federated Index:** 
+  Allow each instance to maintain its local search index (using tools like Elasticsearch or Apache Solr). A federated search query would then:
+
+  - Query a central aggregator or simultaneously dispatch queries to each instance.
+  - Combine and rank results based on metadata, relevance, and cross-instance links.
+- **Cross-instance Metadata Harvesting:** 
+  Use a protocol like [OAI-PMH](https://www.openarchives.org/pmh/) (used in many digital library systems) for harvesting metadata, ensuring that even if the instances are independently maintained, their metadata remains synchronized and searchable.
+
+---
+
+## 6. Architectural Considerations
+
+**Diagrammatically, a simplified architecture might look like this:**
+
+```
+               +--------------------------------+
+               |   Federated Research Network   |
+               +---------+-------------+--------+
+                         |             |
+             +-----------v-----+ +-----v-----------+
+             |  Instance A     | |   Instance B    |
+             |  (Local Store,  | |  (Local Store,  |
+             |   Search Index, | |  Search Index,  |
+             |   API Endpoints)| |   API Endpoints)|
+             +-----------+-----+ +-----+-----------+
+                         |             |
+                         +-----[Federation Protocol]------+
+                         |             | 
+               +---------v-------------v---------+
+               | Aggregator/Discovery Registry   |
+               |   (or decentralized discovery)  |
+               +-----------------------------------+
+```
+
+- **Data Flow:**
+
+  - **Publishing:**  When Instance A adds or updates a research item, it publishes metadata (with cryptographic verification, if possible) to its peers or a central registry.
+  - **Consumption:**  Peers (like Instance B) harvest or receive these updates, integrate them into their local indices, and display aggregated search results.
+  - **Access:**  When a user tries to access linked data on a remote instance, federated authentication ensures they have the right permissions.
+
+---
+
+## 7. Conflict Resolution & Synchronization
+
+- **Eventual Consistency:**   
+  Federated systems rarely achieve strong consistency. Use eventual consistency models where each instance periodically reconciles differences. Techniques like CRDTs (Conflict-free Replicated Data Types) can be explored if you expect concurrent edits on the same resource.
+- **Versioning &amp; Audit Trails:** 
+  Keep track of data versions so instances can resolve conflicts by comparing timestamps or edit histories.
+
+---
+
+## Conclusion
+
+Federating your web application involves standardizing data formats, creating interoperable APIs, setting up a discovery mechanism, and ensuring that authentication and search index synchronization work across independent systems. While this adds complexity, it significantly enhances collaboration and the ability to link research data across environments.
+
+---
+
+## Next Steps and Further Ideas
+
+- **Prototyping with a Single Federation Pair:** 
+  Test the federation between two instances before scaling to a larger network. This helps to fine-tune metadata harvesting, authentication hand-offs, and conflict resolution.
+- **Consider GraphQL Federation:** 
+  If you’re comfortable with GraphQL, the GraphQL Federation model is a modern approach to combine multiple GraphQL services into one unified API. This might provide more flexible querying over distributed research data.
+- **Explore Existing Protocols:** 
+  Look into how platforms in the Fediverse (like Mastodon) or digital libraries (using OAI-PMH) tackle federation. Their experiences can offer valuable insights.
+- **Data Provenance and Robust Linking:** 
+  Deepen the model by linking not just research items but also their provenance (e.g., every change event, citation, review) using semantic relationships. This could later power advanced analytics and discovery options.
+
+Federation is a journey into distributed systems, but once established, it can transform isolated data silos into a thriving ecosystem of collaborative research. Would you like to delve into specific implementation details or explore a deeper dive on any of these components?
+
+DATABUS is current direction for repo interop.
 
 
 extend and match These to the existing issues Group them and put them in the most effective order.
 Create concern log integrating existing (unsoved) issues and this data.
 resync everything with index.md
+provide a synopsis of most important directions to take.
