@@ -7,6 +7,7 @@ import de.dlr.shepard.common.subscription.io.EventIO;
 import de.dlr.shepard.common.subscription.io.SubscriptionIO;
 import de.dlr.shepard.common.subscription.services.SubscriptionService;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.common.util.RequestMethod;
 import io.quarkus.logging.Log;
@@ -19,9 +20,14 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.ext.Provider;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 
 @Subscribable
 @Provider
@@ -58,19 +64,66 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     }
 
     List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
+    if (subs.isEmpty()) return;
+
+    List<Subscription> urlMatched = new ArrayList<>(subs.size());
     for (Subscription sub : subs) {
-      // TODO: This could develop into a bottleneck
       Pattern pattern = Pattern.compile(sub.getSubscribedURL());
-      if (
-        pattern.matcher(event.getUrl()).matches() &&
-        permissionsService.isAllowed(requestContext, AccessType.Read, sub.getCreatedBy().getUsername())
-      ) {
-        EventIO e = new EventIO(event);
-        e.setSubscription(new SubscriptionIO(sub));
-        Log.debugf("%s was triggered with %s", sub, e);
-        executorFactory.getInstance().execute(() -> sendCallback(sub, e));
+      if (pattern.matcher(event.getUrl()).matches()) {
+        urlMatched.add(sub);
       }
     }
+    if (urlMatched.isEmpty()) return;
+
+    Set<String> allowedUsernames = resolveAllowedUsernames(requestContext, urlMatched);
+    for (Subscription sub : urlMatched) {
+      String username = sub.getCreatedBy() == null ? null : sub.getCreatedBy().getUsername();
+      if (username == null || !allowedUsernames.contains(username)) continue;
+      EventIO e = new EventIO(event);
+      e.setSubscription(new SubscriptionIO(sub));
+      Log.debugf("%s was triggered with %s", sub, e);
+      executorFactory.getInstance().execute(() -> sendCallback(sub, e));
+    }
+  }
+
+  /**
+   * One batched permission check for all url-matched subscriptions. Falls back to a single
+   * {@link PermissionsService#isAllowed} call when the request path is not a numeric entity path
+   * (the only branch where the permission verdict varies by username).
+   */
+  private Set<String> resolveAllowedUsernames(ContainerRequestContext requestContext, List<Subscription> urlMatched) {
+    LinkedHashSet<String> usernames = new LinkedHashSet<>();
+    for (Subscription sub : urlMatched) {
+      if (sub.getCreatedBy() != null && sub.getCreatedBy().getUsername() != null) {
+        usernames.add(sub.getCreatedBy().getUsername());
+      }
+    }
+    if (usernames.isEmpty()) return Set.of();
+
+    Long entityId = extractEntityId(requestContext);
+    if (entityId != null) {
+      return permissionsService.filterAllowedUsers(entityId, AccessType.Read, usernames);
+    }
+    String probe = usernames.iterator().next();
+    return permissionsService.isAllowed(requestContext, AccessType.Read, probe) ? usernames : Set.of();
+  }
+
+  /**
+   * Mirrors the numeric-entity branch of {@link PermissionsService#isAllowed}: returns the entity
+   * id only when the path actually routes to the per-user permission check, and {@code null}
+   * otherwise (the result is then username-independent).
+   */
+  private static Long extractEntityId(ContainerRequestContext requestContext) {
+    List<PathSegment> segments = requestContext.getUriInfo().getPathSegments();
+    if (segments.size() < 2) return null;
+    String first = segments.getFirst().getPath();
+    String idSegment = segments.get(1).getPath();
+    if (idSegment == null || idSegment.isBlank()) return null;
+    if (first.equals("temp") && idSegment.equals("migrations")) return null;
+    if (first.equals(Constants.LAB_JOURNAL_ENTRIES)) return null;
+    if (first.equals(Constants.USERS)) return null;
+    if (!StringUtils.isNumeric(idSegment)) return null;
+    return Long.parseLong(idSegment);
   }
 
   private void sendCallback(Subscription sub, EventIO event) {

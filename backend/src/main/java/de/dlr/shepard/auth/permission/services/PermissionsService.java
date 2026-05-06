@@ -124,6 +124,49 @@ public class PermissionsService {
   }
 
   /**
+   * Returns the subset of {@code usernames} for which {@code (entityId, accessType, username)} is
+   * allowed. Symmetric counterpart of {@link #filterAllowedForUser(Collection, AccessType, String)}:
+   * one fixed entity, N usernames. The Permissions node for {@code entityId} is fetched in a single
+   * Cypher round-trip (only if at least one username is uncached), then each uncached username is
+   * resolved against it in-memory. Cached results are read via
+   * {@link CaffeineCache#getIfPresent(Object)} so {@link CacheResult @CacheResult}-managed
+   * semantics are preserved; resolved values are written back so subsequent single-entry calls to
+   * {@link #isAccessTypeAllowedForUser(long, AccessType, String)} re-use the populated entries.
+   */
+  public Set<String> filterAllowedUsers(long entityId, AccessType accessType, Collection<String> usernames) {
+    if (usernames == null || usernames.isEmpty()) return Collections.emptySet();
+
+    LinkedHashSet<String> deduped = new LinkedHashSet<>(usernames);
+    Set<String> allowed = new HashSet<>();
+    List<String> uncached = new ArrayList<>();
+
+    CaffeineCache caffeine = caffeineCache();
+    for (String username : deduped) {
+      if (username == null) continue;
+      Boolean cached = caffeine == null ? null : peekCached(caffeine, entityId, accessType, username);
+      if (cached == null) {
+        uncached.add(username);
+      } else if (Boolean.TRUE.equals(cached)) {
+        allowed.add(username);
+      }
+    }
+
+    if (uncached.isEmpty()) return allowed;
+
+    Log.debugf("filterAllowedUsers: batch resolving %d uncached usernames for entity %d", uncached.size(), entityId);
+    Optional<Permissions> perms = Optional.ofNullable(permissionsDAO.findByEntityNeo4jId(entityId));
+    for (String username : uncached) {
+      Roles roles = getRoles(perms, username);
+      boolean isAllowed = rolesGrantAccess(roles, accessType);
+      if (isAllowed) allowed.add(username);
+      if (caffeine != null) {
+        caffeine.put(new CompositeCacheKey(entityId, accessType, username), CompletableFuture.completedFuture(isAllowed));
+      }
+    }
+    return allowed;
+  }
+
+  /**
    * Returns the subset of {@code entityIds} for which {@code (entityId, accessType, username)} is
    * allowed. Implemented as one batched Cypher round-trip for the uncached subset; cached results
    * are read from {@code permissions-service-cache} via {@link CaffeineCache#getIfPresent(Object)}
