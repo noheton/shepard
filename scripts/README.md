@@ -55,3 +55,18 @@ You may use the .env.example, copy it to .env and fill in both values for it to 
 ```sh
 poetry run cli sample
 ```
+
+## Standalone shell scripts
+
+### `check-schema-name.sh`
+
+Lints that every backend IO/DTO class has a class-level
+`@Schema(name = "...")` so the OpenAPI generator emits a stable schema
+name (a class rename then no longer breaks every downstream client).
+Existing offenders are tracked in
+`backend/src/main/resources/schema-name-baseline.txt`; the lint passes
+only if the missing set is a subset of the baseline.
+
+```sh
+bash scripts/check-schema-name.sh
+```

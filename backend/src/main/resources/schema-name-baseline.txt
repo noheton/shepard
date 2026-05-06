@@ -1,0 +1,46 @@
+# Baseline allowlist for the @Schema(name=...) lint.
+#
+# Each line below is a repo-relative path to an IO/DTO class that is
+# currently missing a class-level @Schema(name="...") annotation. The
+# lint (scripts/check-schema-name.sh) passes only if the missing set
+# is a subset of this list -- so new offenders are blocked, while
+# existing offenders can be cleaned up incrementally.
+#
+# To remove an entry: add @org.eclipse.microprofile.openapi.annotations.media.Schema(name="...")
+# at the class level of the listed file, then delete the corresponding
+# line here. The lint will surface stale entries (annotated classes
+# still on the list) so this file shrinks over time.
+#
+# Blank lines and lines starting with # are ignored.
+#
+# Refs: aidocs/16-dispatcher-backlog.md P17b; aidocs/23-api-critique.md
+# section 5; aidocs/27-convenience-clients-design.md section 7;
+# aidocs/28-paradigms-and-clients-synthesis.md section 4.
+
+backend/src/main/java/de/dlr/shepard/common/search/io/ASearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ASearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ASearchResults.java
+backend/src/main/java/de/dlr/shepard/common/search/io/CollectionSearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/CollectionSearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/CollectionSearchResult.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ContainerSearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ContainerSearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ContainerSearchResult.java
+backend/src/main/java/de/dlr/shepard/common/search/io/QueryType.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ResponseBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/ResultTriple.java
+backend/src/main/java/de/dlr/shepard/common/search/io/SearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/SearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/SearchScope.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserGroupSearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserGroupSearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserGroupSearchResult.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserSearchBody.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserSearchParams.java
+backend/src/main/java/de/dlr/shepard/common/search/io/UserSearchResult.java
+backend/src/main/java/de/dlr/shepard/common/versionz/VersionzIO.java
+backend/src/main/java/de/dlr/shepard/context/references/timeseriesreference/io/MetricsIO.java
+backend/src/main/java/de/dlr/shepard/data/spatialdata/io/FilterCondition.java
+backend/src/main/java/de/dlr/shepard/data/spatialdata/io/Operator.java
+backend/src/main/java/de/dlr/shepard/data/spatialdata/io/SpatialDataQueryParams.java
+backend/src/main/java/de/dlr/shepard/data/timeseries/io/TimeseriesWithDataPoints.java
