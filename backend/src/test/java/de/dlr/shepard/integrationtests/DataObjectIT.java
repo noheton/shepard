@@ -14,6 +14,7 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectIOBuilder;
 import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.builder.RequestSpecBuilder;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
@@ -1326,5 +1327,223 @@ public class DataObjectIT extends BaseTestCaseIT {
       .as(DataObjectIO.class);
     //Assert
     assertEquals(do1New.getName(), res.getName());
+  }
+
+  // -- P21: RFC 7396 JSON Merge Patch on /collections/{cid}/dataObjects/{did} -
+  // See aidocs/16-dispatcher-backlog.md P21; aidocs/26-crud-consistency.md
+  // finding #1. PATCH ships additively in /v1/ alongside the existing PUT
+  // (which keeps full-replace semantics). Mirrors the P21 Collection pilot.
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_happyPath_updatesOnlyDescription() {
+    // Arrange: create a fresh data object so other tests are unaffected.
+    DataObjectIO seed = new DataObjectIO();
+    String seedName = "PatchDataObjectHappy" + System.currentTimeMillis();
+    seed.setName(seedName);
+    seed.setDescription("original");
+    seed.setAttributes(Map.of("k", "v"));
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act: PATCH only the description.
+    String mergePatch = "{\"description\":\"new\"}";
+    DataObjectIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert: description changed; everything else preserved.
+    assertThat(patched.getDescription()).isEqualTo("new");
+    assertThat(patched.getName()).isEqualTo(seedName);
+    assertThat(patched.getAttributes()).isEqualTo(Map.of("k", "v"));
+    assertThat(patched.getId()).isEqualTo(created.getId());
+    assertThat(patched.getUpdatedAt()).isNotNull();
+    assertThat(patched.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
+  }
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_explicitNull_clearsField() {
+    // Arrange: data object with a non-null description.
+    DataObjectIO seed = new DataObjectIO();
+    seed.setName("PatchDataObjectNull" + System.currentTimeMillis());
+    seed.setDescription("will be cleared");
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act: PATCH with explicit null per RFC 7396.
+    String mergePatch = "{\"description\":null}";
+    DataObjectIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert: description set to null; name preserved.
+    assertThat(patched.getDescription()).isNull();
+    assertThat(patched.getName()).isEqualTo(seed.getName());
+  }
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_emptyBody_isNoOp() {
+    // Arrange.
+    DataObjectIO seed = new DataObjectIO();
+    seed.setName("PatchDataObjectNoOp" + System.currentTimeMillis());
+    seed.setDescription("unchanged");
+    seed.setAttributes(Map.of("a", "1"));
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act: empty merge patch.
+    DataObjectIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body("{}")
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Assert: every domain field preserved (updatedAt/By legitimately change).
+    assertThat(patched)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt")
+      .isEqualTo(created);
+  }
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_mergeViolatesValidation_returns400() {
+    // Arrange.
+    DataObjectIO seed = new DataObjectIO();
+    seed.setName("PatchDataObjectValidation" + System.currentTimeMillis());
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act: name is @NotBlank on the merged result, blanking it must fail validation.
+    String mergePatch = "{\"name\":\"\"}";
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(400);
+  }
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_withoutWritePermission_returns403() {
+    // Arrange: defaultUser owns the data object; otherUser has no rights.
+    DataObjectIO seed = new DataObjectIO();
+    seed.setName("PatchDataObjectPerm" + System.currentTimeMillis());
+    seed.setDescription("private");
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    // Act + Assert: otherUser cannot PATCH.
+    given()
+      .spec(requestSpecOfOtherUser)
+      .contentType("application/merge-patch+json")
+      .body("{\"description\":\"hacked\"}")
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(403);
+
+    // And without auth at all -> 401.
+    var noAuth = new RequestSpecBuilder().setContentType("application/merge-patch+json").build();
+    given()
+      .spec(noAuth)
+      .body("{\"description\":\"hacked\"}")
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(401);
+  }
+
+  @Test
+  @Order(33)
+  public void patchDataObjectTest_acceptsApplicationJsonContentType() {
+    // Pilot decision: the /v1/ PATCH accepts both application/merge-patch+json
+    // (RFC 7396 preferred) and application/json so existing callers and SDK
+    // generators that don't yet emit the merge-patch media type aren't broken.
+    // Future /v2/ will require application/merge-patch+json.
+    DataObjectIO seed = new DataObjectIO();
+    seed.setName("PatchDataObjectCT" + System.currentTimeMillis());
+    seed.setDescription("orig");
+    DataObjectIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(dataObjectsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(DataObjectIO.class);
+
+    DataObjectIO patched = given()
+      .spec(requestSpecOfDefaultUser) // ContentType.JSON ("application/json")
+      .body("{\"description\":\"via-json\"}")
+      .when()
+      .patch(dataObjectsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(DataObjectIO.class);
+
+    assertThat(patched.getDescription()).isEqualTo("via-json");
+    assertThat(patched.getName()).isEqualTo(seed.getName());
   }
 }
