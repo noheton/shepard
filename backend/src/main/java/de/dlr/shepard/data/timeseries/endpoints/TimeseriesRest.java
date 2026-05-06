@@ -20,6 +20,7 @@ import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import de.dlr.shepard.data.timeseries.model.enums.FillOption;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
+import de.dlr.shepard.data.timeseries.services.TimeseriesNdjsonService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -45,7 +46,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.util.Collections;
 import java.util.List;
@@ -74,6 +77,9 @@ public class TimeseriesRest {
 
   @Inject
   TimeseriesContainerService timeseriesContainerService;
+
+  @Inject
+  TimeseriesNdjsonService timeseriesNdjsonService;
 
   @Inject
   PermissionsService permissionsService;
@@ -206,6 +212,47 @@ public class TimeseriesRest {
     );
 
     return Response.ok(new Timeseries(timeseriesEntity)).status(Status.CREATED).build();
+  }
+
+  // NDJSON streaming ingest: each request line is a TimeseriesDataPoint; the response is one
+  // NDJSON object per emitted event (per-line errors and a final summary), streamed as written.
+  @POST
+  @Consumes(Constants.APPLICATION_NDJSON)
+  @Produces(Constants.APPLICATION_NDJSON)
+  @Path("/{" + Constants.TIMESERIES_CONTAINER_ID + "}/" + Constants.PAYLOAD)
+  @Subscribable
+  @Tag(name = Constants.TIMESERIES_CONTAINER)
+  @Operation(
+    description = "Stream-ingest timeseries data points as NDJSON (one JSON data point per line). " +
+    "Validates each line independently; per-line errors and a final summary are streamed back as NDJSON."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(mediaType = Constants.APPLICATION_NDJSON, schema = @Schema(type = SchemaType.STRING))
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.TIMESERIES_CONTAINER_ID)
+  @Parameter(name = Constants.MEASUREMENT, required = true)
+  @Parameter(name = Constants.LOCATION, required = true)
+  @Parameter(name = Constants.DEVICE, required = true)
+  @Parameter(name = Constants.SYMBOLICNAME, required = true)
+  @Parameter(name = Constants.FIELD, required = true)
+  public Response createTimeseriesNdjson(
+    @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
+    @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
+    @QueryParam(Constants.LOCATION) @NotBlank String location,
+    @QueryParam(Constants.DEVICE) @NotBlank String device,
+    @QueryParam(Constants.SYMBOLICNAME) @NotBlank String symbolicName,
+    @QueryParam(Constants.FIELD) @NotBlank String field,
+    InputStream input
+  ) {
+    var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
+    StreamingOutput stream = output -> timeseriesNdjsonService.ingest(containerId, timeseries, input, output);
+    return Response.ok(stream, Constants.APPLICATION_NDJSON).build();
   }
 
   @Deprecated(forRemoval = true)
