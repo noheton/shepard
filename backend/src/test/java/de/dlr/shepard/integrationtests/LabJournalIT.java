@@ -9,6 +9,7 @@ import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import io.quarkus.test.junit.QuarkusIntegrationTest;
+import io.restassured.builder.RequestSpecBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -163,5 +164,166 @@ public class LabJournalIT extends BaseTestCaseIT {
       .delete(labJournalURL + "/" + labJournal.getId())
       .then()
       .statusCode(204);
+  }
+
+  // -- P21: RFC 7396 JSON Merge Patch on /labJournalEntries/{id} -------------
+  // See aidocs/16-dispatcher-backlog.md P21; aidocs/26-crud-consistency.md
+  // finding #1. PATCH ships additively in /v1/ alongside the existing PUT
+  // (which keeps full-replace semantics). Mirrors the P21 Collection pilot.
+
+  private static LabJournalEntryIO seedLabJournal(String marker) {
+    LabJournalEntryIO payload = new LabJournalEntryIO();
+    payload.setJournalContent("<p>" + marker + "</p>");
+    return given()
+      .spec(requestSpecOfDefaultUser)
+      .body(payload)
+      .queryParam("dataObjectId", dataObject.getId())
+      .when()
+      .post(labJournalURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(LabJournalEntryIO.class);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_happyPath_updatesJournalContent() {
+    // Arrange: create a fresh lab journal so other tests are unaffected.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalHappy" + System.currentTimeMillis());
+
+    // Act: PATCH only journalContent.
+    String mergePatch = "{\"journalContent\":\"<p>new</p>\"}";
+    LabJournalEntryIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(LabJournalEntryIO.class);
+
+    // Assert: journalContent changed; everything else preserved.
+    assertThat(patched.getJournalContent()).isEqualTo("<p>new</p>");
+    assertThat(patched.getId()).isEqualTo(created.getId());
+    assertThat(patched.getDataObjectId()).isEqualTo(created.getDataObjectId());
+    assertThat(patched.getCreatedBy()).isEqualTo(created.getCreatedBy());
+    assertThat(patched.getUpdatedAt()).isNotNull();
+    assertThat(patched.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_explicitNullOnNotNullField_returns400() {
+    // Every writable field on LabJournalEntryIO is @NotNull, so per the P21
+    // template this case asserts that explicit JSON null on a @NotNull field
+    // (journalContent) fails Bean Validation against the merged result -> 400.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalNull" + System.currentTimeMillis());
+
+    String mergePatch = "{\"journalContent\":null}";
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(400);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_emptyBody_isNoOp() {
+    // Arrange.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalNoOp" + System.currentTimeMillis());
+
+    // Act: empty merge patch.
+    LabJournalEntryIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body("{}")
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(LabJournalEntryIO.class);
+
+    // Assert: every domain field preserved (updatedAt/By legitimately change).
+    assertThat(patched)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt")
+      .isEqualTo(created);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_mergeViolatesValidation_returns400() {
+    // Arrange.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalValidation" + System.currentTimeMillis());
+
+    // Act: dataObjectId is @NotNull on the merged result; clearing it must fail
+    // validation on the merged state -> 400.
+    String mergePatch = "{\"dataObjectId\":null}";
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(400);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_withoutWritePermission_returns403() {
+    // Arrange: defaultUser is the creator; otherUser is not the creator.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalPerm" + System.currentTimeMillis());
+
+    // Act + Assert: otherUser cannot PATCH (creator-only check matches PUT).
+    given()
+      .spec(requestSpecOfOtherUser)
+      .contentType("application/merge-patch+json")
+      .body("{\"journalContent\":\"<p>hacked</p>\"}")
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(403);
+
+    // And without auth at all -> 401.
+    var noAuth = new RequestSpecBuilder().setContentType("application/merge-patch+json").build();
+    given()
+      .spec(noAuth)
+      .body("{\"journalContent\":\"<p>hacked</p>\"}")
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(401);
+  }
+
+  @Test
+  @Order(9)
+  public void patchLabJournalTest_acceptsApplicationJsonContentType() {
+    // Pilot decision: the /v1/ PATCH accepts both application/merge-patch+json
+    // (RFC 7396 preferred) and application/json so existing callers and SDK
+    // generators that don't yet emit the merge-patch media type aren't broken.
+    // Future /v2/ will require application/merge-patch+json.
+    LabJournalEntryIO created = seedLabJournal("PatchLabJournalCT" + System.currentTimeMillis());
+
+    LabJournalEntryIO patched = given()
+      .spec(requestSpecOfDefaultUser) // ContentType.JSON ("application/json")
+      .body("{\"journalContent\":\"<p>via-json</p>\"}")
+      .when()
+      .patch(labJournalURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(LabJournalEntryIO.class);
+
+    assertThat(patched.getJournalContent()).isEqualTo("<p>via-json</p>");
+    assertThat(patched.getId()).isEqualTo(created.getId());
   }
 }
