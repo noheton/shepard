@@ -53,11 +53,15 @@ the canonical source for the DLR-styled GitHub Pages site under
    and `index.html`; the rest were dropped to keep the repo lean.
 
 3. **Photographs** (`photo-aircraft.jpg`, `photo-satellite.jpg`,
-   `photo-solar.jpg`) — likely DLR press photography. Not referenced
-   by the kit and not used by the docs site today; dropped to keep
-   the repo lean. If a future page (e.g. a use-case landing page)
-   needs them, they can be recovered from the original upload and
-   added with proper attribution.
+   `photo-solar.jpg`) — likely DLR press photography. **Added back
+   on 2026-05-07** for the docs/ site's splash landing — committed
+   here as the canonical source and copied to `docs/assets/img/`
+   for the runtime path. `photo-aircraft.jpg` is the default index
+   hero; the other two banner the use-case cards. Hosted in this
+   repo on the same brand-mark argument as the DLR logo SVGs (this
+   is the GitHub mirror of the DLR-owned source repo). If the
+   mirror's posture changes, treat them like the logo and remove or
+   replace.
 
 ## Editorial / brand caveats inherited from the upstream README
 
