@@ -1,0 +1,21 @@
+{%- comment -%}
+  Parameterised hero block. Adapted from
+  `dlr-ui-kit/ui_kits/website/index.html` (commit 8b3245a) `<section class="hero">`.
+  Parameters:
+    eyebrow — small uppercase label above the title (optional)
+    title   — h1 string (required for visual sense; falls back to page.title)
+    lede    — single paragraph below the title (optional)
+    bg      — one of `blue` | `green` | `yellow`; defaults to `blue`
+  The bg-title-*.jpg plates are POTX background gradients, not photographs
+  (see dlr-ui-kit/LICENSING.md and the upstream README).
+{%- endcomment -%}
+{%- assign hero_bg = include.bg | default: 'blue' -%}
+{%- assign hero_title = include.title | default: page.title -%}
+<section class="hero hero-{{ hero_bg }}">
+  <div class="overlay"></div>
+  <div class="inner">
+    {%- if include.eyebrow -%}<div class="eyebrow">{{ include.eyebrow }}</div>{%- endif -%}
+    {%- if hero_title -%}<h1>{{ hero_title }}</h1>{%- endif -%}
+    {%- if include.lede -%}<p class="lede">{{ include.lede }}</p>{%- endif -%}
+  </div>
+</section>

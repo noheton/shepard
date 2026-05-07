@@ -2,6 +2,11 @@
 layout: default
 title: shepard
 description: Storage for HEterogeneous Product And Research Data — overview, use cases, and where to go next.
+hero: true
+hero_eyebrow: Research Data Management
+hero_title: shepard
+hero_lede: Storage for HEterogeneous Product And Research Data — a multi-database research-data platform from DLR's Center for Lightweight Production Technology that exposes a single REST API for timeseries, files, structured documents, spatial data, and semantic annotations.
+hero_bg: blue
 ---
 
 shepard ("Storage for HEterogeneous Product And Research Data") is a multi-database
@@ -12,24 +17,34 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 
 ## What it is for
 
-<div class="cards">
-  <div class="card">
-    <h3>Research data for an aerospace experiment</h3>
-    <p>Group flight-test artefacts — CAD files, sensor channels, lab-journal entries,
-    derived analyses — under one Collection, navigated as a parent/child
-    DataObject tree with predecessor/successor links for derivations.</p>
-  </div>
-  <div class="card">
-    <h3>Time-series ingestion from a measurement campaign</h3>
-    <p>Stream channels into a TimescaleDB-backed timeseries container, then attach the
-    container as a Reference to the DataObject that represents the test run.</p>
-  </div>
-  <div class="card">
-    <h3>Cross-DB graph + tabular + spatial in one place</h3>
-    <p>Metadata graph in Neo4j, files and structured documents in MongoDB, timeseries
-    in Postgres+TimescaleDB, optional spatial data in Postgres+PostGIS — addressed
-    through one REST surface, no per-store integrations to maintain.</p>
-  </div>
+<div class="card-grid">
+  <article class="dlr-card">
+    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-blue.jpg' | relative_url }}')"></div>
+    <div class="body">
+      <span class="eyebrow">Use case</span>
+      <h3>Research data for an aerospace experiment</h3>
+      <p>Group flight-test artefacts — CAD files, sensor channels, lab-journal entries, derived analyses — under one Collection, navigated as a parent/child DataObject tree with predecessor/successor links for derivations.</p>
+      <a href="{{ '/user-guide' | relative_url }}" class="more">Learn more ›</a>
+    </div>
+  </article>
+  <article class="dlr-card">
+    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-green.jpg' | relative_url }}')"></div>
+    <div class="body">
+      <span class="eyebrow">Use case</span>
+      <h3>Time-series ingestion from a measurement campaign</h3>
+      <p>Stream channels into a TimescaleDB-backed timeseries container, then attach the container as a Reference to the DataObject that represents the test run.</p>
+      <a href="{{ '/architecture' | relative_url }}" class="more">Learn more ›</a>
+    </div>
+  </article>
+  <article class="dlr-card">
+    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-yellow.jpg' | relative_url }}')"></div>
+    <div class="body">
+      <span class="eyebrow">Use case</span>
+      <h3>Cross-DB graph + tabular + spatial in one place</h3>
+      <p>Metadata graph in Neo4j, files and structured documents in MongoDB, timeseries in Postgres+TimescaleDB, optional spatial data in Postgres+PostGIS — addressed through one REST surface, no per-store integrations to maintain.</p>
+      <a href="{{ '/architecture' | relative_url }}" class="more">Learn more ›</a>
+    </div>
+  </article>
 </div>
 
 ## Where to next
@@ -44,6 +59,13 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 </ul>
 
 ## At a glance
+
+<div class="facts">
+  <div><div class="num">21</div><div class="lbl">Java version (backend)</div></div>
+  <div><div class="num">3.27.x</div><div class="lbl">Quarkus version</div></div>
+  <div><div class="num">4</div><div class="lbl">Persistence stores</div></div>
+  <div><div class="num">FAIR</div><div class="lbl">RDM posture</div></div>
+</div>
 
 | Aspect | Today |
 |---|---|

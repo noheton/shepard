@@ -1,9 +1,9 @@
 # shepard docs site
 
 This is the source for the GitHub Pages site under `dlr-shepard/shepard`
-(GitHub mirror: `noheton/shepard`). It is intentionally a thin Jekyll site —
-no theme, no Sass framework, no JS bundler — so the canonical DLR
-Corporate-Design swap-in stays a one-file diff.
+(GitHub mirror: `noheton/shepard`). It is a thin Jekyll site with
+**no theme and no JS bundler**, dressed in the canonical DLR institute-page
+chrome from `dlr-ui-kit/`.
 
 ## Preview locally
 
@@ -32,15 +32,23 @@ in production, so push-to-preview is reliable even without local tooling.
 docs/
   _config.yml          Jekyll config; nav list; snapshot date
   _layouts/
-    default.html       Single layout (~25 lines) — header, main, footer
+    default.html       Single layout — utility / header / nav / breadcrumbs
+                       / optional hero / page grid (sidebar opt-in) / footer
   _includes/
-    header.html        Top nav with placeholder logo slot
-    footer.html        CD-pending disclaimer + links
+    header.html        Utility bar + white header (real DLR logo + search box)
+                       + solid-blue primary nav with active-state Liquid
+    footer.html        Footer ribbon (4 columns) + thin legal strip
+    hero.html          Parameterised hero block (eyebrow / title / lede / bg)
   assets/
-    css/main.scss      One CSS file with :root custom properties at the top
-    img/logo-placeholder.svg  Neutral generic mark — NOT the DLR logo
-  index.md             Landing — overview + use cases + nav-by-role
-  architecture.md      Architecture deep-dive (Mermaid diagram)
+    css/main.scss      Adapted from dlr-ui-kit/ui_kits/website/styles.css;
+                       :root tokens at the top form the swap-in surface
+    img/dlr-logo.svg           Real DLR logo (dark on white, header)
+    img/dlr-logo-white.svg     Real DLR logo (white on dark, footer)
+    img/bg-title-blue.jpg      Hero background plate (blue)
+    img/bg-title-green.jpg     Hero background plate (green)
+    img/bg-title-yellow.jpg    Hero background plate (yellow)
+  index.md             Landing — hero + use-case .dlr-card grid + .facts strip
+  architecture.md      Architecture deep-dive (Mermaid diagram, hero)
   getting-started.md   Python quickstart from input_raw.md:1-90
   user-guide.md        End-user concepts
   admin.md             Operations guide (docker-compose era)
@@ -48,48 +56,87 @@ docs/
   README.md            (this file)
 ```
 
-## Corporate-Design swap protocol
+## DLR design system applied
 
-The site ships a placeholder visual treatment because the canonical DLR
-Corporate-Design assets (logo SVG, official palette, fonts, Motion-CI rules)
-are **not** in this repository. When the assets are obtained from DLR
-Corporate Communications / Marken-Portal:
+The chrome on this site is the canonical DLR institute-page pattern. The
+canonical source lives in this repo at `dlr-ui-kit/` (vendored at commit
+`8b3245a`); see `dlr-ui-kit/LICENSING.md` for what was committed and what
+was deliberately excluded.
 
-1. **Replace the four colour custom properties + the font stack** at the top
-   of `docs/assets/css/main.scss`:
+### Where the tokens live
 
-   ```scss
-   :root {
-     --color-primary: …;   /* canonical primary */
-     --color-accent:  …;   /* canonical accent */
-     --color-text:    …;
-     --color-bg:      …;
-     --font-stack:    "<canonical font>", system-ui, sans-serif;
-   }
-   ```
+`docs/assets/css/main.scss` opens with a `:root` block exposing the
+five-value swap-in surface plus a small set of derived tokens:
 
-   Nothing below that block hard-codes a colour or font; the swap is a
-   one-file diff.
+```scss
+:root {
+  --color-primary: #00658b;     /* DLR blue */
+  --color-utility: #ebebeb;     /* utility bar + facts strip */
+  --color-text:    #000000;
+  --color-muted:   #464646;     /* footer ribbon */
+  --color-border:  #cfcfcf;
+  --color-bg:      #ffffff;
+  --font-stack:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+}
+```
 
-2. **Replace the placeholder logo** at
-   `docs/assets/img/logo-placeholder.svg` with the canonical SVG. The
-   `<header>` slot in `_includes/header.html` already references the file by
-   relative URL — no template change needed if you keep the filename. If you
-   prefer a PNG, update the `<img src>` in `_includes/header.html`.
+Nothing further down hard-codes a colour — every component reads through
+these custom properties, so re-theming for a sister-institute landing is
+still a one-block diff. The upstream UI kit's
+`@import url('../../colors_and_type.css')` points at a file that was not
+part of the design-system upload (see `dlr-ui-kit/LICENSING.md`); the
+palette is therefore inlined directly into `main.scss` rather than
+imported.
 
-3. **Remove the disclaimer paragraph** in `_includes/footer.html` and replace
-   the placeholder Standorte / Impressum slots with the canonical copy.
+### Components
 
-4. **Optional fonts** — if the canonical font requires a self-hosted
-   `@font-face`, drop the woff2 files under `docs/assets/fonts/` and add a
-   single `@font-face` block at the top of `main.scss`. Do not load fonts
-   from third-party CDNs (the on-prem deployment posture forbids internet
-   egress at runtime, and the CD office's licensing usually requires
-   self-hosting).
+The kit's components are present as the documented selectors:
 
-The full CD-compliance discipline is documented in
-`aidocs/33-frontend-workflow-analysis.md §7` (forthcoming at this snapshot
-date — link will resolve once that doc is committed).
+- `.utility .header .nav .crumbs` — chrome (utility bar / white header /
+  solid-blue primary nav / breadcrumb row).
+- `.hero` — full-bleed hero with `bg-title-{blue,green,yellow}.jpg` plates
+  and a bottom-gradient title overlay; rendered by `_includes/hero.html`.
+- `.page` — 280 px sidebar + 1fr main grid; pages opt in to the sidebar
+  via front-matter `sidebar: true`. `.page.no-sidebar` is the default
+  single-column layout for short pages.
+- `.facts` — grey four-up strip with big accent-coloured numbers (used on
+  `index.md`).
+- `.dlr-card` `.card-grid` — hairline-bordered card with eyebrow + title +
+  lede + "Learn more ›" (used on `index.md`).
+- `.footer-ribbon .legal` — four-column dark footer + thin near-black
+  legal strip.
+- `.btn.primary .btn.secondary` — square, bold, no border-radius.
+
+### Deployer note: Frutiger fonts
+
+The proprietary **Frutiger** TTFs are deliberately not shipped — the
+upload included `Frutiger-Light.otf` from `exfont.com` under a "Free for
+Personal Use" licence that is not compatible with hosting on a
+public-facing institutional site. See `dlr-ui-kit/LICENSING.md` for the
+full context. The default font stack on this site is therefore the
+system-stack fallback.
+
+If the institutional deployer has a valid Frutiger licence from Linotype
+/ Monotype:
+
+1. Drop the licensed `.woff2` and/or `.ttf` files at
+   `docs/assets/fonts/Frutiger_light.{woff2,ttf}`,
+   `Frutiger_roman.{woff2,ttf}`, `Frutiger_bold.{woff2,ttf}`.
+2. Open `docs/assets/css/main.scss` and uncomment the three
+   `@font-face` blocks immediately under the `:root` declaration. They
+   already point at the paths above.
+3. Edit the `--font-stack` line in `:root` to put `"Frutiger"` first.
+4. Do not load fonts from third-party CDNs (the on-prem deployment
+   posture forbids internet egress at runtime, and the CD office's
+   licensing usually requires self-hosting).
+
+### Search box
+
+The search input in the header is **visual-only**. The form submits
+to `?search=...` on the same page; nothing is wired up. Adding real
+search would mean either Lunr.js (build-time, ships a JSON index) or
+Algolia (hosted) — both out of scope for v1.
 
 ## Branch posture for GitHub Pages
 
@@ -115,8 +162,10 @@ described in `aidocs/33 §6` (forthcoming).
 
 - No emojis, anywhere.
 - No animations beyond the browser default link-hover.
-- No external font loaded — the system stack is used until canonical fonts
-  arrive.
+- No external font loaded — the system stack is used until a licensed
+  Frutiger family is dropped in.
 - No JS framework. Mermaid is loaded only on the architecture page, via a
   conditional `<script>` in the layout.
+- No working search. The header form is a visual mock; wiring it requires
+  Lunr.js or Algolia (out of scope for v1).
 - No theme inheritance. `theme: null` in `_config.yml` makes that explicit.

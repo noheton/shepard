@@ -3,6 +3,11 @@ layout: default
 title: Architecture
 description: shepard's high-level architecture — stack, persistence, entity model, auth, export.
 mermaid: true
+hero: true
+hero_eyebrow: Architecture
+hero_title: Architecture
+hero_lede: Stack, persistence, entity model, auth, and export — sourced from `aidocs/01-repo-overview.md` and the in-repo `architecture/src/` AsciiDoc.
+hero_bg: green
 ---
 
 This page summarises shepard's architecture as it exists today. Sources:
