@@ -30,16 +30,22 @@ import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.version.io.VersionIO;
 import de.dlr.shepard.context.version.services.VersionService;
+import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.InvalidPathException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @RequestScoped
 public class ExportService {
@@ -156,21 +162,27 @@ public class ExportService {
     for (BasicReference reference : dataObject.getReferences()) {
       ExportSelection.PayloadKind kind = mapKind(reference.getType());
       if (selection != null && !selection.includesKind(kind)) continue;
-      if (selection != null && selection.excludesId(String.valueOf(reference.getShepardId()))) continue;
+      String idAsString = String.valueOf(reference.getShepardId());
+      if (selection != null && selection.excludesId(idAsString)) continue;
       writeEntityMetadata(builder, reference, selection, false);
+      ExportSelection.PerPayloadSelection perPayload = selection == null ? null : selection.perPayloadFor(idAsString);
       switch (reference.getType()) {
         case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
           collectionId,
           dataObjectId,
           builder,
           reference.getShepardId(),
-          authenticationContext.getCurrentUserName()
+          authenticationContext.getCurrentUserName(),
+          perPayload,
+          selection != null && selection.isStrictPerPayload()
         );
         case "FileReference" -> fetchAndWriteFileReference(
           collectionId,
           dataObjectId,
           builder,
-          reference.getShepardId()
+          reference.getShepardId(),
+          perPayload,
+          selection != null && selection.isStrictPerPayload()
         );
         case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
           collectionId,
@@ -221,7 +233,9 @@ public class ExportService {
     long dataObjectShepardId,
     ExportBuilder builder,
     long referenceId,
-    String username
+    String username,
+    ExportSelection.PerPayloadSelection perPayload,
+    boolean strict
   ) throws IOException {
     var reference = timeseriesReferenceService.getReference(
       collectionShepardId,
@@ -230,13 +244,63 @@ public class ExportService {
       null
     );
     builder.addReference(new TimeseriesReferenceIO(reference), reference.getCreatedBy());
+
+    Set<String> requestedColumns = perPayload != null && perPayload.columns() != null
+      ? new LinkedHashSet<>(perPayload.columns())
+      : Collections.emptySet();
+    Long startNanosOverride = null;
+    Long endNanosOverride = null;
+    if (perPayload != null && perPayload.timeRange() != null) {
+      var tr = perPayload.timeRange();
+      if (tr.start() != null) startNanosOverride = nanosFromInstant(tr.start());
+      if (tr.end() != null) endNanosOverride = nanosFromInstant(tr.end());
+    }
+
+    // R2b: validate requested columns against the reference's known fields. Unknown columns are
+    // silently dropped (recorded as warnings) unless strict mode flips the contract to 400.
+    Set<String> effectiveFieldFilter = Collections.emptySet();
+    if (!requestedColumns.isEmpty()) {
+      Set<String> knownFields = new HashSet<>();
+      for (var ts : reference.getReferencedTimeseriesList()) {
+        var f = ts.toTimeseries().getField();
+        if (f != null) knownFields.add(f);
+      }
+      Set<String> unknown = new LinkedHashSet<>();
+      Set<String> matched = new LinkedHashSet<>();
+      for (String c : requestedColumns) {
+        if (knownFields.contains(c)) matched.add(c);
+        else unknown.add(c);
+      }
+      if (!unknown.isEmpty()) {
+        if (strict) {
+          throw new BadRequestException(
+            "Unknown column(s) for TimeseriesReference id=" + referenceId + ": " + unknown
+          );
+        }
+        builder.addSelectionWarning(
+          "TimeseriesReference id=" + referenceId + ": unknown columns skipped " + unknown
+        );
+      }
+      effectiveFieldFilter = matched;
+    }
+
     InputStream timeseriesPayload = null;
     try {
       timeseriesPayload = timeseriesReferenceService.exportReferencedTimeseriesByShepardId(
         collectionShepardId,
         dataObjectShepardId,
         referenceId,
-        CsvFormat.ROW
+        null,
+        null,
+        null,
+        Collections.emptySet(),
+        Collections.emptySet(),
+        Collections.emptySet(),
+        Collections.emptySet(),
+        effectiveFieldFilter,
+        CsvFormat.ROW,
+        startNanosOverride,
+        endNanosOverride
       );
     } catch (ShepardException e) {
       Log.warn("Cannot access timeseries payload during export");
@@ -250,7 +314,9 @@ public class ExportService {
     long collectionShepardId,
     long dataObjectShepardId,
     ExportBuilder builder,
-    long referenceId
+    long referenceId,
+    ExportSelection.PerPayloadSelection perPayload,
+    boolean strict
   ) throws IOException {
     FileReference reference = fileReferenceService.getReference(
       collectionShepardId,
@@ -261,16 +327,51 @@ public class ExportService {
 
     builder.addReference(new FileReferenceIO(reference), reference.getCreatedBy());
 
-    List<NamedInputStream> payloads = Collections.emptyList();
-    try {
-      payloads = fileReferenceService.getAllPayloads(collectionShepardId, dataObjectShepardId, referenceId);
-    } catch (ShepardException e) {
-      Log.warn("Cannot access file payload during export");
+    List<String> requestedOids = perPayload == null ? null : perPayload.fileOids();
+    if (requestedOids == null || requestedOids.isEmpty()) {
+      // No per-payload pick ⇒ keep R2 Phase 1 behaviour: fetch everything in bulk.
+      List<NamedInputStream> payloads = Collections.emptyList();
+      try {
+        payloads = fileReferenceService.getAllPayloads(collectionShepardId, dataObjectShepardId, referenceId);
+      } catch (ShepardException e) {
+        Log.warn("Cannot access file payload during export");
+      }
+      for (var nis : payloads) {
+        if (nis.getInputStream() != null) writeFilePayload(builder, nis);
+      }
+      return;
     }
 
-    for (var nis : payloads) {
-      if (nis.getInputStream() != null) writeFilePayload(builder, nis);
+    // R2b per-payload pick: fetch only the requested OIDs via the per-OID API. Stale OIDs (not on
+    // the reference) are silently skipped unless strict.
+    Set<String> knownOids = new HashSet<>();
+    for (ShepardFile f : reference.getFiles()) {
+      if (f.getOid() != null) knownOids.add(f.getOid());
     }
+    List<String> stale = new ArrayList<>();
+    List<String> hits = new ArrayList<>();
+    for (String oid : requestedOids) {
+      if (knownOids.contains(oid)) hits.add(oid);
+      else stale.add(oid);
+    }
+    if (!stale.isEmpty()) {
+      if (strict) {
+        throw new BadRequestException("Unknown file OID(s) for FileReference id=" + referenceId + ": " + stale);
+      }
+      builder.addSelectionWarning("FileReference id=" + referenceId + ": stale file OIDs skipped " + stale);
+    }
+    for (String oid : hits) {
+      try {
+        var nis = fileReferenceService.getPayload(collectionShepardId, dataObjectShepardId, referenceId, oid, null);
+        if (nis != null && nis.getInputStream() != null) writeFilePayload(builder, nis);
+      } catch (ShepardException e) {
+        Log.warnf("Cannot access file payload oid=%s during export", oid);
+      }
+    }
+  }
+
+  private static long nanosFromInstant(java.time.Instant instant) {
+    return Math.addExact(Math.multiplyExact(instant.getEpochSecond(), 1_000_000_000L), instant.getNano());
   }
 
   private void fetchAndWriteStructuredDataReference(

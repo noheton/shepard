@@ -295,6 +295,46 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     Set<String> fieldFilterSet,
     CsvFormat csvFormat
   ) throws IOException {
+    return exportReferencedTimeseriesByShepardId(
+      collectionShepardId,
+      dataObjectShepardId,
+      timeseriesShepardId,
+      function,
+      timeSliceNanoseconds,
+      fillOption,
+      devicesFilterSet,
+      locationsFilterSet,
+      symbolicNameFilterSet,
+      measurementFilterSet,
+      fieldFilterSet,
+      csvFormat,
+      null,
+      null
+    );
+  }
+
+  /**
+   * Full overload supporting per-call start/end nanosecond overrides. Either bound may be
+   * {@code null} to fall back to the reference's configured window. Callers (e.g. the RO-Crate
+   * exporter with an R2b {@code timeRange} pick) clamp the data window without mutating the
+   * underlying reference.
+   */
+  public InputStream exportReferencedTimeseriesByShepardId(
+    long collectionShepardId,
+    long dataObjectShepardId,
+    long timeseriesShepardId,
+    AggregateFunction function,
+    Long timeSliceNanoseconds,
+    FillOption fillOption,
+    Set<String> devicesFilterSet,
+    Set<String> locationsFilterSet,
+    Set<String> symbolicNameFilterSet,
+    Set<String> measurementFilterSet,
+    Set<String> fieldFilterSet,
+    CsvFormat csvFormat,
+    Long startNanosOverride,
+    Long endNanosOverride
+  ) throws IOException {
     TimeseriesReference reference = getReference(collectionShepardId, dataObjectShepardId, timeseriesShepardId, null);
 
     if (reference.getTimeseriesContainer() == null || reference.getTimeseriesContainer().isDeleted()) {
@@ -325,9 +365,11 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
       )
       .toList();
     var containerId = reference.getTimeseriesContainer().getId();
+    long effectiveStart = startNanosOverride != null ? startNanosOverride : reference.getStart();
+    long effectiveEnd = endNanosOverride != null ? endNanosOverride : reference.getEnd();
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
-      reference.getStart(),
-      reference.getEnd(),
+      effectiveStart,
+      effectiveEnd,
       timeSliceNanoseconds,
       fillOption,
       function

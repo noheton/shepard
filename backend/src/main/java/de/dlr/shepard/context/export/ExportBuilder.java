@@ -48,6 +48,8 @@ public class ExportBuilder {
   private ZipOutputStream zos;
   private List<String> entries;
   private final ExportSelection selection;
+  // R2b: stale-OID / unknown-column notes. Surfaced under selection.warnings in the manifest.
+  private final List<String> selectionWarnings = new ArrayList<>();
 
   public ExportBuilder(Collection collection) throws IOException {
     this(collection, null);
@@ -136,6 +138,15 @@ public class ExportBuilder {
     return this;
   }
 
+  /**
+   * Records a warning emitted during selection-aware export (R2b). The warnings are surfaced
+   * under {@code selection.warnings} on the root data entity in {@code ro-crate-metadata.json}.
+   */
+  public ExportBuilder addSelectionWarning(String warning) {
+    if (warning != null && !warning.isBlank()) selectionWarnings.add(warning);
+    return this;
+  }
+
   public ExportBuilder addPayload(byte[] payload, String filename, String name, String encodingFormat)
     throws IOException {
     addToZip(filename, payload);
@@ -159,9 +170,11 @@ public class ExportBuilder {
   public InputStream build() throws IOException {
     var roCrate = roCrateBuilder.build();
     JsonNode tree = objectMapper.readTree(roCrate.getJsonMetadata());
-    // Empty / absent selection ⇒ byte-identical legacy manifest (no "selection" key).
-    if (selection != null && !selection.isEmpty()) {
-      injectSelection(tree, selection);
+    // Empty / absent selection ⇒ byte-identical legacy manifest (no "selection" key) — only
+    // when there are also no R2b warnings to surface.
+    boolean hasSelectionToInject = selection != null && !selection.isEmpty();
+    if (hasSelectionToInject) {
+      injectSelection(tree, selection, selectionWarnings);
     }
     byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(tree);
     addToZip(ExportConstants.ROCRATE_METADATA, bytes);
@@ -170,7 +183,7 @@ public class ExportBuilder {
     return new ByteArrayInputStream(baos.toByteArray());
   }
 
-  private void injectSelection(JsonNode tree, ExportSelection sel) {
+  private void injectSelection(JsonNode tree, ExportSelection sel, List<String> warnings) {
     if (!(tree instanceof ObjectNode root)) return;
     JsonNode graph = root.get("@graph");
     if (!(graph instanceof ArrayNode array)) return;
@@ -178,7 +191,12 @@ public class ExportBuilder {
       if (!(node instanceof ObjectNode obj)) continue;
       JsonNode id = obj.get("@id");
       if (id != null && "./".equals(id.asText())) {
-        obj.set("selection", objectMapper.valueToTree(sel));
+        ObjectNode selNode = (ObjectNode) objectMapper.valueToTree(sel);
+        if (warnings != null && !warnings.isEmpty()) {
+          ArrayNode warnArr = selNode.putArray("warnings");
+          for (String w : warnings) warnArr.add(w);
+        }
+        obj.set("selection", selNode);
         return;
       }
     }
