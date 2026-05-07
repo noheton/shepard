@@ -16,8 +16,10 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.subscription.services.SubscriptionService;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
+import de.dlr.shepard.common.util.RequestMethod;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
@@ -86,6 +88,9 @@ public class ExportMetadataBundleTest {
   @InjectMock
   VersionService versionService;
 
+  @InjectMock
+  SubscriptionService subscriptionService;
+
   @Inject
   ExportService service;
 
@@ -121,6 +126,7 @@ public class ExportMetadataBundleTest {
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(permissionsService.getPermissionsOfEntityOptional(anyLong())).thenReturn(Optional.empty());
     when(versionService.getAllVersions(anyLong())).thenReturn(List.of());
+    when(subscriptionService.getMatchingSubscriptionsForUrl(any(), eq(RequestMethod.GET))).thenReturn(List.of());
   }
 
   private <T extends BasicReference> T hydrateReferenceMock(T reference, String type, long shepardId) {
@@ -296,10 +302,27 @@ public class ExportMetadataBundleTest {
   // ---------- subscriptions -----------------------------------------------
 
   @Test
-  public void subscriptionsTrue_doesNotEmitDocsButPasses() throws IOException {
-    // Subscriptions are URL-pattern based; per-entity emission is deferred. Setting the boolean
-    // to true must not crash the export and must leave the subscription document API untouched.
+  public void subscriptionsTrue_emitsForCollectionAndDataObject() throws IOException {
+    // R2d2: subscriptions are now functional. Per-entity matching lives in
+    // ExportSubscriptionsBundleTest; here we just confirm the boolean wires through.
     var sel = new ExportSelection(null, new ExportSelection.Metadata(null, null, null, null, true));
+
+    var mockStream = mock(InputStream.class);
+    try (
+      var ctrl = mockConstruction(ExportBuilder.class, (m, ctx) -> {
+        when(m.build()).thenReturn(mockStream);
+      })
+    ) {
+      service.exportCollectionByShepardId(collection.getShepardId(), sel);
+      var builder = ctrl.constructed().getFirst();
+      verify(builder).addSubscriptionsFor(eq(15L), any());
+      verify(builder).addSubscriptionsFor(eq(25L), any());
+    }
+  }
+
+  @Test
+  public void subscriptionsDefault_doesNotEmit() throws IOException {
+    var sel = new ExportSelection(null, new ExportSelection.Metadata(null, null, null, null, null));
 
     var mockStream = mock(InputStream.class);
     try (
@@ -340,8 +363,10 @@ public class ExportMetadataBundleTest {
       verify(builder).addPermissionsFor(eq(15L), any(PermissionsIO.class));
       verify(builder).addAnnotationsFor(eq(15L), any());
       verify(builder).addVersionsFor(eq(15L), any());
+      verify(builder).addSubscriptionsFor(eq(15L), any());
       verify(builder).addPermissionsFor(eq(25L), any(PermissionsIO.class));
       verify(builder).addAnnotationsFor(eq(25L), any());
+      verify(builder).addSubscriptionsFor(eq(25L), any());
     }
   }
 

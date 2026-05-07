@@ -97,13 +97,15 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
    * per-field redaction set (R2c).
    *
    * <p>Defaults match today's exporter behaviour: {@code labJournal} is included by default
-   * (legacy behaviour); {@code permissions}, {@code annotations}, and {@code versions} default to
-   * {@code false} and flipping them to {@code true} causes the exporter to emit per-entity
-   * {@code <id>-permissions.json}, {@code <id>-annotations.json}, and {@code <id>-versions.json}
-   * documents (collection-only for versions). {@code subscriptions} is currently
-   * recorded-only — the exporter does not yet emit a per-entity subscriptions document because
-   * subscriptions are URL-pattern based with no clean per-entity API; flipping it has no effect
-   * beyond appearing in the {@code selection} block of {@code ro-crate-metadata.json}.
+   * (legacy behaviour); {@code permissions}, {@code annotations}, {@code versions}, and
+   * {@code subscriptions} default to {@code false} and flipping them to {@code true} causes the
+   * exporter to emit per-entity {@code <id>-permissions.json}, {@code <id>-annotations.json},
+   * {@code <id>-versions.json} (collection-only), and {@code <id>-subscriptions.json} documents.
+   * For subscriptions the exporter synthesises the entity's canonical relative URL (e.g.
+   * {@code /collections/15/dataObjects/25}) and includes the subscriptions whose URL pattern
+   * matches it — using the same regex algorithm the runtime
+   * {@code SubscriptionFilter} uses, so authors of host-anchored patterns may need a
+   * {@code .*} prefix to also match exports.
    *
    * <p>{@code redactFields} (R2c) is a closed set of redactable fields on the IO documents
    * actually emitted. Redaction is post-permission-check: a caller who can read the entity may
@@ -115,7 +117,7 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
    */
   @Schema(
     name = "ExportSelectionMetadata",
-    description = "Per-kind opt-in for bundling metadata documents. Defaults: labJournal=true (legacy); permissions/annotations/versions=false; subscriptions recorded-only (no document emitted). " +
+    description = "Per-kind opt-in for bundling metadata documents. Defaults: labJournal=true (legacy); permissions/annotations/versions/subscriptions=false. Subscriptions: the exported document lists subscriptions whose URL pattern matches the entity's canonical relative URL. " +
     "redactFields is a closed set of fields on the emitted IO documents that are replaced with a sentinel before they are added to the crate (privacy: post-permission-check redaction). " +
     "Redaction has no effect on metadata kinds that are not also opted-in (no document emitted ⇒ nothing to redact)."
   )

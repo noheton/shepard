@@ -5,6 +5,7 @@ import de.dlr.shepard.common.neo4j.io.HasIdIO;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.subscription.io.EventIO;
 import de.dlr.shepard.common.subscription.io.SubscriptionIO;
+import de.dlr.shepard.common.subscription.services.SubscriptionMatcher;
 import de.dlr.shepard.common.subscription.services.SubscriptionService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -22,11 +23,9 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.ext.Provider;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
 @Subscribable
@@ -66,13 +65,7 @@ public class SubscriptionFilter implements ContainerResponseFilter {
     List<Subscription> subs = subscriptionService.getMatchingSubscriptions(event.getRequestMethod());
     if (subs.isEmpty()) return;
 
-    List<Subscription> urlMatched = new ArrayList<>(subs.size());
-    for (Subscription sub : subs) {
-      Pattern pattern = Pattern.compile(sub.getSubscribedURL());
-      if (pattern.matcher(event.getUrl()).matches()) {
-        urlMatched.add(sub);
-      }
-    }
+    List<Subscription> urlMatched = SubscriptionMatcher.matchAll(subs, event.getUrl());
     if (urlMatched.isEmpty()) return;
 
     Set<String> allowedUsernames = resolveAllowedUsernames(requestContext, urlMatched);

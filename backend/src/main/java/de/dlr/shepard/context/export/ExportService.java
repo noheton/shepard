@@ -8,7 +8,11 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.ShepardException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
+import de.dlr.shepard.common.subscription.io.SubscriptionIO;
+import de.dlr.shepard.common.subscription.services.SubscriptionService;
+import de.dlr.shepard.common.util.RequestMethod;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
@@ -83,6 +87,9 @@ public class ExportService {
   @Inject
   VersionService versionService;
 
+  @Inject
+  SubscriptionService subscriptionService;
+
   /**
    * Exports collection by shepard Id
    *
@@ -115,9 +122,9 @@ public class ExportService {
   }
 
   /**
-   * Emit per-entity metadata documents (permissions / versions / annotations) when the selection
-   * has the corresponding boolean flipped to {@code true}. Defaults are {@code false} so legacy
-   * behaviour is unchanged.
+   * Emit per-entity metadata documents (permissions / versions / annotations / subscriptions) when
+   * the selection has the corresponding boolean flipped to {@code true}. Defaults are
+   * {@code false} so legacy behaviour is unchanged.
    *
    * @param isCollection only collections get a versions document; the rest skip that kind.
    */
@@ -146,6 +153,33 @@ public class ExportService {
       List<VersionIO> versions = versionService.getAllVersions(ioId).stream().map(VersionIO::new).toList();
       builder.addVersionsFor(ioId, versions);
     }
+    if (selection.includeSubscriptions()) {
+      String url = canonicalUrlFor(entity);
+      List<SubscriptionIO> subs = url == null
+        ? List.of()
+        : subscriptionService
+          .getMatchingSubscriptionsForUrl(url, RequestMethod.GET)
+          .stream()
+          .map(SubscriptionIO::new)
+          .toList();
+      builder.addSubscriptionsFor(ioId, subs);
+    }
+  }
+
+  /**
+   * Resolve an entity's canonical relative URL via {@link EntityUrlSynthesiser}, dispatching on
+   * runtime type. Returns {@code null} if the entity (or its required parent chain) is missing
+   * the data needed to synthesise a URL — in that case the caller emits an empty subscriptions
+   * document, keeping the export idempotent.
+   */
+  private static String canonicalUrlFor(BasicEntity entity) {
+    return switch (entity) {
+      case Collection c -> EntityUrlSynthesiser.urlFor(c);
+      case DataObject d -> EntityUrlSynthesiser.urlFor(d);
+      case BasicReference r -> EntityUrlSynthesiser.urlFor(r);
+      case null -> null;
+      default -> null;
+    };
   }
 
   private void fetchAndWriteDataObject(
