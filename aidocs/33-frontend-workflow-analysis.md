@@ -336,35 +336,141 @@ stepper dialog, file upload, and the most-used composables.
 
 ## 7. R8 — DLR Corporate-Design theming recommendation
 
-The CD reference HTM files at `aidocs/input/Richtlinien zur
-visuellen Gestaltung (CD-Handbuch).htm`,
-`aidocs/input/7. kapitel.htm`, `Kapitel 11.htm`, etc. are present
-in the worktree but were modified down to empty / placeholder
-content in the current dispatcher pass (`git status` on this
-worktree confirms all twelve `.htm` files are listed as
-"modified"). They cannot serve as the canonical source for a CD
-implementation. Before R8 starts, the maintainer must obtain the
-canonical CD assets from DLR-internal sources (DLR Corporate
-Communications / Marken-Portal): logo SVGs, the official CD
-colour palette (HEX + RGB + the dark-mode mapping), the type
-families (DLR's house font and substitution rules), and any motion-
-CI guidance (`Kapitel 2 Motion-CI.htm`). Without that the work
-risks shipping a "DLR-ish" theme that the CD office rejects.
+The CD reference HTM files (`Richtlinien zur visuellen Gestaltung
+(CD-Handbuch).htm`, `– Kapitel 2 Motion-CI.htm`, `– Kapitel 3
+Digitale Medien.htm`, `Kapitel 4 Printmedien.htm`, etc.) lived
+under `aidocs/input/` only as informative scaffolding for the
+design phase and were **removed in commit `a5b2f85`** — they
+contained empty / placeholder content and could not serve as the
+canonical source for a CD implementation. Before R8 starts the
+maintainer must obtain the canonical CD assets from DLR-internal
+sources (DLR Corporate Communications / Marken-Portal): logo SVGs,
+the official CD colour palette (HEX + RGB + the dark-mode
+mapping), the type families (DLR's house font and substitution
+rules), and the Motion-CI timing / easing rules. Without that the
+work risks shipping a "DLR-ish" theme that the CD office rejects.
 
-Once those assets are in hand, theming is a Vuetify-native
-exercise. The header already toggles a `light` ↔ `dark` theme
-(`HeaderBar.vue:53-56`); the existing tokens are colour names like
-`canvas`, `treeview`, `textbody1`, `divider1`, `divider2`,
-`primary`, `low-emphasis`, `medium-emphasis` (used everywhere —
-e.g. `CollectionSidebar.vue:62`, `EditPermissionsDialog.vue:194`).
-The right move is to add a `dlr` Vuetify theme (alongside `light`
-and `dark`) populating *those same token names* with the
-CD palette, then map the DLR fonts via `@nuxt/fonts`. That keeps
-the diff small and contained to `nuxt.config.ts` + a new theme
-file. Existing design-doc context lives in the briefing's
-references to `aidocs/19 §E12` / `aidocs/20 §E12` / `aidocs/21 §6`
-(none present in this worktree under those numbers; the next
-dispatcher pass should renumber to land them).
+Existing design-doc context lives in `aidocs/19` §F-equivalent /
+`aidocs/20 §E12` (Epic E12, UX & ecosystem) / `aidocs/21 §6` —
+those are the chapter-level briefs around CD theming.
+
+### 7.1 What the DLR CD covers
+
+The chapter titles preserved in the now-removed `*.htm` reference
+set scope what a CD-compliant shepard must respect:
+
+- **Visual fundamentals** (`Richtlinien zur visuellen Gestaltung`)
+  — logo, clear-space, palette, typography, photographic style.
+- **Geschäftspapierausstattung** — letterhead / business-paper
+  templates. Largely irrelevant for a web app, but exported PDFs
+  (post-R2 PDF mode if it lands) should respect the same masthead
+  rules.
+- **Motion-CI** — motion-design rules: timing, easing, when to
+  animate vs not. Maps to Vuetify's `transition` props on dialogs /
+  sheets / fade-in patterns; a noisy app violates Motion-CI.
+- **Digitale Medien** — explicit web guidance: link colours, focus
+  rings, icon style, dark-mode mapping. The most directly relevant
+  chapter for shepard's frontend.
+- **Printmedien** — print-medium guidance; for shepard, this maps
+  to generated PDF / RO-Crate cover-page styling once those exist.
+- **Standorte** — site / location pages; for shepard, this is the
+  app footer and any "About" page that lists DLR institute
+  affiliation.
+
+### 7.2 Compliance audit checklist
+
+When the canonical CD assets arrive, audit the existing app
+against each item below. Every row has a target file or component
+to verify against; every result is binary (`pass` / `fail`). The
+checklist is the deliverable of the audit phase that **must
+precede** any token-mapping work in §7.3 — without it the team
+will discover compliance gaps mid-implementation.
+
+| Area | What to verify | Where to look |
+|---|---|---|
+| Colour palette | Every named token in the Vuetify theme matches a CD palette entry; no raw `#abc123` literals in components | `nuxt.config.ts` theme block; `git grep '#[0-9a-fA-F]\{3,8\}' frontend/components frontend/pages` |
+| Type stack | DLR house font loaded via `@nuxt/fonts` with documented fallbacks; no hard-coded `font-family` | `frontend/app.vue`, `nuxt.config.ts`, `git grep 'font-family' frontend/` |
+| Logo + clear-space | DLR logo SVG used at the canonical aspect ratio; clear-space rule respected in the header | `HeaderBar.vue` |
+| Focus / link styling (Digitale Medien) | Link colour matches the CD palette; focus rings 2 px solid in the CD accent; dark-mode mapping in place | `assets/`, component-level `:focus-visible` rules |
+| Motion-CI | All transitions ≤ 200 ms ease-out (or whatever CD specifies); no custom `cubic-bezier` outside the CD set | Vuetify `transition` props; CSS `transition` declarations |
+| Dark-mode mapping | The `dark` Vuetify theme uses CD-specified dark-mode equivalents (not naive inversions) | `nuxt.config.ts` |
+| Logo in exports | RO-Crate exports + any future generated PDFs include the DLR logo per Geschäftspapierausstattung rules | `ExportBuilder` + the future PDF emitter |
+| Footer / Standorte | App footer carries the DLR institute name + Impressum / Datenschutz links per Standorte | `layouts/default.vue` |
+| Accessibility (CD-adjacent) | WCAG AA contrast across every token combination; CD palette honestly checked, not hand-waved | `axe-core` pass via Playwright |
+| Favicon + OG image | DLR-branded favicon variants (16/32/180/512); OG / Twitter images use the CD masthead | `public/`, head meta tags |
+
+### 7.3 Implementation in Vuetify (once §7.2 passes)
+
+Theming is a Vuetify-native exercise. The header already toggles a
+`light` ↔ `dark` theme (`HeaderBar.vue:53-56`); the existing
+tokens are colour names like `canvas`, `treeview`, `textbody1`,
+`divider1`, `divider2`, `primary`, `low-emphasis`,
+`medium-emphasis` (used everywhere — e.g. `CollectionSidebar.vue:62`,
+`EditPermissionsDialog.vue:194`). The right move is to add a `dlr`
+Vuetify theme (alongside `light` and `dark`) populating *those
+same token names* with the CD palette, then map the DLR fonts via
+`@nuxt/fonts`. That keeps the diff small and contained to
+`nuxt.config.ts` + a new theme file plus a font-import line —
+component code does not change because tokens stay token-named.
+
+### 7.4 Compliance mechanism (verify and enforce over time)
+
+CD compliance is a moving target — easy to land once, hard to
+keep. Three mechanisms, ordered by ROI:
+
+1. **Token guard (lint, S).** A CI lint that fails the build on
+   hard-coded colour literals, hard-coded `font-family`, and
+   hard-coded `transition` durations under `frontend/components`
+   and `frontend/pages`. Mirrors the existing P17b pattern
+   (`scripts/check-schema-name.sh` plus a baseline allowlist) —
+   same shape applied to frontend tokens.
+2. **Visual regression on the §7.2 surfaces (M).** A Playwright
+   suite (per §6) capturing canonical screenshots for the
+   checklist's representative components (`HeaderBar`,
+   `CollectionSidebar`, `EditPermissionsDialog`, the Advanced
+   Search page, dark-mode variants) and failing on pixel-difference
+   threshold. Snapshots regenerate behind a manual flag, never
+   silently.
+3. **Brand review (process, no code).** A pre-release checklist
+   item that files an issue against DLR Corporate Communications
+   for every token-set or asset change, retaining the approval as a
+   signed-off comment. Cheap insurance against the "DLR-ish" theme
+   trap.
+
+### 7.5 Drift surfaces
+
+Where shepard most easily drifts from CD over time. Audit each
+when triaging an R8 follow-on:
+
+- **Third-party Vuetify components** that ship their own colours
+  (date pickers, file inputs). Verify at component-adoption time;
+  the token guard from §7.4 surfaces the most obvious offenders.
+- **Markdown / HTML rendering** in lab-journal entries
+  (`LabJournalEntry`) — users supply content; the CD applies to
+  the **rendering wrapper**'s chrome, not the user's content.
+- **Error pages** (`error.vue`) — frequently forgotten in token
+  migrations because the happy-path components dominate review.
+- **Loading / empty / skeleton states** that hard-code "Loading…"
+  placeholders in default Vuetify gray.
+- **Generated PDFs / RO-Crate cover pages** once those exist
+  (Printmedien chapter) — out of frontend's hands but in scope for
+  the CD audit.
+- **Email templates** if/when shepard sends notifications (none
+  today; would follow Geschäftspapierausstattung rules).
+- **Favicon and OG images** drift independently of the app theme;
+  audit them whenever the Marken-Portal assets refresh.
+
+### 7.6 Out of scope for R8
+
+The following are *adjacent* to CD but should not be folded in:
+
+- **Internationalisation.** German / English copy alignment is a
+  separate workstream; the CD covers visual identity, not language.
+- **Accessibility beyond WCAG AA.** AAA conformance, screen-reader
+  story, keyboard-only flows — all worth doing, but a separate
+  audit (cite under R5 if the team funds it).
+- **Marketing site / landing page.** Out of repo. The DLR Corporate
+  Communications team owns external-facing branding.
 
 ## 8. Things to deliberately *not* do
 
