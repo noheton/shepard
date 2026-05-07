@@ -5,8 +5,13 @@ description: Storage for HEterogeneous Product And Research Data — overview, u
 hero: true
 hero_eyebrow: Research Data Management
 hero_title: shepard
-hero_lede: Storage for HEterogeneous Product And Research Data — a multi-database research-data platform from DLR's Center for Lightweight Production Technology that exposes a single REST API for timeseries, files, structured documents, spatial data, and semantic annotations.
-hero_bg: blue
+hero_lede: A multi-database research-data platform from DLR's Center for Lightweight Production Technology — one REST API for timeseries, files, structured documents, spatial data, and semantic annotations.
+hero_photo: /assets/img/photo-aircraft.jpg
+hero_splash: true
+hero_cta1_text: Get started
+hero_cta1_url: /getting-started
+hero_cta2_text: View architecture
+hero_cta2_url: /architecture
 ---
 
 shepard ("Storage for HEterogeneous Product And Research Data") is a multi-database
@@ -19,7 +24,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 
 <div class="card-grid">
   <article class="dlr-card">
-    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-blue.jpg' | relative_url }}')"></div>
+    <div class="img" style="background-image:url('{{ '/assets/img/photo-aircraft.jpg' | relative_url }}')"></div>
     <div class="body">
       <span class="eyebrow">Use case</span>
       <h3>Research data for an aerospace experiment</h3>
@@ -28,7 +33,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
     </div>
   </article>
   <article class="dlr-card">
-    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-green.jpg' | relative_url }}')"></div>
+    <div class="img" style="background-image:url('{{ '/assets/img/photo-satellite.jpg' | relative_url }}')"></div>
     <div class="body">
       <span class="eyebrow">Use case</span>
       <h3>Time-series ingestion from a measurement campaign</h3>
@@ -37,7 +42,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
     </div>
   </article>
   <article class="dlr-card">
-    <div class="img" style="background-image:url('{{ '/assets/img/bg-title-yellow.jpg' | relative_url }}')"></div>
+    <div class="img" style="background-image:url('{{ '/assets/img/photo-solar.jpg' | relative_url }}')"></div>
     <div class="body">
       <span class="eyebrow">Use case</span>
       <h3>Cross-DB graph + tabular + spatial in one place</h3>
@@ -77,11 +82,3 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 | Deployment | docker-compose, on-premises (no cloud assumed) |
 
 Snapshot date: {{ site.snapshot_date }}.
-
-## Notes on this site
-
-This site is **scaffolding** built from `aidocs/` and the source. The visual treatment
-is intentionally neutral and accessible — the canonical DLR Corporate-Design assets
-(palette, fonts, logo, Motion-CI rules) are not in this repository, so nothing here
-attempts to look "DLR-ish". When the canonical assets land, the swap is a one-file
-diff in `assets/css/main.scss` plus a logo replacement; see `docs/README.md`.

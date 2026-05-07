@@ -63,6 +63,32 @@ canonical source lives in this repo at `dlr-ui-kit/` (vendored at commit
 `8b3245a`); see `dlr-ui-kit/LICENSING.md` for what was committed and what
 was deliberately excluded.
 
+### Identity treatment
+
+shepard's own wordmark (`assets/img/shepard_logo.svg`, sourced from
+`frontend/assets/shepard_logo.svg`) is the **primary mark** in the white
+header. The DLR institutional logo appears subordinately at the right
+edge of the **utility bar** with a thin separator and a `title` of
+*"shepard is developed by DLR"* — so the site identifies as shepard
+while preserving the DLR institutional context. The favicon
+(`assets/favicon.ico`, sourced from `frontend/public/favicon.ico`) is
+shepard's, with an SVG-typed `<link rel="icon">` fallback to the same
+wordmark.
+
+### Splash hero (index-only)
+
+The landing page (`index.md`) opts into a **splash** hero that takes
+the institute pattern and pushes it harder for first impression: a
+full-bleed photograph (`photo-aircraft.jpg` by default; switch via the
+`hero_photo` front-matter field), `min(85vh, 760px)` tall, h1 sized
+`clamp(48px, 8vw, 80px)`, a CTA row below the lede, and a subtle
+~220 ms entry-fade staggered across eyebrow / title / lede / CTAs.
+The fade respects `prefers-reduced-motion`. **Inner pages keep the
+sober ~420 px institute hero** — splash is index-only by design. The
+hero overlay gradient is the strengthened triple-stop (`rgba 0.05 →
+0.35 → 0.75`) so titles stay legible on the bright blue / green /
+yellow plates and on photographs alike.
+
 ### Where the tokens live
 
 `docs/assets/css/main.scss` opens with a `:root` block exposing the

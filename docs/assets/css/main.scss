@@ -116,18 +116,32 @@ body {
 .utility .lang { display: flex; gap: 6px; align-items: center; font-weight: 700; }
 .utility .lang span.active,
 .utility .lang a.active { color: var(--color-primary); }
+/* DLR institutional mark in the utility bar — subordinate to shepard's
+   own wordmark in the header below. Separator is a thin vertical rule. */
+.utility .utility-sep {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: var(--color-border);
+  margin: 0 4px;
+}
+.utility .utility-dlr { display: inline-flex; align-items: center; }
+.utility .utility-dlr img { display: block; height: 20px; width: auto; opacity: .85; }
+.utility .utility-dlr:hover img { opacity: 1; }
 
 /* ---------- HEADER ---------- */
 .header { background: var(--color-bg); border-bottom: 1px solid var(--color-border); }
 .header .inner {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding: 18px var(--container-pad);
+  padding: 22px var(--container-pad);
+  min-height: 84px;
   display: flex;
   align-items: center;
   gap: 24px;
 }
 .header .logo { height: 48px; display: block; }
+.header .shepard-logo { height: 36px; display: block; }
 .header .org-line { font-size: 12px; color: var(--color-muted-2); line-height: 1.35; flex: 1; }
 .header .org-line .big {
   display: block;
@@ -195,7 +209,44 @@ body {
 .hero.hero-yellow { background-image: url("{{ '/assets/img/bg-title-yellow.jpg' | relative_url }}"); }
 .hero .overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,.45) 100%);
+  /* Strengthened triple-stop gradient so titles stay legible on the
+     bright blue/green/yellow plates and on photographs alike. */
+  background: linear-gradient(180deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.75) 100%);
+}
+/* Index splash: photograph hero, taller, bigger type, CTAs. */
+.hero.splash {
+  height: min(85vh, 760px);
+}
+.hero-photo { background-position: center; background-size: cover; background-repeat: no-repeat; }
+.hero.splash h1 {
+  font-size: clamp(48px, 8vw, 80px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  max-width: 980px;
+  /* subtle entry-fade — Motion-CI envelope: ≤200 ms ease-out, opacity only */
+  animation: hero-fade .22s ease-out both;
+}
+.hero.splash .eyebrow,
+.hero.splash .lede,
+.hero.splash .hero-cta {
+  animation: hero-fade .22s ease-out both;
+}
+.hero.splash .eyebrow { animation-delay: 30ms; }
+.hero.splash h1 { animation-delay: 60ms; }
+.hero.splash .lede { animation-delay: 110ms; max-width: 760px; font-size: clamp(18px, 1.6vw, 24px); }
+.hero.splash .hero-cta { animation-delay: 160ms; }
+@keyframes hero-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero.splash h1, .hero.splash .eyebrow, .hero.splash .lede, .hero.splash .hero-cta { animation: none; }
+}
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  flex-wrap: wrap;
 }
 .hero .inner {
   position: relative;

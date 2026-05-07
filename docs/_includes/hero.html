@@ -6,16 +6,37 @@
     title   — h1 string (required for visual sense; falls back to page.title)
     lede    — single paragraph below the title (optional)
     bg      — one of `blue` | `green` | `yellow`; defaults to `blue`
+    photo   — relative URL of a photograph to use as the hero background;
+              if set, overrides `bg` and turns the hero into a photo plate
+              (the splash-only path on the index page).
+    splash  — when true, the hero gets the index-only splash treatment:
+              taller `min(85vh, 760px)`, larger title type, CTA row.
+    cta1_text / cta1_url   — primary CTA label + href (only with splash)
+    cta2_text / cta2_url   — secondary CTA label + href (only with splash)
+
   The bg-title-*.jpg plates are POTX background gradients, not photographs
-  (see dlr-ui-kit/LICENSING.md and the upstream README).
+  (see dlr-ui-kit/LICENSING.md and the upstream README). The photographs
+  (`photo-*.jpg`) come from the same upload, used for the splash hero.
 {%- endcomment -%}
 {%- assign hero_bg = include.bg | default: 'blue' -%}
 {%- assign hero_title = include.title | default: page.title -%}
-<section class="hero hero-{{ hero_bg }}">
+{%- assign hero_class = 'hero hero-' | append: hero_bg -%}
+{%- if include.splash -%}{%- assign hero_class = hero_class | append: ' splash' -%}{%- endif -%}
+{%- if include.photo -%}
+<section class="{{ hero_class }} hero-photo" style="background-image:url('{{ include.photo | relative_url }}')">
+{%- else -%}
+<section class="{{ hero_class }}">
+{%- endif -%}
   <div class="overlay"></div>
   <div class="inner">
     {%- if include.eyebrow -%}<div class="eyebrow">{{ include.eyebrow }}</div>{%- endif -%}
     {%- if hero_title -%}<h1>{{ hero_title }}</h1>{%- endif -%}
     {%- if include.lede -%}<p class="lede">{{ include.lede }}</p>{%- endif -%}
+    {%- if include.splash and include.cta1_text -%}
+    <div class="hero-cta">
+      <a class="btn primary" href="{{ include.cta1_url | relative_url }}">{{ include.cta1_text }}</a>
+      {%- if include.cta2_text -%}<a class="btn secondary" href="{{ include.cta2_url | relative_url }}">{{ include.cta2_text }}</a>{%- endif -%}
+    </div>
+    {%- endif -%}
   </div>
 </section>

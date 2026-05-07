@@ -6,7 +6,8 @@
   <title>{{ page.title | default: site.title }} — {{ site.title }}</title>
   <meta name="description" content="{{ page.description | default: site.description }}">
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
-  <link rel="icon" href="{{ '/assets/img/dlr-logo.svg' | relative_url }}">
+  <link rel="icon" href="{{ '/assets/favicon.ico' | relative_url }}" sizes="any">
+  <link rel="icon" href="{{ '/assets/img/shepard_logo.svg' | relative_url }}" type="image/svg+xml">
   {% if page.mermaid %}
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded', function () { if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: 'neutral' }); } });</script>
@@ -26,7 +27,13 @@
        eyebrow=page.hero_eyebrow
        title=page.hero_title
        lede=page.hero_lede
-       bg=page.hero_bg %}
+       bg=page.hero_bg
+       photo=page.hero_photo
+       splash=page.hero_splash
+       cta1_text=page.hero_cta1_text
+       cta1_url=page.hero_cta1_url
+       cta2_text=page.hero_cta2_text
+       cta2_url=page.hero_cta2_url %}
   {% endif %}
 
   {%- comment -%}
