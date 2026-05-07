@@ -11,9 +11,9 @@ A GitHub Pages site is published from `docs/` on this mirror:
 
 **<https://noheton.github.io/shepard/>**
 
-Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python quickstart (`/getting-started`) · user guide (`/user-guide`) · admin guide (`/admin`) · system requirements (`/system-requirements`).
+Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python quickstart (`/getting-started`) · user guide (`/user-guide`) · admin guide (`/admin`) · system requirements (`/system-requirements`) · [free test deploy on Oracle Cloud](https://noheton.github.io/shepard/deploy-oracle-free) (`/deploy-oracle-free`).
 
-Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main` (preview also runs on the dispatcher branch while PRs are open). The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
+Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main`. The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
 
 ## Quick test / evaluation setup
 
