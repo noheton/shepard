@@ -24,6 +24,8 @@ public class PermissionsTest extends BaseTestCase {
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(BasicEntity.class, new Collection(5L), new Collection(6L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

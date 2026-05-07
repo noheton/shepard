@@ -19,6 +19,8 @@ public class UserTest extends BaseTestCase {
       .forClass(User.class)
       .withPrefabValues(ApiKey.class, new ApiKey(a), new ApiKey(b))
       .withPrefabValues(Subscription.class, new Subscription(1L), new Subscription(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

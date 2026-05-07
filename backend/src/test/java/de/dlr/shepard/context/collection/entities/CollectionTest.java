@@ -29,6 +29,8 @@ public class CollectionTest extends BaseTestCase {
       .withPrefabValues(Version.class, new Version(new UUID(1L, 2L)), new Version(new UUID(3L, 4L)))
       .withPrefabValues(FileContainer.class, new FileContainer(1L), new FileContainer(2L))
       .withPrefabValues(Permissions.class, new Permissions(1L), new Permissions(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

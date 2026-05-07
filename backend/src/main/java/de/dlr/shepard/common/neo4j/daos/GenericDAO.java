@@ -1,5 +1,7 @@
 package de.dlr.shepard.common.neo4j.daos;
 
+import de.dlr.shepard.common.identifier.AppIdGenerator;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
@@ -82,12 +84,23 @@ public abstract class GenericDAO<T> {
   }
 
   /**
-   * Save an entity and all related entities
+   * Save an entity and all related entities.
+   *
+   * <p>If the entity implements {@link HasAppId} and its {@code appId} is still
+   * {@code null}, a fresh UUID v7 is minted via {@link AppIdGenerator#next()}
+   * before persistence. This is the L2a write-side seam of the Neo4j-ID
+   * migration: every newly-created node-entity ships with a stable
+   * application-level identifier without round-tripping the database. Existing
+   * rows pre-dating L2a keep {@code appId == null} until L2b's backfill
+   * migration runs.
    *
    * @param entity The entity to be saved
    * @return the saved entity
    */
   public T createOrUpdate(T entity) {
+    if (entity instanceof HasAppId hasAppId && hasAppId.getAppId() == null) {
+      hasAppId.setAppId(AppIdGenerator.next());
+    }
     session.save(entity, DEPTH_ENTITY);
     return entity;
   }

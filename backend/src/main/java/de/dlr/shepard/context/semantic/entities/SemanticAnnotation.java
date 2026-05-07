@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.semantic.entities;
 
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
@@ -10,16 +11,23 @@ import lombok.ToString;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class SemanticAnnotation implements HasId, Named {
+public class SemanticAnnotation implements HasId, HasAppId, Named {
 
   @Id
   @GeneratedValue
   private Long id;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a.
+   */
+  @Property("appId")
+  private String appId;
 
   @Deprecated
   public String getName() {

@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.version.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.neo4j.entities.UserCreated;
 import de.dlr.shepard.common.util.Constants;
@@ -14,6 +15,7 @@ import lombok.ToString;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.Convert;
 import org.neo4j.ogm.annotation.typeconversion.DateLong;
@@ -23,12 +25,20 @@ import org.neo4j.ogm.typeconversion.UuidStringConverter;
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class Version implements HasId, UserCreated, Named {
+public class Version implements HasId, HasAppId, UserCreated, Named {
 
   @Id
   @GeneratedValue(strategy = UuidStrategy.class)
   @Convert(UuidStringConverter.class)
   private UUID uid;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a, distinct from
+   * the existing {@code uid} primary key (also a UUID, but stored as the
+   * Neo4j-OGM identifier).
+   */
+  @Property("appId")
+  private String appId;
 
   private String name;
 

@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.neo4j.entities;
 
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
@@ -12,6 +13,7 @@ import lombok.ToString;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.Index;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
@@ -25,11 +27,19 @@ import org.neo4j.ogm.annotation.typeconversion.DateLong;
 @Setter
 @ToString
 @NoArgsConstructor
-public abstract class AbstractEntity implements HasId, Deletable, HasProvenance {
+public abstract class AbstractEntity implements HasId, HasAppId, Deletable, HasProvenance {
 
   @Id
   @GeneratedValue
   protected Long id;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a, not yet exposed
+   * via the public API. Set on save by {@code GenericDAO#createOrUpdate}.
+   * Existing rows will have {@code null} until L2b's backfill runs.
+   */
+  @Property("appId")
+  protected String appId;
 
   @Index
   protected boolean deleted = false;

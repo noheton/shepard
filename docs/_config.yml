@@ -3,8 +3,11 @@ description: >-
   Storage for HEterogeneous Product And Research Data — a multi-database
   research-data platform exposing a single REST API for timeseries, files,
   structured documents, spatial data, and semantic annotations.
-url: ""
-baseurl: ""
+url: "https://noheton.github.io"
+# Project-page baseurl — site is served at https://noheton.github.io/shepard/.
+# `relative_url` prepends this so /assets/css/main.css resolves correctly under
+# the project path. If a custom domain is configured later, set baseurl: "".
+baseurl: "/shepard"
 
 # Custom layout — no theme. The single _layouts/default.html is intentionally
 # minimal so the canonical DLR Corporate-Design swap-in (logo, palette, fonts)
