@@ -7,17 +7,13 @@ name: GitHub Pages
 # the actions/deploy-pages step below to take effect.
 #
 # Trigger posture:
-#  - push to `main` — the production deploy after PR-#1001 merges.
-#  - push to `claude/implement-input-raw-changes-2WiOF` — preview of
-#    the dispatcher branch while PR-#1001 is still open. Drop this
-#    branch from the list once the PR merges.
+#  - push to `main` — production deploy.
 #  - workflow_dispatch — manual run from the Actions tab.
 
 on:
   push:
     branches:
       - main
-      - claude/implement-input-raw-changes-2WiOF
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"
@@ -41,6 +37,11 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # Programmatically flips repo Pages source to "GitHub Actions"
+          # if it is still set to "Deploy from a branch" (or unset). Avoids
+          # the manual Settings -> Pages toggle on first deploy.
+          enablement: true
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
