@@ -8,6 +8,14 @@ This page describes how to run shepard. It cites only what is actually in the
 repository today; the dedicated admin CLI is **in design** and not yet
 shipped — see "Admin CLI" below.
 
+## Free test deploy
+
+Want to spin up a personal test instance without paying for hosting?
+See [Deploy on Oracle Cloud Free Tier](deploy-oracle-free) — a one-page
+operator guide covering OCI signup quirks, the ARM-image caveat for
+shepard's backend/frontend, TLS via Caddy + Let's Encrypt, and nightly
+Object Storage backups within the always-free 10 GB allowance.
+
 ## Stack — docker-compose
 
 Production deployment uses `infrastructure/docker-compose.yml`. The
