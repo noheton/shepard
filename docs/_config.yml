@@ -1,0 +1,51 @@
+title: shepard
+description: >-
+  Storage for HEterogeneous Product And Research Data — a multi-database
+  research-data platform exposing a single REST API for timeseries, files,
+  structured documents, spatial data, and semantic annotations.
+url: ""
+baseurl: ""
+
+# Custom layout — no theme. The single _layouts/default.html is intentionally
+# minimal so the canonical DLR Corporate-Design swap-in (logo, palette, fonts)
+# is a one-file diff once the assets arrive. See aidocs/33 §7 (forthcoming).
+theme: null
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Pages live at the docs/ root (default behaviour). Collections kept minimal
+# so this stays a "docs site", not a CMS.
+
+defaults:
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: default
+
+# Top navigation, consumed by _includes/header.html.
+nav:
+  - title: Home
+    url: /
+  - title: Architecture
+    url: /architecture
+  - title: Getting started
+    url: /getting-started
+  - title: User guide
+    url: /user-guide
+  - title: Admin
+    url: /admin
+  - title: System requirements
+    url: /system-requirements
+
+# Snapshot date — bump when content is refreshed.
+snapshot_date: 2026-05-07
+
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - vendor

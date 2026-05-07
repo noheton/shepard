@@ -1,0 +1,23 @@
+{
+  "test_run_id": "TR-002",
+  "campaign": "lumen-inspired-q3-2024",
+  "bench": "P3-Lampoldshausen",
+  "propellant": "LOX/LCH4",
+  "scheduled_at": "2024-07-11T09:00:00+00:00",
+  "shift": "late",
+  "test_engineer": "S. Holzwarth",
+  "is_fired": true,
+  "duration_s": 30,
+  "target_thrust_kN": 25,
+  "target_mixture_ratio": 3.4,
+  "lox_lot_id": "LOX-2024-01",
+  "lch4_lot_id": "CH4-2024-01",
+  "weather": {
+    "temp_c": 22,
+    "wind_kmh": 9,
+    "humidity_pct": 60,
+    "cloud": "SCT"
+  },
+  "igniter_check": "PASS",
+  "notes_brief": "Repeat reference fire. Vibration envelopes nominal across both pumps."
+}

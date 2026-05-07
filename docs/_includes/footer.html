@@ -1,0 +1,41 @@
+{%- comment -%}
+  Footer ribbon + thin legal strip. Adapted from
+  `dlr-ui-kit/ui_kits/website/index.html` (commit 8b3245a). All links
+  point at `/` placeholders; the deployer should fill them once the
+  canonical URLs are known.
+{%- endcomment -%}
+<footer class="footer-ribbon">
+  <div class="inner">
+    <div>
+      <img class="logo" src="{{ '/assets/img/dlr-logo-white.svg' | relative_url }}" alt="DLR" width="100" height="40">
+      <p class="desc">shepard ("Storage for HEterogeneous Product And Research Data") — a multi-database research-data platform from the DLR Center for Lightweight Production Technology in Augsburg.</p>
+    </div>
+    <div>
+      <h4>Über shepard</h4>
+      <a href="{{ '/' | relative_url }}">Home</a>
+      <a href="{{ '/architecture' | relative_url }}">Architecture</a>
+      <a href="{{ '/system-requirements' | relative_url }}">System requirements</a>
+      <a href="https://gitlab.com/dlr-shepard/shepard">GitLab (authoritative)</a>
+    </div>
+    <div>
+      <h4>Service</h4>
+      <a href="{{ '/getting-started' | relative_url }}">Getting started</a>
+      <a href="{{ '/user-guide' | relative_url }}">User guide</a>
+      <a href="{{ '/admin' | relative_url }}">Admin</a>
+      <a href="https://github.com/noheton/shepard">GitHub mirror</a>
+    </div>
+    <div>
+      <h4>Rechtliches</h4>
+      <a href="/">Impressum</a>
+      <a href="/">Datenschutz</a>
+      <a href="/">Barrierefreiheit</a>
+      <a href="/">Kontakt</a>
+    </div>
+  </div>
+</footer>
+<div class="legal">
+  <div class="inner">
+    <span>© {{ "now" | date: "%Y" }} Deutsches Zentrum für Luft- und Raumfahrt e.&nbsp;V. (DLR) · Snapshot {{ site.snapshot_date }}</span>
+    <span><a href="/">Impressum</a> &nbsp; <a href="/">Datenschutz</a> &nbsp; <a href="/">Barrierefreiheit</a></span>
+  </div>
+</div>

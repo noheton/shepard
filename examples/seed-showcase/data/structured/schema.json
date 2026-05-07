@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LUMEN-Inspired Hot-Fire Run Log (synthetic)",
+  "description": "Operator's structured run-log entry per test run. Synthetic schema sketch \u2014 not a DLR standard.",
+  "type": "object",
+  "required": [
+    "test_run_id",
+    "campaign",
+    "bench",
+    "propellant",
+    "scheduled_at",
+    "shift",
+    "test_engineer",
+    "is_fired",
+    "duration_s",
+    "target_thrust_kN",
+    "target_mixture_ratio",
+    "lox_lot_id",
+    "lch4_lot_id",
+    "weather",
+    "igniter_check",
+    "notes_brief"
+  ],
+  "properties": {
+    "test_run_id": {
+      "type": "string",
+      "pattern": "^TR-[0-9]{3}$"
+    },
+    "campaign": {
+      "type": "string"
+    },
+    "bench": {
+      "type": "string"
+    },
+    "propellant": {
+      "type": "string"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "shift": {
+      "type": "string",
+      "enum": [
+        "early",
+        "late"
+      ]
+    },
+    "test_engineer": {
+      "type": "string"
+    },
+    "is_fired": {
+      "type": "boolean"
+    },
+    "duration_s": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "target_thrust_kN": {
+      "type": "number"
+    },
+    "target_mixture_ratio": {
+      "type": "number"
+    },
+    "lox_lot_id": {
+      "type": "string"
+    },
+    "lch4_lot_id": {
+      "type": "string"
+    },
+    "weather": {
+      "type": "object",
+      "required": [
+        "temp_c",
+        "wind_kmh",
+        "humidity_pct",
+        "cloud"
+      ],
+      "properties": {
+        "temp_c": {
+          "type": "number"
+        },
+        "wind_kmh": {
+          "type": "number"
+        },
+        "humidity_pct": {
+          "type": "number"
+        },
+        "cloud": {
+          "type": "string"
+        }
+      }
+    },
+    "igniter_check": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "PASS",
+        "FAIL",
+        null
+      ]
+    },
+    "notes_brief": {
+      "type": "string"
+    }
+  }
+}

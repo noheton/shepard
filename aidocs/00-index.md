@@ -15,7 +15,7 @@ related docs cluster topically.
 - [Chapter B. Plan & live work](#chapter-b--plan--live-work) — `11`, `15`, `16`
 - [Chapter C. Architecture, operations, roadmap](#chapter-c--architecture-operations-roadmap) — `12`, `17`, `19`, `20`
 - [Chapter D. API surface & clients](#chapter-d--api-surface--clients) — `18`, `23`, `26`, `27`, `28`, `29`, `31`, `32`
-- [Chapter E. Search, semantics, knowledge graph, lineage](#chapter-e--search-semantics-knowledge-graph-lineage) — `13`, `14` (`30` joins on land)
+- [Chapter E. Search, semantics, knowledge graph, lineage](#chapter-e--search-semantics-knowledge-graph-lineage) — `13`, `14`, `30`
 - [Chapter F. Identity, auth, permissions, identifiers](#chapter-f--identity-auth-permissions-identifiers) — `24`, `25`
 - [Chapter G. Demand, frontend & operator tooling](#chapter-g--demand-frontend--operator-tooling) — `21`, `22`, `33`
 - [Sub-pages: migration / operator notes](#sub-pages-migration--operator-notes)
@@ -124,16 +124,18 @@ side door + S3-presigned + SSE) hidden from end-users; without it the
 
 ## Chapter E — Search, semantics, knowledge graph, lineage
 
-Discoverability, annotation model generalisation, and the triplestore
-path. **Key takeaway:** `12 §11.B → 13 → 14` is a deliberate triplet —
-identifier discipline first, then unified search, then the annotation
-model. Lineage / provenance (`30`) joins this chapter once it lands;
-PROV-O triples live in the same triplestore `14 §5` proposes.
+Discoverability, annotation model generalisation, the triplestore
+path, and provenance / lineage. **Key takeaway:** `12 §11.B → 13 → 14`
+is a deliberate triplet — identifier discipline first, then unified
+search, then the annotation model. **`30` rides `14`'s triplestore**:
+PROV-O lineage triples live alongside the annotation triples once
+`14 §5` lands, with a Neo4j-relations fallback until then.
 
 | # | File | Topic | Status |
 |---|---|---|---|
 | 13 | [`13-search-improvements.md`](13-search-improvements.md) | One unified search endpoint replacing today's five; richer query syntax (predicate JSON + fulltext + raw escape hatches: SPARQL/SQL); searching by semantic annotation; cursor pagination + streaming | Proposal |
 | 14 | [`14-semantic-improvements.md`](14-semantic-improvements.md) | Generalising semantic annotations to file / structured / spatial payloads; label vs IRI discipline; search-as-you-type for terms; triplestore (n10s on Neo4j → GraphDB / RDF4J) for SPARQL, reasoning, KG export, FAIR | Proposal |
+| 30 | [`30-provenance-and-lineage-design.md`](30-provenance-and-lineage-design.md) | Provenance + data lineage design. Three kinds of provenance (operational / derivation / publication); decision is **OpenLineage *and* PROV-O** via one ~150-LoC mapping layer; capture via JAX-RS filter (operational) + optional `derivedFrom` DTO field (derivation) + RO-Crate `provenance.json` riding R2's `ExportSelection` (publication); query at `GET /entities/{kind}/{id}/lineage` with per-node permission redaction via P2's `filterAllowedForUser`; emission via `aidocs/32`'s job pattern. Spawns sub-IDs **R3a–R3e** (~6.5 eng-weeks). **L2 coupling explicit** — bundle R3a with L2a | Design |
 
 ### Dependency graph among Chapter E + `12 §11.B`
 

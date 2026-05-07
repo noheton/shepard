@@ -1,0 +1,71 @@
+{%- comment -%}
+  Top chrome — utility bar + white header + solid-blue primary nav.
+  Adapted from `dlr-ui-kit/ui_kits/website/index.html` (commit 8b3245a).
+  The utility-bar links Karriere / Newsroom / Kontakt are German because
+  the chrome is canonically German on DLR's own surfaces; the DE/EN switch
+  signals the language of the *content*, which is English on this site.
+  Deployer note: replace the three `/` placeholders with the real URLs
+  for Karriere / Newsroom / Kontakt once they are known.
+  The search box is intentionally visual-only — wiring real search would
+  need either Lunr.js or Algolia (both out of scope for v1).
+
+  Identity treatment: shepard's own wordmark is the primary mark in the
+  header; the DLR institutional logo appears subordinately at the right
+  edge of the utility bar with a separator and an explanatory title.
+{%- endcomment -%}
+<div class="utility">
+  <div class="inner">
+    <a href="/">Karriere</a>
+    <a href="/">Newsroom</a>
+    <a href="/">Kontakt</a>
+    <span class="lang"><a href="/">DE</a> · <span class="active">EN</span></span>
+    <span class="utility-sep" aria-hidden="true"></span>
+    <a class="utility-dlr" href="https://www.dlr.de" title="shepard is developed by DLR" rel="external">
+      <img src="{{ '/assets/img/dlr-logo.svg' | relative_url }}" alt="Deutsches Zentrum für Luft- und Raumfahrt" height="20">
+    </a>
+  </div>
+</div>
+
+<header class="header">
+  <div class="inner">
+    <a class="brand" href="{{ '/' | relative_url }}" aria-label="shepard — home">
+      <img class="shepard-logo" src="{{ '/assets/img/shepard_logo.svg' | relative_url }}" alt="shepard" height="36">
+    </a>
+    <div class="org-line">
+      <span class="big">Research Data Management Platform</span>
+      Storage for HEterogeneous Product And Research Data · DLR Center for Lightweight Production Technology, Augsburg
+    </div>
+    {%- comment -%}
+      Visual-only search form. Submitting hits `?search=...` on the same
+      page — wiring real client-side search requires Lunr.js or Algolia
+      (out of scope for v1).
+    {%- endcomment -%}
+    <form class="search" role="search" method="get" action="{{ '/' | relative_url }}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-4.3-4.3"/>
+      </svg>
+      <input type="search" name="search" placeholder="Search…" aria-label="Search the site">
+    </form>
+  </div>
+</header>
+
+<nav class="nav" aria-label="Primary">
+  <div class="inner">
+    {%- for item in site.nav -%}
+      {%- assign item_url = item.url | relative_url -%}
+      {%- assign page_url = page.url | relative_url -%}
+      {%- comment -%}
+        Active-state match: exact for the home `/`; prefix for everything
+        else (so `/architecture` and `/architecture.html` both match).
+      {%- endcomment -%}
+      {%- assign is_active = false -%}
+      {%- if item.url == "/" and page.url == "/" -%}
+        {%- assign is_active = true -%}
+      {%- elsif item.url != "/" and page.url contains item.url -%}
+        {%- assign is_active = true -%}
+      {%- endif -%}
+      <a href="{{ item_url }}"{% if is_active %} class="active"{% endif %}>{{ item.title }}</a>
+    {%- endfor -%}
+  </div>
+</nav>
