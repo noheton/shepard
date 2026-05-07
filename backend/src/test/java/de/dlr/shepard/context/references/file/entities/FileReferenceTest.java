@@ -27,6 +27,8 @@ public class FileReferenceTest extends BaseTestCase {
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(FileContainer.class, new FileContainer(2L), new FileContainer(3L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.collection.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -19,6 +20,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -524,6 +526,37 @@ public class CollectionDAOTest extends BaseTestCase {
     var actual = dao.findAllCollectionsByShepardId(params, "bob");
     verify(session).query(Collection.class, query, paramsMap);
     assertEquals(List.of(col1), actual);
+  }
+
+  @Test
+  public void createOrUpdate_setsAppIdOnNewCollection() {
+    // L2a: a freshly-built Collection (extends AbstractEntity) should get a
+    // UUID v7 appId minted by the GenericDAO seam before the OGM session.save
+    // call. The legacy Long id is not touched in this phase.
+    var col = new Collection();
+    col.setName("fresh");
+
+    var actual = dao.createOrUpdate(col);
+
+    assertNotNull(actual.getAppId(), "appId should be populated by createOrUpdate");
+    assertEquals(36, actual.getAppId().length());
+    var parsed = UUID.fromString(actual.getAppId());
+    assertEquals(7, parsed.version(), "appId must be a UUID v7");
+    verify(session).save(col, 1);
+  }
+
+  @Test
+  public void createOrUpdate_preservesExistingAppId() {
+    // The seam is one-shot — once an appId is set (e.g. on re-save of a row
+    // already populated by L2b's backfill), it must not be regenerated.
+    var col = new Collection(1L);
+    var existing = "0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506";
+    col.setAppId(existing);
+
+    var actual = dao.createOrUpdate(col);
+
+    assertEquals(existing, actual.getAppId());
+    verify(session).save(col, 1);
   }
 
   @Test

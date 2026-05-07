@@ -19,6 +19,8 @@ public class VersionableEntityTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

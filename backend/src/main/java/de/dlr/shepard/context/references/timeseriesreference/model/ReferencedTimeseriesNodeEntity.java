@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.references.timeseriesreference.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesUniqueIdBuilder;
@@ -10,16 +11,24 @@ import lombok.NoArgsConstructor;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 
 @NodeEntity(label = "Timeseries")
 @Data
 @NoArgsConstructor
-public class ReferencedTimeseriesNodeEntity implements HasId {
+public class ReferencedTimeseriesNodeEntity implements HasId, HasAppId {
 
   @Id
   @GeneratedValue
   @JsonIgnore
   private Long id;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a.
+   */
+  @Property("appId")
+  @JsonIgnore
+  private String appId;
 
   @NotBlank
   private String measurement;

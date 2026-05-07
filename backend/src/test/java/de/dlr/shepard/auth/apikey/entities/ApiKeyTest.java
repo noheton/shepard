@@ -15,6 +15,8 @@ public class ApiKeyTest extends BaseTestCase {
     EqualsVerifier.simple()
       .forClass(ApiKey.class)
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
+      // appId is L2a-additive; not part of equals (uid remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

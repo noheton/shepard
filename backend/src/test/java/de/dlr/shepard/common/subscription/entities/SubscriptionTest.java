@@ -14,6 +14,8 @@ public class SubscriptionTest extends BaseTestCase {
     EqualsVerifier.simple()
       .forClass(Subscription.class)
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

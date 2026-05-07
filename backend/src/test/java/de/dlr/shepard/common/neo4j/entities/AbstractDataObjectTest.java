@@ -18,6 +18,8 @@ public class AbstractDataObjectTest extends BaseTestCase {
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(DataObjectReference.class, new DataObjectReference(1L), new DataObjectReference(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 }

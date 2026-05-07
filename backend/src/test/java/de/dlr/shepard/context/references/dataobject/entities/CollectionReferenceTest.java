@@ -20,6 +20,8 @@ public class CollectionReferenceTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(Collection.class, new Collection(1L), new Collection(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
+      // appId is L2a-additive; not part of equals (legacy id remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 }

@@ -2,6 +2,8 @@ package de.dlr.shepard.common.neo4j.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,9 +13,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.util.TraversalRules;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
@@ -44,6 +48,27 @@ public class GenericDAOTest extends BaseTestCase {
     @Override
     public Class<TestObject> getEntityType() {
       return TestObject.class;
+    }
+  }
+
+  /**
+   * Mirrors the shape of a real {@code @NodeEntity} that implements
+   * {@link HasAppId} via the inherited base class — it lets us exercise the
+   * L2a write-side seam in {@link GenericDAO#createOrUpdate(Object)} without
+   * needing a real Neo4j session.
+   */
+  @Data
+  private static class TestObjectWithAppId implements HasAppId {
+
+    private String appId;
+    private final int a;
+  }
+
+  private static class TestDAOWithAppId extends GenericDAO<TestObjectWithAppId> {
+
+    @Override
+    public Class<TestObjectWithAppId> getEntityType() {
+      return TestObjectWithAppId.class;
     }
   }
 
@@ -121,6 +146,56 @@ public class GenericDAOTest extends BaseTestCase {
     doNothing().when(session).save(a, 1);
     var actual = dao.createOrUpdate(a);
     assertEquals(a, actual);
+  }
+
+  @Test
+  public void createOrUpdate_setsAppId_whenEntityIsHasAppIdAndAppIdIsNull() {
+    // L2a: the DAO seam must mint a UUID v7 on the way to session.save().
+    var appIdDao = new TestDAOWithAppId();
+    var sessionMock = mock(Session.class);
+    appIdDao.session = sessionMock;
+    var entity = new TestObjectWithAppId(1);
+    assertNull(entity.getAppId(), "precondition: appId starts null");
+
+    var saved = appIdDao.createOrUpdate(entity);
+
+    assertNotNull(saved.getAppId(), "appId should be populated after save()");
+    assertEquals(36, saved.getAppId().length(), "appId should be a canonical 36-char UUID");
+    // Parses cleanly as a UUID and is version 7.
+    var parsed = UUID.fromString(saved.getAppId());
+    assertEquals(7, parsed.version());
+    verify(sessionMock).save(entity, 1);
+  }
+
+  @Test
+  public void createOrUpdate_doesNotOverwriteExistingAppId() {
+    // Idempotency: re-saving an already-tagged entity must not mint a new id.
+    var appIdDao = new TestDAOWithAppId();
+    var sessionMock = mock(Session.class);
+    appIdDao.session = sessionMock;
+    var entity = new TestObjectWithAppId(1);
+    var existing = "0190d1f8-7c4d-7d8a-91a5-b7c2d3e4f506";
+    entity.setAppId(existing);
+
+    var saved = appIdDao.createOrUpdate(entity);
+
+    assertEquals(existing, saved.getAppId(), "existing appId must be preserved");
+    verify(sessionMock).save(entity, 1);
+  }
+
+  @Test
+  public void createOrUpdate_legacyEntityWithoutHasAppId_isUntouched() {
+    // Defensive: TestObject does not implement HasAppId. The seam must be a
+    // no-op for it (read paths and legacy node types remain unaffected).
+    var legacyDao = new TestDAO();
+    var sessionMock = mock(Session.class);
+    legacyDao.session = sessionMock;
+    var legacy = new TestObject(1);
+
+    var saved = legacyDao.createOrUpdate(legacy);
+
+    assertEquals(legacy, saved);
+    verify(sessionMock).save(legacy, 1);
   }
 
   @Test

@@ -2,6 +2,7 @@ package de.dlr.shepard.common.mongoDB;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.HasCreationDate;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
@@ -12,16 +13,27 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.Index;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.typeconversion.DateLong;
 
 @Data
 @NoArgsConstructor
-public abstract class AbstractMongoObject implements HasId, HasCreationDate {
+public abstract class AbstractMongoObject implements HasId, HasAppId, HasCreationDate {
 
   @Id
   @GeneratedValue
   @JsonIgnore
   private Long id;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a, not yet exposed
+   * via the public API. Set on save by {@code GenericDAO#createOrUpdate}.
+   * Existing rows will have {@code null} until L2b's backfill runs.
+   */
+  @Property("appId")
+  @BsonIgnore
+  @JsonIgnore
+  private String appId;
 
   @Index
   @BsonIgnore

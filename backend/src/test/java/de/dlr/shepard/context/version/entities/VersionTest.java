@@ -19,6 +19,8 @@ public class VersionTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(Version.class, new Version(new UUID(1L, 2L)), new Version(new UUID(2L, 3L)))
       .withPrefabValues(UUID.class, new UUID(1L, 2L), new UUID(2L, 3L))
+      // appId is L2a-additive; not part of equals (uid remains canonical).
+      .withIgnoredFields("appId")
       .verify();
   }
 

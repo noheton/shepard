@@ -1,6 +1,7 @@
 package de.dlr.shepard.auth.users.entities;
 
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
@@ -12,16 +13,23 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class User implements HasId {
+public class User implements HasId, HasAppId {
 
   @Id
   private String username;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a.
+   */
+  @Property("appId")
+  private String appId;
 
   private String firstName;
 

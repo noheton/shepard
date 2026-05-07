@@ -2,6 +2,7 @@ package de.dlr.shepard.auth.permission.model;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
@@ -15,17 +16,24 @@ import lombok.ToString;
 import org.neo4j.ogm.annotation.GeneratedValue;
 import org.neo4j.ogm.annotation.Id;
 import org.neo4j.ogm.annotation.NodeEntity;
+import org.neo4j.ogm.annotation.Property;
 import org.neo4j.ogm.annotation.Relationship;
 import org.neo4j.ogm.annotation.Relationship.Direction;
 
 @NodeEntity
 @Data
 @NoArgsConstructor
-public class Permissions implements HasId {
+public class Permissions implements HasId, HasAppId {
 
   @Id
   @GeneratedValue
   private Long id;
+
+  /**
+   * Application-level identifier (UUID v7) — additive in L2a.
+   */
+  @Property("appId")
+  private String appId;
 
   @Relationship(type = Constants.HAS_PERMISSIONS, direction = Direction.INCOMING)
   private List<BasicEntity> entities;
