@@ -56,17 +56,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class LabJournalEntryRest {
 
-  /**
-   * RFC 7396 media type for JSON Merge Patch. Accepted alongside
-   * {@code application/json} on the {@code @PATCH} endpoint in this pilot;
-   * future {@code /v2/} APIs will require this exact media type.
-   *
-   * TODO(P21x cleanup): worktree base predates {@code Constants.APPLICATION_MERGE_PATCH_JSON}
-   * (commit d9e08c2). When rebased, replace this local declaration with
-   * {@code Constants.APPLICATION_MERGE_PATCH_JSON} as the prior follow-ons did.
-   */
-  public static final String APPLICATION_MERGE_PATCH_JSON = "application/merge-patch+json";
-
   @Inject
   LabJournalEntryService labJournalEntryService;
 
@@ -228,7 +217,7 @@ public class LabJournalEntryRest {
    */
   @PATCH
   @Path("/{" + Constants.LAB_JOURNAL_ENTRY_ID + "}")
-  @Consumes({ APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Tag(name = Constants.LAB_JOURNAL_ENTRY)
   @Operation(
     summary = "Partially update a lab journal",
@@ -259,7 +248,7 @@ public class LabJournalEntryRest {
       required = true,
       description = "Partial LabJournalEntry (RFC 7396). Every field is optional; absent fields are preserved.",
       content = @Content(
-        mediaType = APPLICATION_MERGE_PATCH_JSON,
+        mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
         schema = @Schema(implementation = LabJournalEntryIO.class)
       )
     ) JsonNode patch
