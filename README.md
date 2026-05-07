@@ -5,6 +5,16 @@ It is designed as a monorepo containing frontend, backend and documentation.
 
 To find more information about shepard, its usage and infrastructure, check out [the documentation concept](https://gitlab.com/dlr-shepard/shepard/-/blob/main/architecture/shepard-architectural-documentation.adoc?ref_type=heads#user-content-documentation-artifacts).
 
+## Documentation site
+
+A GitHub Pages site is published from `docs/` on this mirror:
+
+**<https://noheton.github.io/shepard/>**
+
+Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python quickstart (`/getting-started`) · user guide (`/user-guide`) · admin guide (`/admin`) · system requirements (`/system-requirements`).
+
+Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main` (preview also runs on the dispatcher branch while PRs are open). The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
+
 ## Quick test / evaluation setup
 
 There is a Docker Compose configuration in `infrastructure-local` which you can use to quickly try out shepard.
