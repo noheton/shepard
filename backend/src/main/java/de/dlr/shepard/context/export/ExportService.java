@@ -1,10 +1,13 @@
 package de.dlr.shepard.context.export;
 
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.ShepardException;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
+import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
@@ -24,6 +27,9 @@ import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesRef
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.version.io.VersionIO;
+import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataPayload;
 import de.dlr.shepard.data.timeseries.model.enums.CsvFormat;
 import io.quarkus.logging.Log;
@@ -65,6 +71,12 @@ public class ExportService {
   @Inject
   AuthenticationContext authenticationContext;
 
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  VersionService versionService;
+
   /**
    * Exports collection by shepard Id
    *
@@ -89,10 +101,45 @@ public class ExportService {
     Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
     var exportBuilder = new ExportBuilder(collection, selection);
+    writeEntityMetadata(exportBuilder, collection, selection, true);
     for (var dataObject : collection.getDataObjects()) {
       fetchAndWriteDataObject(collectionId, exportBuilder, dataObject.getShepardId(), selection);
     }
     return exportBuilder.build();
+  }
+
+  /**
+   * Emit per-entity metadata documents (permissions / versions / annotations) when the selection
+   * has the corresponding boolean flipped to {@code true}. Defaults are {@code false} so legacy
+   * behaviour is unchanged.
+   *
+   * @param isCollection only collections get a versions document; the rest skip that kind.
+   */
+  private void writeEntityMetadata(
+    ExportBuilder builder,
+    BasicEntity entity,
+    ExportSelection selection,
+    boolean isCollection
+  ) throws IOException {
+    if (selection == null) return;
+    long ioId = entity.getNumericId();
+    if (selection.includePermissions()) {
+      var perms = permissionsService
+        .getPermissionsOfEntityOptional(entity.getId())
+        .map(PermissionsIO::new)
+        .orElse(null);
+      builder.addPermissionsFor(ioId, perms);
+    }
+    if (selection.includeAnnotations()) {
+      List<SemanticAnnotationIO> annotations = entity.getAnnotations() == null
+        ? List.of()
+        : entity.getAnnotations().stream().map(SemanticAnnotationIO::new).toList();
+      builder.addAnnotationsFor(ioId, annotations);
+    }
+    if (isCollection && selection.includeVersions()) {
+      List<VersionIO> versions = versionService.getAllVersions(ioId).stream().map(VersionIO::new).toList();
+      builder.addVersionsFor(ioId, versions);
+    }
   }
 
   private void fetchAndWriteDataObject(
@@ -103,12 +150,14 @@ public class ExportService {
   ) throws IOException, InvalidBodyException {
     var dataObject = dataObjectService.getDataObject(dataObjectId);
     builder.addDataObject(dataObject);
+    writeEntityMetadata(builder, dataObject, selection, false);
 
     // TODO: Add more types, maybe improve (StrategyPattern?)
     for (BasicReference reference : dataObject.getReferences()) {
       ExportSelection.PayloadKind kind = mapKind(reference.getType());
       if (selection != null && !selection.includesKind(kind)) continue;
       if (selection != null && selection.excludesId(String.valueOf(reference.getShepardId()))) continue;
+      writeEntityMetadata(builder, reference, selection, false);
       switch (reference.getType()) {
         case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
           collectionId,

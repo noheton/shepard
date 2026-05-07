@@ -23,8 +23,22 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
   @Schema(name = "ExportSelectionPayloads")
   public record Payloads(Set<PayloadKind> include, List<String> excludeIds) {}
 
-  /** Booleans gating which categories of metadata bundle into the crate. */
-  @Schema(name = "ExportSelectionMetadata")
+  /**
+   * Booleans gating which categories of metadata bundle into the crate.
+   *
+   * <p>Defaults match today's exporter behaviour: {@code labJournal} is included by default
+   * (legacy behaviour); {@code permissions}, {@code annotations}, and {@code versions} default to
+   * {@code false} and flipping them to {@code true} causes the exporter to emit per-entity
+   * {@code <id>-permissions.json}, {@code <id>-annotations.json}, and {@code <id>-versions.json}
+   * documents (collection-only for versions). {@code subscriptions} is currently
+   * recorded-only — the exporter does not yet emit a per-entity subscriptions document because
+   * subscriptions are URL-pattern based with no clean per-entity API; flipping it has no effect
+   * beyond appearing in the {@code selection} block of {@code ro-crate-metadata.json}.
+   */
+  @Schema(
+    name = "ExportSelectionMetadata",
+    description = "Per-kind opt-in for bundling metadata documents. Defaults: labJournal=true (legacy); permissions/annotations/versions=false; subscriptions recorded-only (no document emitted)."
+  )
   public record Metadata(
     Boolean permissions,
     Boolean annotations,

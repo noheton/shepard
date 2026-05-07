@@ -4,15 +4,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
+import de.dlr.shepard.common.subscription.io.SubscriptionIO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.version.io.VersionIO;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
@@ -83,6 +87,46 @@ public class ExportBuilder {
     var referenceEntity = createFileEntity(entry);
     roCrateBuilder.addDataEntity(referenceEntity);
     addPersonEntity(author);
+    return this;
+  }
+
+  public ExportBuilder addPermissionsFor(long entityIoId, PermissionsIO permissions) throws IOException {
+    var payload = permissions != null ? permissions : new PermissionsIO();
+    return addMetadataDocument(entityIoId, ExportConstants.PERMISSIONS_SUFFIX, ExportConstants.TYPE_PERMISSIONS, payload);
+  }
+
+  public ExportBuilder addVersionsFor(long entityIoId, List<VersionIO> versions) throws IOException {
+    var payload = versions != null ? versions : List.<VersionIO>of();
+    return addMetadataDocument(entityIoId, ExportConstants.VERSIONS_SUFFIX, ExportConstants.TYPE_VERSIONS, payload);
+  }
+
+  public ExportBuilder addSubscriptionsFor(long entityIoId, List<SubscriptionIO> subscriptions) throws IOException {
+    var payload = subscriptions != null ? subscriptions : List.<SubscriptionIO>of();
+    return addMetadataDocument(
+      entityIoId,
+      ExportConstants.SUBSCRIPTIONS_SUFFIX,
+      ExportConstants.TYPE_SUBSCRIPTIONS,
+      payload
+    );
+  }
+
+  public ExportBuilder addAnnotationsFor(long entityIoId, List<SemanticAnnotationIO> annotations) throws IOException {
+    var payload = annotations != null ? annotations : List.<SemanticAnnotationIO>of();
+    return addMetadataDocument(
+      entityIoId,
+      ExportConstants.ANNOTATIONS_SUFFIX,
+      ExportConstants.TYPE_ANNOTATIONS,
+      payload
+    );
+  }
+
+  private ExportBuilder addMetadataDocument(long entityIoId, String suffix, String type, Object payload)
+    throws IOException {
+    var filename = entityIoId + suffix + ExportConstants.JSON_FILE_EXTENSION;
+    writeEntityToZip(filename, payload);
+    var fileEntityBuilder = createFileEntityBuilder(filename, entityIoId + suffix, "application/json");
+    fileEntityBuilder.addProperty(ExportConstants.TYPE_PROP, type);
+    roCrateBuilder.addDataEntity(fileEntityBuilder.build());
     return this;
   }
 

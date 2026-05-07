@@ -7,15 +7,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.version.io.VersionIO;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -60,6 +65,21 @@ public class ExportBuilderSelectionTest {
       }
     }
     return new byte[0];
+  }
+
+  private Map<String, byte[]> readZip(InputStream zipStream) throws IOException {
+    Map<String, byte[]> result = new HashMap<>();
+    try (var zis = new ZipInputStream(zipStream)) {
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        var bos = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = zis.read(buf)) > 0) bos.write(buf, 0, n);
+        result.put(entry.getName(), bos.toByteArray());
+      }
+    }
+    return result;
   }
 
   @Test
@@ -108,5 +128,70 @@ public class ExportBuilderSelectionTest {
       if (id != null && "./".equals(id.asText())) return node;
     }
     throw new AssertionError("root data entity (@id == './') not found in manifest");
+  }
+
+  @Test
+  public void addPermissionsFor_emitsZipEntryAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(true, null, null, null, null)));
+    var perms = new PermissionsIO();
+    builder.addPermissionsFor(2L, perms);
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-permissions.json"), "expected zip entry 2-permissions.json");
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-permissions.json"), "manifest must list the metadata document");
+  }
+
+  @Test
+  public void addAnnotationsFor_emptyList_stillEmitsDocAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(null, true, null, null, null)));
+    builder.addAnnotationsFor(2L, List.of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-annotations.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-annotations.json"));
+  }
+
+  @Test
+  public void addVersionsFor_emitsZipEntryAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(null, null, null, true, null)));
+    builder.addVersionsFor(2L, List.<VersionIO>of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-versions.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-versions.json"));
+  }
+
+  @Test
+  public void allFourMetadataDocs_appearAndAreLinkedInManifest() throws IOException {
+    var builder = new ExportBuilder(
+      collection(),
+      new ExportSelection(null, new ExportSelection.Metadata(true, true, null, true, null))
+    );
+    builder.addPermissionsFor(2L, new PermissionsIO());
+    builder.addAnnotationsFor(2L, List.<SemanticAnnotationIO>of());
+    builder.addVersionsFor(2L, List.<VersionIO>of());
+    builder.addSubscriptionsFor(2L, List.of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-permissions.json"));
+    assertTrue(entries.containsKey("2-annotations.json"));
+    assertTrue(entries.containsKey("2-versions.json"));
+    assertTrue(entries.containsKey("2-subscriptions.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-permissions.json"));
+    assertTrue(hasGraphNode(tree, "2-annotations.json"));
+    assertTrue(hasGraphNode(tree, "2-versions.json"));
+    assertTrue(hasGraphNode(tree, "2-subscriptions.json"));
+    JsonNode root = findRoot(tree);
+    assertTrue(root.has("selection"), "selection block must record what was selected");
+  }
+
+  private boolean hasGraphNode(JsonNode tree, String id) {
+    JsonNode graph = tree.get("@graph");
+    if (graph == null) return false;
+    for (JsonNode node : graph) {
+      JsonNode nodeId = node.get("@id");
+      if (nodeId != null && id.equals(nodeId.asText())) return true;
+    }
+    return false;
   }
 }
