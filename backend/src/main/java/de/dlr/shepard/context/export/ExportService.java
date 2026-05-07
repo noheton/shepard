@@ -75,22 +75,40 @@ public class ExportService {
    * @throws IOException if building the InputStream fails
    */
   public InputStream exportCollectionByShepardId(long collectionId) throws IOException {
+    return exportCollectionByShepardId(collectionId, null);
+  }
+
+  /**
+   * Exports collection by shepard Id with an optional selection filter.
+   *
+   * @param collectionId collection shepard id
+   * @param selection optional selection (nullable ⇒ byte-identical legacy export)
+   * @return InputStream zipped RO-Crate
+   */
+  public InputStream exportCollectionByShepardId(long collectionId, ExportSelection selection) throws IOException {
     Collection collection = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
 
-    var exportBuilder = new ExportBuilder(collection);
+    var exportBuilder = new ExportBuilder(collection, selection);
     for (var dataObject : collection.getDataObjects()) {
-      fetchAndWriteDataObject(collectionId, exportBuilder, dataObject.getShepardId());
+      fetchAndWriteDataObject(collectionId, exportBuilder, dataObject.getShepardId(), selection);
     }
     return exportBuilder.build();
   }
 
-  private void fetchAndWriteDataObject(long collectionId, ExportBuilder builder, long dataObjectId)
-    throws IOException, InvalidBodyException {
+  private void fetchAndWriteDataObject(
+    long collectionId,
+    ExportBuilder builder,
+    long dataObjectId,
+    ExportSelection selection
+  ) throws IOException, InvalidBodyException {
     var dataObject = dataObjectService.getDataObject(dataObjectId);
     builder.addDataObject(dataObject);
 
     // TODO: Add more types, maybe improve (StrategyPattern?)
     for (BasicReference reference : dataObject.getReferences()) {
+      ExportSelection.PayloadKind kind = mapKind(reference.getType());
+      if (selection != null && !selection.includesKind(kind)) continue;
+      if (selection != null && selection.excludesId(String.valueOf(reference.getShepardId()))) continue;
       switch (reference.getType()) {
         case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
           collectionId,
@@ -121,9 +139,22 @@ public class ExportService {
         default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
       }
     }
-    for (LabJournalEntry entry : dataObject.getLabJournalEntries()) {
-      fetchAndWriteLabJournalEntry(collectionId, dataObjectId, builder, entry.getId());
+    if (selection == null || selection.includeLabJournal()) {
+      for (LabJournalEntry entry : dataObject.getLabJournalEntries()) {
+        fetchAndWriteLabJournalEntry(collectionId, dataObjectId, builder, entry.getId());
+      }
     }
+  }
+
+  private static ExportSelection.PayloadKind mapKind(String type) {
+    if (type == null) return ExportSelection.PayloadKind.BasicReference;
+    return switch (type) {
+      case "TimeseriesReference" -> ExportSelection.PayloadKind.TimeseriesReference;
+      case "FileReference" -> ExportSelection.PayloadKind.FileReference;
+      case "StructuredDataReference" -> ExportSelection.PayloadKind.StructuredDataReference;
+      case "URIReference" -> ExportSelection.PayloadKind.URIReference;
+      default -> ExportSelection.PayloadKind.BasicReference;
+    };
   }
 
   private void fetchAndWriteLabJournalEntry(

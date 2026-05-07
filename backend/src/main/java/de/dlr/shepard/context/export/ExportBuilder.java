@@ -1,6 +1,9 @@
 package de.dlr.shepard.context.export;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
@@ -40,11 +43,17 @@ public class ExportBuilder {
   private ByteArrayOutputStream baos;
   private ZipOutputStream zos;
   private List<String> entries;
+  private final ExportSelection selection;
 
   public ExportBuilder(Collection collection) throws IOException {
+    this(collection, null);
+  }
+
+  public ExportBuilder(Collection collection, ExportSelection selection) throws IOException {
     baos = new ByteArrayOutputStream();
     zos = new ZipOutputStream(baos);
     entries = new ArrayList<>();
+    this.selection = selection;
 
     var roCrateName = collection.getName() + " Research Object Crate";
     var roCrateDescription = "Research Object Crate representing the shepard Collection " + collection.getName();
@@ -105,12 +114,30 @@ public class ExportBuilder {
 
   public InputStream build() throws IOException {
     var roCrate = roCrateBuilder.build();
-    Object jsonObject = objectMapper.readValue(roCrate.getJsonMetadata(), Object.class);
-    byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(jsonObject);
+    JsonNode tree = objectMapper.readTree(roCrate.getJsonMetadata());
+    // Empty / absent selection ⇒ byte-identical legacy manifest (no "selection" key).
+    if (selection != null && !selection.isEmpty()) {
+      injectSelection(tree, selection);
+    }
+    byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(tree);
     addToZip(ExportConstants.ROCRATE_METADATA, bytes);
     zos.close();
 
     return new ByteArrayInputStream(baos.toByteArray());
+  }
+
+  private void injectSelection(JsonNode tree, ExportSelection sel) {
+    if (!(tree instanceof ObjectNode root)) return;
+    JsonNode graph = root.get("@graph");
+    if (!(graph instanceof ArrayNode array)) return;
+    for (JsonNode node : array) {
+      if (!(node instanceof ObjectNode obj)) continue;
+      JsonNode id = obj.get("@id");
+      if (id != null && "./".equals(id.asText())) {
+        obj.set("selection", objectMapper.valueToTree(sel));
+        return;
+      }
+    }
   }
 
   private FileEntity createFileEntity(AbstractDataObjectIO entity) throws IOException {

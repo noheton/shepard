@@ -14,6 +14,7 @@ import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.export.ExportSelection;
 import de.dlr.shepard.context.export.ExportService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -358,6 +359,38 @@ public class CollectionRest {
   public Response exportCollection(@PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId)
     throws IOException {
     InputStream is = exportService.exportCollectionByShepardId(collectionId);
+    return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"export.zip\"")
+      .build();
+  }
+
+  @POST
+  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.EXPORT)
+  @Produces(MediaType.APPLICATION_OCTET_STREAM)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Export Collection as RoCrate with an optional selection filter")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_OCTET_STREAM,
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
+    )
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.COLLECTION_ID)
+  public Response exportCollectionWithSelection(
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @RequestBody(
+      required = false,
+      content = @Content(schema = @Schema(implementation = ExportSelection.class))
+    ) @Valid ExportSelection selection
+  ) throws IOException {
+    InputStream is = exportService.exportCollectionByShepardId(collectionId, selection);
     return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"export.zip\"")
       .build();
