@@ -14,7 +14,7 @@ related docs cluster topically.
 - [Chapter A. Situation reports](#chapter-a--situation-reports) — `01–10`
 - [Chapter B. Plan & live work](#chapter-b--plan--live-work) — `11`, `15`, `16`
 - [Chapter C. Architecture, operations, roadmap](#chapter-c--architecture-operations-roadmap) — `12`, `17`, `19`, `20`
-- [Chapter D. API surface & clients](#chapter-d--api-surface--clients) — `18`, `23`, `26`, `27`, `28`, `29`
+- [Chapter D. API surface & clients](#chapter-d--api-surface--clients) — `18`, `23`, `26`, `27`, `28`, `29`, `31`, `32`
 - [Chapter E. Search, semantics, knowledge graph, lineage](#chapter-e--search-semantics-knowledge-graph-lineage) — `13`, `14` (`30` joins on land)
 - [Chapter F. Identity, auth, permissions, identifiers](#chapter-f--identity-auth-permissions-identifiers) — `24`, `25`
 - [Chapter G. Demand & operator tooling](#chapter-g--demand--operator-tooling) — `21`, `22`
@@ -117,6 +117,8 @@ side door + S3-presigned + SSE) hidden from end-users; without it the
 | 27 | [`27-convenience-clients-design.md`](27-convenience-clients-design.md) | `shepard-py` and `shepard-ts` convenience layer (P16) — `Client` shape, 14-line vs 3-line worked example, "no new dependencies" interrogation (true with `[pandas]` / `[excel]` extras), pagination iterator, three workflow helpers (`to_pandas`, `to_excel`, `ro_crate`), TypeScript counterpart, 4-phase rollout | Design |
 | 28 | [`28-paradigms-and-clients-synthesis.md`](28-paradigms-and-clients-synthesis.md) | **Integrated synthesis** of `23 §4` (paradigms) + `§5` (client generation): four surfaces (REST core + SQL side door for bulk reads + S3-presigned for blobs + SSE for change-feeds), one schema source, one generator, one wrapper per language as multiplexer. Maintenance-cost ledger fits the budget; 12-month critical path. Spawns P22 + P23 | Synthesis |
 | 29 | [`29-p10-implementation-design.md`](29-p10-implementation-design.md) | P10 (`POST /sql/timeseries`) implementation design — JSON DSL request body, Cypher-first permission flow via `filterAllowedForUser` (post-P2), three-format content negotiation (CSV / JSON / NDJSON; Arrow deferred to P11), 1M-row + PT60S caps, file-level layout under `data/timeseries/sql/`, **gated on C5**. 3-phase rollout (P10a / P10b / P10c) | Design |
+| 31 | [`31-rocrate-export-optimisation.md`](31-rocrate-export-optimisation.md) | RO-Crate export performance: bottleneck inventory (whole-tree single-transaction walk, `byte[]`-materialised payloads, full-ZIP buffered into `ByteArrayOutputStream` before first byte, per-entity permission checks), 10 ranked optimisations (O1–O10), measurement plan (benchmark harness at S/M/L sizes + Micrometer phase timers), 4–6-phase rollout. **Top 3 ROI: O1 stream the ZIP / O6 batch permissions / O2 async export job** (the last gated on `aidocs/32`) | Performance |
+| 32 | [`32-long-running-process-pattern.md`](32-long-running-process-pattern.md) | Shared async-job pattern modelled on P3's `migration_progress` precedent: single Postgres `job` table, small `JobService` surface, `quarkus-scheduler`-driven worker against a bounded virtual-thread pool, `202 + Location: /jobs/{id}`, polling or SSE for progress, explicit `DELETE` for cooperative cancellation. Decision rule: per-request budgets (≤PT30S reads, ≤PT5M writes); over-budget falls through to a job. First two adopters: **R2 export** (pairs with `aidocs/31` O3) and **P14 NDJSON ingest** | Pattern |
 
 ---
 
