@@ -30,7 +30,9 @@ FileReference and StructuredDataReference per fired run. Read the
 Collection's `description` attribute for the synthetic-data
 disclaimer.
 
-<!-- screenshot: stop-01-collection-tree.png -->
+<figure class="screenshot-placeholder" data-target="stop-01-collection-tree">
+  <figcaption>Screenshot: stop 01 — Collection tree with the seven test runs and the analysis sub-tree — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.**
 
@@ -51,7 +53,9 @@ sit cleanly inside their nominal envelopes (chamber pressure ~90 bar
 at steady_state; fuel-pump vibration ≤ 4 g rms throughout). Use this
 plot as the "this is what nominal looks like" reference.
 
-<!-- screenshot: stop-02-tr001-clean.png -->
+<figure class="screenshot-placeholder" data-target="stop-02-tr001-clean">
+  <figcaption>Screenshot: stop 02 — TR-001 sensor view with vib_fuel_pump in nominal envelope — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.** See cell 2 of `notebooks/anomaly-analysis.ipynb`.
 
@@ -64,7 +68,9 @@ the canonical bearing-precursor signature: the pump completed
 steady_state and the operator only flagged it after reviewing the
 trace.
 
-<!-- screenshot: stop-03-tr004-spike.png -->
+<figure class="screenshot-placeholder" data-target="stop-03-tr004-spike">
+  <figcaption>Screenshot: stop 03 — TR-004 vib_fuel_pump showing the 12 g rms ramp-up spike at t=8s — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.** Re-use cell 2 of the notebook with `data_object_id =
 TR-004.id`.
@@ -78,7 +84,9 @@ peaking 12 g rms. Engine completed steady_state nominally; suspect
 bearing precursor. Recommending teardown."* The journal entry is the
 narrative companion to the timeseries trace.
 
-<!-- screenshot: stop-04-tr004-journal.png -->
+<figure class="screenshot-placeholder" data-target="stop-04-tr004-journal">
+  <figcaption>Screenshot: stop 04 — TR-004 lab-journal debrief with operator hypothesis — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.**
 
@@ -99,7 +107,9 @@ finding (*"Thrust bearing inner race shows incipient spalling.
 Replaced. Re-balance verified. Cleared for re-test."*) and the
 `severity=HIGH` attribute makes it discoverable via search.
 
-<!-- screenshot: stop-05-investigation-graph.png -->
+<figure class="screenshot-placeholder" data-target="stop-05-investigation-graph">
+  <figcaption>Screenshot: stop 05 — Investigation DataObject linked TR-004 → analysis → TR-006 — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.**
 
@@ -122,7 +132,9 @@ project-local placeholders under
 `https://shepard.dlr.de/showcase/lumen-inspired#` so they're easy to
 swap for a real ontology later.
 
-<!-- screenshot: stop-06-annotations.png -->
+<figure class="screenshot-placeholder" data-target="stop-06-annotations">
+  <figcaption>Screenshot: stop 06 — Phase-of-burn annotation overlay on TR-004 timeseries — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.**
 
@@ -138,7 +150,9 @@ hit comes back: the investigation DataObject. Search is also the
 fastest way to locate a specific test engineer's runs (`test_engineer`
 attribute) or the runs that fired vs the hold day (`is_fired`).
 
-<!-- screenshot: stop-07-search-severity.png -->
+<figure class="screenshot-placeholder" data-target="stop-07-search-severity">
+  <figcaption>Screenshot: stop 07 — Search results for severity=HIGH — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.**
 
@@ -166,7 +180,9 @@ but succeeds on `PUT /collections/.../investigation`. The
 `reviewer_key`'s name carries an intended `validUntil` (90 days from
 seed time) — see seed.py for the L5 placeholder.
 
-<!-- screenshot: stop-08-permissions-matrix.png -->
+<figure class="screenshot-placeholder" data-target="stop-08-permissions-matrix">
+  <figcaption>Screenshot: stop 08 — Permissions matrix for the analyst principal — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 ## 9. Versioning
 
@@ -180,7 +196,9 @@ confirmed effective" appears too. Versioning is feature-toggled in
 the backend; on stacks where the toggle is off the seed logs `SKIP`
 and this stop is omitted.
 
-<!-- screenshot: stop-09-versions-diff.png -->
+<figure class="screenshot-placeholder" data-target="stop-09-versions-diff">
+  <figcaption>Screenshot: stop 09 — Collection version v1 vs v2 with the journal addendum — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 ## 10. Selective export
 
@@ -193,7 +211,9 @@ reviewer without leaking the operator's debrief. The current
 falls back gracefully and prints the selection record next to the
 RO-Crate manifest. When R2c lands, the notebook needs no changes.
 
-<!-- screenshot: stop-10-export-selection.png -->
+<figure class="screenshot-placeholder" data-target="stop-10-export-selection">
+  <figcaption>Screenshot: stop 10 — Selective export ExportSelection JSON body and resulting manifest — placeholder. Replace with Playwright capture once R5 lands.</figcaption>
+</figure>
 
 **Try it.** Cells 7-8 of `notebooks/anomaly-analysis.ipynb`.
 
