@@ -130,6 +130,18 @@ Demand-side research and operator-facing tooling.
 
 ---
 
+### Sub-page: migration / operator notes
+
+Short, action-oriented notes that hang off a specific landed item but
+don't warrant their own numbered slot (and reference the chapter doc
+that frames them):
+
+| File | Topic | Hangs off |
+|---|---|---|
+| [`A3c-namespace-migration.md`](A3c-namespace-migration.md) | Operator note for the `shepard.spatial-data.*` → `shepard.infrastructure.spatial.*` rename: aliasing window, deprecation warning, planned removal in v6.0 | A3c (Chapter F) |
+
+---
+
 ## Cross-chapter interlocks
 
 A handful of items in `16-dispatcher-backlog.md` thread through several

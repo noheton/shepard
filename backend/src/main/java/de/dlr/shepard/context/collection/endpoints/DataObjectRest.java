@@ -53,13 +53,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 public class DataObjectRest {
 
-  /**
-   * RFC 7396 media type for JSON Merge Patch. Accepted alongside
-   * {@code application/json} on the {@code @PATCH} endpoint in this pilot;
-   * future {@code /v2/} APIs will require this exact media type.
-   */
-  public static final String APPLICATION_MERGE_PATCH_JSON = "application/merge-patch+json";
-
   @Inject
   DataObjectService dataObjectService;
 
@@ -222,7 +215,7 @@ public class DataObjectRest {
    */
   @PATCH
   @Path("/{" + Constants.DATA_OBJECT_ID + "}")
-  @Consumes({ APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Subscribable
   @Tag(name = Constants.DATA_OBJECT)
   @Operation(
@@ -252,7 +245,7 @@ public class DataObjectRest {
       required = true,
       description = "Partial DataObject (RFC 7396). Every field is optional; absent fields are preserved.",
       content = @Content(
-        mediaType = APPLICATION_MERGE_PATCH_JSON,
+        mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
         schema = @Schema(implementation = DataObjectIO.class)
       )
     ) JsonNode patch
