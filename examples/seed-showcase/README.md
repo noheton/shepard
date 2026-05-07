@@ -20,12 +20,36 @@ campaign, finds the spike with a rolling-median ± k·MAD detector,
 confirms the fix on TR-006, and builds a selective RO-Crate export
 request.
 
+## Two scripts
+
+This directory ships **two** import scripts that produce the same
+entity tree against different targets. Both are deterministic via
+`numpy.random.default_rng(2024)` so the timeseries are bit-identical;
+both create a Collection with the same name. Pick exactly one — the
+two are **not** interchangeable against the same database (running
+both writes duplicate annotations and lab-journal entries).
+
+- **`seed.py`** — for shepard built from the **dispatcher branch**
+  (PR #1000 / PR #1001 merged). Exercises L5 API-key `validUntil`,
+  R2 selective-export, P14 NDJSON ingest, P21 PATCH semantics, and
+  the body-form `POST /collections/{id}/export`. Documented in this
+  README.
+- **`import_upstream.py`** — for **upstream-current** shepard at
+  `gitlab.com/dlr-shepard/shepard` whose published `shepard-client`
+  is the currently-deployed reality. Imports the same entity tree
+  minus the post-PR features. **See [`README-upstream.md`](README-upstream.md)**
+  for the full feature delta and operator invocation.
+
 ## What it ships
 
 ```
 examples/seed-showcase/
-├── README.md                 # this file (operator instructions)
-├── seed.py                   # idempotent main entry point
+├── README.md                 # this file (operator instructions for seed.py)
+├── README-upstream.md        # operator instructions for import_upstream.py
+├── seed.py                   # idempotent dispatcher-branch importer
+├── import_upstream.py        # idempotent upstream-current importer
+├── _data_fallback.py         # rng(2024) fallback used by import_upstream.py
+│                             # if data/generate.py is absent
 ├── data/
 │   ├── generate.py           # deterministic synthetic data generator
 │   ├── manifest.json         # generator output summary (post-generate)

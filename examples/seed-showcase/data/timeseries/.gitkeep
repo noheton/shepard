@@ -1,0 +1,5 @@
+# CSVs land here on first run.
+#
+# If the sibling LUMEN agent has committed examples/seed-showcase/data/generate.py,
+# import_upstream.py reads its CSVs from this directory.
+# If not, _data_fallback.py regenerates them in-place using rng(2024).
