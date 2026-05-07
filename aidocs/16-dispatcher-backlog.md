@@ -18,8 +18,10 @@ Status legend:
 
 `input_raw.md` mixes work for at least three projects:
 
-1. `dlr-shepard/shepard` (this repo, Java/Quarkus backend + Angular frontend +
-   client libs) — **in scope**.
+1. `dlr-shepard/shepard` (this repo, Java/Quarkus backend + Nuxt 3 / Vue 3 /
+   Vuetify 3 frontend + client libs) — **in scope**. (Earlier rounds said
+   "Angular"; corrected by the `aidocs/33` agent which verified against
+   `frontend/package.json:24,45-46`.)
 2. `dlr-shepard/shepard-dataship` (separate Python client; M1–M9 milestones
    on lines 975–1214 reference `src/ui/*.py`, `src/worker.py`, etc.) —
    **out of scope here**, parked.

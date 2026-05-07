@@ -17,7 +17,7 @@ related docs cluster topically.
 - [Chapter D. API surface & clients](#chapter-d--api-surface--clients) — `18`, `23`, `26`, `27`, `28`, `29`, `31`, `32`
 - [Chapter E. Search, semantics, knowledge graph, lineage](#chapter-e--search-semantics-knowledge-graph-lineage) — `13`, `14` (`30` joins on land)
 - [Chapter F. Identity, auth, permissions, identifiers](#chapter-f--identity-auth-permissions-identifiers) — `24`, `25`
-- [Chapter G. Demand & operator tooling](#chapter-g--demand--operator-tooling) — `21`, `22`
+- [Chapter G. Demand, frontend & operator tooling](#chapter-g--demand-frontend--operator-tooling) — `21`, `22`, `33`
 - [Sub-pages: migration / operator notes](#sub-pages-migration--operator-notes)
 - [Cross-chapter interlocks](#cross-chapter-interlocks) — items that thread through several chapters
 - [Snapshot date and provenance](#snapshot-date-and-provenance)
@@ -163,20 +163,24 @@ parameterised-Cypher refactor are tightly coupled — see the
 
 ---
 
-## Chapter G — Demand & operator tooling
+## Chapter G — Demand, frontend & operator tooling
 
-Demand-side research and operator-facing tooling. **Key takeaway:** of
-the three candidate development directions in `21` (HDF5, tabular, KG),
-**KG is the strongest demand signal**; HDF5 carries a hard
-`h5py`/`h5pyd` compatibility constraint (recorded in epic E7); tabular
-is thin and should be deferred until separated into "interface vs
-storage". The admin CLI (`22`) is design-only — Phase 1 unblocks once
-A0 (admin role mechanism) is decided.
+Demand-side research, the operator-facing CLI design, and the
+frontend-workflow analysis. **Key takeaways:** (a) of the three
+candidate development directions in `21` (HDF5, tabular, KG), **KG is
+the strongest demand signal**; HDF5 carries a hard `h5py`/`h5pyd`
+compatibility constraint (recorded in epic E7); tabular is thin and
+should be deferred until separated into "interface vs storage";
+(b) the admin CLI (`22`) is design-only — Phase 1 unblocks once A0
+(admin role mechanism) is decided; (c) `33` corrects an earlier
+mistaken assumption: **the frontend stack is Nuxt 3 / Vue 3 /
+Vuetify 3, not Angular** — verified against `frontend/package.json`.
 
 | # | File | Topic | Status |
 |---|---|---|---|
 | 21 | [`21-user-interest-gauge.md`](21-user-interest-gauge.md) | Gauge of repo-internal demand signals for HDF5/HSDS, tabular/relational storage, and knowledge-graph interfaces. Verdicts: **KG interfaces** strongest, **HDF5** low-medium with hard `h5py`/`h5pyd` compatibility constraint (per epic E7), **tabular** thin (defer). Recommends a lightweight survey + interview plan | Research |
 | 22 | [`22-admin-cli-draft.md`](22-admin-cli-draft.md) | Candidate-function design for a future `shepard-admin` CLI: goals/non-goals, auth model (blocked on A0), per-command catalogue, framework recommendation (Java + Picocli), distribution, 4-phase rollout | Draft |
+| 33 | [`33-frontend-workflow-analysis.md`](33-frontend-workflow-analysis.md) | Frontend (Nuxt 3 / Vue 3 / Vuetify 3) workflow analysis: top 8–12 user-facing flows with click-cost + API-call inventory; friction by workflow with code citations; **top-5 fixes ranked** (W11 search-as-you-type / W6+W7 unify "Add data" / W7 live upload progress / W8 "Download as Excel" / W2-W3-W5 inline editing); how each post-R2 / P10 / P12 / P13 / P16 backend change simplifies the frontend; **Playwright over Cypress** for R5; R8 DLR-CD theming guidance | Review |
 
 ---
 
