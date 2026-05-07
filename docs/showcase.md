@@ -1,3 +1,9 @@
+---
+layout: default
+title: Showcase
+description: Ten-stop tour of shepard's feature surface against a synthetic LUMEN-inspired hot-fire campaign.
+---
+
 # Showcase tour — LUMEN-inspired hot-fire campaign
 
 > **Disclaimer.** Everything below is **synthetic**. The Collection is loosely
