@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Neutral placeholder mark for the shepard docs site.
+  This is intentionally a generic geometric shape — NOT the DLR logo.
+  Replace with the canonical DLR logo SVG once obtained from
+  DLR Corporate Communications / Marken-Portal.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="shepard placeholder mark">
+  <title>shepard placeholder mark</title>
+  <rect x="2" y="2" width="60" height="60" rx="10" ry="10" fill="none" stroke="currentColor" stroke-width="3"/>
+  <path d="M16 40 L24 24 L32 40 L40 24 L48 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>

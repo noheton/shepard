@@ -1,0 +1,57 @@
+name: GitHub Pages
+
+# Builds the Jekyll site under docs/ and deploys it via GitHub Pages.
+#
+# Initial branch posture: build on push to the dispatcher branch
+# `worktree-agent-a6657a13608ba8032` so a maintainer can preview before
+# merging. After the PR merges, edit the `branches:` list below to point at
+# the repository's primary branch (typically `main` or `develop`) and enable
+# Pages in repo Settings -> Pages with source "GitHub Actions".
+
+on:
+  push:
+    branches:
+      - worktree-agent-a6657a13608ba8032
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

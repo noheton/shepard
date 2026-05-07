@@ -1,0 +1,15 @@
+<header class="site-header">
+  <div class="container site-header-inner">
+    <a class="site-brand" href="{{ '/' | relative_url }}">
+      <img class="site-logo" src="{{ '/assets/img/logo-placeholder.svg' | relative_url }}" alt="shepard logo (placeholder)" width="36" height="36">
+      <span class="site-title">shepard</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <ul>
+        {% for item in site.nav %}
+        <li><a href="{{ item.url | relative_url }}">{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </div>
+</header>
