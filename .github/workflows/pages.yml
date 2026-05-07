@@ -2,16 +2,22 @@ name: GitHub Pages
 
 # Builds the Jekyll site under docs/ and deploys it via GitHub Pages.
 #
-# Initial branch posture: build on push to the dispatcher branch
-# `worktree-agent-a6657a13608ba8032` so a maintainer can preview before
-# merging. After the PR merges, edit the `branches:` list below to point at
-# the repository's primary branch (typically `main` or `develop`) and enable
-# Pages in repo Settings -> Pages with source "GitHub Actions".
+# One-time repo setting required (maintainer): Settings -> Pages ->
+# "Source" must be "GitHub Actions" (not "Deploy from a branch") for
+# the actions/deploy-pages step below to take effect.
+#
+# Trigger posture:
+#  - push to `main` — the production deploy after PR-#1001 merges.
+#  - push to `claude/implement-input-raw-changes-2WiOF` — preview of
+#    the dispatcher branch while PR-#1001 is still open. Drop this
+#    branch from the list once the PR merges.
+#  - workflow_dispatch — manual run from the Actions tab.
 
 on:
   push:
     branches:
-      - worktree-agent-a6657a13608ba8032
+      - main
+      - claude/implement-input-raw-changes-2WiOF
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"
@@ -24,7 +30,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:

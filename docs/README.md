@@ -166,13 +166,16 @@ Algolia (hosted) — both out of scope for v1.
 
 ## Branch posture for GitHub Pages
 
-The workflow at `.github/workflows/pages.yml` builds on push to the
-**dispatcher branch** (the long-running `worktree-agent-*` branch this PR
-ships from) so a maintainer can preview the rendered site before merging.
-Once the PR is merged into the repository's primary branch, edit the `on:
-push: branches:` list in the workflow to match (typically `main` or
-`develop`) and **enable GitHub Pages** in repo Settings → Pages, choosing
-"GitHub Actions" as the source.
+The workflow at `.github/workflows/pages.yml` builds on push to either
+`main` (the production deploy after PR-#1001 merges) or
+`claude/implement-input-raw-changes-2WiOF` (preview of the dispatcher
+branch while PR-#1001 is open). Once the PR is merged, drop the
+dispatcher branch from the workflow's `on: push: branches:` list.
+
+**One-time repo setting (required before the first deploy lands a live
+URL):** Settings → Pages → **Source: "GitHub Actions"** (not "Deploy
+from a branch"). Without this, the `actions/deploy-pages` step in the
+workflow will succeed but no live URL will be served.
 
 ## Screenshot capture plan
 
