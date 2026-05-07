@@ -1,15 +1,22 @@
 package de.dlr.shepard.context.export;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
+import de.dlr.shepard.common.subscription.io.SubscriptionIO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.version.io.VersionIO;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
@@ -40,11 +47,19 @@ public class ExportBuilder {
   private ByteArrayOutputStream baos;
   private ZipOutputStream zos;
   private List<String> entries;
+  private final ExportSelection selection;
+  // R2b: stale-OID / unknown-column notes. Surfaced under selection.warnings in the manifest.
+  private final List<String> selectionWarnings = new ArrayList<>();
 
   public ExportBuilder(Collection collection) throws IOException {
+    this(collection, null);
+  }
+
+  public ExportBuilder(Collection collection, ExportSelection selection) throws IOException {
     baos = new ByteArrayOutputStream();
     zos = new ZipOutputStream(baos);
     entries = new ArrayList<>();
+    this.selection = selection;
 
     var roCrateName = collection.getName() + " Research Object Crate";
     var roCrateDescription = "Research Object Crate representing the shepard Collection " + collection.getName();
@@ -71,15 +86,125 @@ public class ExportBuilder {
   }
 
   public ExportBuilder addLabJournalEntry(LabJournalEntryIO entry, User author) throws IOException {
+    if (entry != null) redactLabJournal(entry);
     var referenceEntity = createFileEntity(entry);
     roCrateBuilder.addDataEntity(referenceEntity);
     addPersonEntity(author);
     return this;
   }
 
+  public ExportBuilder addPermissionsFor(long entityIoId, PermissionsIO permissions) throws IOException {
+    var payload = permissions != null ? permissions : new PermissionsIO();
+    redactPermissions(payload);
+    return addMetadataDocument(entityIoId, ExportConstants.PERMISSIONS_SUFFIX, ExportConstants.TYPE_PERMISSIONS, payload);
+  }
+
+  public ExportBuilder addVersionsFor(long entityIoId, List<VersionIO> versions) throws IOException {
+    var payload = versions != null ? versions : List.<VersionIO>of();
+    payload.forEach(this::redactVersion);
+    return addMetadataDocument(entityIoId, ExportConstants.VERSIONS_SUFFIX, ExportConstants.TYPE_VERSIONS, payload);
+  }
+
+  public ExportBuilder addSubscriptionsFor(long entityIoId, List<SubscriptionIO> subscriptions) throws IOException {
+    var payload = subscriptions != null ? subscriptions : List.<SubscriptionIO>of();
+    // R2c: subscriptions have no redactable fields in this iteration (R2d2 owns the path).
+    return addMetadataDocument(
+      entityIoId,
+      ExportConstants.SUBSCRIPTIONS_SUFFIX,
+      ExportConstants.TYPE_SUBSCRIPTIONS,
+      payload
+    );
+  }
+
+  public ExportBuilder addAnnotationsFor(long entityIoId, List<SemanticAnnotationIO> annotations) throws IOException {
+    var payload = annotations != null ? annotations : List.<SemanticAnnotationIO>of();
+    payload.forEach(this::redactAnnotation);
+    return addMetadataDocument(
+      entityIoId,
+      ExportConstants.ANNOTATIONS_SUFFIX,
+      ExportConstants.TYPE_ANNOTATIONS,
+      payload
+    );
+  }
+
+  // -------- R2c: per-field redaction on emitted metadata IOs --------------
+  // Sentinel string that replaces redacted string fields. long[] id arrays are emptied because
+  // they cannot hold a sentinel string and surfacing the count alone is not a meaningful
+  // privacy concession.
+  private static final String REDACTED = "[REDACTED]";
+  private static final long[] EMPTY_LONGS = new long[0];
+
+  private boolean redactedField(ExportSelection.RedactableField field) {
+    return selection != null && selection.isRedacted(field);
+  }
+
+  private void redactPermissions(PermissionsIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.PERMISSION_USERNAME)) {
+      if (io.getOwner() != null) io.setOwner(REDACTED);
+      io.setReader(redactStringArray(io.getReader()));
+      io.setWriter(redactStringArray(io.getWriter()));
+      io.setManager(redactStringArray(io.getManager()));
+    }
+    if (redactedField(ExportSelection.RedactableField.PERMISSION_GROUP_IDS)) {
+      io.setReaderGroupIds(EMPTY_LONGS);
+      io.setWriterGroupIds(EMPTY_LONGS);
+    }
+  }
+
+  private void redactAnnotation(SemanticAnnotationIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.ANNOTATION_LABEL) && io.getPropertyName() != null) {
+      io.setPropertyName(REDACTED);
+    }
+    if (redactedField(ExportSelection.RedactableField.ANNOTATION_VALUE) && io.getValueName() != null) {
+      io.setValueName(REDACTED);
+    }
+  }
+
+  private void redactVersion(VersionIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.VERSION_AUTHOR) && io.getCreatedBy() != null) {
+      io.setCreatedBy(REDACTED);
+    }
+  }
+
+  private void redactLabJournal(LabJournalEntryIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.LAB_JOURNAL_CONTENT) && io.getJournalContent() != null) {
+      io.setJournalContent(REDACTED);
+    }
+  }
+
+  private static String[] redactStringArray(String[] in) {
+    if (in == null) return null;
+    var out = new String[in.length];
+    for (int i = 0; i < in.length; i++) out[i] = REDACTED;
+    return out;
+  }
+
+  private ExportBuilder addMetadataDocument(long entityIoId, String suffix, String type, Object payload)
+    throws IOException {
+    var filename = entityIoId + suffix + ExportConstants.JSON_FILE_EXTENSION;
+    writeEntityToZip(filename, payload);
+    var fileEntityBuilder = createFileEntityBuilder(filename, entityIoId + suffix, "application/json");
+    fileEntityBuilder.addProperty(ExportConstants.TYPE_PROP, type);
+    roCrateBuilder.addDataEntity(fileEntityBuilder.build());
+    return this;
+  }
+
   public ExportBuilder addPayload(byte[] payload, String filename, String name) throws IOException {
     addToZip(filename, payload);
     roCrateBuilder.addDataEntity(createFileEntityBuilder(filename, name).build());
+    return this;
+  }
+
+  /**
+   * Records a warning emitted during selection-aware export (R2b). The warnings are surfaced
+   * under {@code selection.warnings} on the root data entity in {@code ro-crate-metadata.json}.
+   */
+  public ExportBuilder addSelectionWarning(String warning) {
+    if (warning != null && !warning.isBlank()) selectionWarnings.add(warning);
     return this;
   }
 
@@ -105,12 +230,37 @@ public class ExportBuilder {
 
   public InputStream build() throws IOException {
     var roCrate = roCrateBuilder.build();
-    Object jsonObject = objectMapper.readValue(roCrate.getJsonMetadata(), Object.class);
-    byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(jsonObject);
+    JsonNode tree = objectMapper.readTree(roCrate.getJsonMetadata());
+    // Empty / absent selection ⇒ byte-identical legacy manifest (no "selection" key) — only
+    // when there are also no R2b warnings to surface.
+    boolean hasSelectionToInject = selection != null && !selection.isEmpty();
+    if (hasSelectionToInject) {
+      injectSelection(tree, selection, selectionWarnings);
+    }
+    byte[] bytes = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(tree);
     addToZip(ExportConstants.ROCRATE_METADATA, bytes);
     zos.close();
 
     return new ByteArrayInputStream(baos.toByteArray());
+  }
+
+  private void injectSelection(JsonNode tree, ExportSelection sel, List<String> warnings) {
+    if (!(tree instanceof ObjectNode root)) return;
+    JsonNode graph = root.get("@graph");
+    if (!(graph instanceof ArrayNode array)) return;
+    for (JsonNode node : array) {
+      if (!(node instanceof ObjectNode obj)) continue;
+      JsonNode id = obj.get("@id");
+      if (id != null && "./".equals(id.asText())) {
+        ObjectNode selNode = (ObjectNode) objectMapper.valueToTree(sel);
+        if (warnings != null && !warnings.isEmpty()) {
+          ArrayNode warnArr = selNode.putArray("warnings");
+          for (String w : warnings) warnArr.add(w);
+        }
+        obj.set("selection", selNode);
+        return;
+      }
+    }
   }
 
   private FileEntity createFileEntity(AbstractDataObjectIO entity) throws IOException {

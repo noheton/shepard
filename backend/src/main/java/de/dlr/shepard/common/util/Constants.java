@@ -8,6 +8,9 @@ public class Constants {
 
   public static final String API_KEY_HEADER = "X-API-KEY";
 
+  public static final String APPLICATION_NDJSON = "application/x-ndjson";
+  public static final String APPLICATION_MERGE_PATCH_JSON = "application/merge-patch+json";
+
   public static final String HEALTHZ = "healthz";
   public static final String VERSIONZ = "versionz";
 

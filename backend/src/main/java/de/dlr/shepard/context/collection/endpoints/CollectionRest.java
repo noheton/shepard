@@ -1,24 +1,33 @@
 package de.dlr.shepard.context.collection.endpoints;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
 import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.io.CollectionIO;
 import de.dlr.shepard.context.collection.services.CollectionService;
+import de.dlr.shepard.context.export.ExportSelection;
 import de.dlr.shepard.context.export.ExportService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -31,6 +40,7 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -55,6 +65,12 @@ public class CollectionRest {
 
   @Inject
   AuthenticationContext authenticationContext;
+
+  @Inject
+  Validator validator;
+
+  @Inject
+  ObjectMapper objectMapper;
 
   @GET
   @Tag(name = Constants.COLLECTION)
@@ -148,6 +164,75 @@ public class CollectionRest {
     ) @Valid CollectionIO collection
   ) {
     Collection updatedCollection = collectionService.updateCollectionByShepardId(collectionId, collection);
+    return Response.ok(new CollectionIO(updatedCollection)).build();
+  }
+
+  /**
+   * P21 (pilot) - partial-update primitive on Collection per strategy (c) in
+   * backlog P21 (see aidocs/16-dispatcher-backlog.md and aidocs/26-crud-consistency.md
+   * finding #1). Ships PATCH additively in /v1/ alongside the existing PUT, which
+   * keeps its full-replace semantics unchanged for backwards compatibility. Uses
+   * RFC 7396 JSON Merge Patch: missing top-level fields are preserved, present
+   * fields are replaced, explicit JSON null clears the field. Permission check
+   * matches PUT (WRITE on the collection); Bean Validation runs against the merged
+   * result, not the partial input. Future P21 sub-IDs (DataObject, File, ...)
+   * copy this exact pattern; the entire comment is the template.
+   */
+  @PATCH
+  @Path("/{" + Constants.COLLECTION_ID + "}")
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
+  @Subscribable
+  @Tag(name = Constants.COLLECTION)
+  @Operation(
+    summary = "Partially update collection",
+    description = "Applies an RFC 7396 JSON Merge Patch to the collection. The request body is a partial " +
+    "Collection: fields present in the body replace the corresponding fields on the entity, fields absent " +
+    "from the body are left unchanged, and explicit JSON null clears the field. The merged result is then " +
+    "Bean-Validated; constraint violations on the final state return 400. Returns the full updated entity. " +
+    "Accepts both application/merge-patch+json (preferred, per RFC 7396) and application/json in /v1/; " +
+    "future /v2/ APIs will require application/merge-patch+json."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = CollectionIO.class))
+  )
+  @Parameter(name = Constants.COLLECTION_ID)
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  public Response patchCollection(
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @RequestBody(
+      required = true,
+      description = "Partial Collection (RFC 7396). Every field is optional; absent fields are preserved.",
+      content = @Content(
+        mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
+        schema = @Schema(implementation = CollectionIO.class)
+      )
+    ) JsonNode patch
+  ) {
+    if (patch == null || !patch.isObject()) {
+      throw new InvalidBodyException("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
+    }
+
+    Collection existing = collectionService.getCollectionWithDataObjectsAndIncomingReferences(collectionId);
+    CollectionIO merged = new CollectionIO(existing);
+    try {
+      objectMapper.readerForUpdating(merged).readValue(patch);
+    } catch (JsonProcessingException e) {
+      throw new InvalidBodyException("Invalid JSON Merge Patch body: %s".formatted(e.getOriginalMessage()));
+    } catch (IOException e) {
+      throw new InvalidBodyException("Could not read JSON Merge Patch body: %s".formatted(e.getMessage()));
+    }
+
+    Set<ConstraintViolation<CollectionIO>> violations = validator.validate(merged);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+
+    Collection updatedCollection = collectionService.updateCollectionByShepardId(collectionId, merged);
     return Response.ok(new CollectionIO(updatedCollection)).build();
   }
 
@@ -274,6 +359,38 @@ public class CollectionRest {
   public Response exportCollection(@PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId)
     throws IOException {
     InputStream is = exportService.exportCollectionByShepardId(collectionId);
+    return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
+      .header("Content-Disposition", "attachment; filename=\"export.zip\"")
+      .build();
+  }
+
+  @POST
+  @Path("/{" + Constants.COLLECTION_ID + "}/" + Constants.EXPORT)
+  @Produces(MediaType.APPLICATION_OCTET_STREAM)
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Tag(name = Constants.COLLECTION)
+  @Operation(description = "Export Collection as RoCrate with an optional selection filter")
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(
+      mediaType = MediaType.APPLICATION_OCTET_STREAM,
+      schema = @Schema(type = SchemaType.STRING, format = "binary")
+    )
+  )
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  @Parameter(name = Constants.COLLECTION_ID)
+  public Response exportCollectionWithSelection(
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @RequestBody(
+      required = false,
+      content = @Content(schema = @Schema(implementation = ExportSelection.class))
+    ) @Valid ExportSelection selection
+  ) throws IOException {
+    InputStream is = exportService.exportCollectionByShepardId(collectionId, selection);
     return Response.ok(is, MediaType.APPLICATION_OCTET_STREAM)
       .header("Content-Disposition", "attachment; filename=\"export.zip\"")
       .build();

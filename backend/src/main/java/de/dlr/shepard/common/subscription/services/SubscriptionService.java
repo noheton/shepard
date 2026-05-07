@@ -116,4 +116,21 @@ public class SubscriptionService {
     result.addAll(subscriptions);
     return result;
   }
+
+  /**
+   * Returns the subscriptions whose URL pattern matches {@code url} for the given request method,
+   * delegating the regex match to {@link SubscriptionMatcher} so the export pipeline shares the
+   * exact same algorithm the runtime {@code SubscriptionFilter} uses.
+   *
+   * <p>Used by the RO-Crate export walker to discover, per exported entity, which subscriptions
+   * would have fired had a successful {@code GET} hit that entity's canonical URL.
+   *
+   * @param url canonical URL to test against each candidate subscription's pattern
+   * @param method request method (the export uses {@link RequestMethod#GET})
+   * @return matched subscriptions in DAO order; empty list if none match
+   */
+  public List<Subscription> getMatchingSubscriptionsForUrl(String url, RequestMethod method) {
+    if (url == null || url.isEmpty()) return List.of();
+    return SubscriptionMatcher.matchAll(getMatchingSubscriptions(method), url);
+  }
 }

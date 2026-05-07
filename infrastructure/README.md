@@ -268,14 +268,17 @@ In order to make use of this experimental feature, the administrator has to acti
 As environment variable:
 
 ```bash
-SHEPARD_SPATIAL_DATA_ENABLED="true"
+SHEPARD_INFRASTRUCTURE_SPATIAL_ENABLED="true"
 ```
 
 As configuration property:
 
 ```bash
-shepard.spatial-data.enabled = true
+shepard.infrastructure.spatial.enabled = true
 ```
+
+The legacy keys `SHEPARD_SPATIAL_DATA_ENABLED` / `shepard.spatial-data.enabled`
+are still honoured as deprecated aliases and will be removed in v6.0.
 
 That enables the REST endpoints for spatial data.
 Otherwise those endpoints return 404 and cannot be used.

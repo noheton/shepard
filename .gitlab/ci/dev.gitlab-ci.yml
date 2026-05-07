@@ -11,6 +11,7 @@ include:
   - local: .gitlab/ci/jobs/dependency-scanning.yml
   - local: .gitlab/ci/jobs/format-prettier.yml
   - local: .gitlab/ci/jobs/check-scripts.yml
+  - local: .gitlab/ci/jobs/check-schema-name.yml
   - local: .gitlab/ci/jobs/build-backend.yml
   - local: .gitlab/ci/jobs/unrequire-attributes-for-python.yml
   - local: .gitlab/ci/jobs/build-frontend.yml

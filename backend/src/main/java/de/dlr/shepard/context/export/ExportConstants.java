@@ -10,4 +10,14 @@ public class ExportConstants {
   public static final String CREATED_PROP = "dateCreated";
   public static final String UPDATED_PROP = "dateModified";
   public static final String TYPE_PROP = "additionalType";
+
+  public static final String PERMISSIONS_SUFFIX = "-permissions";
+  public static final String VERSIONS_SUFFIX = "-versions";
+  public static final String SUBSCRIPTIONS_SUFFIX = "-subscriptions";
+  public static final String ANNOTATIONS_SUFFIX = "-annotations";
+
+  public static final String TYPE_PERMISSIONS = "Permissions";
+  public static final String TYPE_VERSIONS = "Versions";
+  public static final String TYPE_SUBSCRIPTIONS = "Subscriptions";
+  public static final String TYPE_ANNOTATIONS = "SemanticAnnotations";
 }

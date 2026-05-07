@@ -1,0 +1,6 @@
+check_schema_name:
+  image: bash:5
+  stage: check
+  needs: []
+  script:
+    - bash scripts/check-schema-name.sh

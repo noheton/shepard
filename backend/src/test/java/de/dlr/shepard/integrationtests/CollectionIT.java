@@ -394,6 +394,225 @@ public class CollectionIT extends BaseTestCaseIT {
       .statusCode(403);
   }
 
+  // -- P21 (pilot): RFC 7396 JSON Merge Patch on /collections/{id} -----------
+  // See aidocs/16-dispatcher-backlog.md P21; aidocs/26-crud-consistency.md
+  // finding #1. PATCH ships additively in /v1/ alongside the existing PUT
+  // (which keeps full-replace semantics). These tests are the template the
+  // remaining P21 sub-IDs (DataObject, File, ...) will copy.
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_happyPath_updatesOnlyDescription() {
+    // Arrange: create a fresh collection so other tests are unaffected.
+    CollectionIO seed = new CollectionIO();
+    String seedName = "PatchCollectionHappy" + System.currentTimeMillis();
+    seed.setName(seedName);
+    seed.setDescription("original");
+    seed.setAttributes(Map.of("k", "v"));
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act: PATCH only the description.
+    String mergePatch = "{\"description\":\"new\"}";
+    CollectionIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Assert: description changed; everything else preserved.
+    assertThat(patched.getDescription()).isEqualTo("new");
+    assertThat(patched.getName()).isEqualTo(seedName);
+    assertThat(patched.getAttributes()).isEqualTo(Map.of("k", "v"));
+    assertThat(patched.getId()).isEqualTo(created.getId());
+    assertThat(patched.getUpdatedAt()).isNotNull();
+    assertThat(patched.getUpdatedBy()).isEqualTo(nameOfDefaultUser);
+  }
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_explicitNull_clearsField() {
+    // Arrange: collection with a non-null description.
+    CollectionIO seed = new CollectionIO();
+    seed.setName("PatchCollectionNull" + System.currentTimeMillis());
+    seed.setDescription("will be cleared");
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act: PATCH with explicit null per RFC 7396.
+    String mergePatch = "{\"description\":null}";
+    CollectionIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Assert: description set to null; name preserved.
+    assertThat(patched.getDescription()).isNull();
+    assertThat(patched.getName()).isEqualTo(seed.getName());
+  }
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_emptyBody_isNoOp() {
+    // Arrange.
+    CollectionIO seed = new CollectionIO();
+    seed.setName("PatchCollectionNoOp" + System.currentTimeMillis());
+    seed.setDescription("unchanged");
+    seed.setAttributes(Map.of("a", "1"));
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act: empty merge patch.
+    CollectionIO patched = given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body("{}")
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Assert: every domain field preserved (updatedAt/By legitimately change).
+    assertThat(patched)
+      .usingRecursiveComparison()
+      .ignoringFields("updatedBy", "updatedAt")
+      .isEqualTo(created);
+  }
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_mergeViolatesValidation_returns400() {
+    // Arrange.
+    CollectionIO seed = new CollectionIO();
+    seed.setName("PatchCollectionValidation" + System.currentTimeMillis());
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act: name is @NotBlank on the merged result, blanking it must fail validation.
+    String mergePatch = "{\"name\":\"\"}";
+    given()
+      .spec(requestSpecOfDefaultUser)
+      .contentType("application/merge-patch+json")
+      .body(mergePatch)
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(400);
+  }
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_withoutWritePermission_returns403() {
+    // Arrange: defaultUser owns the collection; otherUser has no rights.
+    CollectionIO seed = new CollectionIO();
+    seed.setName("PatchCollectionPerm" + System.currentTimeMillis());
+    seed.setDescription("private");
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    // Act + Assert: otherUser cannot PATCH.
+    given()
+      .spec(requestSpecOfOtherUser)
+      .contentType("application/merge-patch+json")
+      .body("{\"description\":\"hacked\"}")
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(403);
+
+    // And without auth at all -> 401.
+    var noAuth = new RequestSpecBuilder().setContentType("application/merge-patch+json").build();
+    given()
+      .spec(noAuth)
+      .body("{\"description\":\"hacked\"}")
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(401);
+  }
+
+  @Test
+  @Order(12)
+  public void patchCollectionTest_acceptsApplicationJsonContentType() {
+    // Pilot decision: the /v1/ PATCH accepts both application/merge-patch+json
+    // (RFC 7396 preferred) and application/json so existing callers and SDK
+    // generators that don't yet emit the merge-patch media type aren't broken.
+    // Future /v2/ will require application/merge-patch+json.
+    CollectionIO seed = new CollectionIO();
+    seed.setName("PatchCollectionCT" + System.currentTimeMillis());
+    seed.setDescription("orig");
+    CollectionIO created = given()
+      .spec(requestSpecOfDefaultUser)
+      .body(seed)
+      .when()
+      .post(collectionsURL)
+      .then()
+      .statusCode(201)
+      .extract()
+      .as(CollectionIO.class);
+
+    CollectionIO patched = given()
+      .spec(requestSpecOfDefaultUser) // ContentType.JSON ("application/json")
+      .body("{\"description\":\"via-json\"}")
+      .when()
+      .patch(collectionsURL + "/" + created.getId())
+      .then()
+      .statusCode(200)
+      .extract()
+      .as(CollectionIO.class);
+
+    assertThat(patched.getDescription()).isEqualTo("via-json");
+    assertThat(patched.getName()).isEqualTo(seed.getName());
+  }
+
   @Test
   @Order(13)
   public void deleteCollectionTest_Successful() {

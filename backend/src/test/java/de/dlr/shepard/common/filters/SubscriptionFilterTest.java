@@ -1,8 +1,14 @@
 package de.dlr.shepard.common.filters;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +28,9 @@ import jakarta.ws.rs.core.PathSegment;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,10 +105,11 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.filterAllowedUsers(eq(200L), eq(AccessType.Read), anyCollection())).thenReturn(Set.of("bob"));
 
     filter.filter(request, response);
     verify(executorService).execute(any());
+    verify(permissionsService, never()).isAllowed(any(ContainerRequestContext.class), any(), any());
   }
 
   @Test
@@ -120,7 +129,7 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(noId);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(true);
+    when(permissionsService.filterAllowedUsers(eq(200L), eq(AccessType.Read), anyCollection())).thenReturn(Set.of("bob"));
 
     filter.filter(request, response);
     verify(executorService).execute(any());
@@ -167,9 +176,63 @@ public class SubscriptionFilterTest {
     when(response.getStatus()).thenReturn(200);
     when(response.getEntity()).thenReturn(entityIO);
     when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
-    when(permissionsService.isAllowed(request, AccessType.Read, "bob")).thenReturn(false);
+    when(permissionsService.filterAllowedUsers(eq(200L), eq(AccessType.Read), anyCollection())).thenReturn(Set.of());
 
     filter.filter(request, response);
     verify(executorService, never()).execute(any());
+  }
+
+  /**
+   * P2c rewire: a single batch call replaces the per-username loop. Verifies external
+   * behaviour (which subscriptions fire) is preserved across an allowed/denied/url-mismatch mix
+   * and that exactly one Cypher-side call happens for the matched usernames.
+   */
+  @Test
+  public void testFilterBatchPermissionCheck_preservesPerSubscriptionDecisions() {
+    Subscription allowed = new Subscription(1L);
+    allowed.setCallbackURL("http://callback.url/a");
+    allowed.setName("Allowed");
+    allowed.setRequestMethod(RequestMethod.GET);
+    allowed.setSubscribedURL("http://my.url/test/200/sub");
+    allowed.setCreatedBy(new User("alice"));
+
+    Subscription denied = new Subscription(2L);
+    denied.setCallbackURL("http://callback.url/b");
+    denied.setName("Denied");
+    denied.setRequestMethod(RequestMethod.GET);
+    denied.setSubscribedURL("http://my.url/test/200/sub");
+    denied.setCreatedBy(new User("mallory"));
+
+    Subscription urlMiss = new Subscription(3L);
+    urlMiss.setCallbackURL("http://callback.url/c");
+    urlMiss.setName("UrlMiss");
+    urlMiss.setRequestMethod(RequestMethod.GET);
+    urlMiss.setSubscribedURL("http://my.url/other/.*");
+    urlMiss.setCreatedBy(new User("carol"));
+
+    List<Subscription> subs = List.of(allowed, denied, urlMiss);
+    var entityIO = new BasicEntityIO() {
+      {
+        setId(200L);
+      }
+    };
+
+    when(request.getMethod()).thenReturn("GET");
+    when(response.getStatus()).thenReturn(200);
+    when(response.getEntity()).thenReturn(entityIO);
+    when(service.getMatchingSubscriptions(RequestMethod.GET)).thenReturn(subs);
+    when(
+      permissionsService.filterAllowedUsers(
+        eq(200L),
+        eq(AccessType.Read),
+        argThat((Collection<String> usernames) -> usernames.containsAll(List.of("alice", "mallory")) && !usernames.contains("carol"))
+      )
+    ).thenReturn(Set.of("alice"));
+
+    filter.filter(request, response);
+
+    verify(executorService, times(1)).execute(any());
+    verify(permissionsService, atLeastOnce()).filterAllowedUsers(anyLong(), any(), anyCollection());
+    verify(permissionsService, never()).isAllowed(any(ContainerRequestContext.class), any(), any());
   }
 }

@@ -1,5 +1,9 @@
 package de.dlr.shepard.context.collection.endpoints;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
@@ -8,13 +12,17 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -26,7 +34,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -48,6 +58,12 @@ public class DataObjectRest {
 
   @Context
   private SecurityContext securityContext;
+
+  @Inject
+  Validator validator;
+
+  @Inject
+  ObjectMapper objectMapper;
 
   @GET
   @Tag(name = Constants.DATA_OBJECT)
@@ -184,6 +200,76 @@ public class DataObjectRest {
     ) @Valid DataObjectIO dataObject
   ) {
     DataObject updatedDataObject = dataObjectService.updateDataObject(collectionId, dataObjectId, dataObject);
+    return Response.ok(new DataObjectIO(updatedDataObject)).build();
+  }
+
+  /**
+   * P21 - partial-update primitive on DataObject per strategy (c) in
+   * backlog P21 (see aidocs/16-dispatcher-backlog.md and aidocs/26-crud-consistency.md
+   * finding #1). Ships PATCH additively in /v1/ alongside the existing PUT, which
+   * keeps its full-replace semantics unchanged for backwards compatibility. Uses
+   * RFC 7396 JSON Merge Patch: missing top-level fields are preserved, present
+   * fields are replaced, explicit JSON null clears the field. Permission check
+   * matches PUT (WRITE on the data object); Bean Validation runs against the merged
+   * result, not the partial input. Mirrors the P21 Collection pilot exactly.
+   */
+  @PATCH
+  @Path("/{" + Constants.DATA_OBJECT_ID + "}")
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
+  @Subscribable
+  @Tag(name = Constants.DATA_OBJECT)
+  @Operation(
+    summary = "Partially update dataObject",
+    description = "Applies an RFC 7396 JSON Merge Patch to the data object. The request body is a partial " +
+    "DataObject: fields present in the body replace the corresponding fields on the entity, fields absent " +
+    "from the body are left unchanged, and explicit JSON null clears the field. The merged result is then " +
+    "Bean-Validated; constraint violations on the final state return 400. Returns the full updated entity. " +
+    "Accepts both application/merge-patch+json (preferred, per RFC 7396) and application/json in /v1/; " +
+    "future /v2/ APIs will require application/merge-patch+json."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+  )
+  @Parameter(name = Constants.COLLECTION_ID)
+  @Parameter(name = Constants.DATA_OBJECT_ID)
+  @APIResponse(responseCode = "400", description = "bad request")
+  @APIResponse(responseCode = "401", description = "not authorized")
+  @APIResponse(responseCode = "403", description = "forbidden")
+  @APIResponse(responseCode = "404", description = "not found")
+  public Response patchDataObject(
+    @PathParam(Constants.COLLECTION_ID) @NotNull @PositiveOrZero Long collectionId,
+    @PathParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId,
+    @RequestBody(
+      required = true,
+      description = "Partial DataObject (RFC 7396). Every field is optional; absent fields are preserved.",
+      content = @Content(
+        mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
+        schema = @Schema(implementation = DataObjectIO.class)
+      )
+    ) JsonNode patch
+  ) {
+    if (patch == null || !patch.isObject()) {
+      throw new InvalidBodyException("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
+    }
+
+    DataObject existing = dataObjectService.getDataObject(collectionId, dataObjectId);
+    DataObjectIO merged = new DataObjectIO(existing);
+    try {
+      objectMapper.readerForUpdating(merged).readValue(patch);
+    } catch (JsonProcessingException e) {
+      throw new InvalidBodyException("Invalid JSON Merge Patch body: %s".formatted(e.getOriginalMessage()));
+    } catch (IOException e) {
+      throw new InvalidBodyException("Could not read JSON Merge Patch body: %s".formatted(e.getMessage()));
+    }
+
+    Set<ConstraintViolation<DataObjectIO>> violations = validator.validate(merged);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+
+    DataObject updatedDataObject = dataObjectService.updateDataObject(collectionId, dataObjectId, merged);
     return Response.ok(new DataObjectIO(updatedDataObject)).build();
   }
 

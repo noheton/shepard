@@ -1,0 +1,197 @@
+package de.dlr.shepard.context.export;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.permission.io.PermissionsIO;
+import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.util.DateHelper;
+import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.version.io.VersionIO;
+import io.quarkus.test.component.QuarkusComponentTest;
+import jakarta.inject.Inject;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import org.junit.jupiter.api.Test;
+
+@QuarkusComponentTest
+public class ExportBuilderSelectionTest {
+
+  @Inject
+  DateHelper dateHelper;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  // shared fixed timestamp so two builders constructed back-to-back produce a byte-identical manifest.
+  private final java.util.Date fixedDate = new java.util.Date(1_700_000_000_000L);
+
+  private Collection collection() {
+    var user = new User("alice");
+    return new Collection() {
+      {
+        setId(2L);
+        setShepardId(2L);
+        setName("Sel Crate");
+        setDescription("desc");
+        setCreatedAt(fixedDate);
+        setCreatedBy(user);
+      }
+    };
+  }
+
+  private byte[] manifest(InputStream zipStream) throws IOException {
+    try (var zis = new ZipInputStream(zipStream)) {
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        if (ExportConstants.ROCRATE_METADATA.equals(entry.getName())) {
+          var bos = new ByteArrayOutputStream();
+          byte[] buf = new byte[4096];
+          int n;
+          while ((n = zis.read(buf)) > 0) bos.write(buf, 0, n);
+          return bos.toByteArray();
+        }
+      }
+    }
+    return new byte[0];
+  }
+
+  private Map<String, byte[]> readZip(InputStream zipStream) throws IOException {
+    Map<String, byte[]> result = new HashMap<>();
+    try (var zis = new ZipInputStream(zipStream)) {
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        var bos = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = zis.read(buf)) > 0) bos.write(buf, 0, n);
+        result.put(entry.getName(), bos.toByteArray());
+      }
+    }
+    return result;
+  }
+
+  @Test
+  public void noSelection_byteIdenticalToLegacy() throws IOException {
+    // Two identical builders — one with no selection, one with empty selection record (all nulls).
+    var legacy = new ExportBuilder(collection());
+    var emptySelection = new ExportBuilder(collection(), new ExportSelection(null, null));
+
+    byte[] legacyManifest = manifest(legacy.build());
+    byte[] emptyManifest = manifest(emptySelection.build());
+
+    assertNotNull(legacyManifest);
+    assertNotNull(emptyManifest);
+
+    JsonNode legacyTree = objectMapper.readTree(legacyManifest);
+    JsonNode emptyTree = objectMapper.readTree(emptyManifest);
+
+    // Empty selection is considered isEmpty() ⇒ no "selection" key injected ⇒ identical manifest.
+    assertEquals(legacyTree, emptyTree);
+    assertFalse(findRoot(emptyTree).has("selection"));
+  }
+
+  @Test
+  public void nonEmptySelection_writesSelectionBlockOnRoot() throws IOException {
+    var sel = new ExportSelection(
+      new ExportSelection.Payloads(Set.of(ExportSelection.PayloadKind.FileReference), List.of("abc-123")),
+      new ExportSelection.Metadata(false, true, true, false, false)
+    );
+    var builder = new ExportBuilder(collection(), sel);
+    byte[] manifestBytes = manifest(builder.build());
+    JsonNode tree = objectMapper.readTree(manifestBytes);
+    JsonNode root = findRoot(tree);
+    assertTrue(root.has("selection"), "selection block must be present on root data entity");
+    JsonNode selection = root.get("selection");
+    assertEquals("FileReference", selection.get("payloads").get("include").get(0).asText());
+    assertEquals("abc-123", selection.get("payloads").get("excludeIds").get(0).asText());
+    assertEquals(false, selection.get("metadata").get("permissions").asBoolean());
+    assertEquals(true, selection.get("metadata").get("annotations").asBoolean());
+  }
+
+  private JsonNode findRoot(JsonNode tree) {
+    JsonNode graph = tree.get("@graph");
+    assertNotNull(graph, "@graph must exist");
+    for (JsonNode node : graph) {
+      JsonNode id = node.get("@id");
+      if (id != null && "./".equals(id.asText())) return node;
+    }
+    throw new AssertionError("root data entity (@id == './') not found in manifest");
+  }
+
+  @Test
+  public void addPermissionsFor_emitsZipEntryAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(true, null, null, null, null)));
+    var perms = new PermissionsIO();
+    builder.addPermissionsFor(2L, perms);
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-permissions.json"), "expected zip entry 2-permissions.json");
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-permissions.json"), "manifest must list the metadata document");
+  }
+
+  @Test
+  public void addAnnotationsFor_emptyList_stillEmitsDocAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(null, true, null, null, null)));
+    builder.addAnnotationsFor(2L, List.of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-annotations.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-annotations.json"));
+  }
+
+  @Test
+  public void addVersionsFor_emitsZipEntryAndManifestNode() throws IOException {
+    var builder = new ExportBuilder(collection(), new ExportSelection(null, new ExportSelection.Metadata(null, null, null, true, null)));
+    builder.addVersionsFor(2L, List.<VersionIO>of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-versions.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-versions.json"));
+  }
+
+  @Test
+  public void allFourMetadataDocs_appearAndAreLinkedInManifest() throws IOException {
+    var builder = new ExportBuilder(
+      collection(),
+      new ExportSelection(null, new ExportSelection.Metadata(true, true, null, true, null))
+    );
+    builder.addPermissionsFor(2L, new PermissionsIO());
+    builder.addAnnotationsFor(2L, List.<SemanticAnnotationIO>of());
+    builder.addVersionsFor(2L, List.<VersionIO>of());
+    builder.addSubscriptionsFor(2L, List.of());
+    var entries = readZip(builder.build());
+    assertTrue(entries.containsKey("2-permissions.json"));
+    assertTrue(entries.containsKey("2-annotations.json"));
+    assertTrue(entries.containsKey("2-versions.json"));
+    assertTrue(entries.containsKey("2-subscriptions.json"));
+    JsonNode tree = objectMapper.readTree(entries.get(ExportConstants.ROCRATE_METADATA));
+    assertTrue(hasGraphNode(tree, "2-permissions.json"));
+    assertTrue(hasGraphNode(tree, "2-annotations.json"));
+    assertTrue(hasGraphNode(tree, "2-versions.json"));
+    assertTrue(hasGraphNode(tree, "2-subscriptions.json"));
+    JsonNode root = findRoot(tree);
+    assertTrue(root.has("selection"), "selection block must record what was selected");
+  }
+
+  private boolean hasGraphNode(JsonNode tree, String id) {
+    JsonNode graph = tree.get("@graph");
+    if (graph == null) return false;
+    for (JsonNode node : graph) {
+      JsonNode nodeId = node.get("@id");
+      if (nodeId != null && id.equals(nodeId.asText())) return true;
+    }
+    return false;
+  }
+}
