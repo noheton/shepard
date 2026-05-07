@@ -2,6 +2,8 @@ package de.dlr.shepard.data.spatialdata.endpoints;
 
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.common.healthz.DatabaseKind;
+import de.dlr.shepard.common.healthz.RequiresDatabase;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.ContainerAttributes;
@@ -45,6 +47,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @EndpointDisabled(name = "shepard.spatial-data.enabled", stringValue = "false")
+@RequiresDatabase(DatabaseKind.SPATIAL)
 @Path(Constants.SPATIAL_DATA_CONTAINERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -72,6 +75,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.QP_NAME)
   @Parameter(name = Constants.QP_PAGE)
   @Parameter(name = Constants.QP_SIZE)
@@ -107,6 +111,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response getSpatialDataContainer(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
@@ -123,6 +128,7 @@ public class SpatialDataPointRest {
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = SpatialDataContainerIO.class))
   )
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Transactional
   public Response createSpatialDataContainer(
     @RequestBody(
@@ -143,6 +149,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response deleteSpatialDataContainer(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
@@ -235,6 +242,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   public Response getSpatialDataPoints(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @QueryParam("geometryFilter") String geometryFilterParam,
@@ -272,6 +280,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   public Response createSpatialDataPoints(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
     @RequestBody(
@@ -296,6 +305,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response getSpatialDataPermissions(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
@@ -317,6 +327,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response editSpatialDataPermissions(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId,
@@ -342,6 +353,7 @@ public class SpatialDataPointRest {
   @APIResponse(responseCode = "401", description = "not authorized")
   @APIResponse(responseCode = "403", description = "forbidden")
   @APIResponse(responseCode = "404", description = "not found")
+  @APIResponse(responseCode = "503", description = "spatial database currently unreachable")
   @Parameter(name = Constants.SPATIAL_DATA_CONTAINER_ID)
   public Response getSpatialDataRoles(
     @PathParam(Constants.SPATIAL_DATA_CONTAINER_ID) @NotNull @PositiveOrZero Long containerId
