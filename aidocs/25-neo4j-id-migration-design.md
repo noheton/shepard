@@ -2,9 +2,9 @@
 
 **Scope.** Forward-looking design note for backlog item **L2** (`aidocs/16-dispatcher-backlog.md`, originating from `aidocs/input/input_raw.md:90` and `:715-717`): retire Neo4j's deprecated `id()` function from every Cypher query and every cross-store / API surface, in favour of an **application-generated stable identifier** (`appId`). This is the load-bearing prerequisite for Templates (**L3**) and removes the largest residual blocker on the search (`aidocs/13`) and semantic-annotation (`aidocs/14`) work.
 
-**Status.** Proposal. No code or migration scripts touched.
+**Status.** Phase 1 (L2a) **landed** `fec7979` (cherry-pick onto `claude/implement-input-raw-changes-2WiOF`, merged via PR #1003 at `79f3ffd`). Phase 2 (L2b) **queued** — see §3.1 / §4.Phase-2 for the prescribed migration shape. Phases 3–5 stay queued; L2c gated on C5, L2d gated on P4 + H4.
 
-**Snapshot date.** 2026-05-05.
+**Snapshot date.** 2026-05-07.
 
 **Companion docs.** Reads as a fourth member of the C-section (`12`/`13`/`14`); extends `aidocs/12-timescaledb-performance-analysis.md` §11 (identifier discipline) — does not duplicate it.
 
@@ -56,7 +56,7 @@ Snowflake is rejected: even one shared worker-id register is one more piece of i
 
 Each entity node gains a property `appId: STRING` (UUID v7 canonical). A unique constraint and a lookup index. The existing `id` property (the OGM-mirrored Long, see `backend/src/main/java/de/dlr/shepard/common/neo4j/entities/AbstractEntity.java:30-32`) stays in place during the deprecation window — it is the OGM's primary key and yanking it requires the full OGM-removal pass on `aidocs/03-issues-status.md` #274 to land first.
 
-Cypher migration sketch (do not run; `V11__Add_appId_to_entities.cypher` in the next migration slot — current head is `V10__Refactor_Semantic_Annotations.cypher`):
+Cypher migration **as shipped** in L2a is `V11__Add_appId_unique_constraints.cypher` (constraints only — 28 per-label `REQUIRE n.appId IS UNIQUE`, idempotent via `IF NOT EXISTS`). The backfill below is the **L2b** payload, slated for `V12__Backfill_appId.cypher`:
 
 ```cypher
 // Phase 2 backfill — run idempotent.
@@ -145,10 +145,12 @@ Five phases. Each ships independently. Preconditions cite the backlog ID at `aid
 
 **Change set.**
 
-1. Cypher migration `V11__Add_appId_constraints.xml` introduces the unique constraint + lookup index per label.
-2. A new mixin `HasAppId` (interface + getter/setter) added to `AbstractEntity`, defaulting `appId = UuidCreator.getTimeOrderedEpoch()` (UUID v7) at construction. Same as the Lombok `@Data` pattern already used.
-3. `GenericDAO.createOrUpdate` (`backend/src/main/java/de/dlr/shepard/common/neo4j/daos/GenericDAO.java:90-93`) gains a one-line guard: if `entity.getAppId() == null`, set it before save.
+1. Cypher migration `V11__Add_appId_unique_constraints.cypher` — 28 per-label `REQUIRE n.appId IS UNIQUE` (idempotent via `IF NOT EXISTS`). **Landed.**
+2. New mixin `HasAppId` (interface, `getAppId() / setAppId(String)`) implemented by 28 `@NodeEntity` classes — 18 via `AbstractEntity`, 2 via `AbstractMongoObject`, 8 standalones (`User`, `ApiKey`, `Permissions`, `Subscription`, `AnnotatableTimeseries`, `SemanticAnnotation`, `Version`, `ReferencedTimeseriesNodeEntity`). **Landed.** Note: implementation does **not** mint at construction (would have required adding `appId` to existing hand-written `equals/hashCode` — out of additive scope); the seam mints at the DAO write boundary instead, see (3).
+3. `GenericDAO.createOrUpdate` (`backend/src/main/java/de/dlr/shepard/common/neo4j/daos/GenericDAO.java`) gains a one-line guard: `if (entity instanceof HasAppId hai && hai.getAppId() == null) hai.setAppId(AppIdGenerator.next());` before `session.save`. Single seam, no per-DAO instrumentation. **Landed.**
 4. `Neo4jQueryBuilder` and `PermissionsDAO` Cypher unchanged — still `WHERE ID(e) = %d`.
+
+**Deviation from spec list.** `Roles` (`backend/.../auth/permission/model/Roles.java`) is a plain DTO, not `@NodeEntity` — no `appId`, no constraint. Spec mentioned it as a node label; it isn't one in this codebase.
 
 **Observability.** Add an integration test that creates 1000 collections and asserts `MATCH (c:Collection) WHERE c.appId IS NULL RETURN count(*) = 0` and that no two collections share an `appId`.
 
@@ -162,7 +164,11 @@ Five phases. Each ships independently. Preconditions cite the backlog ID at `aid
 
 **Goal.** Every existing entity (pre-Phase-1) gets an `appId`.
 
-**Change set.** Cypher migration `V12__Backfill_appId.cypher` per the sketch in §3.1, **idempotent** (the `WHERE n.appId IS NULL` filter). The `MigrationsRunner` (`backend/src/main/java/de/dlr/shepard/common/neo4j/MigrationsRunner.java:66-74`) picks it up on next startup. Migration runs in `PER_STATEMENT` transaction mode (`:39`); on a graph with > 1 M nodes this is a lightly chunked cypher (`CALL { ... } IN TRANSACTIONS OF 10000 ROWS`).
+**Preconditions.**
+- **L2a landed** (`fec7979`) — every new write since L2a already has a v7 `appId`. The backfill only touches rows older than L2a's deploy.
+- **MigrationsRunner fail-fast (risk #4 below).** The runner currently logs `MigrationsException` and starts the app anyway. A botched backfill — e.g. a rare uniqueness collision on Neo4j's `randomUUID()` (v4) — must abort startup, not leave the cluster accepting writes on a half-migrated graph. **Fix before L2b ships in any environment that holds real data.**
+
+**Change set.** Cypher migration `V12__Backfill_appId.cypher` per the sketch in §3.1, **idempotent** (the `WHERE n.appId IS NULL` filter). The `MigrationsRunner` (`backend/src/main/java/de/dlr/shepard/common/neo4j/MigrationsRunner.java:66-74`) picks it up on next startup. Migration runs in `PER_STATEMENT` transaction mode (`:39`); on a graph with > 1 M nodes this is a lightly chunked cypher (`CALL { ... } IN TRANSACTIONS OF 10000 ROWS`). The unique constraint from V11 already guards against collisions — a violation aborts the chunk.
 
 **Observability.** Log progress per chunk; mirror the `migration_progress` table pattern from P3 (TimescaleDB-side) with a Neo4j-side `MigrationProgress` node, or — simpler — emit Prometheus counters.
 
