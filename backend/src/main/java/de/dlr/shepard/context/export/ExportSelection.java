@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import java.time.Instant;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +93,8 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
   }
 
   /**
-   * Booleans gating which categories of metadata bundle into the crate.
+   * Booleans gating which categories of metadata bundle into the crate, plus an optional
+   * per-field redaction set (R2c).
    *
    * <p>Defaults match today's exporter behaviour: {@code labJournal} is included by default
    * (legacy behaviour); {@code permissions}, {@code annotations}, and {@code versions} default to
@@ -102,18 +104,72 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
    * recorded-only — the exporter does not yet emit a per-entity subscriptions document because
    * subscriptions are URL-pattern based with no clean per-entity API; flipping it has no effect
    * beyond appearing in the {@code selection} block of {@code ro-crate-metadata.json}.
+   *
+   * <p>{@code redactFields} (R2c) is a closed set of redactable fields on the IO documents
+   * actually emitted. Redaction is post-permission-check: a caller who can read the entity may
+   * still want to hide specific fields when sharing the crate. Redaction has no effect on a
+   * metadata kind that is not also opted-in via the booleans — the document is simply not
+   * emitted, so there is nothing to redact. The redacted-field set is recorded in
+   * {@code ro-crate-metadata.json} under {@code selection.metadata.redactFields} so consumers
+   * know what was hidden; the replacement values are <em>not</em> recorded.
    */
   @Schema(
     name = "ExportSelectionMetadata",
-    description = "Per-kind opt-in for bundling metadata documents. Defaults: labJournal=true (legacy); permissions/annotations/versions=false; subscriptions recorded-only (no document emitted)."
+    description = "Per-kind opt-in for bundling metadata documents. Defaults: labJournal=true (legacy); permissions/annotations/versions=false; subscriptions recorded-only (no document emitted). " +
+    "redactFields is a closed set of fields on the emitted IO documents that are replaced with a sentinel before they are added to the crate (privacy: post-permission-check redaction). " +
+    "Redaction has no effect on metadata kinds that are not also opted-in (no document emitted ⇒ nothing to redact)."
   )
   public record Metadata(
     Boolean permissions,
     Boolean annotations,
     Boolean labJournal,
     Boolean versions,
-    Boolean subscriptions
-  ) {}
+    Boolean subscriptions,
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Schema(
+      description = "Closed set of fields on the emitted metadata IO documents that are replaced with a sentinel before bundling. Privacy semantics: post-permission-check redaction; the redacted field set is recorded in the manifest, the replacement values are not."
+    ) Set<RedactableField> redactFields
+  ) {
+    /** Backwards-compatible 5-arg constructor used by R2-Phase-1 / R2d callers and tests. */
+    public Metadata(
+      Boolean permissions,
+      Boolean annotations,
+      Boolean labJournal,
+      Boolean versions,
+      Boolean subscriptions
+    ) {
+      this(permissions, annotations, labJournal, versions, subscriptions, null);
+    }
+  }
+
+  /**
+   * Closed set of fields on the emitted metadata IO documents that the caller can opt to redact
+   * before the document lands in the RO-Crate. Each value targets a single field on a single IO
+   * type. Redaction replaces strings with the sentinel {@code "[REDACTED]"}; numeric / id arrays
+   * are emptied (they cannot hold a string sentinel and revealing the count alone is not a
+   * meaningful privacy concession).
+   *
+   * <p>This is intentionally a closed enum — adding a redactable surface is a deliberate team
+   * decision, not a freeform path expression that drifts with DTO shape changes.
+   */
+  @Schema(
+    name = "RedactableField",
+    description = "Closed set of fields on metadata IO documents that can be redacted before bundling. Strings are replaced with [REDACTED]; long[] arrays are emptied."
+  )
+  public enum RedactableField {
+    /** Replaces every username field on PermissionsIO ({@code owner}, {@code reader[]}, {@code writer[]}, {@code manager[]}) with the sentinel {@code [REDACTED]}. */
+    PERMISSION_USERNAME,
+    /** Empties {@code readerGroupIds} and {@code writerGroupIds} on PermissionsIO. (PermissionsIO carries group ids, not group names.) */
+    PERMISSION_GROUP_IDS,
+    /** Replaces {@code propertyName} on SemanticAnnotationIO with {@code [REDACTED]} (the human-readable label of the property side of the triple; the IRI is left intact). */
+    ANNOTATION_LABEL,
+    /** Replaces {@code valueName} on SemanticAnnotationIO with {@code [REDACTED]} (the human-readable label of the value side of the triple; the IRI is left intact). */
+    ANNOTATION_VALUE,
+    /** Replaces {@code createdBy} on VersionIO with {@code [REDACTED]}. (VersionIO has no separate {@code author} field; {@code createdBy} carries the username.) */
+    VERSION_AUTHOR,
+    /** Replaces {@code journalContent} on LabJournalEntryIO with {@code [REDACTED]} (the body of an emitted lab-journal entry; redaction does not suppress emission). */
+    LAB_JOURNAL_CONTENT,
+  }
 
   /** Payload kinds the exporter currently knows how to bundle. */
   public enum PayloadKind {
@@ -172,5 +228,21 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
 
   public boolean includeSubscriptions() {
     return metadata != null && Boolean.TRUE.equals(metadata.subscriptions());
+  }
+
+  /**
+   * Returns the (immutable, never-null) set of fields the caller asked to redact on emitted
+   * metadata documents. Used by the per-kind emitters in {@link ExportBuilder}.
+   */
+  public Set<RedactableField> redactFields() {
+    if (metadata == null || metadata.redactFields() == null || metadata.redactFields().isEmpty()) {
+      return EnumSet.noneOf(RedactableField.class);
+    }
+    return EnumSet.copyOf(metadata.redactFields());
+  }
+
+  /** Convenience predicate for the emitters. */
+  public boolean isRedacted(RedactableField field) {
+    return field != null && redactFields().contains(field);
   }
 }

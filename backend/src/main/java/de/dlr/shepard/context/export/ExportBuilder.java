@@ -86,6 +86,7 @@ public class ExportBuilder {
   }
 
   public ExportBuilder addLabJournalEntry(LabJournalEntryIO entry, User author) throws IOException {
+    if (entry != null) redactLabJournal(entry);
     var referenceEntity = createFileEntity(entry);
     roCrateBuilder.addDataEntity(referenceEntity);
     addPersonEntity(author);
@@ -94,16 +95,19 @@ public class ExportBuilder {
 
   public ExportBuilder addPermissionsFor(long entityIoId, PermissionsIO permissions) throws IOException {
     var payload = permissions != null ? permissions : new PermissionsIO();
+    redactPermissions(payload);
     return addMetadataDocument(entityIoId, ExportConstants.PERMISSIONS_SUFFIX, ExportConstants.TYPE_PERMISSIONS, payload);
   }
 
   public ExportBuilder addVersionsFor(long entityIoId, List<VersionIO> versions) throws IOException {
     var payload = versions != null ? versions : List.<VersionIO>of();
+    payload.forEach(this::redactVersion);
     return addMetadataDocument(entityIoId, ExportConstants.VERSIONS_SUFFIX, ExportConstants.TYPE_VERSIONS, payload);
   }
 
   public ExportBuilder addSubscriptionsFor(long entityIoId, List<SubscriptionIO> subscriptions) throws IOException {
     var payload = subscriptions != null ? subscriptions : List.<SubscriptionIO>of();
+    // R2c: subscriptions have no redactable fields in this iteration (R2d2 owns the path).
     return addMetadataDocument(
       entityIoId,
       ExportConstants.SUBSCRIPTIONS_SUFFIX,
@@ -114,12 +118,69 @@ public class ExportBuilder {
 
   public ExportBuilder addAnnotationsFor(long entityIoId, List<SemanticAnnotationIO> annotations) throws IOException {
     var payload = annotations != null ? annotations : List.<SemanticAnnotationIO>of();
+    payload.forEach(this::redactAnnotation);
     return addMetadataDocument(
       entityIoId,
       ExportConstants.ANNOTATIONS_SUFFIX,
       ExportConstants.TYPE_ANNOTATIONS,
       payload
     );
+  }
+
+  // -------- R2c: per-field redaction on emitted metadata IOs --------------
+  // Sentinel string that replaces redacted string fields. long[] id arrays are emptied because
+  // they cannot hold a sentinel string and surfacing the count alone is not a meaningful
+  // privacy concession.
+  private static final String REDACTED = "[REDACTED]";
+  private static final long[] EMPTY_LONGS = new long[0];
+
+  private boolean redactedField(ExportSelection.RedactableField field) {
+    return selection != null && selection.isRedacted(field);
+  }
+
+  private void redactPermissions(PermissionsIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.PERMISSION_USERNAME)) {
+      if (io.getOwner() != null) io.setOwner(REDACTED);
+      io.setReader(redactStringArray(io.getReader()));
+      io.setWriter(redactStringArray(io.getWriter()));
+      io.setManager(redactStringArray(io.getManager()));
+    }
+    if (redactedField(ExportSelection.RedactableField.PERMISSION_GROUP_IDS)) {
+      io.setReaderGroupIds(EMPTY_LONGS);
+      io.setWriterGroupIds(EMPTY_LONGS);
+    }
+  }
+
+  private void redactAnnotation(SemanticAnnotationIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.ANNOTATION_LABEL) && io.getPropertyName() != null) {
+      io.setPropertyName(REDACTED);
+    }
+    if (redactedField(ExportSelection.RedactableField.ANNOTATION_VALUE) && io.getValueName() != null) {
+      io.setValueName(REDACTED);
+    }
+  }
+
+  private void redactVersion(VersionIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.VERSION_AUTHOR) && io.getCreatedBy() != null) {
+      io.setCreatedBy(REDACTED);
+    }
+  }
+
+  private void redactLabJournal(LabJournalEntryIO io) {
+    if (io == null) return;
+    if (redactedField(ExportSelection.RedactableField.LAB_JOURNAL_CONTENT) && io.getJournalContent() != null) {
+      io.setJournalContent(REDACTED);
+    }
+  }
+
+  private static String[] redactStringArray(String[] in) {
+    if (in == null) return null;
+    var out = new String[in.length];
+    for (int i = 0; i < in.length; i++) out[i] = REDACTED;
+    return out;
   }
 
   private ExportBuilder addMetadataDocument(long entityIoId, String suffix, String type, Object payload)
