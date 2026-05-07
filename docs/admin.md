@@ -8,13 +8,18 @@ This page describes how to run shepard. It cites only what is actually in the
 repository today; the dedicated admin CLI is **in design** and not yet
 shipped — see "Admin CLI" below.
 
-## Free test deploy
+## Deploy paths beyond docker-compose
 
-Want to spin up a personal test instance without paying for hosting?
-See [Deploy on Oracle Cloud Free Tier](deploy-oracle-free) — a one-page
-operator guide covering OCI signup quirks, the ARM-image caveat for
-shepard's backend/frontend, TLS via Caddy + Let's Encrypt, and nightly
-Object Storage backups within the always-free 10 GB allowance.
+For paths that go beyond running the bundled compose locally — free
+cloud, self-hosted on a Docker host fronted by a reverse proxy, paid
+VPS, managed-services split — see **[Deploy options](deploy/)**. The
+two deep guides are:
+
+- **[Oracle Cloud Free Tier (Ampere ARM)](deploy-oracle-free)** —
+  always-free 4 OCPU / 24 GB cloud VM, public IPv4 included.
+- **[Self-hosted Docker host behind Zoraxy](deploy-self-hosted-zoraxy)** —
+  your own hardware (mini PC, NUC, lab box) with Zoraxy as the reverse
+  proxy, optionally paired with Cloudflare Tunnel for CG-NAT.
 
 ## Stack — docker-compose
 
