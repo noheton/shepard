@@ -1,0 +1,23 @@
+{
+  "test_run_id": "TR-003",
+  "campaign": "lumen-inspired-q3-2024",
+  "bench": "P3-Lampoldshausen",
+  "propellant": "LOX/LCH4",
+  "scheduled_at": "2024-07-14T09:00:00+00:00",
+  "shift": "early",
+  "test_engineer": "A. Reuter",
+  "is_fired": true,
+  "duration_s": 30,
+  "target_thrust_kN": 25,
+  "target_mixture_ratio": 3.4,
+  "lox_lot_id": "LOX-2024-01",
+  "lch4_lot_id": "CH4-2024-02",
+  "weather": {
+    "temp_c": 26,
+    "wind_kmh": 4,
+    "humidity_pct": 48,
+    "cloud": "FEW"
+  },
+  "igniter_check": "PASS",
+  "notes_brief": "Reference fire pre-anomaly. Fuel turbopump vibration trending +0.4 g rms vs TR-001 (within envelope)."
+}
