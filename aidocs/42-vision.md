@@ -210,6 +210,12 @@ Mid-horizon:
   (spatial, hdf, files-s3) migrate to plugins; codegen archetype
   + `make dev` + unified test-resource make the casual + power
   user paths both faster.
+- **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
+  a `/help` route serving the same `docs/*.md` content as the
+  Pages site, with screenshots auto-captured by Playwright against
+  the `shepard.nuclide.systems` test deployment. Casual users get
+  task-shaped help (upload-data / share-collection /
+  export-rocrate / process-step) without leaving the app.
 
 Long-horizon (deliberately deferred):
 
