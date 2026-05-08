@@ -1,0 +1,78 @@
+name: Security scans
+
+# Heavier security scans that don't belong on every PR. Runs on a weekly
+# schedule + on demand. The OWASP Dependency-Check downloads the NVD CVE
+# database (multi-MB) and takes minutes; gitleaks scans the full repo for
+# secret patterns.
+
+on:
+  schedule:
+    - cron: "37 3 * * 1"           # Mondays 03:37 UTC
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/pom.xml"
+      - "scripts/**/poetry.lock"
+      - "scripts/**/pyproject.toml"
+      - ".github/workflows/security.yml"
+
+permissions:
+  contents: read
+  security-events: write           # for code-scanning SARIF upload
+  pull-requests: write
+
+jobs:
+  owasp-dependency-check:
+    name: OWASP Dependency-Check (Java backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Cache OWASP NVD data dir
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ github.run_id }}
+          restore-keys: |
+            owasp-nvd-
+
+      - name: Run dependency-check (fail at CVSS >= 7.0)
+        env:
+          # NVD recommends an API key for sustainable rate; set NVD_API_KEY in
+          # repo secrets to avoid 1-req-per-30-sec throttling. Optional.
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          mvn -B dependency-check:check \
+              ${NVD_API_KEY:+-DnvdApiKey="$NVD_API_KEY"}
+
+      - name: Upload dependency-check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: backend/target/dependency-check-report.html
+
+  gitleaks:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0           # full history; gitleaks scans the whole tree
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # only needed for orgs > 1 person on the PRO tier

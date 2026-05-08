@@ -2,7 +2,7 @@
 
 **Scope.** Forward-looking design note for backlog item **L2** (`aidocs/16-dispatcher-backlog.md`, originating from `aidocs/input/input_raw.md:90` and `:715-717`): retire Neo4j's deprecated `id()` function from every Cypher query and every cross-store / API surface, in favour of an **application-generated stable identifier** (`appId`). This is the load-bearing prerequisite for Templates (**L3**) and removes the largest residual blocker on the search (`aidocs/13`) and semantic-annotation (`aidocs/14`) work.
 
-**Status.** Phase 1 (L2a) **landed** `fec7979` (cherry-pick onto `claude/implement-input-raw-changes-2WiOF`, merged via PR #1003 at `79f3ffd`). Phase 2 (L2b) **landed** `796bc11` (PR #1020). C5 (the gating Cypher-injection fix) **landed** `ab3f9da` — L2c precondition cleared. **L2c is unblocked**; recommended to land **C5b** (the second-wave injection sites in `*ReferenceDAO` / `GenericDAO` / `VersionDAO` / `SemanticAnnotationDAO`) before L2c so the parameter-type swap (long → String) doesn't open new injection sites. L2d gated on P4 + H4.
+**Status.** Phase 1 (L2a) **landed** `fec7979` (cherry-pick onto `claude/implement-input-raw-changes-2WiOF`, merged via PR #1003 at `79f3ffd`). Phase 2 (L2b) **landed** `796bc11` (PR #1020). C5 (the gating Cypher-injection fix) **landed** `e90bfd8` — L2c precondition cleared. **L2c is unblocked**; recommended to land **C5b** (the second-wave injection sites in `*ReferenceDAO` / `GenericDAO` / `VersionDAO` / `SemanticAnnotationDAO`) before L2c so the parameter-type swap (long → String) doesn't open new injection sites. L2d gated on P4 + H4.
 
 **Snapshot date.** 2026-05-07.
 

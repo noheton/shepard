@@ -31,6 +31,12 @@
     <skipITs>${skipTests}</skipITs>
     <!-- Skip "unit" tests. Most of them will populate the databases with values. -->
     <skipUTs>${skipTests}</skipUTs>
+    <!-- Coverage gate. Default off so a developer's local `mvn verify` doesn't
+         error on a partial run; CI passes -Djacoco.haltOnFailure=true. -->
+    <jacoco.haltOnFailure>false</jacoco.haltOnFailure>
+    <!-- SpotBugs/findsecbugs gate. Same off-by-default-locally / on-in-CI
+         shape — CI passes -Dspotbugs.failOnError=true. -->
+    <spotbugs.failOnError>false</spotbugs.failOnError>
     <!-- The directory glob in which the migration tests reside. -->
     <migrations-dir>**/migrations/**</migrations-dir>
     <!--
@@ -342,6 +348,13 @@
           <skipTests>${skipUTs}</skipTests>
           <excludes>
             <exclude>**/integrationtests/*.java</exclude>
+            <!-- @QuarkusTest classes that boot the full Quarkus app and
+                 transitively need Postgres / Neo4j / Mongo containers.
+                 They belong in the integration-test job (failsafe profile
+                 with infrastructure-local up). Including them here breaks
+                 the unit-only run because Flyway tries to connect at
+                 127.0.0.1:5433 / 7687 / etc. -->
+            <exclude>**/DataObjectSearchServiceQuarkusTest.java</exclude>
           </excludes>
           <includes>
             <include>${include-in-unit-tests}</include>
@@ -382,6 +395,15 @@
         <version>0.8.14</version>
         <configuration>
           <skip>${skipUTs}</skip>
+          <!--
+            Read the surefire-emitted exec, not the small `jacoco-quarkus.exec` the
+            quarkus-jacoco extension writes (which only covers the subset of
+            tests run under Quarkus's Arc proxy classloader). Without this
+            override the report reads near-zero coverage despite 1200+ tests
+            running.
+          -->
+          <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+          <outputDirectory>${project.build.directory}/jacoco-report</outputDirectory>
           <excludes>
             <exclude>**/Backend.*</exclude>
             <exclude>**/Constants.*</exclude>
@@ -399,6 +421,38 @@
             <goals>
               <goal>report</goal>
             </goals>
+          </execution>
+          <execution>
+            <id>check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <!--
+                Baseline below the current measured coverage (~68% line / 66%
+                branch as of 2026-05-08) so the build doesn't break on day 1
+                but does flag regressions. Raise the floor as coverage grows.
+              -->
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.60</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.60</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+              <haltOnFailure>${jacoco.haltOnFailure}</haltOnFailure>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -431,6 +485,52 @@
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>4.9.8.2</version>
+        <configuration>
+          <onlyAnalyze>de.dlr.shepard.*</onlyAnalyze>
+          <effort>Max</effort>
+          <!--
+            Effort=Max + Threshold=High keeps the gate honest without drowning
+            in low-confidence findings. Move to Threshold=Medium once the
+            High-only set is clean.
+          -->
+          <threshold>High</threshold>
+          <failOnError>${spotbugs.failOnError}</failOnError>
+          <plugins>
+            <plugin>
+              <groupId>com.h3xstream.findsecbugs</groupId>
+              <artifactId>findsecbugs-plugin</artifactId>
+              <version>1.14.0</version>
+            </plugin>
+          </plugins>
+        </configuration>
+        <executions>
+          <execution>
+            <id>spotbugs-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--
+        OWASP Dependency-Check. NOT bound to a phase by default — runs only
+        when invoked explicitly (`mvn dependency-check:check`) because
+        the CVE database download is multi-MB and slow. CI runs it on a
+        weekly schedule (.github/workflows/security.yml).
+      -->
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>10.0.4</version>
+        <configuration>
+          <failBuildOnCVSS>7</failBuildOnCVSS>
+          <suppressionFiles>
+            <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
+          </suppressionFiles>
+          <skipProvidedScope>true</skipProvidedScope>
+          <skipTestScope>true</skipTestScope>
+        </configuration>
       </plugin>
     </plugins>
   </build>
