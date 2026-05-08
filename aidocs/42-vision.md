@@ -216,6 +216,13 @@ Mid-horizon:
   the `shepard.nuclide.systems` test deployment. Casual users get
   task-shaped help (upload-data / share-collection /
   export-rocrate / process-step) without leaving the app.
+- **Experiment orchestration** (`aidocs/50`, EXP1 series). A new
+  `shepard-experiment-coordinator` service drives manufacturing-
+  style experiments end-to-end (PLC / SPS / KUKA robot / OPC/UA /
+  KUKA RSI), auto-materialises the shepard graph, and supports
+  pre-seed / JIT / post-process timing strategies plus
+  checkpoint-based restart. Builds on T1 templates + PR1 processes
+  + sTC telemetry + V2 snapshots.
 
 Long-horizon (deliberately deferred):
 

@@ -326,6 +326,17 @@ namespace; core enforces the shape.
 | Task-shaped help pages (upload-data / share-collection / export-rocrate / process-step) for casual users | none | TBD | 📐 (queued, D1c) | `aidocs/49 §2.2` |
 | Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
 
+## 16a. Experiment orchestration
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| `shepard-experiment-coordinator` service driving manufacturing experiments end-to-end (PLC / SPS / KUKA / OPC/UA / KUKA RSI) | none | TBD | 📐 (queued, EXP1a) | `aidocs/50` |
+| Three timing strategies — pre-seed (eager) / JIT (lazy default) / post-process (staged) | n/a | TBD | 📐 (queued, EXP1d/EXP1e + JIT in EXP1a) | `aidocs/50 §2 / §5` |
+| Checkpoint + restart-whole + restart-at-step on top of V2 snapshots | n/a | TBD | 📐 (queued, EXP1f + EXP1g) | `aidocs/50 §6` |
+| KUKA RSI telemetry routing into shepard TimeseriesReferences | n/a | TBD | 📐 (queued, EXP1i) | `aidocs/50 §4.2` |
+| Operator UI for live experiment monitoring + restart controls | none | TBD | 📐 (queued, EXP1j) | `aidocs/50 §3.3` |
+| Recipe storage as `templateKind = "EXPERIMENT_RECIPE"` in `__templates` (T1) | n/a | TBD | 📐 (queued, EXP1k) | `aidocs/50 §3.2` |
+
 ## 17. Companion ecosystem
 
 | Tool | Upstream version | This fork status | Notes |

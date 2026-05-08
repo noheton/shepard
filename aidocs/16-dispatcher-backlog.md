@@ -202,6 +202,21 @@ Status legend:
 | D1e | Per-page "Was this helpful?" telemetry — anonymous, opt-out, summary stats only. | — | M | gated on D1a + privacy review | |
 | D1f | (deferred) Multilingual docs — `docs/de/*.md`, picker driven by `aidocs/36 §3.2 language` setting. | — | L | parked | |
 | D1g | (deferred) Inline contextual help — every page in shepard has a "?" icon that pops the relevant help section. | — | M | parked | Phases into the casual-user UX after D1c content lands. |
+| EXP1 | Experiment orchestration — umbrella | user request, `aidocs/50` | XL | **design done** | `aidocs/50`. New `shepard-experiment-coordinator` service drives PLC/SPS/KUKA experiments end-to-end; auto-materialises shepard graph; three timing strategies (preseed / JIT default / post-process); checkpoint via V2 snapshots; restart-whole + restart-at-step. EXP1a-EXP1n sub-IDs below. |
+| EXP1a | Coordinator service skeleton — Quarkus app, file-based recipes, drives `/v2/process-runs/...` (PR1) + `/v2/<kind>-references/...`. JIT mode only; manual triggers only. | — | L | gated on PR1b | Gate for everything else; alone delivers no value — EXP1b+EXP1c unlock the manufacturing-environment integration. |
+| EXP1b | OPC/UA trigger subscription — real PLC events drive trigger evaluator. Reuses `Eclipse Milo` via sTC's source-layer internals. | — | M | gated on EXP1a | |
+| EXP1c | sTC sink integration — telemetry from sTC routes to coordinator-managed TimeseriesReference OIDs of the active step. | — | M | gated on EXP1a + sTC i1 (NDJSON ingest, shipped via P14) | |
+| EXP1d | Pre-seed mode — recipe declares full graph upfront. | — | M | gated on EXP1a | |
+| EXP1e | Post-process mode — staging-bucket walk + ingest endpoint. | — | M | gated on EXP1a + FS1 (S3 staging) | |
+| EXP1f | Checkpoint + V2 snapshot integration. | — | M | gated on EXP1a + V2b | |
+| EXP1g | Restart-whole + restart-at-step. | — | M | gated on EXP1f | |
+| EXP1h | KUKA OPC/UA trigger integration. | — | S | gated on EXP1b | |
+| EXP1i | KUKA RSI telemetry routing via sTC's RSI source. | — | S | gated on EXP1c + sTC RSI source | |
+| EXP1j | Operator UI — web, embedded in shepard's frontend `/experiments` route. Live state, telemetry sparklines, checkpoint history, restart controls. | — | L | gated on EXP1a + frontend | |
+| EXP1k | Recipe storage in shepard's `__templates` Collection with `templateKind = "EXPERIMENT_RECIPE"`. Operator picks recipes from the existing template-picker UI. | — | M | gated on EXP1a + T1b | |
+| EXP1l | Modbus / REST source integration via sTC i9. | — | S | gated on sTC i9 | |
+| EXP1m | (deferred) PLC writeback — coordinator writes setpoints to PLC. Audit-logged; recipe-authorisation-gated. | — | M | parked until safety review | |
+| EXP1n | (deferred) Multi-coordinator coordination across synchronised stations. | — | L | parked | |
 
 ### Streaming / publication
 
