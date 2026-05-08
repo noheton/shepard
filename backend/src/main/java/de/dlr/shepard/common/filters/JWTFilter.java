@@ -124,10 +124,13 @@ public class JWTFilter implements ContainerRequestFilter {
         return;
       }
     } else {
+      // Do not log the header values — they often contain credentials.
+      // Recording only presence is enough to triage missing-auth vs
+      // wrong-scheme; full payloads would be a token-leak vector.
       Log.warnf(
-        "Invalid/missing authorization header (Authorization: %s, X-API-KEY: %s) on endpoint %s",
-        authorizationHeader,
-        apiKeyHeader,
+        "Invalid/missing authorization header (Authorization=%s, X-API-KEY=%s) on endpoint %s",
+        authorizationHeader == null ? "absent" : "present",
+        apiKeyHeader == null ? "absent" : "present",
         requestContext.getUriInfo().getAbsolutePath()
       );
       requestContext.abortWith(
@@ -169,8 +172,10 @@ public class JWTFilter implements ContainerRequestFilter {
   }
 
   private Jws<Claims> parseAccessTokenFromHeader(String header) {
-    // Extract the token from the HTTP Authorization header
-    String token = header.replace("Bearer ", "");
+    // Caller has verified the "Bearer " prefix, so substring(7) is safe.
+    // Using replace() instead would mangle any token that contains the
+    // literal substring "Bearer " mid-payload.
+    String token = header.startsWith("Bearer ") ? header.substring(7) : header;
     var parser = Jwts.parserBuilder()
       .setSigningKey(oidcPublicKey)
       .deserializeJsonWith(new JacksonDeserializer<>(Map.of("realm_access", RolesList.class)))
