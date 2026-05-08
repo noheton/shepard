@@ -4,6 +4,15 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import java.nio.file.Path;
 import java.util.Set;
 
+/**
+ * Registry of request paths that bypass {@link JWTFilter}. Path
+ * matching uses {@code startsWith} against
+ * {@code requestContext.getUriInfo().getPath()} — pre-H5; H5 will
+ * harden this to exact-match against a normalised path.
+ *
+ * <p>A0 adds {@code /v2/admin/bootstrap} — the bootstrap-token
+ * endpoint must be reachable before any user is authenticated.
+ */
 public class PublicEndpointRegistry {
 
   /**
@@ -12,8 +21,12 @@ public class PublicEndpointRegistry {
    * Compared against the {@link RequestPathHelper#applicationPath} of
    * the incoming request with **exact equality** — see
    * {@link #isRequestPathPublic} for why.
+   *
+   * <p>{@code /v2/admin/bootstrap} (A0) is reachable pre-auth so the
+   * first instance-admin can be created; the bootstrap-token gate
+   * inside the endpoint enforces single-use.
    */
-  private static final Set<String> PUBLIC_PATHS = Set.of("/versionz");
+  private static final Set<String> PUBLIC_PATHS = Set.of("/versionz", "/v2/admin/bootstrap");
 
   /**
    * Returns {@code true} when the request path matches a registered public

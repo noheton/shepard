@@ -179,6 +179,12 @@ public class Constants {
   public static final String HAS_PAYLOAD = "has_payload";
   public static final String HAS_LABJOURNAL_ENTRY = "has_labjournalentry";
   public static final String HAS_DEFAULT_FILE_CONTAINER = "has_default_file_container";
+  public static final String HAS_ROLE = "HAS_ROLE";
+
+  // A0 — instance-admin role
+  public static final String INSTANCE_ADMIN_ROLE = "instance-admin";
+  public static final String INSTANCE_ADMIN_DISPLAY_NAME = "Instance Admin";
+  public static final String BOOTSTRAP_GRANTER = "bootstrap";
 
   // Influx
   public static final String MEASUREMENT = "measurement";

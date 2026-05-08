@@ -10,10 +10,12 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.apikey.daos.ApiKeyDAO;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.io.ApiKeyIO;
+import de.dlr.shepard.auth.role.daos.RoleDAO;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
@@ -47,6 +49,9 @@ public class ApiKeyServiceTest extends BaseTestCase {
   AuthenticationContext authenticationContext;
 
   @InjectMock
+  RoleDAO roleDAO;
+
+  @InjectMock
   DateHelper dateHelper;
 
   @InjectMock
@@ -56,6 +61,11 @@ public class ApiKeyServiceTest extends BaseTestCase {
   ApiKeyService service;
 
   private PrivateKey key;
+
+  @BeforeEach
+  public void setUpRoleDAO() {
+    when(roleDAO.rolesForUser(org.mockito.ArgumentMatchers.anyString())).thenReturn(java.util.Collections.emptyList());
+  }
 
   @BeforeEach
   public void setUpKey() throws NoSuchAlgorithmException, InvalidKeySpecException, IllegalAccessException {
@@ -212,5 +222,119 @@ public class ApiKeyServiceTest extends BaseTestCase {
     when(userService.getUser("bob")).thenReturn(user);
 
     assertThrows(InvalidRequestException.class, () -> service.createApiKey(input, "bob", "uri"));
+  }
+
+  // ----- A0 §4.2: explicit roles + allowlist + caller-must-have -----
+
+  /**
+   * A0: empty roles array preserves today's behaviour — key minted
+   * with no role claim.
+   */
+  @Test
+  public void createApiKey_withEmptyRoles_succeeds() {
+    var uid = UUID.randomUUID();
+    var user = new User("bob");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("MyKey");
+    input.setRoles(java.util.Set.of());
+    var created = new ApiKey() {
+      {
+        setUid(uid);
+        setBelongsTo(user);
+        setCreatedAt(date);
+        setName("MyKey");
+      }
+    };
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("bob")).thenReturn(user);
+    when(dao.createOrUpdate(any(ApiKey.class))).thenReturn(created);
+    when(pkiHelper.getPrivateKey()).thenReturn(key);
+
+    var actual = service.createApiKey(input, "bob", "uri");
+    org.junit.jupiter.api.Assertions.assertNotNull(actual);
+    org.junit.jupiter.api.Assertions.assertTrue(actual.getRoles() == null || actual.getRoles().isEmpty());
+  }
+
+  /**
+   * A0 §4.2: caller has the role → key is minted with that role.
+   */
+  @Test
+  public void createApiKey_callerHasRole_succeeds() {
+    var uid = UUID.randomUUID();
+    var user = new User("admin");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("AdminKey");
+    input.setRoles(java.util.Set.of("instance-admin"));
+    var created = new ApiKey() {
+      {
+        setUid(uid);
+        setBelongsTo(user);
+        setCreatedAt(date);
+        setName("AdminKey");
+        setRoles(java.util.Set.of("instance-admin"));
+      }
+    };
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("admin")).thenReturn(user);
+    when(roleDAO.rolesForUser("admin")).thenReturn(java.util.List.of("instance-admin"));
+    when(dao.createOrUpdate(any(ApiKey.class))).thenReturn(created);
+    when(pkiHelper.getPrivateKey()).thenReturn(key);
+    authenticationContext.setPrincipal(new JWTPrincipal(null, null, "admin", "kid", java.util.List.of("instance-admin")));
+    when(authenticationContext.getCurrentUserName()).thenReturn("admin");
+    when(authenticationContext.getPrincipal()).thenReturn(
+      new JWTPrincipal(null, null, "admin", "kid", java.util.List.of("instance-admin"))
+    );
+
+    var actual = service.createApiKey(input, "admin", "uri");
+    org.junit.jupiter.api.Assertions.assertTrue(actual.getRoles().contains("instance-admin"));
+  }
+
+  /**
+   * A0 §4.2: caller does NOT have the role → 403 (InvalidAuthException).
+   * No privilege escalation.
+   */
+  @Test
+  public void createApiKey_callerLacksRole_rejected() {
+    var user = new User("bob");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("WantsAdmin");
+    input.setRoles(java.util.Set.of("instance-admin"));
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("bob")).thenReturn(user);
+    when(roleDAO.rolesForUser("bob")).thenReturn(java.util.Collections.emptyList());
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(authenticationContext.getPrincipal()).thenReturn(new JWTPrincipal("bob", "kid"));
+
+    assertThrows(InvalidAuthException.class, () -> service.createApiKey(input, "bob", "uri"));
+  }
+
+  /**
+   * A0 §4.2: requested role isn't in the allowlist → 400
+   * (InvalidRequestException).
+   */
+  @Test
+  public void createApiKey_roleNotInAllowlist_rejected() {
+    var user = new User("admin");
+    var date = new Date(30L);
+    var input = new ApiKeyIO();
+    input.setName("CustomKey");
+    input.setRoles(java.util.Set.of("auditor"));
+
+    when(dateHelper.getDate()).thenReturn(date);
+    when(userService.getUser("admin")).thenReturn(user);
+    when(roleDAO.rolesForUser("admin")).thenReturn(java.util.List.of("auditor", "instance-admin"));
+    when(authenticationContext.getCurrentUserName()).thenReturn("admin");
+    when(authenticationContext.getPrincipal()).thenReturn(
+      new JWTPrincipal(null, null, "admin", "kid", java.util.List.of("auditor", "instance-admin"))
+    );
+
+    // Default allowlist is `["instance-admin"]` — `auditor` not in it.
+    assertThrows(InvalidRequestException.class, () -> service.createApiKey(input, "admin", "uri"));
   }
 }

@@ -184,10 +184,13 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
 
   @Test
   public void isAllowedTest_NoPermissions() {
+    // C3 fix (aidocs/51 §8 / aidocs/07 C3): legacy entities lacking a
+    // Permissions node now fail-closed (deny). Was: full access for
+    // every authenticated user.
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(null);
 
     var actual = permissionsService.isAllowed(request, AccessType.Read, "principal");
-    assertTrue(actual);
+    assertFalse(actual);
   }
 
   @Test
@@ -460,9 +463,11 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
 
   @Test
   public void getRolesTest_null() {
+    // C3 fix (aidocs/51 §8 / aidocs/07 C3): the no-Permissions case
+    // returns Roles(false, false, false, false) — fail-closed.
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(null);
 
-    var expected = new Roles(false, true, true, true);
+    var expected = new Roles(false, false, false, false);
     var actual = permissionsService.getUserRolesOnEntity(123, "bob");
     assertEquals(expected, actual);
   }

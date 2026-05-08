@@ -366,10 +366,28 @@ public class PermissionsService {
     return ret;
   }
 
-  private Roles getRoles(Optional<Permissions> perms, String username) {
+  /**
+   * Resolve the roles a user has on an entity given the entity's
+   * Permissions node (or its absence).
+   *
+   * <p>C3 (aidocs/07 / aidocs/51 §8): when an entity has no
+   * Permissions node attached, this method returns a fail-closed
+   * {@code Roles(false, false, false, false)} — i.e. **no rights**.
+   * The previous shape returned {@code Roles(false, true, true, true)}
+   * which silently gave full read/write/manage access to every
+   * authenticated user. Operators with legacy orphan entities must
+   * set {@code shepard.permissions.default-owner} so V14's backfill
+   * attaches default Permissions before this flip kicks in; the
+   * pre-migration {@code OrphanPermissionsBackfillContext} aborts
+   * startup if that combination is missing.
+   *
+   * <p>The {@code GET /v2/admin/permission-audit} endpoint (post-A0)
+   * surfaces any remaining orphans operationally.
+   */
+  Roles getRoles(Optional<Permissions> perms, String username) {
     if (perms.isEmpty()) {
-      // Legacy entity without permissions
-      return new Roles(false, true, true, true);
+      // C3: fail-closed. See javadoc above.
+      return new Roles(false, false, false, false);
     }
     var roles = new Roles(
       isOwner(perms.get(), username),

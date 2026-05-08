@@ -70,6 +70,12 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Default-credential placeholders that fail at startup if not changed | accept shipped defaults | TBD | 📐 (queued) | `aidocs/07` H8 |
 | OIDC `realm_access.roles` claim path configurable (multi-IdP) | hard-coded Keycloak shape | TBD | 📐 (queued, F8) | `aidocs/22 §4.11a.4` |
 | Permission system: declarative `@Authz` annotation | path-segment switch | TBD | 📐 (queued, F1) | `aidocs/24` F1 / P5 |
+| **Instance-Admin role (`instance-admin`)** — single role tier for v1; gates `/v2/admin/*` endpoints + future `shepard-admin` CLI | none — `JWTPrincipal.roles` was always `new String[0]` so `@RolesAllowed("admin")` denied everyone | shipped — new `Role` Neo4j entity + `:HAS_ROLE` relationship; `V13` appId constraint; `JWTSecurityContext.isUserInRole` consults principal; `@RolesAllowed("instance-admin")` works | **✓ ↑** | A0 (this slice) / `aidocs/51` |
+| **Dual-source role check** — IdP claim AND/OR Neo4j `:HAS_ROLE` edge, deduped on the principal | n/a (no role mechanism) | shipped — `JWTFilter.resolveDualSourceRoles`; principal carries one combined `roles` list | **✓ ↑** | A0 / `aidocs/51 §3.3` |
+| **Bootstrap-token mechanism** — `/opt/shepard/.bootstrap-token` (mode 0600); `POST /v2/admin/bootstrap` consumes; replay-protected via `:BootstrapState` Neo4j flag node + token hash | none | shipped — `BootstrapTokenInitializer` runs after migrations; idempotent; configurable path via `shepard.bootstrap.token-path` | **✓ ↑** | A0 / `aidocs/51 §5` |
+| **API-key roles claim** — `POST /apikeys` body grows `roles: [...]` field; minted JWT carries `roles` claim; cross-checked vs Neo4j-stored `roles` Set on read; allowlist + caller-must-have-each-role validation | none | shipped — `shepard.apikey.role-allowlist` (default `["instance-admin"]`); `InvalidAuthException` on escalation attempt; `InvalidRequestException` on out-of-allowlist | **✓ ↑** | A0 §4.2 / `aidocs/51 §4.2` |
+| **C3: `getRoles` fail-closed** — orphan entities (no `:has_permissions` edge) now return `Roles(false,false,false,false)` instead of full read+write+manage to every authenticated user | full-access fallback (CRITICAL backdoor — `aidocs/07` C3) | shipped — paired with `OrphanPermissionsBackfillContext` pre-migration hook + V14 backfill | **✓ ↑** | C3 (bundled with A0) / `aidocs/07` C3 / `aidocs/51 §8` |
+| **`GET /v2/admin/permission-audit`** — surfaces entities lacking `:has_permissions` edge (operational triage for the post-C3 fail-closed default) | none | shipped — `@RolesAllowed("instance-admin")`-gated; returns up to 1000 rows | **✓ ↑** | A0 / `aidocs/51 §10` |
 | Group-based sharing model (`Group` node) | none | TBD | 📐 (queued, F2) | `aidocs/24` F2 |
 | Permission audit log (Postgres) | none | TBD | 📐 (queued, F3) | `aidocs/24` F3 |
 
@@ -184,6 +190,9 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
+| `/v2/admin/instance-admins` (list / grant / revoke) — REST surface for admin-role mutation | none | shipped — `@RolesAllowed("instance-admin")`-gated; returns audit trail (`grantedBy`, `grantedAt`); CLI counterparts deferred to L1 Phase 1 | **✓ ↑** | A0 / `aidocs/51 §10` |
+| `POST /v2/admin/bootstrap` — first instance-admin via the one-shot bootstrap token | none | shipped — unauthenticated (token-gated); replay-protected | **✓ ↑** | A0 / `aidocs/51 §5.2` |
+| `GET /v2/admin/permission-audit` — list orphan-permissions entities | none | shipped (post-C3 fail-closed) | **✓ ↑** | A0 / `aidocs/51 §10` |
 | Admin CLI (`shepard-admin`) — read-only commands | none | designed; phased L1 | 📐 (queued) | `aidocs/22` |
 | Admin CLI cleanup of soft-deleted entities (TTL) | none | designed | 📐 (queued, L1 phase 2) | `aidocs/22 §4.1` |
 | Admin CLI RO-Crate import / export | none | designed | 📐 (queued, L1 phase 3) | `aidocs/22 §4.7` |
@@ -192,9 +201,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Universal TUI mode for every command (auto-fill from server state) | none | designed | 📐 (queued) | `aidocs/22 §4.x` |
 | Env-driven auth discovery (`SHEPARD_HOST` / `SHEPARD_API_KEY`) for the CLI | none | designed | 📐 (queued, L1 phase 1) | `aidocs/22 §3.4` |
 | Init wizard's OIDC sub-flow (Keycloak / Pocket ID / external w/ auto-discovery) | none | designed; depends on F8 (configurable claim path) for non-Keycloak | 📐 (queued) | `aidocs/22 §4.11a` |
-
 ## 13a. File storage backend
-
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | Files stored in MongoDB GridFS (1 MiB chunks, one bucket per FileContainer) | **=** | **=** (today) | **=** | `FileService.java` |
@@ -204,9 +211,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `shepard-admin files migrate` CLI (greenfield / big-bang / dual-store-with-background-sweep) | none | TBD | 📐 (queued, FS1e) | `aidocs/45 §6` |
 | Frontend large-file uploads via presigned PUT (P12) | proxied through backend | TBD | 📐 (queued, FS1f) | `aidocs/45 §9` / `aidocs/33` |
 | RO-Crate export delivery via presigned URL (closes #27 / O3) | proxied | TBD | 📐 (queued, FS1g) | `aidocs/45` / `aidocs/31 §O3` |
-
 ## 13b. CI / quality gates
-
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | JaCoCo coverage report on `mvn verify` | configured but reads the wrong (Quarkus-side) exec file → reports ~0.5% | reads the real `target/jacoco.exec` → reports ~68% line / 66% branch | **✓ ↑** | `backend/pom.xml` jacoco-maven-plugin (post-fix) |
@@ -222,11 +227,6 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | **Trivy** container scan on every published GHCR image (CRITICAL+HIGH, ignore-unfixed) | none | shipped in `build-images.yml`; SARIF → Code Scanning per-image | **✓ ↑** | `.github/workflows/build-images.yml` |
 | **SBOM** (CycloneDX) per published image via `anchore/sbom-action`; uploaded as artifact + attached to GitHub releases | none | shipped in `build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
 | **Dependency-review** (PR-time licence + new-CVE check) banning GPL/AGPL/SSPL families with `.github/dependency-review-config.yml` allowlist | none | shipped in `security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
-
-## 13c. Plugin system + dev experience
-
-| Capability | Upstream | This fork | Status | Refs |
-|---|---|---|---|---|
 | Storage-backend plugin SPI (`PayloadKind` + `PayloadStorage`); new payload kinds drop in as plugins | none | TBD | 📐 (queued, PL1a) | `aidocs/47 §2` |
 | Pilot migration: `spatial` → `shepard-plugin-spatial-postgis` | n/a | TBD | 📐 (queued, PL1b) | `aidocs/47 §3` |
 | HDF5/HSDS (A5a) ships as a plugin from day 1 | none | TBD | 📐 (queued, PL1c) | `aidocs/35` + `aidocs/47` |
@@ -235,42 +235,22 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `make dev` single-command bootstrap (init wizard + compose up + smoke) | none | TBD | 📐 (queued, DX4) | `aidocs/47 §4.4` |
 | Unified `ShepardTestStack` testcontainer resource | none | TBD | 📐 (queued, DX1) | `aidocs/47 §4.1` |
 | BI integrations — Grafana data-source plugin + Superset SQLAlchemy recipe | none | TBD; "SQL win" via P10 (C5 cleared) | 📐 (queued, DX8) | `aidocs/47 §4.8` + `aidocs/29` |
-
-## 14. RO-Crate optimisation
-
-| Capability | Upstream | This fork | Status | Refs |
-|---|---|---|---|---|
 | Selective export ✓ (see §5 above) | GET-only | **✓** (R2 series shipped) | **✓ ↑** | §5 |
 | Streaming RO-Crate export for large Collections | possible OOM | TBD | 📐 (queued) | `aidocs/31` |
 | Long-running export pattern (job-id polling) | synchronous only | TBD | 📐 (queued) | `aidocs/32` |
 | Reproducible-by-snapshot exports | n/a (no snapshots) | TBD; lands at V2d | 📐 (queued, V2d) | `aidocs/41 §5` |
-
-## 14a. API structure — endpoint-by-endpoint delta
-
-The `/shepard/api/...` surface stays byte-frozen with upstream 5.2.0
-per `CLAUDE.md`. This section enumerates **what's been added to
-`/v2/...`** (or designed for it). Endpoints marked `📐` are in
-the design corpus; `🚧` is in flight; `✓` ships.
-
-### 14a.1 What `/shepard/api/...` looks like (upstream parity)
-
-Every upstream 5.2.0 path that exists today still exists with
-identical wire shape. No comprehensive enumeration here — the
-upstream OpenAPI is the canonical reference. **Two operator-visible
-behaviour changes** preserve the wire shape but tighten internals:
-
 | Endpoint group | Internal change | User-visible? |
-|---|---|---|
 | `/shepard/api/.../search` | Cypher now parameter-bound (C5); identifiers whitelisted | No — request body unchanged |
 | `/shepard/api/.../healthz` | Per-DB up/down state in body (A1b) | Additive fields only |
 | `/shepard/api/timeseriesContainers/{id}/payload` | Now also accepts `application/x-ndjson` (P14) | Additive content-type |
 | `/shepard/api/collections/{id}/export` (GET) | Unchanged | No |
-
-### 14a.2 New `/v2/...` endpoints — shipped
-
 | Endpoint | Status | Origin |
-|---|---|---|
 | `POST /v2/collections/{appId}/export` (body-form ExportSelection) | ✓ shipped | R2 / `aidocs/16` |
+| `POST /v2/admin/bootstrap` (unauthenticated; consumes `/opt/shepard/.bootstrap-token`) | ✓ shipped | A0 / `aidocs/51 §5.2` |
+| `GET /v2/admin/instance-admins` (list, source column: Neo4j) | ✓ shipped | A0 / `aidocs/51 §10` |
+| `POST /v2/admin/instance-admins` (grant role) | ✓ shipped | A0 / `aidocs/51 §10` |
+| `DELETE /v2/admin/instance-admins/{username}` (revoke role) | ✓ shipped | A0 / `aidocs/51 §10` |
+| `GET /v2/admin/permission-audit` (list orphan-permissions entities) | ✓ shipped | A0 / `aidocs/51 §8` |
 | (None of the L2c/L2d/L2e `/v2/...` URL forms have shipped yet — those land at L2d.) | | |
 
 ### 14a.3 New `/v2/...` endpoints — designed (queued)

@@ -124,15 +124,18 @@ public class PermissionsServiceFilterAllowedForUserTest extends BaseTestCase {
   }
 
   @Test
-  public void allUncached_legacyEntitiesWithoutPermissions_areTreatedAsAllowed() {
+  public void allUncached_legacyEntitiesWithoutPermissions_areTreatedAsDenied() {
+    // C3 fix (aidocs/51 §8 / aidocs/07 C3): legacy entities lacking
+    // a Permissions node now fail-closed (deny). Was: full access for
+    // every authenticated user via the old `Roles(false, true, true,
+    // true)` fallback.
     primeCacheMiss(50L, AccessType.Read, "alice");
     primeCacheMiss(51L, AccessType.Read, "alice");
     when(permissionsDAO.findByEntityNeo4jIds(any())).thenReturn(Collections.emptyMap());
 
     Set<Long> result = permissionsService.filterAllowedForUser(List.of(50L, 51L), AccessType.Read, "alice");
 
-    // matches getRoles' legacy fallback when no Permissions node exists
-    assertThat(result).containsExactlyInAnyOrder(50L, 51L);
+    assertThat(result).isEmpty();
     verify(permissionsDAO, times(1)).findByEntityNeo4jIds(anyCollection());
   }
 
