@@ -51,7 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 //TODO: Much of the functionality of the endpoint functions can be refactored into the LabJournal Service layer
 
 @Consumes(MediaType.APPLICATION_JSON)
-@Path("/" + Constants.LAB_JOURNAL_ENTRIES)
+@Path(Constants.SHEPARD_API + "/" + Constants.LAB_JOURNAL_ENTRIES)
 @Produces(MediaType.APPLICATION_JSON)
 @RequestScoped
 public class LabJournalEntryRest {

@@ -33,6 +33,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(
+  Constants.SHEPARD_API +
+  "/" +
   Constants.COLLECTIONS +
   "/{" +
   Constants.COLLECTION_ID +

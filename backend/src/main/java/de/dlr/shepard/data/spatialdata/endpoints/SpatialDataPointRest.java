@@ -48,7 +48,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @EndpointDisabled(name = "shepard.spatial-data.enabled", stringValue = "false")
 @RequiresDatabase(DatabaseKind.SPATIAL)
-@Path(Constants.SPATIAL_DATA_CONTAINERS)
+@Path(Constants.SHEPARD_API + "/" + Constants.SPATIAL_DATA_CONTAINERS)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped

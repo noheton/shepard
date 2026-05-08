@@ -33,7 +33,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.SEMANTIC_REPOSITORIES)
+@Path(Constants.SHEPARD_API + "/" + Constants.SEMANTIC_REPOSITORIES)
 @RequestScoped
 public class SemanticRepositoryRest {
 

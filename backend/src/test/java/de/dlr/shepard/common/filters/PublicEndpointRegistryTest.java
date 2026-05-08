@@ -12,29 +12,33 @@ import org.junit.jupiter.api.Test;
 
 class PublicEndpointRegistryTest {
 
+  // Post-P4 the JAX-RS-reported path leads with `shepard/api/`. The test
+  // exercises full request paths and relies on RequestPathHelper to strip
+  // the prefix before the public-path registry compares.
+
   @Test
   void exactMatchAccepts() {
-    assertTrue(isPublic("/versionz"));
+    assertTrue(isPublic("shepard/api/versionz"));
   }
 
   @Test
   void trailingSlashAccepts() {
     // Canonical form strips trailing slash.
-    assertTrue(isPublic("/versionz/"));
+    assertTrue(isPublic("shepard/api/versionz/"));
   }
 
   @Test
   void prefixDoesNotMatch() {
     // Pre-fix the bug from `aidocs/07` H5: /versionzXXX must not match.
-    assertFalse(isPublic("/versionzanything"));
-    assertFalse(isPublic("/versionz/anything"));
-    assertFalse(isPublic("/versionz/healthz"));
+    assertFalse(isPublic("shepard/api/versionzanything"));
+    assertFalse(isPublic("shepard/api/versionz/anything"));
+    assertFalse(isPublic("shepard/api/versionz/healthz"));
   }
 
   @Test
   void traversalAttemptIsNormalised() {
     // /versionz/../containers/1 normalises to /containers/1 → not public.
-    assertFalse(isPublic("/versionz/../containers/1"));
+    assertFalse(isPublic("shepard/api/versionz/../containers/1"));
   }
 
   @Test
@@ -42,14 +46,22 @@ class PublicEndpointRegistryTest {
     // /a/../versionz normalises to /versionz → exact match → public.
     // This is correct behaviour: normalisation is the point of the fix,
     // not a refusal of all `..` segments.
-    assertTrue(isPublic("/a/../versionz"));
+    assertTrue(isPublic("shepard/api/a/../versionz"));
   }
 
   @Test
   void unrelatedPathsRejected() {
-    assertFalse(isPublic("/collections"));
-    assertFalse(isPublic("/"));
+    assertFalse(isPublic("shepard/api/collections"));
+    assertFalse(isPublic("shepard/api/"));
     assertFalse(isPublic(""));
+  }
+
+  @Test
+  void nonShepardPathsRejected() {
+    // Future /v2/... routes don't carry the shepard/api prefix.
+    // They are not public unless explicitly registered.
+    assertFalse(isPublic("v2/versionz"));
+    assertFalse(isPublic("v2/anything"));
   }
 
   @Test

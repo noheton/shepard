@@ -8,6 +8,18 @@ public class Constants {
 
   public static final String API_KEY_HEADER = "X-API-KEY";
 
+  /**
+   * Upstream-frozen API surface prefix. Every JAX-RS resource that participates
+   * in upstream byte-compatibility (upstream dlr-shepard/shepard 5.2.0) carries
+   * this prefix on its class-level @Path. New /v2/ endpoints (this fork's
+   * development surface, per CLAUDE.md API-version policy) live under
+   * de.dlr.shepard.v2 and use "/v2/..." directly instead of this prefix.
+   * Both shapes are fenced by de.dlr.shepard.architecture.V2NamespaceTest.
+   *
+   * No leading slash — JAX-RS prepends one.
+   */
+  public static final String SHEPARD_API = "shepard/api";
+
   public static final String APPLICATION_NDJSON = "application/x-ndjson";
   public static final String APPLICATION_MERGE_PATCH_JSON = "application/merge-patch+json";
 

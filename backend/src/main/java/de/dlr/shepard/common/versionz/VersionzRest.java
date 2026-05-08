@@ -15,7 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-@Path(Constants.VERSIONZ)
+@Path(Constants.SHEPARD_API + "/" + Constants.VERSIONZ)
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 public class VersionzRest {

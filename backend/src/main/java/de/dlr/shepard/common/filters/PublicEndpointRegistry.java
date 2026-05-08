@@ -7,14 +7,18 @@ import java.util.Set;
 public class PublicEndpointRegistry {
 
   /**
-   * Public-endpoint paths. Compared against the **normalised** request path
-   * with **exact equality** — see {@link #isRequestPathPublic} for why.
+   * Public-endpoint paths, application-relative (i.e. without the
+   * {@code /shepard/api/} prefix that resource classes carry post-P4).
+   * Compared against the {@link RequestPathHelper#applicationPath} of
+   * the incoming request with **exact equality** — see
+   * {@link #isRequestPathPublic} for why.
    */
   private static final Set<String> PUBLIC_PATHS = Set.of("/versionz");
 
   /**
    * Returns {@code true} when the request path matches a registered public
-   * endpoint exactly.
+   * endpoint exactly (modulo {@code /shepard/api/} prefix and trailing
+   * slash).
    *
    * <p>Earlier versions used {@code startsWith(path)} which had two
    * problems: (a) {@code /versionz/anything} would match — fine for today's
@@ -24,10 +28,14 @@ public class PublicEndpointRegistry {
    * like {@code /versionz/../containers/1} would slip through without any
    * actual traversal happening. Both vectors are closed by exact-match
    * against a normalised path. (`aidocs/07` H5.)
+   *
+   * <p>Post-P4 the request URI carries the {@code /shepard/api/} prefix;
+   * {@link RequestPathHelper#applicationPath} strips it so the public-path
+   * registry stays in application-relative form.
    */
   public static boolean isRequestPathPublic(ContainerRequestContext requestContext) {
-    String requestPath = requestContext.getUriInfo().getPath();
-    return PUBLIC_PATHS.contains(normalise(requestPath));
+    String applicationPath = RequestPathHelper.applicationPath(requestContext);
+    return PUBLIC_PATHS.contains(normalise(applicationPath));
   }
 
   static String normalise(String requestPath) {

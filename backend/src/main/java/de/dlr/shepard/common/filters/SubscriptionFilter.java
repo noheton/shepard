@@ -107,7 +107,9 @@ public class SubscriptionFilter implements ContainerResponseFilter {
    * otherwise (the result is then username-independent).
    */
   private static Long extractEntityId(ContainerRequestContext requestContext) {
-    List<PathSegment> segments = requestContext.getUriInfo().getPathSegments();
+    // P4: strip the /shepard/api/ prefix to keep first-segment dispatch
+    // byte-equivalent to the pre-P4 behaviour.
+    List<PathSegment> segments = RequestPathHelper.applicationSegments(requestContext);
     if (segments.size() < 2) return null;
     String first = segments.getFirst().getPath();
     String idSegment = segments.get(1).getPath();
