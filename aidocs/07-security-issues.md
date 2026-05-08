@@ -45,7 +45,7 @@ None of the critical findings are tracked as open GitLab issues. Two HIGH findin
 - **Tracked**: No
 
 ### C5 — Cypher injection via user-controlled property names and IRI types
-- **Status**: **DONE** (commit `ab3f9da`). New `Neo4jQuery(cypher, params)` record; `ParamBinder` threaded through every recursive `Neo4jQueryBuilder` helper. Property-name allowlist (`KNOWN_PROPERTIES` + `[A-Za-z_][A-Za-z0-9_|.]*` regex) sits next to `OP_PROPERTY`/`OP_VALUE`. `Neo4jQueryBuilderInjectionTest` (10 tests) covers the malicious payloads from the recommendation. **Subsumes M9.**
+- **Status**: **DONE** (commit `e90bfd8`). New `Neo4jQuery(cypher, params)` record; `ParamBinder` threaded through every recursive `Neo4jQueryBuilder` helper. Property-name allowlist (`KNOWN_PROPERTIES` + `[A-Za-z_][A-Za-z0-9_|.]*` regex) sits next to `OP_PROPERTY`/`OP_VALUE`. `Neo4jQueryBuilderInjectionTest` (10 tests) covers the malicious payloads from the recommendation. **Subsumes M9.**
 - **Follow-up**: Same shape applies to additional `id()=` / `ID()=` sites surfaced by C5's exit-grep — `GenericDAO.getSearchForReachableReferences*`, `VersionDAO`, `ShepardFileDAO`, `StructuredDataDAO`, `*ReferenceDAO` family, `SemanticAnnotationDAO`. Tracked as backlog row **C5b**; should land before L2c.
 - **Original Location**: ~~`Neo4jQueryBuilder.java:376` (`atPart`), `:386` (`iRIPart`), `:280` (lowercased JSON value), `:200-202,239-241` (annotation IRI/Name)~~
 - **Original Description**: ~~`node.get(OP_PROPERTY).textValue()` user-controlled concatenated as a Cypher identifier path; annotation pair values inserted between literal `"` quotes; `valuePart` insertion of raw `node.get(OP_VALUE).toString()`. Impact: read access bypassing `readableByPart`, Neo4j RCE-equivalent via cluster procedures, cross-tenant exfiltration.~~
@@ -124,7 +124,7 @@ None of the critical findings are tracked as open GitLab issues. Two HIGH findin
 | M6 | `application.properties:38-41,45` | Logging filtered to suppress Neo4j deprecations and `BoltRequest` at INFO — masks security-relevant query failures | Keep WARN+ for these categories or route to a separate logger | XS |
 | M7 | `ShepardExceptionMapper.java:21` | All exceptions logged with full stack at error — log-volume DoS plus PII | Sanitize and rate-limit | S |
 | M8 | `PermissionsService.isAllowed:198-243` | Hard-coded path-segment whitelist; comments say "permissions are already checked inside …Service" — that's a doc invariant, not code-enforced | Add unit tests asserting each Service performs its own check; consider annotation-based authorization | M |
-| M9 | ~~`Neo4jQueryBuilder.java:280`~~ | ~~`node.get(OP_VALUE).toString().toLowerCase()`~~ — **DONE** (subsumed by C5; commit `ab3f9da` parameter-binds `createdBy`/`updatedBy`). | — | S |
+| M9 | ~~`Neo4jQueryBuilder.java:280`~~ | ~~`node.get(OP_VALUE).toString().toLowerCase()`~~ — **DONE** (subsumed by C5; commit `e90bfd8` parameter-binds `createdBy`/`updatedBy`). | — | S |
 | M10 | `application.properties:18-22` | CORS responses do not configure `Vary: Origin` — browser-cache poisoning risk if origins is later restricted | Set `quarkus.http.cors.origins-vary=true` if Quarkus supports | XS |
 | M11 | `infrastructure/.env.example:35` | `FRONTEND_AUTH_SECRET="Frontend auth secret"` is not high-entropy | Document required entropy; validate at startup | XS |
 | M12 | `backend/pom.xml:476-490` | SpotBugs/findsecbugs in `<reporting>` only; never runs during `mvn verify`; CI does not call `mvn site` | Move to `<build><plugins>` with `verify` execution; fail on High findings | S |
