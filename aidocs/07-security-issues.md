@@ -117,10 +117,10 @@ None of the critical findings are tracked as open GitLab issues. Two HIGH findin
 | # | Location | Issue | Recommendation | Effort |
 |---|---|---|---|---|
 | M1 | `application.properties:85` | `quarkus.http.limits.max-body-size=` (unlimited) → trivial DoS via large uploads | Set explicit limit (e.g. 1 GiB) and per-endpoint constraints | XS |
-| M2 | `PKIHelper.java:107-110` | Generated RSA keys written without explicit `0600` perms | `Files.setPosixFilePermissions` on private key | XS |
+| M2 | ~~`PKIHelper.java:107-110`~~ | ~~Generated RSA keys written without explicit `0600` perms~~ — **DONE** (`PKIHelper.restrictPrivateKeyPermissions`, `PosixFilePermissions.fromString("rw-------")`, best-effort on non-POSIX). | — | XS |
 | M3 | `PKIHelper.java:104` | RSA 2048; modern guidance is RSA-3072 / Ed25519 | Increase or migrate to EdDSA | S |
-| M4 | `JWTFilter.java:159` | `header.replace("Bearer ", "")` strips `"Bearer "` anywhere — token containing literal "Bearer " is mangled | Use `header.substring(7)` after prefix check | XS |
-| M5 | `JWTFilter.java:113-117` | Logs the entire failed Authorization and X-API-KEY header values at warn level — possible token leak to log file | Redact tokens in log lines | XS |
+| M4 | ~~`JWTFilter.java:159`~~ | ~~`header.replace("Bearer ", "")` strips `"Bearer "` anywhere~~ — **DONE** (`startsWith("Bearer ") ? substring(7) : header`). | — | XS |
+| M5 | ~~`JWTFilter.java:113-117`~~ | ~~Logs the entire failed Authorization and X-API-KEY header values at warn level~~ — **DONE** (now logs `present`/`absent` only). | — | XS |
 | M6 | `application.properties:38-41,45` | Logging filtered to suppress Neo4j deprecations and `BoltRequest` at INFO — masks security-relevant query failures | Keep WARN+ for these categories or route to a separate logger | XS |
 | M7 | `ShepardExceptionMapper.java:21` | All exceptions logged with full stack at error — log-volume DoS plus PII | Sanitize and rate-limit | S |
 | M8 | `PermissionsService.isAllowed:198-243` | Hard-coded path-segment whitelist; comments say "permissions are already checked inside …Service" — that's a doc invariant, not code-enforced | Add unit tests asserting each Service performs its own check; consider annotation-based authorization | M |

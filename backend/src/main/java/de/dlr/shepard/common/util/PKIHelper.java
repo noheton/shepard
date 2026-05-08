@@ -5,6 +5,7 @@ import jakarta.enterprise.context.RequestScoped;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -107,6 +108,22 @@ public class PKIHelper {
     try (var pubFos = Files.newOutputStream(pubKey); var privFos = Files.newOutputStream(privKey)) {
       pubFos.write(kp.getPublic().getEncoded());
       privFos.write(kp.getPrivate().getEncoded());
+    }
+    restrictPrivateKeyPermissions();
+  }
+
+  private void restrictPrivateKeyPermissions() {
+    try {
+      Files.setPosixFilePermissions(
+        privKey,
+        PosixFilePermissions.fromString("rw-------")
+      );
+    } catch (UnsupportedOperationException e) {
+      // Non-POSIX filesystem (e.g. Windows). Best-effort only;
+      // production deploy targets are POSIX.
+      Log.warnf("Cannot set 0600 permissions on %s — non-POSIX filesystem", privKey);
+    } catch (IOException e) {
+      Log.warnf("Failed to set 0600 permissions on %s: %s", privKey, e.getMessage());
     }
   }
 }
