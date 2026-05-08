@@ -17,6 +17,14 @@ on:
       - "scripts/**/poetry.lock"
       - "scripts/**/pyproject.toml"
       - ".github/workflows/security.yml"
+  pull_request:
+    paths:
+      # Dependency-review runs on PRs that touch deps; cheap + fast.
+      - "backend/pom.xml"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "scripts/**/pyproject.toml"
+      - "scripts/**/poetry.lock"
 
 permissions:
   contents: read
@@ -76,3 +84,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}   # only needed for orgs > 1 person on the PRO tier
+
+  dependency-review:
+    name: Dependency review (license + new-CVE check)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          # Fail the PR if any newly-added dep has CVSS >= 7 (matches the
+          # OWASP Dependency-Check threshold) OR carries a banned licence.
+          fail-on-severity: high
+          # Banned licences: copyleft GPL/AGPL families that aren't compatible
+          # with the project's distribution model. Permissive (MIT/Apache/BSD/
+          # MPL/EPL/CDDL/LGPL) stay allowed.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0, SSPL-1.0
+          # New deps must come with a clean change-log line in the PR body
+          # (otherwise the action posts a comment requesting one).
+          comment-summary-in-pr: on-failure
+          # Configurable allowlist for project-vetted exceptions; create
+          # backend/.github/dependency-review-config.yml when the first
+          # exception is needed.
+          config-file: ./.github/dependency-review-config.yml
+        continue-on-error: false

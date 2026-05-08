@@ -1,0 +1,17 @@
+# Dependency-review-action config (extend as exceptions arise).
+#
+# Schema: https://github.com/actions/dependency-review-action#configuration
+#
+# This file is intentionally near-empty — every entry should cite its reason
+# (banned-license-with-justification, transitive-with-no-fix-available, etc.).
+# Same audit discipline as the OWASP suppressions file.
+
+# Per-CVE exceptions: list `GHSA-...` IDs (preferred) or `CVE-...` IDs.
+# allow-ghsas:
+#   - GHSA-xxxx-xxxx-xxxx     # reason: ...
+
+# Per-dependency exceptions for licence checks.
+# allow-dependencies-licenses:
+#   - 'pkg:maven/group/artifact@version?...=...'   # reason: ...
+
+# Re-evaluate exceptions on every release.
