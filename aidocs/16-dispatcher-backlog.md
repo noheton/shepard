@@ -121,6 +121,19 @@ Status legend:
 | T1f | YAML import/export admin tools (`POST /v2/templates/import`, `GET /v2/templates/export`) — round-trips templates as portable artifacts (the "L3 portability story"). | — | M | gated on T1b | Best-effort; explicit warnings on non-round-trippable fields. |
 | T1g | (deferred) "Update instance to latest template version" action. | — | M | parked | Manual opt-in for individual instances. |
 | T1h | (deferred) Collection-level templates (templates that produce a whole Collection structure, not just a DataObject). | — | L | parked | Out of scope for v1; L3-original ambition. |
+| PR1 | Process design + runtime in shepard — umbrella (replaces SPW runtime over time) | user request, `aidocs/40 §2` | L | **design done** | `aidocs/40 §2` proposes a `ProcessDefinition` extension to T-series templates plus a browser-hosted runtime. Coordinates with shepard-process-wizard maintainers; SPW becomes design-side assistant. Sub-IDs PR1a-PR1e below. |
+| PR1a | `ProcessDefinition` model + JSON `processSpec` blob + CRUD `/v2/processes` (read-only). | — | M | gated on T1b | Processes are typed sequences of templates. |
+| PR1b | `ProcessRun` runtime: start a run, advance steps, persist progress. UI stepper. | — | L | gated on PR1a + T1e | The user-facing payoff slice. |
+| PR1c | SPW XML importer (`POST /v2/processes/import`). | — | M | gated on PR1a | Best-effort; explicit warnings on unrepresentable constructs. |
+| PR1d | Conditional / parallel flow control. | — | M | gated on PR1b | Closes the gap with SPW's existing flow capabilities. |
+| PR1e | (deferred) Headless / API-driven run mode (cron, CI). | — | M | parked | Useful but not v1. |
+| V2 | Snapshots — umbrella (point-in-time freeze on top of today's Version marker) | user request, `aidocs/41` | M-L | **design done** | `aidocs/41-snapshots-design.md` picks logical snapshots backed by entity revisions (option C). Storage cost O(entities-in-scope). Sub-IDs V2a-V2f below. |
+| V2a | `revision: long` field on `VersionableEntity` + write-side increment + `V17__Add_revision_to_versionable.cypher` (idempotent backfill `revision = COALESCE(revision, 1)`). | — | S | queued | Independent value: enables optimistic locking. |
+| V2b | `Snapshot` + `SnapshotEntry` model + `POST /v2/collections/{appId}/snapshots`. Without read-side rewriting yet. | — | M | gated on V2a + L2c | Snapshot creation lands; reads stay on the live tree until V2c. |
+| V2c | Snapshot-pinned read path (`GET /v2/collections/{appId}?snapshot={snapshotAppId}`). Resolver layer + permission cache key extension. | — | M | gated on V2b | The user-visible "frozen view" payoff. |
+| V2d | RO-Crate export against a snapshot — reproducible by construction. | — | S | gated on V2c + `aidocs/31` | One-line addition to `ExportSelection` body. |
+| V2e | Snapshot diff tool (`GET /v2/snapshots/{a}/diff/{b}`) — entities added / removed / changed-revision. | — | M | gated on V2b | Useful for "what happened between v1 and v2." |
+| V2f | (deferred) "Branch from snapshot" — fork off a snapshot into a writable child Collection. | — | L | parked | Significant scope; only on real demand. |
 
 ### Streaming / publication
 
