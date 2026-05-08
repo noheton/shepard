@@ -62,7 +62,9 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `~/.shepard/keys/private.key` perms | umask default | `0600` via `Files.setPosixFilePermissions` (best-effort, POSIX only) | **✓ ↑** | M2 |
 | Cypher injection on user-controlled property names + IRI types | injectable | parameterised + property-name allowlist; subsumes M9 | **✓ ↑** | C5 (cherry-pick `e90bfd8`) / `aidocs/07` C5 |
 | Cypher injection — second wave (`*ReferenceDAO` family + `GenericDAO` + `VersionDAO` + `SemanticAnnotationDAO`) | injectable | parameterised + named params; **L2c precondition fully cleared** | **✓ ↑** | C5b (cherry-pick `c707e56`) / `aidocs/16` C5b |
-| `PublicEndpointRegistry` path-match | `startsWith`, no normalisation (path-traversal vector) | exact-match against `Path.normalize()`-normalised path; 8 regression tests | **✓ ↑** | H5 / `aidocs/07` H5 |
+| `PublicEndpointRegistry` path-match | `startsWith`, no normalisation (path-traversal vector) | exact-match against `Path.normalize()`-normalised path; 9 regression tests; post-P4 strips the `/shepard/api/` prefix via `RequestPathHelper` first | **✓ ↑** | H5 / `aidocs/07` H5 + P4 |
+| `/v2/` JAX-RS routing scaffolding | n/a | shipped — `quarkus.http.root-path=/`; resources carry explicit `@Path("/shepard/api/...")`; `de.dlr.shepard.v2.*` package reserved; ArchUnit `V2NamespaceTest` fences (3 rules); `@Sunset` annotation skeleton ready for L2e | **✓ ↑** | P4 (cherry-pick `e0c5e32`) |
+| OpenAPI spec splitting (`/shepard/doc/openapi-v1.json` + `/shepard/doc/openapi-v2.json`) | n/a | TBD | 📐 (queued, P4c) | `aidocs/16` P4c |
 | CORS allowlist instead of `origins=*` | wildcard | TBD | 📐 (queued) | `aidocs/07` C2 |
 | Default-credential placeholders that fail at startup if not changed | accept shipped defaults | TBD | 📐 (queued) | `aidocs/07` H8 |
 | OIDC `realm_access.roles` claim path configurable (multi-IdP) | hard-coded Keycloak shape | TBD | 📐 (queued, F8) | `aidocs/22 §4.11a.4` |
