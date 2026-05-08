@@ -86,3 +86,20 @@ vision when the feature is user-visible.
 
 (Internal refactors, performance work, security fixes, dependency
 bumps — none of these need a vision update.)
+
+## Always: keep `aidocs/44-fork-vs-upstream-feature-matrix.md` current
+
+`aidocs/44` is the **live contributor-facing progress tracker** —
+the per-feature matrix comparing this fork to upstream. Audience
+is contributors / PIs who want to know "what does this fork have
+that upstream doesn't, and what's still in design?"
+
+When a PR ships a feature, lands a design doc, or moves a row from
+`📐 designed` to `🚧 in-flight` to `✓ shipped`, **update `aidocs/44`
+in the same PR**. Most updates are a single status-symbol flip and
+optionally a commit-hash citation in the row's notes.
+
+`aidocs/34` (admin-facing upgrade ledger) and `aidocs/44`
+(contributor-facing progress matrix) are siblings, not duplicates.
+Both update on the same PR; they project different views of the
+same change.
