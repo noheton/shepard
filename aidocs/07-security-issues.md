@@ -83,9 +83,9 @@ None of the critical findings are tracked as open GitLab issues. Two HIGH findin
 - **Tracked**: No
 
 ### H5 — `PublicEndpointRegistry` uses `startsWith` — path-traversal risk
-- **Location**: `backend/src/main/java/de/dlr/shepard/common/filters/PublicEndpointRegistry.java:8-15`
-- **Description**: `requestContext.getUriInfo().getPath().startsWith("/versionz")`. Any future entry like `/users` would match `/usersearch`, `/users/admin`, etc. URI normalization isn't performed — `/versionz/../containers/1` could match. Currently only `/versionz` is registered with no realistic prefix collision, but the implementation is unsafe by construction.
-- **Recommendation**: Use exact-match or anchored regex; normalize the path; add unit tests.
+- **Status**: **DONE**. `PublicEndpointRegistry.isRequestPathPublic` now does exact-match against a `Path.normalize()`-normalised request path; trailing slash stripped to canonical form. 8 regression tests pin: exact-match accepts; trailing slash accepts; prefix (`/versionzanything`, `/versionz/anything`) does NOT match; `/versionz/../containers/1` correctly normalises away from `/versionz`.
+- **Original location**: ~~`backend/src/main/java/de/dlr/shepard/common/filters/PublicEndpointRegistry.java:8-15`~~
+- **Original recommendation**: ~~Use exact-match or anchored regex; normalize the path; add unit tests.~~
 - **Fix effort**: XS
 - **Tracked**: No
 
