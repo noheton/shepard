@@ -1,0 +1,80 @@
+name: CodeQL
+
+# GitHub-native SAST. Multi-language taint analysis broader than the
+# SpotBugs+findsecbugs gate in `backend-ci.yml`. Findings flow to the
+# repo's Security tab → Code scanning, and (in PRs) inline annotations.
+#
+# Triggers:
+#  - push to main + dispatcher branch
+#  - PRs against main
+#  - weekly (Mondays 05:23 UTC) so dependency / language-spec drift
+#    doesn't go unnoticed if no PR touches the relevant files
+#  - manual
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write       # SARIF upload
+  packages: read
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+            working-dir: backend
+          - language: javascript-typescript
+            build-mode: none
+            working-dir: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # security-extended catches more taint flows than the default
+          # `security-and-quality` set; trade-off is longer analysis (acceptable).
+          queries: security-extended
+
+      - name: Build Java (manual mode)
+        if: matrix.language == 'java-kotlin'
+        run: cd ${{ matrix.working-dir }} && mvn -B -DskipTests package
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

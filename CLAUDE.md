@@ -134,21 +134,40 @@ in giant steps.
 
 ## Always: keep the security gates green
 
-Two gates wired into `mvn verify` and CI:
+Six gates wired into CI:
 
-1. **SpotBugs + findsecbugs** — `spotbugs:check` with
-   `Effort=Max`, `Threshold=High`. Fail on any High-confidence
-   finding. Fix or suppress with a `@SuppressFBWarnings` carrying
-   a justification (no bare suppressions).
-2. **OWASP Dependency-Check** — runs weekly via
-   `.github/workflows/security.yml` and on `pom.xml` / `poetry.lock`
-   touch. Fails at `CVSS >= 7.0`. Suppress in
+1. **SpotBugs + findsecbugs** (Java SAST) — `spotbugs:check` with
+   `Effort=Max`, `Threshold=High` in `backend-ci.yml`. Fail on
+   any High-confidence finding. Fix or suppress with a
+   `@SuppressFBWarnings` carrying a justification (no bare
+   suppressions).
+2. **CodeQL** (multi-language SAST, GitHub native) —
+   `codeql.yml`. Java + JS/TS, `security-extended` query set.
+   Findings flow to the Security tab → Code Scanning + inline
+   PR annotations.
+3. **OWASP Dependency-Check** (Java SCA) — `security.yml`
+   weekly + on `pom.xml` / `poetry.lock` touch. Fails at
+   `CVSS >= 7.0`. Suppress in
    `backend/dependency-check-suppressions.xml` with a CVE id +
    reasoning (no opaque suppressions).
+4. **Trivy on the GHCR images** (container CVE scan) — runs in
+   `build-images.yml` after each push. Fails on `CRITICAL,HIGH`
+   with `--ignore-unfixed` (so `OS-pkg-with-no-fix` stragglers
+   don't perma-block; the weekly schedule re-checks).
+5. **gitleaks** (secret scan) — `security.yml` weekly + on push.
+6. **Dependency-review** (PR-time license + new-CVE check) —
+   `security.yml` on every PR that touches dependency manifests.
+   Bans GPL / AGPL / SSPL families per the licence-compatibility
+   policy; suppress in `.github/dependency-review-config.yml`
+   with a justification.
 
-A PR that introduces a High SpotBugs finding or a CVSS-7+
-vulnerable dependency must either fix the issue or land a
-suppression with justification in the same PR.
+Plus **SBOM** (CycloneDX) generated for every published image
+via `anchore/sbom-action` in `build-images.yml` — uploaded as
+workflow artifact + attached to GitHub releases.
+
+A PR that introduces a finding from any of these gates must
+either fix the issue or land a suppression with justification
+in the same PR.
 
 ## Always: keep user-facing docs in step with shipped features
 

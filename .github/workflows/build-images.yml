@@ -31,6 +31,8 @@ on:
 permissions:
   contents: read
   packages: write          # GHCR push
+  security-events: write   # Trivy SARIF → Code Scanning
+  id-token: write          # SBOM signing (anchore/sbom-action)
 
 concurrency:
   group: build-images-${{ github.ref }}
@@ -78,6 +80,7 @@ jobs:
           echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
 
       - name: Build + push backend image
+        id: build-backend
         uses: docker/build-push-action@v6
         with:
           context: backend
@@ -87,6 +90,36 @@ jobs:
           # Cache to GHCR's registry-cache so subsequent builds are fast.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (CycloneDX) for backend image
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-backend.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: true
+
+      - name: Trivy scan — backend image (fail on HIGH+ CVEs)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          # Don't block on dev-tier vulns that have no fix available
+          # (re-evaluated weekly via the security.yml schedule).
+
+      - name: Upload Trivy SARIF (backend) to Code Scanning
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
 
   build-frontend:
     name: Build frontend image
@@ -132,6 +165,7 @@ jobs:
           echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
 
       - name: Build + push frontend image
+        id: build-frontend
         uses: docker/build-push-action@v6
         with:
           context: frontend
@@ -140,3 +174,31 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (CycloneDX) for frontend image
+        if: github.event_name != 'pull_request'
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-frontend.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: true
+
+      - name: Trivy scan — frontend image (fail on HIGH+ CVEs)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF (frontend) to Code Scanning
+        if: always() && github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend

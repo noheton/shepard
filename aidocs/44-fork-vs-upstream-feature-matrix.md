@@ -218,6 +218,10 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
 | Container images published to GHCR (`ghcr.io/noheton/shepard-{backend,frontend}:{latest,sha-<7>,vX.Y.Z}`) | upstream publishes to gitlab.com | shipped via `.github/workflows/build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
 | Auto-deploy to test instance `shepard.nuclide.systems` on push to `main` | n/a | shipped via `.github/workflows/deploy-test-instance.yml` (chains off `Build images`); SSH-deploy + smoke-test of `/healthz`. Image override template at `infrastructure/docker-compose.override.yml.example` | **✓ ↑** | `.github/workflows/deploy-test-instance.yml` / `docs/deploy-self-hosted-zoraxy.md §5a.10` |
+| **CodeQL** SAST (Java + JS/TS, `security-extended` query set) | none | shipped via `.github/workflows/codeql.yml`; weekly + per-PR; SARIF → Code Scanning | **✓ ↑** | `.github/workflows/codeql.yml` |
+| **Trivy** container scan on every published GHCR image (CRITICAL+HIGH, ignore-unfixed) | none | shipped in `build-images.yml`; SARIF → Code Scanning per-image | **✓ ↑** | `.github/workflows/build-images.yml` |
+| **SBOM** (CycloneDX) per published image via `anchore/sbom-action`; uploaded as artifact + attached to GitHub releases | none | shipped in `build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
+| **Dependency-review** (PR-time licence + new-CVE check) banning GPL/AGPL/SSPL families with `.github/dependency-review-config.yml` allowlist | none | shipped in `security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
 
 ## 13c. Plugin system + dev experience
 
