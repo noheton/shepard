@@ -66,3 +66,23 @@ For an admin upgrading from upstream:
 Document each new endpoint's path in the same PR's `aidocs/34`
 tracker row, calling out whether it's `/shepard/api/` (compat
 surface, additive only) or `/v2/` (this fork's development surface).
+
+## Always: keep `aidocs/42-vision.md` current
+
+`aidocs/42-vision.md` is the **live researcher-facing vision** of
+shepard. It is the one document a researcher would read to decide
+whether shepard is the right tool for them. A stale vision doc is
+worse than no vision doc.
+
+When a PR ships a feature that's user-visible — a new payload kind,
+a new top-level concept, a new cross-cutting capability, a removed
+or renamed surface — **update `aidocs/42-vision.md` in the same PR**.
+Most user-visible changes touch the §"Where it's going" section
+(moving a bullet from "near horizon" to "what's in the box (today)")
+or the §"What's in the box" payload-kind table.
+
+Reviewers should reject feature-shipping PRs that don't touch the
+vision when the feature is user-visible.
+
+(Internal refactors, performance work, security fixes, dependency
+bumps — none of these need a vision update.)
