@@ -203,6 +203,19 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Secret scanning (gitleaks weekly + on push) | none | shipped via `.github/workflows/security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
 | GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
 
+## 13c. Plugin system + dev experience
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| Storage-backend plugin SPI (`PayloadKind` + `PayloadStorage`); new payload kinds drop in as plugins | none | TBD | 📐 (queued, PL1a) | `aidocs/47 §2` |
+| Pilot migration: `spatial` → `shepard-plugin-spatial-postgis` | n/a | TBD | 📐 (queued, PL1b) | `aidocs/47 §3` |
+| HDF5/HSDS (A5a) ships as a plugin from day 1 | none | TBD | 📐 (queued, PL1c) | `aidocs/35` + `aidocs/47` |
+| Git references (G1a) ships as a plugin from day 1 | none | TBD | 📐 (queued, PL1d) | `aidocs/38` + `aidocs/47` |
+| Codegen archetype `mvn shepard:scaffold-payload-kind` | none | TBD | 📐 (queued, DX3) | `aidocs/47 §2.5` |
+| `make dev` single-command bootstrap (init wizard + compose up + smoke) | none | TBD | 📐 (queued, DX4) | `aidocs/47 §4.4` |
+| Unified `ShepardTestStack` testcontainer resource | none | TBD | 📐 (queued, DX1) | `aidocs/47 §4.1` |
+| BI integrations — Grafana data-source plugin + Superset SQLAlchemy recipe | none | TBD; "SQL win" via P10 (C5 cleared) | 📐 (queued, DX8) | `aidocs/47 §4.8` + `aidocs/29` |
+
 ## 14. RO-Crate optimisation
 
 | Capability | Upstream | This fork | Status | Refs |
@@ -211,6 +224,71 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Streaming RO-Crate export for large Collections | possible OOM | TBD | 📐 (queued) | `aidocs/31` |
 | Long-running export pattern (job-id polling) | synchronous only | TBD | 📐 (queued) | `aidocs/32` |
 | Reproducible-by-snapshot exports | n/a (no snapshots) | TBD; lands at V2d | 📐 (queued, V2d) | `aidocs/41 §5` |
+
+## 14a. API structure — endpoint-by-endpoint delta
+
+The `/shepard/api/...` surface stays byte-frozen with upstream 5.2.0
+per `CLAUDE.md`. This section enumerates **what's been added to
+`/v2/...`** (or designed for it). Endpoints marked `📐` are in
+the design corpus; `🚧` is in flight; `✓` ships.
+
+### 14a.1 What `/shepard/api/...` looks like (upstream parity)
+
+Every upstream 5.2.0 path that exists today still exists with
+identical wire shape. No comprehensive enumeration here — the
+upstream OpenAPI is the canonical reference. **Two operator-visible
+behaviour changes** preserve the wire shape but tighten internals:
+
+| Endpoint group | Internal change | User-visible? |
+|---|---|---|
+| `/shepard/api/.../search` | Cypher now parameter-bound (C5); identifiers whitelisted | No — request body unchanged |
+| `/shepard/api/.../healthz` | Per-DB up/down state in body (A1b) | Additive fields only |
+| `/shepard/api/timeseriesContainers/{id}/payload` | Now also accepts `application/x-ndjson` (P14) | Additive content-type |
+| `/shepard/api/collections/{id}/export` (GET) | Unchanged | No |
+
+### 14a.2 New `/v2/...` endpoints — shipped
+
+| Endpoint | Status | Origin |
+|---|---|---|
+| `POST /v2/collections/{appId}/export` (body-form ExportSelection) | ✓ shipped | R2 / `aidocs/16` |
+| (None of the L2c/L2d/L2e `/v2/...` URL forms have shipped yet — those land at L2d.) | | |
+
+### 14a.3 New `/v2/...` endpoints — designed (queued)
+
+| Endpoint(s) | Slice | Refs |
+|---|---|---|
+| `GET /v2/lab-journal/{appId}/render`, `/notebooks` | J1a/J1b | `aidocs/37` |
+| `POST /v2/data-objects/{id}/git-references`, `GET /v2/git-references/{appId}{,/content}`, `PATCH/DELETE` | G1a/b/c/d | `aidocs/38` |
+| `GET /v2/templates`, `GET /v2/templates/{appId}`, `POST/PATCH/DELETE`, `GET/PUT /v2/collections/{appId}/allowed-templates`, `POST /v2/collections/{appId}/data-objects/from-template/{templateAppId}` | T1a-T1e | `aidocs/39` |
+| `POST /v2/processes/{appId}/runs`, `POST /v2/process-runs/{appId}/steps/{stepId}/complete`, `GET /v2/process-runs/{appId}` | PR1a/b | `aidocs/40 §2` |
+| `POST /v2/collections/{appId}/snapshots`, `GET /v2/snapshots/{appId}{,/manifest}`, `GET /v2/collections/{appId}?snapshot=`, `POST /v2/collections/{appId}/export?snapshot=`, `GET /v2/snapshots/{a}/diff/{b}` | V2a-e | `aidocs/41` |
+| `GET /v2/lab-journal/{appId}/render`/`/notebooks` (duplicate listing — same as J1) | | |
+| `GET /users/me`, `PATCH /users/me`, `PUT /users/me/avatar`, `GET /users/{appId}`, `GET /users/{appId}/avatar` | U1a-U1e | `aidocs/36` |
+| `GET /v2/templates/{...}/processes/...` (process runtime; subset of PR1) | | `aidocs/40 §2` |
+| `POST /v2/timeseries/{appId}/detect-anomalies`, `GET /v2/data-objects/{appId}/similar`, `POST /v2/search/natural`, `POST /v2/lab-journal/assist`, `POST /v2/semantic-annotations/suggest`, `POST /v2/collections/{appId}/export?aiAssist=true`, the snap-dashboards tool-use catalogue | AI1a-AI1l | `aidocs/43` |
+| `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1a-f | `aidocs/46` |
+| `POST /v2/files/{containerAppId}/upload-url`, `GET /v2/files/{appId}/download-url`, `GET /v2/artifacts/{type}/{id}/url` | FS1c, FS1g | `aidocs/45` |
+| `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` | `aidocs/47` |
+| `GET /v2/processes`, `POST /v2/processes/import` | PR1a, PR1c | `aidocs/40 §2` |
+| `POST /v2/hdf-containers`, `GET /v2/hdf-containers/{appId}{,/file,/datasets/{path}/value}`, `POST /v2/data-objects/{id}/hdf-references`, `POST /api-keys/{id}/hsds-token` | A5a-e | `aidocs/35` |
+| `POST /v2/sql/timeseries` | P10a | `aidocs/29` |
+
+This list is **maintained alongside the design docs that propose
+each endpoint**; if you add a new design doc that introduces
+`/v2/` paths, add a row here in the same PR.
+
+### 14a.4 Convention reminder
+
+- `/v2/<kind>-references/{appId}/...` per-payload-kind read/write
+- `/v2/<kind>-containers/{appId}/...` per-container CRUD
+- `/v2/admin/...` admin-role gated
+- `/users/me` and `/users/{appId}` for profile (no `/v2` prefix —
+  matches `aidocs/36 §6`'s decision to put profile at the top
+  level for stability)
+- `/v2/artifacts/{type}/{id}/url` for any non-payload-kind blob
+
+Plugins (per `aidocs/47 §2.1`) get their own `/v2/<kind-name>-...`
+namespace; core enforces the shape.
 
 ## 15. API versioning policy
 

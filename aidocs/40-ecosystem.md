@@ -181,6 +181,81 @@ shepard-side dependencies); i4 + i6 + i10 as a second PR after L2c.
 The remaining items (i5, i8, i9) are sTC-internal and can ship
 whenever the maintainers prioritise.
 
+## 3a. shepard-dataship — publication pipeline
+
+Previously parked under `aidocs/16` X1 ("M1–M9 dataship milestones").
+Bringing it back into scope because the **S3 file-storage backend**
+from `aidocs/45` (FS1 series) makes dataship's "drop curated data
+at a public URL" workflow tractable — you don't need a separate
+publication store, the FS1 S3 bucket is the publication store
+when you mark a Collection as published.
+
+**What dataship is.** A curated data publication pipeline that
+takes a shepard Collection (typically already snapshotted per
+`aidocs/41`), exports it as RO-Crate (`aidocs/31`), and publishes
+the result to an external archive (Zenodo, B2SHARE, the user's own
+git+web setup). M1-M9 are the milestones in the original dataship
+roadmap.
+
+**Why FS1 unblocks it.** Three concrete wins:
+
+1. **Direct presigned-URL delivery.** Today shepard backend
+   proxies every export ZIP byte. With FS1 + a public-bucket S3
+   policy on the published-collections bucket, dataship's "give
+   me a stable URL for this RO-Crate" answer is a presigned URL
+   with `Expires: never` (or a long TTL). Closes
+   `aidocs/31 §O3` simultaneously.
+2. **Zenodo / B2SHARE integration via S3 presigned URLs.** Most
+   archives accept "fetch from this URL" semantics; presigned URLs
+   match that contract.
+3. **dataship's own bucket as an artifact store.** dataship needs
+   a place to stage manifests, reviewer comments, approval
+   records. If shepard's FS1 ships, dataship reuses the same
+   bucket-per-deployment pattern instead of a separate Mongo /
+   filesystem store.
+
+**Coordination shape.** dataship lives in a separate repo today;
+this fork's design contributions land as:
+
+- An updated `aidocs/16` X1 row pointing at the FS1-enabled
+  publication shape (no longer fully parked).
+- A future `aidocs/49` (or successor number) for the dataship-side
+  contract: which shepard `/v2/` endpoints dataship calls, which
+  S3 bucket layout it expects, the RO-Crate-with-presigned-URLs
+  manifest shape.
+
+**Out of scope here:** the M1–M9 milestone-by-milestone plan
+itself. That stays in dataship's own roadmap; this fork only
+tracks the **integration contract**.
+
+## 3b. BI / dashboarding integrations — Grafana + Superset + the SQL win
+
+See `aidocs/47 §4.8` for the full design. Headlines:
+
+- **Grafana** — ship a shepard data source plugin for timeseries
+  panels; one-click "create dashboard from DataObject" in the
+  shepard UI.
+- **Superset / Metabase** — once P10 ships
+  (`POST /v2/sql/timeseries`, gated on C5 — **C5 shipped**), a
+  Superset SQLAlchemy URI is one line of operator config.
+- **Tableau / PowerBI** — same SQL-adapter shape; add recipes to
+  `docs/deploy.md` as users ask.
+
+The **casual-user north star** in `aidocs/47 §1.0` puts the snap
+dashboards (`aidocs/43 §5.8`) first; BI tool integrations are the
+power-user follow-on for users who want richer dashboards than
+chat-driven one-offs.
+
+## 3c. Reference deployments
+
+Test / demo deployments worth knowing about:
+
+| URL | Path | Notes |
+|---|---|---|
+| **`https://shepard.nuclide.systems`** | Self-hosted Docker host fronted by Zoraxy (per `docs/deploy-self-hosted-zoraxy.md` §5a — "existing-host dev workflow") | The primary test deployment for this fork. Iterates ahead of `main`; useful as a smoke target after each landing. Operator: this fork's maintainer. |
+
+Add new rows here as more reference deployments come online.
+
 ## 4. Cross-tool concerns
 
 - **OpenAPI versioning.** The `/v2/` shelf in shepard means a parallel
