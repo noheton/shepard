@@ -171,6 +171,11 @@ Mid-horizon:
   the showcase notebook's algorithm); semantic-annotation
   suggestion; lab-journal authoring assist; auto-summarisation;
   natural-language search. All BYOK / admin-fallback gated.
+- **S3-compatible file storage** (`aidocs/45`, FS series). Pluggable
+  backend with MinIO / S3 / Azure Blob / Ceph as opt-in alongside
+  the default GridFS. Presigned URLs unblock direct large-file
+  uploads + downloads + RO-Crate ZIP delivery; closes the
+  long-standing issue #27.
 
 Long-horizon (deliberately deferred):
 
