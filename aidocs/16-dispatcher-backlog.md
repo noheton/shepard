@@ -83,6 +83,12 @@ Status legend:
 | L6 | Output control: pagination on more endpoints | 689–691 | S | queued | Aligns with `13-search-improvements.md` cursor pagination |
 | L7 | (Semantically) annotate everything: extend semantic annotations to file/structured/spatial payloads | 692, lines 0+ in `14-semantic-improvements.md` | L | queued | Already designed in §14 |
 | L8 | Review permissions model — umbrella | 693 | M | **design done** | `aidocs/24-permission-system-review.md` is the deliverable. Concrete unpacking is **F1 + F2 + F3** plus the C3 / A0 / F4 / F5 fixes. F6 (OPA seam) and F7 (row-level security) deferred. |
+| A5 | HDF5/HSDS support — umbrella (epic E7) | 697–712 | L | **design done** | `aidocs/35-hdf5-hsds-implementation-design.md` picks **HSDS sidecar + shared-Keycloak token relay** out of three architectures. `h5pyd` parity is the deliverable. Sub-IDs A5a–A5e below. **Gated on L2c** (so HDF endpoints launch directly at `/v2/<appId>`). |
+| A5a | Phase 1: HSDS sidecar + `HdfContainer` create/read/delete + Neo4j model + `V13__Add_appId_constraint_HdfContainer_HdfReference.cypher` migration. HTTP Basic auth (admin-managed) for day 1. | — | M | queued (gated on L2c) | New `data/hdf` module mirroring existing payload-type pattern. New `hdf` profile in `infrastructure/docker-compose.yml`, off by default. Storage default POSIX, S3/MinIO opt-in via `SHEPARD_HDF_STORAGE`. |
+| A5b | Phase 2: Permission bridge — shepard permission changes flow to HSDS ACLs via `PermissionsService` post-commit hook. shepard is source of truth; direct HSDS ACL mutation rejected with RFC 7807. Includes a "rebuild ACLs from scratch" admin endpoint for drift recovery. | — | M | queued | Builds on A5a |
+| A5c | Phase 3: `HdfReference` (per-DataObject anchor at a specific dataset path) + annotation hookup via E6 (`AnnotatableHdfDataset`). | — | S | queued | Builds on A5a + E6 |
+| A5d | Phase 4: Download-original-file fallback (`GET /hdf-containers/{appId}/file`) returning byte-identical HDF5 via HSDS bulk-export. Range requests pass through. | — | S | queued | Builds on A5a. Unblocks the offline-`h5py.File(local)` path. |
+| A5e | Phase 5: Auth bridge — `/api-keys/{id}/hsds-token` mints short-lived JWT signed by shared Keycloak realm; HSDS validates via JWKS. 3-line `clients/python` helper that returns an `h5pyd.File`. | — | S–M | queued | Unblocks the `h5pyd` ergonomics. Depends on shared-Keycloak realm config (operator-side). |
 
 ### Streaming / publication
 
@@ -160,7 +166,7 @@ The MVP "minimum-viable clunkiness fix" is **P5 + P6 + P7 + P10 + P12 + P16 + P1
 | ID | Item | input_raw refs | Why parked |
 |---|---|---|---|
 | X1 | M1–M9 dataship milestones (IDP, async+S3, granular selection, approval, RO-Crate, joint pubs, back-ref) | 975–1214 | Different repo (`shepard-dataship`) |
-| X2 | HDF5/HSDS support, AAS integration, table store | 697–712 | Multi-repo / external integration; needs scoping |
+| X2 | HDF5/HSDS support, AAS integration, table store | 697–712 | Multi-repo / external integration; needs scoping. **HDF5/HSDS slice now has an implementation design** — see `aidocs/35-hdf5-hsds-implementation-design.md`; **A5** series queued (in-scope, not parked); AAS / table store still parked. |
 | X3 | Federation, HMC 2, project website | 8176–8400 | Program-level |
 | X4 | Node-RED file collector flow (incl. JWT tokens) | 100–660 | Reference material; security follow-up below |
 
