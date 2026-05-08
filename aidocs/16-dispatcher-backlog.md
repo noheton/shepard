@@ -160,6 +160,15 @@ Status legend:
 | FS1f | Frontend update — large-file uploads use `/v2/upload-url` presigned path when available, fall back to backend-proxied. | — | M | gated on FS1c + frontend changes | Closes the P12 chunk of `aidocs/33`. |
 | FS1g | RO-Crate export delivery (`aidocs/31 §O3`) returns presigned URLs when backend = s3. | — | S | gated on FS1c + `aidocs/31` | Closes the O3 open question. |
 | FS1h | (deferred) Per-Collection storage choice — only on real demand. | — | L | parked | Architecture C from `aidocs/45 §3.3`. |
+| PV1 | Payload versioning — umbrella | user request, `aidocs/46` | M-L | **design done** | `aidocs/46-payload-versioning-design.md`. Extends V2 (`aidocs/41`) entity-revision snapshots down to payload bytes. SHA-256 dedup; per-Collection retention policy; FS1 S3 backend is the cheapest impl. Sub-IDs PV1a-PV1h below. |
+| PV1a | `PayloadVersion` Neo4j sub-node + `payloadVersion` counter on `FileReference`. `V19__Add_appId_constraint_PayloadVersion.cypher` + `V20__Backfill_initial_payload_version.cypher`. Read path `?payloadVersion=N`; write path with SHA-256 dedup. **`FileReference` only** in this slice. | — | M | queued (FS1a recommended first for easier impl) | |
+| PV1b | Same shape applied to `StructuredDataReference`. | — | M | gated on PV1a | |
+| PV1c | Same shape applied to `SpatialDataReference` (PostGIS `version_id` column on row groups). | — | M | gated on PV1a | |
+| PV1d | `TimeseriesReference` re-ingest flow + version-aware reads. Separate from append-only writes which keep flowing into latest. | — | M-L | gated on PV1a + careful design review | The murkiest semantics; intentionally last. |
+| PV1e | V2 snapshot extension — `SnapshotEntry.payloadVersion` field; pinned reads resolve dual-axis. | — | S | gated on PV1a + V2b | Unlocks byte-identical reproducibility. |
+| PV1f | RO-Crate export pins `payloadVersion` automatically when `?snapshot=` is set; cites SHA-256 in the manifest. | — | S | gated on PV1a + V2d + `aidocs/31` | The headline reproducibility payoff. |
+| PV1g | Per-Collection retention policy (`Collection.payloadRetentionPolicy`) + `shepard-admin payloads gc` CLI. | — | M | gated on PV1a + `aidocs/22` | |
+| PV1h | (deferred) Per-version permissions — today's perms inherit from reference. | — | L | parked | |
 
 ### Streaming / publication
 
