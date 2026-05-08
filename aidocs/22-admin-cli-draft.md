@@ -578,11 +578,14 @@ value if a `.env` already exists):
    merge, or abort). Detects host capabilities (POSIX permissions,
    docker compose plugin version) and prints a one-line readiness
    summary.
-2. **Identity provider** — choose between "bring your own Keycloak"
-   (paste `OIDC_AUTHORITY` URL + `OIDC_PUBLIC` key path) or "let me
-   add a Keycloak service to the compose stack" (the wizard adds the
-   `keycloak` service to `docker-compose.override.yml`, generates an
-   admin password, and prints the post-init Keycloak URL).
+2. **Identity provider** — see §4.11a for the full screen flow.
+   Three top-level paths: (a) bring an existing OIDC IdP (paste
+   issuer URL, the wizard auto-discovers `/.well-known/openid-configuration`
+   + JWKS); (b) sidecar **Keycloak** added to the compose stack;
+   (c) sidecar **Pocket ID** added to the compose stack
+   (passkey-first; lighter footprint). Sets `OIDC_AUTHORITY`,
+   `OIDC_PUBLIC`, `OIDC_ROLE`, and (if needed) the
+   `SHEPARD_OIDC_ROLES_CLAIM_PATH` adapter from §4.11a.4.
 3. **Profiles** — multi-select from the catalogue in §4.6a:
    `spatial`, `hdf`, `monitoring`, `frontend-old`. Tooltips quote the
    per-profile cost (RAM / disk / start time). Sets `COMPOSE_PROFILES`
@@ -623,6 +626,172 @@ and `aidocs/07` H8.
 | Hint | TUI library: Lanterna. Falls back to plain prompts when not a TTY. |
 | Idempotent | Yes (re-run is a review unless operator changes inputs) |
 | Size | M (≈ 1 week for the wizard frame + 6 screens + non-interactive path) |
+
+### 4.11a OIDC screen — detail (added 2026-05-08)
+
+Step 2 of the wizard is the riskiest one for first-time operators
+(get the IdP wrong and shepard refuses every login), so it's a
+multi-screen sub-flow with auto-discovery, sanity probes, and clear
+fallbacks.
+
+#### 4.11a.1 Top-level choice
+
+```
+┌─ Identity provider ────────────────────────────────────────────────┐
+│                                                                    │
+│  ( ) (a) Use an existing OIDC provider (recommended for prod)      │
+│  ( ) (b) Add Keycloak as a sidecar service to this stack           │
+│  ( ) (c) Add Pocket ID as a sidecar service (passkey-first)        │
+│                                                                    │
+│  ( ) (d) Skip — I'll set OIDC env vars by hand later  [advanced]  │
+│                                                                    │
+│   [ < Back ]                                          [ Next > ]   │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+(a) is the default choice. (d) writes `OIDC_*` as commented
+placeholders in the `.env` and leaves a banner in §6 review reminding
+the operator to fix it before serving traffic.
+
+#### 4.11a.2 Path (a) — bring an existing OIDC IdP
+
+The wizard prompts for the **issuer URL** (e.g.
+`https://auth.dlr.de/realms/shepard`) and probes
+`<issuer>/.well-known/openid-configuration`:
+
+```
+┌─ Existing OIDC provider ───────────────────────────────────────────┐
+│                                                                    │
+│  Issuer URL:  https://auth.example.dlr.de/realms/shepard           │
+│                                                                    │
+│  ⓘ Probing /.well-known/openid-configuration ...                  │
+│  ✓ Discovery document found                                       │
+│  ✓ JWKS endpoint reachable (https://.../protocol/openid-connect/   │
+│    certs)                                                          │
+│  ⚠ Roles claim path 'realm_access.roles' not found in a sample     │
+│    token (this is fine if your users haven't logged in yet)        │
+│                                                                    │
+│  Roles claim path:  realm_access.roles            [ default ]      │
+│  Required role:     shepard-user                                   │
+│  Client ID:         shepard-backend                                │
+│                                                                    │
+│   [ < Back ]   [ Test login ]                       [ Next > ]    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+The probe distinguishes:
+
+| Probe outcome | UI feedback | Next step |
+|---|---|---|
+| Discovery doc 200, JWKS 200 | ✓ green | Auto-fills `OIDC_AUTHORITY` and downloads the public key into `~/.shepard/keys/oidc_public.key` (the path stays user-overridable). |
+| Discovery doc 4xx / 5xx | ✗ red, with the actual response body in a collapsed pane | Refuse to advance until issuer URL is fixed. |
+| Discovery doc 200, JWKS 401 | ⚠ yellow | Advances; warns that a private JWKS endpoint may need a token. |
+| Connection refused / TLS error | ✗ red | Refuse; offers to retry with `--insecure-tls` (writes `OIDC_TRUST_INSECURE=true` flag — banner in §6). |
+
+The **Test login** button mints a device-code flow against the IdP
+and walks the operator through completing it in a browser; on
+success, the wizard captures the resulting access token, decodes it
+locally (does not upload it anywhere), and shows the actual claim
+shape — letting the operator confirm the `realm_access.roles` path
+matches what their IdP emits. **This is the most-failed-step rescue
+mechanism** — it catches "wrong claim path" before it becomes a
+post-deploy 401 mystery.
+
+Sets:
+```
+OIDC_AUTHORITY=<issuer>
+OIDC_PUBLIC=~/.shepard/keys/oidc_public.key
+OIDC_ROLE=<required-role>
+SHEPARD_OIDC_ROLES_CLAIM_PATH=<dot-path>     # only if non-default
+```
+
+`SHEPARD_OIDC_ROLES_CLAIM_PATH` is a **new** backend config key
+(currently the path is hard-coded to `realm_access.roles` in
+`JWTFilter.parsePrincipalFromAccessToken`). Adding it is a small
+follow-up — see §4.11a.4. Without it, only Keycloak-shaped IdPs
+work today.
+
+#### 4.11a.3 Paths (b) and (c) — sidecar IdP
+
+Both paths share the same UX: choose a hostname for the IdP service
+(default `auth.<your-shepard-host>`), the wizard appends a service
+to `docker-compose.override.yml`, generates an admin password, and
+prints the URL + initial credentials in the §6 review.
+
+**Keycloak (b).** The wizard pre-configures a Keycloak realm
+`shepard` with a client `shepard-backend`, a default user `admin`,
+and a role `shepard-user`. The admin's first chore is to create
+real users in the Keycloak UI. Heavy (~600 MB image, ~30s start),
+but the canonical match for shepard's claim shape — no claim-path
+adapter needed.
+
+**Pocket ID (c).** The wizard provisions a Pocket ID instance with
+a single OIDC client for shepard. Lighter (~30 MB image, ~3s
+start). Two configuration tasks the wizard does on the operator's
+behalf because they're easy to miss:
+
+- **Custom claim mapping** for `realm_access`. Pocket ID's
+  per-group custom claims feature is used to inject
+  `{"realm_access": {"roles": ["shepard-user"]}}` for users in the
+  `shepard-users` group. The wizard creates the group and the
+  custom claim. Caveat: per Pocket ID issue
+  [#1273](https://github.com/pocket-id/pocket-id/issues/1273),
+  same-key custom claims from multiple groups overwrite rather
+  than merge — fine for single-role users; for multi-role setups,
+  prefer (b) Keycloak.
+- **Passkey enrollment.** The wizard prints a clear instruction
+  that the admin must enroll a passkey at first login (Pocket ID
+  is passkey-only, no password fallback). Falls back to (b) with
+  a warning if the operator confirms they don't have a
+  passkey-capable device.
+
+Both sidecar paths set:
+```
+OIDC_AUTHORITY=http://<sidecar-host>:8080/realms/shepard           # Keycloak
+OIDC_AUTHORITY=http://<sidecar-host>:1411                           # Pocket ID
+OIDC_PUBLIC=~/.shepard/keys/oidc_public.key                         # downloaded from JWKS
+OIDC_ROLE=shepard-user
+SHEPARD_OIDC_ROLES_CLAIM_PATH=realm_access.roles                    # both, post-Pocket-ID-claim-mapping
+```
+
+#### 4.11a.4 Required backend follow-up: configurable claim path
+
+Today `JWTFilter.parsePrincipalFromAccessToken` hard-codes the
+`realm_access.roles` path via Jackson's
+`Map.of("realm_access", RolesList.class)` deserialiser. To support
+non-Keycloak IdPs without forcing admins into the custom-claim
+workaround above, ship a small backend follow-up:
+
+- New config key `shepard.oidc.roles-claim-path` (default
+  `realm_access.roles` for backward compatibility).
+- `JWTFilter` parses the dot-separated path and walks the JSON tree
+  to find the roles array. Validates `String[]` shape.
+- Tracker row in `aidocs/34` as **CONFIG** — additive, default-safe.
+
+This is a S-sized backlog item (call it **F8**, slotting in alongside
+the F-series in `aidocs/24`'s permission-system review). Until F8
+ships, path (a) only works against IdPs that emit `realm_access.roles`
+natively or can be configured to do so.
+
+#### 4.11a.5 Tested-but-unprovisioned IdPs (notes)
+
+Beyond Keycloak and Pocket ID, the issuer-URL discovery path (a)
+should work against any standards-compliant OIDC provider; the
+wizard's claim-path field handles the variance. Notes for the most
+common ones:
+
+| IdP | Roles claim path | Works on path (a)? |
+|---|---|---|
+| **Keycloak** | `realm_access.roles` (default) | Yes, no config |
+| **Pocket ID** | `realm_access.roles` (after the wizard's custom claim mapping) | Yes; multi-role caveat |
+| **Authentik** | `groups` (flat array) | Yes, set `SHEPARD_OIDC_ROLES_CLAIM_PATH=groups` (post-F8) |
+| **Authelia** | `groups` (flat array) | Yes, same as Authentik |
+| **Azure AD** | `roles` (flat array, requires app-role config in AD) | Yes, set path to `roles` (post-F8) |
+| **Auth0** | `https://shepard/roles` (custom; namespaced) | Yes, set path to the full URL-style key (post-F8) |
+| **Google Workspace** | No native roles claim | No — needs an upstream group-mapper bridge; out of scope. |
+
+The wizard's "Test login" step (§4.11a.2) auto-suggests the right
+path when it detects a known shape.
 
 ### 4.12 Backup hooks
 
