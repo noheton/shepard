@@ -1,0 +1,100 @@
+name: Deploy to test instance
+
+# Deploys the latest images to the maintainer's test deployment at
+# shepard.nuclide.systems. The deployment recipe assumes:
+#
+#  1. The host runs the existing infrastructure/docker-compose.yml.
+#  2. A docker-compose.override.yml on the host repoints `backend` and
+#     `frontend` services to the GHCR images this fork builds (see
+#     `infrastructure/docker-compose.override.yml.example` checked in
+#     to this repo as the template).
+#  3. SSH access is provisioned via repo secrets:
+#       SHEPARD_TEST_DEPLOY_HOST     (e.g. shepard.nuclide.systems)
+#       SHEPARD_TEST_DEPLOY_USER     (e.g. deploy)
+#       SHEPARD_TEST_DEPLOY_SSH_KEY  (private key, deploy-only)
+#       SHEPARD_TEST_DEPLOY_PATH     (e.g. /opt/shepard, optional;
+#                                     defaults to /opt/shepard)
+#
+# This workflow is intentionally idempotent — re-running against the
+# same SHA is a no-op (`docker compose up -d` only restarts changed
+# services).
+
+on:
+  workflow_run:
+    workflows: ["Build images"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to deploy (default: latest)"
+        required: false
+        default: "latest"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-test-instance
+  cancel-in-progress: false       # never abort a deploy mid-flight
+
+jobs:
+  deploy:
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: test-instance
+      url: https://shepard.nuclide.systems
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SHEPARD_TEST_DEPLOY_SSH_KEY }}
+
+      - name: Add host to known_hosts
+        env:
+          HOST: ${{ secrets.SHEPARD_TEST_DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Pull images and restart compose stack
+        env:
+          USER: ${{ secrets.SHEPARD_TEST_DEPLOY_USER }}
+          HOST: ${{ secrets.SHEPARD_TEST_DEPLOY_HOST }}
+          PATH_REMOTE: ${{ secrets.SHEPARD_TEST_DEPLOY_PATH || '/opt/shepard' }}
+          TAG: ${{ inputs.tag || 'latest' }}
+        run: |
+          ssh "$USER@$HOST" bash -lc "
+            set -euo pipefail
+            cd '$PATH_REMOTE'
+            git fetch --tags origin
+            git checkout main
+            git pull --ff-only origin main
+            cd infrastructure
+            export SHEPARD_BACKEND_IMAGE=ghcr.io/${{ github.repository_owner }}/shepard-backend:$TAG
+            export SHEPARD_FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/shepard-frontend:$TAG
+            docker compose pull backend frontend
+            docker compose up -d backend frontend
+          "
+
+      - name: Smoke test
+        env:
+          BASE: https://shepard.nuclide.systems
+        run: |
+          # Wait up to 60s for the backend to come back up.
+          for i in $(seq 1 30); do
+            if curl -fsS "$BASE/shepard/api/healthz" >/dev/null 2>&1; then
+              echo "Healthy after ${i}x2s"
+              curl -fsS "$BASE/shepard/api/healthz" | jq .
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not return 200 within 60s — failing."
+          exit 1

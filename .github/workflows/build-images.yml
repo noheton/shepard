@@ -1,0 +1,142 @@
+name: Build images
+
+# Builds the backend (Quarkus + UBI9 OpenJDK runtime image) and frontend
+# (Nuxt 3) container images and pushes them to GitHub Container Registry
+# (GHCR) so the test deployment at shepard.nuclide.systems can pull them.
+#
+# The published tags:
+#  - ghcr.io/noheton/shepard-backend:latest    (rolling, on push to main)
+#  - ghcr.io/noheton/shepard-backend:sha-<7>   (immutable, every push)
+#  - ghcr.io/noheton/shepard-backend:v<x.y.z>  (on tag push v*.*.*)
+#  - ghcr.io/noheton/shepard-frontend:...       same shape
+#
+# Triggers:
+#  - push to main with backend/** or frontend/** changes
+#  - tag push matching v*.*.*
+#  - workflow_dispatch (manual)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infrastructure/docker-compose.yml"
+      - ".github/workflows/build-images.yml"
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write          # GHCR push
+
+concurrency:
+  group: build-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-backend:
+    name: Build backend image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build Quarkus app (skip tests — backend-ci.yml is the gate)
+        run: cd backend && mvn -B -DskipTests package
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          REPO=ghcr.io/${{ github.repository_owner }}/shepard-backend
+          TAGS="$REPO:sha-$SHA"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAGS="$TAGS,$REPO:latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAGS="$TAGS,$REPO:${GITHUB_REF_NAME}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build + push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          # Cache to GHCR's registry-cache so subsequent builds are fast.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-frontend:
+    name: Build frontend image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Nuxt
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          REPO=ghcr.io/${{ github.repository_owner }}/shepard-frontend
+          TAGS="$REPO:sha-$SHA"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAGS="$TAGS,$REPO:latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAGS="$TAGS,$REPO:${GITHUB_REF_NAME}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build + push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

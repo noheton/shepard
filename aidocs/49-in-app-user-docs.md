@@ -227,7 +227,15 @@ The spec reads every `.md` under `docs/`, finds every
 |---|---|
 | Manual via `workflow_dispatch` | Operator-initiated capture (e.g. after a UI change). |
 | Weekly schedule | Catches gradual drift between the docs and the deployed UI. |
-| On `main` after a merge that touches **frontend code or `docs/help/*`** | Catches per-PR breakage. **Pre-merge** screenshot-update is a separate decision (§7 risks). |
+| On `main` after `Deploy to test instance` succeeds (`workflow_run`) | The deploy workflow (per `docs/deploy-self-hosted-zoraxy.md §5a.10`) ships the new build to `shepard.nuclide.systems`; the screenshot pipeline runs against the **freshly-deployed** UI. Catches per-PR drift end-to-end without waiting for the weekly. |
+| On `main` after a merge that touches **`docs/help/*`** | Closed-loop for content-only changes that don't trigger an image rebuild. |
+
+**Why chain off `Deploy to test instance`** (vs. running on every
+`main` push directly): the deploy can take 1-2 minutes between
+push and a healthy backend. Capturing screenshots against an
+in-flight deploy would catch a 502 page mid-restart. The
+`workflow_run` chain waits for the deploy's `Healthy after Nx2s`
+smoke-test before the screenshot job starts.
 
 ### 3.3 Where screenshots live
 

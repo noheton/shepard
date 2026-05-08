@@ -358,6 +358,80 @@ Then in Zoraxy: HTTP Proxy → delete the two proxy rules; TLS / SSL
   instances, use the **staging directory** while iterating, then
   flip to production for the keeper.
 
+### 5a.10 Agent-driven CI deploys (this fork's flow)
+
+The repo ships **two GitHub Actions workflows** that together turn
+the existing Zoraxy host into a dispatcher-deployable target:
+
+- `.github/workflows/build-images.yml` — on every push to `main` (or
+  `v*.*.*` tag), builds `backend` + `frontend` and publishes:
+  - `ghcr.io/noheton/shepard-backend:latest` + `:sha-<7>` + (on tag) `:vX.Y.Z`
+  - `ghcr.io/noheton/shepard-frontend:latest` + `:sha-<7>` + (on tag) `:vX.Y.Z`
+- `.github/workflows/deploy-test-instance.yml` — runs after
+  `Build images` succeeds (`workflow_run` trigger). SSHes to the
+  test host, `docker compose pull backend frontend`, `up -d`, then
+  smoke-tests `/shepard/api/healthz`.
+
+**One-time host setup** (operator does this once):
+
+1. **A `deploy` user** with `docker` group membership; SSH access via
+   a dedicated keypair (don't reuse the operator's personal key).
+2. **The compose stack on disk** at `/opt/shepard` (or whatever path
+   you want — set `SHEPARD_TEST_DEPLOY_PATH` accordingly):
+   ```bash
+   cd /opt && sudo git clone https://github.com/noheton/shepard.git
+   sudo chown -R deploy:deploy /opt/shepard
+   ```
+3. **The fork-image override** in place so the stack uses the GHCR
+   tags this fork builds, not upstream gitlab.com images:
+   ```bash
+   cd /opt/shepard/infrastructure
+   cp docker-compose.override.yml.example docker-compose.override.yml
+   ```
+   (Edit the override if you want to pin to a SHA tag instead of
+   `:latest` for stability.)
+4. **First-time pull + start**:
+   ```bash
+   docker compose pull
+   docker compose up -d
+   ```
+
+**Repository-secrets the workflow needs** (Settings → Secrets →
+Actions):
+
+| Secret | Value | Purpose |
+|---|---|---|
+| `SHEPARD_TEST_DEPLOY_HOST` | `shepard.nuclide.systems` | Target host |
+| `SHEPARD_TEST_DEPLOY_USER` | `deploy` | SSH user |
+| `SHEPARD_TEST_DEPLOY_SSH_KEY` | private key (PEM) | SSH auth |
+| `SHEPARD_TEST_DEPLOY_PATH` | `/opt/shepard` (optional) | Compose-stack path on host |
+
+**`Build images` permissions.** GHCR push uses the workflow's
+`GITHUB_TOKEN` with `packages: write`. No additional secret needed
+beyond what GitHub provides.
+
+**On every push to `main`**: build → publish → deploy → smoke-test
+runs end-to-end without human intervention. The dispatcher workflow
+log shows `Healthy after N×2s` on success.
+
+**Manual override**: `Actions → Deploy to test instance →
+Run workflow → input "tag: sha-<7>"` to deploy a specific commit's
+images instead of `:latest`. Useful for rolling back without
+reverting `main`.
+
+**Rollback**: SSH to the host, edit
+`infrastructure/docker-compose.override.yml` to pin
+`SHEPARD_BACKEND_IMAGE=ghcr.io/.../shepard-backend:sha-<previous>`,
+then `docker compose pull && docker compose up -d backend
+frontend`. ~30 seconds.
+
+**Test isolation.** The deploy targets the **same** Zoraxy proxy
+rules from §5a.5 — `shepard.nuclide.systems` doesn't change subdomain
+on a fresh deploy. If a deploy breaks the smoke test, the previous
+running container keeps serving until you manually intervene
+(`docker compose` doesn't take the old container down until the new
+one is healthy).
+
 ## 6. Public reachability
 
 Two paths depending on whether your host has a public IP:
