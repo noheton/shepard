@@ -144,6 +144,9 @@ or behaves for me, not *what* I can access. They sit on the same
 | `git.pat` | encrypted-at-rest string | — | **U2-coupled** | Per-user Git Personal Access Token for the upcoming Git-artifact-tracking feature (`aidocs/38`, design pending). **Stored encrypted with the shepard server's master key**, never returned in `GET /users/me` (only `gitPatPresent: bool`). Re-enter to update. See **§3.3** for the security shape. |
 | `git.host` | string (e.g. `gitlab.dlr.de`, `github.com`) | — | **U2-coupled** | Companion to `git.pat`. Defines which git host the PAT authenticates against. Multi-host support deferred to U2 vNext. |
 | `editor.preferredJupyter` | URL | — | **U3-coupled** | Optional URL of the user's preferred JupyterHub (e.g. for the "Open in Jupyter" link from `aidocs/37`'s lab-journal-with-Jupyter feature). |
+| `ai.apiKey` | encrypted-at-rest string | — | **U2-coupled** | Per-user OpenAI-compatible API key (`aidocs/43 §4.1`). Powers all AI features (`aidocs/43 §3 / §5`) — when unset and no admin fallback is configured, AI controls stay hidden in the UI. Same secret-class pattern as `git.pat`; never returned in `GET /users/me` (only `aiApiKeyPresent: bool`). |
+| `ai.baseUrl` | URL | — | **U2-coupled** | OpenAI-compatible endpoint. Examples: `https://api.openai.com/v1`, `https://api.anthropic.com/v1` (via the AI1p adapter), `https://openrouter.ai/api/v1`, `http://localhost:11434/v1` (Ollama), `http://vllm:8000/v1` (vLLM). |
+| `ai.model` | string | — | **U2-coupled** | Model id at the chosen provider — `gpt-4o-mini`, `claude-sonnet-4-5`, `llama3.1:8b`, etc. The dashboard chat (`aidocs/43 §5.8`) shows the active model and lets the user switch mid-conversation. |
 
 **Why a typed map and not flat fields.** The list above is already
 seven entries; the next year will probably add three or four more.
@@ -187,6 +190,11 @@ This pattern lets us ship `git.pat` confidently at U2 without a
 larger encryption-of-everything project. **Out of scope:** envelope
 encryption with KMS, per-user keys, key rotation. v1 = single server
 key, manual rotation if needed.
+
+`ai.apiKey` (added 2026-05-08, per `aidocs/43`) is the **second**
+secret-class setting. Same pattern; lights up AI features when set,
+falls back to operator-configured `shepard.ai.fallback.*` if not,
+hides AI features entirely if neither.
 
 ## 4. ORCID specifics
 

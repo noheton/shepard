@@ -135,22 +135,22 @@ Status legend:
 | V2e | Snapshot diff tool (`GET /v2/snapshots/{a}/diff/{b}`) — entities added / removed / changed-revision. | — | M | gated on V2b | Useful for "what happened between v1 and v2." |
 | V2f | (deferred) "Branch from snapshot" — fork off a snapshot into a writable child Collection. | — | L | parked | Significant scope; only on real demand. |
 | AI1 | AI opportunities — umbrella (traditional ML + LLM integration) | user request, `aidocs/43` | XL | **survey done** | `aidocs/43-ai-opportunities.md`. Five hard constraints (data residency / cost / auditability / human-in-the-loop / reproducibility). Local-model default; hosted-model bridge opt-in only. Sub-IDs AI1a-AI1p below. **Each LLM-flavoured slice is suggestion-only — no autonomous mutation in v1.** |
-| AI1a | shepard-AI sidecar pattern: `ai` profile-bound service in compose, FastAPI shell, model-volume mount, broker auth from backend. CPU only. No models bundled yet -- just the plumbing. | — | M | queued | Mirrors HSDS sidecar pattern from `aidocs/35`. Gate for everything else. |
-| AI1b | Anomaly detection: `POST /v2/timeseries/{appId}/detect-anomalies` with rolling-median + isolation-forest. Optional `dlr:anomaly` annotation on hits. | — | M | gated on AI1a | Algorithm already exists in `examples/seed-showcase/notebooks/anomaly-analysis.ipynb`; this is an extraction. |
-| AI1c | Channel-quality scoring: background job emits `qualityScore` attribute on every TimeseriesReference. Search-by-quality unblocked. | — | S | gated on AI1a | |
-| AI1d | Embedding-based similarity + `GET /v2/data-objects/{appId}/similar`. Sentence-transformers small model, CPU. | — | M | gated on AI1a | Improves search before LLM lands. |
-| AI1e | LLM sidecar: bundle a small local LLM (Qwen2.5-7B / Mistral-7B class), expose `/infer/llm/...`. CPU acceptable; GPU opt-in. | — | M | gated on AI1a | LLM gate. |
-| AI1f | Natural-language search (§5.1): `POST /v2/search/natural` returns the LLM-generated structured query *and* results. User-in-the-loop; query is editable. | — | M | gated on AI1e + `aidocs/13` unified search | |
-| AI1g | Lab journal authoring assist: ghost-text completion in the editor, accept-edit-reject UX. `aiGenerated: true` attribution. | — | M | gated on AI1e + `aidocs/37` J1a | |
-| AI1h | Semantic annotation suggestion: `POST /v2/semantic-annotations/suggest`. Suggestion-only; ontology-filter required. | — | M | gated on AI1e + `aidocs/14` | |
-| AI1i | Auto-summarisation: per-DataObject `summary` attribute (debounced rebuild on last-modified change). | — | S | gated on AI1e | |
-| AI1j | RO-Crate description generation: `?aiAssist=true` on export; operator review before commit. | — | S | gated on AI1e + `aidocs/31` | |
-| AI1k | Conversational lineage: chat interface walking the lineage graph. Retrieval + render only — no claims. | — | M | gated on AI1e + `aidocs/30` | |
-| AI1l | Notebook scaffolding: "Open in Jupyter with starter notebook" button. Generated `.ipynb` attached as FileReference. | — | S | gated on AI1e + `aidocs/37` J1c | |
+| AI1a | **AI plumbing slice.** Per-user `ai.apiKey` / `ai.baseUrl` / `ai.model` settings (`aidocs/36 §3.2`); admin `shepard.ai.fallback.*` config; OpenAI-compatible `LlmClient` against `/v1/chat/completions` + `/v1/embeddings`; resolution rule `user-key → admin-fallback → hidden`; per-Collection sensitivity toggle. **Zero models bundled, zero inference container.** AI controls hidden in UI when neither user-key nor fallback is configured. | — | M | gated on aidocs/36 U2-coupled (secret-class settings infra) | Gate for AI1d-AI1l. |
+| AI1b | Anomaly detection: `POST /v2/timeseries/{appId}/detect-anomalies` with rolling-median + isolation-forest. Pure-Python, no LLM call. **Independent of AI1a** — ships even on installs without an LLM endpoint. Optional `dlr:anomaly` annotation on hits. | — | M | queued | Algorithm already exists in `examples/seed-showcase/notebooks/anomaly-analysis.ipynb`; this is an extraction. |
+| AI1c | Channel-quality scoring: background job emits `qualityScore` attribute on every TimeseriesReference. Pure heuristics, no LLM. **Independent of AI1a.** Search-by-quality unblocked. | — | S | queued | |
+| AI1d | Embedding-based similarity + `GET /v2/data-objects/{appId}/similar`. Calls `/v1/embeddings` against the configured endpoint. | — | M | gated on AI1a | Improves search before chat lands. |
+| AI1e | **Snap dashboards (§5.8) — the killer feature.** Chat sidebar with closed tool-use catalogue (`search_data_objects` / `read_attributes` / `fetch_timeseries` / `fetch_structured` / `list_lab_journal` / `render_chart` / `render_table`); inline Vega-Lite v5 rendering; `DashboardReference` save shape; iteration loop with model picker. **No code execution sandbox** — Vega-Lite specs only. | — | L | gated on AI1a + L2c | The user-facing payoff slice. Requires stable `appId` for tool-use entity addressing. |
+| AI1f | Natural-language search (§5.1): `POST /v2/search/natural` returns the LLM-generated structured query *and* results. User-in-the-loop; query is editable. | — | M | gated on AI1a + `aidocs/13` unified search | |
+| AI1g | Lab journal authoring assist: ghost-text completion in the editor, accept-edit-reject UX. `aiGenerated: true` attribution. | — | M | gated on AI1a + `aidocs/37` J1a | |
+| AI1h | Semantic annotation suggestion: `POST /v2/semantic-annotations/suggest`. Suggestion-only; ontology-filter required. | — | M | gated on AI1a + `aidocs/14` | |
+| AI1i | Auto-summarisation: per-DataObject `summary` attribute (debounced rebuild on last-modified change). | — | S | gated on AI1a | |
+| AI1j | RO-Crate description generation: `?aiAssist=true` on export; operator review before commit. | — | S | gated on AI1a + `aidocs/31` | |
+| AI1k | Conversational lineage: chat interface walking the lineage graph. Retrieval + render only — no claims. | — | M | gated on AI1a + `aidocs/30` | |
+| AI1l | Notebook scaffolding: "Open in Jupyter with starter notebook" button. Generated `.ipynb` attached as FileReference. | — | S | gated on AI1a + `aidocs/37` J1c | |
 | AI1m | (deferred) Forecasting (§3.3) — only if real demand surfaces. | — | M | parked | |
 | AI1n | (deferred) Outlier detection in attribute vectors (§3.4). | — | S | parked | |
 | AI1o | (deferred) Search-rank learn-to-rank (§3.6) — gated on having scale. | — | L | parked | |
-| AI1p | (deferred) Hosted-model bridge — opt-in proxy to OpenAI / Claude / Mistral with per-Collection toggle + audit log. | — | M | parked | Default stays local; hosted is operator-explicit. |
+| AI1p | Per-provider OpenAPI nuances (Azure deployment URL paths, Anthropic `messages` adapter, etc.). Ships incrementally as users hit them. | — | S each | gated on AI1a | Renamed from "deferred hosted-model bridge"; now a continuous compatibility track. |
 
 ### Streaming / publication
 

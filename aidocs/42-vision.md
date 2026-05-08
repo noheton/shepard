@@ -140,14 +140,20 @@ Five typical entry points:
 
 ## Where it's going
 
-The three things on the near horizon, in priority order:
+The four things on the near horizon, in priority order:
 
-1. **HDF5 / HSDS as a payload kind** (`aidocs/35`, A5 series).
+1. **Snap dashboards — chat-driven analysis** (`aidocs/43 §5.8`,
+   AI1e). The killer feature. Open the chat, ask "show me vibration
+   vs RPM for the last 7 fired runs and flag any outliers," get an
+   inline publication-quality chart in seconds. Powered by the
+   user's own LLM key (BYOK) or an admin-configured fallback —
+   shepard ships zero models, only the plumbing.
+2. **HDF5 / HSDS as a payload kind** (`aidocs/35`, A5 series).
    `h5pyd` parity for existing analysis code; gated on L2c.
-2. **Templates + processes** (`aidocs/39` + `aidocs/40 §2`, T1 +
+3. **Templates + processes** (`aidocs/39` + `aidocs/40 §2`, T1 +
    PR1 series). Standardise how DataObjects get created; bring
    process design + runtime into shepard core.
-3. **User profile + ORCID** (`aidocs/36`, U1 series). Closes #29
+4. **User profile + ORCID** (`aidocs/36`, U1 series). Closes #29
    and makes RO-Crate exports cite authors properly.
 
 Mid-horizon:
@@ -161,6 +167,10 @@ Mid-horizon:
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
+- **Other AI features** (`aidocs/43`). Anomaly detection (extracting
+  the showcase notebook's algorithm); semantic-annotation
+  suggestion; lab-journal authoring assist; auto-summarisation;
+  natural-language search. All BYOK / admin-fallback gated.
 
 Long-horizon (deliberately deferred):
 

@@ -42,7 +42,7 @@ config.
 
 | Constraint | Why | Shape |
 |---|---|---|
-| **Data residency** | DLR research data must not leave operator-controlled infrastructure by default | Every AI feature ships in two modes: (1) **local** — bundled model running in a sidecar on the operator's infra; (2) **hosted** — opt-in, operator-configured external endpoint (OpenAI, Anthropic, Mistral, …) with a per-Collection toggle and an audit log. **Local is always the default**; hosted requires explicit per-deployment + per-Collection opt-in. |
+| **Data residency** | DLR research data must not leave operator-controlled infrastructure unless someone explicitly opts in | shepard ships **zero AI models**. AI features are **disabled by default** and only light up when an inference endpoint is configured. Three-tier resolution per request: (1) the **user's own** OpenAI-compatible endpoint from `/me` settings (`ai.apiKey` / `ai.baseUrl` / `ai.model`); (2) the **admin's optional fallback** (`shepard.ai.fallback.*`) — typically a self-hosted Ollama / vLLM / llama.cpp endpoint, but can also be a shared institute-wide hosted account; (3) **AI features hidden** with a clear UI message pointing at `/me` settings. Per-Collection sensitivity toggle can additionally block AI calls for explicitly-flagged data even when an endpoint is configured. See §4.1 for the contract and §4.2 for the resolution rule. |
 | **Cost / GPU** | Local inference for 70B-class LLMs needs GPU; most shepard hosts don't have one | Local-mode features default to **small models** that run on CPU (≤ 8B params for LLMs; ~100MB for traditional ML). Larger models behind operator opt-in. |
 | **Auditability** | Researchers need to know which output was AI-assisted vs human-authored | Every AI-emitted artifact (lab journal entry, semantic annotation, search-rank score) carries an `aiGenerated: bool` + `model: string` + `confidence: float` triple in its metadata. Visible in the UI; queryable via search. |
 | **No silent override of human authorship** | Researchers' hand-written work must never be overwritten by AI output | AI features are **suggestion-only** — the user sees the suggestion and accepts / edits / rejects. No "auto-apply" mode in v1 for any text-generating feature. |
@@ -142,33 +142,97 @@ periodic batch retrain; rerank applied at query time when
 **Caveat.** Useful only at scale (hundreds of users × thousands of
 queries / month). Defer until measurable.
 
-## 4. The shepard-AI sidecar pattern
+## 4. The inference-endpoint contract
 
-Mirrors the HSDS sidecar from `aidocs/35`. A new `shepard-ai`
-container runs Python (FastAPI + scikit-learn / sentence-transformers
-/ a small LLM); shepard's backend brokers requests to it.
+shepard does **not** ship inference models. It ships the
+**plumbing** — chat UI, tool-use catalogue, Vega-Lite renderer,
+secret-class settings, audit hooks — and talks to whatever the
+operator and users configure.
+
+### 4.1 BYOK + admin fallback (the auth/endpoint hierarchy)
+
+Two configuration surfaces:
+
+**Per-user (the primary path).** Each user can configure their own
+inference endpoint in `/me` settings (`aidocs/36 §3.2`):
+
+| Setting | Type | Stored | Notes |
+|---|---|---|---|
+| `ai.apiKey` | secret-class string | encrypted at rest (`aidocs/36 §3.3`) | Never returned in `GET /users/me`, only `aiApiKeyPresent: bool`. Re-enter to change. |
+| `ai.baseUrl` | URL | plaintext | OpenAI-compatible. Examples: `https://api.openai.com/v1`, `https://api.anthropic.com/v1`, `https://api.mistral.ai/v1`, `https://openrouter.ai/api/v1`, `http://localhost:11434/v1` (Ollama), `http://vllm:8000/v1` (vLLM), `https://<azure>.openai.azure.com/openai/deployments/{deployment}` |
+| `ai.model` | string | plaintext | Model id at the chosen provider (`gpt-4o-mini`, `claude-sonnet-4-5`, `llama3.1:8b`, etc.). |
+
+**Per-deployment (admin fallback).** Operator may configure a
+fallback endpoint that users without their own key can use:
+
+| Config key | Notes |
+|---|---|
+| `shepard.ai.fallback.enabled` | bool, default `false`. When false, users without `ai.apiKey` get AI features hidden in the UI. |
+| `shepard.ai.fallback.baseUrl` | OpenAI-compatible endpoint. Typically a self-hosted Ollama / vLLM / llama.cpp on the same network, or an institute-wide commercial account. |
+| `shepard.ai.fallback.apiKey` | Optional. Read from a Quarkus secret (file or env), never logged. |
+| `shepard.ai.fallback.model` | Default model name for the fallback. |
+
+The fallback is **opt-in for the operator**. A vanilla shepard
+install ships with `shepard.ai.fallback.enabled = false` and AI
+features stay invisible until either the operator turns the
+fallback on or individual users add their own key.
+
+### 4.2 Resolution rule (per request)
 
 ```
-infrastructure/docker-compose.yml profile: ai
-└─ shepard-ai service
-   ├─ /infer/anomaly
-   ├─ /infer/quality
-   ├─ /infer/embedding
-   └─ /infer/llm/...    # see §5
+on(any AI feature invocation by user U):
+  if U has ai.apiKey set:
+    use U's (apiKey, baseUrl, model)
+  elif shepard.ai.fallback.enabled:
+    use admin's fallback endpoint
+    log: "fallback used by user=<U>"  (operator visibility)
+  else:
+    return 403 with body: "AI features require a personal API key. Visit /me settings."
 ```
 
-**Storage.** Models live in a Docker volume `/opt/shepard/ai-models/`.
-Ships with a small default set; operator can mount additional
-models.
+The 403 is **expected and silent in the UI** — frontend simply
+hides the AI controls. The third state (no endpoint configured at
+all) is the default state on a fresh install — no chat icon, no
+suggestion buttons, no surprises.
 
-**Auth.** Internal-only; not exposed to the internet. Shepard
-backend authenticates with a per-deployment shared secret. Same
-audit hooks as the main backend.
+### 4.3 OpenAI-compatible contract
 
-**GPU.** `runtime: nvidia` opt-in via `SHEPARD_AI_USE_GPU=true`.
-Falls back to CPU if not set. Per-feature requirements documented;
-anomaly detection / quality / forecasting / clustering all run on
-CPU in seconds for typical timeseries sizes.
+The `/v1/chat/completions` shape is the lingua franca; almost every
+modern provider speaks it. shepard's LLM client is a thin wrapper
+around this shape — no provider-specific SDKs.
+
+For **non-LLM ML features** (anomaly detection, quality scoring,
+similarity embeddings — §3.1 / §3.2 / §3.5), the admin fallback
+also serves as the embedding endpoint via `/v1/embeddings`. A user
+without a key can still consume the operator's local embedding
+model if the fallback is configured.
+
+### 4.4 Optional: operator-deployed local inference
+
+For operators who want fully self-hosted AI (no third-party calls
+ever), the recommended pattern is a **separate inference container
+the admin chooses** — not a shepard subsystem. Three turn-key
+options for the `ai` docker-compose profile:
+
+```yaml
+# Choose ONE and set shepard.ai.fallback.baseUrl to point at it.
+profiles: ["ai"]
+services:
+  ollama:
+    image: ollama/ollama:latest
+    # ... (downloads models on first run)
+  # OR
+  vllm:
+    image: vllm/vllm-openai:latest
+    # ... (GPU required)
+  # OR
+  llamacpp:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    # ... (CPU acceptable for 7B-class)
+```
+
+shepard's docs ship one example for each in `docs/admin.md`. Picking
+which one is the operator's call — shepard doesn't lock in.
 
 ## 5. LLM integration opportunities
 
@@ -263,7 +327,97 @@ DataObject view. The starter notebook is generated, attached to the
 DataObject as a `FileReference`, and the deep-link from
 `aidocs/37 J1c` opens it.
 
-### 5.8 Anti-features (deliberately out of scope)
+### 5.8 Snap dashboards — LLM-driven analysis chat (the headline feature)
+
+The killer feature: a Claude-chat-style sidebar where the user
+describes the analysis they want and the LLM **builds an inline
+dashboard** by walking shepard's data + generating chart specs.
+
+**The user-side experience.**
+
+```
+User: Show me vibration_max vs rpm_fuel_pump for the last 7 fired
+      runs in this Collection. Flag any outliers above 10 g rms.
+LLM:  [walks the Collection: 7 fired runs found, fetching channels...]
+      [renders inline chart]
+      I found 7 runs. TR-004 is 2.5σ above the others —
+      vibration_max = 12.7 g rms vs the cohort median of 4.2 g.
+      The other six fall within 3.6–5.1 g.
+
+      [Refine ▾] [Save dashboard] [Open in Jupyter] [Show data]
+
+User: Now exclude TR-004 and group by test_engineer.
+LLM:  [updates the chart in place]
+      ...
+```
+
+**The architectural shape.**
+
+The LLM has **tool-use** against a **closed catalogue** of shepard
+operations. Each tool has a typed schema; the LLM cannot invoke
+arbitrary code. Tool catalogue (post-AI1q):
+
+| Tool | Returns | Auth scope |
+|---|---|---|
+| `search_data_objects` | List of DataObjects matching attribute filters | User's permission scope |
+| `read_attributes` | Attribute values for a DataObject | User's read permission |
+| `fetch_timeseries` | Aggregated values for `(timeseriesRef, channel, start, end, agg, bucket)` | User's read permission |
+| `fetch_structured` | StructuredData document content | User's read permission |
+| `list_lab_journal` | Lab journal entries on an entity | User's read permission |
+| `render_chart` | A Vega-Lite v5 spec → inline rendered SVG | n/a (rendering only) |
+| `render_table` | A row-oriented JSON dataset → inline table | n/a |
+
+Every tool call is **logged with the user's identity** and the
+resulting access goes through the same permission cache as direct
+API calls — the LLM cannot escalate.
+
+**Why Vega-Lite (not Python plotting).** Vega-Lite is a JSON
+chart-spec language. The LLM emits a spec; the frontend renders.
+**No code execution sandbox required**, no Python sidecar growth
+needed, and the spec is human-editable in a Refine pane.
+Expressiveness covers ~90% of what dashboards do (line / bar /
+scatter / heatmap / facet / brush / tooltip). Cases that don't
+fit (FFT, custom transforms, scientific computations) fall back
+to AI1l notebook-scaffolding (§5.7).
+
+**Save / share.** The "Save dashboard" button persists the
+conversation transcript + the final Vega-Lite spec + the data refs
+as a new entity:
+
+- Stored as a **`DashboardReference`** under the active Collection
+  (new payload-kind sibling to FileReference / TimeseriesReference).
+- The spec re-renders against live data on every read — the same
+  `?snapshot={appId}` query param from `aidocs/41` makes the
+  dashboard reproducible against a snapshot.
+- Permissions inherit from the Collection.
+- Goes into RO-Crate exports as a `Dashboard` entity carrying the
+  spec + the data refs (reproducible by downstream consumers with
+  any Vega-Lite renderer).
+
+**Iteration loop.** The chat keeps history. Each user message
+triggers another LLM turn that may refine the existing spec
+(in-place chart update) or create a new one (new chart appended).
+The user can also click **Refine** to edit the Vega-Lite spec by
+hand — escape hatch for power users.
+
+**The "wow" sentence.** A new researcher opens shepard, sees the
+chat icon, types *"compare the chamber pressure across all fired
+runs"*, and 4 seconds later has a publication-quality faceted
+chart with the LLM's narration. **No notebook, no `pip install`,
+no asking a colleague how the data is shaped.** That's what
+"killer feature" looks like in this context.
+
+**Scope discipline.** The LLM **does not**:
+
+- Mutate any shepard entity (no creates / writes / annotations from
+  chat — those go through the dedicated assistive endpoints in
+  §5.1 / §5.2 / §5.4 with their own confirmation UX).
+- Run arbitrary code in the sandbox.
+- Expose tool-use that bypasses permissions (every tool is scoped
+  to the user's read permissions).
+- Persist anything without an explicit "Save dashboard" click.
+
+### 5.9 Anti-features (deliberately out of scope)
 
 - **Auto-classifier on PI-private data.** No model training on
   cross-tenant data; per-deployment fine-tuning on operator's own
@@ -279,22 +433,22 @@ DataObject as a `FileReference`, and the deep-link from
 
 | ID | Slice | Shape | Size | Gate |
 |---|---|---|---|---|
-| **AI1a** | shepard-AI sidecar pattern: profile-bound `ai` service in compose, FastAPI shell, model-volume mount, broker auth from backend. CPU only. **No models yet** — just the plumbing. | Infra | M | None |
-| **AI1b** | Anomaly detection (§3.1) — `POST /v2/timeseries/{appId}/detect-anomalies`. Rolling-median + isolation-forest. Optionally writes `dlr:anomaly` annotations. | ML | M | AI1a |
-| **AI1c** | Channel-quality scoring (§3.2) — background job, automatic `qualityScore` attribute. | ML | S | AI1a |
-| **AI1d** | Embedding-based similarity (§3.5) + `GET /v2/data-objects/{appId}/similar`. | ML | M | AI1a |
-| **AI1e** | LLM sidecar: bundle a small local LLM (Qwen2.5-7B or Mistral-7B equivalent), expose `/infer/llm/...`. | LLM | M | AI1a |
-| **AI1f** | Natural-language search (§5.1). | LLM | M | AI1e + `aidocs/13` (unified search) |
-| **AI1g** | Lab journal authoring assist (§5.2). | LLM | M | AI1e + `aidocs/37` J1a |
-| **AI1h** | Semantic annotation suggestion (§5.4). | LLM | M | AI1e + `aidocs/14` |
-| **AI1i** | Auto-summarisation (§5.3). | LLM | S | AI1e |
-| **AI1j** | RO-Crate description generation (§5.5). | LLM | S | AI1e + `aidocs/31` |
-| **AI1k** | Conversational lineage (§5.6). | LLM | M | AI1e + `aidocs/30` |
-| **AI1l** | Notebook scaffolding (§5.7). | LLM | S | AI1e + `aidocs/37` J1c |
+| **AI1a** | **AI plumbing slice.** `ai.apiKey` / `ai.baseUrl` / `ai.model` per-user settings (`aidocs/36 §3.2`); `shepard.ai.fallback.*` admin config; OpenAI-compatible `LlmClient` wrapper around `/v1/chat/completions` + `/v1/embeddings`; resolution rule from §4.2; per-Collection sensitivity toggle. **No models bundled, no inference container.** Without configuration, AI controls stay hidden in the UI. | Infra | M | aidocs/36 U2-coupled (secret-class settings infra) |
+| **AI1b** | Anomaly detection (§3.1) — `POST /v2/timeseries/{appId}/detect-anomalies`. Rolling-median + isolation-forest. Pure-Python, no LLM call. **Independent of AI1a** — ships even on installs without an LLM endpoint. Optionally writes `dlr:anomaly` annotations. | ML | M | None |
+| **AI1c** | Channel-quality scoring (§3.2) — background job, automatic `qualityScore` attribute. Pure heuristics, no LLM. **Independent of AI1a.** | ML | S | None |
+| **AI1d** | Embedding-based similarity (§3.5) + `GET /v2/data-objects/{appId}/similar`. **Requires AI1a** because it calls `/v1/embeddings` against the configured endpoint (BYOK or admin fallback). | ML | M | AI1a |
+| **AI1e** | First LLM-driven feature: **snap dashboards (§5.8)** — chat sidebar with tool-use catalogue (`search_data_objects` / `read_attributes` / `fetch_timeseries` / `fetch_structured` / `list_lab_journal` / `render_chart` / `render_table`); inline Vega-Lite v5 rendering; `DashboardReference` save shape. **The killer-feature slice.** | LLM | L | AI1a + L2c (so tool-use addresses entities by stable `appId`) |
+| **AI1f** | Natural-language search (§5.1). | LLM | M | AI1a + `aidocs/13` (unified search) |
+| **AI1g** | Lab journal authoring assist (§5.2). | LLM | M | AI1a + `aidocs/37` J1a |
+| **AI1h** | Semantic annotation suggestion (§5.4). | LLM | M | AI1a + `aidocs/14` |
+| **AI1i** | Auto-summarisation (§5.3). | LLM | S | AI1a |
+| **AI1j** | RO-Crate description generation (§5.5). | LLM | S | AI1a + `aidocs/31` |
+| **AI1k** | Conversational lineage (§5.6). | LLM | M | AI1a + `aidocs/30` |
+| **AI1l** | Notebook scaffolding (§5.7). | LLM | S | AI1a + `aidocs/37` J1c |
 | **AI1m** | (deferred) Forecasting (§3.3) — only if real demand surfaces. | ML | M | parked |
 | **AI1n** | (deferred) Outlier detection in attribute vectors (§3.4). | ML | S | parked |
 | **AI1o** | (deferred) Search-rank learning (§3.6) — gated on having scale. | ML | L | parked |
-| **AI1p** | (deferred) Hosted-model bridge — opt-in proxy to OpenAI / Claude / Mistral hosted endpoints with per-Collection toggle + audit log. | Infra | M | parked |
+| **AI1p** | Per-provider OpenAPI nuances (Azure deployment URL paths, Anthropic-style `messages` endpoint adapter, etc.). Ships incrementally as users hit them. | Infra | S each | AI1a |
 
 Recommended order: **AI1a → AI1b → AI1c → AI1d → AI1e → AI1g →
 AI1f → AI1h → AI1i**. AI1a is the gate for everything; AI1b is the
