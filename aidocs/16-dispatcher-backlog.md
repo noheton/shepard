@@ -186,6 +186,14 @@ Status legend:
 | DX6 | RFC 7807 errors everywhere (== existing H4). | — | M | queued | Existing item. |
 | DX7 | `GET /v2/admin/features` + `shepard-admin features list` showing every toggle's source. | — | S | queued | |
 | DX8 | BI integrations — Grafana data source plugin for shepard timeseries; Superset SQLAlchemy URI recipe (post P10); Tableau / PowerBI recipes by request. | — | M | gated on `aidocs/29` P10a (the SQL win — C5 cleared) + DX5 | The power-user dashboarding answer that complements `aidocs/43 §5.8` snap dashboards. |
+| N1 | Internal semantic repository via neosemantics — umbrella | user request, `aidocs/48` | M-L | **design done** | `aidocs/48`. n10s plugin in Neo4j → new `SemanticRepositoryType.INTERNAL`. Pre-seeded common ontologies bundled. Closes the casual-user "I shouldn't need a triple store" friction. Sub-IDs N1a-N1g below. |
+| N1a | n10s plugin in Neo4j compose service; `SemanticRepositoryType.INTERNAL` enum value + `InternalSemanticConnector`; n10s bootstrap startup hook (post-A1e); `WHERE NOT n:Resource` audit on shepard's Cypher writes. | — | M | queued | A1e fail-fast already shipped. |
+| N1b | Pre-seeded common ontologies (PROV-O / Dublin Core / schema.org / FOAF / QUDT / OM-2 / W3C Time / GeoSPARQL) bundled at `backend/src/main/resources/ontologies/`. SHA-256 pinning. Idempotent re-import. | — | M | gated on N1a | ~13 MB total. |
+| N1c | `shepard-admin semantic refresh-ontologies` CLI per `aidocs/22 §4.x`. | — | S | gated on N1a + `aidocs/22` | |
+| N1d | LUMEN seed integration — `lumen-phases.ttl` + `lumen-severity.ttl` + `import_ontologies.py`; replace placeholder IRIs in seed.py with real ontology IRIs; new SPARQL cell in anomaly-analysis.ipynb. | — | S | gated on N1b | The story-telling slice. |
+| N1e | Frontend annotation picker shows pre-seeded ontology terms by default; couples to `aidocs/14` term-search facet. | — | M | gated on N1a + `aidocs/14` | Casual-user UX close. |
+| N1f | (optional) `/v2/semantic/{repoAppId}/sparql` proxy endpoint that wraps n10s SPARQL with shepard auth. | — | M | queued | Operator-config alternative if not done. |
+| N1g | (deferred) Reasoner integration — pure Cypher inference rules for SKOS broader-narrower; no RDFS/OWL reasoner. | — | L | parked | |
 
 ### Streaming / publication
 
