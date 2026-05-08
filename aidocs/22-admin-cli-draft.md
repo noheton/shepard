@@ -200,6 +200,29 @@ in parallel. The two complement each other: (a) for remote ops,
 default** and only exists for the case where the backend's HTTP layer
 itself is down.
 
+### 3.4 Env-driven auto-configuration (added 2026-05-08)
+
+Operators do not type `--host` and `--apikey` on every invocation.
+The CLI reads these from the environment in this precedence order:
+
+1. CLI flags (`--host`, `--apikey`, `--config`) — explicit override.
+2. `SHEPARD_HOST`, `SHEPARD_API_KEY` env vars — typical case.
+3. `.env` file in `$PWD` or `$XDG_CONFIG_HOME/shepard-admin/config`
+   — auto-discovered. The `init` wizard (§4.11) writes to this path
+   by default, so a freshly-bootstrapped operator gets zero-config
+   `shepard-admin` after running `init` once.
+4. Compose discovery — if running on the same host as a docker-compose
+   shepard stack, parse `.env` next to `infrastructure/docker-compose.yml`.
+
+The API key must carry the `admin` role per option (a) above. If the
+key has only ordinary user roles, every mutating command refuses with
+a single-line error pointing at the role-grant doc — there is no
+"escalate" path; rotate the key with the right role instead.
+
+Failure mode: missing both env and config file → CLI prompts to run
+`shepard-admin init` and exits with status 2. No silent fallbacks to
+defaults that could touch real infrastructure.
+
 ---
 
 ## 4. Candidate functions
@@ -353,12 +376,13 @@ each backend independently.
 | Idempotent | Yes |
 | Size | S |
 
-### 4.6 Feature toggle inspection
+### 4.6 Feature toggle inspection and flipping
 
 ```bash
-shepard-admin features list
-shepard-admin features get <name>
+shepard-admin features list                         # show all + current state
+shepard-admin features get <name>                   # show one toggle's state
 shepard-admin features set <name> <true|false>     # post-A3b
+shepard-admin features set <name> <true|false> --restart-stack    # opt-in
 ```
 
 A3 (`16` row A3, commit `ddeeb31`) made the toggle mechanism runtime;
@@ -371,13 +395,53 @@ The toggles available today
 `MigrationModeToggle`, `SpatialDataFeatureToggle`, `VersioningFeatureToggle`,
 plus `TogglePropertyUtil`.
 
+**Profile-bound toggles** (added 2026-05-08): some features are not
+just runtime flags but bind to a docker-compose **profile** because
+they require a separate service on the wire (the canonical example
+is `spatial` → `postgis`; the upcoming `hdf` profile → `hsds` per
+`aidocs/35-hdf5-hsds-implementation-design.md`). For these, the CLI
+needs to do two things atomically:
+
+1. Update the `.env` file to add/remove the profile from
+   `COMPOSE_PROFILES`.
+2. Flip the corresponding `*FeatureToggle` once the service is up.
+
+```bash
+# What the CLI does end-to-end:
+shepard-admin features enable hdf
+# 1. Reads .env, computes new COMPOSE_PROFILES
+# 2. Confirms with the operator (or --yes)
+# 3. Writes .env back
+# 4. If --restart-stack: docker compose up -d  (else: prints the command)
+# 5. Polls /healthz until the new service reports up
+# 6. PATCH /admin/features/hdf {enabled: true}  (post-A3b)
+```
+
+Without `--restart-stack` the CLI is **doc-mode** — it tells the
+operator the exact `docker compose` command to run and exits with a
+non-zero status. This keeps the "the CLI never restarts a stack
+without consent" invariant from §1.2 intact.
+
 | Field | Value |
 |---|---|
 | Role | `admin` (read), `admin` (write) |
-| Side effects | `set` activates / deactivates feature wiring; `MigrationModeToggle` is special — flipping it on locks the API per `MigrationModeFilter.java:25-36` |
+| Side effects | `set` activates / deactivates feature wiring; `MigrationModeToggle` is special — flipping it on locks the API per `MigrationModeFilter.java:25-36`. Profile-bound toggles also touch `.env` and may need a stack restart. |
 | Hint | `GET /admin/features`, `PATCH /admin/features/{name}` (post-A3b) |
-| Idempotent | Yes (set to the same value is a no-op) |
-| Size | S |
+| Idempotent | Yes (set to the same value is a no-op; `enable` on an already-enabled profile is a no-op too) |
+| Size | S for plain toggles; M for the profile-bound shape (needs `.env` round-trip + healthcheck poll) |
+
+### 4.6a Profile-bound toggle catalogue
+
+| Toggle | Profile | Service | Docs |
+|---|---|---|---|
+| `spatial` | `spatial` | `postgis` | `infrastructure/docker-compose.yml` |
+| `hdf` | `hdf` | `hsds` | `aidocs/35-hdf5-hsds-implementation-design.md` |
+| `monitoring` | `monitoring` | `prometheus` + `grafana` | `infrastructure/docker-compose.yml` |
+| `frontend-old` | `frontend-old` | legacy `frontend:4.0.0` | `infrastructure/docker-compose.yml` |
+
+When `aidocs/34-upstream-upgrade-path.md` gains a row for the next
+profile-bound feature (e.g. A5a's `hdf`), this table grows in the
+same PR.
 
 ### 4.7 Collection import / export
 
@@ -484,7 +548,83 @@ Two integrity gaps map to this:
 | Idempotent | Yes |
 | Size | M |
 
-### 4.11 Backup hooks
+### 4.11 First-time setup wizard (`init`)
+
+```bash
+shepard-admin init                       # interactive TUI wizard
+shepard-admin init --output .env         # explicit target file
+shepard-admin init --non-interactive --profile=prod    # answers from defaults
+```
+
+Targets the friction at first-run setup: today an operator copies
+`infrastructure/.env.example`, hand-edits ~25 keys, generates random
+secrets manually, and discovers `aidocs/07` H8 the hard way when their
+shipped placeholders end up in production. The wizard collapses this
+into a single guided session that ends with a known-good `.env`.
+
+**Design.** Modern menu-mode TUI in the spirit of `whiptail` /
+`dialog` but with a 2026-era look — boxed sections, keyboard
+navigation, inline validation, contextual help on the right pane.
+**[Lanterna](https://github.com/mabe02/lanterna)** is the canonical
+fit for the Java + Picocli stack (BSD-3, actively maintained, runs on
+any POSIX terminal + Windows console). Falls back to a plain
+question-stream when stdout is not a TTY (CI, `docker exec` without
+`-t`, piped invocations).
+
+**Wizard flow** (six screens, each can be skipped to keep current
+value if a `.env` already exists):
+
+1. **Welcome** — detects existing `.env` (offers `--force` overwrite,
+   merge, or abort). Detects host capabilities (POSIX permissions,
+   docker compose plugin version) and prints a one-line readiness
+   summary.
+2. **Identity provider** — choose between "bring your own Keycloak"
+   (paste `OIDC_AUTHORITY` URL + `OIDC_PUBLIC` key path) or "let me
+   add a Keycloak service to the compose stack" (the wizard adds the
+   `keycloak` service to `docker-compose.override.yml`, generates an
+   admin password, and prints the post-init Keycloak URL).
+3. **Profiles** — multi-select from the catalogue in §4.6a:
+   `spatial`, `hdf`, `monitoring`, `frontend-old`. Tooltips quote the
+   per-profile cost (RAM / disk / start time). Sets `COMPOSE_PROFILES`
+   in `.env`.
+4. **Storage backends** — the conditional section. If `spatial`
+   selected: PostGIS service config. If `hdf` selected: storage
+   choice (POSIX / S3 / MinIO / Azure) per
+   `aidocs/35-hdf5-hsds-implementation-design.md` §3.
+5. **Secrets** — generates strong random values for every `*_PW` /
+   `*_SECRET` placeholder via `SecureRandom` (96 bits base64).
+   Operator can opt to paste their own. The shipped defaults from
+   `aidocs/07` H8 are explicitly **never** used; declining to set a
+   secret aborts with an explanation.
+6. **Review + write** — shows the diff against the existing `.env`
+   (or against `.env.example` for first-run), asks for confirmation,
+   writes the file with `0600` perms, prints the next step
+   (`docker compose up -d`).
+
+**Idempotency.** `shepard-admin init` against an already-configured
+`.env` is a **no-op review session** unless the operator changes
+something. The wizard always reads → renders → writes; it never
+mutates state mid-session.
+
+**`--non-interactive`.** All prompts use defaults; profile choice
+comes from `--profile` (`prod` / `dev` / `demo` presets). Useful for
+provisioning scripts and CI test rigs. Conservative defaults: no
+profiles, all secrets regenerated, OIDC stays unset (admin must
+configure it before serving traffic).
+
+**Cross-references.** Aligns with `docs/deploy-oracle-free.md` §5b,
+`docs/deploy-self-hosted-zoraxy.md` §3, `infrastructure/.env.example`,
+and `aidocs/07` H8.
+
+| Field | Value |
+|---|---|
+| Role | None (pre-auth — runs before shepard is up) |
+| Side effects | Writes `.env` (always with `0600`); may write `docker-compose.override.yml` if Keycloak option chosen |
+| Hint | TUI library: Lanterna. Falls back to plain prompts when not a TTY. |
+| Idempotent | Yes (re-run is a review unless operator changes inputs) |
+| Size | M (≈ 1 week for the wizard frame + 6 screens + non-interactive path) |
+
+### 4.12 Backup hooks
 
 Marked **out of scope** for the CLI. Backup orchestration belongs to
 the infrastructure layer (the `infrastructure/` and
@@ -496,6 +636,81 @@ that an external backup runner can hook into). The CLI may
 The one trivial hook worth surfacing: `shepard-admin db dump-schema`
 that prints the Neo4j label catalog and the Postgres `\d+`-equivalent.
 This is a debugging aid, not a backup. Size: S.
+
+---
+
+## 4.x TUI everywhere — universal interaction principle (added 2026-05-08)
+
+Every command in §4 has **two invocation modes**:
+
+1. **Direct mode** — fully argumented, scriptable, the canonical
+   `shepard-admin <verb> <noun> [flags]` shape documented per row
+   above. Used in CI, cron, ansible playbooks, ops runbooks.
+2. **TUI mode** — invoke the same command without the required
+   positional args (or with a global `--menu` flag) and the CLI
+   drops into an interactive Lanterna screen for that command.
+   Used by humans at a terminal who want autocomplete + confirmation.
+
+### Auto-fill from server state
+
+The TUI is not just a "press Y to confirm" loop; it pre-populates
+selectable values from the live API:
+
+| Command | Auto-fill source | Result |
+|---|---|---|
+| `cleanup deleted` | `GET /admin/deleted-entities?olderThan={ttl}` (post-A0) | Multi-select list of soft-deleted entities, ordered by age |
+| `features set` | `GET /admin/features` (post-A3b) | Tab-cycle through known toggles; tooltip shows current value, side effects, gate dependencies |
+| `cache invalidate` | Quarkus cache catalogue (already enumerable via `/q/cache/cleared`) | Multi-select of cache names with hit-rate hint per cache |
+| `migrations` | `GET /migrations/progress` (P3, shipped) | Pre-shows applied migration list, highlights the last one; resume / abort options gated on its state |
+| `apikey list/revoke` | `GET /admin/apikeys` (post-A0) | Filterable table; revoke prompts a per-row confirmation |
+| `export collection` | `GET /collections` (existing, with paging) | Cursor-paged picker; once selected, the export-options form auto-fills with sane defaults from `aidocs/31-rocrate-export-optimisation.md` |
+| `import collection` | local filesystem browser starting at `$PWD` | RO-Crate `.zip` picker; preview the manifest before commit |
+| `db check` | label catalogue from Neo4j | Per-label integrity-check selector |
+
+**Auto-fill failure modes.** If the auto-fill API is unreachable
+(network, auth, version skew with a backend that lacks the endpoint),
+the TUI degrades to a plain text-input box and an inline warning —
+never to a "default to first item silently" misclick trap.
+
+### TUI reference patterns
+
+- **Wizard pattern** (`init`, `import collection`) — multi-screen
+  forward-only flow with a final review screen.
+- **Picker pattern** (`cleanup deleted`, `cache invalidate`,
+  `apikey revoke`) — filterable table with checkboxes and a
+  confirm/cancel footer.
+- **Dashboard pattern** (`health`, `migrations status`, `stats top`)
+  — read-only, auto-refresh every `PT5S`, `q` to quit. Useful as a
+  poor-operator's "single pane of glass."
+
+### Library + accessibility
+
+[Lanterna](https://github.com/mabe02/lanterna) for all three patterns;
+the same dependency the `init` wizard already pulls in. Provides:
+
+- True-color + 256-color + plain-VT100 rendering automatically.
+- Mouse support optional (off by default — keyboard navigation is
+  faster for skilled operators and works in headless `screen`/`tmux`).
+- `--no-color` honoured (inherits from `NO_COLOR` env var per the
+  community standard).
+- Falls back to a plain question-stream when stdout is not a TTY,
+  so piping (`shepard-admin features list | jq`) keeps working.
+
+### When TUI is not appropriate
+
+- **Read-only one-shot queries** (`health`, `features list`,
+  `migrations status` without args) print and exit — no TUI prompt.
+  Adding a TUI to these would just slow scripted invocations.
+- **`stats` subcommands** that produce a single number (cache-hit
+  rate, total entity count) print the number; the dashboard
+  pattern is opt-in via `stats top --watch`.
+
+### Auth applied uniformly
+
+All TUI sessions use the same env-driven auth-discovery from §3.4 —
+the wizard never asks for the API key inside the loop. If discovery
+fails, the TUI's first screen is the same `init`-style prompt that
+sets up the env, then proceeds.
 
 ---
 
@@ -589,20 +804,25 @@ decision (§3.3) are made first. Phase 1 cannot ship until A0 is at
 least decided (option (b) is the only A0-free path, and §3 explicitly
 discourages it).
 
-### 7.1 Phase 1 — foundation (skeleton + read-only)
+### 7.1 Phase 1 — foundation (skeleton + read-only + init wizard)
 
-- Repository scaffolding under `admin-cli/` (Java) or
-  `scripts/admin/` (Python). Maven module wired into the parent
-  `pom.xml` (Java case).
-- Auth: option (a) when A0 lands; option (c) behind
-  `shepard.admin.local-socket.enabled` for break-glass.
-- Three commands:
+- Repository scaffolding under `admin-cli/` (Java + Picocli). Maven
+  module wired into the parent `pom.xml`.
+- Auth: env-driven discovery from §3.4. Option (a) admin-role API key
+  when A0 lands; option (c) behind `shepard.admin.local-socket.enabled`
+  for break-glass.
+- TUI scaffolding: Lanterna dependency, the dashboard / picker /
+  wizard pattern primitives from §4.x.
+- **`init` wizard** (§4.11) ships in this phase — operators need it
+  before they can use any other command.
+- Three read-only commands, each available in direct + dashboard modes:
   - `shepard-admin features list` (post-A3b for full read; today reads
     the build-time toggle JSON only).
   - `shepard-admin health <db>` (no new backend code needed).
   - `shepard-admin migrations status` (calls the P3 endpoint).
 - CI: build + smoke test against the existing
-  `infrastructure-local/` compose stack.
+  `infrastructure-local/` compose stack. TUI tested via Lanterna's
+  test harness (`TestTerminalFactory`).
 
 ### 7.2 Phase 2 — cleanup (most asked-for)
 
