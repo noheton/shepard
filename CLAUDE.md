@@ -37,3 +37,32 @@ When you merge a PR that touches anything an admin would notice
 (config keys, endpoints, schemas, defaults, dependencies, breaking
 behaviour), the tracker update is part of the same PR — not a
 follow-up.
+
+## API-version policy
+
+**The upstream API surface stays frozen.** `/shepard/api/...` paths
+must remain byte-compatible with `gitlab.com/dlr-shepard/shepard 5.2.0`
+so a client built against upstream keeps working against this fork.
+
+**All new endpoints we add land under `/v2/`.** This is the
+development version where this fork's additions live (P-series,
+R-series additive endpoints, U-series profile, A5 HDF, J1 lab
+journal render, G1 git integration, T1 templates, anything else).
+Existing `/shepard/api/` paths get only bug fixes that preserve
+their wire shape.
+
+The L2 chain (`aidocs/25`) is the formalisation of this split: L2d
+introduces the `/v2/` shelf with `appId` as the native identifier;
+L2e eventually drops the upstream `/v1/` long-id paths after a
+deprecation window. Until L2d ships, treat any new endpoint as a
+**`/v2/` candidate** and put it there; the routing scaffolding is
+trivial to add early.
+
+For an admin upgrading from upstream:
+- `/shepard/api/...` works exactly like upstream — zero breakage.
+- `/v2/...` is opt-in additional surface — they choose when to
+  consume it.
+
+Document each new endpoint's path in the same PR's `aidocs/34`
+tracker row, calling out whether it's `/shepard/api/` (compat
+surface, additive only) or `/v2/` (this fork's development surface).

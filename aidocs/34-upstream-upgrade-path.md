@@ -24,6 +24,25 @@ additive (new endpoints, new optional config) or migration-safe
 operator-visible change is a single config-key namespace deprecation
 (A3c) which is alias-compatible until v6.0.
 
+## API-version policy (the big rule)
+
+The standing rule in `CLAUDE.md` (repo root) is reproduced here for
+admin convenience:
+
+- **`/shepard/api/...` is frozen.** Byte-compatible with upstream
+  `dlr-shepard/shepard 5.2.0`. Existing clients (Python / TS / Java
+  generated against upstream OpenAPI) keep working unchanged.
+- **`/v2/...` is this fork's development surface.** Every new
+  endpoint we add lands here. Opt-in for clients that want our
+  additions; ignored by clients that don't.
+- L2d formalises the split (`aidocs/25 §4 Phase 4`); L2e eventually
+  drops the upstream long-id paths after a deprecation window.
+
+Each row below indicates whether the endpoint touches `/shepard/api/`
+(compat surface, additive only) or `/v2/` (this fork). Rows that
+touch neither (config keys, internal behaviour) leave the column
+blank.
+
 The L2 chain (`L2b` … `L2e`) will introduce data-mutating migrations
 and an API deprecation window — see "What's coming" at the bottom.
 
