@@ -260,6 +260,66 @@ NULL` but no purger ever runs.
 
 `--dry-run` prints either Cypher or a summary (open question §8).
 
+### 4.1a Timeseries inventory + cleanup of unreferenced intervals
+
+```bash
+# Inventory: what's actually stored vs what's referenced.
+shepard-admin timeseries inventory \
+  [--container <containerAppId>] \
+  [--format table|json|csv]
+
+# Cleanup: drop hypertable rows that no live reference points at,
+# bounded to specific containers + time windows.
+shepard-admin timeseries cleanup \
+  --container <containerAppId> \
+  [--older-than <ISO-8601-duration>] \
+  [--time-range <start>..<end>] \
+  [--dry-run] \
+  [--no-confirm]
+```
+
+**Why this slot.** TimescaleDB hypertables grow append-only. When
+a `TimeseriesReference` is deleted (soft or hard), the *reference
+node* in Neo4j goes; the **rows in the hypertable do not**. Over
+time, instances accumulate hypertable bytes that no shepard entity
+addresses any more — invisible to the API, expensive on disk.
+
+`inventory` walks each `TimeseriesContainer` and reports:
+
+- Total row count + on-disk size per container (queried via
+  `pg_total_relation_size`).
+- For each timeseries id present in the hypertable: whether a
+  `Timeseries` / `AnnotatableTimeseries` Neo4j node still
+  references it.
+- Per-container "unreferenced bytes" estimate.
+
+`cleanup` deletes hypertable rows for **unreferenced timeseries
+ids** within the named container, bounded to the user-specified
+time range (so a partial-window cleanup is possible — useful when
+a sensor was re-calibrated and the old span should go, but the
+new span stays).
+
+| Field | Value |
+|---|---|
+| Role | `admin` |
+| Side effects | Hard-deletes hypertable rows. **Irrecoverable** without backup restore. |
+| Hint | TimescaleDB hypertable row-delete with a `(timeseries_id, time)` predicate. Per-chunk; relies on Timescale's chunk-level pruning to be efficient. |
+| Idempotent | Yes (re-run finds no candidates) |
+| Confirmation | Prints the row count + estimated bytes, prompts y/N (TUI mode shows a picker). `--no-confirm` for scripts; `--dry-run` for a CI-style report. |
+| Size | M (needs the inventory query first to be safe) |
+
+**Cross-references.** Couples to:
+
+- `aidocs/22 §4.1` (entity soft-delete cleanup; this is the
+  payload-side counterpart for timeseries specifically — the
+  `aidocs/22 §4.1` Hint already mentions TimescaleDB orphans
+  needing `db check-orphans`; this section makes the check-orphans
+  part executable).
+- `aidocs/46` PV1g (per-Collection retention policy + CLI sweep —
+  same shape, different payload kind).
+- `aidocs/12` (TimescaleDB perf — informs the chunk-aware delete
+  strategy).
+
 ### 4.2 Stale lock / session cleanup
 
 ```bash

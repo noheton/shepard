@@ -170,6 +170,22 @@ Status legend:
 | PV1f | RO-Crate export pins `payloadVersion` automatically when `?snapshot=` is set; cites SHA-256 in the manifest. | — | S | gated on PV1a + V2d + `aidocs/31` | The headline reproducibility payoff. |
 | PV1g | Per-Collection retention policy (`Collection.payloadRetentionPolicy`) + `shepard-admin payloads gc` CLI. | — | M | gated on PV1a + `aidocs/22` | |
 | PV1h | (deferred) Per-version permissions — today's perms inherit from reference. | — | L | parked | |
+| PL1 | Storage-backend plugin SPI — umbrella | user request, `aidocs/47` | L | **design done** | `aidocs/47 §2`. New `PayloadKind` + `PayloadStorage` SPI; existing kinds migrate gradually; new kinds (HDF5, Git, future) ship as plugins from day 1. Sub-IDs PL1a-PL1g below. |
+| PL1a | `PayloadKind` + `PayloadStorage` SPI interfaces in `backend/.../spi/payload/` + `PayloadKindRegistry`. **No** existing kind refactored yet. | — | M | queued | Pure introduction; behaviour-preserving. |
+| PL1b | Pilot migration: `shepard-plugin-spatial-postgis`. Behaviour-identical with today's spatial feature toggle. | — | M | gated on PL1a | Smallest existing surface; A3c feature toggle already in place. |
+| PL1c | A5a (HDF5/HSDS, `aidocs/35`) ships as a plugin from day 1. | — | M | gated on PL1a + DX3 + `aidocs/35` | First net-new plugin. |
+| PL1d | G1a (Git, `aidocs/38`) ships as a plugin from day 1. | — | M | gated on PL1a + DX3 + `aidocs/38` | Second net-new plugin. |
+| PL1e | (deferred) Refactor `file` payload kind to the SPI; lands the FS1 GridFS/S3 plugin split. | — | L | parked (post FS1) | |
+| PL1f | (deferred) Refactor `structured` payload kind to the SPI. | — | M | parked | |
+| PL1g | (deferred) Refactor `timeseries` payload kind to the SPI. | — | L | parked | More entanglement with `AnnotatableTimeseries` + hypertable specifics. |
+| DX1 | Unified `ShepardTestStack` test-resource (Postgres + Mongo + Neo4j + Influx + mock OIDC via testcontainers). Unblocks `*QuarkusTest` reliability without `infrastructure-local`. | — | M | queued | Resolves the long-standing baseline failure trail. |
+| DX2 | `ShepardTestFixtures` shared helpers (typed builders for Collection / DataObject / fired-Run shapes). | — | S | queued | Shrinks Mockito boilerplate in `*ServiceTest`. |
+| DX3 | `mvn shepard:scaffold-payload-kind` archetype. | — | M | gated on PL1a | Codegen for new payload-kind plugins. |
+| DX4 | `make dev` single-command bootstrap (init wizard + compose up + smoke-test). | — | S | gated on DX1 + `aidocs/22` | Casual-user path: clone-and-run in one line. |
+| DX5 | Quarkus Neo4j Dev Service; OpenAPI hot-reload across `clients/*`. | — | M | queued | |
+| DX6 | RFC 7807 errors everywhere (== existing H4). | — | M | queued | Existing item. |
+| DX7 | `GET /v2/admin/features` + `shepard-admin features list` showing every toggle's source. | — | S | queued | |
+| DX8 | BI integrations — Grafana data source plugin for shepard timeseries; Superset SQLAlchemy URI recipe (post P10); Tableau / PowerBI recipes by request. | — | M | gated on `aidocs/29` P10a (the SQL win — C5 cleared) + DX5 | The power-user dashboarding answer that complements `aidocs/43 §5.8` snap dashboards. |
 
 ### Streaming / publication
 

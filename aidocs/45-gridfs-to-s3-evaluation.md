@@ -218,6 +218,69 @@ The legacy `/shepard/api/files/{...}/payload` paths keep proxying
 bytes regardless of backend — that's the upstream compatibility
 contract. Native presigned-URL clients use `/v2/`.
 
+## 7a. Downstream beneficiaries — what FS1 unblocks
+
+FS1 isn't just a "files now live in S3" change — it's the substrate
+for several other features that have been waiting on cheap,
+direct-from-storage delivery. Three concrete:
+
+### 7a.1 RO-Crate ZIP delivery (closes `aidocs/31` O3)
+
+Today the RO-Crate exporter buffers the whole ZIP server-side and
+streams it through shepard's HTTP layer on download. For a
+multi-GB Collection that's heap pressure + bandwidth on every
+fetch. With FS1:
+
+- Exporter writes the ZIP as a multi-part upload to a dedicated
+  `shepard-exports/` prefix in the FS1 bucket.
+- `POST /v2/collections/{appId}/export` returns the **presigned URL**
+  (FS1c) instead of streaming bytes. Client follows the redirect;
+  S3 / MinIO serves the ZIP directly.
+- Lifecycle policy on the prefix expires the export ZIP after
+  `PT24H` (configurable) so the bucket doesn't grow unbounded.
+
+Closes the `aidocs/31 §O3` "drop the export at an S3 URL" question
+that's been queued.
+
+### 7a.2 dataship as a publication pipeline (`aidocs/40 §3a`)
+
+dataship's whole reason-for-being is "publish a shepard Collection
+to a public archive." With FS1 it becomes:
+
+1. dataship reads the snapshotted Collection (`aidocs/41` V2).
+2. dataship invokes the RO-Crate export with `?snapshot={appId}`
+   (PV1f from `aidocs/46` — byte-reproducible).
+3. The export lands at a **public-bucket** prefix in the FS1
+   bucket — `s3://<bucket>/published/<doi>/<crate>.zip`.
+4. dataship hands the (now-permanent) URL to Zenodo / B2SHARE /
+   the user's web archive.
+
+**No new infrastructure.** The publication store *is* the same
+S3 bucket FS1 already provisions, with a per-prefix bucket policy
+flipping it from "presigned-only" to "public-read" on the
+`published/` prefix.
+
+### 7a.3 Other artifact hosting — generic `/v2/artifacts/`
+
+Beyond RO-Crate and dataship, other shepard subsystems produce
+"artifacts that should be downloadable but aren't payload-kind
+references":
+
+- Migration progress reports (P3).
+- `shepard-admin payloads gc` dry-run reports (`aidocs/22 §4.x`).
+- AI-generated dashboard exports (`aidocs/43 §5.8` saved
+  dashboards as PNG / SVG / Vega-Lite spec ZIPs).
+- Long-running job results (`aidocs/32`).
+
+Today each subsystem invents its own delivery shape. After FS1c,
+they all share **`/v2/artifacts/{type}/{id}/url`** which returns a
+presigned URL into the FS1 bucket's `artifacts/` prefix. One
+endpoint, one pattern, one TTL story.
+
+This is a small follow-up after FS1c; doesn't need a separate
+backlog row, but worth landing as part of the same FS1 wave so
+the pattern doesn't fragment.
+
 ## 8. Verdict
 
 **Yes — migrate, via path (B) pluggable storage backend.** The

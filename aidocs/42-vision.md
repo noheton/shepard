@@ -27,6 +27,17 @@ files-and-folders share, and it is not a database; it is the
 
 ## Who it's for
 
+**Casual users come first.** Most shepard researchers touch the
+tool once a month between experiments — they're not data engineers
+who live in the API. Every feature on the roadmap is judged
+against "does this make the casual-user path easier?" (the
+explicit framing rule in `aidocs/47 §1.0`). Snap dashboards
+(`aidocs/43 §5.8`), templates (`aidocs/39`), the LUMEN-inspired
+showcase notebook, and the deploy guides under `docs/` are all
+shaped by this constraint.
+
+Specifically:
+
 - A **PI** running a multi-month experiment campaign who wants the
   raw data, the analysis notes, and the publication artifact to all
   trace back to the same provenance graph.
@@ -38,10 +49,21 @@ files-and-folders share, and it is not a database; it is the
 - A **data steward** who has to ship an RO-Crate to a journal and
   doesn't want to assemble it by hand.
 
+Power users (people who *do* extend shepard) come second; the
+plugin SPI (`aidocs/47 §2`) keeps their path painless without
+distorting the casual-user defaults.
+
 It is **less obviously useful** for a single-author short-term
 project where a git repo plus three CSV files would do. The
 overhead of shepard is amortised across collaboration and
 re-discovery.
+
+**Live test deployment for this fork:**
+[**shepard.nuclide.systems**](https://shepard.nuclide.systems) —
+self-hosted Docker host fronted by Zoraxy
+(`docs/deploy-self-hosted-zoraxy.md` §5a is the canonical recipe).
+Iterates ahead of `main`; useful as a smoke target after each
+landing.
 
 ## What's in the box (today)
 
