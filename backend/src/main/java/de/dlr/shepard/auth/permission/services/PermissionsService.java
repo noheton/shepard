@@ -11,6 +11,7 @@ import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.exceptions.ShepardProcessingException;
+import de.dlr.shepard.common.filters.RequestPathHelper;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -303,7 +304,10 @@ public class PermissionsService {
    * @param userName
    */
   public boolean isAllowed(ContainerRequestContext requestContext, AccessType accessType, String userName) {
-    List<PathSegment> pathSegments = requestContext.getUriInfo().getPathSegments();
+    // P4: strip the /shepard/api/ prefix so first-segment dispatch
+    // ("collections", "temp", "users", …) keeps working byte-identically.
+    List<PathSegment> pathSegments = RequestPathHelper.applicationSegments(requestContext);
+    if (pathSegments.isEmpty()) return true;
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
 
     // migration state endpoints

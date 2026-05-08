@@ -1,5 +1,6 @@
 package de.dlr.shepard.data.timeseries.migration.endpoints;
 
+import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.timeseries.migration.io.MigrationProgressIO;
 import de.dlr.shepard.data.timeseries.migration.services.MigrationProgressService;
 import jakarta.enterprise.context.RequestScoped;
@@ -20,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
-@Path("temp/migrations")
+@Path(Constants.SHEPARD_API + "/temp/migrations")
 @RequestScoped
 public class MigrationProgressRest {
 

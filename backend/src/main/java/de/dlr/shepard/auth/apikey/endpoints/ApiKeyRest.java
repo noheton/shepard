@@ -36,7 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Path(Constants.USERS + "/{" + Constants.USERNAME + "}/" + Constants.APIKEYS)
+@Path(Constants.SHEPARD_API + "/" + Constants.USERS + "/{" + Constants.USERNAME + "}/" + Constants.APIKEYS)
 @RequestScoped
 public class ApiKeyRest {
 

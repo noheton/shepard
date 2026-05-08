@@ -44,7 +44,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.STRUCTURED_DATA_CONTAINERS)
+@Path(Constants.SHEPARD_API + "/" + Constants.STRUCTURED_DATA_CONTAINERS)
 @RequestScoped
 public class StructuredDataRest {
 

@@ -32,6 +32,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Path(
+  Constants.SHEPARD_API +
+  "/" +
   Constants.TIMESERIES_CONTAINERS +
   "/{" +
   Constants.TIMESERIES_CONTAINER_ID +

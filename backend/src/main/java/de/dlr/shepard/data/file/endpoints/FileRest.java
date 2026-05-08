@@ -49,7 +49,7 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-@Path(Constants.FILE_CONTAINERS)
+@Path(Constants.SHEPARD_API + "/" + Constants.FILE_CONTAINERS)
 @RequestScoped
 public class FileRest {
 

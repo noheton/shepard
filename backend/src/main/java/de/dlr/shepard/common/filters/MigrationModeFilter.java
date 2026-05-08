@@ -20,7 +20,10 @@ public class MigrationModeFilter implements ContainerRequestFilter {
   public void filter(ContainerRequestContext requestContext) throws IOException {
     if (!MigrationModeToggle.isActive()) return;
     if (PublicEndpointRegistry.isRequestPathPublic(requestContext)) return;
-    if (requestContext.getUriInfo().getPath().startsWith("/temp")) return;
+    // P4: compare against the application-relative path (with the
+    // /shepard/api/ prefix stripped) so the temp-migrations carve-out
+    // matches the same URLs as before the root-path change.
+    if (RequestPathHelper.applicationPath(requestContext).startsWith("/temp")) return;
 
     requestContext.abortWith(
       Response.status(Status.SERVICE_UNAVAILABLE)
