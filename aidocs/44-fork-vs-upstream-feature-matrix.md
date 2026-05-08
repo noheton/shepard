@@ -191,6 +191,18 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Frontend large-file uploads via presigned PUT (P12) | proxied through backend | TBD | 📐 (queued, FS1f) | `aidocs/45 §9` / `aidocs/33` |
 | RO-Crate export delivery via presigned URL (closes #27 / O3) | proxied | TBD | 📐 (queued, FS1g) | `aidocs/45` / `aidocs/31 §O3` |
 
+## 13b. CI / quality gates
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| JaCoCo coverage report on `mvn verify` | configured but reads the wrong (Quarkus-side) exec file → reports ~0.5% | reads the real `target/jacoco.exec` → reports ~68% line / 66% branch | **✓ ↑** | `backend/pom.xml` jacoco-maven-plugin (post-fix) |
+| JaCoCo `check` gate at 60% line / 60% branch (`haltOnFailure` in CI) | none | shipped; `-Djacoco.haltOnFailure=true` in `backend-ci.yml` | **✓ ↑** | `backend/pom.xml` + `.github/workflows/backend-ci.yml` |
+| PR coverage comment + per-changed-file 70% gate | none | shipped via `madrapps/jacoco-report` | **✓ ↑** | `.github/workflows/backend-ci.yml` |
+| SpotBugs + findsecbugs running on `mvn verify` (was `<reporting>` only — `aidocs/07` M12) | `<reporting>` only — never invoked | shipped at `Effort=Max`, `Threshold=High`, `failOnError` in CI | **✓ ↑** | `backend/pom.xml` + `.github/workflows/backend-ci.yml` |
+| OWASP Dependency-Check (weekly + on pom changes; `failBuildOnCVSS=7`) | none | shipped via `.github/workflows/security.yml`; suppressions in `backend/dependency-check-suppressions.xml` with CVE+reason format | **✓ ↑** | `.github/workflows/security.yml` |
+| Secret scanning (gitleaks weekly + on push) | none | shipped via `.github/workflows/security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
+| GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
+
 ## 14. RO-Crate optimisation
 
 | Capability | Upstream | This fork | Status | Refs |

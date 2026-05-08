@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OWASP Dependency-Check suppressions.
+
+  Add an entry per false positive or per accepted residual risk. Each
+  entry MUST cite (a) the CVE id, (b) the package coordinate, (c) the
+  reasoning. Without the third, the suppression is opaque and rots.
+
+  Template:
+
+  <suppress until="YYYY-MM-DD">
+    <notes>Why this CVE doesn't apply / accepted residual risk.</notes>
+    <packageUrl regex="true">^pkg:maven/group/artifact@.*$</packageUrl>
+    <cve>CVE-YYYY-NNNNN</cve>
+  </suppress>
+
+  Re-evaluate suppressions on every release. The `until` attribute makes
+  expired suppressions show up as warnings.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>

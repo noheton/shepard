@@ -103,3 +103,49 @@ optionally a commit-hash citation in the row's notes.
 (contributor-facing progress matrix) are siblings, not duplicates.
 Both update on the same PR; they project different views of the
 same change.
+
+## Always: keep test coverage at the recommended floor
+
+Backend coverage gate: **≥ 60% line / ≥ 60% branch** measured via
+JaCoCo over the entire `de.dlr.shepard` package (current snapshot is
+~68% line / 66% branch). Enforced in CI via
+`-Djacoco.haltOnFailure=true` (`backend/pom.xml` `jacoco-maven-plugin`
+`check` execution). Local `mvn verify` defaults to off so partial
+runs don't error.
+
+When a PR adds non-trivial code:
+
+- **Add tests in the same PR.** A PR that drops coverage by more
+  than 0.5% line or 0.5% branch (new code's coverage averaged
+  against the bundle's prior level) needs either tests or an
+  explicit `aidocs/44` row noting why the floor moved.
+- **New code targets ≥ 70% line coverage** per the CI
+  `min-coverage-changed-files: 70` rule (`backend-ci.yml`). Higher
+  than the bundle floor because new code has no excuse — old code
+  carries the legacy debt that pulls the average down.
+- **Excluded classes** stay narrowly scoped (currently `Backend.*`
+  and `Constants.*`). Adding to `<excludes>` to dodge the gate is
+  the bug.
+
+Raise the bundle floor incrementally — when the measured number is
+2 percentage points above the floor, bump the floor in `backend/pom.xml`
+and the CI `min-coverage-overall` to the new floor. Don't ratchet
+in giant steps.
+
+## Always: keep the security gates green
+
+Two gates wired into `mvn verify` and CI:
+
+1. **SpotBugs + findsecbugs** — `spotbugs:check` with
+   `Effort=Max`, `Threshold=High`. Fail on any High-confidence
+   finding. Fix or suppress with a `@SuppressFBWarnings` carrying
+   a justification (no bare suppressions).
+2. **OWASP Dependency-Check** — runs weekly via
+   `.github/workflows/security.yml` and on `pom.xml` / `poetry.lock`
+   touch. Fails at `CVSS >= 7.0`. Suppress in
+   `backend/dependency-check-suppressions.xml` with a CVE id +
+   reasoning (no opaque suppressions).
+
+A PR that introduces a High SpotBugs finding or a CVSS-7+
+vulnerable dependency must either fix the issue or land a
+suppression with justification in the same PR.
