@@ -10,6 +10,7 @@ import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.UserGroupSearchBody;
 import de.dlr.shepard.common.search.io.UserGroupSearchParams;
 import de.dlr.shepard.common.search.io.UserGroupSearchResult;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ public class UserGroupSearchServiceTest extends BaseTestCase {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     var params = new UserGroupSearchParams(JSONquery);
     var searchBody = new UserGroupSearchBody(params);
-    String selectionQuery = Neo4jQueryBuilder.userGroupSelectionQuery(JSONquery);
+    Neo4jQuery selectionQuery = Neo4jQueryBuilder.userGroupSelectionQuery(JSONquery);
     var userGroup = new UserGroup(123);
     when(searchDAO.findUserGroups(selectionQuery, "userGroup")).thenReturn(List.of(userGroup));
     var actual = userGroupSearcher.search(searchBody);

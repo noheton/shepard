@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.endpoints.BasicCollectionAttributes;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.search.query.QueryValidator;
 import de.dlr.shepard.common.util.Constants;
@@ -36,7 +37,7 @@ public class CollectionSearchService {
     QueryValidator.checkQuery(collectionSearchQuery);
     PaginationHelper pagination = null;
     if (page.isPresent() && pageSize.isPresent()) pagination = new PaginationHelper(page.get(), pageSize.get());
-    String neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jSelectionQuery = Neo4jQueryBuilder.collectionSelectionQueryWithNeo4jId(
       collectionSearchQuery,
       user.getUsername(),
       new SortingHelper(orderBy, orderDesc)

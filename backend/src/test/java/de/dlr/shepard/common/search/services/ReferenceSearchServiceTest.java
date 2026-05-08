@@ -13,6 +13,7 @@ import de.dlr.shepard.common.search.io.ResultTriple;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.SearchParams;
 import de.dlr.shepard.common.search.io.SearchScope;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.TraversalRules;
@@ -61,7 +62,7 @@ public class ReferenceSearchServiceTest {
 
   @ParameterizedTest
   @MethodSource
-  public void test(SearchScope scope, String selectionQuery) {
+  public void test(SearchScope scope, Neo4jQuery selectionQuery) {
     var collection = new Collection(1L);
     collection.setShepardId(collection.getId());
     var dataObject = new DataObject(2L);

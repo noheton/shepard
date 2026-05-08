@@ -11,6 +11,7 @@ import de.dlr.shepard.common.neo4j.io.BasicContainerIO;
 import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchParams;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.SortingHelper;
@@ -55,7 +56,7 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.BASIC);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.BASIC,
       new SortingHelper(null, null),
@@ -80,7 +81,7 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.FILE);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    String neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jFileSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.FILE,
       new SortingHelper(null, null),
@@ -105,7 +106,7 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\", \"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.TIMESERIES);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    String neo4jTimeseriesQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jTimeseriesQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.TIMESERIES,
       new SortingHelper(null, null),
@@ -128,7 +129,7 @@ public class ContainerSearchServiceTest {
     String JSONquery = "{\"property\": \"name\", \"value\": \"MyName\",\"operator\": \"eq\"}";
     ContainerSearchParams params = new ContainerSearchParams(JSONquery, ContainerType.STRUCTUREDDATA);
     ContainerSearchBody searchBody = new ContainerSearchBody(params);
-    String neo4jStructuredDataSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jStructuredDataSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       JSONquery,
       ContainerType.STRUCTUREDDATA,
       new SortingHelper(null, null),

@@ -8,6 +8,7 @@ import de.dlr.shepard.common.search.daos.SearchDAO;
 import de.dlr.shepard.common.search.io.ContainerSearchBody;
 import de.dlr.shepard.common.search.io.ContainerSearchParams;
 import de.dlr.shepard.common.search.io.ContainerSearchResult;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.search.query.QueryValidator;
 import de.dlr.shepard.common.util.PaginationHelper;
@@ -34,7 +35,7 @@ public class ContainerSearchService {
 
     ContainerSearchParams containerSearchParams = containerSearchBody.getSearchParams();
     QueryValidator.checkQuery(containerSearchBody.getSearchParams().getQuery());
-    String neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
+    Neo4jQuery neo4jSelectionQuery = Neo4jQueryBuilder.containerSelectionQueryWithNeo4jId(
       containerSearchParams.getQuery(),
       containerSearchParams.getQueryType(),
       sortOrder,
@@ -54,7 +55,7 @@ public class ContainerSearchService {
   }
 
   private List<BasicContainerIO> findContainerList(
-    String neo4jSelectionQuery,
+    Neo4jQuery neo4jSelectionQuery,
     ContainerSearchParams searchParams,
     PaginationHelper pagination
   ) {

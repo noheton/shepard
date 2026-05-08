@@ -4,6 +4,7 @@ import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.neo4j.entities.BasicContainer;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.PaginationHelper;
@@ -12,7 +13,6 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 import org.neo4j.ogm.session.Session;
@@ -27,71 +27,65 @@ public class SearchDAO {
   }
 
   public List<Collection> findCollections(
-    String selectionQuery,
+    Neo4jQuery selectionQuery,
     PaginationHelper pagination,
     String collectionVariable
   ) {
-    String query = selectionQuery + emitCollectionReturnPart(collectionVariable, pagination);
-    Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
+    String query = selectionQuery.cypher() + emitCollectionReturnPart(collectionVariable, pagination);
+    Iterable<Collection> collections = session.query(Collection.class, query, selectionQuery.params());
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;
   }
 
-  public List<Collection> findCollections(String query) {
-    Iterable<Collection> collections = session.query(Collection.class, query, Collections.emptyMap());
-    var ret = StreamSupport.stream(collections.spliterator(), false).toList();
-    return ret;
-  }
-
-  public Integer getCollectionTotalCount(String selectionQuery, String collectionVariable) {
-    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery, collectionVariable);
-    Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
+  public Integer getCollectionTotalCount(Neo4jQuery selectionQuery, String collectionVariable) {
+    String query = "%s RETURN COUNT(%s)".formatted(selectionQuery.cypher(), collectionVariable);
+    Iterable<Integer> collectionTotalCountIterable = session.query(Integer.class, query, selectionQuery.params());
     return collectionTotalCountIterable.iterator().next();
   }
 
-  public List<DataObject> findDataObjects(String selectionQuery, String dataObjectVariable) {
-    String query = selectionQuery + emitDataObjectReturnPart(dataObjectVariable);
-    Iterable<DataObject> collections = session.query(DataObject.class, query, Collections.emptyMap());
+  public List<DataObject> findDataObjects(Neo4jQuery selectionQuery, String dataObjectVariable) {
+    String query = selectionQuery.cypher() + emitDataObjectReturnPart(dataObjectVariable);
+    Iterable<DataObject> collections = session.query(DataObject.class, query, selectionQuery.params());
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;
   }
 
-  public List<BasicReference> findReferences(String selectionQuery, String referenceVariable) {
-    String query = selectionQuery + emitReferencesReturnPart(referenceVariable);
-    Iterable<BasicReference> collections = session.query(BasicReference.class, query, Collections.emptyMap());
+  public List<BasicReference> findReferences(Neo4jQuery selectionQuery, String referenceVariable) {
+    String query = selectionQuery.cypher() + emitReferencesReturnPart(referenceVariable);
+    Iterable<BasicReference> collections = session.query(BasicReference.class, query, selectionQuery.params());
     var ret = StreamSupport.stream(collections.spliterator(), false).toList();
     return ret;
   }
 
   public List<BasicContainer> findContainers(
-    String selectionQuery,
+    Neo4jQuery selectionQuery,
     PaginationHelper pagination,
     String containerVariable
   ) {
-    String query = selectionQuery + emitContainerReturnPart(containerVariable, pagination);
-    Iterable<BasicContainer> basicContainers = session.query(BasicContainer.class, query, Collections.emptyMap());
+    String query = selectionQuery.cypher() + emitContainerReturnPart(containerVariable, pagination);
+    Iterable<BasicContainer> basicContainers = session.query(BasicContainer.class, query, selectionQuery.params());
     List<BasicContainer> ret = new ArrayList<>();
     basicContainers.forEach(ret::add);
     return ret;
   }
 
-  public Integer getContainerTotalCount(String selectionQuery, String containerVariable) {
-    String query = selectionQuery + emitTotalCountReturnPart(containerVariable);
-    Iterable<Integer> containerTotalCountIterable = session.query(Integer.class, query, Collections.emptyMap());
+  public Integer getContainerTotalCount(Neo4jQuery selectionQuery, String containerVariable) {
+    String query = selectionQuery.cypher() + emitTotalCountReturnPart(containerVariable);
+    Iterable<Integer> containerTotalCountIterable = session.query(Integer.class, query, selectionQuery.params());
     return containerTotalCountIterable.iterator().next();
   }
 
-  public List<User> findUsers(String selectionQuery, String userVariable) {
-    String query = selectionQuery + emitUserReturnPart(userVariable);
-    Iterable<User> users = session.query(User.class, query, Collections.emptyMap());
+  public List<User> findUsers(Neo4jQuery selectionQuery, String userVariable) {
+    String query = selectionQuery.cypher() + emitUserReturnPart(userVariable);
+    Iterable<User> users = session.query(User.class, query, selectionQuery.params());
     List<User> ret = new ArrayList<>();
     users.forEach(ret::add);
     return ret;
   }
 
-  public List<UserGroup> findUserGroups(String selectionQuery, String userGroupVariable) {
-    String query = selectionQuery + emitUserGroupReturnPart(userGroupVariable);
-    Iterable<UserGroup> userGroups = session.query(UserGroup.class, query, Collections.emptyMap());
+  public List<UserGroup> findUserGroups(Neo4jQuery selectionQuery, String userGroupVariable) {
+    String query = selectionQuery.cypher() + emitUserGroupReturnPart(userGroupVariable);
+    Iterable<UserGroup> userGroups = session.query(UserGroup.class, query, selectionQuery.params());
     List<UserGroup> ret = new ArrayList<>();
     userGroups.forEach(ret::add);
     return ret;
