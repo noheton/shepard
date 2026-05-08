@@ -18,12 +18,12 @@ public class StructuredDataDAO extends GenericDAO<StructuredData> {
    * @return the found structuredData or null
    */
   public StructuredData find(long containerId, String oid) {
+    // C5b fix: bind containerId as a Cypher parameter rather than concatenating it.
     var query =
-      "MATCH (c:StructuredDataContainer)-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) WHERE ID(c)=%d %s".formatted(
-          containerId,
+      "MATCH (c:StructuredDataContainer)-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) WHERE ID(c)=$containerId %s".formatted(
           CypherQueryHelper.getReturnPart("s")
         );
-    var results = findByQuery(query, Map.of("oid", oid));
+    var results = findByQuery(query, Map.of("oid", oid, "containerId", containerId));
     return results.iterator().hasNext() ? results.iterator().next() : null;
   }
 

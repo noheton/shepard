@@ -226,13 +226,15 @@ public class GenericDAOTest extends BaseTestCase {
 
   @Test
   public void getSearchForReachableReferencesQueryStartIdTest() {
+    // C5b: id(d) and id(col) are bound as Cypher parameters $startId / $collectionId.
     long startId = 1L;
     long collectionId = 2L;
     String userName = "user";
     String startIdQuery =
-      "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = 1 AND id(col) = 2 AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
+      "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = $startId AND id(col) = $collectionId AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
     var actual = dao.getSearchForReachableReferencesQuery(collectionId, startId, userName);
-    assertEquals(startIdQuery, actual);
+    assertEquals(startIdQuery, actual.cypher());
+    assertEquals(Map.of("startId", 1L, "collectionId", 2L), actual.params());
   }
 
   @Test
@@ -291,13 +293,33 @@ public class GenericDAOTest extends BaseTestCase {
   }
 
   @Test
+  public void getSearchForReachableReferencesByNeo4jIdQueryTest() {
+    // C5b: parametrised id(d) and id(col) for the traversal-rule variant.
+    long startId = 1L;
+    long collectionId = 2L;
+    String userName = "user";
+    var actual = dao.getSearchForReachableReferencesByNeo4jIdQuery(
+      TraversalRules.children,
+      collectionId,
+      startId,
+      userName
+    );
+    String expected =
+      "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)-[:has_child*0..]->(e:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(d) = $startId AND id(col) = $collectionId AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
+    assertEquals(expected, actual.cypher());
+    assertEquals(Map.of("startId", 1L, "collectionId", 2L), actual.params());
+  }
+
+  @Test
   public void getSearchForReachableReferencesQueryCollectionIdOnly() {
+    // C5b: id(col) is bound as Cypher parameter $collectionId.
     long collectionId = 1L;
     String userName = "user";
     String expected =
-      "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(col) = 1 AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
-    String actual = dao.getSearchForReachableReferencesQuery(collectionId, userName);
-    assertEquals(expected, actual);
+      "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)-[hr:has_reference]->(r:TestObject) WITH nodes(path) as ns, r as ret WHERE id(col) = $collectionId AND NONE(node IN ns WHERE (node.deleted = TRUE)) AND (NOT exists((col)-[:has_permissions]->(:Permissions)) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by|owned_by]->(:User { username: \"user\" })) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"Public\"})) OR exists((col)-[:has_permissions]->(:Permissions {permissionType: \"PublicReadable\"})) OR exists((col)-[:has_permissions]->(:Permissions)-[:readable_by_group]->(:UserGroup)<-[:is_in_group]-(:User { username: \"user\"}))) MATCH path=(ret)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN ret, nodes(path), relationships(path)";
+    var actual = dao.getSearchForReachableReferencesQuery(collectionId, userName);
+    assertEquals(expected, actual.cypher());
+    assertEquals(Map.of("collectionId", 1L), actual.params());
   }
 
   //new test

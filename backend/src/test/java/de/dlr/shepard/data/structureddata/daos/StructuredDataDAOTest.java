@@ -2,6 +2,7 @@ package de.dlr.shepard.data.structureddata.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -25,16 +26,19 @@ public class StructuredDataDAOTest extends BaseTestCase {
 
   @Test
   public void findTest() {
+    // C5b: ID(c) is bound as Cypher parameter $containerId alongside $oid.
     var sd = new StructuredData("oid", new Date(), "name");
     var query =
       """
       MATCH (c:StructuredDataContainer)-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) \
-      WHERE ID(c)=123 MATCH path=(s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      WHERE ID(c)=$containerId MATCH path=(s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN s, nodes(path), relationships(path)""";
+    var paramsMap = Map.<String, Object>of("oid", "oid", "containerId", 123L);
 
-    when(session.query(StructuredData.class, query, Map.of("oid", "oid"))).thenReturn(List.of(sd));
+    when(session.query(StructuredData.class, query, paramsMap)).thenReturn(List.of(sd));
     var actual = dao.find(123L, "oid");
     assertEquals(sd, actual);
+    verify(session).query(StructuredData.class, query, paramsMap);
   }
 
   @Test
@@ -42,10 +46,11 @@ public class StructuredDataDAOTest extends BaseTestCase {
     var query =
       """
       MATCH (c:StructuredDataContainer)-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) \
-      WHERE ID(c)=123 MATCH path=(s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      WHERE ID(c)=$containerId MATCH path=(s)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN s, nodes(path), relationships(path)""";
+    var paramsMap = Map.<String, Object>of("oid", "oid", "containerId", 123L);
 
-    when(session.query(StructuredData.class, query, Map.of("oid", "oid"))).thenReturn(Collections.emptyList());
+    when(session.query(StructuredData.class, query, paramsMap)).thenReturn(Collections.emptyList());
     var actual = dao.find(123L, "oid");
     assertNull(actual);
   }

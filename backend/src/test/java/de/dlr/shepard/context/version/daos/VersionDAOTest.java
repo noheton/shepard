@@ -157,14 +157,16 @@ public class VersionDAOTest extends BaseTestCase {
 
   @Test
   public void findVersionLigthByNeo4jIdTest() {
+    // C5b: id(ve) is bound as Cypher parameter $neo4jId.
     Version ver = new Version();
     ver.setName("name");
     long neo4jId = 10L;
-    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = " + neo4jId + " RETURN v";
-    Map<String, Object> paramsMap = new HashMap<>();
+    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = $neo4jId RETURN v";
+    Map<String, Object> paramsMap = Map.of("neo4jId", neo4jId);
     when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver));
     Version found = dao.findVersionLightByNeo4jId(neo4jId);
     assertEquals(ver, found);
+    verify(session).query(Version.class, query, paramsMap);
   }
 
   //@Test

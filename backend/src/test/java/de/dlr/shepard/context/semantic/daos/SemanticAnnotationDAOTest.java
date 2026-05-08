@@ -8,6 +8,7 @@ import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -29,18 +30,20 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
 
   @Test
   public void findAllSemanticAnnotationsTest() {
+    // C5b: ID(e) is bound as Cypher parameter $entityId.
     var annotation = new SemanticAnnotation(1L);
     annotation.setPropertyName("Test");
 
     var query =
       """
       MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) \
-      WHERE ID(e)=1 WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      WHERE ID(e)=$entityId WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN a, nodes(path), relationships(path)""";
-    when(session.query(SemanticAnnotation.class, query, Collections.emptyMap())).thenReturn(List.of(annotation));
+    var paramsMap = Map.<String, Object>of("entityId", 1L);
+    when(session.query(SemanticAnnotation.class, query, paramsMap)).thenReturn(List.of(annotation));
 
     var actual = dao.findAllSemanticAnnotationsByNeo4jId(1L);
-    verify(session).query(SemanticAnnotation.class, query, Collections.emptyMap());
+    verify(session).query(SemanticAnnotation.class, query, paramsMap);
     assertEquals(List.of(annotation), actual);
   }
 
