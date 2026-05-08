@@ -252,7 +252,7 @@ Test / demo deployments worth knowing about:
 
 | URL | Path | Notes |
 |---|---|---|
-| **`https://shepard.nuclide.systems`** | Self-hosted Docker host fronted by Zoraxy (per `docs/deploy-self-hosted-zoraxy.md` §5a — "existing-host dev workflow") | The primary test deployment for this fork. Iterates ahead of `main`; useful as a smoke target after each landing. Operator: this fork's maintainer. |
+| **`https://shepard.nuclide.systems`** | Self-hosted Docker host fronted by Zoraxy (per `docs/deploy-self-hosted-zoraxy.md` §5a — "existing-host dev workflow"). **Dispatcher-deployable** via `.github/workflows/deploy-test-instance.yml` (§5a.10) — every push to `main` builds GHCR images and SSH-deploys. Image tags: `ghcr.io/noheton/shepard-{backend,frontend}:latest` plus per-SHA tags. | The primary test deployment for this fork. Iterates ahead of `main`; useful as a smoke target after each landing. Operator: this fork's maintainer. |
 
 Add new rows here as more reference deployments come online.
 

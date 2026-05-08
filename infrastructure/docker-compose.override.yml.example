@@ -1,0 +1,18 @@
+# Operator template for points-shepard-at-this-fork's-images.
+#
+# Copy to docker-compose.override.yml on the deployment host. The
+# `Deploy to test instance` workflow expects this layout — it sets
+# the SHEPARD_BACKEND_IMAGE / SHEPARD_FRONTEND_IMAGE env vars before
+# invoking `docker compose pull` + `up -d`.
+#
+# Without this override, infrastructure/docker-compose.yml runs against
+# upstream gitlab.com/dlr-shepard/shepard images and the fork's changes
+# (L2a/L2b/L2c, R2 export, M2/M4/M5, future C5/C5b/H4/P4/...) are NOT
+# served.
+
+services:
+  backend:
+    image: ${SHEPARD_BACKEND_IMAGE:-ghcr.io/noheton/shepard-backend:latest}
+
+  frontend:
+    image: ${SHEPARD_FRONTEND_IMAGE:-ghcr.io/noheton/shepard-frontend:latest}

@@ -212,6 +212,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | OWASP Dependency-Check (weekly + on pom changes; `failBuildOnCVSS=7`) | none | shipped via `.github/workflows/security.yml`; suppressions in `backend/dependency-check-suppressions.xml` with CVE+reason format | **✓ ↑** | `.github/workflows/security.yml` |
 | Secret scanning (gitleaks weekly + on push) | none | shipped via `.github/workflows/security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
 | GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
+| Container images published to GHCR (`ghcr.io/noheton/shepard-{backend,frontend}:{latest,sha-<7>,vX.Y.Z}`) | upstream publishes to gitlab.com | shipped via `.github/workflows/build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
+| Auto-deploy to test instance `shepard.nuclide.systems` on push to `main` | n/a | shipped via `.github/workflows/deploy-test-instance.yml` (chains off `Build images`); SSH-deploy + smoke-test of `/healthz`. Image override template at `infrastructure/docker-compose.override.yml.example` | **✓ ↑** | `.github/workflows/deploy-test-instance.yml` / `docs/deploy-self-hosted-zoraxy.md §5a.10` |
 
 ## 13c. Plugin system + dev experience
 
