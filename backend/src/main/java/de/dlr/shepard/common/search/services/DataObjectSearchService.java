@@ -8,6 +8,7 @@ import de.dlr.shepard.common.search.io.ResponseBody;
 import de.dlr.shepard.common.search.io.ResultTriple;
 import de.dlr.shepard.common.search.io.SearchBody;
 import de.dlr.shepard.common.search.io.SearchScope;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.search.query.Neo4jQueryBuilder;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.TraversalRules;
@@ -35,7 +36,7 @@ public class DataObjectSearchService {
     for (SearchScope scope : scopes) {
       // no CollectionId and no DataObjectId given
       if (scope.getCollectionId() == null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(
+        Neo4jQuery selectionQuery = Neo4jQueryBuilder.dataObjectSelectionQueryWithNeo4jId(
           searchBodyQuery,
           user.getUsername()
         );
@@ -44,7 +45,7 @@ public class DataObjectSearchService {
       }
       // CollectionId given but no DataObjectId
       else if (scope.getCollectionId() != null && scope.getDataObjectId() == null) {
-        String selectionQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(
+        Neo4jQuery selectionQuery = Neo4jQueryBuilder.collectionDataObjectSelectionQueryWithNeo4jId(
           scope.getCollectionId(),
           searchBodyQuery,
           user.getUsername()
@@ -57,7 +58,7 @@ public class DataObjectSearchService {
         // search according to TraversalRules
         if (scope.getTraversalRules().length != 0) {
           for (TraversalRules traversalRules : scope.getTraversalRules()) {
-            String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
+            Neo4jQuery selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
               scope,
               traversalRules,
               searchBodyQuery,
@@ -69,7 +70,7 @@ public class DataObjectSearchService {
         }
         // no TraversalRules given
         else {
-          String selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
+          Neo4jQuery selectionQuery = Neo4jQueryBuilder.collectionDataObjectDataObjectSelectionQueryWithNeo4jId(
             scope,
             searchBodyQuery,
             user.getUsername()

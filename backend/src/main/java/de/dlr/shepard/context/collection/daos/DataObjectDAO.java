@@ -34,8 +34,13 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * @return a List of DataObjects
    */
   public List<DataObject> findByCollectionByNeo4jIds(long collectionId, QueryParamHelper params) {
+    // C5 fix: bind every id as a Cypher parameter rather than concatenating
+    // it into the query string. Numeric ids are not user-controlled today
+    // but the parametric shape keeps these sites safe under L2c when ids
+    // become UUID strings.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", params.getName());
+    paramsMap.put("collectionId", collectionId);
     if (params.hasPagination()) {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
@@ -43,14 +48,15 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     String match =
       "MATCH (c:Collection)-[hdo:has_dataobject]->" +
       CypherQueryHelper.getObjectPart("d", "DataObject", params.hasName());
-    String where = " WHERE ID(c)=" + collectionId;
+    String where = " WHERE ID(c)=$collectionId";
 
     if (params.hasParentId()) {
       if (params.getParentId() == -1) {
         where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
       } else {
         match += "<-[:has_child]-(parent:DataObject {deleted: FALSE})";
-        where += " AND ID(parent)=" + params.getParentId();
+        where += " AND ID(parent)=$parentId";
+        paramsMap.put("parentId", params.getParentId());
       }
     }
 
@@ -59,7 +65,8 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
       } else {
         match += "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE})";
-        where += " AND ID(predecessor)=" + params.getPredecessorId();
+        where += " AND ID(predecessor)=$predecessorId";
+        paramsMap.put("predecessorId", params.getPredecessorId());
       }
     }
     if (params.hasSuccessorId()) {
@@ -67,7 +74,8 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
       } else {
         match += "-[:has_successor]->(successor:DataObject {deleted: FALSE})";
-        where += " AND ID(successor)=" + params.getSuccessorId();
+        where += " AND ID(successor)=$successorId";
+        paramsMap.put("successorId", params.getSuccessorId());
       }
     }
 
@@ -253,12 +261,10 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     dataObject.setUpdatedAt(updatedAt);
     dataObject.setDeleted(true);
     createOrUpdate(dataObject);
-    String query = String.format(
-      "MATCH (d:DataObject) WHERE ID(d) = %d OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
-      "FOREACH (n in [d,r] | SET n.deleted = true)",
-      id
-    );
-    var result = runQuery(query, Collections.emptyMap());
+    String query =
+      "MATCH (d:DataObject) WHERE ID(d) = $dataObjectId OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
+      "FOREACH (n in [d,r] | SET n.deleted = true)";
+    var result = runQuery(query, Map.of("dataObjectId", id));
     return result;
   }
 
@@ -276,12 +282,10 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     dataObject.setUpdatedAt(updatedAt);
     dataObject.setDeleted(true);
     createOrUpdate(dataObject);
-    String query = String.format(
-      "MATCH (d:DataObject) WHERE ID(d) = %d OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
-      "FOREACH (n in [d,r] | SET n.deleted = true)",
-      dataObject.getId()
-    );
-    var result = runQuery(query, Collections.emptyMap());
+    String query =
+      "MATCH (d:DataObject) WHERE ID(d) = $dataObjectId OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
+      "FOREACH (n in [d,r] | SET n.deleted = true)";
+    var result = runQuery(query, Map.of("dataObjectId", dataObject.getId()));
     return result;
   }
 

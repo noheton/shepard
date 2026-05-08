@@ -41,12 +41,17 @@ public class PermissionsDAOTest extends BaseTestCase {
     var perm = new Permissions(1L);
     String query =
       """
-      MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 2 \
+      MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = $entityId \
       MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN p, nodes(path), relationships(path)""";
-    when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(List.of(perm));
+    Map<String, Object> params = Map.of("entityId", 2L);
+    when(session.query(Permissions.class, query, params)).thenReturn(List.of(perm));
     var actual = dao.findByEntityNeo4jId(2L);
-    verify(session).query(Permissions.class, query, Collections.emptyMap());
+    verify(session).query(Permissions.class, query, params);
+    // C5: assert the query string does NOT contain the raw id payload —
+    // the value flows in via the parameter map only.
+    assertThat(query).doesNotContain("= 2 ").contains("$entityId");
+    assertThat(params).containsEntry("entityId", 2L);
     assertEquals(perm, actual);
   }
 
@@ -54,12 +59,13 @@ public class PermissionsDAOTest extends BaseTestCase {
   public void findByEntityTest_notFound() {
     String query =
       """
-      MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = 1 \
+      MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = $entityId \
       MATCH path=(p)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN p, nodes(path), relationships(path)""";
-    when(session.query(Permissions.class, query, Collections.emptyMap())).thenReturn(Collections.emptyList());
+    Map<String, Object> params = Map.of("entityId", 1L);
+    when(session.query(Permissions.class, query, params)).thenReturn(Collections.emptyList());
     var actual = dao.findByEntityNeo4jId(1L);
-    verify(session).query(Permissions.class, query, Collections.emptyMap());
+    verify(session).query(Permissions.class, query, params);
     assertNull(actual);
   }
 

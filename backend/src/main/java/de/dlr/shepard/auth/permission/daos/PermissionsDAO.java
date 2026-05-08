@@ -17,10 +17,14 @@ import java.util.Set;
 public class PermissionsDAO extends GenericDAO<Permissions> {
 
   public Permissions findByEntityNeo4jId(long entityId) {
+    // C5 fix: bind entityId as a Cypher parameter rather than concatenating
+    // it into the query string. Today entityId is a Java long so the prior
+    // .formatted(...) shape was structurally safe, but parametrising now
+    // also keeps the call site safe under L2c when ids become UUID strings.
     String query =
-      "MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = %d ".formatted(entityId) +
+      "MATCH (e:BasicEntity)-[:has_permissions]->(p:Permissions) WHERE ID(e) = $entityId " +
       CypherQueryHelper.getReturnPart("p");
-    var permissions = findByQuery(query, Collections.emptyMap());
+    var permissions = findByQuery(query, Map.of("entityId", entityId));
     if (permissions.iterator().hasNext()) return permissions.iterator().next();
     return null;
   }
