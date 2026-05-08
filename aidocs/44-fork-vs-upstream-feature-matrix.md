@@ -321,6 +321,10 @@ namespace; core enforces the shape.
 | **This** fork-vs-upstream feature matrix (contributor-facing) | n/a | this doc | **✓ ↑** | this doc |
 | LUMEN-inspired showcase seed + analysis notebook | none | shipped (`examples/seed-showcase/`) | **✓ ↑** | PR #1001 |
 | Upstream-current parallel import script (`import_upstream.py`) for the same showcase data | n/a (the upstream itself) | shipped | **✓ ↑** | PR #1001 |
+| **In-app user docs** — Nuxt `/help` route serving `docs/*.md` from the same source as the Pages site | none | TBD; same source, two presentations | 📐 (queued, D1a) | `aidocs/49` |
+| **Playwright screenshot pipeline** capturing against `shepard.nuclide.systems` test deployment, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
+| Task-shaped help pages (upload-data / share-collection / export-rocrate / process-step) for casual users | none | TBD | 📐 (queued, D1c) | `aidocs/49 §2.2` |
+| Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
 
 ## 17. Companion ecosystem
 

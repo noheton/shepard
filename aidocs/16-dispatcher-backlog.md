@@ -194,6 +194,14 @@ Status legend:
 | N1e | Frontend annotation picker shows pre-seeded ontology terms by default; couples to `aidocs/14` term-search facet. | — | M | gated on N1a + `aidocs/14` | Casual-user UX close. |
 | N1f | (optional) `/v2/semantic/{repoAppId}/sparql` proxy endpoint that wraps n10s SPARQL with shepard auth. | — | M | queued | Operator-config alternative if not done. |
 | N1g | (deferred) Reasoner integration — pure Cypher inference rules for SKOS broader-narrower; no RDFS/OWL reasoner. | — | L | parked | |
+| D1 | In-app user docs — umbrella | user request, `aidocs/49` | M-L | **design done** | `aidocs/49`. Frontend `/help` route serves `docs/*.md` rendered; Playwright pipeline captures against `shepard.nuclide.systems` and commits PNGs to `docs/assets/screenshots/`. Sub-IDs D1a-D1g below. |
+| D1a | Frontend `/help` route + `HelpFrame.vue` + build-time copy of `docs/_site/` to `frontend/public/help/`. Top-nav "Help" link. | — | M | queued | Self-contained; works offline; same origin. |
+| D1b | Playwright spec + `.github/workflows/screenshot-pipeline.yml` + `marker-routes.ts`. First capture against `shepard.nuclide.systems`; replaces placeholder markers in `docs/showcase.md`. | — | M | gated on D1a + maintainer publishes `SHEPARD_TEST_INSTANCE_APIKEY` repo secret | The pipeline that's been waiting on a real test deployment. |
+| D1c | Task-shaped help pages — `docs/help/upload-data.md`, `share-collection.md`, `export-rocrate.md`, `process-step.md`. | — | S each | gated on D1a | Casual-user-task-shaped, complements feature-shaped `docs/user-guide.md`. |
+| D1d | Version stamping — `docs/_site/version.json` + frontend version display + footer "Help for shepard X.Y" + build-time check vs `pom.xml` `<revision>`. | — | S | gated on D1a | Closes version-drift gap. |
+| D1e | Per-page "Was this helpful?" telemetry — anonymous, opt-out, summary stats only. | — | M | gated on D1a + privacy review | |
+| D1f | (deferred) Multilingual docs — `docs/de/*.md`, picker driven by `aidocs/36 §3.2 language` setting. | — | L | parked | |
+| D1g | (deferred) Inline contextual help — every page in shepard has a "?" icon that pops the relevant help section. | — | M | parked | Phases into the casual-user UX after D1c content lands. |
 
 ### Streaming / publication
 
