@@ -90,21 +90,87 @@ Path (ii) shape:
 - Top nav gets a "Help" item linking to `/help`; same pane shape
   as `aidocs/33 §W12` Configuration.
 
-### 2.2 Doc-source layout (unchanged)
+### 2.2 Doc-source layout — two-track structure
 
-`docs/` stays the source. Existing pages (`admin.md`, `getting-started.md`,
-`user-guide.md`, `architecture.md`, `system-requirements.md`,
-`showcase.md`, `deploy*.md`) are the v1 in-app catalogue. New
-casual-user-focused pages added as needed:
+`docs/` stays the source. The user-facing content is organised in
+**two tracks under one nav** so casual users land on a friendly
+front door but power users still find every feature documented:
 
+**Track A — "Get started / Common tasks" (casual landing).**
+Task-shaped, ≤ 5-minute path-to-success per page, heavy on
+screenshots, links forward to the reference for depth. Lives at
+`docs/help/`:
+
+- `docs/help/index.md` — the `/help` landing page. "I want to do
+  X" picker linking into the task pages.
 - `docs/help/upload-data.md` — "How do I get my data into shepard?"
-- `docs/help/share-collection.md` — "How do I share with a colleague?"
-- `docs/help/export-rocrate.md` — "How do I export for publication?"
-- `docs/help/process-step.md` — "How do I follow a templated process?"
+- `docs/help/share-collection.md` — "How do I share with a
+  colleague?"
+- `docs/help/export-rocrate.md` — "How do I export for
+  publication?"
+- `docs/help/process-step.md` — "How do I follow a templated
+  process?"
+- `docs/help/find-data.md` — "How do I find a dataset I (or someone
+  else) created?"
+- `docs/help/annotate.md` — "How do I tag data with an ontology
+  term?"
+- `docs/help/lab-journal.md` — "How do I write a lab journal entry?"
+- `docs/help/dashboard.md` — "How do I get a chart from my data?"
+  (post-AI1e snap dashboards)
 
-These are **task-shaped**, not feature-shaped. The existing
-`docs/user-guide.md` is feature-shaped (good for power users);
-the new `docs/help/*.md` is task-shaped (good for casual users).
+**Track B — "Reference / Every feature" (comprehensive).**
+Feature-shaped, complete per shipped feature. Lives at the existing
+`docs/` top-level + a new `docs/reference/` for per-primitive
+deep-dives:
+
+| Primitive | Reference page |
+|---|---|
+| Collection | `docs/reference/collection.md` |
+| DataObject | `docs/reference/data-object.md` |
+| FileReference | `docs/reference/file-reference.md` |
+| StructuredDataReference | `docs/reference/structured-data-reference.md` |
+| TimeseriesReference | `docs/reference/timeseries-reference.md` |
+| SpatialDataReference | `docs/reference/spatial-data-reference.md` |
+| HdfReference *(post-A5)* | `docs/reference/hdf-reference.md` |
+| GitReference *(post-G1)* | `docs/reference/git-reference.md` |
+| Permissions | `docs/reference/permissions.md` |
+| Annotations | `docs/reference/annotations.md` |
+| Lab journal | `docs/reference/lab-journal.md` |
+| Versions / Snapshots *(post-V2)* | `docs/reference/snapshots.md` |
+| Templates *(post-T1)* | `docs/reference/templates.md` |
+| Processes *(post-PR1)* | `docs/reference/processes.md` |
+| API keys + ORCID + profile *(post-U1)* | `docs/reference/profile.md` |
+| AI features *(post-AI1)* | `docs/reference/ai-features.md` |
+| Configuration / preferences | `docs/reference/preferences.md` |
+
+Existing `user-guide.md` becomes the **bridge index** that links
+into both tracks; `getting-started.md` stays the API-quickstart
+flavour for power users; `architecture.md` / `system-requirements.md`
+/ `admin.md` / `deploy*.md` stay where they are (admin/operator
+audience, untouched).
+
+**Track-A pages always link to track-B for depth.** Track-B
+pages always link back to track-A "common tasks." A casual user
+who needs more never hits a dead end; a power user who needs the
+quick path doesn't have to scroll through reference prose.
+
+### 2.2a The completeness standing rule
+
+**Every user-visible feature must ship a user-doc page in the same
+PR.** Tracked as a new standing rule in `CLAUDE.md` (§docs
+currency); reviewers reject feature-shipping PRs without the
+matching `docs/reference/*.md` (and a `docs/help/*.md` if the
+feature has a casual-task expression). This is the structural fix
+for "the docs always reflect what shepard does today" — same shape
+as the vision (`aidocs/42`) and matrix (`aidocs/44`) currency
+rules already in `CLAUDE.md`.
+
+The catalogue in §2.2 above is the **target state** at full
+feature parity. As of the snapshot date most reference pages are
+**TBD** — they land per-feature as their slices ship. The
+casual-landing pages (track A) ship at D1c as a unit so the
+front-door feels complete from day 1 even when the reference
+backbone is still filling in.
 
 ### 2.3 Versioning
 
@@ -294,7 +360,8 @@ Documented in `docs/admin.md`'s "Generating in-app docs" section.
 |---|---|---|---|
 | **D1a** | Frontend `/help` route + Vue `HelpFrame.vue` component + frontend build copies `docs/_site/` to `frontend/public/help/`. Top-nav "Help" link. | M | None |
 | **D1b** | Playwright spec + workflow + marker-routes file. First capture against `shepard.nuclide.systems`. Replaces every `<figure class="screenshot-placeholder">` in `docs/showcase.md`. | M | D1a + maintainer publishes `SHEPARD_TEST_INSTANCE_APIKEY` repo secret |
-| **D1c** | Task-shaped help pages: `upload-data.md`, `share-collection.md`, `export-rocrate.md`, `process-step.md`. | S each | D1a |
+| **D1c** | Track A casual-landing pages — `docs/help/index.md` + `upload-data.md` + `share-collection.md` + `export-rocrate.md` + `process-step.md` + `find-data.md` + `annotate.md` + `lab-journal.md`. Front-door feels complete from day 1. | M | D1a |
+| **D1c2** | Track B reference catalogue — backfill of `docs/reference/*.md` for every primitive *currently shipped* on `main` (Collection, DataObject, the four references, Permissions, Annotations, Lab journal, Configuration/preferences). Future shipped features land their reference page per the §2.2a standing rule, not via this slice. | M | D1a |
 | **D1d** | Version stamping — `docs/_site/version.json` + frontend version display + "Help for shepard X.Y" footer. | S | D1a |
 | **D1e** | Per-page "Was this helpful?" telemetry — anonymous, opt-out, summary stats only. | M | D1a + privacy review |
 | **D1f** | (deferred) Multilingual docs — `docs/de/*.md`, picker driven by `aidocs/36 §3.2 language` setting. | L | parked |
