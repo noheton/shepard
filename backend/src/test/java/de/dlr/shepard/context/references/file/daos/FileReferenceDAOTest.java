@@ -10,6 +10,7 @@ import de.dlr.shepard.context.references.file.entities.FileReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -55,15 +56,17 @@ public class FileReferenceDAOTest extends BaseTestCase {
       }
     };
 
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     var query =
       """
-      MATCH (d:DataObject)-[hr:has_reference]->(r:FileReference { deleted: FALSE }) WHERE ID(d)=1 \
+      MATCH (d:DataObject)-[hr:has_reference]->(r:FileReference { deleted: FALSE }) WHERE ID(d)=$dataObjectId \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
-    when(session.query(FileReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref2, ref3));
+    var paramsMap = Map.<String, Object>of("dataObjectId", 1L);
+    when(session.query(FileReference.class, query, paramsMap)).thenReturn(List.of(ref, ref2, ref3));
 
     var actual = dao.findByDataObjectNeo4jId(1L);
-    verify(session).query(FileReference.class, query, Collections.emptyMap());
+    verify(session).query(FileReference.class, query, paramsMap);
     assertEquals(List.of(ref), actual);
   }
 

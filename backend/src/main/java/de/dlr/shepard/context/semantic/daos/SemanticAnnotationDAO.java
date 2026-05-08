@@ -8,18 +8,19 @@ import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.StreamSupport;
 
 @RequestScoped
 public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
 
   public List<SemanticAnnotation> findAllSemanticAnnotationsByNeo4jId(long entityId) {
+    // C5b fix: bind entityId as a Cypher parameter rather than concatenating it.
     String query;
-    query = "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE ID(e)=%d WITH a %s".formatted(
-        entityId,
+    query = "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE ID(e)=$entityId WITH a %s".formatted(
         CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
       );
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var queryResult = findByQuery(query, Map.of("entityId", entityId));
     var ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }

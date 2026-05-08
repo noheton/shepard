@@ -7,6 +7,7 @@ import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
@@ -20,14 +21,14 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
    * @return a List of references
    */
   public List<DataObjectReference> findByDataObjectNeo4jId(long dataObjectId) {
+    // C5b fix: bind dataObjectId as a Cypher parameter rather than concatenating it.
     String query =
-      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ".formatted(
-          CypherQueryHelper.getObjectPart("r", "DataObjectReference", false),
-          dataObjectId
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=$dataObjectId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "DataObjectReference", false)
         ) +
       CypherQueryHelper.getReturnPart("r");
 
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var queryResult = findByQuery(query, Map.of("dataObjectId", dataObjectId));
 
     List<DataObjectReference> result = StreamSupport.stream(queryResult.spliterator(), false)
       .filter(r -> r.getDataObject() != null)

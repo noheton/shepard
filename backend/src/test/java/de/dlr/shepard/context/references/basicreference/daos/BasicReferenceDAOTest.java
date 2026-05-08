@@ -45,13 +45,15 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref.setName("Yes");
     ref4.setDataObject(obj2);
     ref4.setName("Yes");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", null);
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      WHERE ID(d)=$dataObjectId WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
 
@@ -104,13 +106,15 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref4.setName("Yes");
     ref5.setDataObject(obj);
     ref5.setName("No");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", "Yes");
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      WHERE ID(d)=$dataObjectId WITH r MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
 
@@ -166,13 +170,15 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref4.setName("Yes");
     ref5.setDataObject(obj);
     ref5.setName("No");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", "Yes");
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC \
+      WHERE ID(d)=$dataObjectId WITH r ORDER BY toLower(r.name) DESC \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
@@ -230,15 +236,17 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref.setName("Yes");
     ref4.setDataObject(obj2);
     ref4.setName("Yes");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("offset", 300);
     paramsMap.put("size", 100);
     paramsMap.put("name", null);
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size \
+      WHERE ID(d)=$dataObjectId WITH r SKIP $offset LIMIT $size \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
@@ -290,15 +298,17 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref.setName("Yes");
     ref4.setDataObject(obj2);
     ref4.setName("Yes");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("offset", 300);
     paramsMap.put("size", 100);
     paramsMap.put("name", null);
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
+      WHERE ID(d)=$dataObjectId WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4));
@@ -357,15 +367,17 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref4.setName("Yes");
     ref5.setDataObject(obj);
     ref5.setName("No");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("offset", 300);
     paramsMap.put("size", 100);
     paramsMap.put("name", "Yes");
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r SKIP $offset LIMIT $size \
+      WHERE ID(d)=$dataObjectId WITH r SKIP $offset LIMIT $size \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));
@@ -460,15 +472,17 @@ public class BasicReferenceDAOTest extends BaseTestCase {
     ref4.setName("Yes");
     ref5.setDataObject(obj);
     ref5.setName("No");
+    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("offset", 300);
     paramsMap.put("size", 100);
     paramsMap.put("name", "Yes");
+    paramsMap.put("dataObjectId", 1L);
 
     var query =
       """
       MATCH (d:DataObject)-[hr:has_reference]->(r:BasicReference { name : $name, deleted: FALSE }) \
-      WHERE ID(d)=1 WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
+      WHERE ID(d)=$dataObjectId WITH r ORDER BY toLower(r.name) DESC SKIP $offset LIMIT $size \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     when(session.query(BasicReference.class, query, paramsMap)).thenReturn(List.of(ref, ref3, ref4, ref5));

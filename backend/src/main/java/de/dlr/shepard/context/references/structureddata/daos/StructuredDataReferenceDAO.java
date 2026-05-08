@@ -8,6 +8,7 @@ import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.StreamSupport;
 
 @RequestScoped
@@ -20,13 +21,13 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
    * @return a List of references
    */
   public List<StructuredDataReference> findByDataObjectNeo4jId(long dataObjectId) {
+    // C5b fix: bind dataObjectId as a Cypher parameter rather than concatenating it.
     String query =
-      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=%d ".formatted(
-          CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false),
-          dataObjectId
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=$dataObjectId ".formatted(
+          CypherQueryHelper.getObjectPart("r", "StructuredDataReference", false)
         ) +
       CypherQueryHelper.getReturnPart("r");
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var queryResult = findByQuery(query, Map.of("dataObjectId", dataObjectId));
     List<StructuredDataReference> result = StreamSupport.stream(queryResult.spliterator(), false)
       .filter(r -> r.getDataObject() != null)
       .filter(r -> r.getDataObject().getId().equals(dataObjectId))
@@ -57,13 +58,13 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
     long startShepardId,
     String userName
   ) {
-    String query = getSearchForReachableReferencesByNeo4jIdQuery(
+    var query = getSearchForReachableReferencesByNeo4jIdQuery(
       traversalRule,
       collectionShepardId,
       startShepardId,
       userName
     );
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var queryResult = findByQuery(query.cypher(), query.params());
     List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }
@@ -73,8 +74,8 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
     long startId,
     String userName
   ) {
-    String query = getSearchForReachableReferencesQuery(collectionId, startId, userName);
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var query = getSearchForReachableReferencesQuery(collectionId, startId, userName);
+    var queryResult = findByQuery(query.cypher(), query.params());
     List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }
@@ -91,8 +92,8 @@ public class StructuredDataReferenceDAO extends VersionableEntityDAO<StructuredD
   }
 
   public List<StructuredDataReference> findReachableReferencesByNeo4jId(long collectionId, String userName) {
-    String query = getSearchForReachableReferencesQuery(collectionId, userName);
-    var queryResult = findByQuery(query, Collections.emptyMap());
+    var query = getSearchForReachableReferencesQuery(collectionId, userName);
+    var queryResult = findByQuery(query.cypher(), query.params());
     List<StructuredDataReference> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }

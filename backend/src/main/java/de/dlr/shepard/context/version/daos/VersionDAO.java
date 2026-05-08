@@ -70,9 +70,10 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public Version findVersionLightByNeo4jId(long neo4jId) {
+    // C5b fix: bind neo4jId as a Cypher parameter rather than concatenating it.
     Version ret = null;
-    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = " + neo4jId + " RETURN v";
-    Map<String, Object> paramsMap = new HashMap<>();
+    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = $neo4jId RETURN v";
+    Map<String, Object> paramsMap = Map.of("neo4jId", neo4jId);
     var resultSet = findByQuery(query, paramsMap);
     Iterator<Version> it = resultSet.iterator();
     if (it.hasNext()) {

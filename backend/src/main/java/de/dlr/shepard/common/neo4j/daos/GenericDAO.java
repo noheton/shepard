@@ -3,6 +3,7 @@ package de.dlr.shepard.common.neo4j.daos;
 import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.NeoConnector;
+import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
@@ -157,19 +158,23 @@ public abstract class GenericDAO<T> {
     return ret;
   }
 
-  public String getSearchForReachableReferencesByNeo4jIdQuery(
+  public Neo4jQuery getSearchForReachableReferencesByNeo4jIdQuery(
     TraversalRules traversalRule,
     long collectionShepardId,
     long startShepardId,
     String userName
   ) {
+    // C5b fix: bind id(d) / id(col) as Cypher parameters rather than concatenating
+    // them into the query string. Today these are Java longs so the prior shape
+    // was structurally safe, but parametrising now also keeps the call sites safe
+    // under L2c when ids become UUID strings.
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
     ret += getTraversalRulesPath(traversalRule);
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(d) = " + startShepardId + " AND id(col) = " + collectionShepardId;
+    ret += " WHERE id(d) = $startId AND id(col) = $collectionId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return ret;
+    return new Neo4jQuery(ret, Map.of("startId", startShepardId, "collectionId", collectionShepardId));
   }
 
   private String getTraversalRulesPath(TraversalRules traversalRule) {
@@ -183,13 +188,14 @@ public abstract class GenericDAO<T> {
     };
   }
 
-  public String getSearchForReachableReferencesQuery(long collectionId, String userName) {
+  public Neo4jQuery getSearchForReachableReferencesQuery(long collectionId, String userName) {
+    // C5b fix: bind id(col) as a Cypher parameter (see sibling method for rationale).
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)";
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(col) = " + collectionId;
+    ret += " WHERE id(col) = $collectionId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return ret;
+    return new Neo4jQuery(ret, Map.of("collectionId", collectionId));
   }
 
   public String getSearchForReachableReferencesByShepardIdQuery(long collectionShepardId, String userName) {
@@ -201,13 +207,14 @@ public abstract class GenericDAO<T> {
     return ret;
   }
 
-  public String getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
+  public Neo4jQuery getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
+    // C5b fix: bind id(d) / id(col) as Cypher parameters (see sibling method for rationale).
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)";
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(d) = " + startId + " AND id(col) = " + collectionId;
+    ret += " WHERE id(d) = $startId AND id(col) = $collectionId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return ret;
+    return new Neo4jQuery(ret, Map.of("startId", startId, "collectionId", collectionId));
   }
 
   public String getSearchForReachableReferencesByShepardIdQuery(

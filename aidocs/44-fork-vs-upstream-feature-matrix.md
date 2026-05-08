@@ -61,7 +61,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Auth-header echo to warn-level logs (token-leak) | full echo | `present`/`absent` only | **✓ ↑** | M5 |
 | `~/.shepard/keys/private.key` perms | umask default | `0600` via `Files.setPosixFilePermissions` (best-effort, POSIX only) | **✓ ↑** | M2 |
 | Cypher injection on user-controlled property names + IRI types | injectable | parameterised + property-name allowlist; subsumes M9 | **✓ ↑** | C5 (cherry-pick `e90bfd8`) / `aidocs/07` C5 |
-| Cypher injection — second wave (`*ReferenceDAO` family + `GenericDAO` + `VersionDAO` + `SemanticAnnotationDAO`) | injectable | TBD; same shape as C5 | 📐 (queued, C5b) | `aidocs/16` C5b |
+| Cypher injection — second wave (`*ReferenceDAO` family + `GenericDAO` + `VersionDAO` + `SemanticAnnotationDAO`) | injectable | parameterised + named params; **L2c precondition fully cleared** | **✓ ↑** | C5b (cherry-pick `c707e56`) / `aidocs/16` C5b |
 | CORS allowlist instead of `origins=*` | wildcard | TBD | 📐 (queued) | `aidocs/07` C2 |
 | Default-credential placeholders that fail at startup if not changed | accept shipped defaults | TBD | 📐 (queued) | `aidocs/07` H8 |
 | OIDC `realm_access.roles` claim path configurable (multi-IdP) | hard-coded Keycloak shape | TBD | 📐 (queued, F8) | `aidocs/22 §4.11a.4` |
