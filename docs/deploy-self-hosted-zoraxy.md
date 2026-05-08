@@ -156,6 +156,208 @@ stop publishing port 8000 (`docker compose down && remove the line`) or
 restrict it with the host firewall (`ufw allow from <your-lan-cidr> to
 any port 8000`).
 
+## 5a. Connecting to an existing Zoraxy host (dev workflow)
+
+If a Zoraxy instance is already running on a host you have admin
+access to — the typical dev case where you want to point a new
+shepard build at "your" Zoraxy and iterate — skip §3-§5 above and
+follow this section instead. **No changes to the existing Zoraxy
+configuration or its other proxied apps.**
+
+### 5a.1 What you need on the existing Zoraxy host
+
+- Admin login to the Zoraxy management UI (the box that runs Zoraxy
+  itself).
+- Either:
+  - **(i) Same-host deploy** — shepard runs in the same Docker daemon
+    as Zoraxy. Easiest; no network plumbing.
+  - **(ii) Different-host deploy** — shepard runs on a different
+    machine on the same network. Needs the Zoraxy host to be able
+    to reach `<shepard-host>:8080` and `<shepard-host>:80` (or
+    whichever ports your shepard frontend / backend land on).
+
+### 5a.2 Pick a subdomain for the dev instance
+
+Don't reuse your main shepard subdomain — keep dev and any existing
+prod cleanly separate. Convention:
+
+```
+shepard-dev.<your-zoraxy-domain>            -> shepard frontend
+api-shepard-dev.<your-zoraxy-domain>        -> shepard backend
+```
+
+Add A records (or CNAMEs to the Zoraxy host's main domain) for both.
+DNS-01 challenges via Zoraxy's ACME flow handle the cert provision.
+
+### 5a.3 Same-host deploy (path i, recommended for dev)
+
+On the Zoraxy host:
+
+```bash
+# Confirm the existing 'edge' network Zoraxy uses (or whatever name
+# it was set up with). Shepard will need to join the same network so
+# Zoraxy can resolve service names.
+docker network ls | grep -E '(edge|zoraxy)'
+
+# If your existing Zoraxy is on a network called 'zoraxy' rather than
+# 'edge', adjust the override below accordingly.
+EXISTING_ZORAXY_NETWORK=edge   # change me if needed
+
+sudo mkdir -p /opt/shepard-dev && sudo chown -R "$USER" /opt/shepard-dev
+cd /opt/shepard-dev
+git clone https://github.com/noheton/shepard.git .
+cd infrastructure
+cp .env.example .env
+$EDITOR .env   # rotate every shipped credential per aidocs/07 H8
+```
+
+Create a `docker-compose.override.yml` that disables the bundled
+Caddy and joins the existing Zoraxy network:
+
+```yaml
+# /opt/shepard-dev/infrastructure/docker-compose.override.yml
+services:
+  caddy:
+    profiles:
+      - disabled              # existing Zoraxy serves TLS
+
+  backend:
+    container_name: shepard-dev-backend
+    networks:
+      - shepard
+      - edge                  # ${EXISTING_ZORAXY_NETWORK}
+
+  frontend:
+    container_name: shepard-dev-frontend
+    networks:
+      - frontend
+      - edge
+
+networks:
+  edge:
+    external: true
+    name: edge                # match EXISTING_ZORAXY_NETWORK
+```
+
+```bash
+docker compose up -d
+docker compose ps
+# shepard-dev-backend, shepard-dev-frontend, neo4j, mongodb,
+# timescaledb listed Up. The existing Zoraxy container is unchanged.
+```
+
+### 5a.4 Different-host deploy (path ii)
+
+Run shepard on its own host as you normally would
+(`docker compose -f infrastructure/docker-compose.yml up -d`),
+including the bundled Caddy if you want a TLS terminator on the
+shepard side too — **but Zoraxy will be the public-facing TLS
+terminator**, so you can also disable Caddy on the shepard host
+(same override as 5a.3) and let Zoraxy talk plain HTTP over the
+private network.
+
+Confirm reachability from the Zoraxy host:
+
+```bash
+# From the Zoraxy host, hit the dev shepard's backend health probe:
+curl http://<shepard-dev-host>:8080/shepard/api/healthz
+```
+
+If that works, you're set for §5a.5.
+
+### 5a.5 Add proxy rules in the existing Zoraxy UI
+
+In the Zoraxy admin (`https://<zoraxy-host>:8000` or wherever it
+lives):
+
+1. **HTTP Proxy → New Proxy Rule**
+   - Matching keyword: `shepard-dev.<your-domain>`
+   - Backend: `shepard-dev-frontend:80` (path i, container DNS) or
+     `<shepard-dev-host>:80` (path ii)
+   - Enable HTTPS, "Use TLS for backend": off
+   - Save.
+2. Repeat for `api-shepard-dev.<your-domain>` → backend service.
+3. **TLS / SSL → ACME** — issue or renew certs for both hostnames.
+   Reuses the existing ACME provider config; zero new setup.
+4. Hit `https://shepard-dev.<your-domain>` from a browser.
+
+The other apps Zoraxy proxies are untouched.
+
+### 5a.6 Iterate (the dev-loop part)
+
+```bash
+cd /opt/shepard-dev/infrastructure
+
+# Pull a new shepard build:
+git pull origin main
+docker compose build backend frontend       # or pull, depending on your image source
+docker compose up -d backend frontend       # recreate just these two
+docker compose logs -f backend              # tail until the migrations log "OK"
+
+# Roll back fast:
+git checkout <previous-sha>
+docker compose up -d --force-recreate backend frontend
+```
+
+`docker compose up -d --force-recreate` is the "redeploy this
+container" verb. The data tier (Neo4j / Mongo / Timescale) keeps
+running across backend/frontend recreates so you don't lose state
+between iterations.
+
+For **hot-reload** of the frontend during active dev: run the Nuxt
+dev server outside docker on your laptop (`npm run dev` against the
+shepard-frontend repo) pointed at the dev-deployed backend
+(`VUE_APP_BACKEND=https://api-shepard-dev.<your-domain>/shepard/api`).
+Backend code changes still need a rebuild + recreate; the frontend
+gets HMR.
+
+### 5a.7 Smoke-test checklist
+
+After each redeploy, the same tests pass before you call it good:
+
+- [ ] `https://shepard-dev.<your-domain>` loads the Nuxt app
+- [ ] `https://api-shepard-dev.<your-domain>/shepard/api/healthz`
+      returns 200 with all DBs `UP`
+- [ ] `https://api-shepard-dev.<your-domain>/shepard/doc/openapi.json`
+      serves the spec
+- [ ] OIDC login round-trips against the configured `OIDC_AUTHORITY`
+- [ ] A new Collection POST + GET round-trips through the API
+- [ ] (when applicable) a new `/v2/...` endpoint you're testing
+      returns the expected shape
+
+Wire those into a small `make smoke-test` target; saves time on
+every iteration.
+
+### 5a.8 Clean teardown
+
+When you're done with the dev instance:
+
+```bash
+cd /opt/shepard-dev/infrastructure
+docker compose down -v       # stops + drops the data volumes
+```
+
+Then in Zoraxy: HTTP Proxy → delete the two proxy rules; TLS / SSL
+→ revoke or just let the certs expire. The DNS records can stay
+(or be removed via your registrar).
+
+### 5a.9 Common gotchas (existing-Zoraxy variant)
+
+- **Network name mismatch.** If the existing Zoraxy uses a different
+  Docker network name (e.g. `zoraxy`, `proxy`, `traefik-net`), the
+  shepard override's `name:` must match — otherwise Zoraxy can't
+  resolve container DNS and you get 502s.
+- **Container-name collision.** `container_name: shepard-dev-backend`
+  in the override avoids collision with any other shepard-prod
+  container on the same daemon.
+- **Port collision on path (ii).** If shepard's bundled Caddy is
+  still up on the dev-host, ports 80/443 are taken — disable it via
+  the override (same trick as path i).
+- **Subdomain TLS rate-limit.** Let's Encrypt limits 5 cert issuances
+  per registered domain per hour; if you're spinning up many dev
+  instances, use the **staging directory** while iterating, then
+  flip to production for the keeper.
+
 ## 6. Public reachability
 
 Two paths depending on whether your host has a public IP:
