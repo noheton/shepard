@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.configuration.feature.toggles.VersioningFeatureToggle;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
@@ -89,6 +90,9 @@ public class VersionDAOTest extends BaseTestCase {
   @Mock
   private QueryStatistics queryStatistics;
 
+  @Mock
+  private EntityIdResolver entityIdResolver;
+
   @InjectMocks
   private VersionDAO dao;
 
@@ -157,12 +161,13 @@ public class VersionDAOTest extends BaseTestCase {
 
   @Test
   public void findVersionLigthByNeo4jIdTest() {
-    // C5b: id(ve) is bound as Cypher parameter $neo4jId.
+    // L2c: id(ve) flipped to {appId: $appId}; resolver translates the OGM long.
     Version ver = new Version();
     ver.setName("name");
     long neo4jId = 10L;
-    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = $neo4jId RETURN v";
-    Map<String, Object> paramsMap = Map.of("neo4jId", neo4jId);
+    when(entityIdResolver.resolveAppId(neo4jId)).thenReturn("appid-ve-10");
+    String query = "MATCH (ve:VersionableEntity {appId: $appId})-[:has_version]->(v) RETURN v";
+    Map<String, Object> paramsMap = Map.of("appId", "appid-ve-10");
     when(session.query(Version.class, query, paramsMap)).thenReturn(List.of(ver));
     Version found = dao.findVersionLightByNeo4jId(neo4jId);
     assertEquals(ver, found);

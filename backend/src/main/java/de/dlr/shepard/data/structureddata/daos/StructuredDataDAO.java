@@ -18,12 +18,13 @@ public class StructuredDataDAO extends GenericDAO<StructuredData> {
    * @return the found structuredData or null
    */
   public StructuredData find(long containerId, String oid) {
-    // C5b fix: bind containerId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     var query =
-      "MATCH (c:StructuredDataContainer)-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) WHERE ID(c)=$containerId %s".formatted(
+      "MATCH (c:StructuredDataContainer {appId: $containerAppId})-[:structureddata_in_container]->(s:StructuredData {oid: $oid}) %s".formatted(
           CypherQueryHelper.getReturnPart("s")
         );
-    var results = findByQuery(query, Map.of("oid", oid, "containerId", containerId));
+    var results = findByQuery(query, Map.of("oid", oid, "containerAppId", resolveAppIdOrEmpty(containerId)));
     return results.iterator().hasNext() ? results.iterator().next() : null;
   }
 

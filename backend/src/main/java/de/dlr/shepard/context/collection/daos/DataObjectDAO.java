@@ -34,13 +34,13 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * @return a List of DataObjects
    */
   public List<DataObject> findByCollectionByNeo4jIds(long collectionId, QueryParamHelper params) {
-    // C5 fix: bind every id as a Cypher parameter rather than concatenating
-    // it into the query string. Numeric ids are not user-controlled today
-    // but the parametric shape keeps these sites safe under L2c when ids
-    // become UUID strings.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // OGM Long ids (collection / parent / predecessor / successor) are translated
+    // to their appIds via the request-scoped EntityIdResolver; the public method
+    // signature stays long for caller-compat until L2d flips the public surface.
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", params.getName());
-    paramsMap.put("collectionId", collectionId);
+    paramsMap.put("collectionAppId", resolveAppIdOrEmpty(collectionId));
     if (params.hasPagination()) {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
@@ -48,15 +48,15 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     String match =
       "MATCH (c:Collection)-[hdo:has_dataobject]->" +
       CypherQueryHelper.getObjectPart("d", "DataObject", params.hasName());
-    String where = " WHERE ID(c)=$collectionId";
+    String where = " WHERE c.appId=$collectionAppId";
 
     if (params.hasParentId()) {
       if (params.getParentId() == -1) {
         where += " AND NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))";
       } else {
         match += "<-[:has_child]-(parent:DataObject {deleted: FALSE})";
-        where += " AND ID(parent)=$parentId";
-        paramsMap.put("parentId", params.getParentId());
+        where += " AND parent.appId=$parentAppId";
+        paramsMap.put("parentAppId", resolveAppIdOrEmpty(params.getParentId()));
       }
     }
 
@@ -65,8 +65,8 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)<-[:has_successor]-(:DataObject {deleted: FALSE}))";
       } else {
         match += "<-[:has_successor]-(predecessor:DataObject {deleted: FALSE})";
-        where += " AND ID(predecessor)=$predecessorId";
-        paramsMap.put("predecessorId", params.getPredecessorId());
+        where += " AND predecessor.appId=$predecessorAppId";
+        paramsMap.put("predecessorAppId", resolveAppIdOrEmpty(params.getPredecessorId()));
       }
     }
     if (params.hasSuccessorId()) {
@@ -74,8 +74,8 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
         where += " AND NOT EXISTS((d)-[:has_successor]->(:DataObject {deleted: FALSE}))";
       } else {
         match += "-[:has_successor]->(successor:DataObject {deleted: FALSE})";
-        where += " AND ID(successor)=$successorId";
-        paramsMap.put("successorId", params.getSuccessorId());
+        where += " AND successor.appId=$successorAppId";
+        paramsMap.put("successorAppId", resolveAppIdOrEmpty(params.getSuccessorId()));
       }
     }
 
@@ -261,10 +261,14 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     dataObject.setUpdatedAt(updatedAt);
     dataObject.setDeleted(true);
     createOrUpdate(dataObject);
+    // L2c read-path swap: use appId rather than the deprecated id() function.
+    // dataObject was just persisted so its appId is guaranteed populated.
+    String appId = dataObject.getAppId();
+    if (appId == null) appId = entityIdResolver.resolveAppId(id);
     String query =
-      "MATCH (d:DataObject) WHERE ID(d) = $dataObjectId OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
+      "MATCH (d:DataObject {appId: $appId}) OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
       "FOREACH (n in [d,r] | SET n.deleted = true)";
-    var result = runQuery(query, Map.of("dataObjectId", id));
+    var result = runQuery(query, Map.of("appId", appId));
     return result;
   }
 
@@ -282,10 +286,14 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     dataObject.setUpdatedAt(updatedAt);
     dataObject.setDeleted(true);
     createOrUpdate(dataObject);
+    // L2c read-path swap: use appId rather than the deprecated id() function.
+    // dataObject was just persisted so its appId is guaranteed populated.
+    String appId = dataObject.getAppId();
+    if (appId == null) appId = entityIdResolver.resolveAppId(dataObject.getId());
     String query =
-      "MATCH (d:DataObject) WHERE ID(d) = $dataObjectId OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
+      "MATCH (d:DataObject {appId: $appId}) OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) " +
       "FOREACH (n in [d,r] | SET n.deleted = true)";
-    var result = runQuery(query, Map.of("dataObjectId", dataObject.getId()));
+    var result = runQuery(query, Map.of("appId", appId));
     return result;
   }
 
@@ -330,4 +338,5 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     List<DataObject> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }
+
 }

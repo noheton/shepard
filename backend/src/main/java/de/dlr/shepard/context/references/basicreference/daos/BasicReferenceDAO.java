@@ -28,16 +28,17 @@ public class BasicReferenceDAO extends VersionableEntityDAO<BasicReference> {
    * @return a List of references
    */
   public List<BasicReference> findByDataObjectNeo4jId(long dataObjectId, QueryParamHelper params) {
-    // C5b fix: bind dataObjectId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     String query;
     Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put("name", params.getName());
-    paramsMap.put("dataObjectId", dataObjectId);
+    paramsMap.put("dataObjectAppId", resolveAppIdOrEmpty(dataObjectId));
     if (params.hasPagination()) {
       paramsMap.put("offset", params.getPagination().getOffset());
       paramsMap.put("size", params.getPagination().getSize());
     }
-    query = "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=$dataObjectId WITH r".formatted(
+    query = "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d.appId=$dataObjectAppId WITH r".formatted(
         CypherQueryHelper.getObjectPart("r", "BasicReference", params.hasName())
       );
     if (params.hasOrderByAttribute()) {

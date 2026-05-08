@@ -75,7 +75,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 |---|---|---|---|---|
 | Additive `appId` (UUID v7) on every Neo4j node-write | none | shipped via `HasAppId` mixin on 28 labels; minted by `GenericDAO` seam; `V11` per-label unique constraints | **✓ ↑** | L2a (commit `fec7979`) |
 | Backfill `appId` for pre-L2a rows (`V12`) | n/a | shipped — chunked 10k rows per batch, idempotent, operator-run rollback file | **✓ ↑** | L2b (cherry-pick `796bc11`) |
-| Read path uses `WHERE e.appId = $appId` | uses `id()` | TBD; gated on C5 | 📐 (queued, gated on C5) | L2c / `aidocs/25` |
+| Read path uses `WHERE e.appId = $appId` | uses `id()` | shipped — `EntityIdResolver` request-scoped translates Long ↔ appId at the DAO boundary; 14 DAO files swapped (`PermissionsDAO`, `DataObjectDAO`, `GenericDAO`, the `*ReferenceDAO` family, `VersionDAO`, `ShepardFileDAO`, `StructuredDataDAO`, `SemanticAnnotationDAO`); public DAO signatures stay `long` for caller-compat; cache key stays `long` (per design §3.3); `Neo4jQueryBuilder`'s search-JSON predicates and `PermissionsService.isAllowed` segment dispatch deliberately untouched (those are L2d's job) | **✓ ↑** | L2c (cherry-pick TBD) / `aidocs/25 §4 Phase 3` |
 | `/v2/` API exposes `appId` natively | n/a | TBD; gated on P4 + H4 | 📐 (queued) | L2d / `aidocs/25` |
 | Drop `/v1/` long-id paths; flip cache key shape; drop TimescaleDB legacy column | n/a | TBD | 📐 (queued) | L2e / `aidocs/25` |
 
@@ -353,7 +353,7 @@ namespace; core enforces the shape.
 
 **Shipped on this fork (vs upstream 5.2.0):** 6 DB-resilience improvements, 5 config/cache improvements, 1 API-key auth feature (L5), 4 security fixes (M2/M4/M5 + the L2a additive identifier substrate), 5 endpoint-additive features (P3, P14, R2/b/c/d/d2), the GitHub Pages docs site with three deploy guides, the LUMEN showcase seed + notebook, and **two Live tracking docs** (`aidocs/34` admin-facing + this matrix contributor-facing).
 
-**In flight (agents dispatched):** C5 (Cypher injection fix; gates L2c) and L2b (V12 backfill of `appId`).
+**In flight (agents dispatched):** none currently — C5/C5b/L2b/L2c have all landed; the remaining L2 chain (L2d/L2e) is gated on P4 + H4.
 
 **Designed and queued (substantial):** the entire L2 chain after L2a (b/c/d/e), unified search + pagination (`aidocs/13`), semantic-annotation expansion (`aidocs/14`), HDF5/HSDS (A5), Templates (T1), Process design+runtime (PR1), Git integration (G1), User profile (U1), Lab journal v2 + Jupyter (J1), Snapshots (V2), AI features w/ snap-dashboards killer feature (AI1), Admin CLI (L1), permission-system evolutions (F1-F8), provenance (`aidocs/30`).
 

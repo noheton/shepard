@@ -21,14 +21,15 @@ public class DataObjectReferenceDAO extends VersionableEntityDAO<DataObjectRefer
    * @return a List of references
    */
   public List<DataObjectReference> findByDataObjectNeo4jId(long dataObjectId) {
-    // C5b fix: bind dataObjectId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     String query =
-      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE ID(d)=$dataObjectId ".formatted(
+      "MATCH (d:DataObject)-[hr:has_reference]->%s WHERE d.appId=$dataObjectAppId ".formatted(
           CypherQueryHelper.getObjectPart("r", "DataObjectReference", false)
         ) +
       CypherQueryHelper.getReturnPart("r");
 
-    var queryResult = findByQuery(query, Map.of("dataObjectId", dataObjectId));
+    var queryResult = findByQuery(query, Map.of("dataObjectAppId", resolveAppIdOrEmpty(dataObjectId)));
 
     List<DataObjectReference> result = StreamSupport.stream(queryResult.spliterator(), false)
       .filter(r -> r.getDataObject() != null)
