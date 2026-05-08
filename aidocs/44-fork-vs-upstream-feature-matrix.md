@@ -110,6 +110,16 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Better feedback on missing language labels | basic | TBD | 📐 (queued, #682) | `aidocs/14` |
 | Refactor Neo4j representation of semantic annotations | older shape | TBD | 📐 (queued, #659) | `aidocs/14` |
 
+## 7a. Internal semantic repository (neosemantics)
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| Pre-seeded common ontologies (PROV-O / Dublin Core / schema.org / FOAF / QUDT / OM-2 / W3C Time / GeoSPARQL) inside the existing Neo4j | none — operator must wire an external triple store | TBD | 📐 (queued, N1a + N1b) | `aidocs/48` |
+| `SemanticRepositoryType.INTERNAL` enum value + `InternalSemanticConnector` (Cypher / SPARQL via `n10s`) | none | TBD | 📐 (queued, N1a) | `aidocs/48 §3` |
+| `shepard-admin semantic refresh-ontologies` CLI | none | TBD | 📐 (queued, N1c) | `aidocs/48` + `aidocs/22 §4.x` |
+| LUMEN seed integration — placeholder IRIs replaced with real PROV-O / QUDT / SKOS terms; SPARQL demo cell in notebook | seed uses placeholder IRIs only | TBD | 📐 (queued, N1d) | `aidocs/48 §5` |
+| Annotation picker auto-completes from pre-seeded ontologies | none | TBD | 📐 (queued, N1e) | `aidocs/48` + `aidocs/14` |
+
 ## 8. Provenance / lineage
 
 | Capability | Upstream | This fork | Status | Refs |

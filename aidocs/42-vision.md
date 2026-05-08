@@ -198,6 +198,18 @@ Mid-horizon:
   the default GridFS. Presigned URLs unblock direct large-file
   uploads + downloads + RO-Crate ZIP delivery; closes the
   long-standing issue #27.
+- **Internal semantic repository via neosemantics** (`aidocs/48`,
+  N1 series). Pre-seeded common ontologies (PROV-O / QUDT /
+  schema.org / Dublin Core / FOAF / OM-2 / W3C Time / GeoSPARQL)
+  inside shepard's existing Neo4j — no separate triple store.
+  Closes the casual-user "I shouldn't need to deploy a SPARQL
+  endpoint to annotate `g rms`" friction.
+- **Storage-backend plugin SPI + dev-experience** (`aidocs/47`,
+  PL1 + DX series). New payload kinds drop in as plugins instead
+  of 12-file PR sprawls; existing storage-bound feature flags
+  (spatial, hdf, files-s3) migrate to plugins; codegen archetype
+  + `make dev` + unified test-resource make the casual + power
+  user paths both faster.
 
 Long-horizon (deliberately deferred):
 
