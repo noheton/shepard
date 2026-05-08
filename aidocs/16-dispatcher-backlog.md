@@ -151,6 +151,15 @@ Status legend:
 | AI1n | (deferred) Outlier detection in attribute vectors (§3.4). | — | S | parked | |
 | AI1o | (deferred) Search-rank learn-to-rank (§3.6) — gated on having scale. | — | L | parked | |
 | AI1p | Per-provider OpenAPI nuances (Azure deployment URL paths, Anthropic `messages` adapter, etc.). Ships incrementally as users hit them. | — | S each | gated on AI1a | Renamed from "deferred hosted-model bridge"; now a continuous compatibility track. |
+| FS1 | File storage backend pluggability (GridFS → S3 evaluation) — umbrella | issue #27, user request | M-L | **design done** | `aidocs/45-gridfs-to-s3-evaluation.md`. Pluggable `FileStorage` interface; GridFS stays default; S3 (MinIO / AWS S3 / Azure Blob / Ceph) as opt-in. Presigned-URL `/v2/` endpoints unblock the W1 wins (frontend uploads, RO-Crate delivery, long-running results) without forcing migration. Closes #27. Sub-IDs FS1a-FS1h below. |
+| FS1a | `FileStorage` interface + `GridFsFileStorage` extracted from `FileService` (pure refactor; behaviour-equivalent). Tests pin existing behaviour. | — | M | queued | Behaviour-preserving; ships independently. |
+| FS1b | `S3FileStorage` implementation using AWS SDK v2 + endpoint-override config for MinIO. New `shepard.files.storage` config key + CDI selector. Backend-proxied path works against both backends. | — | M | gated on FS1a | |
+| FS1c | Presigned-URL `/v2/` endpoints (`POST /v2/files/{containerAppId}/upload-url`, `GET /v2/files/{appId}/download-url`). Returns 404 when backend doesn't support presigned URLs. | — | S | gated on FS1b | |
+| FS1d | MinIO sidecar in `infrastructure/docker-compose.yml` under `files-s3` profile (off by default; mirrors `spatial`/`hdf` patterns). One-line operator switch. | — | S | gated on FS1b + `aidocs/22 §4.6a` profile-bound toggles | |
+| FS1e | `shepard-admin files migrate` CLI command (big-bang + background-sweep modes), progress via P3 pattern. | — | M | gated on FS1a + FS1b + `aidocs/22` | Two-phase migration runway from `aidocs/45 §6`. |
+| FS1f | Frontend update — large-file uploads use `/v2/upload-url` presigned path when available, fall back to backend-proxied. | — | M | gated on FS1c + frontend changes | Closes the P12 chunk of `aidocs/33`. |
+| FS1g | RO-Crate export delivery (`aidocs/31 §O3`) returns presigned URLs when backend = s3. | — | S | gated on FS1c + `aidocs/31` | Closes the O3 open question. |
+| FS1h | (deferred) Per-Collection storage choice — only on real demand. | — | L | parked | Architecture C from `aidocs/45 §3.3`. |
 
 ### Streaming / publication
 

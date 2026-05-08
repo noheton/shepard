@@ -178,6 +178,18 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Env-driven auth discovery (`SHEPARD_HOST` / `SHEPARD_API_KEY`) for the CLI | none | designed | 📐 (queued, L1 phase 1) | `aidocs/22 §3.4` |
 | Init wizard's OIDC sub-flow (Keycloak / Pocket ID / external w/ auto-discovery) | none | designed; depends on F8 (configurable claim path) for non-Keycloak | 📐 (queued) | `aidocs/22 §4.11a` |
 
+## 13a. File storage backend
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| Files stored in MongoDB GridFS (1 MiB chunks, one bucket per FileContainer) | **=** | **=** (today) | **=** | `FileService.java` |
+| Pluggable `FileStorage` interface (GridFS default, S3-compatible opt-in via MinIO / S3 / Azure Blob / Ceph) | none | TBD | 📐 (queued, FS1a-b) | `aidocs/45` |
+| Presigned-URL `/v2/` endpoints for upload + download (frees backend from being the bytes proxy) | none | TBD | 📐 (queued, FS1c) | `aidocs/45 §4` |
+| MinIO sidecar profile in compose (operator one-line switch) | none | TBD | 📐 (queued, FS1d) | `aidocs/45 §9` |
+| `shepard-admin files migrate` CLI (greenfield / big-bang / dual-store-with-background-sweep) | none | TBD | 📐 (queued, FS1e) | `aidocs/45 §6` |
+| Frontend large-file uploads via presigned PUT (P12) | proxied through backend | TBD | 📐 (queued, FS1f) | `aidocs/45 §9` / `aidocs/33` |
+| RO-Crate export delivery via presigned URL (closes #27 / O3) | proxied | TBD | 📐 (queued, FS1g) | `aidocs/45` / `aidocs/31 §O3` |
+
 ## 14. RO-Crate optimisation
 
 | Capability | Upstream | This fork | Status | Refs |
