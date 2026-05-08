@@ -70,10 +70,11 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public Version findVersionLightByNeo4jId(long neo4jId) {
-    // C5b fix: bind neo4jId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     Version ret = null;
-    String query = "MATCH (ve:VersionableEntity)-[:has_version]->(v) WHERE id(ve) = $neo4jId RETURN v";
-    Map<String, Object> paramsMap = Map.of("neo4jId", neo4jId);
+    String query = "MATCH (ve:VersionableEntity {appId: $appId})-[:has_version]->(v) RETURN v";
+    Map<String, Object> paramsMap = Map.of("appId", resolveAppIdOrEmpty(neo4jId));
     var resultSet = findByQuery(query, paramsMap);
     Iterator<Version> it = resultSet.iterator();
     if (it.hasNext()) {
@@ -83,12 +84,13 @@ public class VersionDAO extends GenericDAO<Version> {
   }
 
   public void createLink(long versionableEntityId, UUID versionUID) {
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
     HashMap<String, Object> params = new HashMap<String, Object>();
-    params.put("versionableEntityId", versionableEntityId);
+    params.put("versionableEntityAppId", resolveAppIdOrEmpty(versionableEntityId));
     params.put("versionUID", versionUID);
     String query =
       """
-      MATCH (ve:VersionableEntity), (v:Version) WHERE id(ve) = $versionableEntityId AND v.uid = $versionUID
+      MATCH (ve:VersionableEntity {appId: $versionableEntityAppId}), (v:Version) WHERE v.uid = $versionUID
        CREATE (ve)-[:has_version]->(v)
       """;
     runQuery(query, params);
@@ -207,7 +209,7 @@ public class VersionDAO extends GenericDAO<Version> {
       MATCH (v_source:Version)<-[:has_version]-(c_pointer:Collection)-[:has_dataobject]->(do_source_pointer:DataObject)-[:has_reference]->(dor_source:DataObjectReference)-[:points_to]->(do_source_pointed_to:DataObject)<-[:has_dataobject]-(c_pointed_to:Collection),
       (do_target_pointed_to:DataObject)-[:has_version]->(v_target:Version)<-[:has_version]-(do_target_pointer:DataObject)
       WHERE v_source.uid = $sourceVersionUID AND v_target.uid = $targetVersionUID
-      AND do_source_pointer.shepardId = do_target_pointer.shepardId AND do_source_pointed_to.shepardId = do_target_pointed_to.shepardId AND id(c_pointer) = id(c_pointed_to)
+      AND do_source_pointer.shepardId = do_target_pointer.shepardId AND do_source_pointed_to.shepardId = do_target_pointed_to.shepardId AND c_pointer.appId = c_pointed_to.appId
       CREATE (do_target_pointer)-[:has_reference]->(dor_target:DataObjectReference:BasicReference:VersionableEntity:BasicEntity)-[:points_to]->(do_target_pointed_to)
       SET dor_target = dor_source
       """;

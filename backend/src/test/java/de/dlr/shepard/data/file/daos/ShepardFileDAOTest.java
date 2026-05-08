@@ -6,11 +6,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -21,19 +23,27 @@ public class ShepardFileDAOTest extends BaseTestCase {
   @Mock
   private Session session;
 
+  @Mock
+  private EntityIdResolver entityIdResolver;
+
   @InjectMocks
   private ShepardFileDAO dao = new ShepardFileDAO();
 
+  @BeforeEach
+  public void primeResolver() {
+    org.mockito.Mockito.lenient().when(entityIdResolver.resolveAppId(123L)).thenReturn("appid-fc-123");
+  }
+
   @Test
   public void findTest() {
-    // C5b: ID(c) is bound as Cypher parameter $containerId alongside $oid.
+    // L2c: ID(c) flipped to {appId: $containerAppId}; resolver translates the OGM long.
     var f = new ShepardFile("oid", new Date(), "filename", "md5");
     var query =
       """
-      MATCH (c:FileContainer)-[:file_in_container]->(f:ShepardFile {oid: $oid}) \
-      WHERE ID(c)=$containerId MATCH path=(f)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      MATCH (c:FileContainer {appId: $containerAppId})-[:file_in_container]->(f:ShepardFile {oid: $oid}) \
+      MATCH path=(f)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN f, nodes(path), relationships(path)""";
-    var paramsMap = Map.<String, Object>of("oid", "oid", "containerId", 123L);
+    var paramsMap = Map.<String, Object>of("oid", "oid", "containerAppId", "appid-fc-123");
 
     when(session.query(ShepardFile.class, query, paramsMap)).thenReturn(List.of(f));
     var actual = dao.find(123L, "oid");
@@ -45,10 +55,10 @@ public class ShepardFileDAOTest extends BaseTestCase {
   public void findTest_notFound() {
     var query =
       """
-      MATCH (c:FileContainer)-[:file_in_container]->(f:ShepardFile {oid: $oid}) \
-      WHERE ID(c)=$containerId MATCH path=(f)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      MATCH (c:FileContainer {appId: $containerAppId})-[:file_in_container]->(f:ShepardFile {oid: $oid}) \
+      MATCH path=(f)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN f, nodes(path), relationships(path)""";
-    var paramsMap = Map.<String, Object>of("oid", "oid", "containerId", 123L);
+    var paramsMap = Map.<String, Object>of("oid", "oid", "containerAppId", "appid-fc-123");
 
     when(session.query(ShepardFile.class, query, paramsMap)).thenReturn(Collections.emptyList());
     var actual = dao.find(123L, "oid");

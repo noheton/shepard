@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.neo4j.daos;
 
 import de.dlr.shepard.common.identifier.AppIdGenerator;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.search.query.Neo4jQuery;
@@ -9,6 +10,8 @@ import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.TraversalRules;
 import io.quarkus.logging.Log;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,8 +25,28 @@ public abstract class GenericDAO<T> {
 
   protected Session session = null;
 
+  @Inject
+  protected EntityIdResolver entityIdResolver;
+
   protected GenericDAO() {
     session = NeoConnector.getInstance().getNeo4jSession();
+  }
+
+  /**
+   * Resolve an OGM Long id to its appId for use in a Cypher parameter under
+   * the L2c read-path swap. If no such node exists, returns a
+   * guaranteed-non-matching sentinel so the surrounding filter Cypher returns
+   * no rows — preserving the pre-L2c {@code WHERE ID(e)=$id} behaviour where
+   * an unknown id meant "no match" rather than an exception.
+   */
+  protected String resolveAppIdOrEmpty(long ogmId) {
+    try {
+      return entityIdResolver.resolveAppId(ogmId);
+    } catch (NotFoundException e) {
+      // Guaranteed-no-match: the V11 unique constraint says no real appId is
+      // the empty string.
+      return "";
+    }
   }
 
   /**
@@ -164,17 +187,20 @@ public abstract class GenericDAO<T> {
     long startShepardId,
     String userName
   ) {
-    // C5b fix: bind id(d) / id(col) as Cypher parameters rather than concatenating
-    // them into the query string. Today these are Java longs so the prior shape
-    // was structurally safe, but parametrising now also keeps the call sites safe
-    // under L2c when ids become UUID strings.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // OGM Longs (kept on the call signature for compat) are resolved to their
+    // appIds via EntityIdResolver; the public method signature stays long
+    // until L2d flips the public surface.
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->";
     ret += getTraversalRulesPath(traversalRule);
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(d) = $startId AND id(col) = $collectionId";
+    ret += " WHERE d.appId = $startAppId AND col.appId = $collectionAppId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return new Neo4jQuery(ret, Map.of("startId", startShepardId, "collectionId", collectionShepardId));
+    return new Neo4jQuery(
+      ret,
+      Map.of("startAppId", resolveAppIdOrEmpty(startShepardId), "collectionAppId", resolveAppIdOrEmpty(collectionShepardId))
+    );
   }
 
   private String getTraversalRulesPath(TraversalRules traversalRule) {
@@ -189,13 +215,13 @@ public abstract class GenericDAO<T> {
   }
 
   public Neo4jQuery getSearchForReachableReferencesQuery(long collectionId, String userName) {
-    // C5b fix: bind id(col) as a Cypher parameter (see sibling method for rationale).
+    // L2c read-path swap: query by appId (see sibling method for rationale).
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(do:DataObject)";
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(col) = $collectionId";
+    ret += " WHERE col.appId = $collectionAppId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return new Neo4jQuery(ret, Map.of("collectionId", collectionId));
+    return new Neo4jQuery(ret, Map.of("collectionAppId", resolveAppIdOrEmpty(collectionId)));
   }
 
   public String getSearchForReachableReferencesByShepardIdQuery(long collectionShepardId, String userName) {
@@ -208,13 +234,16 @@ public abstract class GenericDAO<T> {
   }
 
   public Neo4jQuery getSearchForReachableReferencesQuery(long collectionId, long startId, String userName) {
-    // C5b fix: bind id(d) / id(col) as Cypher parameters (see sibling method for rationale).
+    // L2c read-path swap: query by appId (see sibling method for rationale).
     String ret = "MATCH path = (col:Collection)-[:has_dataobject]->(d:DataObject)";
     ret += "-[hr:has_reference]->(r:" + getEntityType().getSimpleName() + ")";
     ret += getWithPart("ns", "ret");
-    ret += " WHERE id(d) = $startId AND id(col) = $collectionId";
+    ret += " WHERE d.appId = $startAppId AND col.appId = $collectionAppId";
     ret += getReturnPart("ns", "ret", "col", userName);
-    return new Neo4jQuery(ret, Map.of("startId", startId, "collectionId", collectionId));
+    return new Neo4jQuery(
+      ret,
+      Map.of("startAppId", resolveAppIdOrEmpty(startId), "collectionAppId", resolveAppIdOrEmpty(collectionId))
+    );
   }
 
   public String getSearchForReachableReferencesByShepardIdQuery(

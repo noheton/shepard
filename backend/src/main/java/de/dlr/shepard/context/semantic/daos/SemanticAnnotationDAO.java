@@ -15,12 +15,13 @@ import java.util.stream.StreamSupport;
 public class SemanticAnnotationDAO extends GenericDAO<SemanticAnnotation> {
 
   public List<SemanticAnnotation> findAllSemanticAnnotationsByNeo4jId(long entityId) {
-    // C5b fix: bind entityId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     String query;
-    query = "MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) WHERE ID(e)=$entityId WITH a %s".formatted(
+    query = "MATCH (e {appId: $entityAppId})-[ha:has_annotation]->(a:SemanticAnnotation) WITH a %s".formatted(
         CypherQueryHelper.getReturnPart("a", Neighborhood.OUTGOING)
       );
-    var queryResult = findByQuery(query, Map.of("entityId", entityId));
+    var queryResult = findByQuery(query, Map.of("entityAppId", resolveAppIdOrEmpty(entityId)));
     var ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
   }

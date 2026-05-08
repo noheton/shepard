@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +20,9 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
   @Mock
   private Session session;
 
+  @Mock
+  private EntityIdResolver entityIdResolver;
+
   @InjectMocks
   private SemanticAnnotationDAO dao;
 
@@ -30,16 +34,17 @@ public class SemanticAnnotationDAOTest extends BaseTestCase {
 
   @Test
   public void findAllSemanticAnnotationsTest() {
-    // C5b: ID(e) is bound as Cypher parameter $entityId.
+    // L2c: ID(e) flipped to {appId: $entityAppId}; resolver translates the OGM long.
+    when(entityIdResolver.resolveAppId(1L)).thenReturn("appid-e-1");
     var annotation = new SemanticAnnotation(1L);
     annotation.setPropertyName("Test");
 
     var query =
       """
-      MATCH (e)-[ha:has_annotation]->(a:SemanticAnnotation) \
-      WHERE ID(e)=$entityId WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
+      MATCH (e {appId: $entityAppId})-[ha:has_annotation]->(a:SemanticAnnotation) \
+      WITH a MATCH path=(a)-[*0..1]->(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN a, nodes(path), relationships(path)""";
-    var paramsMap = Map.<String, Object>of("entityId", 1L);
+    var paramsMap = Map.<String, Object>of("entityAppId", "appid-e-1");
     when(session.query(SemanticAnnotation.class, query, paramsMap)).thenReturn(List.of(annotation));
 
     var actual = dao.findAllSemanticAnnotationsByNeo4jId(1L);

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.timeseriesreference.daos.TimeseriesReferenceDAO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -20,6 +21,9 @@ public class TimeseriesReferenceDAOTest extends BaseTestCase {
 
   @Mock
   private Session session;
+
+  @Mock
+  private EntityIdResolver entityIdResolver;
 
   @InjectMocks
   private TimeseriesReferenceDAO dao;
@@ -40,13 +44,15 @@ public class TimeseriesReferenceDAOTest extends BaseTestCase {
     ref.setDataObject(obj);
     ref2.setDataObject(obj2);
 
-    // C5b: ID(d) is bound as Cypher parameter $dataObjectId.
+    // L2c: WHERE ID(d) flipped to WHERE d.appId; resolver translates the
+    // OGM long to its appId at the DAO boundary.
+    when(entityIdResolver.resolveAppId(1L)).thenReturn("appid-do-1");
     var query =
       """
-      MATCH (d:DataObject)-[hr:has_reference]->(r:TimeseriesReference { deleted: FALSE }) WHERE ID(d)=$dataObjectId \
+      MATCH (d:DataObject)-[hr:has_reference]->(r:TimeseriesReference { deleted: FALSE }) WHERE d.appId=$dataObjectAppId \
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
-    var paramsMap = Map.<String, Object>of("dataObjectId", 1L);
+    var paramsMap = Map.<String, Object>of("dataObjectAppId", "appid-do-1");
     when(session.query(TimeseriesReference.class, query, paramsMap)).thenReturn(List.of(ref, ref2, ref3));
 
     var actual = dao.findByDataObjectNeo4jId(1L);

@@ -18,12 +18,13 @@ public class ShepardFileDAO extends GenericDAO<ShepardFile> {
    * @return the found shepardFile or null
    */
   public ShepardFile find(long containerId, String oid) {
-    // C5b fix: bind containerId as a Cypher parameter rather than concatenating it.
+    // L2c read-path swap: query by appId rather than the deprecated id() function.
+    // Public method signature stays long for caller-compat until L2d.
     var query =
-      "MATCH (c:FileContainer)-[:file_in_container]->(f:ShepardFile {oid: $oid}) WHERE ID(c)=$containerId %s".formatted(
+      "MATCH (c:FileContainer {appId: $containerAppId})-[:file_in_container]->(f:ShepardFile {oid: $oid}) %s".formatted(
           CypherQueryHelper.getReturnPart("f")
         );
-    var results = findByQuery(query, Map.of("oid", oid, "containerId", containerId));
+    var results = findByQuery(query, Map.of("oid", oid, "containerAppId", resolveAppIdOrEmpty(containerId)));
     return results.iterator().hasNext() ? results.iterator().next() : null;
   }
 
