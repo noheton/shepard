@@ -149,3 +149,30 @@ Two gates wired into `mvn verify` and CI:
 A PR that introduces a High SpotBugs finding or a CVSS-7+
 vulnerable dependency must either fix the issue or land a
 suppression with justification in the same PR.
+
+## Always: keep user-facing docs in step with shipped features
+
+`docs/` (the user-facing docs, served both as the public Pages
+site and as the in-app `/help` route per `aidocs/49`) is
+two-track:
+
+- **`docs/help/*.md`** — casual-task pages (front-door for
+  newcomers; a stuck user gets answers in two clicks).
+- **`docs/reference/*.md`** — per-primitive reference pages
+  covering every shipped feature.
+
+When a PR ships a user-visible feature, the matching
+**reference page** must land in the same PR (and a **task page**
+when the feature has a casual expression — uploading a new
+payload kind, exporting a new shape, etc.). The catalogue lives
+in `aidocs/49 §2.2`; reviewers reject feature PRs that don't
+touch the relevant `docs/reference/*.md`.
+
+This is the structural fix for screenshot/feature drift in the
+user-facing docs — same shape as the vision currency
+(`aidocs/42`), upgrade-tracker currency (`aidocs/34`), and
+feature-matrix currency (`aidocs/44`) rules above.
+
+(Internal refactors, performance work, security fixes, dependency
+bumps — none of these need a docs update unless they change a
+user-visible behaviour.)
