@@ -355,13 +355,15 @@
           <skipTests>${skipUTs}</skipTests>
           <excludes>
             <exclude>**/integrationtests/*.java</exclude>
-            <!-- @QuarkusTest classes that boot the full Quarkus app and
-                 transitively need Postgres / Neo4j / Mongo containers.
-                 They belong in the integration-test job (failsafe profile
-                 with infrastructure-local up). Including them here breaks
-                 the unit-only run because Flyway tries to connect at
-                 127.0.0.1:5433 / 7687 / etc. -->
+            <!-- @QuarkusTest classes that need Postgres at 127.0.0.1:5433
+                 even for read-only paths via Flyway-migrate-at-start.
+                 Both DataObjectSearchServiceQuarkusTest and
+                 ReferenceSearchServiceQuarkusTest hit the same boot path
+                 (Flyway can't reach Postgres) when run in the unit-only
+                 profile. Belong in the integration-test job (failsafe
+                 with infrastructure-local up). -->
             <exclude>**/DataObjectSearchServiceQuarkusTest.java</exclude>
+            <exclude>**/ReferenceSearchServiceQuarkusTest.java</exclude>
           </excludes>
           <includes>
             <include>${include-in-unit-tests}</include>
