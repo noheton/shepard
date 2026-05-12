@@ -76,6 +76,28 @@ class PublicEndpointRegistryTest {
     assertEquals("/versionz", PublicEndpointRegistry.normalise("versionz"));
   }
 
+  @Test
+  void aasWellKnownIsPublic() {
+    // AAS1-well-known (aidocs/52 §4a.5): reachable pre-auth so external
+    // AAS-aware clients can discover capabilities.
+    assertTrue(isPublic("shepard/api/v2/aas/.well-known/aas-server"));
+    assertTrue(isPublic("shepard/api/v2/aas/.well-known/aas-server/"));
+  }
+
+  @Test
+  void dotWellKnownSegmentIsPreservedByNormalisation() {
+    // Defensive: Path.normalize() must not strip `.well-known` (which
+    // shares its leading dot with the special `.` segment but is not it).
+    assertEquals("/v2/aas/.well-known/aas-server", PublicEndpointRegistry.normalise("/v2/aas/.well-known/aas-server"));
+  }
+
+  @Test
+  void aasWellKnownPrefixDoesNotMatch() {
+    // /v2/aas/.well-known/aas-server-evil and /aas-server/subpath must not match.
+    assertFalse(isPublic("shepard/api/v2/aas/.well-known/aas-server-evil"));
+    assertFalse(isPublic("shepard/api/v2/aas/.well-known/aas-server/subpath"));
+  }
+
   // helper
 
   private static boolean isPublic(String path) {
