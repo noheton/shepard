@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.labJournal.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import jakarta.validation.constraints.NotNull;
 import java.util.Date;
@@ -48,8 +49,12 @@ public class LabJournalEntryIO {
     this.journalContent = labJournalEntry.getContent();
     this.id = labJournalEntry.getId();
     this.createdAt = labJournalEntry.getCreatedAt();
-    this.createdBy = labJournalEntry.getCreatedBy() != null ? labJournalEntry.getCreatedBy().getUsername() : null;
+    this.createdBy = labJournalEntry.getCreatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(labJournalEntry.getCreatedBy())
+      : null;
     this.updatedAt = labJournalEntry.getUpdatedAt();
-    this.updatedBy = labJournalEntry.getUpdatedBy() != null ? labJournalEntry.getUpdatedBy().getUsername() : null;
+    this.updatedBy = labJournalEntry.getUpdatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(labJournalEntry.getUpdatedBy())
+      : null;
   }
 }

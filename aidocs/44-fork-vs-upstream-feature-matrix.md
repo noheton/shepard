@@ -155,7 +155,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | ORCID iD on user profile (#29) | none | `PATCH /v2/users/me` (orcid); ISO 7064 mod 11-2 checked; UI edit dialog in ProfilePane | **✓ ↑** | U1a (#1062) + U1-profile-ui |
-| `displayName` override + `effectiveDisplayName` derivation + audit-trail render switch (#694) | username only | `displayName` field + `DisplayNameResolver` fallback chain; backend 🚧 PR open | **🚧 (U1b #1064)** | `aidocs/36` |
+| `displayName` override + `effectiveDisplayName` derivation + audit-trail render switch (#694) | username only | `displayName` field + `DisplayNameResolver` fallback chain (U1b #1064); render switch across all IO classes + RO-Crate export (U1b2) | **✓ ↑** | `aidocs/36` |
 | `/me` route (split from Configuration) | mixed Configuration page | TBD | 📐 (queued, U1c) | `aidocs/36 §5` |
 | Preferences (`theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`, `defaultLandingPage`) via `SettingDescriptor` enum + typed map | none | TBD | 📐 (queued, U1d) | `aidocs/36 §3.2 / §7` |
 | Avatar (shepard-uploaded → IdP `picture` → Gravatar tier) | none | TBD | 📐 (queued, U1e) | `aidocs/36 §3.1` |
