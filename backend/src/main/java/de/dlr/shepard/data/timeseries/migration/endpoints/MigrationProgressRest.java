@@ -3,6 +3,7 @@ package de.dlr.shepard.data.timeseries.migration.endpoints;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.data.timeseries.migration.io.MigrationProgressIO;
 import de.dlr.shepard.data.timeseries.migration.services.MigrationProgressService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -20,9 +21,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+/**
+ * Migration-progress query surface. Originally always-reachable by any
+ * authenticated user (per the {@code PermissionsService.isAllowed}
+ * "temp/migrations" carve-out); P3c locks it down to
+ * {@code instance-admin} — migration state is operator-only information.
+ * Anyone who polled this endpoint as a regular user pre-P3c now gets
+ * 403; the upgrade-tracker (`aidocs/34`) calls this out as an
+ * {@code AWARE} change.
+ */
 @Produces(MediaType.APPLICATION_JSON)
 @Path(Constants.SHEPARD_API + "/temp/migrations")
 @RequestScoped
+@RolesAllowed("instance-admin")
 public class MigrationProgressRest {
 
   @Inject

@@ -310,7 +310,12 @@ public class PermissionsService {
     if (pathSegments.isEmpty()) return true;
     var idSegment = pathSegments.size() > 1 ? pathSegments.get(1).getPath() : null;
 
-    // migration state endpoints
+    // migration state endpoints — P3c gates the endpoint itself via
+    // @RolesAllowed("instance-admin") on MigrationProgressRest. This
+    // branch stays "return true" because PermissionsService.isAllowed
+    // is consulted by SubscriptionFilter to decide who receives
+    // subscription notifications; the @RolesAllowed gate runs later
+    // and is what blocks non-admin callers from the endpoint.
     if (pathSegments.getFirst().getPath().equals("temp") && pathSegments.get(1).getPath().equals("migrations")) {
       return true;
     }
