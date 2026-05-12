@@ -1,7 +1,9 @@
 package de.dlr.shepard.common.neo4j;
 
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
+import de.dlr.shepard.auth.bootstrap.BootstrapState;
 import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.role.entities.Role;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.IConnector;
@@ -82,12 +84,14 @@ public class NeoConnector implements IConnector {
           configuration,
           AnnotatableTimeseries.class.getPackageName(),
           ApiKey.class.getPackageName(),
+          BootstrapState.class.getPackageName(),
           Collection.class.getPackageName(),
           CollectionReference.class.getPackageName(),
           FileContainer.class.getPackageName(),
           FileReference.class.getPackageName(),
           LabJournalEntry.class.getPackageName(),
           Permissions.class.getPackageName(),
+          Role.class.getPackageName(),
           SemanticAnnotation.class.getPackageName(),
           SpatialDataContainer.class.getPackageName(),
           SpatialDataReference.class.getPackageName(),

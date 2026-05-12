@@ -288,7 +288,7 @@ Today's storage-bound feature toggles map to plugins:
 |---|---|
 | `shepard.spatial-data.enabled` (A3c) | `shepard-plugin-spatial-postgis` — plugin with `name() = "spatial"`, PostGIS as backend. The compose `spatial` profile remains for the PostGIS sidecar; the Java code lives in the plugin module. |
 | (forthcoming) `shepard.hdf.enabled` per `aidocs/35` | `shepard-plugin-hdf-hsds` — plugin with HSDS sidecar; ships the auth-bridge from `aidocs/35 §5`. |
-| (forthcoming) `shepard.files.storage` per `aidocs/45` | **Two file plugins co-existing** — `shepard-plugin-file-gridfs` (default) + `shepard-plugin-file-s3` — selected via `shepard.payload.file.backend` runtime config. The `PayloadKind` registry permits one-active-per-name; the two file plugins share the kind name `"file"` but differ in backend. |
+| (forthcoming) `shepard.files.storage` per `aidocs/45` | **Two file plugins co-existing as first-class supported backends** — `shepard-plugin-file-gridfs` (default) + `shepard-plugin-file-s3` — selected via `shepard.payload.file.backend` runtime config. Per user direction (2026-05-12): GridFS is **not deprecated** — both plugins are supported indefinitely; the operator picks per-install based on workload size + presigned-URL needs (see `aidocs/45 §3.2`). The `PayloadKind` registry permits one-active-per-name; the two file plugins share the kind name `"file"` but differ in backend. |
 | `quarkus.versioning.feature.enabled` (existing) | **Stays a non-plugin toggle.** Versioning is entity-graph behaviour, not a payload backend. Out of scope for this SPI. |
 | `shepard.migrations.mode-enabled` (existing) | **Stays a non-plugin toggle.** Same reason. |
 

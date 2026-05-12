@@ -10,16 +10,9 @@ shipped — see "Admin CLI" below.
 
 ## Deploy paths beyond docker-compose
 
-For paths that go beyond running the bundled compose locally — free
-cloud, self-hosted on a Docker host fronted by a reverse proxy, paid
-VPS, managed-services split — see **[Deploy options](deploy/)**. The
-two deep guides are:
-
-- **[Oracle Cloud Free Tier (Ampere ARM)](deploy-oracle-free)** —
-  always-free 4 OCPU / 24 GB cloud VM, public IPv4 included.
-- **[Self-hosted Docker host behind Zoraxy](deploy-self-hosted-zoraxy)** —
-  your own hardware (mini PC, NUC, lab box) with Zoraxy as the reverse
-  proxy, optionally paired with Cloudflare Tunnel for CG-NAT.
+For paths that go beyond running the bundled compose locally — paid
+VPS, managed-services split, ephemeral cloud dev — see
+**[Deploy options](deploy/)**.
 
 ## Stack — docker-compose
 
@@ -107,6 +100,35 @@ state, not raw DB connectivity. Use Prometheus scrapes plus per-DB
 monitoring for connectivity.)
 
 Metrics: Prometheus scrape at `/shepard/doc/metrics/prometheus`.
+
+## Performance metrics — out-of-the-box dashboard
+
+The bundled `monitoring` compose profile boots **Prometheus** and
+**Grafana** with auto-provisioning:
+
+```bash
+docker compose --env-file .env --profile monitoring up -d
+```
+
+- **Prometheus** scrapes the backend's `/shepard/doc/metrics/prometheus`
+  endpoint every 10 s (see `infrastructure/prometheus/prometheus.yml`)
+  and exposes its UI at <http://localhost:9090>.
+- **Grafana** auto-loads the Prometheus datasource and the
+  **"shepard — Overview"** dashboard with panels for HTTP request
+  rate + p95/p99 latency, JVM heap / threads / GC, Hibernate session
+  events, MongoDB command latency, and the permissions-cache hit
+  ratio. UI at <http://localhost:3001>; admin login from
+  `GRAFANA_ADMIN_USERNAME` + `GRAFANA_ADMIN_PASSWORD` in `.env`.
+
+The dashboard JSON lives at
+`infrastructure/grafana/dashboards/shepard-overview.json` — edit
+in place and re-deploy to extend the panel set. Provisioning specs
+are in `infrastructure/grafana/provisioning/`. Dashboards are
+re-loaded by Grafana on a 30-second poll.
+
+For shared/long-running deployments, replace the bundled
+`shepard` / `secret` Grafana credentials in `.env` before exposing
+port 3001 publicly.
 
 ## Backups
 

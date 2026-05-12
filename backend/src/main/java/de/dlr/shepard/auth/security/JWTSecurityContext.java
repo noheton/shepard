@@ -2,8 +2,16 @@ package de.dlr.shepard.auth.security;
 
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
-import java.util.Arrays;
 
+/**
+ * JAX-RS {@link SecurityContext} that wraps a {@link JWTPrincipal} and
+ * routes {@link #isUserInRole(String)} through the principal's
+ * dual-source-resolved roles (aidocs/51 §3.3 / §7).
+ *
+ * <p>Standard JAX-RS {@code @RolesAllowed("instance-admin")}
+ * gates work via this hook — once the principal carries the role,
+ * the existing JAX-RS authorization plumbing accepts the call.
+ */
 public class JWTSecurityContext implements SecurityContext {
 
   private SecurityContext context;
@@ -21,7 +29,7 @@ public class JWTSecurityContext implements SecurityContext {
 
   @Override
   public boolean isUserInRole(String role) {
-    return Arrays.stream(userPrincipal.getRoles()).anyMatch(role::equals);
+    return userPrincipal != null && userPrincipal.hasRole(role);
   }
 
   @Override

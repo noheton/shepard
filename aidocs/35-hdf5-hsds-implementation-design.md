@@ -301,8 +301,8 @@ CI integration: HSDS testcontainer (`hdfgroup/hsds:latest`) on the
    benchmarks show meaningful round-trip pain.
 4. **Backup story.** HSDS data files (POSIX or object store) need
    their own backup discipline separate from the Neo4j / Mongo /
-   Timescale tarball pattern in `docs/deploy-oracle-free.md`. Document
-   when A5a lands; suggest `hsadmin` HSDS tooling.
+   Timescale tarball pattern. Document when A5a lands; suggest
+   `hsadmin` HSDS tooling.
 
 ## 14. Cross-references
 

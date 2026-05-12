@@ -7,7 +7,9 @@ import de.dlr.shepard.common.neo4j.entities.Named;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -48,6 +50,15 @@ public class ApiKey implements HasId, HasAppId, Named, HasCreationDate {
   @DateLong
   private Date validUntil;
 
+  /**
+   * A0 §4.1 — set of role-strings the key carries (e.g.
+   * {@code {"instance-admin"}}). Defaults to empty so existing keys
+   * preserve today's behaviour. Stored as a Neo4j primitive array
+   * property; cross-checked against the JWT's {@code roles} claim
+   * by {@code JWTFilter.parseApiKey} on every (uncached) request.
+   */
+  private Set<String> roles = new HashSet<>();
+
   private String jws;
 
   @ToString.Exclude
@@ -78,7 +89,7 @@ public class ApiKey implements HasId, HasAppId, Named, HasCreationDate {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(createdAt, jws, name, uid, validUntil);
+    result = prime * result + Objects.hash(createdAt, jws, name, uid, validUntil, roles);
     result = prime * result + HasId.hashcodeHelper(belongsTo);
     return result;
   }
@@ -94,7 +105,8 @@ public class ApiKey implements HasId, HasAppId, Named, HasCreationDate {
       Objects.equals(jws, other.jws) &&
       Objects.equals(name, other.name) &&
       Objects.equals(uid, other.uid) &&
-      Objects.equals(validUntil, other.validUntil)
+      Objects.equals(validUntil, other.validUntil) &&
+      Objects.equals(roles, other.roles)
     );
   }
 }

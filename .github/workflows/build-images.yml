@@ -2,7 +2,8 @@ name: Build images
 
 # Builds the backend (Quarkus + UBI9 OpenJDK runtime image) and frontend
 # (Nuxt 3) container images and pushes them to GitHub Container Registry
-# (GHCR) so the test deployment at shepard.nuclide.systems can pull them.
+# (GHCR) so operators (and the fork's image-override compose recipe) can
+# pull them.
 #
 # The published tags:
 #  - ghcr.io/noheton/shepard-backend:latest    (rolling, on push to main)

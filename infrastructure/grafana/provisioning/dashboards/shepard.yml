@@ -1,0 +1,17 @@
+# Auto-provisioned dashboard provider for the shepard `monitoring`
+# compose profile. Grafana watches `/etc/grafana/dashboards/` on
+# startup and on a 30-second poll interval.
+apiVersion: 1
+
+providers:
+  - name: "shepard"
+    orgId: 1
+    folder: "shepard"
+    folderUid: "shepard"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

@@ -56,7 +56,7 @@ read path.
 
 | # | Cost | Notes |
 |---|---|---|
-| C1 | **New infrastructure dependency** — operators run an S3-compatible service | MinIO is the lightweight self-hosted answer (~50 MB binary, S3-compatible, BSL/AGPL-licensed). For all-in-one shepard installs (`docs/deploy-oracle-free.md`, `docs/deploy-self-hosted-zoraxy.md`), MinIO joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
+| C1 | **New infrastructure dependency** — operators run an S3-compatible service | MinIO is the lightweight self-hosted answer (~50 MB binary, S3-compatible, BSL/AGPL-licensed). For all-in-one shepard installs, MinIO joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
 | C2 | **Auth bridge** — shepard's per-Collection / per-DataObject permissions vs S3's IAM/bucket-policy model | Two paths: (a) the **backend stays in the data path** for permission enforcement (proxies streams from S3, defeats W1); (b) **presigned URLs** carry per-request scope (does W1 properly but requires careful URL TTL + revocation thinking). Recommend (b) with short TTLs (≤ 5 min). Detailed in §4. |
 | C3 | **Migration cost** — copying existing FileContainers from GridFS to S3 takes wall-clock and bytes-out from Mongo | A 1 TB shepard install needs ~1 TB read from Mongo + 1 TB write to S3, single-pass. Doable in hours; needs a background job not a `docker compose up` migration. Detailed in §6. |
 | C4 | **Multi-region complexity** | Mongo replica sets handle this for GridFS; S3 cross-region replication needs operator config. For single-region installs, no extra work. |
@@ -108,23 +108,39 @@ public interface FileStorage {
 }
 ```
 
-Two implementations:
+Two implementations ship as **first-class plugins**
+(per `aidocs/47 §2`) — neither is deprecated; both are supported
+indefinitely, picked per-install:
 
-- **`GridFsFileStorage`** — today's behaviour, refactored from
-  `FileService`. **Stays the default** for backward compat and
-  for the all-in-one install.
-- **`S3FileStorage`** — uses AWS SDK v2 (`software.amazon.awssdk:s3`),
-  configured via standard AWS env / config (`AWS_REGION`,
-  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-  `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE` for MinIO). Optional
-  `presignedDownloadUrl` / `presignedUploadUrl` return real
-  presigned URLs; the GridFs impl returns `Optional.empty()` and
-  callers fall back to backend-proxied streams.
+- **`shepard-plugin-file-gridfs`** — today's behaviour, refactored
+  from `FileService`. **Stays the default** for backward compat
+  and for the all-in-one install. Operators with sub-TB workloads,
+  zero-extra-services preference, or air-gapped deployments stay
+  here; the plugin is **not a deprecation step on a path to
+  removal**. The user explicitly directed (2026-05-12): "when
+  migrating to storage plugins also implement a (legacy) GridFS
+  Plugin!" — meaning GridFS keeps a first-class supported plugin
+  surface, not a "use it until you can leave" deprecation stance.
+- **`shepard-plugin-file-s3`** — uses AWS SDK v2
+  (`software.amazon.awssdk:s3`), configured via standard AWS env
+  / config (`AWS_REGION`, `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`, `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE`
+  for MinIO). Optional `presignedDownloadUrl` /
+  `presignedUploadUrl` return real presigned URLs; the GridFs
+  plugin returns `Optional.empty()` and callers fall back to
+  backend-proxied streams.
 
-Selection at startup: `shepard.files.storage = gridfs | s3` (default
-`gridfs`). Resolved by a CDI `@Produces` bean. Single-file change at
-the seam in `FileService` (the existing class becomes a thin facade
-that delegates to `FileStorage`).
+Selection at startup: `shepard.payload.file.backend = gridfs | s3`
+(default `gridfs`). Resolved by the `PayloadStorage` SPI
+(`aidocs/47 §2.2`). Single-file change at the seam in
+`FileService` (the existing class becomes a thin facade that
+delegates to the registered `FileStorage` plugin).
+
+**Pick-axiom.** S3 is the right choice for installs with multi-TB
+data, frequent multi-GB uploads, presigned-URL needs, or an
+existing S3-compatible service in the operator's environment.
+GridFS is the right choice for everything else — and we ship
+both as supported plugins.
 
 ### 3.3 (C) Per-Collection storage choice
 
@@ -338,8 +354,7 @@ when the new endpoints land.
   high-egress installs.
 - **CORS misconfiguration.** A wrong CORS rule on the S3 bucket
   manifests as silent failures in the browser. Provide a known-good
-  CORS template in `docs/deploy-self-hosted-zoraxy.md` and the
-  Oracle deploy guide.
+  CORS template in `docs/deploy.md`.
 
 ## 11. Cross-references
 

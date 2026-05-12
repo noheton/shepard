@@ -58,13 +58,6 @@ project where a git repo plus three CSV files would do. The
 overhead of shepard is amortised across collaboration and
 re-discovery.
 
-**Live test deployment for this fork:**
-[**shepard.nuclide.systems**](https://shepard.nuclide.systems) —
-self-hosted Docker host fronted by Zoraxy
-(`docs/deploy-self-hosted-zoraxy.md` §5a is the canonical recipe).
-Iterates ahead of `main`; useful as a smoke target after each
-landing.
-
 ## What's in the box (today)
 
 shepard organises everything into five primitives:
@@ -213,9 +206,9 @@ Mid-horizon:
 - **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
   a `/help` route serving the same `docs/*.md` content as the
   Pages site, with screenshots auto-captured by Playwright against
-  the `shepard.nuclide.systems` test deployment. Casual users get
-  task-shaped help (upload-data / share-collection /
-  export-rocrate / process-step) without leaving the app.
+  a locally-booted compose stack. Casual users get task-shaped help
+  (upload-data / share-collection / export-rocrate / process-step)
+  without leaving the app.
 - **Experiment orchestration** (`aidocs/50`, EXP1 series). A new
   `shepard-experiment-coordinator` service drives manufacturing-
   style experiments end-to-end (PLC / SPS / KUKA robot / OPC/UA /
@@ -223,6 +216,51 @@ Mid-horizon:
   pre-seed / JIT / post-process timing strategies plus
   checkpoint-based restart. Builds on T1 templates + PR1 processes
   + sTC telemetry + V2 snapshots.
+- **Instance-Admin role** (`aidocs/51`, A0 + C3 + F8 — backend
+  shipped). Single role tier (`instance-admin`); dual-source role
+  check (IdP claim OR Neo4j `:HAS_ROLE` edge); bootstrap-token
+  mechanism for first-admin; `/v2/admin/...` REST surface.
+- **PROV-O provenance + activity dashboard** (`aidocs/55`, PROV1
+  series). Casual-user sparkline ("3.2 GB files captured, 18M
+  timeseries points, 4 contributors active over 90 days") backed
+  by a W3C PROV-O graph; per-Collection + instance-admin scopes;
+  PROV-N JSON export.
+- **Video as a first-class payload** (`aidocs/53`, VID1 series).
+  Dedicated PayloadStorage plugin; segments + HLS manifest on
+  object store; navigation by video-time and wall-clock; live
+  ingest via a sibling `shepard-video-collector` or a MediaMTX
+  sidecar.
+- **`FileReference` → `FileBundle` + `FileGroup`** (`aidocs/53`,
+  FB1 series). The existing entity is actually a *bundle* of
+  files; the rename makes that visible and adds a first-class
+  group concept under it so a 1000-image cyclic capture stops
+  looking like a flat list.
+- **Templates as a first-class admin entity** (`aidocs/54`, T1
+  revised). `:ShepardTemplate` Neo4j entity in an admin-only
+  subgraph (replaces the `__templates` hack); JSON DSL bodies,
+  copy-on-write versioning, admin-gated CRUD at `/v2/templates`.
+- **v2 API simplification + output profiles + MCP-friendly
+  OpenAPI** (`aidocs/56`, V2S1 series). Flat
+  `/v2/dataobjects/{appId}` single-entity paths;
+  `?profile=metadata|relations|all` projections;
+  `x-mcp-tool-name` + `x-mcp-side-effects` extensions so a later
+  MCP-server can be generated from the spec.
+- **AAS backend integration** (`aidocs/52`, AAS1 series). Explore
+  whether shepard can act as an Asset Administration Shell
+  (Plattform Industrie 4.0) repository backend; v1 = adapter shim
+  at `/v2/aas/...`; conformance targets IDTA Nameplate +
+  TechnicalData + TimeSeriesData first.
+- **UI + graph ergonomics cluster** (`aidocs/58`, UI1 / UI2 / UI3
+  / CP1 / ONT1 / REF1 / GR1 / BIZ1 series). Lefthand-tree
+  drag-and-drop; navigable Collection graph view (cytoscape.js);
+  `@`-mention autocomplete; `:CollectionProperties` properties-
+  node; RO ontology added to the pre-seed bundle; DBpedia Databus
+  rich-reference plugin; **GraphRAG** on shepard via native Neo4j
+  5.13+ vector index.
+- **OpenAPI client-generator pick** (`aidocs/57`, CG1 series).
+  Kiota for the `/v2/` shelf, OpenAPI Generator retained for the
+  byte-frozen `/shepard/api/...` shelf; Hey API as a TS-only
+  tactical secondary for the Nuxt frontend.
 
 Long-horizon (deliberately deferred):
 
@@ -243,7 +281,7 @@ has a low-friction path (see `aidocs/34`).
 ## Where to go next
 
 - **Operator** ("how do I run it?") → `docs/admin.md`,
-  `docs/deploy-oracle-free.md`, `docs/deploy-self-hosted-zoraxy.md`.
+  `docs/deploy.md`.
 - **API user** ("how do I write a client?") → the OpenAPI at
   `<host>/shepard/doc/openapi.json`; generated clients on
   `gitlab.com/groups/dlr-shepard/-/packages`.

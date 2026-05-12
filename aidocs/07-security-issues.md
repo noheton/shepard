@@ -30,12 +30,15 @@ None of the critical findings are tracked as open GitLab issues. Two HIGH findin
 - **Fix effort**: XS
 - **Tracked**: No
 
-### C3 — Permissions fallback grants full access to entities with no Permissions node
+### C3 — Permissions fallback grants full access to entities with no Permissions node — **FIXED**
 - **Location**: `backend/src/main/java/de/dlr/shepard/auth/permission/services/PermissionsService.java:258-262`
-- **Description**: `getRoles` returns `new Roles(false, true, true, true)` — i.e. manager + writer + reader = true — for any "legacy entity without permissions". `isAccessTypeAllowedForUser` (line 115) consults `getRoles` for every authorization decision; a single missed `createPermissions(...)` call (in a new entity type or due to a race condition during creation) silently exposes data with full write/manage rights to **every authenticated user**. Architecture documents this as known tech-debt #1, but the severity from a security standpoint is critical.
-- **Recommendation**: Invert the default — empty Optional should return `new Roles(false,false,false,false)`. Add a Neo4j constraint or startup audit job that fails the deploy if any `BasicEntity` is missing its `has_permissions` edge. Add an integration test that creates each entity type and verifies a Permissions node exists.
-- **Fix effort**: S
-- **Tracked**: Partial overlap with #41/#62/#424/#483/#667 (permissions cluster) and tech-debt #1.
+- **Description**: `getRoles` returned `new Roles(false, true, true, true)` — i.e. manager + writer + reader = true — for any "legacy entity without permissions". `isAccessTypeAllowedForUser` (line 115) consulted `getRoles` for every authorization decision; a single missed `createPermissions(...)` call (in a new entity type or due to a race condition during creation) silently exposed data with full write/manage rights to **every authenticated user**.
+- **Status**: **DONE** — fixed in the A0 bundle (aidocs/51 §8). `getRoles` now returns `Roles(false, false, false, false)` fail-closed when the Permissions node is absent. Bundled because the inverse-by-itself would lock everyone out — it needed the A0 admin-role mechanism shipping together so legitimate admin operations still work.
+  - Pre-migration `OrphanPermissionsBackfillContext` aborts startup if orphans exist and `shepard.permissions.default-owner` is unset (post-A1e fail-fast).
+  - `V14__Backfill_orphan_permissions.cypher` migration attaches default Permissions to every orphan via the configured owner; idempotent (only writes orphans).
+  - `GET /v2/admin/permission-audit` (`@RolesAllowed("instance-admin")`-gated) lists the remaining orphans for operational triage.
+- **Fix effort**: S (post-bundle)
+- **Tracked**: Closed by this slice. Partial overlap with #41/#62/#424/#483/#667 and tech-debt #1 (permissions cluster).
 
 ### C4 — SSRF + ReDoS in subscription webhook filter
 - **Location**: `backend/src/main/java/de/dlr/shepard/common/filters/SubscriptionFilter.java:63-78`

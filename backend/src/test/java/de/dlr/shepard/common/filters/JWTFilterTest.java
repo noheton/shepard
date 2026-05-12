@@ -9,7 +9,9 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.services.ApiKeyService;
+import de.dlr.shepard.auth.role.daos.RoleDAO;
 import de.dlr.shepard.auth.security.ApiKeyLastSeenCache;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
 import de.dlr.shepard.auth.security.RolesList;
@@ -69,6 +71,12 @@ public class JWTFilterTest extends BaseTestCase {
   @InjectMock
   ApiKeyLastSeenCache apiKeyLastSeenCache;
 
+  @InjectMock
+  RoleDAO roleDAO;
+
+  @InjectMock
+  AuthenticationContext authenticationContext;
+
   @Inject
   JWTFilter filter;
 
@@ -98,6 +106,11 @@ public class JWTFilterTest extends BaseTestCase {
   @BeforeEach
   public void setUpKeys() throws IllegalAccessException {
     when(pkiHelper.getPublicKey()).thenReturn(publicKey);
+  }
+
+  @BeforeEach
+  public void setUpRoleDAO() {
+    when(roleDAO.rolesForUser(org.mockito.ArgumentMatchers.anyString())).thenReturn(java.util.Collections.emptyList());
   }
 
   @BeforeEach
@@ -627,5 +640,192 @@ public class JWTFilterTest extends BaseTestCase {
     verify(context).setSecurityContext(scCaptor.capture());
     verify(apiKeyService, never()).getApiKey("MyUserName", uid);
     assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
+  }
+
+  // ----- A0 + F8: dual-source role resolution + claim-path walk -----
+
+  /**
+   * F8: when {@code shepard.oidc.roles-claim-path} points at a path
+   * that doesn't exist in the JWT, the filter still authenticates the
+   * user (no role is enforced) — the claim-path is for role lookup
+   * only.
+   */
+  @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
+  @TestConfigProperty(key = "shepard.oidc.roles-claim-path", value = "groups")
+  @TestConfigProperty(key = "shepard.instance-admin.role", value = "shepard-admin")
+  public void testF8_idpRoleGrantsInstanceAdmin() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    when(roleDAO.rolesForUser("alice")).thenReturn(java.util.Collections.emptyList());
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("alice")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("groups", java.util.List.of("shepard-admin", "users"))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var principal = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    org.junit.jupiter.api.Assertions.assertTrue(principal.hasRole("instance-admin"));
+  }
+
+  /**
+   * Dual-source: only Neo4j edge (no IdP claim) still grants
+   * instance-admin via the principal.
+   */
+  @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
+  @TestConfigProperty(key = "shepard.instance-admin.role", value = "shepard-admin")
+  public void testDualSource_neo4jOnlyGrant() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    when(roleDAO.rolesForUser("bob")).thenReturn(java.util.List.of("instance-admin"));
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("bob")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("realm_access", new RolesList(new String[] { "users" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var principal = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    org.junit.jupiter.api.Assertions.assertTrue(principal.hasRole("instance-admin"));
+  }
+
+  /**
+   * Dual-source: both sources agree → still exactly one
+   * instance-admin entry on the principal (deduped).
+   */
+  @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
+  @TestConfigProperty(key = "shepard.instance-admin.role", value = "shepard-admin")
+  public void testDualSource_bothSources_dedupes() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    when(roleDAO.rolesForUser("carol")).thenReturn(java.util.List.of("instance-admin"));
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("carol")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("realm_access", new RolesList(new String[] { "shepard-admin" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var principal = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    long count = java.util.Arrays.stream(principal.getRoles()).filter("instance-admin"::equals).count();
+    org.junit.jupiter.api.Assertions.assertEquals(1, count);
+  }
+
+  /**
+   * Dual-source: neither source grants the role → principal carries
+   * no instance-admin (and authentication still succeeds — the role
+   * is only required for `@RolesAllowed`-gated endpoints).
+   */
+  @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
+  @TestConfigProperty(key = "shepard.instance-admin.role", value = "shepard-admin")
+  public void testDualSource_neither_principalHasNoRole() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    when(roleDAO.rolesForUser("dave")).thenReturn(java.util.Collections.emptyList());
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("dave")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim("realm_access", new RolesList(new String[] { "users" }))
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var principal = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    org.junit.jupiter.api.Assertions.assertFalse(principal.hasRole("instance-admin"));
+  }
+
+  /**
+   * F8: a deeper claim-path (Pocket ID-style nested claim) walks
+   * correctly when configured.
+   */
+  @Test
+  @TestConfigProperty(key = "oidc.role", value = "")
+  @TestConfigProperty(key = "shepard.oidc.roles-claim-path", value = "resource_access.shepard.roles")
+  @TestConfigProperty(key = "shepard.instance-admin.role", value = "instance-admin")
+  public void testF8_nestedClaimPath() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    when(roleDAO.rolesForUser("eve")).thenReturn(java.util.Collections.emptyList());
+    Date now = new Date();
+    Date future = DateUtils.addMinutes(now, 5);
+    UUID keyId = UUID.randomUUID();
+
+    String jws = Jwts.builder()
+      .setSubject("eve")
+      .setAudience("account")
+      .setExpiration(future)
+      .setNotBefore(now)
+      .setIssuedAt(new Date())
+      .setId(keyId.toString())
+      .claim(
+        "resource_access",
+        java.util.Map.of("shepard", java.util.Map.of("roles", java.util.List.of("instance-admin")))
+      )
+      .signWith(privateKey)
+      .compact();
+
+    when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
+    filter.filter(context);
+    verify(context, never()).abortWith(any());
+    verify(context).setSecurityContext(scCaptor.capture());
+    var principal = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    org.junit.jupiter.api.Assertions.assertTrue(principal.hasRole("instance-admin"));
+  }
+
+  /**
+   * Static-helper level: claim-path parsing.
+   */
+  @Test
+  public void parseClaimPath_splits() {
+    org.junit.jupiter.api.Assertions.assertArrayEquals(
+      new String[] { "realm_access", "roles" },
+      JWTFilter.parseClaimPath("realm_access.roles")
+    );
+    org.junit.jupiter.api.Assertions.assertArrayEquals(new String[0], JWTFilter.parseClaimPath(""));
+    org.junit.jupiter.api.Assertions.assertArrayEquals(
+      new String[] { "groups" },
+      JWTFilter.parseClaimPath(" groups ")
+    );
   }
 }

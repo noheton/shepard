@@ -355,13 +355,23 @@
           <skipTests>${skipUTs}</skipTests>
           <excludes>
             <exclude>**/integrationtests/*.java</exclude>
-            <!-- @QuarkusTest classes that boot the full Quarkus app and
-                 transitively need Postgres / Neo4j / Mongo containers.
-                 They belong in the integration-test job (failsafe profile
-                 with infrastructure-local up). Including them here breaks
-                 the unit-only run because Flyway tries to connect at
-                 127.0.0.1:5433 / 7687 / etc. -->
-            <exclude>**/DataObjectSearchServiceQuarkusTest.java</exclude>
+            <!-- @QuarkusTest classes that boot the full Quarkus app
+                 and need Postgres / Neo4j / Mongo via Flyway-migrate-
+                 at-start. They belong in the integration-test job
+                 (failsafe + infrastructure-local up). The
+                 `*QuarkusTest.java` name-convention catches most;
+                 the remainder are listed explicitly. Renaming the
+                 latter to the *QuarkusTest convention is the
+                 follow-up cleanup. -->
+            <exclude>**/*QuarkusTest.java</exclude>
+            <exclude>**/labJournal/services/LabJournalTest.java</exclude>
+            <exclude>**/spatialdata/repositories/SpatialDataPointRepositoryTest.java</exclude>
+            <exclude>**/timeseries/services/TimeseriesCsvServiceTest.java</exclude>
+            <exclude>**/timeseries/services/TimeseriesContainerServiceTest.java</exclude>
+            <exclude>**/timeseries/services/TimeseriesServiceTest.java</exclude>
+            <exclude>**/timeseries/services/TimeseriesServiceAggregationTest.java</exclude>
+            <exclude>**/timeseriesreference/TimeseriesReferenceMetricsServiceTest.java</exclude>
+            <exclude>**/semantic/services/AnnotatableTimeseriesServiceTest.java</exclude>
           </excludes>
           <includes>
             <include>${include-in-unit-tests}</include>

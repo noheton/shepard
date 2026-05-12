@@ -7,11 +7,15 @@
 # Same audit discipline as the OWASP suppressions file.
 
 # Per-CVE exceptions: list `GHSA-...` IDs (preferred) or `CVE-...` IDs.
-# allow-ghsas:
+allow-ghsas: []
 #   - GHSA-xxxx-xxxx-xxxx     # reason: ...
 
 # Per-dependency exceptions for licence checks.
-# allow-dependencies-licenses:
+allow-dependencies-licenses: []
 #   - 'pkg:maven/group/artifact@version?...=...'   # reason: ...
 
 # Re-evaluate exceptions on every release.
+#
+# (Empty `allow-*` keys must be present even when no exceptions are
+# active — dependency-review-action@v4 rejects a wholly-empty file
+# with "Cannot convert undefined or null to object".)

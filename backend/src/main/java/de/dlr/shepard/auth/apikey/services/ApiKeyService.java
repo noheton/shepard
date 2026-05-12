@@ -3,18 +3,26 @@ package de.dlr.shepard.auth.apikey.services;
 import de.dlr.shepard.auth.apikey.daos.ApiKeyDAO;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.apikey.io.ApiKeyIO;
+import de.dlr.shepard.auth.role.daos.RoleDAO;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PKIHelper;
 import io.jsonwebtoken.Jwts;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @RequestScoped
 public class ApiKeyService {
@@ -30,6 +38,23 @@ public class ApiKeyService {
 
   @Inject
   PKIHelper pkiHelper;
+
+  @Inject
+  AuthenticationContext authenticationContext;
+
+  @Inject
+  RoleDAO roleDAO;
+
+  /**
+   * A0 §4.2 — operator-configurable allowlist of roles that API keys
+   * may carry. Default is the singleton {@code ["instance-admin"]};
+   * shrink to empty (set the property to nothing) to forbid
+   * role-bearing keys entirely. Modelled as {@code Optional<String[]>}
+   * so SmallRye config doesn't reject empty values.
+   */
+  @Inject
+  @ConfigProperty(name = "shepard.apikey.role-allowlist", defaultValue = "instance-admin")
+  java.util.Optional<String[]> apiKeyRoleAllowlistOpt;
 
   /**
    * Searches the neo4j database for all ApiKeys associated with a given user.
@@ -106,15 +131,76 @@ public class ApiKeyService {
       throw new InvalidRequestException("validUntil must be in the future");
     }
 
+    Set<String> requestedRoles = apiKey.getRoles() == null ? Set.of() : new HashSet<>(apiKey.getRoles());
+    validateRequestedRoles(requestedRoles, username);
+
     var toCreate = new ApiKey();
     toCreate.setBelongsTo(user);
     toCreate.setCreatedAt(now);
     toCreate.setName(apiKey.getName());
     toCreate.setValidUntil(validUntil);
+    toCreate.setRoles(requestedRoles);
 
     var createdApiKey = apiKeyDAO.createOrUpdate(toCreate);
     createdApiKey.setJws(generateJws(createdApiKey, baseUri));
     return apiKeyDAO.createOrUpdate(createdApiKey);
+  }
+
+  /**
+   * A0 §4.2 — verify the requested role-set is valid for the caller:
+   *
+   * <ol>
+   *   <li>Each role must be in {@code shepard.apikey.role-allowlist}
+   *       (operator-configurable; default {@code ["instance-admin"]}).
+   *   <li>Each role must already be held by the caller — looked up via
+   *       both the JWT principal's deduped roles AND the Neo4j edge
+   *       (the dual-source check). No privilege escalation: a non-admin
+   *       can't mint admin keys.
+   * </ol>
+   *
+   * <p>Empty role set (the default) skips both checks — preserves
+   * today's behaviour for existing API-key flows.
+   */
+  void validateRequestedRoles(Set<String> requestedRoles, String username) {
+    if (requestedRoles == null || requestedRoles.isEmpty()) return;
+
+    Set<String> allowlist = new HashSet<>();
+    String[] configured = apiKeyRoleAllowlistOpt == null ? null : apiKeyRoleAllowlistOpt.orElse(new String[0]);
+    if (configured != null) {
+      for (String r : configured) {
+        if (r != null && !r.isBlank()) allowlist.add(r.trim());
+      }
+    }
+
+    Set<String> callerRoles = new HashSet<>();
+    var principal = authenticationContext == null ? null : authenticationContext.getPrincipal();
+    if (principal != null && principal.getRoles() != null) {
+      callerRoles.addAll(Arrays.asList(principal.getRoles()));
+    }
+    // Belt-and-braces: also consult the Neo4j edge directly, so a
+    // mint requested via a fresh request whose principal hasn't yet
+    // been dual-source-resolved still works.
+    if (roleDAO != null) {
+      try {
+        callerRoles.addAll(roleDAO.rolesForUser(username));
+      } catch (RuntimeException ignored) {
+        // best-effort, see JWTFilter notes
+      }
+    }
+
+    for (String role : requestedRoles) {
+      if (role == null || role.isBlank()) continue;
+      if (!allowlist.contains(role)) {
+        throw new InvalidRequestException(
+          "Role '" + role + "' is not in shepard.apikey.role-allowlist=" + allowlist
+        );
+      }
+      if (!callerRoles.contains(role)) {
+        throw new InvalidAuthException(
+          "Caller does not hold role '" + role + "' — cannot mint an API key with it."
+        );
+      }
+    }
   }
 
   /**
@@ -155,6 +241,17 @@ public class ApiKeyService {
     if (apiKey.getValidUntil() != null) {
       builder.setExpiration(apiKey.getValidUntil());
     }
+    Set<String> roles = apiKey.getRoles();
+    if (roles != null && !roles.isEmpty()) {
+      // Sorted list for deterministic token shape.
+      var sorted = new java.util.TreeSet<>(roles);
+      builder.claim(Constants.ROLES, java.util.List.copyOf(sorted));
+    }
     return builder.signWith(pkiHelper.getPrivateKey()).compact();
+  }
+
+  // Ignore Sonar — referenced in unit tests for visibility into the empty-by-default state.
+  Set<String> emptyRoles() {
+    return Collections.emptySet();
   }
 }
