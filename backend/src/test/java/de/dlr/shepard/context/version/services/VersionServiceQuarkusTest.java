@@ -19,9 +19,9 @@ import de.dlr.shepard.context.references.dataobject.io.CollectionReferenceIO;
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
@@ -90,7 +90,7 @@ public class VersionServiceQuarkusTest {
   FileContainerService fileContainerService;
 
   @Inject
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @Inject
   VersionDAO versionDAO;
@@ -215,7 +215,7 @@ public class VersionServiceQuarkusTest {
     );
   }
 
-  private FileReference createFileReference(long collectionShepardId, String name, DataObject referencingDataObject) {
+  private FileBundleReference createFileReference(long collectionShepardId, String name, DataObject referencingDataObject) {
     FileContainerIO containerIO = new FileContainerIO();
     containerIO.setName(name + "Container");
     FileContainer container = fileContainerService.createContainer(containerIO);
@@ -406,16 +406,16 @@ public class VersionServiceQuarkusTest {
   public void createVersion_collectionWithFileReferences_copiedSuccessfully() {
     Collection collection = createCollection("collection");
     DataObject dataObject = createDataObject("DataObject", collection, null, null);
-    FileReference reference = createFileReference(collection.getShepardId(), "reference", dataObject);
+    FileBundleReference reference = createFileReference(collection.getShepardId(), "reference", dataObject);
     Version HEADVersion = collection.getVersion();
     Version version1 = createVersion("version1", collection);
-    FileReference HEADReference = fileReferenceService.getReference(
+    FileBundleReference HEADReference = fileReferenceService.getReference(
       collection.getShepardId(),
       dataObject.getShepardId(),
       reference.getShepardId(),
       HEADVersion.getUid()
     );
-    FileReference version1Reference = fileReferenceService.getReference(
+    FileBundleReference version1Reference = fileReferenceService.getReference(
       collection.getShepardId(),
       dataObject.getShepardId(),
       reference.getShepardId(),

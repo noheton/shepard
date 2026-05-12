@@ -25,8 +25,8 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
@@ -72,7 +72,7 @@ public class ExportSubscriptionsBundleTest {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @InjectMock
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @InjectMock
   StructuredDataReferenceService structuredDataReferenceService;
@@ -301,7 +301,7 @@ public class ExportSubscriptionsBundleTest {
   @Test
   public void subscriptionsTrue_referenceUrlMatch_emittedForReference() throws IOException {
     // A FileReference attached to dataObject(25) inside collection(15).
-    FileReference reference = mock(FileReference.class);
+    FileBundleReference reference = mock(FileBundleReference.class);
     when(reference.getId()).thenReturn(99L);
     when(reference.getShepardId()).thenReturn(99L);
     when(reference.getNumericId()).thenReturn(99L);

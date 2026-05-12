@@ -19,9 +19,9 @@ import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -82,7 +82,7 @@ public class ExportServiceQuarkusTest {
   FileContainerService fileContainerService;
 
   @Inject
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @Inject
   VersionDAO versionDAO;
@@ -120,7 +120,7 @@ public class ExportServiceQuarkusTest {
   private DataObject childDataObject;
   private LabJournalEntry labJournalEntry;
   private FileContainer fileContainer;
-  private FileReference fileReference;
+  private FileBundleReference fileReference;
   private DataObjectReference dataObjectReference;
   private ShepardFile shepardFile;
   private Timeseries timeseries;

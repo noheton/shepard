@@ -19,9 +19,9 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
@@ -60,7 +60,7 @@ public class ExportServiceTest {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @InjectMock
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @InjectMock
   StructuredDataReferenceService structuredDataReferenceService;
@@ -189,7 +189,7 @@ public class ExportServiceTest {
 
   @Test
   public void exportTest_fileReference() throws IOException {
-    var reference = hydrateReferenceMock(mock(FileReference.class), "FileReference");
+    var reference = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference");
     dataObject.addReference(reference);
 
     when(

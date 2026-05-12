@@ -27,7 +27,7 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
@@ -68,7 +68,7 @@ public class ExportMetadataBundleTest {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @InjectMock
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @InjectMock
   StructuredDataReferenceService structuredDataReferenceService;
