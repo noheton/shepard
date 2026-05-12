@@ -70,6 +70,21 @@ services:
       NEO4J_server_memory_heap_initial__size: 2G
       NEO4J_server_memory_heap_max__size: 2G
       NEO4J_server_memory_pagecache_size: 3G
+      # N1a — install the neosemantics ("n10s") plugin so shepard's
+      # internal `SemanticRepositoryType.INTERNAL` connector has a backend.
+      # The official neo4j image's NEO4J_PLUGINS list fetches+verifies the
+      # plugin jar on startup (see https://neo4j.com/docs/operations-manual/5/docker/plugins/).
+      # If an air-gapped operator can't reach the plugin CDN, drop the jar
+      # into /opt/shepard/neo4j/plugins by hand and remove this env var —
+      # the n10s bootstrap hook gracefully degrades when the procedures
+      # aren't found.
+      NEO4J_PLUGINS: '["n10s"]'
+      # n10s exposes procedures under the `n10s.*` namespace; both lists
+      # must include it or `CALL n10s.graphconfig.init` is denied.
+      # APOC is included pre-emptively because most shepard deployments
+      # eventually want it; remove if your policy is strictly minimal.
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*,n10s.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*,n10s.*"
     ports:
       - "7687:7687"
     volumes:
