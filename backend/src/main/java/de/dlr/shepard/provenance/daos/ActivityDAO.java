@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * DAO for {@link Activity} provenance rows. Designed in
@@ -117,6 +118,99 @@ public class ActivityDAO extends GenericDAO<Activity> {
       params.put("until", untilMillis);
     }
     cypher.append(" RETURN count(a) AS c");
+    var result = session.query(cypher.toString(), params);
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return 0L;
+    Object c = it.next().get("c");
+    return c instanceof Number n ? n.longValue() : 0L;
+  }
+
+  /**
+   * Bucket activity counts by time-window for the dashboard sparkline.
+   * Returns a list of {@code [bucketStartMillis, count]} pairs sorted
+   * ascending. Empty buckets within the window are NOT filled — the
+   * caller fills gaps client-side (per {@code aidocs/55 §6}).
+   *
+   * @param targetAppId    optional — filter to one entity (sparkline for one Collection)
+   * @param agentUsername  optional — filter to one Agent
+   * @param sinceMillis    inclusive lower bound
+   * @param untilMillis    inclusive upper bound
+   * @param bucketMillis   bucket width in millis (e.g. 86_400_000 for daily)
+   */
+  public List<long[]> aggregateBuckets(String targetAppId, String agentUsername, long sinceMillis, long untilMillis, long bucketMillis) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (a:Activity) WHERE a.startedAtMillis >= $since AND a.startedAtMillis <= $until"
+    );
+    Map<String, Object> params = new HashMap<>();
+    params.put("since", sinceMillis);
+    params.put("until", untilMillis);
+    params.put("bucket", bucketMillis);
+    if (targetAppId != null) {
+      cypher.append(" AND a.targetAppId = $tappid");
+      params.put("tappid", targetAppId);
+    }
+    if (agentUsername != null) {
+      cypher.append(" AND a.agentUsername = $agent");
+      params.put("agent", agentUsername);
+    }
+    cypher.append(" WITH (a.startedAtMillis / $bucket) * $bucket AS bucketStart")
+      .append(" RETURN bucketStart, count(*) AS c ORDER BY bucketStart ASC");
+    var result = session.query(cypher.toString(), params);
+    List<long[]> out = new ArrayList<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      long bucket = row.get("bucketStart") instanceof Number bn ? bn.longValue() : 0L;
+      long count = row.get("c") instanceof Number cn ? cn.longValue() : 0L;
+      out.add(new long[] { bucket, count });
+    }
+    return out;
+  }
+
+  /**
+   * Returns per-{@code actionKind} totals for the same filter set as
+   * {@link #aggregateBuckets}.
+   */
+  public Map<String, Long> totalsByActionKind(String targetAppId, String agentUsername, long sinceMillis, long untilMillis) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (a:Activity) WHERE a.startedAtMillis >= $since AND a.startedAtMillis <= $until"
+    );
+    Map<String, Object> params = new HashMap<>();
+    params.put("since", sinceMillis);
+    params.put("until", untilMillis);
+    if (targetAppId != null) {
+      cypher.append(" AND a.targetAppId = $tappid");
+      params.put("tappid", targetAppId);
+    }
+    if (agentUsername != null) {
+      cypher.append(" AND a.agentUsername = $agent");
+      params.put("agent", agentUsername);
+    }
+    cypher.append(" RETURN coalesce(a.actionKind, 'UNKNOWN') AS kind, count(*) AS c");
+    var result = session.query(cypher.toString(), params);
+    Map<String, Long> out = new java.util.LinkedHashMap<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      String kind = Objects.toString(row.get("kind"), "UNKNOWN");
+      long c = row.get("c") instanceof Number n ? n.longValue() : 0L;
+      out.put(kind, c);
+    }
+    return out;
+  }
+
+  /**
+   * Distinct count of agent usernames matching the filter set. Used by
+   * the dashboard's "N contributors active" tile.
+   */
+  public long distinctAgentCount(String targetAppId, long sinceMillis, long untilMillis) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (a:Activity) WHERE a.startedAtMillis >= $since AND a.startedAtMillis <= $until"
+    );
+    Map<String, Object> params = new HashMap<>();
+    params.put("since", sinceMillis);
+    params.put("until", untilMillis);
+    if (targetAppId != null) {
+      cypher.append(" AND a.targetAppId = $tappid");
+      params.put("tappid", targetAppId);
+    }
+    cypher.append(" RETURN count(DISTINCT a.agentUsername) AS c");
     var result = session.query(cypher.toString(), params);
     var it = result.queryResults().iterator();
     if (!it.hasNext()) return 0L;
