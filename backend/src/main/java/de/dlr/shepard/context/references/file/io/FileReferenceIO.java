@@ -2,7 +2,7 @@ package de.dlr.shepard.context.references.file.io;
 
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +23,7 @@ public class FileReferenceIO extends BasicReferenceIO {
   @Schema(required = true)
   private long fileContainerId;
 
-  public FileReferenceIO(FileReference ref) {
+  public FileReferenceIO(FileBundleReference ref) {
     super(ref);
     this.fileOids = ref.getFiles().stream().map(ShepardFile::getOid).toArray(String[]::new);
     this.fileContainerId = ref.getFileContainer() != null ? ref.getFileContainer().getId() : -1;
