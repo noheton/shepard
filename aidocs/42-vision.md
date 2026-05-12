@@ -97,9 +97,12 @@ Plus payload kinds (the things References point at):
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
   PostGIS (optional feature toggle).
-- **HDF5 / HSDS reference** *(coming with A5; design done in
-  `aidocs/35`)* → HDF5 datasets accessible via `h5pyd`-compatible
-  REST.
+- **HDF5 (via HSDS sidecar — opt-in)** *(A5a shipped: `HdfContainer`
+  create/read/delete + opt-in `hdf` compose profile + HTTP Basic
+  Phase 1 auth — see `aidocs/35`)* → HDF5 containers backed by the
+  HSDS sidecar. The per-DataObject reference, the byte-identical
+  download fallback, the permission bridge, and the
+  shepard-API-key-to-`h5pyd`-bearer-token relay are queued (A5b–A5e).
 - **Git reference** *(mode-a shipped: loose link to repo URL + ref + path;
   UI in-flight; tracked + pinned-snapshot modes coming with G1b/G1c)* →
   pinned git commit + path, for analysis code provenance.
