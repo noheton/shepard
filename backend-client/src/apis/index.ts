@@ -22,6 +22,7 @@ export * from './TimeseriesContainerApi';
 export * from './TimeseriesMigrationApi';
 export * from './TimeseriesReferenceApi';
 export * from './UriReferenceApi';
+export * from './MeApi';
 export * from './UserApi';
 export * from './UserGroupApi';
 export * from './VersionzApi';

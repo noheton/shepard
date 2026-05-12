@@ -143,7 +143,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | HDF5 / HSDS as a payload kind (`HdfContainer` / `HdfReference`); `h5pyd` parity | none | TBD; HSDS sidecar + shared-Keycloak token relay | 📐 (queued, A5) | `aidocs/35` |
-| Git integration (`GitReference`); 3 modes (loose / tracked / pinned-snapshot); commit-SHA in RO-Crate | none | TBD | 📐 (queued, G1) | `aidocs/38` |
+| Git integration (`GitReference`); mode-a (loose link: repoUrl + ref + path); modes b/c scaffolded; CRUD via `/v2/data-objects/{appId}/git-references`; UI renders as clickable link | none | Backend ✓; UI 🚧 | **✓ ↑ (backend, G1a #1063)** / **🚧 UI** | `aidocs/38` |
 | Templates feature (Templates Collection of DataObject blueprints; per-Collection allow-list) | none | TBD; replaces / supersedes upstream-aspirational L3 | 📐 (queued, T1) | `aidocs/39` |
 | Process design + runtime in shepard core (`ProcessDefinition` + browser-hosted stepper) | SPW desktop only | TBD | 📐 (queued, PR1) | `aidocs/40 §2` |
 | Snapshots (point-in-time, immutable, reproducible reads) | `Version` is a marker only | TBD; logical snapshots backed by entity revisions | 📐 (queued, V2) | `aidocs/41` |
@@ -152,8 +152,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
-| ORCID iD on user profile (#29) | none | TBD; mod 11-2 checksum, no network | 📐 (queued, U1a) | `aidocs/36` |
-| `displayName` override + audit-trail render switch (#694) | username only | TBD | 📐 (queued, U1b) | `aidocs/36` |
+| ORCID iD on user profile (#29) | none | `PATCH /v2/users/me` (orcid); ISO 7064 mod 11-2 checked; UI edit dialog in ProfilePane | **✓ ↑** | U1a (#1062) + U1-profile-ui |
+| `displayName` override + `effectiveDisplayName` derivation + audit-trail render switch (#694) | username only | `displayName` field + `DisplayNameResolver` fallback chain; backend 🚧 PR open | **🚧 (U1b #1064)** | `aidocs/36` |
 | `/me` route (split from Configuration) | mixed Configuration page | TBD | 📐 (queued, U1c) | `aidocs/36 §5` |
 | Preferences (`theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`, `defaultLandingPage`) via `SettingDescriptor` enum + typed map | none | TBD | 📐 (queued, U1d) | `aidocs/36 §3.2 / §7` |
 | Avatar (shepard-uploaded → IdP `picture` → Gravatar tier) | none | TBD | 📐 (queued, U1e) | `aidocs/36 §3.1` |
