@@ -74,15 +74,25 @@ Plus payload kinds (the things References point at):
 
 - **TimeseriesReference** → time-stamped numeric data, stored in
   TimescaleDB.
+- **FileReference (singleton)** → a single file attached to a
+  DataObject (one PDF, one CSV result, one photo). Bytes live in a
+  shared `_shepard_files` MongoDB / GridFS namespace — no per-Reference
+  Mongo collection overhead. New `/v2/files/{appId}` surface with
+  `POST`, `GET`, `GET /content` (HTTP-range capable), `PATCH`, `DELETE`
+  (FR1b shipped, see `aidocs/53 §1.8`). Distinct from `FileBundleReference`
+  below — the casual upload UI (FR1b-ui, queued) dispatches by drag count
+  (1 file → singleton, ≥ 2 → bundle).
 - **FileBundleReference** → a bag of files (CAD, PDFs, photos,
   source code, camera frame dumps), optionally organised into one or
   more **FileGroup** sub-Reference sub-nodes for "these N files
   belong to one logical sub-run" structure (FR1a shipped, see
-  `aidocs/53 §1`). Stored in MongoDB / GridFS. The upstream API
+  `aidocs/53 §1`). Stored per-bundle in MongoDB / GridFS. The upstream API
   surface keeps the legacy `FileReference` name for byte-for-byte
   wire compatibility; the `/v2/bundles/...` shelf reads with the new
-  name. A true singleton-shaped `FileReference` for the single-file
-  case will land in FR1b (`aidocs/53 §1.8`).
+  name. The upstream `/shepard/api/...fileReferences/...` surface
+  projects both singleton and bundle types onto the legacy flat-files
+  wire shape; writes there always create bundles (singletons are
+  `/v2/`-only).
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
@@ -241,13 +251,15 @@ Mid-horizon:
   ingest via a sibling `shepard-video-collector` or a MediaMTX
   sidecar.
 - **`FileReference` → `FileBundleReference` + `FileGroup` rename**
-  (`aidocs/53`, FR1 series — **FR1a shipped**: V21 migration adds
-  the second label + default group; `/v2/bundles/{appId}` shelf
-  surfaces the new shape; upstream wire stays frozen).
-  The follow-on FR1b reintroduces a true singleton `FileReference`
-  for the single-file case alongside `FileBundleReference`, with
-  parallel `/v2/files/...` endpoints and the V16b opt-in
-  carve-out migration. FR1c/FR1d cover snapshot + RO-Crate.
+  (`aidocs/53`, FR1 series — **FR1a + FR1b shipped**. FR1a: V21
+  migration adds the second label + default group; `/v2/bundles/{appId}`
+  shelf surfaces the new shape; upstream wire stays frozen. FR1b:
+  singleton `FileReference` re-introduced with the
+  `:SingletonFileReference` label and shared `_shepard_files`
+  Mongo namespace; new `/v2/files/{appId}/{,content}` shelf with
+  HTTP-range support; V23 opt-in carve-out migration gated by
+  `shepard.migration.split-singletons.enabled`).
+  FR1c/FR1d cover snapshot + RO-Crate.
 - **Templates as a first-class admin entity** (`aidocs/54`, T1
   revised). `:ShepardTemplate` Neo4j entity in an admin-only
   subgraph (replaces the `__templates` hack); JSON DSL bodies,
