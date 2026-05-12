@@ -22,6 +22,31 @@ public class TimeseriesReference extends BasicReference {
 
   private long end;
 
+  /**
+   * AI1c — channel-quality score in {@code [0.0, 1.0]} emitted by the
+   * background {@code TimeseriesQualityScoringJob}. {@code null} means
+   * "not yet scored" (newly-created references; refs the heuristic
+   * skipped for lack of data; or any ref pre-dating AI1c).
+   *
+   * <p>The score is pure-heuristic — completeness, coverage, stability
+   * averaged — no LLM call. See
+   * {@code TimeseriesQualityScorer} for the formula and
+   * {@code aidocs/43 §3.2} for the design.
+   *
+   * <p>Searchable as a regular Neo4j property — the existing
+   * {@code Neo4jQueryBuilder.primitiveClauseWithNeo4jId} accepts
+   * camelCase property names through {@code SAFE_PROPERTY_NAME}.
+   */
+  private Double qualityScore;
+
+  /**
+   * AI1c — millisecond epoch at which the background job last computed
+   * (or attempted to compute) {@link #qualityScore}. {@code null}
+   * means "never scored". Used by the job to skip references that
+   * were re-scored within the rescoring window.
+   */
+  private Long lastScoredAt;
+
   @Relationship(type = Constants.HAS_PAYLOAD)
   private List<ReferencedTimeseriesNodeEntity> referencedTimeseriesList = new ArrayList<>();
 
@@ -46,7 +71,7 @@ public class TimeseriesReference extends BasicReference {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(end, start, referencedTimeseriesList);
+    result = prime * result + Objects.hash(end, start, referencedTimeseriesList, qualityScore, lastScoredAt);
     result = prime * result + HasId.hashcodeHelper(timeseriesContainer);
     return result;
   }
@@ -60,6 +85,8 @@ public class TimeseriesReference extends BasicReference {
     return (
       end == other.end &&
       start == other.start &&
+      Objects.equals(qualityScore, other.qualityScore) &&
+      Objects.equals(lastScoredAt, other.lastScoredAt) &&
       Objects.equals(referencedTimeseriesList, other.referencedTimeseriesList) &&
       HasId.equalsHelper(timeseriesContainer, other.timeseriesContainer)
     );
