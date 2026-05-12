@@ -163,7 +163,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
-| Markdown body interpretation (CommonMark + GFM) | plain text | TBD | 📐 (queued, J1a) | `aidocs/37` |
+| Markdown body interpretation (CommonMark + GFM) + `GET /v2/lab-journal/{appId}/render` | plain text | `MarkdownRenderer` + `LabJournalRenderRest`; commonmark 0.22.0 + GFM extensions; OWASP jsoup sanitisation | ✓ ↑ (J1a) | `aidocs/37` |
 | Inline `.ipynb` static render | none | TBD | 📐 (queued, J1b) | `aidocs/37` |
 | "Open in Jupyter" deep link via `editor.preferredJupyter` | none | TBD | 📐 (queued, J1c) | `aidocs/37` |
 | Edit history (append-only revisions) | write-once | TBD | 📐 (queued, J1d) | `aidocs/37` |
