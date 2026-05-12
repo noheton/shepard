@@ -4,12 +4,15 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
+import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.v2.template.io.AllowedTemplatesIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
+import de.dlr.shepard.v2.template.io.TemplateInstantiationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -128,6 +131,48 @@ public class CollectionTemplatesRest {
     templateDAO.setAllowedForCollection(collectionAppId, ids);
     List<ShepardTemplateIO> rows = templateDAO.listAllowedForCollection(collectionAppId).stream().map(ShepardTemplateIO::from).toList();
     return Response.ok(rows).build();
+  }
+
+  @POST
+  @Path("/from/{templateAppId}")
+  @Operation(
+    summary = "Instantiate this Collection from a template — records :USES_TEMPLATE and returns the recipe body.",
+    description = "Stamps the :USES_TEMPLATE edge (idempotent) so the Collection's provenance trail records " +
+    "which template it was created from. Returns the template body so the client (frontend / CLI) can " +
+    "interpret the JSON DSL and mint entities. Server-side body interpretation lands in T1c-apply " +
+    "(queued). Requires Write on the Collection."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Edge recorded (or already existed); template body returned for client interpretation.",
+    content = @Content(schema = @Schema(implementation = TemplateInstantiationIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write on the Collection.")
+  @APIResponse(responseCode = "404", description = "Collection or template not found, or template retired.")
+  public Response instantiate(
+    @PathParam("appId") String collectionAppId,
+    @PathParam("templateAppId") String templateAppId,
+    @Context SecurityContext securityContext
+  ) {
+    Optional<Long> ogmId = resolveAndGate(collectionAppId, AccessType.Write, securityContext);
+    if (ogmId.isEmpty()) return forbiddenOrNotFound(collectionAppId, securityContext);
+
+    Optional<ShepardTemplate> template = templateDAO.findByAppId(templateAppId);
+    if (template.isEmpty()) {
+      return Response.status(Response.Status.NOT_FOUND).entity("No template with appId " + templateAppId).build();
+    }
+    ShepardTemplate t = template.get();
+    if (t.isRetired()) {
+      // Retired templates aren't valid for new citations — pick a non-retired
+      // version (e.g. the latest by name+kind).
+      return Response.status(Response.Status.NOT_FOUND).entity("Template " + templateAppId + " is retired").build();
+    }
+
+    boolean edgeCreated = templateDAO.recordUsageReportingCreation(collectionAppId, templateAppId);
+    return Response.ok(
+      new TemplateInstantiationIO(collectionAppId, templateAppId, t.getTemplateKind(), t.getVersion(), t.getBody(), edgeCreated)
+    ).build();
   }
 
   /**

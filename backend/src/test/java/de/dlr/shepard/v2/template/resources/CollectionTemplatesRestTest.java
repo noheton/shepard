@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.template.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
@@ -164,5 +166,82 @@ class CollectionTemplatesRestTest {
 
     assertEquals(200, r.getStatus());
     verify(templateDAO).setAllowedForCollection(COLL_APP_ID, List.of());
+  }
+
+  @Test
+  void instantiateRequires401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    Response r = resource.instantiate(COLL_APP_ID, "tmpl-1", securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void instantiateReturns403WhenCallerLacksWrite() {
+    when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER)).thenReturn(false);
+    Response r = resource.instantiate(COLL_APP_ID, "tmpl-1", securityContext);
+    assertEquals(403, r.getStatus());
+    verify(templateDAO, never()).recordUsageReportingCreation(any(), any());
+  }
+
+  @Test
+  void instantiateReturns404WhenTemplateMissing() {
+    when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER)).thenReturn(true);
+    when(templateDAO.findByAppId("ghost")).thenReturn(Optional.empty());
+
+    Response r = resource.instantiate(COLL_APP_ID, "ghost", securityContext);
+    assertEquals(404, r.getStatus());
+    verify(templateDAO, never()).recordUsageReportingCreation(any(), any());
+  }
+
+  @Test
+  void instantiateReturns404WhenTemplateRetired() {
+    var t = new de.dlr.shepard.template.entities.ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{}");
+    t.setAppId("retired-tmpl");
+    t.setRetired(true);
+    when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER)).thenReturn(true);
+    when(templateDAO.findByAppId("retired-tmpl")).thenReturn(Optional.of(t));
+
+    Response r = resource.instantiate(COLL_APP_ID, "retired-tmpl", securityContext);
+    assertEquals(404, r.getStatus());
+    verify(templateDAO, never()).recordUsageReportingCreation(any(), any());
+  }
+
+  @Test
+  void instantiateStampsEdgeAndReturnsBody() {
+    var t = new de.dlr.shepard.template.entities.ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    t.setAppId("tmpl-1");
+    t.setVersion(3);
+    when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER)).thenReturn(true);
+    when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(t));
+    when(templateDAO.recordUsageReportingCreation(COLL_APP_ID, "tmpl-1")).thenReturn(true);
+
+    Response r = resource.instantiate(COLL_APP_ID, "tmpl-1", securityContext);
+    assertEquals(200, r.getStatus());
+    var io = (de.dlr.shepard.v2.template.io.TemplateInstantiationIO) r.getEntity();
+    assertEquals(COLL_APP_ID, io.getCollectionAppId());
+    assertEquals("tmpl-1", io.getTemplateAppId());
+    assertEquals("EXPERIMENT_RECIPE", io.getTemplateKind());
+    assertEquals(Integer.valueOf(3), io.getTemplateVersion());
+    assertEquals("{\"experiment\":{}}", io.getBody());
+    assertTrue(io.isEdgeCreated());
+  }
+
+  @Test
+  void instantiateReportsExistingEdgeOnRepeatCall() {
+    var t = new de.dlr.shepard.template.entities.ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    t.setAppId("tmpl-1");
+    t.setVersion(3);
+    when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER)).thenReturn(true);
+    when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(t));
+    when(templateDAO.recordUsageReportingCreation(COLL_APP_ID, "tmpl-1")).thenReturn(false);
+
+    Response r = resource.instantiate(COLL_APP_ID, "tmpl-1", securityContext);
+    var io = (de.dlr.shepard.v2.template.io.TemplateInstantiationIO) r.getEntity();
+    assertFalse(io.isEdgeCreated());
   }
 }
