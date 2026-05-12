@@ -9,6 +9,7 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -107,6 +108,45 @@ public class ProvenanceRest {
       case RELATIONS -> io.relationsOnly();
       case ALL -> io;
     };
+  }
+
+  @GET
+  @Path("/entity/{appId}")
+  @Operation(
+    summary = "Provenance trail for a single entity (most recent first).",
+    description = "Returns every captured Activity whose targetAppId matches the supplied entity. " +
+    "Casual users see only rows whose acting Agent is themselves; instance-admins see all rows " +
+    "targeting the entity. Honours ?profile=metadata|relations|all from V2S1a. Caps at 1000 rows."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Activities targeting the entity, sorted by startedAt DESC.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = ActivityIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response listEntityActivities(
+    @Parameter(description = "Target entity's appId.", required = true) @PathParam("appId") String entityAppId,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch).") @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch).") @QueryParam("until") Long until,
+    @Parameter(description = "Max rows. Defaults to 100; capped at 1000.") @QueryParam("limit") Integer limit,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    // Casual users only see their own rows against this entity; admins see all.
+    String agentFilter = isAdmin ? null : caller;
+
+    int eff = limit == null ? 100 : limit;
+    OutputProfile prof = outputProfile.getProfile();
+    List<ActivityIO> rows = provenance
+      .list(agentFilter, null, entityAppId, since, until, eff)
+      .stream()
+      .map(ActivityIO::from)
+      .map(io -> applyProfile(io, prof))
+      .toList();
+    return Response.ok(rows).build();
   }
 
   @GET
