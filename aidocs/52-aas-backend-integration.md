@@ -223,6 +223,186 @@ indefinitely unless shepard pivots from "research-data-first" to
 | Couples to upstream upgrade-path discipline | Compatible | Compatible | Compatible only in letter, not spirit |
 | Fits `CLAUDE.md` `/v2/` policy | Yes | Yes (plugin endpoints already `/v2/`) | Yes |
 
+## 4a. Registration with external discovery — candidates
+
+§4 covered the **inbound** surface (clients reach shepard). This
+section covers the **outbound** surface — once shepard exposes
+`/v2/aas/...`, an AAS-fluent client still has to *find* it.
+Federated I4.0 deployments solve this with a discovery layer; a
+shepard instance should register itself at startup so the rest of
+the AAS ecosystem can see what it offers.
+
+Five candidate registration targets, ranked by ease-of-adoption:
+
+### 4a.1 IDTA AAS Registry (`IDTA-01002-3 §3 Discovery Service`)
+
+The canonical answer per the AAS spec. A standalone HTTP service
+that holds a directory of Shells + Submodels and their endpoints.
+Reference implementations:
+
+- **Eclipse BaSyx v2 AAS Registry** — Spring-Boot + MongoDB; the
+  most-used FOSS implementation in the Plattform I40 ecosystem.
+  Apache-2.0. Single-binary container.
+- **FA³ST Registry** (Fraunhofer IOSB) — Apache-2.0 Java. Smaller
+  surface; pairs well with FA³ST Service.
+
+Shepard registration flow on startup:
+
+1. Config: `shepard.aas.registry.url=https://registry.example.org`
+   + `shepard.aas.registry.api-key=...`
+2. After `ShepardMain` starts, walk every Collection that maps to
+   a Shell (per `aidocs/52 §3` mapping), build a
+   `ShellDescriptor` per IDTA-01002 §3.2, and `POST` it to
+   `{registry}/shell-descriptors`.
+3. Same for Submodels — `POST /submodel-descriptors` listing this
+   shepard as the {endpoint, interface=SUBMODEL_3_0}.
+4. On entity create / delete in shepard, fire-and-forget update
+   to the registry (best-effort; retries with exponential
+   backoff). Failures don't block the shepard write — the
+   registry is an availability concern, not a correctness one.
+
+**Pros.** Spec-compliant; widely-adopted; one URL gives clients a
+discoverable starting point. **Cons.** Operator runs another
+service; the registry itself becomes a SPOF for cross-instance
+discovery. **Recommended for v1.**
+
+### 4a.2 AAS Repository (parent) federation
+
+`IDTA-01002 §2` describes an AAS Repository as both storage **and**
+discovery — clients can list Shells directly from a repository
+without going through a registry. In a federated topology, one
+"parent" repository fronts several "leaf" repositories — leaves
+register themselves at the parent.
+
+Shepard plays the role of a leaf:
+
+- Config: `shepard.aas.parent-repository.url=...`
+- Registration writes a "remote-shell" reference into the parent;
+  the parent's `GET /shells` includes shepard's Shell IDs with
+  the shepard endpoint embedded.
+
+**Pros.** No separate registry needed; the spec already covers it.
+**Cons.** Few production-grade parent-repository
+implementations today; the federation-write API is less
+standardised than the AAS Registry. **Queued for v2** (AAS1g).
+
+### 4a.3 Eclipse Dataspace Connector (EDC) — for IDS / Catena-X
+
+For deployments that live inside a dataspace (Catena-X, Mobility
+Data Space, …), the EDC `Catalog` becomes the discovery layer.
+Shepard publishes a `DataAsset` whose endpoint is its
+`/v2/aas/...` surface; the EDC handles usage policy + IDS-protocol
+mediation between dataspace participants.
+
+Shepard registration:
+
+- Config: `shepard.aas.edc.url=...` plus EDC-side asset/policy
+  identifiers.
+- Daily `POST /assets` to the connector; usage-policy attached
+  separately by the operator.
+
+**Pros.** Unlocks shepard in regulated data-space deployments; the
+EDC enforces contractual access control on top of shepard's own
+auth. **Cons.** EDC has its own learning curve; only meaningful
+inside an existing dataspace. **Out-of-scope for v1; design hook
+only.**
+
+### 4a.4 mDNS / DNS-SD opportunistic LAN discovery
+
+For lab-network and Edge deployments (`aidocs/60`), advertise the
+shepard AAS endpoint via mDNS — clients on the same LAN discover
+shepard without any central registry. JmDNS (Apache-2.0) is the
+canonical Java library.
+
+Service-type strings would be e.g. `_aas-repo._tcp.local.` per a
+small shepard-side convention (no IDTA-blessed mDNS type exists
+yet — propose one separately if this lands).
+
+**Pros.** Zero-config for lab demos and shepard Edge field
+deployments. **Cons.** LAN-only; not a substitute for federated
+discovery. **Queued for shepard-Edge phase (`aidocs/60`, EDGE1g).**
+
+### 4a.5 Self-discovery: `GET /v2/aas/.well-known/aas-server`
+
+Smallest possible: shepard exposes a well-known JSON document
+listing its own endpoints. Adapter clients that already know
+shepard's base URL can fetch it to discover capabilities, the
+supported AAS API profile (Read-only / R+W), and the list of
+Shells the caller is permitted to see.
+
+Shape (proposed):
+
+```json
+{
+  "aasApiProfile": "Submodel-Repository-Read-3.1",
+  "endpoints": {
+    "shells": "/v2/aas/shells",
+    "submodels": "/v2/aas/submodels"
+  },
+  "supportedSubmodelTemplates": [
+    "https://admin-shell.io/idta/submodels/nameplate/3/0",
+    "https://admin-shell.io/idta/submodels/technical-data/1/2",
+    "https://admin-shell.io/idta/submodels/time-series-data/1/1"
+  ],
+  "shellCount": 42,
+  "registryRegistrations": []
+}
+```
+
+**Pros.** Zero new infrastructure; works regardless of whether
+the operator runs a registry. **Cons.** Clients have to know
+shepard's URL up front — no actual *discovery*. **Recommended
+for v1 alongside §4a.1** (so shepard is reachable both via the
+registry and standalone).
+
+### Recommended bundle for AAS1
+
+- **Ship §4a.1 (IDTA Registry) + §4a.5 (well-known)** as part of
+  AAS1's first useful slice (AAS1d in §9 — added below).
+- **Queue §4a.2 (parent-repository federation)** as AAS1g.
+- **Queue §4a.4 (mDNS)** under EDGE1g so it ships with shepard
+  Edge.
+- **§4a.3 (EDC)** stays a design hook — wire it when the first
+  dataspace deployment lands.
+
+The new endpoint surface that registration touches:
+
+| Endpoint | Direction | Purpose |
+|---|---|---|
+| `POST /shell-descriptors` (Registry) | outbound | Register a Shell on startup / create. |
+| `DELETE /shell-descriptors/{id}` (Registry) | outbound | Deregister on delete. |
+| `POST /submodel-descriptors` (Registry) | outbound | Register Submodels per Shell. |
+| `GET /v2/aas/.well-known/aas-server` | inbound | shepard's self-description (no auth — only what a public Shell-list would already reveal). |
+| `POST /v2/admin/aas/registrations/sync` | inbound | admin-triggered full re-sync — `@RolesAllowed("instance-admin")`. |
+| `GET /v2/admin/aas/registrations` | inbound | admin sees registration status / errors per target. |
+
+### Config keys introduced (all default-empty / disabled)
+
+- `shepard.aas.enabled` (default `false`) — master toggle.
+- `shepard.aas.registry.url` — IDTA Registry endpoint. Empty disables 4a.1.
+- `shepard.aas.registry.api-key` — Bearer token written into the
+  `Authorization` header.
+- `shepard.aas.registry.sync-on-start` (default `true`) — full
+  re-sync on every startup.
+- `shepard.aas.parent-repository.url` — federated parent. Empty disables 4a.2.
+- `shepard.aas.edc.url` — EDC base URL. Empty disables 4a.3.
+- `shepard.aas.mdns.enabled` (default `false`) — opt-in 4a.4.
+
+### Failure-handling discipline
+
+Registration is **observability + discoverability**, not
+correctness. The shepard write path never blocks on registry
+calls. The standing rule:
+
+- Outbound registry/repository/EDC failures → WARN log + count
+  via Micrometer (so the perf dashboard from PERF1 shows them).
+- The full-resync admin endpoint (`/v2/admin/aas/registrations/sync`)
+  is the operator's recovery lever.
+- A small **outbox table** (`:AasRegistration` Neo4j entity) tracks
+  per-registration state (`pending` / `synced` / `failed`) so
+  flaps don't cause silent drift. Cleanup by retention job
+  (parallels the `aidocs/55 PROV1f` shape).
+
 ## 5. Recommended path
 
 **Ship (a) — the adapter shim — as v1. Keep (b) as the fall-back
@@ -378,6 +558,11 @@ stretch goal, not a v1 gate.
 | **AAS1i** | (deferred) AAS Registry surface (`/v2/aas/shell-descriptors` + `/v2/aas/submodel-descriptors`) for federated discovery. | M | parked (X3) |
 | **AAS1j** | (deferred) Operation invocation stubs — 405 with `aas:operation_not_supported`. | S | AAS1c |
 | **AAS1k** | (deferred) Submodel-only fall-back (option (b)) as a `PayloadKind` plugin. Lands only if AAS1a–AAS1c reveal the Repository surface is too costly. | M | AAS1a (decision-gate) |
+| **AAS1-reg** | Outbound registration at an external IDTA AAS Registry (BaSyx / FA³ST) per §4a.1. Config `shepard.aas.registry.*`; sync-on-start + per-write outbox; `POST /v2/admin/aas/registrations/sync` admin endpoint. | M | AAS1b |
+| **AAS1-well-known** | `GET /v2/aas/.well-known/aas-server` self-description per §4a.5 (zero-discovery alternative to AAS1-reg). | S | AAS1a |
+| **AAS1-fed** | Parent-repository federation per §4a.2 — leaf-mode `shepard.aas.parent-repository.url`. | M | AAS1-reg (the outbox / retry plumbing is reusable) |
+| **AAS1-mdns** | mDNS / DNS-SD opportunistic LAN discovery per §4a.4 — JmDNS sidecar; opt-in. Folded into `aidocs/60` EDGE1g phasing for the shepard-Edge form factor. | S | AAS1-well-known |
+| **AAS1-edc** | (parked) Eclipse Dataspace Connector publish per §4a.3 — wire when the first dataspace deployment lands. | M | external precondition (dataspace operator owns it) |
 
 **Recommended order: AAS1a → AAS1b → AAS1d → AAS1c → AAS1f →
 AAS1e → AAS1g → AAS1h.** AAS1a is the tiny observable win — ships
@@ -411,6 +596,13 @@ Should **not** be decided by the design agent.
 7. **Does AAS conformance failure block AAS1?** §8 proposes
    "documentation, not gate." A stricter maintainer could require
    the subset to pass before AAS1e merges.
+8. **External registration target** — §4a candidates. Recommended
+   v1 bundle: §4a.1 (IDTA Registry, BaSyx or FA³ST) + §4a.5
+   (`.well-known/aas-server`). Maintainer picks the Registry
+   implementation (BaSyx is the safer pick — wider adoption);
+   §4a.2 (parent-repository federation) is queued; §4a.3 (EDC
+   for IDS / Catena-X dataspace) waits on a concrete dataspace
+   deployment; §4a.4 (mDNS) folds into shepard-Edge.
 8. **AAS Registry (AAS1i) — ever?** Parked; revisit if `aidocs/16`
    X3 federation wakes up.
 
