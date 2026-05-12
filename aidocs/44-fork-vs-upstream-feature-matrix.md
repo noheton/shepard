@@ -49,6 +49,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | Build-time vs runtime feature toggle mechanism | `@IfBuildProperty` only | `@ConditionalOnFeature` + runtime-toggleable | **✓ ↑** | A3 |
+| Runtime feature-toggle admin API (`GET /v2/admin/features`, `PATCH /v2/admin/features/{name}`) | none | `FeatureToggleRegistry` + `AdminFeaturesRest`; `@RolesAllowed("instance-admin")`; in-process override, not persisted across restart | **✓ ↑** | A3b |
 | Spatial-data namespace alias (`shepard.spatial-data.*` → `shepard.infrastructure.spatial.*`) | only old names | both names resolve; old logs deprecation warning; removal v6.0 | **✓ ↑** | A3c / `aidocs/A3c-namespace-migration.md` |
 | Permission cache TTL/max-size config | hard-coded global defaults | `shepard.permissions.cache.ttl` (`PT5M`) + `.max-size` (`10000`) | **✓ ↑** | A4 |
 
@@ -250,6 +251,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `POST /v2/admin/instance-admins` (grant role) | ✓ shipped | A0 / `aidocs/51 §10` |
 | `DELETE /v2/admin/instance-admins/{username}` (revoke role) | ✓ shipped | A0 / `aidocs/51 §10` |
 | `GET /v2/admin/permission-audit` (list orphan-permissions entities) | ✓ shipped | A0 / `aidocs/51 §8` |
+| `GET /v2/admin/features` (list runtime feature toggles) | ✓ shipped | A3b |
+| `PATCH /v2/admin/features/{name}` (set toggle enabled/disabled) | ✓ shipped | A3b |
 | (None of the L2c/L2d/L2e `/v2/...` URL forms have shipped yet — those land at L2d.) | | |
 
 ### 14a.3 New `/v2/...` endpoints — designed (queued)
@@ -267,7 +270,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `POST /v2/timeseries/{appId}/detect-anomalies`, `GET /v2/data-objects/{appId}/similar`, `POST /v2/search/natural`, `POST /v2/lab-journal/assist`, `POST /v2/semantic-annotations/suggest`, `POST /v2/collections/{appId}/export?aiAssist=true`, the snap-dashboards tool-use catalogue | AI1a-AI1l | `aidocs/43` |
 | `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1a-f | `aidocs/46` |
 | `POST /v2/files/{containerAppId}/upload-url`, `GET /v2/files/{appId}/download-url`, `GET /v2/artifacts/{type}/{id}/url` | FS1c, FS1g | `aidocs/45` |
-| `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` | `aidocs/47` |
+| `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped | — |
 | `GET /v2/processes`, `POST /v2/processes/import` | PR1a, PR1c | `aidocs/40 §2` |
 | `POST /v2/hdf-containers`, `GET /v2/hdf-containers/{appId}{,/file,/datasets/{path}/value}`, `POST /v2/data-objects/{id}/hdf-references`, `POST /api-keys/{id}/hsds-token` | A5a-e | `aidocs/35` |
 | `POST /v2/sql/timeseries` | P10a | `aidocs/29` |
