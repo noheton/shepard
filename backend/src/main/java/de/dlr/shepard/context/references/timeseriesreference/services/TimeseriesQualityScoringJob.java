@@ -8,7 +8,6 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -195,10 +194,6 @@ public class TimeseriesQualityScoringJob {
    * repository is {@code @RequestScoped} via Hibernate).
    */
   @ActivateRequestContext
-  @SuppressFBWarnings(
-    value = "EI_EXPOSE_REP",
-    justification = "Returned list comes straight from the repository; downstream consumers only read it."
-  )
   List<TimeseriesDataPoint> fetchPoints(
     long containerId,
     Timeseries channel,
