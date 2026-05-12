@@ -33,6 +33,8 @@ Optional / behind compose `profiles`:
 
 - `postgis` (`postgis/postgis:16-3.5`) under profile `spatial` — enables the
   optional spatial-data feature.
+- `shepard-hsds` (`hdfgroup/hsds:v0.9.5`) under profile `hdf` — enables the
+  optional HDF5 / HSDS feature ([details below](#hdf5-hsds-opt-in-sidecar)).
 - `mongoexpress` for ad-hoc DB browsing.
 - `prometheus` (`prom/prometheus:v3.9.1`) and `grafana`
   (`grafana/grafana:12.2.1-security-01`) under profile `monitoring`.
@@ -164,6 +166,120 @@ unified backup tool today.
 
 Coordinate the dumps so they reflect a consistent point-in-time, especially
 when permissions or schema migrations are mid-flight.
+
+## HDF5 (HSDS) — opt-in sidecar
+
+The HDF5 payload kind is **off by default**. With the toggle off, every
+`/v2/hdf-containers/...` endpoint returns `404 Not Found` and no HSDS HTTP
+client is ever instantiated. See [`docs/reference/hdf-container.md`](reference/hdf-container/)
+for the API surface; this section covers the operator side.
+
+**Phase 1 only.** The current slice (backlog ID A5a — see
+[`aidocs/35`](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md))
+ships `HdfContainer` create / read / delete plus the HSDS sidecar
+itself. The per-DataObject `HdfReference`, the byte-identical
+download fallback, and the shared-Keycloak token relay are deferred
+to A5b – A5e. Phase 1 uses **HTTP Basic** between the shepard
+backend and the HSDS sidecar.
+
+### Install steps
+
+1. **Pick credentials and put them in `.env`.** The compose service
+   defaults to `admin` / `admin` — fine for an air-gapped dev box,
+   never fine for any deployment reachable from the public internet.
+
+   ```bash
+   # in infrastructure/.env
+   HSDS_USERNAME=hsds-admin
+   HSDS_PASSWORD=<32-char-random-secret>
+   HSDS_BUCKET_NAME=shepard
+   ```
+
+2. **Mirror the credentials onto the backend.** The backend speaks
+   HTTP Basic to the sidecar; supply the same username / password as
+   environment variables consumed by `application.properties`.
+
+   ```bash
+   # also in infrastructure/.env, then reference from docker-compose.yml
+   # as env to the backend service:
+   SHEPARD_HDF_ENABLED=true
+   SHEPARD_HDF_HSDS_USERNAME=hsds-admin
+   SHEPARD_HDF_HSDS_PASSWORD=<same-32-char-secret>
+   # endpoint defaults to http://shepard-hsds:5101 (the compose service
+   # name), no override needed when running inside the compose network.
+   ```
+
+   Then add these to the backend service's `environment:` block in
+   `infrastructure/docker-compose.yml` next to the other
+   `SHEPARD_*` keys. Startup fails fast if `SHEPARD_HDF_ENABLED=true`
+   but the credentials are blank — Phase 1 deliberately refuses to
+   run in "ambient auth" mode.
+
+3. **Bring up the profile.**
+
+   ```bash
+   cd infrastructure
+   docker compose --env-file .env --profile hdf up -d
+   ```
+
+   Verify the sidecar is up:
+
+   ```bash
+   curl -fsS -u "$HSDS_USERNAME:$HSDS_PASSWORD" http://localhost:5101/about
+   ```
+
+4. **Restart the backend** (so it picks up the new env). On startup
+   the shepard log emits one line per HsdsClient construction:
+   `HSDS client initialised against endpoint=http://shepard-hsds:5101 (HTTP Basic, Phase 1)`.
+
+5. **Smoke test from the API.**
+
+   ```bash
+   # Create a container.
+   curl -fsS -X POST http://localhost:8080/v2/hdf-containers \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer <shepard-api-key>" \
+        -d '{"name":"smoke","description":"first hdf"}'
+   # Returns: {"appId":"019…","hsdsDomain":"/shepard/019…/", …}
+
+   # Read it back.
+   curl -fsS http://localhost:8080/v2/hdf-containers/019… \
+        -H "Authorization: Bearer <shepard-api-key>"
+   ```
+
+   You can also confirm the HSDS-side row directly:
+
+   ```bash
+   curl -fsS -u "$HSDS_USERNAME:$HSDS_PASSWORD" \
+        "http://localhost:5101/?domain=/shepard/019…/"
+   ```
+
+### Storage and capacity planning
+
+The compose service mounts `./hsds-storage` for the **POSIX** storage
+backend (HSDS's default). Object-store backends (S3 / MinIO / Azure
+Blob) are opt-in via HSDS upstream env vars — see
+[`aidocs/35` §3](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md#3-storage-layer).
+
+**Rule of thumb** (per HSDS docs): plan for **~1.2× the raw HDF5
+size** on disk because of HSDS's chunk-store overhead. A 100 GB HDF5
+file → ~120 GB on disk.
+
+### Backups
+
+Add `./hsds-storage` (or your S3 bucket prefix, if you flip storage
+backends) to the [backup checklist](#backups). HSDS supplies the
+`hsadmin` CLI for higher-level export / import if you need
+storage-backend migration.
+
+### What's deferred
+
+Until A5e ships the auth bridge, users authenticate to **HSDS
+directly** with the admin credentials configured here (or per-user
+Basic credentials you provision via `hsadmin`). Once A5e lands,
+shepard mints per-user JWTs signed by a shared Keycloak realm and
+the `h5pyd` ergonomics ("one credential, the shepard API key")
+arrive — see [`aidocs/35` §5](https://github.com/noheton/shepard/blob/main/aidocs/35-hdf5-hsds-implementation-design.md#5-auth-bridge-the-trickiest-piece).
 
 ## Admin CLI
 

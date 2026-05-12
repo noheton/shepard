@@ -166,6 +166,42 @@ services:
     profiles:
       - spatial
 
+  # A5a — HDF5 / HSDS sidecar (Phase 1). Off by default; bring up with
+  #   docker compose --profile hdf up -d
+  # The shepard backend talks to this service over plain HTTP Basic
+  # in Phase 1 (admin creds via HSDS_USERNAME / HSDS_PASSWORD below
+  # — change these and the backend's matching shepard.hdf.hsds.*
+  # keys before deploying anywhere reachable from the internet!).
+  # Per aidocs/35 §3 the POSIX storage backend is the default for
+  # the all-in-one stack; S3 / Azure are opt-in via additional env
+  # vars supported by HSDS upstream (HSDS_AWS_S3_GATEWAY etc.).
+  shepard-hsds:
+    image: hdfgroup/hsds:v0.9.5
+    container_name: shepard-hsds
+    environment:
+      BUCKET_NAME: ${HSDS_BUCKET_NAME:-shepard}
+      HSDS_USERNAME: ${HSDS_USERNAME:-admin}
+      HSDS_PASSWORD: ${HSDS_PASSWORD:-admin}
+      LOG_LEVEL: ${HSDS_LOG_LEVEL:-INFO}
+    ports:
+      - "5101:5101"
+    volumes:
+      # POSIX backend — keep data on the host next to the other
+      # shepard volumes so the operator backup story is the same
+      # shape as Neo4j / Mongo / TimescaleDB.
+      - ./hsds-storage:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:5101/about || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles:
+      - hdf
+
   caddy:
     image: caddy:2
     ports:
