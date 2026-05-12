@@ -235,6 +235,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Codegen archetype `mvn shepard:scaffold-payload-kind` | none | TBD | 📐 (queued, DX3) | `aidocs/47 §2.5` |
 | `make dev` single-command bootstrap (init wizard + compose up + smoke) | none | TBD | 📐 (queued, DX4) | `aidocs/47 §4.4` |
 | Unified `ShepardTestStack` testcontainer resource | none | TBD | 📐 (queued, DX1) | `aidocs/47 §4.1` |
+| `ShepardTestFixtures` shared typed builders (Collection / DataObject / User / Permissions / BasicReference) | none | shipped — `backend/src/test/java/de/dlr/shepard/testing/fixtures/ShepardTestFixtures.java`; pilot adopters `CollectionServiceTest` / `DataObjectServiceTest` / `BasicReferenceServiceTest` | **✓ ↑** (DX2) | `aidocs/16` DX2 |
 | BI integrations — Grafana data-source plugin + Superset SQLAlchemy recipe | none | TBD; "SQL win" via P10 (C5 cleared) | 📐 (queued, DX8) | `aidocs/47 §4.8` + `aidocs/29` |
 | Selective export ✓ (see §5 above) | GET-only | **✓** (R2 series shipped) | **✓ ↑** | §5 |
 | Streaming RO-Crate export for large Collections | possible OOM | TBD | 📐 (queued) | `aidocs/31` |
