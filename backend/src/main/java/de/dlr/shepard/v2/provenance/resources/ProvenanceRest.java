@@ -1,6 +1,8 @@
 package de.dlr.shepard.v2.provenance.resources;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.output.OutputProfile;
+import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -45,6 +47,9 @@ public class ProvenanceRest {
   @Inject
   AuthenticationContext authContext;
 
+  @Inject
+  OutputProfileResolver outputProfile;
+
   @GET
   @Path("/activities")
   @Operation(
@@ -86,12 +91,22 @@ public class ProvenanceRest {
     }
 
     int eff = limit == null ? 100 : limit;
+    OutputProfile prof = outputProfile.getProfile();
     List<ActivityIO> rows = provenance
       .list(agent, targetKind, targetAppId, since, until, eff)
       .stream()
       .map(ActivityIO::from)
+      .map(io -> applyProfile(io, prof))
       .toList();
     return Response.ok(rows).build();
+  }
+
+  private static ActivityIO applyProfile(ActivityIO io, OutputProfile profile) {
+    return switch (profile) {
+      case METADATA -> io.metadataOnly();
+      case RELATIONS -> io.relationsOnly();
+      case ALL -> io;
+    };
   }
 
   @GET
