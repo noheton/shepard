@@ -13,6 +13,13 @@
         Configuration
       </v-btn>
       <v-btn class="nav-item" to="/search">Advanced Search</v-btn>
+      <v-btn
+        v-if="isInstanceAdmin"
+        class="nav-item"
+        :to="{ path: '/admin', hash: '#feature-toggles' }"
+      >
+        Admin
+      </v-btn>
     </v-app-bar-title>
     <template #append>
       <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item">
@@ -40,6 +47,10 @@ const isSignedIn = computed(
   () => status.value === "authenticated" && !data.value?.error,
 ).value;
 const authIcon = isSignedIn ? "mdi-logout" : "mdi-account";
+
+const isInstanceAdmin = computed(() =>
+  hasInstanceAdminRole(data.value?.accessToken),
+);
 
 const handleAuth = () => {
   if (isSignedIn) {
