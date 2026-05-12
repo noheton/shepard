@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,14 +30,22 @@ class ProvenanceStatsServiceTest {
     service.activityDAO = activityDAO;
   }
 
+  private static ActivityDAO.StatsSnapshot snap(long total, long distinctAgents, List<long[]> buckets, Map<String, Long> kinds) {
+    var s = new ActivityDAO.StatsSnapshot();
+    s.totalCount = total;
+    s.distinctAgents = distinctAgents;
+    s.buckets = buckets;
+    s.totalsByActionKind = new java.util.LinkedHashMap<>(kinds);
+    return s;
+  }
+
   @Test
-  void instanceScopeQueriesUnfilteredAggregations() {
+  void instanceScopeQueriesUnfilteredAggregation() {
     long now = 1_700_000_000_000L;
     long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(null, null, since, now, ProvenanceStatsService.DAY_MILLIS))
-      .thenReturn(List.of(new long[] { since, 5 }, new long[] { since + ProvenanceStatsService.DAY_MILLIS, 3 }));
-    when(activityDAO.totalsByActionKind(null, null, since, now)).thenReturn(Map.of("CREATE", 4L, "UPDATE", 4L));
-    when(activityDAO.distinctAgentCount(null, since, now)).thenReturn(2L);
+    var bucketList = List.of(new long[] { since, 5L }, new long[] { since + ProvenanceStatsService.DAY_MILLIS, 3L });
+    when(activityDAO.aggregateStats(null, null, since, now, ProvenanceStatsService.DAY_MILLIS))
+      .thenReturn(snap(8L, 2L, bucketList, Map.of("CREATE", 4L, "UPDATE", 4L)));
 
     var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
 
@@ -47,6 +54,7 @@ class ProvenanceStatsServiceTest {
     assertEquals(2L, out.getDistinctAgents());
     assertEquals(Map.of("CREATE", 4L, "UPDATE", 4L), out.getTotalsByActionKind());
     assertEquals(2, out.getBuckets().size());
+    assertEquals(2, out.getCumulative().size());
     assertEquals(ProvenanceStatsService.DAY_MILLIS, out.getBucketMillis());
   }
 
@@ -54,38 +62,32 @@ class ProvenanceStatsServiceTest {
   void collectionScopeFiltersByTargetAppId() {
     long now = 1_700_000_000_000L;
     long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(List.of());
-    when(activityDAO.totalsByActionKind(any(), any(), anyLong(), anyLong())).thenReturn(Map.of());
-    when(activityDAO.distinctAgentCount(any(), anyLong(), anyLong())).thenReturn(0L);
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
 
     service.compute(ProvenanceStatsService.SCOPE_COLLECTION, "appid-1", since, now);
 
-    verify(activityDAO).aggregateBuckets("appid-1", null, since, now, ProvenanceStatsService.DAY_MILLIS);
-    verify(activityDAO).totalsByActionKind("appid-1", null, since, now);
-    verify(activityDAO).distinctAgentCount("appid-1", since, now);
+    verify(activityDAO).aggregateStats("appid-1", null, since, now, ProvenanceStatsService.DAY_MILLIS);
   }
 
   @Test
   void userScopeFiltersByAgentAndDistinctIsBoolean() {
     long now = 1_700_000_000_000L;
     long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(null, "alice", since, now, ProvenanceStatsService.DAY_MILLIS))
-      .thenReturn(List.of(new long[] { since, 7 }));
-    when(activityDAO.totalsByActionKind(null, "alice", since, now)).thenReturn(Map.of("CREATE", 7L));
+    when(activityDAO.aggregateStats(null, "alice", since, now, ProvenanceStatsService.DAY_MILLIS))
+      .thenReturn(snap(7L, 99L /* should be ignored for user scope */, List.of(new long[] { since, 7L }), Map.of("CREATE", 7L)));
 
     var out = service.compute(ProvenanceStatsService.SCOPE_USER, "alice", since, now);
 
     assertEquals(7L, out.getTotalCount());
-    assertEquals(1L, out.getDistinctAgents()); // user scope: 1 when active
-    verify(activityDAO, never()).distinctAgentCount(any(), anyLong(), anyLong());
+    assertEquals(1L, out.getDistinctAgents()); // user scope: 1 when active, ignores DAO's distinctAgents
   }
 
   @Test
   void userScopeWithNoActivityReportsZeroContributors() {
     long now = 1_700_000_000_000L;
     long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(null, "alice", since, now, ProvenanceStatsService.DAY_MILLIS)).thenReturn(List.of());
-    when(activityDAO.totalsByActionKind(null, "alice", since, now)).thenReturn(Map.of());
+    when(activityDAO.aggregateStats(null, "alice", since, now, ProvenanceStatsService.DAY_MILLIS))
+      .thenReturn(snap(0L, 5L, List.of(), Map.of()));
 
     var out = service.compute(ProvenanceStatsService.SCOPE_USER, "alice", since, now);
 
@@ -97,14 +99,13 @@ class ProvenanceStatsServiceTest {
   void windowLongerThan90DaysSwitchesToWeeklyBuckets() {
     long now = 1_700_000_000_000L;
     long since = now - 180L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(null, null, since, now, ProvenanceStatsService.WEEK_MILLIS)).thenReturn(List.of());
-    when(activityDAO.totalsByActionKind(null, null, since, now)).thenReturn(Map.of());
-    when(activityDAO.distinctAgentCount(null, since, now)).thenReturn(0L);
+    when(activityDAO.aggregateStats(null, null, since, now, ProvenanceStatsService.WEEK_MILLIS))
+      .thenReturn(snap(0L, 0L, List.of(), Map.of()));
 
     var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
 
     assertEquals(ProvenanceStatsService.WEEK_MILLIS, out.getBucketMillis());
-    verify(activityDAO).aggregateBuckets(null, null, since, now, ProvenanceStatsService.WEEK_MILLIS);
+    verify(activityDAO).aggregateStats(null, null, since, now, ProvenanceStatsService.WEEK_MILLIS);
   }
 
   @Test
@@ -121,16 +122,38 @@ class ProvenanceStatsServiceTest {
   }
 
   @Test
-  void totalCountIsSumOfBuckets() {
+  void cumulativeIntegralRunsAcrossBuckets() {
     long now = 1_700_000_000_000L;
     long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
-    when(activityDAO.aggregateBuckets(any(), any(), anyLong(), anyLong(), anyLong()))
-      .thenReturn(List.of(new long[] { since, 10 }, new long[] { since + ProvenanceStatsService.DAY_MILLIS, 20 }, new long[] { since + 2 * ProvenanceStatsService.DAY_MILLIS, 30 }));
-    when(activityDAO.totalsByActionKind(any(), any(), anyLong(), anyLong())).thenReturn(Map.of());
-    when(activityDAO.distinctAgentCount(any(), anyLong(), anyLong())).thenReturn(0L);
+    var bucketList = List.of(
+      new long[] { since, 10L },
+      new long[] { since + ProvenanceStatsService.DAY_MILLIS, 20L },
+      new long[] { since + 2 * ProvenanceStatsService.DAY_MILLIS, 30L }
+    );
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(60L, 1L, bucketList, Map.of()));
 
     var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
+
     assertEquals(60L, out.getTotalCount());
+    assertEquals(3, out.getCumulative().size());
+    assertEquals(10L, out.getCumulative().get(0)[1]);
+    assertEquals(30L, out.getCumulative().get(1)[1]);
+    assertEquals(60L, out.getCumulative().get(2)[1]);
+  }
+
+  @Test
+  void cumulativeIntegralHelperHandlesEmpty() {
+    assertEquals(0, ProvenanceStatsService.cumulativeIntegral(List.of()).size());
+  }
+
+  @Test
+  void cumulativeIntegralHelperKeepsBucketAlignment() {
+    var input = List.of(new long[] { 100L, 5L }, new long[] { 200L, 7L });
+    var out = ProvenanceStatsService.cumulativeIntegral(input);
+    assertEquals(100L, out.get(0)[0]);
+    assertEquals(5L, out.get(0)[1]);
+    assertEquals(200L, out.get(1)[0]);
+    assertEquals(12L, out.get(1)[1]);
   }
 
   @Test

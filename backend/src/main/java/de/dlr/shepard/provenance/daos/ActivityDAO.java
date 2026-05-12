@@ -218,6 +218,73 @@ public class ActivityDAO extends GenericDAO<Activity> {
     return c instanceof Number n ? n.longValue() : 0L;
   }
 
+  /**
+   * Single-pass aggregation — returns {@link StatsSnapshot} with the
+   * per-bucket counts, per-actionKind totals, total count, and
+   * distinct-agent count all derived from one Cypher round-trip.
+   *
+   * <p>Replaces three separate Cypher round-trips
+   * ({@link #aggregateBuckets} + {@link #totalsByActionKind} +
+   * {@link #distinctAgentCount}). Used by
+   * {@code ProvenanceStatsService} to keep the dashboard query
+   * cheap on big installs.
+   *
+   * <p>The Cypher pulls one bag of {@code {bucket, kind, agent}}
+   * tuples and the caller computes the three aggregations in Java
+   * — this trades one Neo4j round-trip for one O(n) Java pass,
+   * which is the right tradeoff up to ~100k activities per query
+   * window (and {@code list}'s 1000-row cap covers most reads).
+   */
+  public StatsSnapshot aggregateStats(String targetAppId, String agentUsername, long sinceMillis, long untilMillis, long bucketMillis) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (a:Activity) WHERE a.startedAtMillis >= $since AND a.startedAtMillis <= $until"
+    );
+    Map<String, Object> params = new HashMap<>();
+    params.put("since", sinceMillis);
+    params.put("until", untilMillis);
+    params.put("bucket", bucketMillis);
+    if (targetAppId != null) {
+      cypher.append(" AND a.targetAppId = $tappid");
+      params.put("tappid", targetAppId);
+    }
+    if (agentUsername != null) {
+      cypher.append(" AND a.agentUsername = $agent");
+      params.put("agent", agentUsername);
+    }
+    cypher.append(
+      " RETURN (a.startedAtMillis / $bucket) * $bucket AS bucket," +
+      " coalesce(a.actionKind, 'UNKNOWN') AS kind," +
+      " a.agentUsername AS agent"
+    );
+    var result = session.query(cypher.toString(), params);
+    StatsSnapshot snap = new StatsSnapshot();
+    snap.buckets = new ArrayList<>();
+    snap.totalsByActionKind = new java.util.LinkedHashMap<>();
+    java.util.TreeMap<Long, Long> bucketCounts = new java.util.TreeMap<>();
+    java.util.Set<String> agents = new java.util.HashSet<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      long b = row.get("bucket") instanceof Number bn ? bn.longValue() : 0L;
+      bucketCounts.merge(b, 1L, Long::sum);
+      String kind = Objects.toString(row.get("kind"), "UNKNOWN");
+      snap.totalsByActionKind.merge(kind, 1L, Long::sum);
+      Object a = row.get("agent");
+      if (a != null) agents.add(a.toString());
+      snap.totalCount++;
+    }
+    bucketCounts.forEach((b, c) -> snap.buckets.add(new long[] { b, c }));
+    snap.distinctAgents = agents.size();
+    return snap;
+  }
+
+  /** Snapshot returned by {@link #aggregateStats}. */
+  public static final class StatsSnapshot {
+
+    public List<long[]> buckets;
+    public Map<String, Long> totalsByActionKind;
+    public long distinctAgents;
+    public long totalCount;
+  }
+
   @Override
   public Class<Activity> getEntityType() {
     return Activity.class;

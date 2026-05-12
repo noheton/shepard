@@ -48,4 +48,11 @@ public class ProvenanceStatsIO {
     description = "Sparkline buckets: each entry is [bucketStartMillis, count]. Empty buckets within the window are NOT filled."
   )
   private List<long[]> buckets;
+
+  @Schema(
+    required = true,
+    description = "Cumulative-integral buckets: each entry is [bucketStartMillis, runningTotal]. Running sum of activity counts up to " +
+    "and including the bucket — useful for 'total captured so far' tiles in the dashboard. Same bucket alignment as `buckets`."
+  )
+  private List<long[]> cumulative;
 }

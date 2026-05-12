@@ -304,13 +304,24 @@ public class ProvenanceRest {
     }
 
     long now = System.currentTimeMillis();
-    long effUntil = until == null ? now : until;
-    long effSince = since == null ? effUntil - 90L * 86_400_000L : since;
+    // Clamp user-supplied bounds to [0, now] before any arithmetic so
+    // a malicious or malformed `since`/`until` can't drive the default-
+    // window subtraction into underflow (CodeQL/CWE-191).
+    Long sinceClamped = since == null ? null : clampToNonNegative(since);
+    Long untilClamped = until == null ? null : clampToNonNegative(until);
+    long effUntil = untilClamped == null ? now : Math.min(untilClamped, now);
+    long defaultWindowMillis = 90L * 86_400_000L;
+    long effSince = sinceClamped == null ? Math.max(0L, effUntil - defaultWindowMillis) : Math.min(sinceClamped, effUntil);
     try {
       ProvenanceStatsIO out = statsService.compute(scope, id, effSince, effUntil);
       return Response.ok(out).build();
     } catch (IllegalArgumentException e) {
       return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
     }
+  }
+
+  /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
+  private static long clampToNonNegative(long v) {
+    return Math.max(0L, v);
   }
 }

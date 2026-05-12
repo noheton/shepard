@@ -4,8 +4,8 @@ import de.dlr.shepard.provenance.daos.ActivityDAO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * On-demand provenance stats roll-up per {@code aidocs/55 §6}. Built
@@ -55,14 +55,47 @@ public class ProvenanceStatsService {
       );
     }
 
-    List<long[]> buckets = activityDAO.aggregateBuckets(targetAppId, agentUsername, sinceMillis, untilMillis, bucketMillis);
-    long totalCount = buckets.stream().mapToLong(b -> b[1]).sum();
-    Map<String, Long> totalsByActionKind = activityDAO.totalsByActionKind(targetAppId, agentUsername, sinceMillis, untilMillis);
-    // For scope=user, "distinct contributors" is meaningless; report 1 (the user themselves) when they have activity.
-    long distinctAgents = SCOPE_USER.equals(scope)
-      ? (totalCount > 0 ? 1L : 0L)
-      : activityDAO.distinctAgentCount(targetAppId, sinceMillis, untilMillis);
+    // Single Cypher round-trip across the matched rows; buckets +
+    // per-actionKind totals + distinct-agent count derived in Java
+    // from the same matched set (was three separate Cypher round-
+    // trips in PROV1c v1).
+    var snap = activityDAO.aggregateStats(targetAppId, agentUsername, sinceMillis, untilMillis, bucketMillis);
 
-    return new ProvenanceStatsIO(scope, id, sinceMillis, untilMillis, bucketMillis, totalCount, distinctAgents, totalsByActionKind, buckets);
+    // For scope=user, "distinct contributors" is meaningless; report
+    // 1 when the user has activity, 0 when they don't.
+    long distinctAgents = SCOPE_USER.equals(scope)
+      ? (snap.totalCount > 0 ? 1L : 0L)
+      : snap.distinctAgents;
+
+    List<long[]> cumulative = cumulativeIntegral(snap.buckets);
+
+    return new ProvenanceStatsIO(
+      scope,
+      id,
+      sinceMillis,
+      untilMillis,
+      bucketMillis,
+      snap.totalCount,
+      distinctAgents,
+      snap.totalsByActionKind,
+      snap.buckets,
+      cumulative
+    );
+  }
+
+  /**
+   * Build the cumulative-integral list from per-bucket counts. Each
+   * output entry is {@code [bucketStart, runningTotal]} — the sum of
+   * every count up to and including the bucket. Same bucket
+   * alignment as the input.
+   */
+  static List<long[]> cumulativeIntegral(List<long[]> buckets) {
+    List<long[]> out = new ArrayList<>(buckets.size());
+    long running = 0L;
+    for (long[] b : buckets) {
+      running += b[1];
+      out.add(new long[] { b[0], running });
+    }
+    return out;
   }
 }
