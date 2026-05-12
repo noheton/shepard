@@ -143,7 +143,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
-| HDF5 / HSDS as a payload kind (`HdfContainer` / `HdfReference`); `h5pyd` parity | none | HSDS sidecar + shared-Keycloak token relay (`aidocs/35`). A5a (Phase 1) ships: `HdfContainer` create / read / delete + `hdf` compose profile + V25 + HTTP Basic auth. A5b–e still queued. | **✓ ↑ (A5a Phase 1)** / 📐 (A5b – A5e queued) | `aidocs/35` |
+| HDF5 / HSDS as a payload kind (`HdfContainer` / `HdfReference`); `h5pyd` parity | none | HSDS sidecar + shared-Keycloak token relay (`aidocs/35`). A5a (Phase 1) ships: `HdfContainer` create / read / delete + `hdf` compose profile + V25 + HTTP Basic auth. A5b (Phase 2) ships: permission bridge (shepard ACL → HSDS ACL via `PermissionsChangedEvent` + `HdfPermissionBridge`) + `POST /v2/admin/hdf/rebuild-acls` drift-recovery admin endpoint + ADR-0019 source-of-truth. A5c–e still queued. | **✓ ↑ (A5a + A5b)** / 📐 (A5c – A5e queued) | `aidocs/35` + `aidocs/63` |
 | Git integration (`GitReference`); mode-a (loose link: repoUrl + ref + path); modes b/c scaffolded; CRUD via `/v2/data-objects/{appId}/git-references`; UI renders as clickable link | none | Backend ✓; UI 🚧 | **✓ ↑ (backend, G1a #1063)** / **🚧 UI** | `aidocs/38` |
 | Per-user git credentials (host + username + AES-GCM encrypted PAT); `/v2/me/git-credentials` CRUD | none | ✓ backend (G1-cred) / ✓ UI (PR #1071) | 🚧 (G1-cred #1069) | — |
 | Templates feature (Templates Collection of DataObject blueprints; per-Collection allow-list) | none | TBD; replaces / supersedes upstream-aspirational L3 | 📐 (queued, T1) | `aidocs/39` |

@@ -1,6 +1,7 @@
 package de.dlr.shepard.auth.permission.services;
 
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
+import de.dlr.shepard.auth.permission.events.PermissionsChangedEvent;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
@@ -12,6 +13,7 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import de.dlr.shepard.common.filters.RequestPathHelper;
+import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
@@ -23,6 +25,7 @@ import io.quarkus.cache.CaffeineCache;
 import io.quarkus.cache.CompositeCacheKey;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -56,13 +59,75 @@ public class PermissionsService {
   UserGroupService userGroupService;
 
   /**
+   * A5b — CDI event fired post-commit on every permissions write
+   * path. Decoupled from the request; observers (e.g.
+   * {@link de.dlr.shepard.auth.permission.events.PermissionsChangedEvent}
+   * → {@code HdfPermissionBridge}) are best-effort and never block.
+   * See {@code aidocs/35 §6}.
+   */
+  @Inject
+  Event<PermissionsChangedEvent> permissionsChangedEvent;
+
+  /**
    * @param entity         the entity the permissions belong to
    * @param user           the user creating the permissions
    * @param permissionType the initial permission type
    * @return the newly created permissions
    */
   public Permissions createPermissions(BasicEntity entity, User user, PermissionType permissionType) {
-    return permissionsDAO.createOrUpdate(new Permissions(entity, user, PermissionType.Private));
+    Permissions persisted = permissionsDAO.createOrUpdate(new Permissions(entity, user, PermissionType.Private));
+    firePermissionsChanged(entity, PermissionsChangedEvent.Kind.CREATED);
+    return persisted;
+  }
+
+  /**
+   * Fire-and-forget post-commit hook. Catches every throwable so a
+   * malfunctioning observer can never propagate back to the shepard
+   * write path — the shepard write is the source of truth, downstream
+   * sync is observability. Mirrors the contract in {@code aidocs/35 §6}.
+   */
+  private void firePermissionsChanged(BasicEntity entity, PermissionsChangedEvent.Kind kind) {
+    if (entity == null || permissionsChangedEvent == null) return;
+    try {
+      String kindName = entityKindName(entity);
+      String appId = entity instanceof HasAppId hasAppId ? hasAppId.getAppId() : null;
+      permissionsChangedEvent.fire(new PermissionsChangedEvent(entity.getId(), kindName, appId, kind));
+    } catch (RuntimeException e) {
+      // Observer threw — log and swallow. Best-effort by contract.
+      Log.warnf(e, "PermissionsChangedEvent observer failed for entityId=%s; ignoring", entity.getId());
+    }
+  }
+
+  /**
+   * Variant that fires after a write addressed by Neo4j id only.
+   * Re-fetches the row to read entity kind + appId so downstream
+   * listeners can filter without an extra round-trip. Returns
+   * quietly if the row no longer resolves (e.g. concurrent delete).
+   */
+  private void firePermissionsChangedByEntityId(long entityId, PermissionsChangedEvent.Kind kind) {
+    if (permissionsChangedEvent == null) return;
+    try {
+      Permissions perms = permissionsDAO.findByEntityNeo4jId(entityId);
+      String kindName = "Unknown";
+      String appId = null;
+      if (perms != null && perms.getEntities() != null && !perms.getEntities().isEmpty()) {
+        BasicEntity ent = perms.getEntities().get(0);
+        if (ent != null) {
+          kindName = entityKindName(ent);
+          appId = ent instanceof HasAppId hasAppId ? hasAppId.getAppId() : null;
+        }
+      }
+      permissionsChangedEvent.fire(new PermissionsChangedEvent(entityId, kindName, appId, kind));
+    } catch (RuntimeException e) {
+      Log.warnf(e, "PermissionsChangedEvent observer failed for entityId=%s; ignoring", entityId);
+    }
+  }
+
+  private static String entityKindName(BasicEntity entity) {
+    // Strip CGLIB-style enhancer suffixes some OGM proxies tack on.
+    String n = entity.getClass().getSimpleName();
+    int sep = n.indexOf("$");
+    return sep > 0 ? n.substring(0, sep) : n;
   }
 
   /**
@@ -289,11 +354,34 @@ public class PermissionsService {
     oldPermissions.setPermissionType(newPermissions.getPermissionType());
     var res = permissionsDAO.createOrUpdate(oldPermissions);
     removeEntityFromCache(id);
+    // A5b — fire post-commit. Best-effort: see firePermissionsChangedByEntityId.
+    firePermissionsChangedByEntityId(id, PermissionsChangedEvent.Kind.UPDATED);
     return res;
   }
 
   public boolean deletePermissions(Permissions permissions) {
-    return permissionsDAO.deleteByNeo4jId(permissions.getId());
+    long entityId = -1L;
+    String kindName = "Unknown";
+    String appId = null;
+    if (permissions != null && permissions.getEntities() != null && !permissions.getEntities().isEmpty()) {
+      BasicEntity ent = permissions.getEntities().get(0);
+      if (ent != null) {
+        entityId = ent.getId() == null ? -1L : ent.getId();
+        kindName = entityKindName(ent);
+        appId = ent instanceof HasAppId hasAppId ? hasAppId.getAppId() : null;
+      }
+    }
+    boolean ok = permissions == null ? false : permissionsDAO.deleteByNeo4jId(permissions.getId());
+    if (ok && entityId > 0 && permissionsChangedEvent != null) {
+      try {
+        permissionsChangedEvent.fire(
+          new PermissionsChangedEvent(entityId, kindName, appId, PermissionsChangedEvent.Kind.DELETED)
+        );
+      } catch (RuntimeException e) {
+        Log.warnf(e, "PermissionsChangedEvent (DELETED) observer failed for entityId=%s; ignoring", entityId);
+      }
+    }
+    return ok;
   }
 
   /**
