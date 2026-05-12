@@ -2,9 +2,13 @@
 layout: default
 title: File bundle (reference)
 permalink: /reference/file-bundle/
-redirect_from:
-  - /reference/file-reference/
 ---
+
+> **Looking for a single-file primitive?** With FR1b shipped, the
+> singleton `FileReference` is back as a distinct primitive — see
+> [File reference (singleton)](/reference/file-reference/) for the
+> single-file casual workflow. This page describes the multi-file
+> bundle.
 
 # File bundle reference
 

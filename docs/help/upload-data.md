@@ -11,32 +11,56 @@ uploading it as a payload of one of shepard's payload kinds.
 
 ## File-shaped data (PDFs, CSVs, photos, frame dumps)
 
-Files attach via the **file-bundle** payload kind (see
-[FileBundleReference reference](/reference/file-bundle/)). A bundle is
-a bag of files, optionally organised into one or more **groups**
-("sub-run 1", "sub-run 2", etc.) — useful when one capture run
-produces dozens or hundreds of files.
+shepard ships two file primitives. The casual upload UI picks the
+right one by **drag count**:
 
-### Single file
+| Drag count | Primitive | Reference doc |
+|---|---|---|
+| 1 file | `FileReference` (singleton) | [File reference](/reference/file-reference/) |
+| ≥ 2 files | `FileBundleReference` (multi) | [File bundle](/reference/file-bundle/) |
 
-The simplest path:
+A "wrap as bundle" toggle on the drop target lets you pre-declare
+bundle intent when you have one file now but expect more. The
+direction is **singleton → bundle, never bundle → singleton**: a
+user who realises mid-upload they want bundle structure converts
+forward; un-bundling is delete + re-upload.
 
-1. Create a `FileBundleReference` on the DataObject (the upstream
-   `POST /shepard/api/.../fileReferences` works; `/v2/bundles/...`
-   coming in FR1b will offer a singleton-shaped option).
-2. Upload your file into the bundle's default group:
+### Single file (singleton)
 
-   ```
-   POST /v2/bundles/{bundleAppId}/groups/{defaultGroupAppId}/files
-   Content-Type: multipart/form-data
+The simplest path — one file becomes one Reference. No groups, no
+bundle ceremony.
 
-   file=<your file>
-   ```
+```
+POST /v2/files?parentDataObjectAppId={dataObjectAppId}&name=My%20PDF
+Content-Type: multipart/form-data
 
-   Every freshly-created bundle has a default group named `"default"`
-   (index 0) — discover its `appId` from `GET /v2/bundles/{appId}`.
+file=<your file>
+```
 
-### Multiple files in one capture run
+The response carries the singleton's `appId`; the underlying bytes
+live in the shared `_shepard_files` MongoDB / GridFS namespace. To
+download:
+
+```
+GET /v2/files/{appId}/content
+```
+
+Range requests are supported (`Range: bytes=0-1023` for the first
+1 KiB; `Range: bytes=500-` for everything from offset 500 onwards) —
+useful for streamed previews and resumable downloads.
+
+To rename the singleton (the only patchable field in FR1b):
+
+```
+PATCH /v2/files/{appId}
+Content-Type: application/merge-patch+json
+
+{"name": "renamed"}
+```
+
+`DELETE /v2/files/{appId}` removes the Reference and its bytes.
+
+### Multiple files in one capture run (bundle)
 
 Group them so future-you can navigate them sub-run by sub-run:
 
