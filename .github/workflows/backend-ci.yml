@@ -47,7 +47,8 @@ jobs:
 
       - name: Run unit tests + JaCoCo report + coverage gate
         run: |
-          mvn -B -DskipITs \
+          mvn -B -P unit-test \
+              -DskipITs \
               -Djacoco.haltOnFailure=true \
               verify
 
