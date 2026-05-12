@@ -3,6 +3,8 @@ package de.dlr.shepard.v2.provenance.resources;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
+import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -50,6 +52,9 @@ public class ProvenanceRest {
 
   @Inject
   OutputProfileResolver outputProfile;
+
+  @Inject
+  ProvJsonRenderer provJsonRenderer;
 
   @GET
   @Path("/activities")
@@ -111,6 +116,43 @@ public class ProvenanceRest {
   }
 
   @GET
+  @Path("/activities")
+  @Produces(ProvJsonRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "List provenance activities as W3C PROV-JSON (most recent first).",
+    description = "Same query semantics as the JSON variant; output shape conforms to a small subset " +
+    "of the W3C PROV-JSON Submission (activity / agent / entity / wasAssociatedWith / used / " +
+    "wasGeneratedBy blocks). Triggered by Accept: application/prov+json. Honours ?profile= " +
+    "for filtering, though the PROV-JSON serialisation always emits the full PROV-O fields."
+  )
+  @APIResponse(responseCode = "200", description = "Activities serialised as PROV-JSON.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
+  public Response listActivitiesProvJson(
+    @QueryParam("agent") String agent,
+    @QueryParam("targetKind") String targetKind,
+    @QueryParam("targetAppId") String targetAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @QueryParam("limit") Integer limit,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    if (agent == null) {
+      if (!isAdmin) agent = caller;
+    } else if (!agent.equals(caller) && !isAdmin) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    int eff = limit == null ? 100 : limit;
+    List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, eff);
+    return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
+  }
+
+  @GET
   @Path("/entity/{appId}")
   @Operation(
     summary = "Provenance trail for a single entity (most recent first).",
@@ -147,6 +189,34 @@ public class ProvenanceRest {
       .map(io -> applyProfile(io, prof))
       .toList();
     return Response.ok(rows).build();
+  }
+
+  @GET
+  @Path("/entity/{appId}")
+  @Produces(ProvJsonRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "Per-entity provenance trail as W3C PROV-JSON.",
+    description = "Same query semantics as the JSON variant of the per-entity endpoint; output shape " +
+    "conforms to a small subset of W3C PROV-JSON. Triggered by Accept: application/prov+json."
+  )
+  @APIResponse(responseCode = "200", description = "Activities serialised as PROV-JSON.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response listEntityActivitiesProvJson(
+    @PathParam("appId") String entityAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @QueryParam("limit") Integer limit,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    String agentFilter = isAdmin ? null : caller;
+
+    int eff = limit == null ? 100 : limit;
+    List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
+    return Response.ok(provJsonRenderer.render(rows)).type(ProvJsonRenderer.MEDIA_TYPE).build();
   }
 
   @GET
