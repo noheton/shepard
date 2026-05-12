@@ -107,6 +107,53 @@ Response (201):
 }
 ```
 
+## Permission model
+
+shepard is the **source of truth** for HDF container ACLs (`aidocs/63`
+ADR-0020). When you change permissions on a `:Collection` that contains
+`:HdfContainer` rows, the `PermissionsChangedEvent` CDI seam fires the
+`HdfPermissionBridge` observer, which rewrites the matching HSDS
+domain's ACL via the sidecar's REST API. The mapping is:
+
+| shepard role | HSDS POSIX bits |
+|---|---|
+| Reader | `read` |
+| Writer | `read,update,create,delete` |
+| Manager | `read,update,create,delete,update_acl` |
+| _(no role)_ | (entry removed; container becomes invisible to that user) |
+
+Sync is **best-effort**. Failures (HSDS unreachable, auth misconfig)
+are logged + queued in a size-capped in-memory retry list, then
+attempted again on the next permission write. A failed bridge call
+**never blocks the shepard write** — the casual UX always wins.
+
+**Direct HSDS-side mutation gets clobbered.** Tools that edit HSDS
+ACLs out of band (`h5pyd` admin paths, `hsadmin` CLI) will see their
+changes overwritten on the next shepard permission change for the
+affected container. If you've been editing HSDS ACLs directly and
+want shepard's graph to take over cleanly, run the drift-recovery
+admin endpoint once:
+
+```bash
+curl -X POST https://shepard.example.dlr.de/v2/admin/hdf/rebuild-acls \
+  -H "X-API-KEY: <instance-admin-api-key>"
+```
+
+Response shape:
+
+```json
+{
+  "containersProcessed": 42,
+  "containersSynced": 41,
+  "errors": [
+    {"appId": "01HF…", "reason": "hsds.connect-timeout"}
+  ]
+}
+```
+
+The endpoint is idempotent — re-running after a transient HSDS outage
+finishes the job.
+
 ## What's deferred
 
 The full E7 vision is rolling out across A5a – A5e:
