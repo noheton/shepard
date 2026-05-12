@@ -5,8 +5,9 @@ description: Operational guide — docker-compose stack, configuration, health e
 ---
 
 This page describes how to run shepard. It cites only what is actually in the
-repository today; the dedicated admin CLI is **in design** and not yet
-shipped — see "Admin CLI" below.
+repository today. A read-only admin CLI ([`shepard-admin`](reference/admin-cli/))
+ships in L1 Phase 1 — see "Admin CLI" below; the broader mutating commands
+remain in design.
 
 ## Deploy paths beyond docker-compose
 
@@ -151,15 +152,26 @@ unified backup tool today.
 Coordinate the dumps so they reflect a consistent point-in-time, especially
 when permissions or schema migrations are mid-flight.
 
-## Admin CLI — coming, not shipped
+## Admin CLI
 
-A dedicated administration CLI is in design — proposed candidate functions
-include user/group lifecycle, API-key rotation, permission audits, and bulk
-exports/imports. **It is not implemented today.** Until it lands, operators
-use docker-compose plus the per-DB CLI tools above.
+A read-only `shepard-admin` CLI ships in L1 Phase 1 — `features list`,
+`health`, and `migrations status [containerId]`. Build the uber-jar
+locally for now:
 
-(Design reference: `aidocs/22-admin-cli-draft.md` — forthcoming. The link
-will resolve once that document is committed.)
+```bash
+cd cli
+mvn package -DskipTests
+export SHEPARD_ADMIN_URL=https://shepard.example.com
+export SHEPARD_ADMIN_API_KEY=<instance-admin-roled API key>
+java -jar target/shepard-admin-*.jar features list
+```
+
+Full reference, sample output, and exit-code semantics in
+**[Admin CLI (reference)](reference/admin-cli/)**.
+
+Phase 2+ (cleanup of soft-deleted entities, RO-Crate import/export,
+the `init` TUI wizard for first-run `.env`) remains in design — see
+`aidocs/22-admin-cli-draft.md`.
 
 ## Upgrades
 

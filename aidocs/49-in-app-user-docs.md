@@ -141,6 +141,7 @@ deep-dives:
 | API keys + ORCID + profile *(post-U1)* | `docs/reference/profile.md` |
 | AI features *(post-AI1)* | `docs/reference/ai-features.md` |
 | Configuration / preferences | `docs/reference/preferences.md` |
+| Admin CLI *(L1 Phase 1, shipped)* | `docs/reference/admin-cli.md` |
 
 Existing `user-guide.md` becomes the **bridge index** that links
 into both tracks; `getting-started.md` stays the API-quickstart

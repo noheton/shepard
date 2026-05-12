@@ -1,12 +1,12 @@
 # Admin CLI — Candidate-Function Draft
 
-**Scope.** Forward-looking design note for a future shepard administrator
+**Scope.** Forward-looking design note for the shepard administrator
 command-line tool. Catalogues candidate verbs/nouns, frames the
-authentication model (which is currently blocking), proposes a CLI
-framework, and sketches a phased rollout. **This document is research
-and writing only — no code is being written here.**
+authentication model, proposes a CLI framework, and sketches a phased
+rollout. **Phase 1 of this doc has shipped** — see `cli/` and §7.1
+below. Phase 2+ remains design-only.
 
-**Snapshot date:** 2026-05-05.
+**Snapshot date:** 2026-05-05 (Phase 1 ship update: 2026-05-12).
 **Originating items.** `aidocs/16-dispatcher-backlog.md` row L1
 ("Admin CLI: cleanup of data marked for deletion, import/export of
 collections as RO-Crate"); `aidocs/input/input_raw.md:705-708`; new
@@ -1032,25 +1032,42 @@ decision (§3.3) are made first. Phase 1 cannot ship until A0 is at
 least decided (option (b) is the only A0-free path, and §3 explicitly
 discourages it).
 
-### 7.1 Phase 1 — foundation (skeleton + read-only + init wizard)
+### 7.1 Phase 1 — foundation (skeleton + read-only)  — **shipped 2026-05-12**
 
-- Repository scaffolding under `admin-cli/` (Java + Picocli). Maven
-  module wired into the parent `pom.xml`.
-- Auth: env-driven discovery from §3.4. Option (a) admin-role API key
-  when A0 lands; option (c) behind `shepard.admin.local-socket.enabled`
-  for break-glass.
-- TUI scaffolding: Lanterna dependency, the dashboard / picker /
-  wizard pattern primitives from §4.x.
-- **`init` wizard** (§4.11) ships in this phase — operators need it
-  before they can use any other command.
-- Three read-only commands, each available in direct + dashboard modes:
-  - `shepard-admin features list` (post-A3b for full read; today reads
-    the build-time toggle JSON only).
-  - `shepard-admin health <db>` (no new backend code needed).
-  - `shepard-admin migrations status` (calls the P3 endpoint).
-- CI: build + smoke test against the existing
-  `infrastructure-local/` compose stack. TUI tested via Lanterna's
-  test harness (`TestTerminalFactory`).
+Status: **shipped** on `main` via the L1-Phase-1 PR. The actual
+delivered slice is narrower than the full design — the `init`
+wizard + Lanterna TUI scaffolding are deferred to a follow-up
+phase because the read-only commands stand alone usefully without
+them. Concretely the shipped artefact is:
+
+- New top-level Maven module `cli/` (`de.dlr.shepard:shepard-admin`).
+  Standalone (no aggregator pom — the rest of the repo's Java tree
+  is `backend/` only). Java 21 + Picocli 4.7. Shaded uber-jar:
+  `cli/target/shepard-admin-${version}.jar`.
+- Auth: env-driven discovery from §3.4 (CLI flags > env >
+  `~/.shepard/admin.toml` > defaults). Option (a) admin-role API
+  key — A0 (commit `2901834`) is the upstream dependency and is in.
+  Option (c) Unix-socket carve-out **deferred**.
+- Three read-only commands:
+  - `shepard-admin features list` — `GET /v2/admin/features`
+    (instance-admin role gated).
+  - `shepard-admin health` — `GET /shepard/api/healthz/ready` +
+    `GET /shepard/api/healthz/live`, with exit code mapping
+    (0 = both UP, 1 = anything DOWN).
+  - `shepard-admin migrations status [containerId]` —
+    `GET /shepard/api/temp/migrations/state` or
+    `GET /shepard/api/temp/migrations/{containerId}`.
+- Every command supports `--output human` (default, plain-text
+  column-aligned table — pipes cleanly into `awk`) and
+  `--output json` (pretty-printed Jackson).
+- 54 tests, 89 % instruction / 81 % branch coverage (well above
+  the CLAUDE.md 70 % floor for new modules). Tests stand up a
+  loopback JDK `HttpServer` to stand in for shepard — no Quarkus
+  test stack pulled in.
+- **Deferred to a follow-up phase** (NOT in Phase 1): `init`
+  wizard, Lanterna TUI scaffolding, JBang catalogue publishing,
+  CI integration-test against `infrastructure-local/`, GHCR
+  container image.
 
 ### 7.2 Phase 2 — cleanup (most asked-for)
 
