@@ -3,10 +3,13 @@ package de.dlr.shepard.v2.provenance.resources;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
+import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
+import de.dlr.shepard.provenance.services.ProvenanceStatsService;
 import de.dlr.shepard.v2.provenance.io.ActivityIO;
+import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -55,6 +58,9 @@ public class ProvenanceRest {
 
   @Inject
   ProvJsonRenderer provJsonRenderer;
+
+  @Inject
+  ProvenanceStatsService statsService;
 
   @GET
   @Path("/activities")
@@ -246,5 +252,76 @@ public class ProvenanceRest {
 
     long c = provenance.count(agent, targetKind, targetAppId, since, until);
     return Response.ok(java.util.Map.of("count", c)).build();
+  }
+
+  @GET
+  @Path("/stats")
+  @Operation(
+    summary = "Aggregated provenance stats — totals + sparkline buckets + action-kind histogram.",
+    description = "Rolls a single window into one payload for the dashboard. " +
+    "scope = instance (admin-only) | collection (any auth user) | user (self or admin). " +
+    "Bucket width auto-flips daily → weekly at > 90-day windows. " +
+    "Default window = last 90 days when since/until omitted."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Stats payload.",
+    content = @Content(schema = @Schema(implementation = ProvenanceStatsIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Invalid scope, since > until, or missing id for scope=collection|user.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Non-admin requested scope=instance or another user's stats.")
+  public Response stats(
+    @Parameter(description = "scope: instance | collection | user.", required = true) @QueryParam("scope") String scope,
+    @Parameter(description = "Entity appId for scope=collection, username for scope=user. Ignored for scope=instance.")
+    @QueryParam("id") String id,
+    @Parameter(description = "Inclusive lower bound on startedAt (millis since epoch). Defaults to 90 days ago.")
+    @QueryParam("since") Long since,
+    @Parameter(description = "Inclusive upper bound on startedAt (millis since epoch). Defaults to now.")
+    @QueryParam("until") Long until,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (scope == null || scope.isBlank()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("scope is required").build();
+    }
+    boolean isAdmin = securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
+
+    if (ProvenanceStatsService.SCOPE_INSTANCE.equals(scope) && !isAdmin) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+    if (ProvenanceStatsService.SCOPE_USER.equals(scope)) {
+      if (id == null || id.isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=user").build();
+      }
+      if (!id.equals(caller) && !isAdmin) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+    }
+    if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope) && (id == null || id.isBlank())) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=collection").build();
+    }
+
+    long now = System.currentTimeMillis();
+    // Clamp user-supplied bounds to [0, now] before any arithmetic so
+    // a malicious or malformed `since`/`until` can't drive the default-
+    // window subtraction into underflow (CodeQL/CWE-191).
+    Long sinceClamped = since == null ? null : clampToNonNegative(since);
+    Long untilClamped = until == null ? null : clampToNonNegative(until);
+    long effUntil = untilClamped == null ? now : Math.min(untilClamped, now);
+    long defaultWindowMillis = 90L * 86_400_000L;
+    long effSince = sinceClamped == null ? Math.max(0L, effUntil - defaultWindowMillis) : Math.min(sinceClamped, effUntil);
+    try {
+      ProvenanceStatsIO out = statsService.compute(scope, id, effSince, effUntil);
+      return Response.ok(out).build();
+    } catch (IllegalArgumentException e) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+    }
+  }
+
+  /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
+  private static long clampToNonNegative(long v) {
+    return Math.max(0L, v);
   }
 }
