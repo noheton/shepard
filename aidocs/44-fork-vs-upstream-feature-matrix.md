@@ -177,7 +177,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 |---|---|---|---|---|
 | OpenAI-compatible BYOK + admin-fallback infrastructure (per-user `ai.apiKey` / `ai.baseUrl` / `ai.model`) | none | TBD; **shepard ships zero models** | 📐 (queued, AI1a) | `aidocs/43 §4` |
 | Anomaly detection on timeseries (rolling-median + isolation-forest) | none | TBD; pure-Python, LLM-independent | 📐 (queued, AI1b) | `aidocs/43 §3.1` |
-| Channel-quality scoring | none | TBD | 📐 (queued, AI1c) | `aidocs/43 §3.2` |
+| Channel-quality scoring (background job: `TimeseriesReference.qualityScore` ∈ `[0.0, 1.0]` — completeness + coverage + stability heuristic; opt-in via `shepard.timeseries.quality-scoring.enabled`) | none | pure-heuristic scorer, no LLM | ✓ (AI1c) | `aidocs/43 §3.2`, `aidocs/16` AI1c |
 | Embedding-based similarity (`/data-objects/{appId}/similar`) | none | TBD; needs `/v1/embeddings` endpoint | 📐 (queued, AI1d) | `aidocs/43 §3.5` |
 | **Snap dashboards** — Claude-chat-style chat sidebar with closed tool-use catalogue + Vega-Lite v5 inline rendering | none | TBD; **headline killer feature** | 📐 (queued, AI1e) | `aidocs/43 §5.8` |
 | Natural-language search | none | TBD | 📐 (queued, AI1f) | `aidocs/43 §5.1` |
