@@ -10,6 +10,7 @@ import picocli.CommandLine.Command;
  */
 @Command(
   name = "features",
+  mixinStandardHelpOptions = true,
   description = "Inspect feature toggles.",
   subcommands = { FeaturesListCommand.class }
 )

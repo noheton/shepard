@@ -78,6 +78,22 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
   private ObjectMapper prettyMapper;
 
+  /**
+   * Test seam — when non-null, replaces the default
+   * {@link AdminConfigLoader}. Production code never assigns this;
+   * the CLI tests poke it via the {@code CliRunner} helper to inject
+   * a deterministic env/path source.
+   */
+  AdminConfigLoader configLoaderOverride;
+
+  /**
+   * Test seam — when non-null, replaces the default
+   * {@link HttpClient}. Tests rarely need this because the
+   * {@code CliRunner} fixture points the CLI at a localhost stub
+   * backend, but the hook is here for unit-level mocks too.
+   */
+  HttpClient httpClientOverride;
+
   /** Lazily-built shared Jackson mapper for {@code --output=json}. */
   protected ObjectMapper jsonMapper() {
     if (prettyMapper == null) {
@@ -91,12 +107,12 @@ public abstract class AbstractCommand implements Callable<Integer> {
 
   /** Test seam — overridden in unit tests to inject a mock client. */
   protected HttpClient httpClient() {
-    return ShepardHttpClient.defaultClient();
+    return httpClientOverride != null ? httpClientOverride : ShepardHttpClient.defaultClient();
   }
 
   /** Test seam — overridden in unit tests to inject a fixture loader. */
   protected AdminConfigLoader configLoader() {
-    return new AdminConfigLoader();
+    return configLoaderOverride != null ? configLoaderOverride : new AdminConfigLoader();
   }
 
   /**

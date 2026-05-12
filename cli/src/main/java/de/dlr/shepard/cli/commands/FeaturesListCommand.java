@@ -23,6 +23,7 @@ import picocli.CommandLine.Command;
  */
 @Command(
   name = "list",
+  mixinStandardHelpOptions = true,
   description = "List runtime feature toggles and their current state."
 )
 public final class FeaturesListCommand extends AbstractCommand {

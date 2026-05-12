@@ -1,7 +1,6 @@
 package de.dlr.shepard.cli.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
@@ -27,6 +26,7 @@ import picocli.CommandLine.Command;
  */
 @Command(
   name = "health",
+  mixinStandardHelpOptions = true,
   description = "Show per-database readiness + liveness state."
 )
 public final class HealthCommand extends AbstractCommand {
@@ -65,24 +65,15 @@ public final class HealthCommand extends AbstractCommand {
    * Quarkus returns HTTP 200 on UP and 503 on DOWN. Both bodies
    * are still valid JSON in the SmallRye-Health envelope shape,
    * so the 503 path is treated as a successful read rather than
-   * an error.
+   * an error. The {@code allow503} flag on {@link ShepardHttpClient}
+   * does exactly that.
    */
   private HealthCheckResult fetch(ShepardHttpClient client, String path) {
+    var response = client.get(path, true);
     try {
-      return client.getJson(path, new TypeReference<HealthCheckResult>() {});
-    } catch (AdminCliException e) {
-      // Quarkus returns 503 with a JSON body on DOWN — re-attempt
-      // by raw-fetching and parsing the body directly. Anything
-      // else (connect refusal, 404, malformed body) propagates.
-      if (e.getMessage() != null && e.getMessage().contains("HTTP 503")) {
-        var response = client.get(path);
-        try {
-          return ShepardHttpClient.mapper().readValue(response.body(), HealthCheckResult.class);
-        } catch (Exception ex) {
-          throw new AdminCliException("Could not parse 503 health body from " + path + ": " + ex.getMessage(), ex);
-        }
-      }
-      throw e;
+      return ShepardHttpClient.mapper().readValue(response.body(), HealthCheckResult.class);
+    } catch (Exception ex) {
+      throw new AdminCliException("Could not parse health response from " + path + ": " + ex.getMessage(), ex);
     }
   }
 
