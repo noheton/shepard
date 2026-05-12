@@ -83,7 +83,8 @@ Plus payload kinds (the things References point at):
 - **HDF5 / HSDS reference** *(coming with A5; design done in
   `aidocs/35`)* → HDF5 datasets accessible via `h5pyd`-compatible
   REST.
-- **Git reference** *(coming with G1; design done in `aidocs/38`)* →
+- **Git reference** *(mode-a shipped: loose link to repo URL + ref + path;
+  UI in-flight; tracked + pinned-snapshot modes coming with G1b/G1c)* →
   pinned git commit + path, for analysis code provenance.
 
 ## The cross-cutting features
@@ -168,8 +169,10 @@ The four things on the near horizon, in priority order:
 3. **Templates + processes** (`aidocs/39` + `aidocs/40 §2`, T1 +
    PR1 series). Standardise how DataObjects get created; bring
    process design + runtime into shepard core.
-4. **User profile + ORCID** (`aidocs/36`, U1 series). Closes #29
-   and makes RO-Crate exports cite authors properly.
+4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
+   **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
+   edit dialog in-flight. RO-Crate exports now cite authors when the
+   field is set. `displayName` override (U1b) in review.
 
 Mid-horizon:
 

@@ -50,11 +50,29 @@ export interface User {
      */
     readonly subscriptionIds: Array<number>;
     /**
-     * 
+     *
      * @type {Array<string>}
      * @memberof User
      */
     readonly apiKeyIds: Array<string>;
+    /**
+     * ORCID identifier (16-digit ISO 7064 checked). Null until set via PATCH /v2/users/me.
+     * @type {string}
+     * @memberof User
+     */
+    orcid?: string | null;
+    /**
+     * Optional display-name override set via PATCH /v2/users/me.
+     * @type {string}
+     * @memberof User
+     */
+    displayName?: string | null;
+    /**
+     * Computed display name: displayName override → firstName+lastName → redacted username.
+     * @type {string}
+     * @memberof User
+     */
+    readonly effectiveDisplayName?: string;
 }
 
 /**
@@ -83,6 +101,9 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
         'email': json['email'] == null ? undefined : json['email'],
         'subscriptionIds': json['subscriptionIds'],
         'apiKeyIds': json['apiKeyIds'],
+        'orcid': json['orcid'] == null ? undefined : json['orcid'],
+        'displayName': json['displayName'] == null ? undefined : json['displayName'],
+        'effectiveDisplayName': json['effectiveDisplayName'] == null ? undefined : json['effectiveDisplayName'],
     };
 }
 
