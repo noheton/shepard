@@ -96,6 +96,7 @@ public class FileServiceTest {
     ObjectId fileoid = new ObjectId("60b73212cfa45d2d5baa795d");
     String name = "name";
     String md5 = "md5";
+    Long fileSize = 4096L;
     Date date = new Date();
     Document file = mock(Document.class);
     @SuppressWarnings("unchecked")
@@ -108,10 +109,36 @@ public class FileServiceTest {
     when(file.getString("name")).thenReturn(name);
     when(file.getDate("createdAt")).thenReturn(date);
     when(file.getString("md5")).thenReturn(md5);
+    when(file.getLong("fileSize")).thenReturn(fileSize);
 
     var expected = new ShepardFile(fileoid.toHexString(), date, name, md5);
+    expected.setFileSize(fileSize);
     var result = fileService.getFile(containerId, fileoid.toHexString());
     assertEquals(expected, result);
+    assertEquals(fileSize, result.getFileSize());
+  }
+
+  @Test
+  public void getExistingFileTest_legacyFileSizeNull() {
+    // FB1a: pre-FB1a rows have no fileSize attr; round-trip stays null.
+    String containerId = "FileContainerdc824045-9137-4051-8981-c528e6b91fbe";
+    ObjectId fileoid = new ObjectId("60b73212cfa45d2d5baa795d");
+    Date date = new Date();
+    Document file = mock(Document.class);
+    @SuppressWarnings("unchecked")
+    FindIterable<Document> collectionReturn = mock(FindIterable.class);
+
+    when(mongoDatabase.getCollection(containerId)).thenReturn(collection);
+    when(collection.find(Filters.eq("_id", fileoid))).thenReturn(collectionReturn);
+    when(collectionReturn.first()).thenReturn(file);
+    when(file.getObjectId("_id")).thenReturn(fileoid);
+    when(file.getString("name")).thenReturn("name");
+    when(file.getDate("createdAt")).thenReturn(date);
+    when(file.getString("md5")).thenReturn("md5");
+    when(file.getLong("fileSize")).thenReturn(null);
+
+    var result = fileService.getFile(containerId, fileoid.toHexString());
+    org.junit.jupiter.api.Assertions.assertNull(result.getFileSize());
   }
 
   @Test
@@ -143,6 +170,7 @@ public class FileServiceTest {
     ObjectId moid = new ObjectId();
     String fileName = "fileName";
     String md5 = DatatypeConverter.printHexBinary(MessageDigest.getInstance("MD5").digest());
+    Long fileSize = 8192L;
     InputStream inputStream = mock(InputStream.class);
     String mongoid = "mongoid";
     Date date = new Date();
@@ -152,6 +180,12 @@ public class FileServiceTest {
 
     when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
     when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
+    // FB1a: createFile looks up the just-uploaded GridFS file to record its length.
+    GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+    GridFSFile gridFsFile = mock(GridFSFile.class);
+    when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+    when(filesCollectionReturn.first()).thenReturn(gridFsFile);
+    when(gridFsFile.getLength()).thenReturn(fileSize);
     doAnswer(
       new Answer<Void>() {
         @Override
@@ -169,11 +203,48 @@ public class FileServiceTest {
       .append("name", fileName)
       .append("FileMongoId", oid.toHexString())
       .append("createdAt", date)
-      .append("md5", md5);
+      .append("md5", md5)
+      .append("fileSize", fileSize);
     var expected = new ShepardFile(moid.toHexString(), date, fileName, md5);
+    expected.setFileSize(fileSize);
     var result = fileService.createFile(mongoid, fileName, inputStream);
     assertEquals(expected, result);
+    assertEquals(fileSize, result.getFileSize());
     verify(collection).insertOne(newFile);
+  }
+
+  @Test
+  public void createFileTest_missingGridFsFileLeavesFileSizeNull() throws NoSuchAlgorithmException {
+    // FB1a defensive path: if the bucket lookup turns up nothing
+    // (shouldn't happen in practice, but Mongo's find().first() is nullable),
+    // we should still persist the ShepardFile rather than NPE.
+    ObjectId oid = new ObjectId();
+    ObjectId moid = new ObjectId();
+    String fileName = "fileName";
+    InputStream inputStream = mock(InputStream.class);
+    String mongoid = "mongoid";
+
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(mongoDatabase.getCollection(mongoid)).thenReturn(collection);
+    when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
+    when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
+    GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+    when(gridBucket.find(Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+    when(filesCollectionReturn.first()).thenReturn(null);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", moid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    var result = fileService.createFile(mongoid, fileName, inputStream);
+    org.junit.jupiter.api.Assertions.assertNull(result.getFileSize());
   }
 
   @Test

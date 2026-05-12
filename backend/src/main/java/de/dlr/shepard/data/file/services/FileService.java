@@ -33,6 +33,7 @@ public class FileService {
   private static final String FILEID_ATTR = "FileMongoId";
   private static final String CREATEDAT_ATTR = "createdAt";
   private static final String MD5_ATTR = "md5";
+  private static final String FILESIZE_ATTR = "fileSize";
 
   @Inject
   @Named("mongoDatabase")
@@ -78,11 +79,15 @@ public class FileService {
     }
 
     DigestInputStream dis = new DigestInputStream(inputStream, md);
-    String fileMongoId = createBucket()
-      .withChunkSizeBytes(CHUNK_SIZE_BYTES)
-      .uploadFromStream(fileName, dis)
-      .toHexString();
+    var bucket = createBucket();
+    ObjectId fileId = bucket.withChunkSizeBytes(CHUNK_SIZE_BYTES).uploadFromStream(fileName, dis);
+    String fileMongoId = fileId.toHexString();
+    // FB1a: GridFS knows the final payload size; persist it so byte
+    // totals are available without re-reading every blob.
+    var gridFsFile = bucket.find(eq(ID_ATTR, fileId)).first();
+    Long fileSize = gridFsFile != null ? gridFsFile.getLength() : null;
     var file = new ShepardFile(dateHelper.getDate(), fileName, DatatypeConverter.printHexBinary(md.digest()));
+    file.setFileSize(fileSize);
     var doc = toDocument(file).append(FILEID_ATTR, fileMongoId);
     collection.insertOne(doc);
     file.setOid(doc.getObjectId(ID_ATTR).toHexString());
@@ -195,6 +200,8 @@ public class FileService {
       doc.getString(FILENAME_ATTR),
       doc.getString(MD5_ATTR)
     );
+    // FB1a: pre-FB1a rows have no fileSize attr; getLong returns null in that case.
+    file.setFileSize(doc.getLong(FILESIZE_ATTR));
     return file;
   }
 
@@ -203,6 +210,7 @@ public class FileService {
       .append(CREATEDAT_ATTR, file.getCreatedAt())
       .append(FILENAME_ATTR, file.getFilename())
       .append(MD5_ATTR, file.getMd5());
+    if (file.getFileSize() != null) doc.append(FILESIZE_ATTR, file.getFileSize());
     if (file.getOid() != null) doc.append(ID_ATTR, new ObjectId(file.getOid()));
     return doc;
   }
