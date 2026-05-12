@@ -33,4 +33,30 @@ class GitReferenceTest {
     assertNull(gr.getResolvedSha());
     assertNull(gr.getResolvedAtMillis());
   }
+
+  // ── G1b: mode ──────────────────────────────────────────────────────────
+
+  @Test
+  void modeDefaultsToLooseLink() {
+    var gr = new GitReference();
+    assertEquals(GitReferenceMode.LOOSE_LINK, gr.getMode());
+  }
+
+  @Test
+  void modeAccessorFallsBackToLooseLinkWhenNull() {
+    // Simulates a row loaded from Neo4j pre-migration where the property
+    // is absent — the defensive getter must still return LOOSE_LINK.
+    var gr = new GitReference();
+    gr.setMode(null);
+    assertEquals(GitReferenceMode.LOOSE_LINK, gr.getMode());
+  }
+
+  @Test
+  void modeAccessorReturnsConfiguredMode() {
+    var gr = new GitReference();
+    gr.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+    assertEquals(GitReferenceMode.TRACKED_ARTIFACT, gr.getMode());
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    assertEquals(GitReferenceMode.PINNED_SNAPSHOT, gr.getMode());
+  }
 }
