@@ -192,16 +192,28 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
     networks:
       - shepard
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-storage:/prometheus
     restart: unless-stopped
     profiles:
       - monitoring
 
+  # Out-of-the-box performance-metrics dashboard for the
+  # `monitoring` compose profile. Auto-provisions:
+  #   * a Prometheus datasource pointing at prometheus:9090
+  #   * an "shepard — Overview" dashboard with HTTP / JVM / DB /
+  #     permission-cache panels
+  # Reachable at http://localhost:3001 after
+  # `docker compose --profile monitoring up -d`.
   grafana:
     image: grafana/grafana:12.2.1-security-01
     networks:
       - shepard
+    ports:
+      - "3001:3000"
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_BASIC_ENABLED=true
@@ -209,6 +221,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
       - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
     restart: unless-stopped
     profiles:
       - monitoring
@@ -221,3 +235,4 @@ networks:
 
 volumes:
   grafana-storage: {}
+  prometheus-storage: {}

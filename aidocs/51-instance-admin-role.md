@@ -430,6 +430,68 @@ The badge reflects the **current** role state, not the
 state-at-creation-time. Historical "this user was admin when they
 did X" is the F3 audit-log's job (post-`aidocs/24` F3).
 
+### 9.4 Role-in-current-context indicator (user request 2026-05-12)
+
+A casual user opening a Collection / DataObject wants to know "what
+am I allowed to do here?" at a glance. The frontend shell renders a
+**role-in-context chip** in the page header that derives from the
+current entity's permissions for the current user:
+
+```
+[ Owner ]        ← can read + write + manage permissions
+[ Editor ]       ← can read + write
+[ Reader ]       ← read-only
+[ No access ]    ← shouldn't normally render; page would 403 first
+```
+
+Plus the **"Instance Admin"** chip whenever
+`JWTPrincipal.roles.contains("instance-admin")`, side-by-side, so
+admins can see they're operating in an elevated context.
+
+Source of truth = the existing `PermissionsService.getRoles(entity)`
+call result, surfaced via the existing
+`profile=relations`-style response augmentation (per `aidocs/56`).
+No new endpoint needed; the existing entity GET already carries
+enough info if `profile=relations|all` is requested.
+
+Slice ID: **U1c2 — Role-in-context chip in page header.** Lives
+alongside U1c "Profile + roles section" per `aidocs/36`.
+Implementation order: ship after CP1 (`aidocs/58 §5`) lands so the
+chip's per-Collection defaults can read from `:CollectionProperties`.
+
+### 9.5 Admin-page metrics embed (user request 2026-05-12)
+
+The `/admin` operator pane (§9.2) gains an **"Instance health"
+strip** at the top that links to — or, where possible, embeds —
+the key Grafana panels from the `monitoring` compose profile
+(`docs/admin.md §Performance metrics`):
+
+- HTTP requests/sec + p95 latency (last hour) → links to the
+  "shepard — Overview" dashboard.
+- JVM heap usage (last 6 h) → links.
+- Permissions-cache hit ratio (current value as a single
+  big-number stat) → links.
+
+Two implementation paths considered:
+
+1. **Link-only** (cheapest, v1). The strip is a Vue card with a
+   one-line summary fetched from `/v2/admin/metrics-summary` (a
+   new tiny endpoint that wraps a handful of `instant`-style
+   Prometheus queries server-side, so the operator's browser
+   never talks to Prometheus directly). Each summary card carries
+   an external-link icon to the Grafana panel.
+2. **Embed** via Grafana's `iframe` panel-share or
+   `/render/d-solo/...` URL. Plays better visually but requires
+   either anonymous Grafana access (a no-go for non-dev
+   instances) or proxying through shepard's auth — out-of-scope
+   for v1.
+
+Slice ID: **A3b1 — Admin-page metrics strip** (link-only;
+`/v2/admin/metrics-summary` endpoint server-side). Depends on
+A0 (`@RolesAllowed("instance-admin")`) — already shipped — and
+on the monitoring profile being up (operator runtime choice).
+The embed-via-iframe path becomes A3b2, deferred.
+
 ---
 
 ## 10. Endpoints (all under `/v2/`)

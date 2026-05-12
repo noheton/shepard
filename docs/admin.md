@@ -101,6 +101,35 @@ monitoring for connectivity.)
 
 Metrics: Prometheus scrape at `/shepard/doc/metrics/prometheus`.
 
+## Performance metrics — out-of-the-box dashboard
+
+The bundled `monitoring` compose profile boots **Prometheus** and
+**Grafana** with auto-provisioning:
+
+```bash
+docker compose --env-file .env --profile monitoring up -d
+```
+
+- **Prometheus** scrapes the backend's `/shepard/doc/metrics/prometheus`
+  endpoint every 10 s (see `infrastructure/prometheus/prometheus.yml`)
+  and exposes its UI at <http://localhost:9090>.
+- **Grafana** auto-loads the Prometheus datasource and the
+  **"shepard — Overview"** dashboard with panels for HTTP request
+  rate + p95/p99 latency, JVM heap / threads / GC, Hibernate session
+  events, MongoDB command latency, and the permissions-cache hit
+  ratio. UI at <http://localhost:3001>; admin login from
+  `GRAFANA_ADMIN_USERNAME` + `GRAFANA_ADMIN_PASSWORD` in `.env`.
+
+The dashboard JSON lives at
+`infrastructure/grafana/dashboards/shepard-overview.json` — edit
+in place and re-deploy to extend the panel set. Provisioning specs
+are in `infrastructure/grafana/provisioning/`. Dashboards are
+re-loaded by Grafana on a 30-second poll.
+
+For shared/long-running deployments, replace the bundled
+`shepard` / `secret` Grafana credentials in `.env` before exposing
+port 3001 publicly.
+
 ## Backups
 
 Each persistence store has its own backup path. shepard does not ship a
