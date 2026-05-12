@@ -33,7 +33,15 @@ public class PublicEndpointRegistry {
     // reachable pre-auth so external AAS-aware clients can discover
     // what this shepard speaks. Carries only capability flags / counts
     // — never per-Shell identifiers.
-    "/v2/aas/.well-known/aas-server"
+    "/v2/aas/.well-known/aas-server",
+    // P4c — per-shelf OpenAPI documents. OpenAPI specs are public,
+    // same posture as the combined /shepard/doc/openapi.json that the
+    // smallrye-openapi extension already serves pre-auth. The paths
+    // here are application-relative (post-RequestPathHelper); the
+    // /shepard/api/ prefix never reaches application code because the
+    // resource @Path is /shepard/doc/openapi/{v1,v2}.json directly.
+    "/shepard/doc/openapi/v1.json",
+    "/shepard/doc/openapi/v2.json"
   );
 
   /**

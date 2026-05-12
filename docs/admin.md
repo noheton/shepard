@@ -70,6 +70,19 @@ Quarkus path roots (also from `application.properties`):
 - `quarkus.smallrye-openapi.path=openapi.json`
 - `quarkus.swagger-ui.always-include=true`
 
+The combined OpenAPI document is served at `/shepard/doc/openapi.json`.
+This fork additionally exposes two filtered views, useful when an
+operator wants to generate a client pinned to a single API shelf:
+
+- `/shepard/doc/openapi/v1.json` — only the upstream-compatible
+  `/shepard/api/...` paths.
+- `/shepard/doc/openapi/v2.json` — only the fork's `/v2/...`
+  development surface.
+
+Both honour `?format=yaml`; both are unauthenticated, matching the
+posture of the combined document. The combined `/shepard/doc/openapi.json`
+keeps working unchanged. (P4c.)
+
 CORS is permissive (`quarkus.http.cors.origins=*`) and accepts headers
 `Origin, Accept, X-Requested-With, Content-Type, Authorization, X-API-KEY`
 plus the standard preflight set. Tighten this in front of internet-exposed

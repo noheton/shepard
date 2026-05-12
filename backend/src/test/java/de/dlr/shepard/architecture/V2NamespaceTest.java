@@ -90,6 +90,14 @@ class V2NamespaceTest {
     ArchRuleDefinition.classes()
       .that()
       .resideOutsideOfPackage(V2_PACKAGE + "..")
+      // OpenAPI emission classes mount at `/shepard/doc/...` to mirror
+      // the existing smallrye-openapi extension's combined-doc path
+      // (`/openapi.json` / `/shepard/doc/openapi.json`). These are
+      // documentation routes, not REST resources — they sit beside the
+      // `/shepard/api/...` and `/v2/...` shelves, not inside either.
+      // Exempt from the API-prefix rule by package.
+      .and()
+      .resideOutsideOfPackage("de.dlr.shepard.common.openapi")
       .and()
       .areAnnotatedWith(Path.class)
       .should(haveJaxRsPathStartingWith(API_PREFIX_WITH_SLASH, API_PREFIX_NO_SLASH))
