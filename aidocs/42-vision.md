@@ -133,10 +133,14 @@ These work the same way across every primitive:
   shepard's existing Neo4j, so a fresh `docker compose up` is the
   whole setup for "I want to annotate `vibration_max` with the QUDT
   IRI for `g rms`." **Pre-seeded common ontologies** (PROV-O,
-  Dublin Core, schema.org, FOAF, QUDT, OM-2, W3C Time, GeoSPARQL)
-  ship with the install (N1b, shipped) — eight SHA-256-pinned
-  Turtle bundles imported into the n10s repository on startup, so
-  the casual annotation flow finds resolvable IRIs out of the box.
+  Dublin Core, schema.org, FOAF, QUDT, OM-2, W3C Time, GeoSPARQL,
+  OBO Relation Ontology) ship with the install (N1b + ONT1a,
+  shipped) — nine SHA-256-pinned Turtle bundles imported into the
+  n10s repository on startup, so the casual annotation flow finds
+  resolvable IRIs out of the box. The Relation Ontology supplies
+  the cross-cutting relations researchers want for process-graph
+  edges (`part_of`, `has_part`, `derives_from`, `participates_in`,
+  `has_input`, `has_output`).
 - **Subscriptions.** URL-pattern webhooks fire on entity changes
   for downstream pipeline glue.
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
@@ -302,9 +306,10 @@ Mid-horizon:
   / CP1 / ONT1 / REF1 / GR1 / BIZ1 series). Lefthand-tree
   drag-and-drop; navigable Collection graph view (cytoscape.js);
   `@`-mention autocomplete; `:CollectionProperties` properties-
-  node; RO ontology added to the pre-seed bundle; DBpedia Databus
-  rich-reference plugin; **GraphRAG** on shepard via native Neo4j
-  5.13+ vector index.
+  node (CP1a/CP1b shipped); RO ontology added to the pre-seed
+  bundle (ONT1a shipped — LUMEN seed citation queued under ONT1b);
+  DBpedia Databus rich-reference plugin; **GraphRAG** on shepard
+  via native Neo4j 5.13+ vector index.
 - **OpenAPI client-generator pick** (`aidocs/57`, CG1 series).
   Kiota for the `/v2/` shelf, OpenAPI Generator retained for the
   byte-frozen `/shepard/api/...` shelf; Hey API as a TS-only
