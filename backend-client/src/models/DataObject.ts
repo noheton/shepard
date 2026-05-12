@@ -20,7 +20,13 @@ import { mapValues } from '../runtime';
  */
 export interface DataObject {
     /**
-     * 
+     * Application-level UUID v7 identifier. Null on pre-L2a rows.
+     * @type {string}
+     * @memberof DataObject
+     */
+    readonly appId?: string | null;
+    /**
+     *
      * @type {number}
      * @memberof DataObject
      */
@@ -139,7 +145,8 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         return json;
     }
     return {
-        
+
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'id': json['id'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],

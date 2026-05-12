@@ -45,8 +45,12 @@ public class BasicEntityIO implements HasId {
   @Schema(required = true)
   private String name;
 
+  @Schema(readOnly = true, nullable = true, description = "Application-level UUID v7 identifier.")
+  private String appId;
+
   public BasicEntityIO(BasicEntity entity) {
     this.id = entity.getId();
+    this.appId = entity.getAppId();
     this.createdAt = entity.getCreatedAt();
     this.createdBy = entity.getCreatedBy() != null
       ? DisplayNameResolver.effectiveDisplayName(entity.getCreatedBy())
@@ -60,6 +64,7 @@ public class BasicEntityIO implements HasId {
 
   public BasicEntityIO(BasicEntityIO entity) {
     this.id = entity.getId();
+    this.appId = entity.getAppId();
     this.createdAt = entity.getCreatedAt();
     this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy() : null;
     this.updatedAt = entity.getUpdatedAt();
@@ -69,6 +74,7 @@ public class BasicEntityIO implements HasId {
 
   public BasicEntityIO(VersionableEntity entity) {
     this.id = entity.getShepardId();
+    this.appId = entity.getAppId();
     this.createdAt = entity.getCreatedAt();
     this.createdBy = entity.getCreatedBy() != null
       ? DisplayNameResolver.effectiveDisplayName(entity.getCreatedBy())
@@ -101,6 +107,7 @@ public class BasicEntityIO implements HasId {
     BasicEntityIO other = (BasicEntityIO) o;
     return (
       Objects.equals(id, other.id) &&
+      Objects.equals(appId, other.appId) &&
       Objects.equals(createdAt, other.createdAt) &&
       Objects.equals(createdBy, other.createdBy) &&
       Objects.equals(updatedAt, other.updatedAt) &&
@@ -113,7 +120,7 @@ public class BasicEntityIO implements HasId {
   public int hashCode() {
     final int prime = 31;
     int result = 0;
-    result = prime * result + Objects.hash(id, createdAt, createdBy, updatedAt, updatedBy, name);
+    result = prime * result + Objects.hash(id, appId, createdAt, createdBy, updatedAt, updatedBy, name);
     return result;
   }
 }

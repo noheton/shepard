@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
+import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
@@ -196,6 +197,12 @@ watch(dataObject, () => {
                       :data-object-id="dataObjectId"
                     />
                   </template>
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
+                  v-if="dataObject.appId"
+                  title="Git References"
+                >
+                  <GitReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>
