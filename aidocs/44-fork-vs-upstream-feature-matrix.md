@@ -205,7 +205,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | Files stored in MongoDB GridFS (1 MiB chunks, one bucket per FileContainer) | **=** | **=** (today) | **=** | `FileService.java` |
-| Pluggable `FileStorage` interface (GridFS default, S3-compatible opt-in via MinIO / S3 / Azure Blob / Ceph) | none | TBD | 📐 (queued, FS1a-b) | `aidocs/45` |
+| **Two file-storage plugins** — `shepard-plugin-file-gridfs` (default) + `shepard-plugin-file-s3` (MinIO / S3 / Azure Blob / Ceph) — co-existing as first-class supported backends; operator picks per install via `shepard.payload.file.backend` | none | TBD | 📐 (queued, FS1a-b) | `aidocs/45 §3.2` + `aidocs/47 §3.2` |
 | Presigned-URL `/v2/` endpoints for upload + download (frees backend from being the bytes proxy) | none | TBD | 📐 (queued, FS1c) | `aidocs/45 §4` |
 | MinIO sidecar profile in compose (operator one-line switch) | none | TBD | 📐 (queued, FS1d) | `aidocs/45 §9` |
 | `shepard-admin files migrate` CLI (greenfield / big-bang / dual-store-with-background-sweep) | none | TBD | 📐 (queued, FS1e) | `aidocs/45 §6` |

@@ -108,23 +108,39 @@ public interface FileStorage {
 }
 ```
 
-Two implementations:
+Two implementations ship as **first-class plugins**
+(per `aidocs/47 §2`) — neither is deprecated; both are supported
+indefinitely, picked per-install:
 
-- **`GridFsFileStorage`** — today's behaviour, refactored from
-  `FileService`. **Stays the default** for backward compat and
-  for the all-in-one install.
-- **`S3FileStorage`** — uses AWS SDK v2 (`software.amazon.awssdk:s3`),
-  configured via standard AWS env / config (`AWS_REGION`,
-  `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
-  `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE` for MinIO). Optional
-  `presignedDownloadUrl` / `presignedUploadUrl` return real
-  presigned URLs; the GridFs impl returns `Optional.empty()` and
-  callers fall back to backend-proxied streams.
+- **`shepard-plugin-file-gridfs`** — today's behaviour, refactored
+  from `FileService`. **Stays the default** for backward compat
+  and for the all-in-one install. Operators with sub-TB workloads,
+  zero-extra-services preference, or air-gapped deployments stay
+  here; the plugin is **not a deprecation step on a path to
+  removal**. The user explicitly directed (2026-05-12): "when
+  migrating to storage plugins also implement a (legacy) GridFS
+  Plugin!" — meaning GridFS keeps a first-class supported plugin
+  surface, not a "use it until you can leave" deprecation stance.
+- **`shepard-plugin-file-s3`** — uses AWS SDK v2
+  (`software.amazon.awssdk:s3`), configured via standard AWS env
+  / config (`AWS_REGION`, `AWS_ACCESS_KEY_ID`,
+  `AWS_SECRET_ACCESS_KEY`, `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE`
+  for MinIO). Optional `presignedDownloadUrl` /
+  `presignedUploadUrl` return real presigned URLs; the GridFs
+  plugin returns `Optional.empty()` and callers fall back to
+  backend-proxied streams.
 
-Selection at startup: `shepard.files.storage = gridfs | s3` (default
-`gridfs`). Resolved by a CDI `@Produces` bean. Single-file change at
-the seam in `FileService` (the existing class becomes a thin facade
-that delegates to `FileStorage`).
+Selection at startup: `shepard.payload.file.backend = gridfs | s3`
+(default `gridfs`). Resolved by the `PayloadStorage` SPI
+(`aidocs/47 §2.2`). Single-file change at the seam in
+`FileService` (the existing class becomes a thin facade that
+delegates to the registered `FileStorage` plugin).
+
+**Pick-axiom.** S3 is the right choice for installs with multi-TB
+data, frequent multi-GB uploads, presigned-URL needs, or an
+existing S3-compatible service in the operator's environment.
+GridFS is the right choice for everything else — and we ship
+both as supported plugins.
 
 ### 3.3 (C) Per-Collection storage choice
 
