@@ -73,4 +73,24 @@ public class ActivityIO {
       a.getOriginInstance()
     );
   }
+
+  /**
+   * Return a copy with the request-shape fields (method / path / status
+   * / endedAt / originInstance) cleared. Used by the
+   * {@code ?profile=metadata} path to drop everything that isn't the
+   * core PROV-O Activity surface.
+   */
+  public ActivityIO metadataOnly() {
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null);
+  }
+
+  /**
+   * Return a copy with only metadata + the {@code targetAppId} relation
+   * (the only "relation" an Activity row carries — to its target
+   * entity). Drops the request-shape fields the way
+   * {@link #metadataOnly()} does.
+   */
+  public ActivityIO relationsOnly() {
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null);
+  }
 }
