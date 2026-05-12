@@ -1,5 +1,8 @@
 package de.dlr.shepard.context.collection.services;
 
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aCollection;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aUser;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.permissionsFor;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -70,11 +73,7 @@ public class CollectionServiceTest {
   @Test
   public void getCollectionsByShepardIdTest() {
     String username = "manni";
-    Collection collectionNotDeleted = new Collection(5L);
-    collectionNotDeleted.setShepardId(55L);
-    Collection collectionDeleted = new Collection(6L);
-    collectionDeleted.setShepardId(65L);
-    collectionDeleted.setDeleted(true);
+    Collection collectionNotDeleted = aCollection().id(5L).shepardId(55L).build();
 
     when(authenticationContext.getCurrentUserName()).thenReturn("manni");
     when(dao.findAllCollectionsByShepardId(null, username)).thenReturn(List.of(collectionNotDeleted));
@@ -85,11 +84,7 @@ public class CollectionServiceTest {
   @Test
   public void getCollectionsByShepardIdTest_withName() {
     String username = "kurac";
-    Collection collectionNotDeleted = new Collection(5L);
-    collectionNotDeleted.setShepardId(55L);
-    Collection collectionDeleted = new Collection(6L);
-    collectionDeleted.setShepardId(65L);
-    collectionDeleted.setDeleted(true);
+    Collection collectionNotDeleted = aCollection().id(5L).shepardId(55L).build();
 
     QueryParamHelper params = new QueryParamHelper().withName("test");
     when(authenticationContext.getCurrentUserName()).thenReturn("kurac");
@@ -100,7 +95,7 @@ public class CollectionServiceTest {
 
   @Test
   public void createCollectionTest() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
     Version nullVersion = new Version(new UUID(1L, 2L));
     CollectionIO input = new CollectionIO() {
@@ -110,6 +105,9 @@ public class CollectionServiceTest {
         setName("Name");
       }
     };
+    // toCreate uses `new Collection()` (id=null) to match what the service-under-test
+    // constructs internally for argument matching — fixture builders default a non-null id,
+    // so the create-flow's pre-persist "no id yet" stage stays inline.
     Collection toCreate = new Collection() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -153,9 +151,9 @@ public class CollectionServiceTest {
 
   @Test
   public void updateCollectionByShepardIdTest() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    User updateUser = new User("claus");
+    User updateUser = aUser().username("claus").build();
     Date updateDate = new Date(43);
 
     CollectionIO input = new CollectionIO() {
@@ -166,30 +164,26 @@ public class CollectionServiceTest {
         setName("newName");
       }
     };
-    Collection old = new Collection() {
-      {
-        setAttributes(Map.of("a", "b", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setId(15L);
-        setShepardId(input.getId());
-      }
-    };
-    var updated = new Collection() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("newDesc");
-        setName("newName");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setUpdatedAt(updateDate);
-        setUpdatedBy(updateUser);
-        setId(old.getId());
-        setShepardId(old.getShepardId());
-      }
-    };
+    Collection old = aCollection()
+      .id(15L)
+      .shepardId(input.getId())
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("a", "b", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .build();
+    Collection updated = aCollection()
+      .id(old.getId())
+      .shepardId(old.getShepardId())
+      .named("newName")
+      .withDescription("newDesc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .updatedAt(updateDate)
+      .updatedBy(updateUser)
+      .build();
 
     when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
     when(userService.getCurrentUser()).thenReturn(updateUser);
@@ -210,9 +204,9 @@ public class CollectionServiceTest {
 
   @Test
   public void updateCollectionByShepardIdTest_noUpdatePermissions() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    User updateUser = new User("claus");
+    User updateUser = aUser().username("claus").build();
     Date updateDate = new Date(43);
 
     CollectionIO input = new CollectionIO() {
@@ -223,30 +217,26 @@ public class CollectionServiceTest {
         setName("newName");
       }
     };
-    Collection old = new Collection() {
-      {
-        setAttributes(Map.of("a", "b", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setId(15L);
-        setShepardId(input.getId());
-      }
-    };
-    var updated = new Collection() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("newDesc");
-        setName("newName");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setUpdatedAt(updateDate);
-        setUpdatedBy(updateUser);
-        setId(old.getId());
-        setShepardId(old.getShepardId());
-      }
-    };
+    Collection old = aCollection()
+      .id(15L)
+      .shepardId(input.getId())
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("a", "b", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .build();
+    Collection updated = aCollection()
+      .id(old.getId())
+      .shepardId(old.getShepardId())
+      .named("newName")
+      .withDescription("newDesc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .updatedAt(updateDate)
+      .updatedBy(updateUser)
+      .build();
 
     when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
     when(userService.getCurrentUser()).thenReturn(updateUser);
@@ -266,9 +256,9 @@ public class CollectionServiceTest {
 
   @Test
   public void updateCollectionByShepardId_setDefaultFileContainer() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    User updateUser = new User("claus");
+    User updateUser = aUser().username("claus").build();
     Date updateDate = new Date(43);
     FileContainer fileContainer = new FileContainer(151L);
 
@@ -281,32 +271,27 @@ public class CollectionServiceTest {
         setDefaultFileContainerId(151L);
       }
     };
-    Collection old = new Collection() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setId(15L);
-        setShepardId(input.getId());
-        setFileContainer(null);
-      }
-    };
-    var updated = new Collection() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(user);
-        setUpdatedAt(updateDate);
-        setUpdatedBy(updateUser);
-        setId(old.getId());
-        setShepardId(old.getShepardId());
-        setFileContainer(fileContainer);
-      }
-    };
+    Collection old = aCollection()
+      .id(15L)
+      .shepardId(input.getId())
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .build();
+    Collection updated = aCollection()
+      .id(old.getId())
+      .shepardId(old.getShepardId())
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(user)
+      .updatedAt(updateDate)
+      .updatedBy(updateUser)
+      .build();
+    updated.setFileContainer(fileContainer);
 
     when(dao.findByShepardId(old.getShepardId(), false)).thenReturn(old);
     when(userService.getCurrentUser()).thenReturn(updateUser);
@@ -328,11 +313,10 @@ public class CollectionServiceTest {
 
   @Test
   public void deleteCollectionByShepardIdTest() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
 
-    Collection collection = new Collection(1L);
-    collection.setShepardId(15L);
+    Collection collection = aCollection().id(1L).shepardId(15L).build();
 
     when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
@@ -352,11 +336,10 @@ public class CollectionServiceTest {
 
   @Test
   public void deleteCollectionByShepardIdTestNoUpdatePermissions() {
-    User user = new User("timbo");
+    User user = aUser().username("timbo").build();
     Date date = new Date(23);
 
-    Collection collection = new Collection(1L);
-    collection.setShepardId(15L);
+    Collection collection = aCollection().id(1L).shepardId(15L).build();
 
     when(userService.getCurrentUser()).thenReturn(user);
     when(dateHelper.getDate()).thenReturn(date);
@@ -376,7 +359,7 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionByShepardIdNoVersion() {
-    Collection ret = new Collection(1L);
+    Collection ret = aCollection().id(1L).build();
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
@@ -398,8 +381,7 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionByShepardIdNoVersionDeleted() {
-    Collection ret = new Collection(1L);
-    ret.setDeleted(true);
+    Collection ret = aCollection().id(1L).deleted(true).build();
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId)).thenReturn(ret);
 
@@ -409,7 +391,7 @@ public class CollectionServiceTest {
   }
 
   public void getCollectionByShepardIdNoVersionNoReadPermissions() {
-    Collection ret = new Collection(1L);
+    Collection ret = aCollection().id(1L).build();
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
     when(authenticationContext.getCurrentUserName()).thenReturn("eric");
@@ -420,7 +402,7 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionByShepardId() {
-    Collection ret = new Collection(1L);
+    Collection ret = aCollection().id(1L).build();
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID, false)).thenReturn(ret);
@@ -443,8 +425,7 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionByShepardIdDeleted() {
-    Collection ret = new Collection(1L);
-    ret.setDeleted(true);
+    Collection ret = aCollection().id(1L).deleted(true).build();
     UUID versionUID = new UUID(1L, 2L);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID)).thenReturn(ret);
@@ -455,8 +436,9 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionPermissions() {
-    Collection col = new Collection(1L);
-    Permissions ret = new Permissions(col, new User("bob"), PermissionType.Private);
+    Collection col = aCollection().id(1L).build();
+    User bob = aUser().username("bob").build();
+    Permissions ret = permissionsFor(col).ownedBy(bob).type(PermissionType.Private).build();
     col.setPermissions(ret);
     long shepardId = 2L;
 
@@ -472,8 +454,9 @@ public class CollectionServiceTest {
 
   @Test
   public void getCollectionPermissionsNoManagePermissions() {
-    Collection col = new Collection(1L);
-    Permissions ret = new Permissions(col, new User("bob"), PermissionType.Private);
+    Collection col = aCollection().id(1L).build();
+    User bob = aUser().username("bob").build();
+    Permissions ret = permissionsFor(col).ownedBy(bob).type(PermissionType.Private).build();
     col.setPermissions(ret);
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
@@ -486,10 +469,10 @@ public class CollectionServiceTest {
 
   @Test
   public void updateCollectionPermissions() {
-    Collection col = new Collection(1L);
+    Collection col = aCollection().id(1L).shepardId(2L).build();
     long shepardId = 2L;
-    col.setShepardId(shepardId);
-    Permissions newPermissions = new Permissions(col, new User("bob"), PermissionType.Public);
+    User bob = aUser().username("bob").build();
+    Permissions newPermissions = permissionsFor(col).ownedBy(bob).type(PermissionType.Public).build();
     PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
@@ -502,10 +485,10 @@ public class CollectionServiceTest {
 
   @Test
   public void updateCollectionPermissionsNoManagePermissions() {
-    Collection col = new Collection(1L);
+    Collection col = aCollection().id(1L).shepardId(2L).build();
     long shepardId = 2L;
-    col.setShepardId(shepardId);
-    Permissions newPermissions = new Permissions(col, new User("bob"), PermissionType.Public);
+    User bob = aUser().username("bob").build();
+    Permissions newPermissions = permissionsFor(col).ownedBy(bob).type(PermissionType.Public).build();
     PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");

@@ -1,5 +1,8 @@
 package de.dlr.shepard.context.references.basicreference.services;
 
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aBasicReference;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aDataObject;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aUser;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,15 +39,12 @@ public class BasicReferenceServiceTest {
   BasicReferenceService service;
 
   private final long collectionId = 123456L;
-  private final User user = new User("Testuser");
+  private final User user = aUser().username("Testuser").build();
 
   @Test
   public void getBasicReferenceByShepardIdTest_successful() {
-    BasicReference ref = new BasicReference(1L);
-    ref.setShepardId(15L);
-
-    DataObject dataObject = new DataObject(5432L);
-    dataObject.setShepardId(54321L);
+    BasicReference ref = aBasicReference().id(1L).shepardId(15L).build();
+    DataObject dataObject = aDataObject().id(5432L).shepardId(54321L).build();
     dataObject.setReferences(List.of(ref));
     ref.setDataObject(dataObject);
 
@@ -56,11 +56,8 @@ public class BasicReferenceServiceTest {
 
   @Test
   public void getBasicReferenceByShepardIdNotFoundTest() {
-    BasicReference ref = new BasicReference(1L);
-    ref.setShepardId(15L);
-
-    DataObject dataObject = new DataObject(5432L);
-    dataObject.setShepardId(54321L);
+    BasicReference ref = aBasicReference().id(1L).shepardId(15L).build();
+    DataObject dataObject = aDataObject().id(5432L).shepardId(54321L).build();
     dataObject.setReferences(List.of(ref));
     ref.setDataObject(dataObject);
 
@@ -74,12 +71,8 @@ public class BasicReferenceServiceTest {
 
   @Test
   public void getBasicReferenceByShepardIdIsDeletedTest() {
-    BasicReference ref = new BasicReference(1L);
-    ref.setShepardId(15L);
-    ref.setDeleted(true);
-
-    DataObject dataObject = new DataObject(5432L);
-    dataObject.setShepardId(54321L);
+    BasicReference ref = aBasicReference().id(1L).shepardId(15L).deleted(true).build();
+    DataObject dataObject = aDataObject().id(5432L).shepardId(54321L).build();
     dataObject.setReferences(List.of(ref));
     ref.setDataObject(dataObject);
 
@@ -93,13 +86,8 @@ public class BasicReferenceServiceTest {
 
   @Test
   public void getAllBasicReferencesByShepardIdsTest() {
-    var ref1 = new BasicReference(1L);
-    ref1.setShepardId(15L);
-    var ref2 = new BasicReference(2L);
-    ref2.setShepardId(25L);
-    var ref3 = new BasicReference(3L);
-    ref3.setShepardId(35L);
-    ref3.setDeleted(true);
+    var ref1 = aBasicReference().id(1L).shepardId(15L).build();
+    var ref2 = aBasicReference().id(2L).shepardId(25L).build();
     QueryParamHelper params = new QueryParamHelper().withName("test");
     Long dataObjectShepardId = 2005L;
 
@@ -112,19 +100,10 @@ public class BasicReferenceServiceTest {
   @Test
   public void deleteReferenceByShepardIdTest() {
     Date date = new Date(30L);
-    BasicReference ref = new BasicReference(1L);
-    ref.setShepardId(15L);
-
-    DataObject dataObject = new DataObject(5432L);
-    dataObject.setShepardId(54321L);
+    BasicReference ref = aBasicReference().id(1L).shepardId(15L).build();
+    DataObject dataObject = aDataObject().id(5432L).shepardId(54321L).build();
     dataObject.setReferences(List.of(ref));
     ref.setDataObject(dataObject);
-
-    BasicReference expected = new BasicReference(ref.getId());
-    expected.setShepardId(ref.getShepardId());
-    expected.setDeleted(true);
-    expected.setUpdatedAt(date);
-    expected.setUpdatedBy(user);
 
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
     when(userDAO.find(user.getUsername())).thenReturn(user);

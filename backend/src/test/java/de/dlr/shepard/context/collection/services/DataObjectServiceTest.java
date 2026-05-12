@@ -1,5 +1,8 @@
 package de.dlr.shepard.context.collection.services;
 
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aCollection;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aDataObject;
+import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aUser;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,15 +68,12 @@ public class DataObjectServiceTest {
   @Inject
   DataObjectService service;
 
-  private final User defaultUser = new User("Bob");
+  private final User defaultUser = aUser().username("Bob").build();
 
   @Test
   public void getDataObjectTest() {
-    Collection collection = new Collection(555L);
-    collection.setShepardId(5555L);
-    DataObject dataObject = new DataObject(5L);
-    dataObject.setShepardId(55L);
-    dataObject.setCollection(collection);
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject dataObject = aDataObject().id(5L).shepardId(55L).inCollection(collection).build();
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
@@ -89,12 +89,9 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectWithVersionUIDTest() {
-    Collection collection = new Collection(555L);
-    collection.setShepardId(5555L);
-    DataObject dataObject = new DataObject(5L);
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject dataObject = aDataObject().id(5L).shepardId(55L).inCollection(collection).build();
     UUID versionUID = new UUID(0L, 1L);
-    dataObject.setShepardId(55L);
-    dataObject.setCollection(collection);
     when(dao.findByShepardId(dataObject.getShepardId(), versionUID)).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
@@ -110,9 +107,7 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectTest_deleted() {
-    DataObject dataObject = new DataObject(5L);
-    dataObject.setDeleted(true);
-    dataObject.setShepardId(55L);
+    DataObject dataObject = aDataObject().id(5L).shepardId(55L).deleted(true).build();
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     assertThrows(InvalidPathException.class, () -> {
       service.getDataObject(dataObject.getShepardId());
@@ -130,18 +125,21 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectTest_deletedParent() {
-    Collection collection = new Collection(555L);
-    collection.setShepardId(5555L);
-    DataObject parent = new DataObject(1L);
-    parent.setShepardId(15L);
-    parent.setDeleted(true);
-    DataObject dataObject = new DataObject(2L);
-    dataObject.setShepardId(25L);
-    dataObject.setParent(parent);
-    dataObject.setCollection(collection);
-    DataObject dataObjectCut = new DataObject(2L);
-    dataObjectCut.setShepardId(25L);
-    dataObjectCut.setCollection(collection);
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject parent = aDataObject().id(1L).shepardId(15L).deleted(true).build();
+    DataObject dataObject = aDataObject()
+      .id(2L)
+      .shepardId(25L)
+      .named("data-object-25")
+      .inCollection(collection)
+      .withParent(parent)
+      .build();
+    DataObject dataObjectCut = aDataObject()
+      .id(2L)
+      .shepardId(25L)
+      .named("data-object-25")
+      .inCollection(collection)
+      .build();
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
@@ -158,14 +156,14 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectTest_withParent() {
-    Collection collection = new Collection(555L);
-    collection.setShepardId(5555L);
-    DataObject parent = new DataObject(1L);
-    parent.setShepardId(15L);
-    DataObject dataObject = new DataObject(2L);
-    dataObject.setShepardId(25L);
-    dataObject.setParent(parent);
-    dataObject.setCollection(collection);
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    DataObject parent = aDataObject().id(1L).shepardId(15L).build();
+    DataObject dataObject = aDataObject()
+      .id(2L)
+      .shepardId(25L)
+      .inCollection(collection)
+      .withParent(parent)
+      .build();
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
@@ -182,13 +180,9 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectTest_notInCollection() {
-    Collection collection = new Collection(555L);
-    collection.setShepardId(5555L);
-    Collection otherCollection = new Collection(15L);
-    otherCollection.setShepardId(10L);
-    DataObject dataObject = new DataObject(2L);
-    dataObject.setShepardId(25L);
-    dataObject.setCollection(otherCollection);
+    Collection collection = aCollection().id(555L).shepardId(5555L).build();
+    Collection otherCollection = aCollection().id(15L).shepardId(10L).build();
+    DataObject dataObject = aDataObject().id(2L).shepardId(25L).inCollection(otherCollection).build();
 
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
@@ -206,8 +200,7 @@ public class DataObjectServiceTest {
 
   @Test
   public void getDataObjectsByShepardIdsTest() {
-    DataObject dataObjectNotDeleted = new DataObject(5L);
-    dataObjectNotDeleted.setShepardId(55L);
+    DataObject dataObjectNotDeleted = aDataObject().id(5L).shepardId(55L).build();
 
     QueryParamHelper params = new QueryParamHelper().withName("Name");
     Long collectionShepardId = 1L;
@@ -220,12 +213,9 @@ public class DataObjectServiceTest {
   public void createDataObjectByShepardIdWithoutPredecessorsTest() {
     Date date = new Date(23);
     Version version = new Version(new UUID(1L, 2L));
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
     collection.setVersion(version);
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setCollection(collection);
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -234,6 +224,10 @@ public class DataObjectServiceTest {
         setParentId(parent.getShepardId());
       }
     };
+    // toCreate / created / createdWithShepardId stay inline: the service builds
+    // `toCreate` via `new DataObject()` (id=null) for the first persist call —
+    // fixture builders default a non-null id, so these "pre-persist" shapes
+    // remain hand-rolled to match what the service produces internally.
     DataObject toCreate = new DataObject() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -285,15 +279,10 @@ public class DataObjectServiceTest {
   public void createDataObjectByShepardIdTest() {
     Date date = new Date(23);
     Version version = new Version(new UUID(1L, 2L));
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
     collection.setVersion(version);
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setCollection(collection);
-    DataObject predecessor = new DataObject(4L);
-    predecessor.setShepardId(45L);
-    predecessor.setCollection(collection);
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
+    DataObject predecessor = aDataObject().id(4L).shepardId(45L).inCollection(collection).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -356,10 +345,9 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_wrongParent() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -377,10 +365,9 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_wrongPredecessor() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -398,13 +385,10 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_deletedParent() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setDeleted(true);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
+    DataObject parent = aDataObject().id(3L).shepardId(35L).deleted(true).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -422,13 +406,10 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_deletedPredecessor() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
-    DataObject predecessor = new DataObject(3L);
-    predecessor.setShepardId(35L);
-    predecessor.setDeleted(true);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
+    DataObject predecessor = aDataObject().id(3L).shepardId(35L).deleted(true).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -446,15 +427,11 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_ParentWrongCollection() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
-    Collection wrong = new Collection(200L);
-    wrong.setShepardId(2005L);
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setCollection(wrong);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
+    Collection wrong = aCollection().id(200L).shepardId(2005L).build();
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(wrong).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -472,15 +449,11 @@ public class DataObjectServiceTest {
 
   @Test
   public void createDataObjectByShepardIdTest_PredecessorWrongCollection() {
-    User user = new User("bob");
+    User user = aUser().username("bob").build();
     Date date = new Date(23);
-    Collection collection = new Collection(2L);
-    collection.setShepardId(25L);
-    Collection wrong = new Collection(200L);
-    wrong.setShepardId(2005L);
-    DataObject predecessor = new DataObject(4L);
-    predecessor.setShepardId(45L);
-    predecessor.setCollection(wrong);
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
+    Collection wrong = aCollection().id(200L).shepardId(2005L).build();
+    DataObject predecessor = aDataObject().id(4L).shepardId(45L).inCollection(wrong).build();
     DataObjectIO input = new DataObjectIO() {
       {
         setAttributes(Map.of("a", "b", "c", "d"));
@@ -498,20 +471,13 @@ public class DataObjectServiceTest {
 
   @Test
   public void updateDataObjectByShepardIdTest() {
-    Collection collection = new Collection(100L);
-    collection.setShepardId(1005L);
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
     Date date = new Date(23);
-    User updateUser = new User("claus");
+    User updateUser = aUser().username("claus").build();
     Date updateDate = new Date(43);
 
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setCollection(collection);
-
-    DataObject aPredecessor = new DataObject(4L);
-    aPredecessor.setShepardId(45L);
-    aPredecessor.setCollection(collection);
-
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
+    DataObject aPredecessor = aDataObject().id(4L).shepardId(45L).inCollection(collection).build();
     List<DataObject> predecessors = List.of(aPredecessor);
 
     DataObjectIO input = new DataObjectIO() {
@@ -524,35 +490,32 @@ public class DataObjectServiceTest {
         setPredecessorIds(predecessors.stream().mapToLong(DataObject::getShepardId).toArray());
       }
     };
-    DataObject old = new DataObject() {
-      {
-        setAttributes(Map.of("a", "b", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(defaultUser);
-        setId(1L);
-        setShepardId(1L);
-        setCollection(collection);
-        setPredecessors(predecessors);
-      }
-    };
-    DataObject updated = new DataObject() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("newDesc");
-        setName("newName");
-        setCreatedAt(date);
-        setCreatedBy(defaultUser);
-        setUpdatedAt(updateDate);
-        setUpdatedBy(updateUser);
-        setParent(parent);
-        setPredecessors(predecessors);
-        setId(old.getId());
-        setShepardId(old.getShepardId());
-        setCollection(collection);
-      }
-    };
+    DataObject old = aDataObject()
+      .id(1L)
+      .shepardId(1L)
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("a", "b", "c", "d"))
+      .createdAt(date)
+      .ownedBy(defaultUser)
+      .inCollection(collection)
+      .withPredecessors(predecessors)
+      .build();
+    DataObject updated = aDataObject()
+      .id(old.getId())
+      .shepardId(old.getShepardId())
+      .named("newName")
+      .withDescription("newDesc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(defaultUser)
+      .updatedAt(updateDate)
+      .updatedBy(updateUser)
+      .withParent(parent)
+      .withPredecessors(predecessors)
+      .inCollection(collection)
+      .build();
+
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
     when(dao.createOrUpdate(old)).thenReturn(updated);
@@ -582,17 +545,12 @@ public class DataObjectServiceTest {
 
   @Test
   public void updateDataObjectByShepardIdTest_UpdateParent() {
-    Collection collection = new Collection(100L);
-    collection.setShepardId(1005L);
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
     Date date = new Date(23);
-    User updateUser = new User("claus");
+    User updateUser = aUser().username("claus").build();
     Date updateDate = new Date(43);
-    DataObject parent = new DataObject(3L);
-    parent.setShepardId(35L);
-    parent.setCollection(collection);
-    DataObject oldParent = new DataObject(3L);
-    oldParent.setShepardId(35L);
-    oldParent.setCollection(collection);
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
+    DataObject oldParent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
     @SuppressWarnings("unchecked")
     List<DataObject> children = Mockito.mock(List.class);
     oldParent.setChildren(children);
@@ -606,35 +564,31 @@ public class DataObjectServiceTest {
         setParentId(parent.getShepardId());
       }
     };
-    DataObject old = new DataObject() {
-      {
-        setAttributes(Map.of("a", "b", "c", "d"));
-        setDescription("Desc");
-        setName("Name");
-        setCreatedAt(date);
-        setCreatedBy(defaultUser);
-        setId(1L);
-        setShepardId(1L);
-        setCollection(collection);
-        setParent(oldParent);
-      }
-    };
+    DataObject old = aDataObject()
+      .id(1L)
+      .shepardId(1L)
+      .named("Name")
+      .withDescription("Desc")
+      .withAttributes(Map.of("a", "b", "c", "d"))
+      .createdAt(date)
+      .ownedBy(defaultUser)
+      .inCollection(collection)
+      .withParent(oldParent)
+      .build();
 
-    DataObject updated = new DataObject() {
-      {
-        setAttributes(Map.of("1", "2", "c", "d"));
-        setDescription("newDesc");
-        setName("newName");
-        setCreatedAt(date);
-        setCreatedBy(defaultUser);
-        setUpdatedAt(updateDate);
-        setUpdatedBy(updateUser);
-        setParent(parent);
-        setId(old.getId());
-        setShepardId(old.getShepardId());
-        setCollection(collection);
-      }
-    };
+    DataObject updated = aDataObject()
+      .id(old.getId())
+      .shepardId(old.getShepardId())
+      .named("newName")
+      .withDescription("newDesc")
+      .withAttributes(Map.of("1", "2", "c", "d"))
+      .createdAt(date)
+      .ownedBy(defaultUser)
+      .updatedAt(updateDate)
+      .updatedBy(updateUser)
+      .withParent(parent)
+      .inCollection(collection)
+      .build();
 
     DataObject oldParentSpy = spy(oldParent);
     when(oldParentSpy.getChildren()).thenReturn(children);
@@ -662,8 +616,7 @@ public class DataObjectServiceTest {
 
   @Test
   public void updateDataObjectByShepardIdTest_SelfReferences() {
-    Collection collection = new Collection(100L);
-    collection.setShepardId(1005L);
+    Collection collection = aCollection().id(100L).shepardId(1005L).build();
     Date date = new Date(23);
 
     DataObjectIO input = new DataObjectIO() {
@@ -672,13 +625,11 @@ public class DataObjectServiceTest {
         setPredecessorIds(new long[] { 1L });
       }
     };
-    DataObject old = new DataObject() {
-      {
-        setId(input.getId());
-        setShepardId(input.getId());
-        setCollection(collection);
-      }
-    };
+    DataObject old = aDataObject()
+      .id(input.getId())
+      .shepardId(input.getId())
+      .inCollection(collection)
+      .build();
 
     when(dao.findByShepardId(old.getShepardId())).thenReturn(old);
     when(dateHelper.getDate()).thenReturn(date);
@@ -700,12 +651,9 @@ public class DataObjectServiceTest {
   public void deleteDataObjectByShepardIdTest() {
     Date date = new Date(23);
 
-    Collection collection = new Collection();
-    collection.setShepardId(1005L);
+    Collection collection = aCollection().shepardId(1005L).build();
 
-    DataObject dataObject = new DataObject(1L);
-    dataObject.setShepardId(15L);
-    dataObject.setCollection(collection);
+    DataObject dataObject = aDataObject().id(1L).shepardId(15L).inCollection(collection).build();
 
     when(dateHelper.getDate()).thenReturn(date);
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
