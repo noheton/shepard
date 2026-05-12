@@ -26,7 +26,15 @@ public class PublicEndpointRegistry {
    * first instance-admin can be created; the bootstrap-token gate
    * inside the endpoint enforces single-use.
    */
-  private static final Set<String> PUBLIC_PATHS = Set.of("/versionz", "/v2/admin/bootstrap");
+  private static final Set<String> PUBLIC_PATHS = Set.of(
+    "/versionz",
+    "/v2/admin/bootstrap",
+    // AAS1-well-known (aidocs/52 §4a.5): capability self-description,
+    // reachable pre-auth so external AAS-aware clients can discover
+    // what this shepard speaks. Carries only capability flags / counts
+    // — never per-Shell identifiers.
+    "/v2/aas/.well-known/aas-server"
+  );
 
   /**
    * Returns {@code true} when the request path matches a registered public

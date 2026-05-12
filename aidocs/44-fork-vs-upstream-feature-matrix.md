@@ -357,7 +357,7 @@ namespace; core enforces the shape.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | **Instance-Admin role + bootstrap** (`instance-admin` tier, `:HAS_ROLE` Neo4j edge, configurable OIDC roles-claim path, file-on-disk bootstrap token, `/v2/admin/...` REST surface) | n/a | backend slice shipped (PR #1037; A0 + C3 + F8) | **✓ ↑** | `aidocs/51` / `aidocs/16 A0` |
-| **AAS backend integration** (Adapter shim at `/v2/aas/...` mapping Shell / Submodel / SubmodelElement → Collection / DataObject / Reference; conformance targets IDTA Nameplate + TechnicalData + TimeSeriesData) | n/a | design done | 📐 (queued, AAS1a) | `aidocs/52` |
+| **AAS backend integration** (Adapter shim at `/v2/aas/...` mapping Shell / Submodel / SubmodelElement → Collection / DataObject / Reference; conformance targets IDTA Nameplate + TechnicalData + TimeSeriesData) | n/a | design done; **AAS1-well-known shipped** (capability self-description at `/v2/aas/.well-known/aas-server`) | 🚧 (in-flight, AAS1a queued) | `aidocs/52` / `aidocs/16 AAS1-well-known` |
 | **`FileReference` → `FileBundle` rename + `FileGroup` sub-node** (camera cyclic-capture grouping; legacy wire shape stays frozen) | n/a | design done | 📐 (queued, FB1a) | `aidocs/53` |
 | **Video as a first-class payload kind** (dedicated PayloadStorage plugin; segments + HLS manifest; navigation by video-time + wall-clock; live ingest via sibling `shepard-video-collector` or MediaMTX sidecar) | n/a | design done | 📐 (queued, VID1a) | `aidocs/53` |
 | **Templates as a first-class admin entity** (`:ShepardTemplate` Neo4j entity in admin-only subgraph, JSON DSL bodies, copy-on-write versioning, admin-gated CRUD at `/v2/templates`) | n/a | design done | 📐 (queued, T1a) | `aidocs/54` |
