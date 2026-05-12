@@ -45,6 +45,16 @@ public class User implements HasId, HasAppId {
    */
   private String orcid;
 
+  /**
+   * User-chosen override for how their name renders across the UI
+   * (audit trails, headers, "Created by …" lines) — per
+   * {@code aidocs/16 U1b}. Nullable; when null,
+   * {@link de.dlr.shepard.auth.users.services.DisplayNameResolver}
+   * derives the rendered name from {@code firstName}/{@code lastName}
+   * with the cryptic-Keycloak-username redaction as fallback.
+   */
+  private String displayName;
+
   @ToString.Exclude
   @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
@@ -84,7 +94,7 @@ public class User implements HasId, HasAppId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(email, firstName, lastName, orcid, username);
+    result = prime * result + Objects.hash(displayName, email, firstName, lastName, orcid, username);
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
     return result;
@@ -98,6 +108,7 @@ public class User implements HasId, HasAppId {
     return (
       HasId.areEqualSetsByUniqueId(apiKeys, other.apiKeys) &&
       HasId.areEqualSetsByUniqueId(subscriptions, other.subscriptions) &&
+      Objects.equals(displayName, other.displayName) &&
       Objects.equals(email, other.email) &&
       Objects.equals(firstName, other.firstName) &&
       Objects.equals(lastName, other.lastName) &&

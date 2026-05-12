@@ -150,4 +150,67 @@ class MeRestTest {
     org.mockito.Mockito.verify(userDAO).createOrUpdate(captor.capture());
     assertNotNull(captor.getValue());
   }
+
+  // ── U1b: displayName ────────────────────────────────────────────────
+
+  @Test
+  void setsDisplayNameWhenSupplied() throws Exception {
+    var r = resource.patchMe(MAPPER.readTree("{\"displayName\":\"Dr. A\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    org.mockito.Mockito.verify(userDAO).createOrUpdate(captor.capture());
+    assertEquals("Dr. A", captor.getValue().getDisplayName());
+  }
+
+  @Test
+  void displayNameExplicitNullClears() throws Exception {
+    var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
+    existing.setDisplayName("Dr. A");
+    when(userService.getCurrentUser()).thenReturn(existing);
+
+    var r = resource.patchMe(MAPPER.readTree("{\"displayName\":null}"), securityContext);
+    assertEquals(200, r.getStatus());
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    org.mockito.Mockito.verify(userDAO).createOrUpdate(captor.capture());
+    assertNull(captor.getValue().getDisplayName());
+  }
+
+  @Test
+  void displayNameEmptyStringClears() throws Exception {
+    var existing = new User(CALLER, "Alice", "Anderson", "alice@example.org");
+    existing.setDisplayName("Dr. A");
+    when(userService.getCurrentUser()).thenReturn(existing);
+
+    var r = resource.patchMe(MAPPER.readTree("{\"displayName\":\"\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    org.mockito.Mockito.verify(userDAO).createOrUpdate(captor.capture());
+    assertNull(captor.getValue().getDisplayName());
+  }
+
+  @Test
+  void displayNameNonStringReturns400() throws Exception {
+    var r = resource.patchMe(MAPPER.readTree("{\"displayName\":42}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void orcidAndDisplayNameSetInSamePatch() throws Exception {
+    // RFC 7396: a single body can update multiple fields atomically
+    // from the caller's POV. The endpoint applies both before saving.
+    var r = resource.patchMe(
+      MAPPER.readTree("{\"orcid\":\"" + VALID_ORCID + "\",\"displayName\":\"Dr. A\"}"),
+      securityContext
+    );
+    assertEquals(200, r.getStatus());
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    org.mockito.Mockito.verify(userDAO).createOrUpdate(captor.capture());
+    var passed = captor.getValue();
+    assertEquals(VALID_ORCID, passed.getOrcid());
+    assertEquals("Dr. A", passed.getDisplayName());
+  }
 }

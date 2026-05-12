@@ -9,8 +9,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * Every field is nullable; only fields supplied in the body apply,
  * absent fields stay unchanged on the {@code :User} entity.
  *
- * <p>v1 (U1a) ships only {@code orcid}. Later U1 sub-slices grow this
- * IO with {@code displayName} (U1b), avatar URL (U1c/U1d), etc.
+ * <p>v1 (U1a) shipped {@code orcid}. U1b adds {@code displayName}.
+ * Later U1 sub-slices grow this IO with avatar URL (U1c/U1d), etc.
  */
 @Data
 @NoArgsConstructor
@@ -24,4 +24,16 @@ public class PatchMeIO {
     example = "0000-0002-1825-0097"
   )
   private String orcid;
+
+  /**
+   * U1b: user-chosen display-name override. Empty string clears
+   * (UI then falls back to firstName+lastName, then redacted-username
+   * per `aidocs/16 U1b`).
+   */
+  @Schema(
+    nullable = true,
+    description = "User-chosen display name. Empty string clears the override (UI falls back to firstName+lastName, " +
+    "then redacted-username). Null = leave unchanged."
+  )
+  private String displayName;
 }

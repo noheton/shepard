@@ -31,9 +31,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * fields, fields absent are preserved, explicit JSON {@code null}
  * clears the field.
  *
- * <p>v1 (U1a) only accepts the {@code orcid} field. Later U1
- * sub-slices grow the patchable surface (displayName at U1b, avatar
- * at U1e, etc.).
+ * <p>U1a shipped {@code orcid}; U1b adds {@code displayName}. Later
+ * U1 sub-slices grow the patchable surface (avatar at U1e, etc.).
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/users/me")
@@ -51,9 +50,9 @@ public class MeRest {
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "Partial-update the caller's User record.",
-    description = "RFC 7396 JSON Merge Patch. v1 (U1a) accepts `orcid` only. " +
+    description = "RFC 7396 JSON Merge Patch. Accepts `orcid` (U1a) and `displayName` (U1b). " +
     "ORCID format: `NNNN-NNNN-NNNN-NNN[N|X]` (ISO 7064 mod 11-2 checked). " +
-    "Empty-string `orcid` clears the field. Unknown body fields are ignored."
+    "Empty-string on either clears the field. Unknown body fields are ignored."
   )
   @APIResponse(
     responseCode = "200",
@@ -92,6 +91,19 @@ public class MeRest {
         }
       } else {
         return Response.status(Response.Status.BAD_REQUEST).entity("orcid must be a string or null").build();
+      }
+    }
+    // U1b: displayName override.
+    if (patch.has("displayName")) {
+      JsonNode dn = patch.get("displayName");
+      if (dn.isNull()) {
+        current.setDisplayName(null);
+      } else if (dn.isTextual()) {
+        String value = dn.asText();
+        // Empty string clears (matches the wire-shape semantics on orcid).
+        current.setDisplayName(value.isEmpty() ? null : value);
+      } else {
+        return Response.status(Response.Status.BAD_REQUEST).entity("displayName must be a string or null").build();
       }
     }
     // Other patchable fields land in later U1 sub-slices; unknown
