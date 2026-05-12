@@ -43,4 +43,13 @@ public class ShepardFileTest {
 
     assertEquals("oid", actual);
   }
+
+  @Test
+  public void fileSizeRoundTrip() {
+    // FB1a: fileSize is a new nullable field on ShepardFile.
+    var file = new ShepardFile(new Date(), "name", "md5");
+    org.junit.jupiter.api.Assertions.assertNull(file.getFileSize());
+    file.setFileSize(12345L);
+    assertEquals(12345L, file.getFileSize());
+  }
 }

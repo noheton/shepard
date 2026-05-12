@@ -22,6 +22,14 @@ public class ShepardFile extends AbstractMongoObject {
   @Schema(readOnly = true, nullable = true)
   private String md5;
 
+  /**
+   * Size of the underlying GridFS payload in bytes. Captured at upload
+   * time per FB1a (aidocs/16); existing rows uploaded before FB1a stay
+   * {@code null} until they are re-uploaded.
+   */
+  @Schema(readOnly = true, nullable = true, description = "Payload size in bytes. Null for files uploaded before FB1a.")
+  private Long fileSize;
+
   public ShepardFile(Date createdAt, String filename, String md5) {
     setCreatedAt(createdAt);
     this.filename = filename;
