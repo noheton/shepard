@@ -135,6 +135,30 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
   }
 
   /**
+   * Distinct list of tags across all non-retired templates, sorted
+   * ascending. Used by the picker UI's tag-autocomplete dropdown.
+   * Optionally narrows to one {@code templateKind}.
+   */
+  public List<String> listDistinctTags(String templateKind) {
+    StringBuilder cypher = new StringBuilder(
+      "MATCH (t:ShepardTemplate) WHERE (t.retired IS NULL OR t.retired = false)"
+    );
+    Map<String, Object> params = new HashMap<>();
+    if (templateKind != null) {
+      cypher.append(" AND t.templateKind = $kind");
+      params.put("kind", templateKind);
+    }
+    cypher.append(" UNWIND coalesce(t.tags, []) AS tag RETURN DISTINCT tag ORDER BY tag");
+    var result = session.query(cypher.toString(), params);
+    List<String> out = new ArrayList<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      Object tag = row.get("tag");
+      if (tag != null) out.add(tag.toString());
+    }
+    return out;
+  }
+
+  /**
    * Record that a Collection was instantiated from a given template —
    * idempotent {@code :USES_TEMPLATE} edge.
    */

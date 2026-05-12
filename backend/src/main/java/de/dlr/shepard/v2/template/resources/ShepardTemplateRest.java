@@ -188,4 +188,24 @@ public class ShepardTemplateRest {
     dao.createOrUpdate(t);
     return Response.noContent().build();
   }
+
+  @GET
+  @Path("/tags")
+  @Operation(
+    summary = "Distinct list of tags across all non-retired templates.",
+    description = "Used by the picker UI's tag-autocomplete. Optionally narrow to one templateKind."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Distinct tag list, sorted ascending.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = String.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response tags(
+    @Parameter(description = "Filter to a single templateKind.") @QueryParam("kind") String kind,
+    @Context SecurityContext securityContext
+  ) {
+    if (securityContext.getUserPrincipal() == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    return Response.ok(dao.listDistinctTags(kind)).build();
+  }
 }

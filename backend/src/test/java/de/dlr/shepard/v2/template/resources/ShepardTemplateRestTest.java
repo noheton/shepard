@@ -195,4 +195,31 @@ class ShepardTemplateRestTest {
     assertEquals(404, r.getStatus());
     verify(dao, never()).createOrUpdate(any());
   }
+
+  @Test
+  void tagsReturns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    Response r = resource.tags(null, securityContext);
+    assertEquals(401, r.getStatus());
+    verify(dao, never()).listDistinctTags(any());
+  }
+
+  @Test
+  void tagsReturnsDistinctList() {
+    when(dao.listDistinctTags(null)).thenReturn(List.of("calibration", "hot-fire", "lumen"));
+    Response r = resource.tags(null, securityContext);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<String> tags = (List<String>) r.getEntity();
+    assertEquals(3, tags.size());
+    assertEquals("calibration", tags.get(0));
+  }
+
+  @Test
+  void tagsHonoursKindFilter() {
+    when(dao.listDistinctTags("EXPERIMENT_RECIPE")).thenReturn(List.of("hot-fire"));
+    Response r = resource.tags("EXPERIMENT_RECIPE", securityContext);
+    assertEquals(200, r.getStatus());
+    verify(dao).listDistinctTags("EXPERIMENT_RECIPE");
+  }
 }
