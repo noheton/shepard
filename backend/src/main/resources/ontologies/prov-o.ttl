@@ -1,0 +1,37 @@
+# Canonical source: https://www.w3.org/ns/prov-o.ttl
+# Ontology IRI:    http://www.w3.org/ns/prov#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         W3C Document License (https://www.w3.org/Consortium/Legal/2015/doc-license)
+#
+# NOTE: This is the shepard-bundled copy of the W3C PROV-O ontology.
+# The bundle stub below carries the canonical ontology IRI and a few
+# representative top-level classes / properties so n10s can import a
+# valid Turtle document at startup even on installs that haven't yet
+# refreshed against the upstream URL via
+# `shepard-admin semantic refresh-ontologies` (N1c).
+#
+# Operators wanting the full PROV-O vocabulary either run the refresh
+# CLI (post-N1c) or replace this file with the canonical Turtle
+# download and regenerate `ontologies-manifest.json`.
+
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix prov:  <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+prov:  a owl:Ontology ;
+       dcterms:title    "W3C PROV-O Ontology (shepard-bundled stub)"@en ;
+       rdfs:label       "PROV-O"@en ;
+       rdfs:comment     "Provenance interchange vocabulary."@en .
+
+prov:Entity   a owl:Class ; rdfs:label "Entity"@en .
+prov:Activity a owl:Class ; rdfs:label "Activity"@en .
+prov:Agent    a owl:Class ; rdfs:label "Agent"@en .
+
+prov:wasGeneratedBy   a owl:ObjectProperty ; rdfs:label "wasGeneratedBy"@en .
+prov:wasDerivedFrom   a owl:ObjectProperty ; rdfs:label "wasDerivedFrom"@en .
+prov:wasAttributedTo  a owl:ObjectProperty ; rdfs:label "wasAttributedTo"@en .
+prov:used             a owl:ObjectProperty ; rdfs:label "used"@en .
+prov:startedAtTime    a owl:DatatypeProperty ; rdfs:label "startedAtTime"@en .
+prov:endedAtTime      a owl:DatatypeProperty ; rdfs:label "endedAtTime"@en .

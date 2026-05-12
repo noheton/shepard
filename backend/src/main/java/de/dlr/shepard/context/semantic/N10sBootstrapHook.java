@@ -89,23 +89,47 @@ public class N10sBootstrapHook {
   private final Session session;
   private final boolean enabled;
   private final String handleVocabUris;
+  private final OntologySeedService seedService;
 
   /** Production ctor — reads config + the OGM session at call time. */
   public N10sBootstrapHook() {
     this(
       de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession(),
       readBooleanConfig(ENABLED_PROPERTY, true),
-      readStringConfig(HANDLE_VOCAB_URIS_PROPERTY, DEFAULT_HANDLE_VOCAB_URIS)
+      readStringConfig(HANDLE_VOCAB_URIS_PROPERTY, DEFAULT_HANDLE_VOCAB_URIS),
+      new OntologySeedService()
     );
   }
 
-  /** Test seam — accept a pre-built session + the two config values. */
+  /**
+   * Test seam (pre-N1b) — accept a pre-built session + the two
+   * config values. The seed service is constructed in disabled mode
+   * so pre-N1b tests get the original semantics: bootstrap-only,
+   * no ontology import.
+   */
   public N10sBootstrapHook(Session session, boolean enabled, String handleVocabUris) {
+    this(
+      session,
+      enabled,
+      handleVocabUris,
+      new OntologySeedService(
+        session,
+        false, // pre-seed disabled — preserves pre-N1b test contract
+        java.util.Collections.<String>emptySet(),
+        null,
+        null
+      )
+    );
+  }
+
+  /** Test seam (N1b) — accept a pre-built session, config values, and a pre-built seed service. */
+  public N10sBootstrapHook(Session session, boolean enabled, String handleVocabUris, OntologySeedService seedService) {
     this.session = session;
     this.enabled = enabled;
     this.handleVocabUris = handleVocabUris == null || handleVocabUris.isBlank()
       ? DEFAULT_HANDLE_VOCAB_URIS
       : handleVocabUris.trim();
+    this.seedService = seedService;
   }
 
   /**
@@ -153,6 +177,27 @@ public class N10sBootstrapHook {
     }
 
     Log.info("N10sBootstrapHook: n10s INTERNAL semantic repository ready.");
+
+    // N1b — pre-seed the common ontologies bundle (PROV-O / Dublin
+    // Core / schema.org / FOAF / QUDT / OM-2 / W3C Time / GeoSPARQL).
+    // Fail-soft: any error per-bundle is logged + swallowed by the
+    // seed service. The toggle
+    // `shepard.semantic.internal.preseed-ontologies.enabled` (default
+    // ON) lets operators opt out and run a bare n10s.
+    if (seedService != null) {
+      try {
+        seedService.seedIfNeeded();
+      } catch (RuntimeException ex) {
+        // Defensive — the service is fail-soft internally; this is
+        // belt-and-braces so a future regression can't take down
+        // shepard startup.
+        Log.warnf(
+          "N10sBootstrapHook: ontology pre-seed raised %s (%s); continuing.",
+          ex.getClass().getSimpleName(),
+          ex.getMessage()
+        );
+      }
+    }
   }
 
   private boolean detectN10s() {

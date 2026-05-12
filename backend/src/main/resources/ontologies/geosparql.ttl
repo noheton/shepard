@@ -1,0 +1,35 @@
+# Canonical source: http://www.opengis.net/ont/geosparql (RDF/XML; Turtle equivalent)
+# Ontology IRI:    http://www.opengis.net/ont/geosparql#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         OGC Open Data License (https://www.ogc.org/ogc/document)
+#
+# shepard-bundled stub of the OGC GeoSPARQL vocabulary. Carries the
+# canonical namespace plus the headline classes shepard's spatial
+# profile (aidocs/16) cites when annotating geographic references.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix geo:    <http://www.opengis.net/ont/geosparql#> .
+@prefix sf:     <http://www.opengis.net/ont/sf#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://www.opengis.net/ont/geosparql>
+       a owl:Ontology ;
+       dcterms:title    "OGC GeoSPARQL Ontology (shepard-bundled stub)"@en ;
+       rdfs:label       "GeoSPARQL"@en ;
+       rdfs:comment     "OGC vocabulary for representing geographic data."@en .
+
+geo:SpatialObject  a owl:Class ; rdfs:label "Spatial Object"@en .
+geo:Feature        a owl:Class ; rdfs:subClassOf geo:SpatialObject ; rdfs:label "Feature"@en .
+geo:Geometry       a owl:Class ; rdfs:subClassOf geo:SpatialObject ; rdfs:label "Geometry"@en .
+
+sf:Point           a owl:Class ; rdfs:subClassOf geo:Geometry ; rdfs:label "Point"@en .
+sf:LineString      a owl:Class ; rdfs:subClassOf geo:Geometry ; rdfs:label "LineString"@en .
+sf:Polygon         a owl:Class ; rdfs:subClassOf geo:Geometry ; rdfs:label "Polygon"@en .
+
+geo:hasGeometry    a owl:ObjectProperty ; rdfs:label "has geometry"@en .
+geo:asWKT          a owl:DatatypeProperty ; rdfs:label "as WKT"@en .
+geo:asGML          a owl:DatatypeProperty ; rdfs:label "as GML"@en .
+geo:sfWithin       a owl:ObjectProperty ; rdfs:label "sf within"@en .
+geo:sfContains     a owl:ObjectProperty ; rdfs:label "sf contains"@en .
