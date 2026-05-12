@@ -675,9 +675,8 @@ provisioning scripts and CI test rigs. Conservative defaults: no
 profiles, all secrets regenerated, OIDC stays unset (admin must
 configure it before serving traffic).
 
-**Cross-references.** Aligns with `docs/deploy-oracle-free.md` §5b,
-`docs/deploy-self-hosted-zoraxy.md` §3, `infrastructure/.env.example`,
-and `aidocs/07` H8.
+**Cross-references.** Aligns with `docs/deploy.md`,
+`infrastructure/.env.example`, and `aidocs/07` H8.
 
 | Field | Value |
 |---|---|

@@ -10,16 +10,9 @@ shipped — see "Admin CLI" below.
 
 ## Deploy paths beyond docker-compose
 
-For paths that go beyond running the bundled compose locally — free
-cloud, self-hosted on a Docker host fronted by a reverse proxy, paid
-VPS, managed-services split — see **[Deploy options](deploy/)**. The
-two deep guides are:
-
-- **[Oracle Cloud Free Tier (Ampere ARM)](deploy-oracle-free)** —
-  always-free 4 OCPU / 24 GB cloud VM, public IPv4 included.
-- **[Self-hosted Docker host behind Zoraxy](deploy-self-hosted-zoraxy)** —
-  your own hardware (mini PC, NUC, lab box) with Zoraxy as the reverse
-  proxy, optionally paired with Cloudflare Tunnel for CG-NAT.
+For paths that go beyond running the bundled compose locally — paid
+VPS, managed-services split, ephemeral cloud dev — see
+**[Deploy options](deploy/)**.
 
 ## Stack — docker-compose
 

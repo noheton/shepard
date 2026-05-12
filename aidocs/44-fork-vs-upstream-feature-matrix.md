@@ -222,7 +222,6 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Secret scanning (gitleaks weekly + on push) | none | shipped via `.github/workflows/security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
 | GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
 | Container images published to GHCR (`ghcr.io/noheton/shepard-{backend,frontend}:{latest,sha-<7>,vX.Y.Z}`) | upstream publishes to gitlab.com | shipped via `.github/workflows/build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
-| Auto-deploy to test instance `shepard.nuclide.systems` on push to `main` | n/a | shipped via `.github/workflows/deploy-test-instance.yml` (chains off `Build images`); SSH-deploy + smoke-test of `/healthz`. Image override template at `infrastructure/docker-compose.override.yml.example` | **✓ ↑** | `.github/workflows/deploy-test-instance.yml` / `docs/deploy-self-hosted-zoraxy.md §5a.10` |
 | **CodeQL** SAST (Java + JS/TS, `security-extended` query set) | none | shipped via `.github/workflows/codeql.yml`; weekly + per-PR; SARIF → Code Scanning | **✓ ↑** | `.github/workflows/codeql.yml` |
 | **Trivy** container scan on every published GHCR image (CRITICAL+HIGH, ignore-unfixed) | none | shipped in `build-images.yml`; SARIF → Code Scanning per-image | **✓ ↑** | `.github/workflows/build-images.yml` |
 | **SBOM** (CycloneDX) per published image via `anchore/sbom-action`; uploaded as artifact + attached to GitHub releases | none | shipped in `build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
@@ -303,8 +302,6 @@ namespace; core enforces the shape.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | GitHub Pages docs site (Jekyll under `docs/`) | none | shipped at https://noheton.github.io/shepard/ | **✓ ↑** | `docs/` |
-| Free-test-deploy guide for Oracle Cloud Free Tier | none | shipped (`docs/deploy-oracle-free.md`) | **✓ ↑** | PR #1004 |
-| Self-hosted-behind-Zoraxy guide (incl. existing-host dev workflow §5a) | none | shipped (`docs/deploy-self-hosted-zoraxy.md`) | **✓ ↑** | PR #1005 / PR #1016 |
 | Live researcher-facing vision doc | none | shipped (`aidocs/42-vision.md`, Live status) | **✓ ↑** | `aidocs/42` |
 | Live ecosystem doc (SPW + sTC + others) | none | shipped (`aidocs/40-ecosystem.md`) | **✓ ↑** | `aidocs/40` |
 | Upstream upgrade-path tracker (admin-facing) | n/a | shipped (`aidocs/34-upstream-upgrade-path.md`, Live) | **✓ ↑** | `aidocs/34` |
@@ -312,7 +309,7 @@ namespace; core enforces the shape.
 | LUMEN-inspired showcase seed + analysis notebook | none | shipped (`examples/seed-showcase/`) | **✓ ↑** | PR #1001 |
 | Upstream-current parallel import script (`import_upstream.py`) for the same showcase data | n/a (the upstream itself) | shipped | **✓ ↑** | PR #1001 |
 | **In-app user docs** — Nuxt `/help` route serving `docs/*.md` from the same source as the Pages site | none | TBD; same source, two presentations | 📐 (queued, D1a) | `aidocs/49` |
-| **Playwright screenshot pipeline** capturing against `shepard.nuclide.systems` test deployment, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
+| **Playwright screenshot pipeline** capturing against a CI-booted compose stack, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
 | Task-shaped help pages (upload-data / share-collection / export-rocrate / process-step) for casual users | none | TBD | 📐 (queued, D1c) | `aidocs/49 §2.2` |
 | Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
 

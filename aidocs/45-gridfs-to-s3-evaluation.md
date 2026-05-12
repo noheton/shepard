@@ -56,7 +56,7 @@ read path.
 
 | # | Cost | Notes |
 |---|---|---|
-| C1 | **New infrastructure dependency** — operators run an S3-compatible service | MinIO is the lightweight self-hosted answer (~50 MB binary, S3-compatible, BSL/AGPL-licensed). For all-in-one shepard installs (`docs/deploy-oracle-free.md`, `docs/deploy-self-hosted-zoraxy.md`), MinIO joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
+| C1 | **New infrastructure dependency** — operators run an S3-compatible service | MinIO is the lightweight self-hosted answer (~50 MB binary, S3-compatible, BSL/AGPL-licensed). For all-in-one shepard installs, MinIO joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
 | C2 | **Auth bridge** — shepard's per-Collection / per-DataObject permissions vs S3's IAM/bucket-policy model | Two paths: (a) the **backend stays in the data path** for permission enforcement (proxies streams from S3, defeats W1); (b) **presigned URLs** carry per-request scope (does W1 properly but requires careful URL TTL + revocation thinking). Recommend (b) with short TTLs (≤ 5 min). Detailed in §4. |
 | C3 | **Migration cost** — copying existing FileContainers from GridFS to S3 takes wall-clock and bytes-out from Mongo | A 1 TB shepard install needs ~1 TB read from Mongo + 1 TB write to S3, single-pass. Doable in hours; needs a background job not a `docker compose up` migration. Detailed in §6. |
 | C4 | **Multi-region complexity** | Mongo replica sets handle this for GridFS; S3 cross-region replication needs operator config. For single-region installs, no extra work. |
@@ -338,8 +338,7 @@ when the new endpoints land.
   high-egress installs.
 - **CORS misconfiguration.** A wrong CORS rule on the S3 bucket
   manifests as silent failures in the browser. Provide a known-good
-  CORS template in `docs/deploy-self-hosted-zoraxy.md` and the
-  Oracle deploy guide.
+  CORS template in `docs/deploy.md`.
 
 ## 11. Cross-references
 

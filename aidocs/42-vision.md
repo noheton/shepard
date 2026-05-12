@@ -58,13 +58,6 @@ project where a git repo plus three CSV files would do. The
 overhead of shepard is amortised across collaboration and
 re-discovery.
 
-**Live test deployment for this fork:**
-[**shepard.nuclide.systems**](https://shepard.nuclide.systems) —
-self-hosted Docker host fronted by Zoraxy
-(`docs/deploy-self-hosted-zoraxy.md` §5a is the canonical recipe).
-Iterates ahead of `main`; useful as a smoke target after each
-landing.
-
 ## What's in the box (today)
 
 shepard organises everything into five primitives:
@@ -213,9 +206,9 @@ Mid-horizon:
 - **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
   a `/help` route serving the same `docs/*.md` content as the
   Pages site, with screenshots auto-captured by Playwright against
-  the `shepard.nuclide.systems` test deployment. Casual users get
-  task-shaped help (upload-data / share-collection /
-  export-rocrate / process-step) without leaving the app.
+  a locally-booted compose stack. Casual users get task-shaped help
+  (upload-data / share-collection / export-rocrate / process-step)
+  without leaving the app.
 - **Experiment orchestration** (`aidocs/50`, EXP1 series). A new
   `shepard-experiment-coordinator` service drives manufacturing-
   style experiments end-to-end (PLC / SPS / KUKA robot / OPC/UA /
@@ -243,7 +236,7 @@ has a low-friction path (see `aidocs/34`).
 ## Where to go next
 
 - **Operator** ("how do I run it?") → `docs/admin.md`,
-  `docs/deploy-oracle-free.md`, `docs/deploy-self-hosted-zoraxy.md`.
+  `docs/deploy.md`.
 - **API user** ("how do I write a client?") → the OpenAPI at
   `<host>/shepard/doc/openapi.json`; generated clients on
   `gitlab.com/groups/dlr-shepard/-/packages`.

@@ -248,13 +248,12 @@ chat-driven one-offs.
 
 ## 3c. Reference deployments
 
-Test / demo deployments worth knowing about:
-
-| URL | Path | Notes |
-|---|---|---|
-| **`https://shepard.nuclide.systems`** | Self-hosted Docker host fronted by Zoraxy (per `docs/deploy-self-hosted-zoraxy.md` §5a — "existing-host dev workflow"). **Dispatcher-deployable** via `.github/workflows/deploy-test-instance.yml` (§5a.10) — every push to `main` builds GHCR images and SSH-deploys. Image tags: `ghcr.io/noheton/shepard-{backend,frontend}:latest` plus per-SHA tags. | The primary test deployment for this fork. Iterates ahead of `main`; useful as a smoke target after each landing. Operator: this fork's maintainer. |
-
-Add new rows here as more reference deployments come online.
+No public reference deployment for this fork at present. The
+maintainer iterates against a local stack (`docs/deploy.md`'s
+compose recipes); UI verification by dispatched agents happens via
+direct shell access on the maintainer's machine, not a hosted
+target. If a public test deployment comes online later, document
+its URL + operator + image-tag policy here.
 
 ## 4. Cross-tool concerns
 
