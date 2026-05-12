@@ -20,6 +20,15 @@ public class SemanticRepositoryConnectorFactoryTest {
   }
 
   @Test
+  public void getRepositoryService_Internal() {
+    // N1a — INTERNAL routes to the n10s-backed connector. The
+    // endpoint string is ignored for this type; the connector talks
+    // to the in-process OGM session.
+    var actual = factory.getRepositoryService(SemanticRepositoryType.INTERNAL, "ignored");
+    assertEquals(InternalSemanticConnector.class, actual.getClass());
+  }
+
+  @Test
   public void getRepositoryService_NotYetImplemented() {
     assertThrows(UnsupportedOperationException.class, () ->
       factory.getRepositoryService(SemanticRepositoryType.JSKOS, "endpoint")

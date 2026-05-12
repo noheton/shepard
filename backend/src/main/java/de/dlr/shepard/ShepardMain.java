@@ -7,6 +7,7 @@ import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.IConnector;
 import de.dlr.shepard.common.util.PKIHelper;
+import de.dlr.shepard.context.semantic.N10sBootstrapHook;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
@@ -63,6 +64,14 @@ public class ShepardMain implements QuarkusApplication {
     // A0 — bootstrap-token initializer. Generates a one-shot token if
     // zero instance-admins exist; logs the path for the operator.
     new BootstrapTokenInitializer().runIfNeeded();
+
+    // N1a — initialise the neosemantics graph config for
+    // SemanticRepositoryType.INTERNAL repositories. Runs post-A1e
+    // (after MigrationsRunner.apply) so the n10s_unique_uri
+    // constraint creation doesn't race with V11's appId constraints.
+    // Fail-soft: a missing n10s plugin is logged + skipped, not
+    // fatal — see N10sBootstrapHook javadoc.
+    new N10sBootstrapHook().run();
   }
 
   @Override
