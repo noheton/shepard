@@ -2,6 +2,7 @@
 /* eslint-disable */
 export * from './AdminFeaturesApi';
 export * from './ApikeyApi';
+export * from './GitCredentialsApi';
 export * from './CollectionApi';
 export * from './CollectionReferenceApi';
 export * from './DataObjectApi';
