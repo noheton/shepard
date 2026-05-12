@@ -68,7 +68,7 @@ shepard organises everything into five primitives:
 | **DataObject** | A logical thing inside a Collection, freely nestable, with attributes | "TR-004 — fired run with anomaly" |
 | **Reference** | A pointer from a DataObject to a payload of one of five kinds | "`tr-004-sensors`" — TimeseriesReference |
 | **Annotation** | A semantic tag from an ontology attached to anything | `phase = ramp_up`, `severity = HIGH` |
-| **Lab journal entry** | A free-text (post-J1a: markdown) note attached to anything | "Vibration spike on fuel-turbopump observed at t=8s..." |
+| **Lab journal entry** | A free-text markdown note attached to anything; rendered via `GET /v2/lab-journal/{appId}/render` (J1a) | "Vibration spike on fuel-turbopump observed at t=8s..." |
 
 Plus payload kinds (the things References point at):
 
@@ -177,8 +177,10 @@ Mid-horizon:
   exports, lineage diff.
 - **Git artifact tracking** (`aidocs/38`, G1 series). Commit-SHA
   provenance in RO-Crate exports.
-- **Lab journal + Jupyter** (`aidocs/37`, J1 series). Inline
-  notebook render, "Open in Jupyter" deep link.
+- **Lab journal + Jupyter** (`aidocs/37`, J1 series). J1a shipped:
+  `GET /v2/lab-journal/{appId}/render` — CommonMark + GFM render,
+  OWASP-sanitised. Remaining: inline notebook render (J1b), "Open
+  in Jupyter" deep link (J1c).
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
