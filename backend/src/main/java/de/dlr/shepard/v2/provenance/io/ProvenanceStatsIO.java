@@ -55,4 +55,13 @@ public class ProvenanceStatsIO {
     "and including the bucket — useful for 'total captured so far' tiles in the dashboard. Same bucket alignment as `buckets`."
   )
   private List<long[]> cumulative;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "Entity-count census for the scope at query time (NOT window-filtered). Keys: dataObjects, fileReferences, " +
+    "timeseriesReferences, structuredDataReferences, spatialDataReferences, labJournalEntries. Drives the casual-user " +
+    "dashboard's 'what's in here' tiles. Null when scope=user (the census is not per-user)."
+  )
+  private Map<String, Long> contentCensus;
 }

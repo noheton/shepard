@@ -1,11 +1,13 @@
 package de.dlr.shepard.provenance.services;
 
 import de.dlr.shepard.provenance.daos.ActivityDAO;
+import de.dlr.shepard.provenance.daos.ContentCensusDAO;
 import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * On-demand provenance stats roll-up per {@code aidocs/55 §6}. Built
@@ -34,6 +36,9 @@ public class ProvenanceStatsService {
 
   @Inject
   ActivityDAO activityDAO;
+
+  @Inject
+  ContentCensusDAO censusDAO;
 
   public ProvenanceStatsIO compute(String scope, String id, long sinceMillis, long untilMillis) {
     if (sinceMillis > untilMillis) {
@@ -69,6 +74,16 @@ public class ProvenanceStatsService {
 
     List<long[]> cumulative = cumulativeIntegral(snap.buckets);
 
+    // Content census: not window-filtered (NOT a "captured in this
+    // window" count — that needs the FB1 byte-size field and is
+    // tracked as PROV1-content-stats-2). v1 reports the at-query-time
+    // "what's in here" totals so the dashboard tiles render now.
+    Map<String, Long> census = switch (scope) {
+      case SCOPE_COLLECTION -> censusDAO.censusForCollection(id);
+      case SCOPE_INSTANCE -> censusDAO.censusInstanceWide();
+      default -> null; // user-scope census is meaningless
+    };
+
     return new ProvenanceStatsIO(
       scope,
       id,
@@ -79,7 +94,8 @@ public class ProvenanceStatsService {
       distinctAgents,
       snap.totalsByActionKind,
       snap.buckets,
-      cumulative
+      cumulative,
+      census
     );
   }
 

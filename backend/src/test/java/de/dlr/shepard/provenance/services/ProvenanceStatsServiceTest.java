@@ -21,6 +21,9 @@ class ProvenanceStatsServiceTest {
   @Mock
   ActivityDAO activityDAO;
 
+  @Mock
+  de.dlr.shepard.provenance.daos.ContentCensusDAO censusDAO;
+
   ProvenanceStatsService service;
 
   @BeforeEach
@@ -28,6 +31,10 @@ class ProvenanceStatsServiceTest {
     MockitoAnnotations.openMocks(this);
     service = new ProvenanceStatsService();
     service.activityDAO = activityDAO;
+    service.censusDAO = censusDAO;
+    // Default empty census so existing tests don't NPE.
+    when(censusDAO.censusForCollection(any())).thenReturn(java.util.Map.of("dataObjects", 0L));
+    when(censusDAO.censusInstanceWide()).thenReturn(java.util.Map.of("dataObjects", 0L));
   }
 
   private static ActivityDAO.StatsSnapshot snap(long total, long distinctAgents, List<long[]> buckets, Map<String, Long> kinds) {
@@ -160,5 +167,43 @@ class ProvenanceStatsServiceTest {
   void thresholdConstantsSane() {
     assertEquals(86_400_000L, ProvenanceStatsService.DAY_MILLIS);
     assertTrue(ProvenanceStatsService.WEEK_MILLIS == 7L * ProvenanceStatsService.DAY_MILLIS);
+  }
+
+  @Test
+  void collectionScopeIncludesContentCensus() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+    when(censusDAO.censusForCollection("appid-1")).thenReturn(Map.of("dataObjects", 42L, "fileReferences", 12L, "labJournalEntries", 5L));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_COLLECTION, "appid-1", since, now);
+
+    assertEquals(Map.of("dataObjects", 42L, "fileReferences", 12L, "labJournalEntries", 5L), out.getContentCensus());
+    verify(censusDAO).censusForCollection("appid-1");
+  }
+
+  @Test
+  void instanceScopeIncludesInstanceWideCensus() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+    when(censusDAO.censusInstanceWide()).thenReturn(Map.of("dataObjects", 1_000L));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
+
+    assertEquals(Map.of("dataObjects", 1_000L), out.getContentCensus());
+    verify(censusDAO).censusInstanceWide();
+  }
+
+  @Test
+  void userScopeOmitsContentCensus() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_USER, "alice", since, now);
+
+    // user scope: census is meaningless (would require per-user file ownership which we don't track).
+    org.junit.jupiter.api.Assertions.assertNull(out.getContentCensus());
   }
 }
