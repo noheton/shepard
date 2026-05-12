@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.git.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -9,6 +10,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
@@ -240,5 +243,148 @@ class GitReferenceRestTest {
     when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
     assertEquals(404, resource.delete(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
     verify(gitReferenceDAO, never()).deleteByNeo4jId(anyLong());
+  }
+
+  // ── patch ──────────────────────────────────────────────────────────
+
+  private static JsonNode json(String json) {
+    try {
+      return new ObjectMapper().readTree(json);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private GitReference existingGr() {
+    var parent = new DataObject();
+    parent.setAppId(DO_APP_ID);
+    var gr = new GitReference("https://gitlab.dlr.de/g/r", "main", "src");
+    gr.setAppId(GR_APP_ID);
+    gr.setDataObject(parent);
+    return gr;
+  }
+
+  @Test
+  void patch_returns200WhenRepoUrlUpdated() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var updated = new GitReference("https://gitlab.dlr.de/g/other", "main", "src");
+    updated.setAppId(GR_APP_ID);
+    updated.setDataObject(gr.getDataObject());
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenReturn(updated);
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"repoUrl\":\"https://gitlab.dlr.de/g/other\"}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<GitReference> captor = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(captor.capture());
+    assertEquals("https://gitlab.dlr.de/g/other", captor.getValue().getRepoUrl());
+    // Absent fields preserved
+    assertEquals("main", captor.getValue().getRef());
+    assertEquals("src", captor.getValue().getPath());
+  }
+
+  @Test
+  void patch_returns200AndClearsRefWhenNullSent() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var updated = new GitReference("https://gitlab.dlr.de/g/r", null, "src");
+    updated.setAppId(GR_APP_ID);
+    updated.setDataObject(gr.getDataObject());
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenReturn(updated);
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"ref\":null}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<GitReference> captor = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(captor.capture());
+    assertNull(captor.getValue().getRef());
+    // repoUrl and path preserved
+    assertEquals("https://gitlab.dlr.de/g/r", captor.getValue().getRepoUrl());
+    assertEquals("src", captor.getValue().getPath());
+  }
+
+  @Test
+  void patch_returns400WhenRepoUrlNullSent() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"repoUrl\":null}"), securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_returns400WhenRepoUrlBlank() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"repoUrl\":\"  \"}"), securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_returns400WhenBodyNotObject() {
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("\"not-an-object\""), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patch_returns400WhenBodyNull() {
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, null, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patch_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"ref\":\"v1.0\"}"), securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void patch_returns403WhenNoWritePermission() {
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"ref\":\"v1.0\"}"), securityContext);
+    assertEquals(403, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_returns404WhenGitReferenceMissing() {
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(null);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"ref\":\"v1.0\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_returns404WhenGitReferenceBelongsToDifferentDataObject() {
+    var other = new DataObject();
+    other.setAppId("different-do-appid");
+    var gr = new GitReference("https://gitlab.dlr.de/g/r", "main", null);
+    gr.setAppId(GR_APP_ID);
+    gr.setDataObject(other);
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"ref\":\"v1.0\"}"), securityContext);
+    assertEquals(404, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_returns200WhenEmptyObjectSent_noFieldsModified() {
+    // Empty merge-patch body is valid — no fields change.
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenReturn(gr);
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{}"), securityContext);
+
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<GitReference> captor = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(captor.capture());
+    // All fields preserved
+    assertEquals("https://gitlab.dlr.de/g/r", captor.getValue().getRepoUrl());
+    assertEquals("main", captor.getValue().getRef());
+    assertEquals("src", captor.getValue().getPath());
   }
 }

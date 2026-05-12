@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.git.resources;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
@@ -14,6 +15,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -27,6 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -162,6 +165,70 @@ public class GitReferenceRest {
     }
     gitReferenceDAO.deleteByNeo4jId(gr.getId());
     return Response.noContent().build();
+  }
+
+  @PATCH
+  @Path("/{appId}")
+  @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "Partially update a GitReference (mode-a fields).",
+    description = "RFC 7396 JSON Merge Patch. Accepted fields: repoUrl, ref, path. " +
+    "Fields absent from the body are preserved; explicit JSON null clears the field " +
+    "(except repoUrl — null or blank repoUrl is rejected with 400). " +
+    "Returns 200 + the updated GitReferenceIO. Requires Write permission on the parent DataObject."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Updated.",
+    content = @Content(schema = @Schema(implementation = GitReferenceIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "repoUrl null or blank after patch.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No DataObject or GitReference with those appIds.")
+  public Response patch(
+    @PathParam("dataObjectAppId") String dataObjectAppId,
+    @PathParam("appId") String gitReferenceAppId,
+    @RequestBody(
+      required = true,
+      description = "Partial GitReference (RFC 7396). repoUrl, ref, path are patchable; read-only fields are ignored.",
+      content = @Content(
+        mediaType = "application/merge-patch+json",
+        schema = @Schema(implementation = GitReferenceIO.class)
+      )
+    ) JsonNode body,
+    @Context SecurityContext securityContext
+  ) {
+    if (body == null || !body.isObject()) {
+      return Response.status(Response.Status.BAD_REQUEST).entity("PATCH body must be a JSON object").build();
+    }
+    var gate = checkAccess(dataObjectAppId, AccessType.Write, securityContext);
+    if (gate != null) return gate;
+
+    GitReference gr = gitReferenceDAO.findByAppId(gitReferenceAppId);
+    if (gr == null || gr.getDataObject() == null || !dataObjectAppId.equals(gr.getDataObject().getAppId())) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    // Apply merge-patch: only present fields are updated; absent fields are preserved.
+    if (body.has("repoUrl")) {
+      JsonNode node = body.get("repoUrl");
+      if (node.isNull() || (node.isTextual() && node.asText().isBlank())) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("repoUrl must not be null or blank").build();
+      }
+      gr.setRepoUrl(node.asText());
+    }
+    if (body.has("ref")) {
+      JsonNode node = body.get("ref");
+      gr.setRef(node.isNull() ? null : node.asText());
+    }
+    if (body.has("path")) {
+      JsonNode node = body.get("path");
+      gr.setPath(node.isNull() ? null : node.asText());
+    }
+
+    GitReference saved = gitReferenceDAO.createOrUpdate(gr);
+    return Response.ok(new GitReferenceIO(saved)).build();
   }
 
   /**
