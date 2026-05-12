@@ -26,8 +26,24 @@ final class OpenApiShelfMembership {
    * API shelf. Each entry matches either an exact path or a path
    * starting with the entry followed by {@code /} — so {@code /healthz}
    * matches but {@code /healthzfoo} does not.
+   *
+   * <p>Note: {@code /openapi.json} and {@code /openapi.yaml} are
+   * handled separately (see {@link #PLATFORM_DOTTED}) — the combined
+   * OpenAPI document smallrye serves uses the dotted suffix, which
+   * the prefix-plus-slash rule above does not catch.
    */
   private static final List<String> PLATFORM_PREFIXES = List.of("/healthz", "/openapi", "/swagger-ui", "/metrics");
+
+  /**
+   * Exact-match platform paths that don't follow the prefix-plus-slash
+   * shape. These are the Quarkus-served entry points for the combined
+   * spec / swagger-ui assets.
+   */
+  private static final List<String> PLATFORM_DOTTED = List.of(
+    "/openapi.json",
+    "/openapi.yaml",
+    "/openapi.yml"
+  );
 
   private static final String V1_RAW_PREFIX = "/shepard/api";
   private static final String V2_PREFIX = "/v2";
@@ -63,6 +79,9 @@ final class OpenApiShelfMembership {
   private static boolean isPlatformPath(String path) {
     for (String prefix : PLATFORM_PREFIXES) {
       if (matchesPrefix(path, prefix)) return true;
+    }
+    for (String dotted : PLATFORM_DOTTED) {
+      if (path.equals(dotted)) return true;
     }
     return false;
   }

@@ -86,10 +86,14 @@ public class OpenApiPerShelfRest {
    * return the resulting bytes with the matching media type.
    */
   private Response serialise(OASFilter filter, String format) {
+    // smallrye-openapi throws IllegalStateException from get() when the
+    // model hasn't been initialised yet; guard via isSet() to surface a
+    // proper 500 instead. Defensive — should never happen post-startup.
+    if (!OpenApiDocument.INSTANCE.isSet()) {
+      throw new InternalServerErrorException("OpenAPI document is not yet initialised.");
+    }
     OpenAPI source = OpenApiDocument.INSTANCE.get();
     if (source == null) {
-      // smallrye-openapi has not finished initialising — should never
-      // happen post-startup, but is defensively handled.
       throw new InternalServerErrorException("OpenAPI document is not yet initialised.");
     }
     OpenAPI clone = io.smallrye.openapi.api.util.MergeUtil.merge(OASFactory.createOpenAPI(), source);

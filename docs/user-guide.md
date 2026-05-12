@@ -89,3 +89,21 @@ For exact request and response shapes, point your browser at
 `application.properties`: `quarkus.http.non-application-root-path=/shepard/doc`,
 `quarkus.swagger-ui.always-include=true`). The OpenAPI document itself is at
 `/shepard/doc/openapi.json`.
+
+### Per-shelf OpenAPI documents
+
+This fork additionally exposes two filtered views of the OpenAPI
+document, so a generated client can pin to a single API shelf:
+
+- `/shepard/doc/openapi/v1.json` — the upstream-compatible
+  `/shepard/api/...` surface only. Build a client against this if you
+  want to stay byte-compatible with `gitlab.com/dlr-shepard/shepard`.
+- `/shepard/doc/openapi/v2.json` — this fork's `/v2/...` development
+  surface only (P-series, R-series, U-series profile, lab journal,
+  git integration, templates, …). Build a client against this if you
+  only consume the additive endpoints and want a smaller client.
+
+Both endpoints support `?format=yaml` for YAML output (default is JSON)
+and are public, mirroring the combined `/shepard/doc/openapi.json` —
+no auth needed to fetch the spec. The combined document keeps working
+unchanged.
