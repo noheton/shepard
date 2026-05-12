@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.template.services.TemplateBodyValidator;
 import de.dlr.shepard.v2.template.io.CreateShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.PatchShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
@@ -45,6 +46,7 @@ class ShepardTemplateRestTest {
     MockitoAnnotations.openMocks(this);
     resource = new ShepardTemplateRest();
     resource.dao = dao;
+    resource.bodyValidator = new TemplateBodyValidator();
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
   }
@@ -120,7 +122,7 @@ class ShepardTemplateRestTest {
       t.setAppId("server-minted-appid");
       return t;
     });
-    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"x\":1}", "desc", List.of("lumen"));
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{\"steps\":[]}}", "desc", List.of("lumen"));
     Response r = resource.create(body, securityContext);
     assertEquals(201, r.getStatus());
     var io = (ShepardTemplateIO) r.getEntity();
@@ -140,12 +142,12 @@ class ShepardTemplateRestTest {
 
   @Test
   void patchTriggersCopyOnWriteAndRetiresPrior() {
-    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"x\":1}");
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
     prior.setAppId("prior-appid");
     prior.setVersion(1);
     when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
     when(dao.nextVersionOf(prior)).thenAnswer(inv -> {
-      ShepardTemplate next = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"x\":1}");
+      ShepardTemplate next = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
       next.setVersion(2);
       return next;
     });
@@ -155,7 +157,7 @@ class ShepardTemplateRestTest {
       return t;
     });
 
-    var body = new PatchShepardTemplateIO(null, "{\"x\":2}", null, null);
+    var body = new PatchShepardTemplateIO(null, "{\"experiment\":{\"v\":2}}", null, null);
     Response r = resource.patch("prior-appid", body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -170,7 +172,7 @@ class ShepardTemplateRestTest {
 
     var newRow = saved.get(1);
     assertEquals(Integer.valueOf(2), newRow.getVersion());
-    assertEquals("{\"x\":2}", newRow.getBody());
+    assertEquals("{\"experiment\":{\"v\":2}}", newRow.getBody());
   }
 
   @Test
@@ -221,5 +223,42 @@ class ShepardTemplateRestTest {
     Response r = resource.tags("EXPERIMENT_RECIPE", securityContext);
     assertEquals(200, r.getStatus());
     verify(dao).listDistinctTags("EXPERIMENT_RECIPE");
+  }
+
+  @Test
+  void createReturns400OnMalformedJson() {
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{ not valid json", null, null);
+    Response r = resource.create(body, securityContext);
+    assertEquals(400, r.getStatus());
+    @SuppressWarnings("unchecked")
+    java.util.Map<String, Object> entity = (java.util.Map<String, Object>) r.getEntity();
+    @SuppressWarnings("unchecked")
+    List<String> errors = (List<String>) entity.get("errors");
+    assertTrue(errors.get(0).contains("not valid JSON"));
+  }
+
+  @Test
+  void createReturns400OnWrongShapeBodyForKind() {
+    var body = new CreateShepardTemplateIO("Recipe", "EXPERIMENT_RECIPE", "{\"collection\":{}}", null, null);
+    Response r = resource.create(body, securityContext);
+    assertEquals(400, r.getStatus());
+    @SuppressWarnings("unchecked")
+    java.util.Map<String, Object> entity = (java.util.Map<String, Object>) r.getEntity();
+    @SuppressWarnings("unchecked")
+    List<String> errors = (List<String>) entity.get("errors");
+    assertTrue(errors.get(0).contains("templateKind=EXPERIMENT_RECIPE"));
+  }
+
+  @Test
+  void patchReturns400OnMalformedBody() {
+    var prior = new ShepardTemplate("Recipe", "EXPERIMENT_RECIPE", "{\"experiment\":{}}");
+    prior.setAppId("prior-appid");
+    when(dao.findByAppId("prior-appid")).thenReturn(Optional.of(prior));
+
+    var body = new PatchShepardTemplateIO(null, "[]", null, null);
+    Response r = resource.patch("prior-appid", body, securityContext);
+
+    assertEquals(400, r.getStatus());
+    verify(dao, never()).createOrUpdate(any());
   }
 }

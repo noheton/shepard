@@ -3,6 +3,8 @@ package de.dlr.shepard.v2.template.resources;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.template.services.TemplateBodyValidator;
+import de.dlr.shepard.template.services.TemplateBodyValidator.InvalidTemplateBodyException;
 import de.dlr.shepard.v2.template.io.CreateShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.PatchShepardTemplateIO;
 import de.dlr.shepard.v2.template.io.ShepardTemplateIO;
@@ -55,6 +57,9 @@ public class ShepardTemplateRest {
 
   @Inject
   ShepardTemplateDAO dao;
+
+  @Inject
+  TemplateBodyValidator bodyValidator;
 
   @GET
   @Operation(
@@ -115,6 +120,11 @@ public class ShepardTemplateRest {
     if (body == null || body.getName() == null || body.getTemplateKind() == null || body.getBody() == null) {
       return Response.status(Response.Status.BAD_REQUEST).entity("name, templateKind, body are required").build();
     }
+    try {
+      bodyValidator.validate(body.getBody(), body.getTemplateKind());
+    } catch (InvalidTemplateBodyException e) {
+      return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
+    }
     String caller = securityContext.getUserPrincipal().getName();
     long now = System.currentTimeMillis();
     ShepardTemplate t = new ShepardTemplate(body.getName(), body.getTemplateKind(), body.getBody());
@@ -146,6 +156,14 @@ public class ShepardTemplateRest {
     Optional<ShepardTemplate> existing = dao.findByAppId(appId);
     if (existing.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
     ShepardTemplate prior = existing.get();
+    // Validate the body when one is supplied; null body means "no body change" and is fine.
+    if (body != null && body.getBody() != null) {
+      try {
+        bodyValidator.validate(body.getBody(), prior.getTemplateKind());
+      } catch (InvalidTemplateBodyException e) {
+        return Response.status(Response.Status.BAD_REQUEST).entity(java.util.Map.of("errors", e.getErrors())).build();
+      }
+    }
     String caller = securityContext.getUserPrincipal().getName();
     long now = System.currentTimeMillis();
 
