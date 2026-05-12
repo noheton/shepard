@@ -102,6 +102,10 @@ export default defineNuxtConfig({
     sessionRefreshInterval: getSessionRefreshInterval(),
     public: {
       backendApiUrl: "",
+      // Base URL for /v2/ endpoints (server root, no /shepard/api suffix).
+      // Example: "http://localhost:8080". If unset, derived from backendApiUrl
+      // by stripping the /shepard/api suffix.
+      backendV2ApiUrl: "",
     },
   },
 });

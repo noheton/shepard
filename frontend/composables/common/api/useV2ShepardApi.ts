@@ -15,8 +15,12 @@ export function useV2ShepardApi<A extends BaseAPI>(
   const { data } = useAuth();
 
   const configuration = computed(() => {
-    const legacyBase = useRuntimeConfig().public.backendApiUrl as string;
-    const v2Base = legacyBase.replace(/\/shepard\/api\/?$/, "");
+    const config = useRuntimeConfig().public;
+    const explicit = config.backendV2ApiUrl as string | undefined;
+    const v2Base =
+      explicit && explicit.length > 0
+        ? explicit
+        : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
     return new Configuration({
       basePath: v2Base,
       accessToken: data.value?.accessToken,
