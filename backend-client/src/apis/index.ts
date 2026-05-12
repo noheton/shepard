@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export * from './AdminFeaturesApi';
 export * from './ApikeyApi';
 export * from './CollectionApi';
 export * from './CollectionReferenceApi';
