@@ -64,4 +64,15 @@ public class ProvenanceStatsIO {
     "dashboard's 'what's in here' tiles. Null when scope=user (the census is not per-user)."
   )
   private Map<String, Long> contentCensus;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "Byte-size totals for the scope at query time (NOT window-filtered). Keys: `fileBytes` (sum of " +
+    "`ShepardFile.fileSize` reachable from the scope). Pre-FB1a rows uploaded before `fileSize` capture landed " +
+    "have `fileSize=null` and contribute 0 to the sum — the total is therefore a **lower bound** until those " +
+    "rows are re-uploaded. Null when scope=user (the byte totals are not per-user). Open-shape: future kinds " +
+    "(`timeseriesBytes`, `structuredDataBytes`) get added as separate keys without changing the schema."
+  )
+  private Map<String, Long> byteTotals;
 }

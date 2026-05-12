@@ -74,15 +74,26 @@ public class ProvenanceStatsService {
 
     List<long[]> cumulative = cumulativeIntegral(snap.buckets);
 
-    // Content census: not window-filtered (NOT a "captured in this
-    // window" count — that needs the FB1 byte-size field and is
-    // tracked as PROV1-content-stats-2). v1 reports the at-query-time
-    // "what's in here" totals so the dashboard tiles render now.
-    Map<String, Long> census = switch (scope) {
-      case SCOPE_COLLECTION -> censusDAO.censusForCollection(id);
-      case SCOPE_INSTANCE -> censusDAO.censusInstanceWide();
-      default -> null; // user-scope census is meaningless
-    };
+    // Content census + byte totals: not window-filtered ("what's in
+    // here today", not "added this window"). PROV1-content-stats v1
+    // shipped counts only; PROV1-content-stats-2 adds the byte totals
+    // (unblocked by FB1a-fileSize). Both null for scope=user.
+    Map<String, Long> census;
+    Map<String, Long> bytes;
+    switch (scope) {
+      case SCOPE_COLLECTION -> {
+        census = censusDAO.censusForCollection(id);
+        bytes = censusDAO.byteTotalsForCollection(id);
+      }
+      case SCOPE_INSTANCE -> {
+        census = censusDAO.censusInstanceWide();
+        bytes = censusDAO.byteTotalsInstanceWide();
+      }
+      default -> {
+        census = null;
+        bytes = null;
+      }
+    }
 
     return new ProvenanceStatsIO(
       scope,
@@ -95,7 +106,8 @@ public class ProvenanceStatsService {
       snap.totalsByActionKind,
       snap.buckets,
       cumulative,
-      census
+      census,
+      bytes
     );
   }
 

@@ -13,11 +13,12 @@ import org.neo4j.ogm.session.Session;
  * 18M timeseries points / 42 DataObjects added" tiles next to the
  * activity sparkline.
  *
- * <p>v1 of PROV1-content-stats ships **counts only** — bytes / point
- * totals need either (a) on-demand GridFS round-trips (expensive) or
- * (b) a stored {@code fileSize} on {@code :ShepardFile} that hasn't
- * landed yet (gated on FB1a's FileBundle rename). Defer to
- * PROV1-content-stats-2 once the FB1 rename ships.
+ * <p>v1 of PROV1-content-stats shipped **counts only**. PROV1-content-
+ * stats-2 (now unblocked by FB1a-fileSize) adds {@link #byteTotalsForCollection}
+ * / {@link #byteTotalsInstanceWide} which sum {@code ShepardFile.fileSize}
+ * reachable from the scope. Pre-FB1a rows uploaded before {@code fileSize}
+ * capture landed contribute 0 to the sum (the result is a lower bound until
+ * they're re-uploaded) — surfaced as a caveat on the wire schema.
  *
  * <p>One Cypher round-trip per scope. The query unions sub-counts
  * by entity kind so the result is a single map.
@@ -88,6 +89,52 @@ public class ContentCensusDAO {
     return toCensusMap(it.next());
   }
 
+  /**
+   * Byte totals narrowed to one Collection (resolved by {@code appId}).
+   * Returns a map keyed by storage kind; v1 ships {@code fileBytes}
+   * (sum of reachable {@code ShepardFile.fileSize}). Pre-FB1a rows with
+   * {@code fileSize=null} contribute 0 to the sum — the total is a
+   * lower bound until those rows are re-uploaded.
+   */
+  public Map<String, Long> byteTotalsForCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (c:Collection {appId: $cAppId}) " +
+      "OPTIONAL MATCH (c)-[:HAS_DATAOBJECT*0..]->(:DataObject)-[:HAS_REFERENCE]->(:FileReference)-[:has_payload]->(f:ShepardFile) " +
+      "RETURN coalesce(sum(coalesce(f.fileSize, 0)), 0) AS fileBytes";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return emptyByteTotals();
+    return toByteTotalsMap(it.next());
+  }
+
+  /**
+   * Instance-wide byte totals — sums {@code ShepardFile.fileSize} across
+   * the whole graph. Same null-tolerance caveat as
+   * {@link #byteTotalsForCollection}.
+   */
+  public Map<String, Long> byteTotalsInstanceWide() {
+    String cypher = "OPTIONAL MATCH (f:ShepardFile) RETURN coalesce(sum(coalesce(f.fileSize, 0)), 0) AS fileBytes";
+    var result = session.query(cypher, Map.of());
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return emptyByteTotals();
+    return toByteTotalsMap(it.next());
+  }
+
+  private Map<String, Long> emptyByteTotals() {
+    Map<String, Long> empty = new java.util.LinkedHashMap<>();
+    for (String key : BYTE_TOTAL_KEYS) empty.put(key, 0L);
+    return empty;
+  }
+
+  private Map<String, Long> toByteTotalsMap(Map<String, Object> row) {
+    Map<String, Long> out = new java.util.LinkedHashMap<>();
+    for (String key : BYTE_TOTAL_KEYS) {
+      Object v = row.get(key);
+      out.put(key, v instanceof Number n ? n.longValue() : 0L);
+    }
+    return out;
+  }
+
   private Map<String, Long> emptyCensus() {
     Map<String, Long> empty = new HashMap<>();
     for (String key : KEYS) empty.put(key, 0L);
@@ -111,4 +158,11 @@ public class ContentCensusDAO {
     "spatialDataReferences",
     "labJournalEntries",
   };
+
+  /**
+   * Byte-total map keys. {@code fileBytes} ships in v1; future kinds
+   * (e.g. {@code timeseriesBytes}, {@code structuredDataBytes}) get
+   * appended without changing the wire schema.
+   */
+  private static final String[] BYTE_TOTAL_KEYS = { "fileBytes" };
 }
