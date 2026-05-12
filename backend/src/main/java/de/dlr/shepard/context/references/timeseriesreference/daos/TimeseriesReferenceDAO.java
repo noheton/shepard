@@ -8,6 +8,7 @@ import jakarta.enterprise.context.RequestScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @RequestScoped
@@ -55,6 +56,37 @@ public class TimeseriesReferenceDAO extends VersionableEntityDAO<TimeseriesRefer
       .toList();
 
     return result;
+  }
+
+  /**
+   * AI1c — list non-deleted {@code TimeseriesReference} nodes whose
+   * {@code qualityScore} is either unset or whose {@code lastScoredAt}
+   * is older than the supplied cutoff (epoch millis). Capped at
+   * {@code limit} rows so the rescoring job has bounded I/O per tick.
+   *
+   * <p>The query intentionally matches only references with a non-null
+   * {@code timeseriesContainer} — a stranded reference (container
+   * deleted) can't be scored, no point listing it.
+   *
+   * @param staleCutoffMillis epoch-millis cutoff; refs scored at or
+   *     before this point are considered stale
+   * @param limit            hard cap on rows returned (batch size)
+   * @return up to {@code limit} references in need of scoring
+   */
+  public List<TimeseriesReference> findNeedingScoring(long staleCutoffMillis, int limit) {
+    String query =
+      "MATCH (r:TimeseriesReference) " +
+      "WHERE r.deleted = FALSE " +
+      "AND EXISTS { MATCH (r)-[:is_in_container]->(:TimeseriesContainer) } " +
+      "AND (r.qualityScore IS NULL OR r.lastScoredAt IS NULL OR r.lastScoredAt < $staleCutoff) " +
+      "RETURN r LIMIT $limit";
+
+    var queryResult = findByQuery(
+      query,
+      Map.of("staleCutoff", staleCutoffMillis, "limit", limit)
+    );
+
+    return StreamSupport.stream(queryResult.spliterator(), false).collect(Collectors.toList());
   }
 
   @Override
