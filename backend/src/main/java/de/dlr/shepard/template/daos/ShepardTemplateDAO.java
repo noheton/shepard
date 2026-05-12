@@ -79,6 +79,73 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return next;
   }
 
+  /**
+   * Templates the Collection's owner has curated as visible inside
+   * the Collection — the picker UI filters its list down to these
+   * when the user opens the new-DataObject dialog from inside the
+   * Collection. Returns empty when no curation is set.
+   *
+   * <p>Design: {@code aidocs/54 §3} `:ALLOWS_TEMPLATE` edge.
+   */
+  public List<ShepardTemplate> listAllowedForCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:ALLOWS_TEMPLATE]->(t:ShepardTemplate) " +
+      "WHERE t.retired IS NULL OR t.retired = false " +
+      "RETURN t ORDER BY t.name, t.version DESC";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId)).forEach(out::add);
+    return out;
+  }
+
+  /**
+   * Templates the Collection has cited via {@code :USES_TEMPLATE}
+   * (the provenance edge — "this Collection was created from
+   * template X"). Includes retired templates because past citations
+   * stay valid per the copy-on-write semantics of {@code aidocs/54}.
+   */
+  public List<ShepardTemplate> listUsedByCollection(String collectionAppId) {
+    String cypher =
+      "MATCH (:Collection {appId: $cAppId})-[:USES_TEMPLATE]->(t:ShepardTemplate) " +
+      "RETURN t ORDER BY t.name, t.version DESC";
+    List<ShepardTemplate> out = new ArrayList<>();
+    findByQuery(cypher, Map.of("cAppId", collectionAppId)).forEach(out::add);
+    return out;
+  }
+
+  /**
+   * Replace the {@code :ALLOWS_TEMPLATE} edge set for one Collection.
+   * Existing edges are wiped; new edges are minted for every appId in
+   * {@code templateAppIds}. Missing templates / missing Collection
+   * are silent — the caller validates first. Idempotent.
+   */
+  public void setAllowedForCollection(String collectionAppId, List<String> templateAppIds) {
+    session.query(
+      "MATCH (:Collection {appId: $cAppId})-[r:ALLOWS_TEMPLATE]->(:ShepardTemplate) DELETE r",
+      Map.of("cAppId", collectionAppId)
+    );
+    if (templateAppIds != null && !templateAppIds.isEmpty()) {
+      session.query(
+        "MATCH (c:Collection {appId: $cAppId}) " +
+        "UNWIND $appIds AS tAppId " +
+        "MATCH (t:ShepardTemplate {appId: tAppId}) " +
+        "MERGE (c)-[:ALLOWS_TEMPLATE]->(t)",
+        Map.of("cAppId", collectionAppId, "appIds", templateAppIds)
+      );
+    }
+  }
+
+  /**
+   * Record that a Collection was instantiated from a given template —
+   * idempotent {@code :USES_TEMPLATE} edge.
+   */
+  public void recordUsage(String collectionAppId, String templateAppId) {
+    session.query(
+      "MATCH (c:Collection {appId: $cAppId}), (t:ShepardTemplate {appId: $tAppId}) " +
+      "MERGE (c)-[:USES_TEMPLATE]->(t)",
+      Map.of("cAppId", collectionAppId, "tAppId", templateAppId)
+    );
+  }
+
   @Override
   public Class<ShepardTemplate> getEntityType() {
     return ShepardTemplate.class;
