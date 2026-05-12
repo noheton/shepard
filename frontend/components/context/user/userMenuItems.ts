@@ -4,6 +4,7 @@ export enum UserFragments {
   PROFILE = "profile",
   API_KEYS = "api-keys",
   SUBSCRIPTIONS = "subscriptions",
+  GIT_CREDENTIALS = "git-credentials",
 }
 
 export const UserMenuEntries: MenuEntry[] = [
@@ -21,5 +22,10 @@ export const UserMenuEntries: MenuEntry[] = [
     name: "Subscriptions",
     fragment: UserFragments.SUBSCRIPTIONS,
     icon: "mdi-bell-outline",
+  },
+  {
+    name: "Git Credentials",
+    fragment: UserFragments.GIT_CREDENTIALS,
+    icon: "mdi-source-repository",
   },
 ];
