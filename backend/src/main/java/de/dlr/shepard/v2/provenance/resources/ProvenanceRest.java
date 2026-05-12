@@ -54,6 +54,12 @@ public class ProvenanceRest {
   AuthenticationContext authContext;
 
   @Inject
+  de.dlr.shepard.auth.permission.services.PermissionsService permissionsService;
+
+  @Inject
+  de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO collectionPropertiesDAO;
+
+  @Inject
   OutputProfileResolver outputProfile;
 
   @Inject
@@ -299,8 +305,22 @@ public class ProvenanceRest {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
     }
-    if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope) && (id == null || id.isBlank())) {
-      return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=collection").build();
+    if (ProvenanceStatsService.SCOPE_COLLECTION.equals(scope)) {
+      if (id == null || id.isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST).entity("id is required for scope=collection").build();
+      }
+      // PROV1c-acl: gate on Read permission against the target Collection.
+      // Admins bypass the per-Collection check (instance-admin already sees
+      // everything elsewhere). Missing Collection → 404; lacking Read → 403.
+      if (!isAdmin) {
+        var ogmId = collectionPropertiesDAO.findCollectionIdByAppId(id);
+        if (ogmId.isEmpty()) {
+          return Response.status(Response.Status.NOT_FOUND).entity("No Collection with appId " + id).build();
+        }
+        if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller)) {
+          return Response.status(Response.Status.FORBIDDEN).build();
+        }
+      }
     }
 
     long now = System.currentTimeMillis();
