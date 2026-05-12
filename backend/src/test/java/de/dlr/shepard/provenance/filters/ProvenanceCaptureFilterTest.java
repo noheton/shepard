@@ -151,6 +151,29 @@ class ProvenanceCaptureFilterTest {
   }
 
   @Test
+  void targetExtractionForV2EntityPath() throws IOException {
+    String uuid = "018f9c5a-7e26-7000-a000-000000000123";
+    when(request.getMethod()).thenReturn("PATCH");
+    when(response.getStatus()).thenReturn(200);
+    when(uriInfo.getPath()).thenReturn("v2/collections/" + uuid);
+
+    filter.filter(request, response);
+
+    verify(provenance).record(
+      eq("UPDATE"),
+      eq("Collection"),
+      eq(uuid),
+      eq("alice"),
+      eq("PATCH /v2/collections/" + uuid),
+      eq("PATCH"),
+      eq("v2/collections/" + uuid),
+      eq(200),
+      anyLong(),
+      anyLong()
+    );
+  }
+
+  @Test
   void actionKindMappingCoversAllVerbs() {
     assertEquals("CREATE", ProvenanceCaptureFilter.actionKindFor("POST"));
     assertEquals("UPDATE", ProvenanceCaptureFilter.actionKindFor("PUT"));

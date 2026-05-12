@@ -69,7 +69,22 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     String summary = method + " /" + (path == null ? "" : path);
     String actionKind = actionKindFor(method);
 
-    provenance.record(actionKind, null, null, principal.getName(), summary, method, path, status, startedAtMillis, endedAtMillis);
+    var target = TargetEntityResolver.resolve(path);
+    String targetKind = target.map(TargetEntityResolver.TargetRef::kind).orElse(null);
+    String targetAppId = target.map(TargetEntityResolver.TargetRef::appId).orElse(null);
+
+    provenance.record(
+      actionKind,
+      targetKind,
+      targetAppId,
+      principal.getName(),
+      summary,
+      method,
+      path,
+      status,
+      startedAtMillis,
+      endedAtMillis
+    );
   }
 
   private static boolean isMutation(String method) {
