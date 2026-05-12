@@ -1,0 +1,33 @@
+# Canonical source: https://www.w3.org/2006/time
+# Ontology IRI:    http://www.w3.org/2006/time#
+# Retrieved:       SEE ontologies-manifest.json
+# License:         W3C Document License (https://www.w3.org/Consortium/Legal/2015/doc-license)
+#
+# shepard-bundled stub of the W3C Time Ontology. Carries the canonical
+# namespace plus the core temporal-entity classes shepard uses to
+# annotate timeseries spans and lab-journal events.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix time:   <http://www.w3.org/2006/time#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://www.w3.org/2006/time>
+       a owl:Ontology ;
+       dcterms:title    "W3C Time Ontology (shepard-bundled stub)"@en ;
+       rdfs:label       "Time"@en ;
+       rdfs:comment     "OWL-2 ontology of temporal concepts."@en .
+
+time:TemporalEntity a owl:Class ; rdfs:label "Temporal Entity"@en .
+time:Instant        a owl:Class ; rdfs:subClassOf time:TemporalEntity ; rdfs:label "Instant"@en .
+time:Interval       a owl:Class ; rdfs:subClassOf time:TemporalEntity ; rdfs:label "Interval"@en .
+time:ProperInterval a owl:Class ; rdfs:subClassOf time:Interval ; rdfs:label "Proper Interval"@en .
+time:Duration       a owl:Class ; rdfs:label "Duration"@en .
+
+time:hasBeginning   a owl:ObjectProperty ; rdfs:label "has beginning"@en .
+time:hasEnd         a owl:ObjectProperty ; rdfs:label "has end"@en .
+time:hasDuration    a owl:ObjectProperty ; rdfs:label "has duration"@en .
+time:inXSDDateTimeStamp a owl:DatatypeProperty ; rdfs:label "in XSD dateTimeStamp"@en .
+time:before         a owl:ObjectProperty ; rdfs:label "before"@en .
+time:after          a owl:ObjectProperty ; rdfs:label "after"@en .

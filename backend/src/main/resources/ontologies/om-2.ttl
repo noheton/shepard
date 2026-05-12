@@ -1,0 +1,35 @@
+# Canonical source: http://www.ontology-of-units-of-measure.org/data/om-2.0/om-2.0.ttl
+# Ontology IRI:    http://www.ontology-of-units-of-measure.org/resource/om-2/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of OM-2 (Ontology of Units of Measure). QUDT is
+# the default units ontology this fork seeds, but OM-2 ships alongside
+# for cross-compatibility with sites that already cite OM-2 IRIs.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix om:     <http://www.ontology-of-units-of-measure.org/resource/om-2/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://www.ontology-of-units-of-measure.org/resource/om-2/>
+       a owl:Ontology ;
+       dcterms:title    "OM-2 Ontology of Units of Measure (shepard-bundled stub)"@en ;
+       rdfs:label       "OM-2"@en ;
+       rdfs:comment     "Ontology of units of measure and related concepts."@en .
+
+om:Quantity         a owl:Class ; rdfs:label "Quantity"@en .
+om:Unit             a owl:Class ; rdfs:label "Unit"@en .
+om:Measure          a owl:Class ; rdfs:label "Measure"@en .
+om:Dimension        a owl:Class ; rdfs:label "Dimension"@en .
+
+om:metre            a om:Unit ; rdfs:label "metre"@en .
+om:kilogram         a om:Unit ; rdfs:label "kilogram"@en .
+om:second           a om:Unit ; rdfs:label "second"@en .
+om:newton           a om:Unit ; rdfs:label "newton"@en .
+om:pascal           a om:Unit ; rdfs:label "pascal"@en .
+om:hertz            a om:Unit ; rdfs:label "hertz"@en .
+
+om:hasUnit          a owl:ObjectProperty ; rdfs:label "has unit"@en .
+om:hasNumericalValue a owl:DatatypeProperty ; rdfs:label "has numerical value"@en .

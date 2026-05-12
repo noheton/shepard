@@ -1,0 +1,32 @@
+# Canonical source: http://xmlns.com/foaf/spec/index.rdf (RDF/XML; Turtle equivalent)
+# Ontology IRI:    http://xmlns.com/foaf/0.1/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 1.0 (http://creativecommons.org/licenses/by/1.0/)
+#
+# shepard-bundled stub of the Friend Of A Friend (FOAF) vocabulary.
+# Carries the canonical namespace plus the core Person / Organization
+# / Agent classes shepard uses for author-style annotations.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://xmlns.com/foaf/0.1/>
+       a owl:Ontology ;
+       dcterms:title    "FOAF Vocabulary Specification (shepard-bundled stub)"@en ;
+       rdfs:label       "FOAF"@en ;
+       rdfs:comment     "Friend of a Friend vocabulary."@en .
+
+foaf:Agent         a owl:Class ; rdfs:label "Agent"@en .
+foaf:Person        a owl:Class ; rdfs:subClassOf foaf:Agent ; rdfs:label "Person"@en .
+foaf:Organization  a owl:Class ; rdfs:subClassOf foaf:Agent ; rdfs:label "Organization"@en .
+foaf:Group         a owl:Class ; rdfs:subClassOf foaf:Agent ; rdfs:label "Group"@en .
+
+foaf:name        a owl:DatatypeProperty ; rdfs:label "name"@en .
+foaf:mbox        a owl:ObjectProperty ;  rdfs:label "personal mailbox"@en .
+foaf:homepage    a owl:ObjectProperty ;  rdfs:label "homepage"@en .
+foaf:member      a owl:ObjectProperty ;  rdfs:label "member"@en .
+foaf:knows       a owl:ObjectProperty ;  rdfs:label "knows"@en .
+foaf:account     a owl:ObjectProperty ;  rdfs:label "account"@en .

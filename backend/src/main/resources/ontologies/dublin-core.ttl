@@ -1,0 +1,37 @@
+# Canonical source: https://www.dublincore.org/specifications/dublin-core/dcmi-terms/dublin_core_terms.ttl
+# Ontology IRI:    http://purl.org/dc/terms/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the Dublin Core Terms (DCMI Terms) vocabulary.
+# Carries the canonical namespace plus the headline metadata properties
+# every research deployment cites. Replace with the full DCMI Terms
+# Turtle download via the refresh CLI (N1c) for the complete vocab.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://purl.org/dc/terms/>
+       a owl:Ontology ;
+       dcterms:title    "DCMI Metadata Terms (shepard-bundled stub)"@en ;
+       rdfs:label       "DCMI Terms"@en ;
+       rdfs:comment     "Dublin Core Metadata Initiative terms vocabulary."@en .
+
+dcterms:title       a owl:DatatypeProperty ; rdfs:label "Title"@en .
+dcterms:creator     a owl:ObjectProperty ;  rdfs:label "Creator"@en .
+dcterms:contributor a owl:ObjectProperty ;  rdfs:label "Contributor"@en .
+dcterms:description a owl:DatatypeProperty ; rdfs:label "Description"@en .
+dcterms:date        a owl:DatatypeProperty ; rdfs:label "Date"@en .
+dcterms:created     a owl:DatatypeProperty ; rdfs:label "Date Created"@en .
+dcterms:modified    a owl:DatatypeProperty ; rdfs:label "Date Modified"@en .
+dcterms:identifier  a owl:DatatypeProperty ; rdfs:label "Identifier"@en .
+dcterms:license     a owl:ObjectProperty ;  rdfs:label "License"@en .
+dcterms:rights      a owl:DatatypeProperty ; rdfs:label "Rights"@en .
+dcterms:subject     a owl:ObjectProperty ;  rdfs:label "Subject"@en .
+dcterms:source      a owl:ObjectProperty ;  rdfs:label "Source"@en .
+dcterms:format      a owl:DatatypeProperty ; rdfs:label "Format"@en .
+dcterms:language    a owl:DatatypeProperty ; rdfs:label "Language"@en .
+dcterms:publisher   a owl:ObjectProperty ;  rdfs:label "Publisher"@en .
+dcterms:type        a owl:ObjectProperty ;  rdfs:label "Type"@en .

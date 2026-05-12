@@ -1,0 +1,37 @@
+# Canonical source: https://schema.org/version/latest/schemaorg-current-https.ttl
+# Ontology IRI:    https://schema.org/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/)
+#
+# shepard-bundled stub of schema.org core. Carries the canonical
+# namespace plus the most-cited classes shepard's RO-Crate exports
+# tend to reference (Dataset, Person, Organization, DataCatalog).
+# Replace with the full schema.org Turtle via N1c for the complete
+# vocabulary.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix schema: <https://schema.org/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://schema.org/>
+       a owl:Ontology ;
+       dcterms:title    "schema.org core (shepard-bundled stub)"@en ;
+       rdfs:label       "schema.org"@en ;
+       rdfs:comment     "Schema.org vocabulary for structured data."@en .
+
+schema:Thing        a owl:Class ; rdfs:label "Thing"@en .
+schema:Dataset      a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "Dataset"@en .
+schema:DataCatalog  a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "DataCatalog"@en .
+schema:Person       a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "Person"@en .
+schema:Organization a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "Organization"@en .
+schema:Place        a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "Place"@en .
+schema:CreativeWork a owl:Class ; rdfs:subClassOf schema:Thing ; rdfs:label "CreativeWork"@en .
+
+schema:name        a owl:DatatypeProperty ; rdfs:label "name"@en .
+schema:description a owl:DatatypeProperty ; rdfs:label "description"@en .
+schema:author      a owl:ObjectProperty ;  rdfs:label "author"@en .
+schema:identifier  a owl:DatatypeProperty ; rdfs:label "identifier"@en .
+schema:dateCreated a owl:DatatypeProperty ; rdfs:label "dateCreated"@en .
+schema:license     a owl:ObjectProperty ;  rdfs:label "license"@en .

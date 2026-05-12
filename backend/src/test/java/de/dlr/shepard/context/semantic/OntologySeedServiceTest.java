@@ -1,0 +1,524 @@
+package de.dlr.shepard.context.semantic;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+import org.neo4j.ogm.model.Result;
+import org.neo4j.ogm.session.Session;
+
+/**
+ * Unit tests for {@link OntologySeedService}. Two layers:
+ *
+ * <ol>
+ *   <li><b>Mocked-classloader tests</b> — synthesise an in-memory
+ *       manifest + bundle bytes via a custom {@link ClassLoader},
+ *       exercising every per-bundle branch (happy / SHA mismatch /
+ *       missing file / skipped / failed n10s call). The Cypher
+ *       composition is verified via {@code verify(session).query(...)}.</li>
+ *   <li><b>Real-classpath sanity test</b> — load the actual
+ *       {@code /ontologies/ontologies-manifest.json} shipped with the
+ *       backend; assert every declared file exists on the classpath
+ *       and every declared SHA-256 matches the file on disk.</li>
+ * </ol>
+ *
+ * <p>We deliberately do NOT test Turtle parsing — that's n10s's job.
+ */
+class OntologySeedServiceTest {
+
+  // ---------- Mocked-classloader tests --------------------------------------
+
+  private static final String SAMPLE_TTL =
+    "@prefix ex: <http://example.org/> .\nex:a a ex:Thing .\n";
+
+  /** SHA-256 of {@link #SAMPLE_TTL} bytes (UTF-8). */
+  private static final String SAMPLE_SHA = OntologySeedService.sha256Hex(
+    SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+  );
+
+  @Test
+  void seed_disabledByConfig_isNoOp() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, false, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    svc.seedIfNeeded();
+    verify(session, never()).query(any(String.class), any());
+  }
+
+  @Test
+  void seed_skipsWhenN10sAbsent() {
+    Session session = mock(Session.class);
+    Result detect = singleRow(Map.of("available", Boolean.FALSE));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    svc.seedIfNeeded();
+
+    verify(session).query(eq(OntologySeedService.DETECT_CYPHER), any());
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_handlesNullSession() {
+    var svc = new OntologySeedService(null, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    assertDoesNotThrow(svc::seedIfNeeded);
+  }
+
+  @Test
+  void seed_importsValidBundle_andSendsCorrectCypher() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/one.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result imp = singleRow(Map.of("status", "OK", "loaded", 7L, "parsed", 7L, "info", "fresh"));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    svc.seedIfNeeded();
+
+    verify(session).query(
+      eq(OntologySeedService.IMPORT_INLINE_CYPHER),
+      eq(Map.of("rdf", SAMPLE_TTL, "format", "Turtle"))
+    );
+  }
+
+  @Test
+  void seed_rerun_isIdempotent_n10sReportsZeroLoaded() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/one.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 42L));
+    // n10s constraint-deduped re-run: status=OK + loaded=0 is the
+    // idempotent contract — service must treat it as success, not a warn.
+    Result reRun = singleRow(Map.of("status", "OK", "loaded", 0L, "parsed", 7L, "info", "duplicate"));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(reRun);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    verify(session).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_shaMismatch_skipsThatBundle_continuesWithNext() {
+    Session session = mock(Session.class);
+    String badSha = "0".repeat(64);
+    String manifest = manifestJson(
+      List.of(
+        entry("bad", "bad.ttl", badSha, SAMPLE_TTL.length()),
+        entry("good", "good.ttl", SAMPLE_SHA, SAMPLE_TTL.length())
+      )
+    );
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/bad.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8),
+        "ontologies/good.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result imp = singleRow(Map.of("status", "OK", "loaded", 5L));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    // The bad-SHA bundle short-circuits BEFORE invokeImport; the good one fires.
+    verify(session).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_missingBundleFile_isPerBundleFailure_neverThrows() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("missing", "missing.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8)
+        // missing.ttl is NOT in the map
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_skipBundles_setHonoured() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(
+      List.of(
+        entry("a", "a.ttl", SAMPLE_SHA, SAMPLE_TTL.length()),
+        entry("b", "b.ttl", SAMPLE_SHA, SAMPLE_TTL.length())
+      )
+    );
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/a.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8),
+        "ontologies/b.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result imp = singleRow(Map.of("status", "OK", "loaded", 3L));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    var svc = new OntologySeedService(session, true, Set.of("a"), new ObjectMapper(), cl);
+    svc.seedIfNeeded();
+
+    // Only one import call (for "b"); skip was applied to "a".
+    verify(session, org.mockito.Mockito.times(1)).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_missingManifest_skipsEntirelyAndDoesNotThrow() {
+    Session session = mock(Session.class);
+    ClassLoader cl = classLoaderWith(Map.of());
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_emptyManifest_skips() {
+    Session session = mock(Session.class);
+    String manifest = "{\"version\":1,\"ontologies\":[]}";
+    ClassLoader cl = classLoaderWith(
+      Map.of("ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8))
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    svc.seedIfNeeded();
+
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seed_nonOkStatusFromN10s_isWarnedNotRaised() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/one.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result imp = singleRow(Map.of("status", "KO", "loaded", 0L, "info", "syntax error"));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+  }
+
+  @Test
+  void seed_importThrows_isPerBundleFailureNotFatal() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(
+      List.of(
+        entry("explode", "explode.ttl", SAMPLE_SHA, SAMPLE_TTL.length()),
+        entry("ok", "ok.ttl", SAMPLE_SHA, SAMPLE_TTL.length())
+      )
+    );
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/explode.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8),
+        "ontologies/ok.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result okRow = singleRow(Map.of("status", "OK", "loaded", 1L));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    // First (explode.ttl) raises, then OK for the next bundle.
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any()))
+      .thenThrow(new RuntimeException("connection reset"))
+      .thenReturn(okRow);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    verify(session, org.mockito.Mockito.times(2)).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void parseSkipBundles_acceptsCsv() {
+    Set<String> set = OntologySeedService.parseSkipBundles("qudt, om-2, ,foaf");
+    assertEquals(Set.of("qudt", "om-2", "foaf"), set);
+  }
+
+  @Test
+  void parseSkipBundles_emptyOrNullYieldsEmpty() {
+    assertTrue(OntologySeedService.parseSkipBundles(null).isEmpty());
+    assertTrue(OntologySeedService.parseSkipBundles("").isEmpty());
+    assertTrue(OntologySeedService.parseSkipBundles("   ").isEmpty());
+  }
+
+  @Test
+  void manifestEntry_rejectsInvalidSha() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("bad", "x.ttl", "not-hex", 0)));
+    ClassLoader cl = classLoaderWith(
+      Map.of("ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8))
+    );
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertThrows(RuntimeException.class, svc::loadManifest);
+  }
+
+  @Test
+  void manifestEntry_rejectsDuplicateId() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(
+      List.of(
+        entry("same", "a.ttl", SAMPLE_SHA, 10),
+        entry("same", "b.ttl", SAMPLE_SHA, 10)
+      )
+    );
+    ClassLoader cl = classLoaderWith(
+      Map.of("ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8))
+    );
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertThrows(RuntimeException.class, svc::loadManifest);
+  }
+
+  @Test
+  void manifestEntry_rejectsMissingRequiredFields() {
+    Session session = mock(Session.class);
+    String manifest = "{\"ontologies\":[{\"id\":\"only\"}]}";
+    ClassLoader cl = classLoaderWith(
+      Map.of("ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8))
+    );
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertThrows(RuntimeException.class, svc::loadManifest);
+  }
+
+  @Test
+  void seed_resourceCountFailure_isSwallowed() {
+    Session session = mock(Session.class);
+    String manifest = manifestJson(List.of(entry("one", "one.ttl", SAMPLE_SHA, SAMPLE_TTL.length())));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/one.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result imp = singleRow(Map.of("status", "OK", "loaded", 5L));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any()))
+      .thenThrow(new RuntimeException("read denied"));
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+  }
+
+  @Test
+  void sha256Hex_isLowercaseHex_64chars() {
+    String s = OntologySeedService.sha256Hex("hello".getBytes(StandardCharsets.UTF_8));
+    assertEquals(64, s.length());
+    assertEquals(s.toLowerCase(java.util.Locale.ROOT), s);
+    assertTrue(s.chars().allMatch(c -> Character.digit(c, 16) >= 0));
+  }
+
+  @Test
+  void detectProbeException_treatedAsAbsent() {
+    Session session = mock(Session.class);
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any()))
+      .thenThrow(new RuntimeException("permission denied"));
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    assertDoesNotThrow(svc::seedIfNeeded);
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  // ---------- Real-classpath sanity test ------------------------------------
+
+  /**
+   * Load the actual {@code /ontologies/ontologies-manifest.json}
+   * shipped with the backend. For every entry:
+   * <ul>
+   *   <li>The bundled file exists on the classpath.</li>
+   *   <li>The bundled file's SHA-256 matches the manifest.</li>
+   *   <li>The manifest's SHA-256 field is 64 hex chars.</li>
+   * </ul>
+   */
+  @Test
+  void realManifest_everyEntryIsConsistentWithBundledFile() {
+    Session session = mock(Session.class);
+    // Use the real classloader → reads from src/main/resources.
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    List<OntologySeedService.OntologyEntry> entries = svc.loadManifest();
+
+    assertFalse(entries.isEmpty(), "real manifest must declare at least one ontology");
+    for (OntologySeedService.OntologyEntry e : entries) {
+      // 64 hex chars (defensive — fromJson already enforces this).
+      assertEquals(64, e.sha256.length(), "sha256 length for " + e.id);
+      // File exists on classpath.
+      byte[] bytes = assertDoesNotThrow(() -> svc.readBundleBytes(e.file), "bundle " + e.file + " missing");
+      // SHA matches.
+      String actual = OntologySeedService.sha256Hex(bytes);
+      assertEquals(e.sha256.toLowerCase(java.util.Locale.ROOT), actual.toLowerCase(java.util.Locale.ROOT),
+        "SHA-256 mismatch for " + e.id + " (file=" + e.file + ")");
+    }
+  }
+
+  @Test
+  void realManifest_declaresEveryRequiredOntology() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
+    // Per aidocs/48 §3.2 the bundle ships exactly these 8 ontologies.
+    assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
+    assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
+    assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
+    assertTrue(ids.contains("foaf"), "manifest missing foaf");
+    assertTrue(ids.contains("qudt"), "manifest missing qudt");
+    assertTrue(ids.contains("om-2"), "manifest missing om-2");
+    assertTrue(ids.contains("time"), "manifest missing time");
+    assertTrue(ids.contains("geosparql"), "manifest missing geosparql");
+  }
+
+  // ---------- helpers -------------------------------------------------------
+
+  static Result singleRow(Map<String, Object> row) {
+    Result result = mock(Result.class);
+    when(result.queryResults()).thenReturn(List.<Map<String, Object>>of(new LinkedHashMap<>(row)));
+    return result;
+  }
+
+  static Result emptyResult() {
+    Result result = mock(Result.class);
+    when(result.queryResults()).thenReturn(Collections.<Map<String, Object>>emptyList());
+    return result;
+  }
+
+  /** Mini JSON manifest builder for the in-memory tests. */
+  private static String manifestJson(List<Map<String, Object>> entries) {
+    StringBuilder sb = new StringBuilder("{\"version\":1,\"ontologies\":[");
+    boolean first = true;
+    for (Map<String, Object> e : entries) {
+      if (!first) sb.append(',');
+      first = false;
+      sb.append('{');
+      boolean firstField = true;
+      for (var ent : e.entrySet()) {
+        if (!firstField) sb.append(',');
+        firstField = false;
+        sb.append('"').append(ent.getKey()).append("\":");
+        Object v = ent.getValue();
+        if (v instanceof Number) sb.append(v);
+        else sb.append('"').append(v).append('"');
+      }
+      sb.append('}');
+    }
+    sb.append("]}");
+    return sb.toString();
+  }
+
+  private static Map<String, Object> entry(String id, String file, String sha, long size) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", id);
+    m.put("file", file);
+    m.put("format", "Turtle");
+    m.put("sha256", sha);
+    m.put("sizeBytes", size);
+    return m;
+  }
+
+  /**
+   * Build an in-memory ClassLoader that serves the given path → bytes
+   * map via {@link ClassLoader#getResourceAsStream(String)}. Any other
+   * path returns {@code null}.
+   */
+  private static ClassLoader classLoaderWith(Map<String, byte[]> resources) {
+    return new ClassLoader(OntologySeedServiceTest.class.getClassLoader()) {
+      @Override
+      public InputStream getResourceAsStream(String name) {
+        byte[] data = resources.get(name);
+        if (data != null) return new ByteArrayInputStream(data);
+        return null;
+      }
+
+      @Override
+      public URL getResource(String name) {
+        // Not used by the service — return null so the test isn't tempted to depend on it.
+        return null;
+      }
+    };
+  }
+}

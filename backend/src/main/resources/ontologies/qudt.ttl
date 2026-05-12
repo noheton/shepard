@@ -1,0 +1,42 @@
+# Canonical source: http://qudt.org/2.1/vocab/unit.ttl (units), http://qudt.org/2.1/vocab/quantitykind.ttl (kinds)
+# Ontology IRI:    http://qudt.org/vocab/unit/ + http://qudt.org/vocab/quantitykind/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the QUDT v2.1 Units / QuantityKinds vocabularies.
+# A handful of representative units (G_Earth / Newton / Pascal / Hertz)
+# are declared here so the casual annotation flow ("I want to tag this
+# channel with the QUDT IRI for `g rms`") finds a resolvable IRI on a
+# fresh install. The refresh CLI (N1c) replaces this with the full
+# QUDT 2.1 dump for sites that need it.
+
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix qudt:   <http://qudt.org/schema/qudt/> .
+@prefix unit:   <http://qudt.org/vocab/unit/> .
+@prefix kind:   <http://qudt.org/vocab/quantitykind/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://qudt.org/vocab/unit/>
+       a owl:Ontology ;
+       dcterms:title    "QUDT Units of Measure (shepard-bundled stub)"@en ;
+       rdfs:label       "QUDT Unit"@en ;
+       rdfs:comment     "Quantities, units, dimensions and types ontology."@en .
+
+qudt:Unit          a owl:Class ; rdfs:label "Unit"@en .
+qudt:QuantityKind  a owl:Class ; rdfs:label "QuantityKind"@en .
+
+unit:G_Earth     a qudt:Unit ; rdfs:label "g (standard gravity)"@en .
+unit:N           a qudt:Unit ; rdfs:label "newton"@en .
+unit:PA          a qudt:Unit ; rdfs:label "pascal"@en .
+unit:HZ          a qudt:Unit ; rdfs:label "hertz"@en .
+unit:DEG_C       a qudt:Unit ; rdfs:label "degree Celsius"@en .
+unit:M_PER_SEC2  a qudt:Unit ; rdfs:label "metre per second squared"@en .
+unit:KG_PER_M3   a qudt:Unit ; rdfs:label "kilogram per cubic metre"@en .
+
+kind:Acceleration   a qudt:QuantityKind ; rdfs:label "Acceleration"@en .
+kind:Pressure       a qudt:QuantityKind ; rdfs:label "Pressure"@en .
+kind:Frequency      a qudt:QuantityKind ; rdfs:label "Frequency"@en .
+kind:Force          a qudt:QuantityKind ; rdfs:label "Force"@en .
+kind:Temperature    a qudt:QuantityKind ; rdfs:label "Temperature"@en .
