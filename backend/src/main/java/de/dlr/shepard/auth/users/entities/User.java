@@ -41,13 +41,13 @@ public class User implements HasId, HasAppId {
    * ORCID identifier (16-digit ISO 7064 mod 11-2 checked), per
    * {@code aidocs/16 U1a}. Nullable; set via
    * {@code PATCH /v2/users/me}. RO-Crate export
-   * (`aidocs/31`) picks this up automatically once present.
+   * ({@code aidocs/31}) picks this up automatically once present.
    */
   private String orcid;
 
   /**
    * User-chosen override for how their name renders across the UI
-   * (audit trails, headers, "Created by …" lines) — per
+   * (audit trails, headers, "Created by ..." lines) — per
    * {@code aidocs/16 U1b}. Nullable; when null,
    * {@link de.dlr.shepard.auth.users.services.DisplayNameResolver}
    * derives the rendered name from {@code firstName}/{@code lastName}
@@ -62,6 +62,10 @@ public class User implements HasId, HasAppId {
   @ToString.Exclude
   @Relationship(type = Constants.BELONGS_TO, direction = Direction.INCOMING)
   private List<ApiKey> apiKeys = new ArrayList<>();
+
+  @ToString.Exclude
+  @Relationship(type = "OWNS_CREDENTIAL", direction = Direction.OUTGOING)
+  private List<GitCredential> gitCredentials = new ArrayList<>();
 
   /**
    * For testing purposes only
@@ -97,6 +101,7 @@ public class User implements HasId, HasAppId {
     result = prime * result + Objects.hash(displayName, email, firstName, lastName, orcid, username);
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
+    result = prime * result + HasId.hashcodeHelper(gitCredentials);
     return result;
   }
 
@@ -108,6 +113,7 @@ public class User implements HasId, HasAppId {
     return (
       HasId.areEqualSetsByUniqueId(apiKeys, other.apiKeys) &&
       HasId.areEqualSetsByUniqueId(subscriptions, other.subscriptions) &&
+      HasId.areEqualSetsByUniqueId(gitCredentials, other.gitCredentials) &&
       Objects.equals(displayName, other.displayName) &&
       Objects.equals(email, other.email) &&
       Objects.equals(firstName, other.firstName) &&

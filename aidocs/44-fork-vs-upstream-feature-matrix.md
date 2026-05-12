@@ -145,6 +145,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 |---|---|---|---|---|
 | HDF5 / HSDS as a payload kind (`HdfContainer` / `HdfReference`); `h5pyd` parity | none | TBD; HSDS sidecar + shared-Keycloak token relay | 📐 (queued, A5) | `aidocs/35` |
 | Git integration (`GitReference`); mode-a (loose link: repoUrl + ref + path); modes b/c scaffolded; CRUD via `/v2/data-objects/{appId}/git-references`; UI renders as clickable link | none | Backend ✓; UI 🚧 | **✓ ↑ (backend, G1a #1063)** / **🚧 UI** | `aidocs/38` |
+| Per-user git credentials (host + username + AES-GCM encrypted PAT); `/v2/me/git-credentials` CRUD | none | ✓ backend (G1-cred) / ✓ UI (PR #1071) | 🚧 (G1-cred #1069) | — |
 | Templates feature (Templates Collection of DataObject blueprints; per-Collection allow-list) | none | TBD; replaces / supersedes upstream-aspirational L3 | 📐 (queued, T1) | `aidocs/39` |
 | Process design + runtime in shepard core (`ProcessDefinition` + browser-hosted stepper) | SPW desktop only | TBD | 📐 (queued, PR1) | `aidocs/40 §2` |
 | Snapshots (point-in-time, immutable, reproducible reads) | `Version` is a marker only | TBD; logical snapshots backed by entity revisions | 📐 (queued, V2) | `aidocs/41` |
