@@ -74,8 +74,15 @@ Plus payload kinds (the things References point at):
 
 - **TimeseriesReference** → time-stamped numeric data, stored in
   TimescaleDB.
-- **FileReference** → arbitrary file blobs, stored in MongoDB
-  (CAD, PDFs, photos, source code).
+- **FileBundleReference** → a bag of files (CAD, PDFs, photos,
+  source code, camera frame dumps), optionally organised into one or
+  more **FileGroup** sub-Reference sub-nodes for "these N files
+  belong to one logical sub-run" structure (FR1a shipped, see
+  `aidocs/53 §1`). Stored in MongoDB / GridFS. The upstream API
+  surface keeps the legacy `FileReference` name for byte-for-byte
+  wire compatibility; the `/v2/bundles/...` shelf reads with the new
+  name. A true singleton-shaped `FileReference` for the single-file
+  case will land in FR1b (`aidocs/53 §1.8`).
 - **StructuredDataReference** → JSON documents, stored in MongoDB
   (run-logs, configs, metadata bundles).
 - **SpatialDataReference** → geo / spatial geometry, stored in
@@ -233,11 +240,14 @@ Mid-horizon:
   object store; navigation by video-time and wall-clock; live
   ingest via a sibling `shepard-video-collector` or a MediaMTX
   sidecar.
-- **`FileReference` → `FileBundle` + `FileGroup`** (`aidocs/53`,
-  FB1 series). The existing entity is actually a *bundle* of
-  files; the rename makes that visible and adds a first-class
-  group concept under it so a 1000-image cyclic capture stops
-  looking like a flat list.
+- **`FileReference` → `FileBundleReference` + `FileGroup` rename**
+  (`aidocs/53`, FR1 series — **FR1a shipped**: V21 migration adds
+  the second label + default group; `/v2/bundles/{appId}` shelf
+  surfaces the new shape; upstream wire stays frozen).
+  The follow-on FR1b reintroduces a true singleton `FileReference`
+  for the single-file case alongside `FileBundleReference`, with
+  parallel `/v2/files/...` endpoints and the V16b opt-in
+  carve-out migration. FR1c/FR1d cover snapshot + RO-Crate.
 - **Templates as a first-class admin entity** (`aidocs/54`, T1
   revised). `:ShepardTemplate` Neo4j entity in an admin-only
   subgraph (replaces the `__templates` hack); JSON DSL bodies,

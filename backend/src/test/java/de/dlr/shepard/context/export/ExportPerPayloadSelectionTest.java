@@ -31,9 +31,9 @@ import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -82,7 +82,7 @@ public class ExportPerPayloadSelectionTest {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @InjectMock
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @InjectMock
   StructuredDataReferenceService structuredDataReferenceService;
@@ -142,7 +142,7 @@ public class ExportPerPayloadSelectionTest {
 
   @Test
   public void fileOids_includesOnlyMatchingOids_andEmitsBytesViaPerOidApi() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var fileA = new ShepardFile("oid-A", dateHelper.getDate(), "a.txt", null);
     var fileB = new ShepardFile("oid-B", dateHelper.getDate(), "b.txt", null);
     var fileC = new ShepardFile("oid-C", dateHelper.getDate(), "c.txt", null);
@@ -194,7 +194,7 @@ public class ExportPerPayloadSelectionTest {
 
   @Test
   public void fileOids_staleOid_silentlySkipped_andRecordedAsWarning() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var fileA = new ShepardFile("oid-A", dateHelper.getDate(), "a.txt", null);
     when(fileRef.getFiles()).thenReturn(List.of(fileA));
     dataObject.addReference(fileRef);
@@ -239,7 +239,7 @@ public class ExportPerPayloadSelectionTest {
 
   @Test
   public void fileOids_strictMode_staleOid_throwsBadRequest() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var fileA = new ShepardFile("oid-A", dateHelper.getDate(), "a.txt", null);
     when(fileRef.getFiles()).thenReturn(List.of(fileA));
     dataObject.addReference(fileRef);
@@ -597,7 +597,7 @@ public class ExportPerPayloadSelectionTest {
 
   @Test
   public void emptyPerPayloadMap_keepsLegacyFullFetchPath() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var fileA = new ShepardFile("oid-A", dateHelper.getDate(), "a.txt", null);
     when(fileRef.getFiles()).thenReturn(List.of(fileA));
     dataObject.addReference(fileRef);

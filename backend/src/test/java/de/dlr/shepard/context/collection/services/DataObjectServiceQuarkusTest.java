@@ -17,7 +17,7 @@ import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference
 import de.dlr.shepard.context.references.dataobject.io.DataObjectReferenceIO;
 import de.dlr.shepard.context.references.dataobject.services.CollectionReferenceService;
 import de.dlr.shepard.context.references.dataobject.services.DataObjectReferenceService;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.services.TimeseriesReferenceService;
 import de.dlr.shepard.context.version.daos.VersionDAO;
@@ -56,7 +56,7 @@ public class DataObjectServiceQuarkusTest {
   FileContainerService fileContainerService;
 
   @Inject
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @Inject
   VersionDAO versionDAO;

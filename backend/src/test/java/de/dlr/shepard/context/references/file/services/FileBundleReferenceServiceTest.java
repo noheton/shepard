@@ -17,8 +17,8 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.DataObjectService;
-import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
@@ -39,10 +39,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
-public class FileReferenceServiceTest {
+public class FileBundleReferenceServiceTest {
 
   @InjectMock
-  FileReferenceDAO dao;
+  FileBundleReferenceDAO dao;
 
   @InjectMock
   FileService fileService;
@@ -72,7 +72,7 @@ public class FileReferenceServiceTest {
   UserService userService;
 
   @Inject
-  FileReferenceService service;
+  FileBundleReferenceService service;
 
   @Inject
   FileContainerService fileContainerService;
@@ -81,7 +81,7 @@ public class FileReferenceServiceTest {
 
   @Test
   public void getFileReferenceByShepardIdTest_successful() {
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
 
     DataObject dataObject = new DataObject(1121L);
@@ -91,7 +91,7 @@ public class FileReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
-    FileReference actual = service.getReference(collectionId, dataObject.getShepardId(), ref.getShepardId(), null);
+    FileBundleReference actual = service.getReference(collectionId, dataObject.getShepardId(), ref.getShepardId(), null);
     assertEquals(ref, actual);
   }
 
@@ -106,7 +106,7 @@ public class FileReferenceServiceTest {
 
   @Test
   public void getFileReferenceByShepardIdTest_deleted() {
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setDeleted(true);
     when(dao.findByShepardId(ref.getShepardId())).thenReturn(ref);
@@ -121,15 +121,15 @@ public class FileReferenceServiceTest {
   public void getAllFileReferencesByShepardIdTest() {
     DataObject dataObject = new DataObject(200L);
     dataObject.setShepardId(2005L);
-    FileReference ref1 = new FileReference(1L);
+    FileBundleReference ref1 = new FileBundleReference(1L);
     ref1.setShepardId(15L);
-    FileReference ref2 = new FileReference(2L);
+    FileBundleReference ref2 = new FileBundleReference(2L);
     ref2.setShepardId(25L);
     dataObject.setReferences(List.of(ref1, ref2));
 
     when(dao.findByDataObjectShepardId(dataObject.getShepardId())).thenReturn(List.of(ref1, ref2));
 
-    List<FileReference> actual = service.getAllReferencesByDataObjectId(collectionId, dataObject.getShepardId(), null);
+    List<FileBundleReference> actual = service.getAllReferencesByDataObjectId(collectionId, dataObject.getShepardId(), null);
     assertEquals(List.of(ref1, ref2), actual);
   }
 
@@ -150,7 +150,7 @@ public class FileReferenceServiceTest {
         setFileContainerId(container.getId());
       }
     };
-    FileReference toCreate = new FileReference() {
+    FileBundleReference toCreate = new FileBundleReference() {
       {
         setCreatedAt(date);
         setCreatedBy(user);
@@ -160,7 +160,7 @@ public class FileReferenceServiceTest {
         setFileContainer(container);
       }
     };
-    FileReference created = new FileReference() {
+    FileBundleReference created = new FileBundleReference() {
       {
         setId(1L);
         setCreatedAt(date);
@@ -171,7 +171,7 @@ public class FileReferenceServiceTest {
         setFileContainer(toCreate.getFileContainer());
       }
     };
-    FileReference createdWithShepardId = new FileReference() {
+    FileBundleReference createdWithShepardId = new FileBundleReference() {
       {
         setId(created.getId());
         setCreatedAt(created.getCreatedAt());
@@ -196,7 +196,7 @@ public class FileReferenceServiceTest {
       permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
     ).thenReturn(true);
 
-    FileReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
+    FileBundleReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
   }
 
@@ -216,7 +216,7 @@ public class FileReferenceServiceTest {
         setFileContainerId(300L);
       }
     };
-    var toCreate = new FileReference() {
+    var toCreate = new FileBundleReference() {
       {
         setCreatedAt(date);
         setCreatedBy(user);
@@ -226,7 +226,7 @@ public class FileReferenceServiceTest {
         setFileContainer(container);
       }
     };
-    var created = new FileReference() {
+    var created = new FileBundleReference() {
       {
         setId(1L);
         setCreatedAt(date);
@@ -237,7 +237,7 @@ public class FileReferenceServiceTest {
         setFileContainer(container);
       }
     };
-    var createdWithShepardId = new FileReference() {
+    var createdWithShepardId = new FileBundleReference() {
       {
         setId(1L);
         setShepardId(1L);
@@ -324,7 +324,7 @@ public class FileReferenceServiceTest {
   public void deleteReferenceByShepardIdTest() {
     User user = new User("Bob");
     Date date = new Date(30L);
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
 
     DataObject dataObject = new DataObject(1121L);
@@ -332,7 +332,7 @@ public class FileReferenceServiceTest {
     ref.setDataObject(dataObject);
     dataObject.setReferences(List.of(ref));
 
-    FileReference expected = new FileReference(ref.getId());
+    FileBundleReference expected = new FileBundleReference(ref.getId());
     expected.setShepardId(ref.getShepardId());
     expected.setDeleted(true);
     expected.setUpdatedAt(date);
@@ -352,7 +352,7 @@ public class FileReferenceServiceTest {
     String fileOID = "oid";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
 
@@ -385,7 +385,7 @@ public class FileReferenceServiceTest {
 
   @Test
   public void getPayloadByShepardIdTest_ContainerIsNull() {
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15l);
 
     DataObject dataObject = new DataObject(1234L);
@@ -406,7 +406,7 @@ public class FileReferenceServiceTest {
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
     container.setDeleted(true);
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15l);
     ref.setFileContainer(container);
 
@@ -428,7 +428,7 @@ public class FileReferenceServiceTest {
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
 
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
 
@@ -451,7 +451,7 @@ public class FileReferenceServiceTest {
     String username = "123";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
@@ -480,7 +480,7 @@ public class FileReferenceServiceTest {
     String username = "123";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     ref.setFiles(
@@ -516,7 +516,7 @@ public class FileReferenceServiceTest {
     container.setMongoId("mongoId");
     container.setDeleted(true);
 
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
@@ -537,7 +537,7 @@ public class FileReferenceServiceTest {
 
   @Test
   public void getAllPayloadsByShepardIdTest_ContainerIsNull() {
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFiles(List.of(new ShepardFile("oid1", null, "", "md5"), new ShepardFile("oid2", null, "", "md5")));
 
@@ -557,7 +557,7 @@ public class FileReferenceServiceTest {
     String username = "Xrj§84eEi6fY?";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFileContainer(container);
 
@@ -581,7 +581,7 @@ public class FileReferenceServiceTest {
       new ShepardFile("a", new Date(), "b", "c"),
       new ShepardFile("d", new Date(), "e", "f")
     );
-    FileReference ref = new FileReference(1L);
+    FileBundleReference ref = new FileBundleReference(1L);
     ref.setShepardId(15L);
     ref.setFiles(files);
 

@@ -21,9 +21,9 @@ import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
 import de.dlr.shepard.context.references.timeseriesreference.io.TimeseriesReferenceIO;
@@ -70,7 +70,7 @@ public class ExportService {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @Inject
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @Inject
   StructuredDataReferenceService structuredDataReferenceService;
@@ -352,7 +352,7 @@ public class ExportService {
     ExportSelection.PerPayloadSelection perPayload,
     boolean strict
   ) throws IOException {
-    FileReference reference = fileReferenceService.getReference(
+    FileBundleReference reference = fileReferenceService.getReference(
       collectionShepardId,
       dataObjectShepardId,
       referenceId,

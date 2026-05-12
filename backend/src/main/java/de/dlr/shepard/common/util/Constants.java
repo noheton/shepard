@@ -74,6 +74,18 @@ public class Constants {
   public static final String FILE_REFERENCES = "fileReferences";
   public static final String FILE_REFERENCE_ID = "fileReferenceId";
 
+  // FR1a (aidocs/53 §1.4 / §1.6) — FileBundleReference + FileGroup.
+  // The path segments under /v2/ are short ("bundles", "groups"); the
+  // class names keep the *Reference suffix per the family naming rule.
+  public static final String FILES = "files";
+  public static final String BUNDLES = "bundles";
+  public static final String BUNDLE_APP_ID = "bundleAppId";
+  public static final String GROUPS = "groups";
+  public static final String GROUP_APP_ID = "groupAppId";
+  public static final String FILE_GROUP = "fileGroup";
+  public static final String FILE_GROUPS = "fileGroups";
+  public static final String FILE_GROUP_ID = "fileGroupId";
+
   public static final String SEMANTIC_REPOSITORY = "semanticRepository";
   public static final String SEMANTIC_REPOSITORIES = "semanticRepositories";
   public static final String SEMANTIC_REPOSITORY_ID = "semanticRepositoryId";
@@ -177,6 +189,8 @@ public class Constants {
   public static final String TIMESERIES_IN_CONTAINER = "timeseries_in_container";
   public static final String STRUCTUREDDATA_IN_CONTAINER = "structureddata_in_container";
   public static final String HAS_PAYLOAD = "has_payload";
+  // FR1a — bundle->group relationship (see aidocs/53 §1.4).
+  public static final String HAS_GROUP = "HAS_GROUP";
   public static final String HAS_LABJOURNAL_ENTRY = "has_labjournalentry";
   public static final String HAS_DEFAULT_FILE_CONTAINER = "has_default_file_container";
   public static final String HAS_PROPERTIES = "HAS_PROPERTIES";

@@ -24,9 +24,9 @@ import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.structureddata.io.StructuredDataReferenceIO;
 import de.dlr.shepard.context.references.structureddata.services.StructuredDataReferenceService;
@@ -65,7 +65,7 @@ public class ExportSelectionTest {
   TimeseriesReferenceService timeseriesReferenceService;
 
   @InjectMock
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @InjectMock
   StructuredDataReferenceService structuredDataReferenceService;
@@ -121,7 +121,7 @@ public class ExportSelectionTest {
 
   @Test
   public void selectionInclude_onlyFileReferenceKind_skipsTimeseriesAndStructured() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var tsRef = hydrateReferenceMock(mock(TimeseriesReference.class), "TimeseriesReference", 42L);
     var sdRef = hydrateReferenceMock(mock(StructuredDataReference.class), "StructuredDataReference", 43L);
     dataObject.addReference(fileRef);
@@ -154,7 +154,7 @@ public class ExportSelectionTest {
 
   @Test
   public void selectionExcludeIds_skipsThatId_keepsOthers() throws IOException {
-    var fileRef = hydrateReferenceMock(mock(FileReference.class), "FileReference", 41L);
+    var fileRef = hydrateReferenceMock(mock(FileBundleReference.class), "FileReference", 41L);
     var tsRef = hydrateReferenceMock(mock(TimeseriesReference.class), "TimeseriesReference", 42L);
     dataObject.addReference(fileRef);
     dataObject.addReference(tsRef);

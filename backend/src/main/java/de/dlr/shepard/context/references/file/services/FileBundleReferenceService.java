@@ -8,13 +8,15 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.references.IReferenceService;
-import de.dlr.shepard.context.references.file.daos.FileReferenceDAO;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.daos.FileBundleReferenceDAO;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
+import de.dlr.shepard.context.references.file.entities.FileGroup;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.daos.ShepardFileDAO;
@@ -30,11 +32,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service for {@link FileBundleReference} (FR1a, formerly known as
+ * {@code FileReferenceService} per {@code aidocs/53 §1.7}).
+ *
+ * <p>Behaviourally backward-compatible with the upstream
+ * {@code FileReferenceService}: every method that the legacy
+ * {@code /shepard/api/.../fileReferences/...} REST surface calls
+ * keeps the same signature, parameters, and return shape.
+ *
+ * <p>FR1a-new: {@link #createReference} additionally creates a
+ * default {@link FileGroup} ({@code name = "default"},
+ * {@code index = 0}) under each new bundle and re-parents the bundle's
+ * initial files under it. The bundle's own {@code HAS_PAYLOAD} edges
+ * are kept as a compatibility shadow for the upstream-API read path.
+ */
 @RequestScoped
-public class FileReferenceService implements IReferenceService<FileReference, FileReferenceIO> {
+public class FileBundleReferenceService implements IReferenceService<FileBundleReference, FileReferenceIO> {
 
   @Inject
-  FileReferenceDAO fileReferenceDAO;
+  FileBundleReferenceDAO fileBundleReferenceDAO;
 
   @Inject
   DataObjectService dataObjectService;
@@ -67,40 +84,40 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   UserService userService;
 
   /**
-   * Gets FileReference list for a given dataobject.
+   * Gets FileBundleReference list for a given dataobject.
    *
    * @param collectionShepardId
    * @param dataObjectShepardId
    * @param versionUID the version UUID
-   * @return List<FileReference>
+   * @return List<FileBundleReference>
    * @throws InvalidPathException If collection or dataobject cannot be found, or no association between dataobject and collection exists
    * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
    */
   @Override
-  public List<FileReference> getAllReferencesByDataObjectId(
+  public List<FileBundleReference> getAllReferencesByDataObjectId(
     long collectionShepardId,
     long dataObjectShepardId,
     UUID versionUID
   ) {
     dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
 
-    List<FileReference> references = fileReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
+    List<FileBundleReference> references = fileBundleReferenceDAO.findByDataObjectShepardId(dataObjectShepardId);
     return references;
   }
 
   /**
-   * Gets FileReference by shepard id.
+   * Gets FileBundleReference by shepard id.
    *
    * @param collectionShepardId
    * @param dataObjectShepardId
    * @param shepardId
    * @param versionUID the version UUID
-   * @return FileReference
+   * @return FileBundleReference
    * @throws InvalidPathException If reference with Id does not exist or is deleted, or if collection or dataObject Id of path is not valid
    * @throws InvalidAuthException If user has no read permissions on collection or dataobject specified by request path
    */
   @Override
-  public FileReference getReference(
+  public FileBundleReference getReference(
     long collectionShepardId,
     long dataObjectShepardId,
     long shepardId,
@@ -108,7 +125,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   ) {
     dataObjectService.getDataObject(collectionShepardId, dataObjectShepardId, versionUID);
 
-    FileReference fileReference = fileReferenceDAO.findByShepardId(shepardId, versionUID);
+    FileBundleReference fileReference = fileBundleReferenceDAO.findByShepardId(shepardId, versionUID);
     if (fileReference == null || fileReference.isDeleted()) {
       String errorMsg = "ID ERROR - File Reference with id %s is null or deleted".formatted(shepardId);
       Log.error(errorMsg);
@@ -127,17 +144,25 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
   }
 
   /**
-   * Creates a new FileReference
+   * Creates a new FileBundleReference.
+   *
+   * <p>FR1a behaviour: every freshly-created bundle gets a default
+   * {@link FileGroup} ({@code name = "default"}, {@code index = 0})
+   * and the bundle's initial files are re-parented under that group
+   * (they remain attached to the bundle directly as a compatibility
+   * shadow for the upstream API). The default-group behaviour is
+   * additive — the upstream wire shape (flat {@code files} array)
+   * is unchanged.
    *
    * @param collectionShepardId
    * @param dataObjectShepardId DataObject id for the reference to be created
    * @param fileReference Reference object
-   * @return FileReference
+   * @return FileBundleReference
    * @throws InvalidPathException if collection or dataobject specified by their Ids are null or deleted
    * @throws InvalidAuthException if user has no permission to edit referencing collection or no read permissions on referenced container
    */
   @Override
-  public FileReference createReference(
+  public FileBundleReference createReference(
     long collectionShepardId,
     long dataObjectShepardId,
     FileReferenceIO fileReference
@@ -155,7 +180,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
       throw new InvalidBodyException(ex.getMessage());
     }
 
-    var toCreate = new FileReference();
+    var toCreate = new FileBundleReference();
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
     toCreate.setDataObject(dataObject);
@@ -163,18 +188,35 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     toCreate.setFileContainer(container);
 
     // Get existing file
+    var initialFiles = new ArrayList<ShepardFile>();
     for (var oid : fileReference.getFileOids()) {
       var file = fileDAO.find(container.getId(), oid);
       if (file != null) {
         toCreate.addFile(file);
+        initialFiles.add(file);
       } else {
         Log.warnf("Could not find file with oid: %s", oid);
       }
     }
 
-    var created = fileReferenceDAO.createOrUpdate(toCreate);
+    // FR1a — attach a default FileGroup so every new bundle has at
+    // least one navigable group from the moment it's created. The
+    // bundle->file edges added above stay in place as the upstream
+    // compatibility shadow.
+    var defaultGroup = new FileGroup();
+    defaultGroup.setAppId(AppIdGenerator.next());
+    defaultGroup.setName("default");
+    defaultGroup.setIndex(0);
+    defaultGroup.setCreatedAt(dateHelper.getDate());
+    defaultGroup.setCreatedBy(user);
+    for (var f : initialFiles) {
+      defaultGroup.addFile(f);
+    }
+    toCreate.addGroup(defaultGroup);
+
+    var created = fileBundleReferenceDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
-    created = fileReferenceDAO.createOrUpdate(created);
+    created = fileBundleReferenceDAO.createOrUpdate(created);
     versionService.attachToVersionOfVersionableEntityAndReturnVersion(dataObject.getId(), created.getId());
     return created;
   }
@@ -190,14 +232,14 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    */
   @Override
   public void deleteReference(long collectionShepardId, long dataObjectShepardId, long fileReferenceShepardId) {
-    FileReference fileReference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
+    FileBundleReference fileReference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
     User user = userService.getCurrentUser();
     fileReference.setDeleted(true);
     fileReference.setUpdatedBy(user);
     fileReference.setUpdatedAt(dateHelper.getDate());
-    fileReferenceDAO.createOrUpdate(fileReference);
+    fileBundleReferenceDAO.createOrUpdate(fileReference);
   }
 
   /**
@@ -216,7 +258,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     long fileReferenceShepardId,
     UUID versionUID
   ) {
-    FileReference reference = getReference(
+    FileBundleReference reference = getReference(
       collectionShepardId,
       dataObjectShepardId,
       fileReferenceShepardId,
@@ -225,7 +267,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
       String errorMsg =
-        "Referenced FileContainer is not set or deleted in FileReference with id %s".formatted(reference.getId());
+        "Referenced FileContainer is not set or deleted in FileBundleReference with id %s".formatted(reference.getId());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -247,7 +289,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    * @param oid identifies the actual file
    * @param username the current user
    * @return NamedInputStream
-   * @throws InvalidPathException when FileReference cannot be found due to invalid collection, dataobject or reference Ids
+   * @throws InvalidPathException when FileBundleReference cannot be found due to invalid collection, dataobject or reference Ids
    * @throws InvalidAuthException when the user is not authorized to access the container
    * @throws NotFoundException when mongoDb is not able to find document container or file by mongoId or oid, or when Referenced file container is not accessible
    * @throws InvalidRequestException when FileContainer is not accessible
@@ -259,7 +301,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     String oid,
     UUID versionUID
   ) {
-    FileReference reference = getReference(
+    FileBundleReference reference = getReference(
       collectionShepardId,
       dataObjectShepardId,
       fileReferenceShepardId,
@@ -268,7 +310,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
       String errorMsg =
-        "FileContainer with id %s is not set or deleted in FileReference".formatted(reference.getFileContainer());
+        "FileContainer with id %s is not set or deleted in FileBundleReference".formatted(reference.getFileContainer());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }
@@ -294,7 +336,7 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
    * @param dataObjectShepardId
    * @param fileReferenceShepardId identifies the file reference
    * @return list of NamedInputStreams
-   * @throws InvalidPathException when FileReference cannot be found due to invalid collection, dataobject or reference Ids
+   * @throws InvalidPathException when FileBundleReference cannot be found due to invalid collection, dataobject or reference Ids
    * @throws NotFoundException when container is not accessible
    * @throws InvalidAuthException when the user is not authorized to access the container
    */
@@ -303,11 +345,11 @@ public class FileReferenceService implements IReferenceService<FileReference, Fi
     long dataObjectShepardId,
     long fileReferenceShepardId
   ) {
-    FileReference reference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
+    FileBundleReference reference = getReference(collectionShepardId, dataObjectShepardId, fileReferenceShepardId, null);
 
     if (reference.getFileContainer() == null || reference.getFileContainer().isDeleted()) {
       String errorMsg =
-        "Referenced FileContainer is not set or deleted in FileReference with id %s".formatted(reference.getId());
+        "Referenced FileContainer is not set or deleted in FileBundleReference with id %s".formatted(reference.getId());
       Log.error(errorMsg);
       throw new NotFoundException(errorMsg);
     }

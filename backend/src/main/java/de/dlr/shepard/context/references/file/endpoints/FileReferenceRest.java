@@ -3,9 +3,9 @@ package de.dlr.shepard.context.references.file.endpoints;
 import de.dlr.shepard.common.filters.Subscribable;
 import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.Constants;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
-import de.dlr.shepard.context.references.file.services.FileReferenceService;
+import de.dlr.shepard.context.references.file.services.FileBundleReferenceService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -56,7 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class FileReferenceRest {
 
   @Inject
-  FileReferenceService fileReferenceService;
+  FileBundleReferenceService fileReferenceService;
 
   @Context
   private SecurityContext securityContext;
@@ -85,7 +85,7 @@ public class FileReferenceRest {
     if (versionUID != null) {
       versionUUID = UUID.fromString(versionUID);
     }
-    List<FileReference> references = fileReferenceService.getAllReferencesByDataObjectId(
+    List<FileBundleReference> references = fileReferenceService.getAllReferencesByDataObjectId(
       collectionId,
       dataObjectId,
       versionUUID
@@ -124,7 +124,7 @@ public class FileReferenceRest {
     if (versionUID != null) {
       versionUUID = UUID.fromString(versionUID);
     }
-    FileReference ref = fileReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUUID);
+    FileBundleReference ref = fileReferenceService.getReference(collectionId, dataObjectId, referenceId, versionUUID);
     return Response.ok(new FileReferenceIO(ref)).build();
   }
 
@@ -151,7 +151,7 @@ public class FileReferenceRest {
       content = @Content(schema = @Schema(implementation = FileReferenceIO.class))
     ) @Valid FileReferenceIO fileReference
   ) {
-    FileReference ref = fileReferenceService.createReference(collectionId, dataObjectId, fileReference);
+    FileBundleReference ref = fileReferenceService.createReference(collectionId, dataObjectId, fileReference);
     return Response.ok(new FileReferenceIO(ref)).status(Status.CREATED).build();
   }
 

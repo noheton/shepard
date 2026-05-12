@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.context.collection.entities.DataObject;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.neo4j.ogm.session.Session;
 
-public class FileReferenceDAOTest extends BaseTestCase {
+public class FileBundleReferenceDAOTest extends BaseTestCase {
 
   @Mock
   private Session session;
@@ -27,12 +27,12 @@ public class FileReferenceDAOTest extends BaseTestCase {
   private EntityIdResolver entityIdResolver;
 
   @InjectMocks
-  private FileReferenceDAO dao;
+  private FileBundleReferenceDAO dao;
 
   @Test
   public void getEntityTypeTest() {
     var type = dao.getEntityType();
-    assertEquals(FileReference.class, type);
+    assertEquals(FileBundleReference.class, type);
   }
 
   @Test
@@ -40,21 +40,21 @@ public class FileReferenceDAOTest extends BaseTestCase {
     var obj = new DataObject(1L);
     var obj2 = new DataObject(100L);
     var con = new FileContainer(200L);
-    var ref = new FileReference() {
+    var ref = new FileBundleReference() {
       {
         setId(2L);
         setFileContainer(con);
         setDataObject(obj);
       }
     };
-    var ref2 = new FileReference() {
+    var ref2 = new FileBundleReference() {
       {
         setId(3L);
         setFileContainer(con);
         setDataObject(obj2);
       }
     };
-    var ref3 = new FileReference() {
+    var ref3 = new FileBundleReference() {
       {
         setId(3L);
         setFileContainer(con);
@@ -70,10 +70,10 @@ public class FileReferenceDAOTest extends BaseTestCase {
       MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL \
       RETURN r, nodes(path), relationships(path)""";
     var paramsMap = Map.<String, Object>of("dataObjectAppId", "appid-do-1");
-    when(session.query(FileReference.class, query, paramsMap)).thenReturn(List.of(ref, ref2, ref3));
+    when(session.query(FileBundleReference.class, query, paramsMap)).thenReturn(List.of(ref, ref2, ref3));
 
     var actual = dao.findByDataObjectNeo4jId(1L);
-    verify(session).query(FileReference.class, query, paramsMap);
+    verify(session).query(FileBundleReference.class, query, paramsMap);
     assertThat(query).doesNotContain("ID(d)").contains("$dataObjectAppId");
     assertEquals(List.of(ref), actual);
   }
@@ -85,7 +85,7 @@ public class FileReferenceDAOTest extends BaseTestCase {
     var obj2 = new DataObject(100L);
     obj2.setShepardId(1001L);
     var con = new FileContainer(200L);
-    var ref = new FileReference() {
+    var ref = new FileBundleReference() {
       {
         setId(2L);
         setShepardId(21L);
@@ -93,7 +93,7 @@ public class FileReferenceDAOTest extends BaseTestCase {
         setDataObject(obj);
       }
     };
-    var ref2 = new FileReference() {
+    var ref2 = new FileBundleReference() {
       {
         setId(3L);
         setShepardId(31L);
@@ -101,7 +101,7 @@ public class FileReferenceDAOTest extends BaseTestCase {
         setDataObject(obj2);
       }
     };
-    var ref3 = new FileReference() {
+    var ref3 = new FileBundleReference() {
       {
         setId(3L);
         setShepardId(31L);
@@ -111,10 +111,10 @@ public class FileReferenceDAOTest extends BaseTestCase {
 
     String query =
       "MATCH (d:DataObject)-[hr:has_reference]->(r:FileReference { deleted: FALSE }) WHERE d.shepardId=11 MATCH path=(r)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN r, nodes(path), relationships(path)";
-    when(session.query(FileReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref2, ref3));
+    when(session.query(FileBundleReference.class, query, Collections.emptyMap())).thenReturn(List.of(ref, ref2, ref3));
 
     var actual = dao.findByDataObjectShepardId(obj.getShepardId());
-    verify(session).query(FileReference.class, query, Collections.emptyMap());
+    verify(session).query(FileBundleReference.class, query, Collections.emptyMap());
     assertEquals(List.of(ref), actual);
   }
 }

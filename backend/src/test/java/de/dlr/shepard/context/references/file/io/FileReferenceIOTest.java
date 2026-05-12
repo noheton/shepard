@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.entities.DataObject;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import java.util.Arrays;
@@ -32,7 +32,7 @@ public class FileReferenceIOTest {
     var container = new FileContainer(3L);
     var file = new ShepardFile("oid", new Date(), "name", "md5");
 
-    var obj = new FileReference(1L);
+    var obj = new FileBundleReference(1L);
     obj.setShepardId(48L);
     obj.setCreatedAt(date);
     obj.setCreatedBy(user);
@@ -64,7 +64,7 @@ public class FileReferenceIOTest {
     dataObject.setShepardId(734L);
     var file = new ShepardFile("oid", new Date(), "name", "md5");
 
-    var obj = new FileReference(1L);
+    var obj = new FileBundleReference(1L);
     obj.setShepardId(399L);
     obj.setCreatedAt(date);
     obj.setCreatedBy(user);

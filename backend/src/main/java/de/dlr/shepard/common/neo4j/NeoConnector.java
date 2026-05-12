@@ -10,7 +10,7 @@ import de.dlr.shepard.common.util.IConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
-import de.dlr.shepard.context.references.file.entities.FileReference;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
@@ -88,7 +88,7 @@ public class NeoConnector implements IConnector {
           Collection.class.getPackageName(),
           CollectionReference.class.getPackageName(),
           FileContainer.class.getPackageName(),
-          FileReference.class.getPackageName(),
+          FileBundleReference.class.getPackageName(),
           LabJournalEntry.class.getPackageName(),
           Permissions.class.getPackageName(),
           Role.class.getPackageName(),

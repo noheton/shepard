@@ -267,4 +267,165 @@ public class TestNeo4jMigrations {
       .get("c");
     assertEquals(0, nullCountAfterRerun.intValue(), "V12 must be idempotent — re-run should not introduce NULL appIds");
   }
+
+  /**
+   * FR1a — V21 renames :FileReference → :FileBundleReference (additive
+   * second label, legacy label preserved) and attaches a default
+   * :FileGroup to every existing bundle, re-parenting files under the
+   * group. The bundle's own HAS_PAYLOAD edges are LEFT in place as a
+   * compatibility shadow for the upstream API read path.
+   *
+   * <p>This test seeds N pre-FR1a-shaped FileReference nodes (each with
+   * K files attached via HAS_PAYLOAD), runs V21, and asserts:
+   * <ul>
+   *   <li>Every seeded bundle now has BOTH :FileReference AND
+   *       :FileBundleReference labels.</li>
+   *   <li>Every seeded bundle has exactly one default :FileGroup
+   *       attached via :HAS_GROUP, named "default", index 0.</li>
+   *   <li>The default group has the correct files attached
+   *       (compatibility shadow on the bundle remains).</li>
+   *   <li>Re-running V21 is a no-op (no extra groups appear).</li>
+   * </ul>
+   */
+  @Test
+  public void testV21_V22_FR1a() {
+    String marker = "FR1a-V21-test-" + randomElement;
+
+    // Pre-condition: V11 (constraints) is in place — this guarantees
+    // V22's FileGroup unique-appId constraint is also runnable.
+    runMigrations("V11");
+
+    // Seed: create 3 pre-FR1a FileReference nodes, each with 4 files
+    // attached via HAS_PAYLOAD. We bypass GenericDAO by raw Cypher so
+    // the OGM @Labels seam doesn't add :FileBundleReference too early.
+    int bundleCount = 3;
+    int filesPerBundle = 4;
+    for (int i = 0; i < bundleCount; i++) {
+      session.query(
+        "CREATE (b:FileReference:BasicReference:VersionableEntity:BasicEntity {" +
+        "  testMarker: $marker, name: 'b' + $i, deleted: false, appId: randomUUID()" +
+        "}) " +
+        "WITH b " +
+        "UNWIND range(0, $f - 1) AS j " +
+        "CREATE (sf:ShepardFile {testMarker: $marker, oid: $marker + '-b' + $i + '-f' + j, " +
+        "  filename: 'f' + j, appId: randomUUID()}) " +
+        "CREATE (b)-[:has_payload]->(sf)",
+        Map.of("marker", marker, "i", i, "f", filesPerBundle)
+      );
+    }
+
+    // Pre-V21 sanity: no FileGroup exists for our marker.
+    var preGroups = (Number) session
+      .query(
+        "MATCH (g:FileGroup) WHERE g.legacyDefault = 'FR1a-V21' " +
+        "AND EXISTS { (b:FileReference {testMarker: $marker})-[:HAS_GROUP]->(g) } " +
+        "RETURN count(g) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(0, preGroups.intValue(), "no FileGroups should exist before V21 runs");
+
+    // Apply V21.
+    runMigrations("V21");
+
+    // Assertion 1: every seeded bundle has both labels.
+    var withBothLabels = (Number) session
+      .query(
+        "MATCH (b:FileReference:FileBundleReference) WHERE b.testMarker = $marker " +
+        "RETURN count(b) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount, withBothLabels.intValue(),
+      "every seeded :FileReference should now ALSO carry :FileBundleReference");
+
+    // Assertion 2: exactly one default :FileGroup per bundle, attached via :HAS_GROUP.
+    var defaultGroups = (Number) session
+      .query(
+        "MATCH (b:FileBundleReference)-[:HAS_GROUP]->(g:FileGroup {legacyDefault: 'FR1a-V21'}) " +
+        "WHERE b.testMarker = $marker " +
+        "RETURN count(g) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount, defaultGroups.intValue(), "exactly one default FileGroup per seeded bundle");
+
+    // Assertion 3: default groups carry the right metadata (name, index, appId).
+    var groupShape = (Number) session
+      .query(
+        "MATCH (b:FileBundleReference)-[:HAS_GROUP]->(g:FileGroup {legacyDefault: 'FR1a-V21'}) " +
+        "WHERE b.testMarker = $marker " +
+        "AND g.name = 'default' AND g.index = 0 AND g.appId IS NOT NULL " +
+        "RETURN count(g) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount, groupShape.intValue(),
+      "every default group has name='default', index=0, non-null appId");
+
+    // Assertion 4: files are now attached under the default group AND
+    // still attached to the bundle directly (compatibility shadow).
+    var groupFiles = (Number) session
+      .query(
+        "MATCH (b:FileBundleReference)-[:HAS_GROUP]->(:FileGroup {legacyDefault: 'FR1a-V21'})" +
+        "  -[:has_payload]->(sf:ShepardFile) " +
+        "WHERE b.testMarker = $marker AND sf.testMarker = $marker " +
+        "RETURN count(sf) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount * filesPerBundle, groupFiles.intValue(),
+      "every file is now reachable via group->has_payload");
+
+    var bundleFiles = (Number) session
+      .query(
+        "MATCH (b:FileBundleReference)-[:has_payload]->(sf:ShepardFile) " +
+        "WHERE b.testMarker = $marker AND sf.testMarker = $marker " +
+        "RETURN count(sf) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount * filesPerBundle, bundleFiles.intValue(),
+      "compatibility shadow: bundle->file edges remain after V21");
+
+    // Assertion 5: idempotency — re-run V21, group count unchanged.
+    runMigrations("V21");
+    var rerunGroups = (Number) session
+      .query(
+        "MATCH (b:FileBundleReference)-[:HAS_GROUP]->(g:FileGroup {legacyDefault: 'FR1a-V21'}) " +
+        "WHERE b.testMarker = $marker " +
+        "RETURN count(g) AS c",
+        Map.of("marker", marker)
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(bundleCount, rerunGroups.intValue(),
+      "V21 must be idempotent — re-run should not duplicate default groups");
+
+    // Assertion 6: V22 (FileGroup appId constraint) applies cleanly.
+    runMigrations("V22");
+    var constraintCount = (Number) session
+      .query(
+        "SHOW CONSTRAINTS YIELD name WHERE name = 'appId_unique_FileGroup' RETURN count(*) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(1, constraintCount.intValue(),
+      "V22 must create the appId_unique_FileGroup constraint");
+  }
 }
