@@ -63,6 +63,20 @@ public class CollectionPropertiesDAO extends GenericDAO<CollectionProperties> {
     return createOrUpdate(p);
   }
 
+  /**
+   * Resolve a Collection's {@code appId} to its OGM-side numeric id —
+   * the handle the legacy {@code PermissionsService} expects. Returns
+   * {@link Optional#empty()} when no Collection matches.
+   */
+  public Optional<Long> findCollectionIdByAppId(String collectionAppId) {
+    String cypher = "MATCH (c:Collection {appId: $cAppId}) RETURN id(c) AS id LIMIT 1";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return Optional.empty();
+    Object id = it.next().get("id");
+    return id instanceof Number n ? Optional.of(n.longValue()) : Optional.empty();
+  }
+
   @Override
   public Class<CollectionProperties> getEntityType() {
     return CollectionProperties.class;
