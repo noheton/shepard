@@ -37,6 +37,14 @@ public class User implements HasId, HasAppId {
 
   private String email;
 
+  /**
+   * ORCID identifier (16-digit ISO 7064 mod 11-2 checked), per
+   * {@code aidocs/16 U1a}. Nullable; set via
+   * {@code PATCH /v2/users/me}. RO-Crate export
+   * (`aidocs/31`) picks this up automatically once present.
+   */
+  private String orcid;
+
   @ToString.Exclude
   @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
@@ -76,7 +84,7 @@ public class User implements HasId, HasAppId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(email, firstName, lastName, username);
+    result = prime * result + Objects.hash(email, firstName, lastName, orcid, username);
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
     return result;
@@ -93,6 +101,7 @@ public class User implements HasId, HasAppId {
       Objects.equals(email, other.email) &&
       Objects.equals(firstName, other.firstName) &&
       Objects.equals(lastName, other.lastName) &&
+      Objects.equals(orcid, other.orcid) &&
       Objects.equals(username, other.username)
     );
   }
