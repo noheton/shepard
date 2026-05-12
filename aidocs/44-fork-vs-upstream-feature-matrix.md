@@ -352,6 +352,28 @@ namespace; core enforces the shape.
 
 ---
 
+## 18. Newly designed (2026-05-12 batch)
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| **Instance-Admin role + bootstrap** (`instance-admin` tier, `:HAS_ROLE` Neo4j edge, configurable OIDC roles-claim path, file-on-disk bootstrap token, `/v2/admin/...` REST surface) | n/a | backend slice shipped (PR #1037; A0 + C3 + F8) | **✓ ↑** | `aidocs/51` / `aidocs/16 A0` |
+| **AAS backend integration** (Adapter shim at `/v2/aas/...` mapping Shell / Submodel / SubmodelElement → Collection / DataObject / Reference; conformance targets IDTA Nameplate + TechnicalData + TimeSeriesData) | n/a | design done | 📐 (queued, AAS1a) | `aidocs/52` |
+| **`FileReference` → `FileBundle` rename + `FileGroup` sub-node** (camera cyclic-capture grouping; legacy wire shape stays frozen) | n/a | design done | 📐 (queued, FB1a) | `aidocs/53` |
+| **Video as a first-class payload kind** (dedicated PayloadStorage plugin; segments + HLS manifest; navigation by video-time + wall-clock; live ingest via sibling `shepard-video-collector` or MediaMTX sidecar) | n/a | design done | 📐 (queued, VID1a) | `aidocs/53` |
+| **Templates as a first-class admin entity** (`:ShepardTemplate` Neo4j entity in admin-only subgraph, JSON DSL bodies, copy-on-write versioning, admin-gated CRUD at `/v2/templates`) | n/a | design done | 📐 (queued, T1a) | `aidocs/54` |
+| **PROV-O provenance + activity dashboard** (`:Activity` Neo4j entity, JAX-RS request filter, casual-user sparkline with X MB timeseries / Y GB files / N contributors over 90 days, PROV-N JSON export) | n/a | design done | 📐 (queued, PROV1a) | `aidocs/55` |
+| **v2 API simplification + output profiles + MCP-friendly OpenAPI** (flat appId-indexed paths for single-entity endpoints, `?profile=metadata\|relations\|all` projections, `x-mcp-tool-name` + `x-mcp-side-effects` extensions per operation, ArchUnit fence for admin ↔ `@RolesAllowed("instance-admin")`) | n/a | design done | 📐 (queued, V2S1a) | `aidocs/56` |
+| **OpenAPI client-generator pick** (Kiota for `/v2/`, OpenAPI Generator retained for byte-frozen `/shepard/api/...`, Hey API as TS-only tactical secondary) | n/a | design done | 📐 (queued, CG1a; **open question: Kiota vs OpenAPI Generator on `/v2/`**) | `aidocs/57` |
+| **Tree drag-and-drop** (lefthand tree; move default, copy on modifier; cycle-prevention server-side) | n/a | design done | 📐 (queued, UI1a) | `aidocs/58 §2` |
+| **Navigable Collection graph view** (cytoscape.js; per-user layout persistence; entity-kind filtering) | n/a | design done | 📐 (queued, UI2a) | `aidocs/58 §3` |
+| **`@`-mention autocomplete for internal entity citations** (TipTap mention extension + `GET /v2/search?q=…&kinds=…`; opaque `[entity:<appId>]` syntax; orphan-handling) | n/a | design done | 📐 (queued, UI3a) | `aidocs/58 §4` |
+| **`:CollectionProperties` properties-node** (folds template-info + default-FC-strategy + cross-cutting Collection config into one place; replaces the `default_filecontainer` hack) | n/a | design done | 📐 (queued, CP1a) | `aidocs/58 §5` |
+| **RO (Relation Ontology) added to the pre-seed bundle** (`obo-relations.owl`, SHA-256 pinned, LUMEN seed uses RO terms) | n/a | design done | 📐 (queued, ONT1a) | `aidocs/58 §6` + `aidocs/48` |
+| **DBpedia Databus rich-reference plugin** (preview / description / title fetched + 24h-cached) | n/a | design done | 📐 (queued, REF1a; off-by-default until v1) | `aidocs/58 §7` |
+| **GraphRAG on shepard** (embeddings per DataObject / Collection / lab-journal entry / Reference; similarity endpoint `GET /v2/search/similar?to=<appId>`; native Neo4j 5.13+ vector index — no extra service) | n/a | design done | 📐 (queued, GR1a) | `aidocs/58 §8` + `aidocs/43` |
+
+---
+
 ## Cross-references
 
 - **Companion docs:** `aidocs/34` (admin-facing upgrade path), `aidocs/16` (live backlog), `aidocs/42` (researcher-facing vision), `aidocs/00-index` (full design corpus index).
