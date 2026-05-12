@@ -17,6 +17,7 @@ ADR cites it.
 | ADR | Title | Status | Date | Reversibility |
 | --- | --- | --- | --- | --- |
 | [ADR-0019](#adr-0019--pre-seed-common-ontologies-default-on) | Pre-seed common ontologies default-on | accepted | 2026-05-12 | easy |
+| [ADR-0020](#adr-0020--shepard-is-source-of-truth-for-hdf-container-acls) | shepard is source of truth for HDF container ACLs | accepted | 2026-05-12 | moderate |
 
 ## ADR-0019 — Pre-seed common ontologies default-on
 
@@ -86,3 +87,58 @@ operators who want most of the bundle but skip a specific entry use
   the "no setup" UX is the value here; an operator who has to run
   a CLI before annotations work is already past the casual-user
   cliff.
+
+## ADR-0020 — shepard is source of truth for HDF container ACLs
+
+**Status.** accepted. **Date.** 2026-05-12.
+**Applied in.** A5b (PR #1085); `HdfPermissionBridge` + `HdfAdminRest`.
+
+### Context
+
+A5a (Phase 1) shipped `HdfContainer` create / read / delete with HTTP-Basic
+auth between shepard and the HSDS sidecar (per ADR-0012). Phase 2 (A5b)
+adds the permission bridge: shepard's per-Collection ACL must be reflected
+into the HSDS domain ACL so HSDS-native clients (`h5pyd`, future per-user
+auth in A5e) see the same access shape as shepard's REST surface.
+
+The bidirectional alternative — letting operators edit HSDS ACLs out of
+band and having shepard reconcile — was considered and rejected.
+
+### Decision
+
+shepard is the **single source of truth** for HDF container ACLs. The
+`PermissionsChangedEvent` → `HdfPermissionBridge` flow rewrites HSDS
+ACLs on every shepard permission write. Direct HSDS-side mutations get
+clobbered on the next shepard change for the affected container.
+
+An admin escape hatch — `POST /v2/admin/hdf/rebuild-acls` — re-derives
+every HSDS ACL from shepard's permission graph from scratch, for drift
+recovery after manual HSDS edits.
+
+### Rationale
+
+- Single source of truth simplifies the model (one place to look when
+  permissions are wrong).
+- Eliminates a class of bugs where shepard and HSDS ACLs drift, leaving
+  the `h5pyd` user seeing different access than the shepard-REST user.
+- The rebuild-acls admin endpoint is the safety valve for operators who
+  edited HSDS ACLs before this PR landed.
+- Best-effort sync (retry queue, failures don't block user writes)
+  keeps shepard's UX intact when HSDS is briefly unavailable.
+
+### Alternatives considered
+
+- **Bidirectional sync** — rejected; introduces conflict-resolution
+  rules + a race condition between HSDS-side and shepard-side writes.
+- **HSDS-side authoritative** — rejected; would force every shepard
+  permission write through HSDS, adding a hard dependency on the HDF
+  feature being enabled for permission management on non-HDF
+  resources.
+- **No sync (operators set ACLs in both places)** — rejected; the
+  drift surface is unbounded and a confusing UX.
+
+### Reversibility
+
+Moderate. Reversing requires re-architecting the bridge in either of
+the rejected directions; the rebuild-acls endpoint stays valuable
+regardless.
