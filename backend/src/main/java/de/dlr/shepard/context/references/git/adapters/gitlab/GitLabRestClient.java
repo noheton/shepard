@@ -148,7 +148,7 @@ public class GitLabRestClient implements GitAdapter {
     if (path == null || path.isBlank()) {
       throw new GitAdapterException(400, "path is required for tracked-artifact fetch");
     }
-    String url = scheme + "://" + parsed.host() +
+    String url = scheme + "://" + parsed.authority() +
       FILES_RAW_PATH.formatted(urlEncode(parsed.projectPath()), urlEncode(path)) +
       "?ref=" + urlEncode(ref);
 
@@ -202,7 +202,7 @@ public class GitLabRestClient implements GitAdapter {
     if (ref == null || ref.isBlank()) {
       throw new GitAdapterException(400, "ref is required to resolve a SHA");
     }
-    String url = scheme + "://" + parsed.host() +
+    String url = scheme + "://" + parsed.authority() +
       COMMITS_PATH.formatted(urlEncode(parsed.projectPath()), urlEncode(ref));
 
     HttpResponse<byte[]> response = sendWithRetry(buildGet(url, pat), HttpResponse.BodyHandlers.ofByteArray());

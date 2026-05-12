@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
  * URL builder (the {@code projectPath} is URL-encoded to form the
  * {@code /api/v4/projects/{projectId}/...} segment).
  */
-public record ParsedRepoUrl(String host, String projectPath) {
+public record ParsedRepoUrl(String host, int port, String projectPath) {
   /**
    * @throws GitAdapterException 400-class for malformed URLs.
    */
@@ -52,6 +52,16 @@ public record ParsedRepoUrl(String host, String projectPath) {
     if (projectPath.isBlank()) {
       throw new GitAdapterException(400, "repoUrl project path is empty after stripping: " + repoUrl);
     }
-    return new ParsedRepoUrl(host.toLowerCase(java.util.Locale.ROOT), projectPath);
+    return new ParsedRepoUrl(host.toLowerCase(java.util.Locale.ROOT), uri.getPort(), projectPath);
+  }
+
+  /**
+   * Authority for URL building: {@code host} on the default scheme port,
+   * or {@code host:port} when a non-default port is set. Used by adapters
+   * to preserve a custom port (mainly test servers; some self-hosted
+   * GitLab instances also expose a non-443 port).
+   */
+  public String authority() {
+    return port < 0 ? host : host + ":" + port;
   }
 }

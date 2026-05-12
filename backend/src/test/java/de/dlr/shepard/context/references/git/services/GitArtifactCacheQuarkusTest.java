@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * </ul>
  */
 @QuarkusTest
-class GitArtifactCacheTest {
+class GitArtifactCacheQuarkusTest {
 
   @Inject
   GitArtifactCache cache;
