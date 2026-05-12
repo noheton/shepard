@@ -18,6 +18,7 @@ ADR cites it.
 | --- | --- | --- | --- | --- |
 | [ADR-0019](#adr-0019--pre-seed-common-ontologies-default-on) | Pre-seed common ontologies default-on | accepted | 2026-05-12 | easy |
 | [ADR-0020](#adr-0020--shepard-is-source-of-truth-for-hdf-container-acls) | shepard is source of truth for HDF container ACLs | accepted | 2026-05-12 | moderate |
+| [ADR-0021](#adr-0021--gitlab-only-adapter-in-g1b-github--gitea-ship-in-g1d-via-the-gitadapter-interface-seam) | GitLab-only adapter in G1b; GitHub + Gitea ship in G1d via the GitAdapter interface seam | accepted | 2026-05-12 | easy |
 
 ## ADR-0019 — Pre-seed common ontologies default-on
 
@@ -142,3 +143,50 @@ recovery after manual HSDS edits.
 Moderate. Reversing requires re-architecting the bridge in either of
 the rejected directions; the rebuild-acls endpoint stays valuable
 regardless.
+
+## ADR-0021 — GitLab-only adapter in G1b; GitHub + Gitea ship in G1d via the GitAdapter interface seam
+
+**Status.** accepted. **Date.** 2026-05-12.
+**Applied in.** G1b (PR #1086); `GitAdapter` + `GitAdapterRegistry` +
+`GitLabRestClient`.
+
+### Context
+
+`aidocs/38` (Git integration umbrella) anticipated three host
+adapters: GitLab, GitHub, Gitea. The G1b slice ships tracked-artifact
+mode (mode b) and needs a reference adapter implementation. Shipping
+all three adapters in G1b would have been a big slice.
+
+### Decision
+
+Ship **GitLab only** in G1b. Define a `GitAdapter` interface +
+`GitAdapterRegistry` seam now so G1d can drop in `GitHubRestClient`
+and `GiteaRestClient` mechanically.
+
+Non-GitLab hosts return RFC 7807 `git.adapter.unsupported-host` 501
+until G1d lands. The adapter dispatch is host-substring matching with
+a config-driven CSV override (`shepard.git.adapter.gitlab.hosts`) for
+self-hosted GitLab on non-obvious DNS names.
+
+### Rationale
+
+- Shipping one adapter end-to-end proves the interface shape; G1d is
+  mechanical replication.
+- GitLab is the canonical host inside DLR (`gitlab.dlr.de`) — the
+  highest-payoff first adapter.
+- The 501 response with RFC 7807 makes the unsupported-host case
+  user-debuggable without surprises.
+
+### Alternatives considered
+
+- **Ship all three adapters in G1b** — rejected; ~3× the surface
+  area for one slice, harder to review.
+- **Per-host plugin loading via PayloadKind SPI (`aidocs/47`)** —
+  rejected; over-engineering for v1. The `GitAdapter` interface is
+  swappable to that shape later without breaking callers.
+
+### Reversibility
+
+Easy. The `GitAdapter` interface seam is internal; replacing
+GitLab-only with a different host (or removing the per-host split)
+is a refactor with no wire-format implication.
