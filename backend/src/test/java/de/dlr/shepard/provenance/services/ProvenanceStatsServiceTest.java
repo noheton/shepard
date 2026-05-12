@@ -32,9 +32,11 @@ class ProvenanceStatsServiceTest {
     service = new ProvenanceStatsService();
     service.activityDAO = activityDAO;
     service.censusDAO = censusDAO;
-    // Default empty census so existing tests don't NPE.
+    // Default empty census + byte totals so existing tests don't NPE.
     when(censusDAO.censusForCollection(any())).thenReturn(java.util.Map.of("dataObjects", 0L));
     when(censusDAO.censusInstanceWide()).thenReturn(java.util.Map.of("dataObjects", 0L));
+    when(censusDAO.byteTotalsForCollection(any())).thenReturn(java.util.Map.of("fileBytes", 0L));
+    when(censusDAO.byteTotalsInstanceWide()).thenReturn(java.util.Map.of("fileBytes", 0L));
   }
 
   private static ActivityDAO.StatsSnapshot snap(long total, long distinctAgents, List<long[]> buckets, Map<String, Long> kinds) {
@@ -205,5 +207,43 @@ class ProvenanceStatsServiceTest {
 
     // user scope: census is meaningless (would require per-user file ownership which we don't track).
     org.junit.jupiter.api.Assertions.assertNull(out.getContentCensus());
+  }
+
+  @Test
+  void collectionScopeIncludesByteTotals() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+    when(censusDAO.byteTotalsForCollection("appid-1")).thenReturn(Map.of("fileBytes", 1_234_567L));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_COLLECTION, "appid-1", since, now);
+
+    assertEquals(Map.of("fileBytes", 1_234_567L), out.getByteTotals());
+    verify(censusDAO).byteTotalsForCollection("appid-1");
+  }
+
+  @Test
+  void instanceScopeIncludesInstanceWideByteTotals() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+    when(censusDAO.byteTotalsInstanceWide()).thenReturn(Map.of("fileBytes", 9_999_999_999L));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_INSTANCE, null, since, now);
+
+    assertEquals(Map.of("fileBytes", 9_999_999_999L), out.getByteTotals());
+    verify(censusDAO).byteTotalsInstanceWide();
+  }
+
+  @Test
+  void userScopeOmitsByteTotals() {
+    long now = 1_700_000_000_000L;
+    long since = now - 30L * ProvenanceStatsService.DAY_MILLIS;
+    when(activityDAO.aggregateStats(any(), any(), anyLong(), anyLong(), anyLong())).thenReturn(snap(0L, 0L, List.of(), Map.of()));
+
+    var out = service.compute(ProvenanceStatsService.SCOPE_USER, "alice", since, now);
+
+    // user scope: byte totals not meaningful per-user.
+    org.junit.jupiter.api.Assertions.assertNull(out.getByteTotals());
   }
 }
