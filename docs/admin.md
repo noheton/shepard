@@ -186,12 +186,50 @@ Phase 2+ (cleanup of soft-deleted entities, RO-Crate import/export,
 the `init` TUI wizard for first-run `.env`) remains in design — see
 `aidocs/22-admin-cli-draft.md`.
 
+## Neo4j plugins
+
+Operators get the **neosemantics ("n10s")** plugin enabled by default
+(`NEO4J_PLUGINS=["n10s"]` plus `n10s.*` allowed in
+`dbms.security.procedures.{allowlist,unrestricted}` in
+`infrastructure/docker-compose.yml`). The plugin backs the new
+`SemanticRepositoryType.INTERNAL` connector type — see
+[Semantic repositories](/reference/semantic-repositories/) for the
+casual-user story.
+
+If you customised the Neo4j service and **removed** the procedures
+allowlist line for `n10s.*`, you'll need to add it back, otherwise
+shepard's startup hook logs:
+
+```
+N10sBootstrapHook: neosemantics (n10s) procedures not registered in Neo4j.
+SemanticRepositoryType.INTERNAL will report unhealthy.
+```
+
+That's the only operator-visible signal — the rest of shepard
+(including external `SPARQL`/`JSKOS`/`SKOSMOS` repositories)
+continues to work unchanged.
+
+The bootstrap calls `n10s.graphconfig.init(...)` exactly once per
+fresh database; it's idempotent and safe to restart through. Override
+the `handleVocabUris` mode via the
+`shepard.semantic.internal.handle-vocab-uris` property
+(default `IGNORE`), or fully disable the bootstrap with
+`shepard.semantic.internal.enabled=false`.
+
 ## Upgrades
 
 The Neo4j and MongoDB images are pinned with explicit comments in
 `infrastructure/docker-compose.yml` pointing at the upstream upgrade guides
 (MR-315 for Neo4j 4.4 → 5.24; MR-306 for MongoDB step upgrades). Read those
 before bumping major versions.
+
+**Neo4j 5 → 6 upgrade note.** The n10s plugin tracks Neo4j major
+versions. When upgrading Neo4j across a major boundary, also bump
+the n10s version (the `NEO4J_PLUGINS=["n10s"]` env var auto-resolves
+to the version matching the running Neo4j image). Plan a single
+restart that includes both, watch the bootstrap log line for
+"n10s INTERNAL semantic repository ready" on first start after the
+upgrade.
 
 ## Reverse proxy
 

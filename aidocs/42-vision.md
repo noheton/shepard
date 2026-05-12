@@ -122,6 +122,16 @@ These work the same way across every primitive:
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).
+- **Semantic-annotation repositories — internal *or* external.**
+  Reference an ontology term by IRI; resolve labels through one of
+  three connector types. **External** SPARQL endpoints (the upstream
+  path) for users who run their own triple store. **Internal**
+  (`aidocs/48`, N1a shipped) — the neosemantics plugin runs inside
+  shepard's existing Neo4j, so a fresh `docker compose up` is the
+  whole setup for "I want to annotate `vibration_max` with the QUDT
+  IRI for `g rms`." Pre-seeded common ontologies (PROV-O, Dublin
+  Core, schema.org, FOAF, QUDT, OM-2, W3C Time, GeoSPARQL) bundle
+  in N1b.
 - **Subscriptions.** URL-pattern webhooks fire on entity changes
   for downstream pipeline glue.
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
@@ -211,12 +221,18 @@ Mid-horizon:
   the default GridFS. Presigned URLs unblock direct large-file
   uploads + downloads + RO-Crate ZIP delivery; closes the
   long-standing issue #27.
-- **Internal semantic repository via neosemantics** (`aidocs/48`,
-  N1 series). Pre-seeded common ontologies (PROV-O / QUDT /
-  schema.org / Dublin Core / FOAF / OM-2 / W3C Time / GeoSPARQL)
-  inside shepard's existing Neo4j — no separate triple store.
-  Closes the casual-user "I shouldn't need to deploy a SPARQL
-  endpoint to annotate `g rms`" friction.
+- **Internal semantic repository — pre-seeded ontologies + UX**
+  (`aidocs/48`, N1 series). The internal repo itself is **shipped**
+  (N1a): the neosemantics plugin runs inside shepard's existing
+  Neo4j, with `SemanticRepositoryType.INTERNAL` as the new
+  connector type — see "what's in the box" above. What's still
+  ahead: pre-seeded common ontologies (PROV-O / QUDT / schema.org
+  / Dublin Core / FOAF / OM-2 / W3C Time / GeoSPARQL) bundled in
+  the install (N1b); a `shepard-admin semantic refresh-ontologies`
+  CLI (N1c); LUMEN seed integration with real ontology IRIs (N1d);
+  annotation-picker auto-complete (N1e). Closes the casual-user
+  "I shouldn't need to deploy a SPARQL endpoint to annotate
+  `g rms`" friction.
 - **Storage-backend plugin SPI + dev-experience** (`aidocs/47`,
   PL1 + DX series). New payload kinds drop in as plugins instead
   of 12-file PR sprawls; existing storage-bound feature flags
