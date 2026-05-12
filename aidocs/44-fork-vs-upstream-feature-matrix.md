@@ -195,13 +195,13 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `/v2/admin/instance-admins` (list / grant / revoke) — REST surface for admin-role mutation | none | shipped — `@RolesAllowed("instance-admin")`-gated; returns audit trail (`grantedBy`, `grantedAt`); CLI counterparts deferred to L1 Phase 1 | **✓ ↑** | A0 / `aidocs/51 §10` |
 | `POST /v2/admin/bootstrap` — first instance-admin via the one-shot bootstrap token | none | shipped — unauthenticated (token-gated); replay-protected | **✓ ↑** | A0 / `aidocs/51 §5.2` |
 | `GET /v2/admin/permission-audit` — list orphan-permissions entities | none | shipped (post-C3 fail-closed) | **✓ ↑** | A0 / `aidocs/51 §10` |
-| Admin CLI (`shepard-admin`) — read-only commands | none | designed; phased L1 | 📐 (queued) | `aidocs/22` |
+| Admin CLI (`shepard-admin`) — read-only commands (Phase 1: `features list`, `health`, `migrations status`) | none | **shipped** — top-level `cli/` Maven module, Java 21 + Picocli 4.7, shaded uber-jar, 54 tests / 89 % instruction / 81 % branch coverage. Auth via `X-API-KEY` + the instance-admin role per A0. Phase 2+ still designed. | **✓ ↑** (Phase 1) | `aidocs/22 §7.1` |
 | Admin CLI cleanup of soft-deleted entities (TTL) | none | designed | 📐 (queued, L1 phase 2) | `aidocs/22 §4.1` |
 | Admin CLI RO-Crate import / export | none | designed | 📐 (queued, L1 phase 3) | `aidocs/22 §4.7` |
-| Admin CLI feature-toggle inspection / flipping (incl. profile-bound) | none | designed | 📐 (queued) | `aidocs/22 §4.6 / §4.6a` |
-| `shepard-admin init` TUI wizard for first-run `.env` (Lanterna) | none | designed | 📐 (queued, L1 phase 1) | `aidocs/22 §4.11` |
+| Admin CLI feature-toggle inspection / flipping (incl. profile-bound) | none | designed (read-only ✓ shipped under L1 Phase 1) | 📐 (write path queued) | `aidocs/22 §4.6 / §4.6a` |
+| `shepard-admin init` TUI wizard for first-run `.env` (Lanterna) | none | designed; deferred from L1 Phase 1 ship | 📐 (queued) | `aidocs/22 §4.11` |
 | Universal TUI mode for every command (auto-fill from server state) | none | designed | 📐 (queued) | `aidocs/22 §4.x` |
-| Env-driven auth discovery (`SHEPARD_HOST` / `SHEPARD_API_KEY`) for the CLI | none | designed | 📐 (queued, L1 phase 1) | `aidocs/22 §3.4` |
+| Env-driven auth discovery (`SHEPARD_ADMIN_URL` / `SHEPARD_ADMIN_API_KEY`) for the CLI | none | **shipped** — flags > env > `~/.shepard/admin.toml` > defaults precedence ladder; `AdminConfigLoaderTest` covers each layer | **✓ ↑** | `aidocs/22 §3.4` |
 | Init wizard's OIDC sub-flow (Keycloak / Pocket ID / external w/ auto-discovery) | none | designed; depends on F8 (configurable claim path) for non-Keycloak | 📐 (queued) | `aidocs/22 §4.11a` |
 ## 13a. File storage backend
 | Capability | Upstream | This fork | Status | Refs |
@@ -346,7 +346,7 @@ namespace; core enforces the shape.
 
 **In flight (agents dispatched):** none currently — C5/C5b/L2b/L2c have all landed; the remaining L2 chain (L2d/L2e) is gated on P4 + H4.
 
-**Designed and queued (substantial):** the entire L2 chain after L2a (b/c/d/e), unified search + pagination (`aidocs/13`), semantic-annotation expansion (`aidocs/14`), HDF5/HSDS (A5), Templates (T1), Process design+runtime (PR1), Git integration (G1), User profile (U1), Lab journal v2 + Jupyter (J1), Snapshots (V2), AI features w/ snap-dashboards killer feature (AI1), Admin CLI (L1), permission-system evolutions (F1-F8), provenance (`aidocs/30`).
+**Designed and queued (substantial):** the entire L2 chain after L2a (b/c/d/e), unified search + pagination (`aidocs/13`), semantic-annotation expansion (`aidocs/14`), HDF5/HSDS (A5), Templates (T1), Process design+runtime (PR1), Git integration (G1), User profile (U1), Lab journal v2 + Jupyter (J1), Snapshots (V2), AI features w/ snap-dashboards killer feature (AI1), Admin CLI L1 Phase 2+ (Phase 1 already shipped — see §13 row above), permission-system evolutions (F1-F8), provenance (`aidocs/30`).
 
 **Headline next-horizon line items** (per `aidocs/42` vision):
 1. Snap dashboards (AI1e) — the killer feature
