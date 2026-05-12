@@ -15,10 +15,15 @@ public class UserTest extends BaseTestCase {
   public void equalsContract() {
     var a = UUID.randomUUID();
     var b = UUID.randomUUID();
+    var credA = new GitCredential();
+    credA.setAppId("cred-a");
+    var credB = new GitCredential();
+    credB.setAppId("cred-b");
     EqualsVerifier.simple()
       .forClass(User.class)
       .withPrefabValues(ApiKey.class, new ApiKey(a), new ApiKey(b))
       .withPrefabValues(Subscription.class, new Subscription(1L), new Subscription(2L))
+      .withPrefabValues(GitCredential.class, credA, credB)
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
       .withIgnoredFields("appId")
       .verify();
