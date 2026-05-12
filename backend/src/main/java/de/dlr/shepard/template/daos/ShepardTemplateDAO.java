@@ -170,6 +170,29 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     );
   }
 
+  /**
+   * Idempotent {@code MERGE} that reports whether the edge was newly
+   * created. Useful for the {@code POST .../from-template/...}
+   * endpoint to surface "you've already used this template" vs
+   * "first time you're using it" in the response.
+   *
+   * <p>Returns {@code false} when either node is missing — caller
+   * should validate first.
+   */
+  public boolean recordUsageReportingCreation(String collectionAppId, String templateAppId) {
+    String cypher =
+      "MATCH (c:Collection {appId: $cAppId}), (t:ShepardTemplate {appId: $tAppId}) " +
+      "MERGE (c)-[r:USES_TEMPLATE]->(t) ON CREATE SET r.createdNow = true " +
+      "WITH r, r.createdNow AS createdNow " +
+      "REMOVE r.createdNow " +
+      "RETURN coalesce(createdNow, false) AS created";
+    var result = session.query(cypher, Map.of("cAppId", collectionAppId, "tAppId", templateAppId));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return false;
+    Object created = it.next().get("created");
+    return created instanceof Boolean b ? b : false;
+  }
+
   @Override
   public Class<ShepardTemplate> getEntityType() {
     return ShepardTemplate.class;
