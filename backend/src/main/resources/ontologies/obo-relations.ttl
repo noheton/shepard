@@ -1,0 +1,38 @@
+# Canonical source: http://purl.obolibrary.org/obo/ro.owl  (OBO Foundry; OWL/RDF-XML — n10s imports both)
+# Ontology IRI:    http://purl.obolibrary.org/obo/ro.owl
+# Term IRI prefix: http://purl.obolibrary.org/obo/RO_
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+#
+# shepard-bundled stub of the OBO Relation Ontology (RO). Carries the
+# canonical OBO term prefix plus a handful of widely-cited relations
+# the LUMEN-inspired showcase (post-ONT1b) uses to wire process-graph
+# edges: `part_of`, `has_part`, `derives_from`, `participates_in`,
+# `has_input`, `has_output`, `precedes`, `preceded_by`. Operators who
+# need the full ~150-relation vocabulary either run the N1c refresh
+# CLI or drop the canonical Turtle in place and regenerate the
+# matching manifest entry.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix obo:     <http://purl.obolibrary.org/obo/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<http://purl.obolibrary.org/obo/ro.owl>
+       a owl:Ontology ;
+       dcterms:title   "OBO Relation Ontology (shepard-bundled stub)"@en ;
+       dcterms:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+       rdfs:label      "Relation Ontology (RO)"@en ;
+       rdfs:comment    "OBO Foundry vocabulary of relations used across the life-sciences and research-data communities."@en .
+
+obo:RO_0000050  a owl:ObjectProperty ; rdfs:label "part of"@en .
+obo:RO_0000051  a owl:ObjectProperty ; rdfs:label "has part"@en ; owl:inverseOf obo:RO_0000050 .
+obo:RO_0000056  a owl:ObjectProperty ; rdfs:label "participates in"@en .
+obo:RO_0000057  a owl:ObjectProperty ; rdfs:label "has participant"@en ; owl:inverseOf obo:RO_0000056 .
+obo:RO_0001000  a owl:ObjectProperty ; rdfs:label "derives from"@en .
+obo:RO_0001001  a owl:ObjectProperty ; rdfs:label "derives into"@en ; owl:inverseOf obo:RO_0001000 .
+obo:RO_0002086  a owl:ObjectProperty ; rdfs:label "ends before start of"@en .
+obo:RO_0002087  a owl:ObjectProperty ; rdfs:label "immediately preceded by"@en .
+obo:RO_0002233  a owl:ObjectProperty ; rdfs:label "has input"@en .
+obo:RO_0002234  a owl:ObjectProperty ; rdfs:label "has output"@en .
