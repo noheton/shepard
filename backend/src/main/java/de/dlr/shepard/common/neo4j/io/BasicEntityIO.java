@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.neo4j.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.version.entities.VersionableEntity;
@@ -47,9 +48,13 @@ public class BasicEntityIO implements HasId {
   public BasicEntityIO(BasicEntity entity) {
     this.id = entity.getId();
     this.createdAt = entity.getCreatedAt();
-    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
+    this.createdBy = entity.getCreatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(entity.getCreatedBy())
+      : null;
     this.updatedAt = entity.getUpdatedAt();
-    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
+    this.updatedBy = entity.getUpdatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(entity.getUpdatedBy())
+      : null;
     this.name = entity.getName();
   }
 
@@ -65,9 +70,13 @@ public class BasicEntityIO implements HasId {
   public BasicEntityIO(VersionableEntity entity) {
     this.id = entity.getShepardId();
     this.createdAt = entity.getCreatedAt();
-    this.createdBy = entity.getCreatedBy() != null ? entity.getCreatedBy().getUsername() : null;
+    this.createdBy = entity.getCreatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(entity.getCreatedBy())
+      : null;
     this.updatedAt = entity.getUpdatedAt();
-    this.updatedBy = entity.getUpdatedBy() != null ? entity.getUpdatedBy().getUsername() : null;
+    this.updatedBy = entity.getUpdatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(entity.getUpdatedBy())
+      : null;
     this.name = entity.getName();
   }
 

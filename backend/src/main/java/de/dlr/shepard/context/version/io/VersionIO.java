@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.version.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.version.entities.Version;
 import java.util.Date;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public class VersionIO {
     this.isHEADVersion = version.isHEADVersion();
     this.description = version.getDescription();
     this.createdAt = version.getCreatedAt();
-    this.createdBy = version.getCreatedBy().getUsername();
+    this.createdBy = DisplayNameResolver.effectiveDisplayName(version.getCreatedBy());
     if (version.getPredecessor() != null) this.predecessorUUID = version.getPredecessor().getUid();
     else this.predecessorUUID = null;
   }

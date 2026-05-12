@@ -1,6 +1,7 @@
 package de.dlr.shepard.common.subscription.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.RequestMethod;
 import jakarta.validation.constraints.NotBlank;
@@ -51,6 +52,8 @@ public class SubscriptionIO {
     this.subscribedURL = sub.getSubscribedURL();
     this.requestMethod = sub.getRequestMethod();
     this.createdAt = sub.getCreatedAt();
-    this.createdBy = sub.getCreatedBy() != null ? sub.getCreatedBy().getUsername() : null;
+    this.createdBy = sub.getCreatedBy() != null
+      ? DisplayNameResolver.effectiveDisplayName(sub.getCreatedBy())
+      : null;
   }
 }

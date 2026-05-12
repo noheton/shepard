@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.neo4j.io.BasicEntityIO;
 import de.dlr.shepard.common.subscription.io.SubscriptionIO;
@@ -218,12 +219,21 @@ public class ExportBuilder {
   private void addPersonEntity(User user) {
     if (user == null) return;
 
+    // Use ORCID as @id when available (resolvable URI per schema.org/Person); otherwise fall
+    // back to the username-based identifier kept for backward-compatibility (U1a / aidocs/16).
+    String personId = (user.getOrcid() != null && !user.getOrcid().isBlank())
+      ? "https://orcid.org/" + user.getOrcid()
+      : user.getUsername();
+
     var entity = new PersonEntity.PersonEntityBuilder()
-      .setId(user.getUsername())
+      .setId(personId)
       .setEmail(user.getEmail())
       .setGivenName(user.getFirstName())
       .setFamilyName(user.getLastName())
       .build();
+
+    // Override the name with the DisplayNameResolver's resolved display name (U1b2).
+    entity.addProperty("name", DisplayNameResolver.effectiveDisplayName(user));
 
     roCrateBuilder.addContextualEntity(entity);
   }
