@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { collectionsPath } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -60,6 +61,17 @@ watch(collection, () => {
               <TitleAndMetadataDisplay
                 :entity="collection"
                 id-label="Collection ID"
+              />
+            </v-row>
+            <v-row
+              v-if="collectionAppId && isAllowedToEditCollection"
+              no-gutters
+              class="justify-end pb-2"
+            >
+              <PublishButton
+                entity-kind="collections"
+                :entity-app-id="collectionAppId"
+                :entity-name="collection.name"
               />
             </v-row>
             <v-row no-gutters>
