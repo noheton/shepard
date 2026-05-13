@@ -17,7 +17,7 @@ import java.util.Collection;
  *   <li>The startup hook in
  *       {@code UnhideConfigService.seedIfNeeded()} creating the
  *       node when none exists.</li>
- *   <li>The {@code V27} migration adding the
+ *   <li>The {@code V29} migration adding the
  *       {@code REQUIRE n.appId IS UNIQUE} constraint so accidental
  *       duplicates fail at the database boundary.</li>
  * </ol>
@@ -41,7 +41,7 @@ public class UnhideConfigDAO extends GenericDAO<UnhideConfig> {
     if (all.isEmpty()) {
       return null;
     }
-    // The V27 uniqueness constraint + service-layer seed guarantees
+    // The V29 uniqueness constraint + service-layer seed guarantees
     // at most one row; an installed multiplicity is a bug elsewhere
     // — return the first deterministically (smallest Neo4j id).
     return all

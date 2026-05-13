@@ -137,6 +137,26 @@ class PublicEndpointRegistryTest {
     assertFalse(PublicEndpointRegistry.matchesPrefix("/v2/.well-known/kip", null));
   }
 
+  @Test
+  void unhideFeedIsPublic() {
+    // UH1a — the Helmholtz Unhide harvest feed is JWT-bypassed; the
+    // runtime-mutable access predicate (enabled / feedPublic / X-API-KEY
+    // matching :UnhideConfig.harvestApiKeyHash) is enforced inside the
+    // resource because a static registry can't express it.
+    assertTrue(isPublic("shepard/api/v2/unhide/feed.jsonld"));
+    assertTrue(isPublic("shepard/api/v2/unhide/feed.jsonld/"));
+  }
+
+  @Test
+  void unhideAdminEndpointsAreNotPublic() {
+    // The /v2/admin/unhide/... surface stays JWT-protected — it's
+    // @RolesAllowed(instance-admin), the feed isn't.
+    assertFalse(isPublic("shepard/api/v2/admin/unhide/config"));
+    assertFalse(isPublic("shepard/api/v2/admin/unhide/harvest-key/rotate"));
+    assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld/evil"));
+    assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld.evil"));
+  }
+
   // helper
 
   private static boolean isPublic(String path) {
