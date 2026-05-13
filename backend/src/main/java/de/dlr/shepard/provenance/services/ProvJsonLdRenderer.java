@@ -74,6 +74,30 @@ public class ProvJsonLdRenderer {
     };
   }
 
+  /**
+   * Render a row-count integer as a thin JSON-LD wrapper. Default
+   * carries a {@code shepard:numberOfActivities} key under a typed
+   * {@code @context}; m4i flavour adds the m4i namespace symmetry so
+   * the JSON-LD media-type parameter and the body's
+   * {@code @context} agree on the alphabet.
+   *
+   * <p>Designed in {@code aidocs/64-provenance-architecture.md §6}
+   * (the JSON-LD variant of {@code /v2/provenance/count}). The
+   * integer is typed as {@code xsd:nonNegativeInteger} so a
+   * downstream SPARQL store rounds-trips cleanly.
+   */
+  public Map<String, Object> renderCount(long count, ProfileChoice profile) {
+    boolean m4i = profile == ProfileChoice.M4I;
+    Map<String, Object> out = new LinkedHashMap<>();
+    out.put("@context", buildContext(m4i));
+
+    Map<String, Object> typed = new LinkedHashMap<>();
+    typed.put("@type", "xsd:nonNegativeInteger");
+    typed.put("@value", Long.toString(count));
+    out.put("shepard:numberOfActivities", typed);
+    return out;
+  }
+
   private Map<String, Object> render(List<Activity> activities, boolean m4i) {
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("@context", buildContext(m4i));
@@ -225,11 +249,14 @@ public class ProvJsonLdRenderer {
    * scanning the type/subtype clauses for {@code application/ld+json}.
    * Returns {@code null} when no profile parameter applies.
    *
-   * <p>Visible for unit testing. Conservative parser — accepts the
-   * common shapes: {@code application/ld+json; profile="<url>"} or
+   * <p>Exposed for the REST layer (which needs to distinguish "no
+   * profile param given → default PROV-O" from "profile param given
+   * but unrecognised → 406") and for direct unit tests. Conservative
+   * parser — accepts the common shapes:
+   * {@code application/ld+json; profile="<url>"} or
    * {@code application/ld+json; profile=metadata4ing}.
    */
-  static String extractProfileParam(String acceptHeader) {
+  public static String extractProfileParam(String acceptHeader) {
     if (acceptHeader == null) return null;
     // Header may carry multiple media-type clauses comma-separated.
     String[] clauses = acceptHeader.split(",");

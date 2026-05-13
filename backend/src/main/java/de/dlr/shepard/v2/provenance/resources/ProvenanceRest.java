@@ -351,6 +351,47 @@ public class ProvenanceRest {
   }
 
   @GET
+  @Path("/count")
+  @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "Row count as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
+    description = "JSON-LD variant of /count — wraps the integer as " +
+    "shepard:numberOfActivities under a typed @context. Same query semantics + " +
+    "Accept-header profile precedence as the /activities endpoint."
+  )
+  @APIResponse(responseCode = "200", description = "Row count, JSON-LD wrapped.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
+  @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
+  public Response countActivitiesJsonLd(
+    @QueryParam("agent") String agent,
+    @QueryParam("targetKind") String targetKind,
+    @QueryParam("targetAppId") String targetAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    if (agent == null) {
+      if (!isAdmin) agent = caller;
+    } else if (!agent.equals(caller) && !isAdmin) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    Response profileError = enforceJsonLdProfile(acceptHeader);
+    if (profileError != null) return profileError;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+
+    long c = provenance.count(agent, targetKind, targetAppId, since, until);
+    java.util.Map<String, Object> body = provJsonLdRenderer.renderCount(c, profile);
+    return Response.ok(body).type(jsonLdMediaTypeFor(profile)).build();
+  }
+
+  @GET
   @Path("/stats")
   @Operation(
     summary = "Aggregated provenance stats — totals + sparkline buckets + action-kind histogram.",
