@@ -18,6 +18,41 @@ paper, and any HMC tool walking that PID lands on the shepard
 entity it points at — without prior knowledge of which shepard
 instance it lives on.
 
+## Step 1: click Publish
+
+The fastest path is the web UI. Open the entity in shepard's
+frontend — any [Collection](/reference/collection/) or
+[DataObject](/reference/data-object/) detail pane carries a
+**Publish** button at the top, next to the title and metadata
+block.
+
+If you don't see the button, you don't have **Writer** or
+**Manager** permission on the entity — ask an owner / manager to
+publish it for you, or to grant you the permission.
+
+Click **Publish**, pick a licence in the modal that opens
+(`CC-BY-4.0` is a sensible default for openly-shared research
+data), and confirm. The freshly-minted PID lands in a snackbar
+at the bottom of the screen with two copy buttons:
+
+- **Copy resolver URL** — the public URL HMC PID resolvers walk to
+  find the entity. Paste this into your dataset citation if the
+  citation venue prefers a resolvable URL.
+- **Copy PID** — the bare persistent identifier (e.g.
+  `mock:shepard:data-objects:01HF...:174…`). Paste this into a
+  paper if your citation style wants the PID itself.
+
+The PID is permanent. You can update the entity later (rename it,
+add data references, edit attributes) without changing the PID —
+a published shepard entity is the same kind of mutable record it
+always was, just with a citable handle attached. Republishing the
+same entity returns the same PID (the API is idempotent); use
+`?force=true` from the REST surface if you really need a fresh PID
+(e.g. a major revision you want to address separately).
+
+For the full mechanics — REST shape, errors, the resolver
+endpoint — see [Publishing and PIDs (reference)](/reference/publish-and-pids/).
+
 ## When to publish
 
 | You want to … | Publish? |

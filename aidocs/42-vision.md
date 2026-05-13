@@ -180,18 +180,23 @@ These work the same way across every primitive:
   SPARQL store or an RO-Crate manifest. 2-year retention default.
   Instance-admin dashboard (PROV1e) queued behind A0's admin shell.
 - **HMC Kernel Information Profile publication** (`aidocs/66`,
-  KIP1a shipped). Hit `POST /v2/data-objects/{appId}/publish` (or
-  `/v2/collections/{appId}/publish`) to mint a PID and attach a
-  `:Publication` row. Dereference via the public, unauthenticated
-  `GET /v2/.well-known/kip/{pid-suffix}` resolver — any HMC PID
-  resolver can consume the small JSON-LD-flavoured KIP record
-  (digital-object type, landing-page URL, created/modified
-  timestamps, rights-holder). KIP1a ships a built-in `MockMinter`
-  (no external dependency); ePIC handle service (KIP1c) and
-  DataCite REST (KIP1d) ship as drop-in plugin JARs per ADR-0023.
-  Publication records are append-only by KIP convention — a forced
-  re-mint via `?force=true` attaches a fresh row; the most recent
-  is "current."
+  KIP1a + KIP1e shipped). A one-click **Publish button** sits at
+  the top of every Collection and DataObject pane in the web UI
+  (KIP1e): a researcher with Writer / Manager permission clicks
+  it, picks an SPDX licence, confirms, and the freshly-minted PID
+  comes back in a snackbar with a one-click "Copy resolver URL"
+  action. Under the hood: `POST /v2/data-objects/{appId}/publish`
+  (or `/v2/collections/{appId}/publish`) mints a PID and attaches
+  a `:Publication` row. Dereference via the public,
+  unauthenticated `GET /v2/.well-known/kip/{pid-suffix}` resolver
+  — any HMC PID resolver can consume the small JSON-LD-flavoured
+  KIP record (digital-object type, landing-page URL,
+  created/modified timestamps, rights-holder). KIP1a ships a
+  built-in `MockMinter` (no external dependency); ePIC handle
+  service (KIP1c) and DataCite REST (KIP1d) ship as drop-in
+  plugin JARs per ADR-0023. Publication records are append-only
+  by KIP convention — a forced re-mint via `?force=true` attaches
+  a fresh row; the most recent is "current."
 - **Publish to the Helmholtz Knowledge Graph (Unhide)** (`aidocs/67`,
   UH1a shipped). A first-class shepard plugin
   (`shepard-plugin-unhide`) exposes

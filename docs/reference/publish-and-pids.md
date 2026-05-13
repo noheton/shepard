@@ -50,6 +50,56 @@ most-recent row attached to an entity is the "current" Publication;
 a force re-mint attaches a fresh row alongside, never replacing
 the old one.
 
+## Publishing from the UI
+
+In addition to the REST surface below, the shepard web UI ships a
+one-click **Publish button** on every [Collection](/reference/collection/)
+and [DataObject](/reference/data-object/) detail pane (KIP1e
+slice — see `frontend/components/context/publish/`).
+
+The button only renders for users with **Writer** or **Manager**
+permission on the entity (the same predicate that gates the
+existing Edit / Add affordances on those panes — the backend still
+enforces the permission check on the POST regardless of UI state).
+
+Workflow:
+
+1. Click **Publish** at the top of the entity detail pane.
+2. Pick an SPDX licence in the modal that opens. The minimum-viable
+   set covers the common shapes: `CC-BY-4.0`, `CC-BY-SA-4.0`,
+   `CC0-1.0`, `MIT`, `Apache-2.0`, `LGPL-3.0`, `GPL-3.0`. A
+   tracked-SPDX integration that draws from the canonical SPDX
+   list is a follow-up slice.
+3. Confirm. The modal explains the KIP append-only convention
+   before the confirm CTA fires.
+4. A snackbar surfaces the freshly-minted PID with two copy
+   actions: **Copy resolver URL** (the public
+   `/v2/.well-known/kip/...` URL HMC PID resolvers should dereference
+   against) and **Copy PID** (the bare PID a researcher drops into
+   a paper / dataset citation).
+
+**Scope-down note (KIP1e).** The button reads "Publish" in all
+states regardless of whether the entity already has a Publication
+attached. Because the backend's POST is idempotent — a re-POST
+without `?force=true` returns the existing row — clicking on an
+already-published entity surfaces the same PID through the
+snackbar. A follow-up slice will land an "existing-publication"
+popover with the minted-at timestamp + the "Re-mint (force)"
+affordance once a `GET /v2/{kind}/{appId}/publications` helper
+endpoint exists (KIP1a's `BasicEntityIO` is frozen per
+`CLAUDE.md`'s "frozen upstream classes" rule, so the publication
+state isn't surfaced on the entity-fetch wire shape today).
+
+**Licence wire-shape note.** The KIP1a `POST` endpoint does not
+yet accept a request body — the licence sourced into the public
+KIP record comes from the entity's metadata (`attributes.license`
+if you've set one there). The KIP1e modal's licence drop-down is
+**informational** today: the operator confirms intent, the publish
+fires without a body, the licence stored on the entity stays
+authoritative. The modal already emits the selected SPDX id on
+its submit event, so when KIP1a grows a `licence` body field the
+wire-up is a single prop forward.
+
 ## REST surface
 
 ### Publish an entity
@@ -187,7 +237,7 @@ per the CLAUDE.md "comfort over cleverness" rule.
 
 - **KIP1c (ePIC plugin)** — real Handles, queued.
 - **KIP1d (DataCite plugin)** — DOIs, queued.
-- **KIP1e (Vue Publish button)** — UI surface + licence picker, queued.
+- **KIP1e (Vue Publish button)** — UI surface + licence picker, **shipped** (see [Publishing from the UI](#publishing-from-the-ui) above).
 - **KIP1f (unpublish / retire)** — open question on retire-vs-tombstone semantics; KIP records are append-only by the HMC spec so a hard delete is the wrong shape.
 
 See `aidocs/66` (design) and `aidocs/16` KIP1 rows (live status).
