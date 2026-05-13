@@ -185,6 +185,21 @@ These work the same way across every primitive:
   Publication records are append-only by KIP convention — a forced
   re-mint via `?force=true` attaches a fresh row; the most recent
   is "current."
+- **Publish to the Helmholtz Knowledge Graph (Unhide)** (`aidocs/67`,
+  UH1a shipped). A first-class shepard plugin
+  (`shepard-plugin-unhide`) exposes
+  `GET /v2/unhide/feed.jsonld` — a schema.org + metadata4ing
+  JSON-LD feed the HKG / Unhide harvester pulls daily. Every
+  Collection on the instance becomes a `schema:Dataset` +
+  `m4i:Dataset` entry with creator (firstName/lastName/displayName
+  + ORCID `@id`), dates, and a back-link to shepard. Admin-
+  configurable at runtime — flip the master toggle, the
+  feed-public flag, or rotate the harvest API key via
+  `shepard-admin unhide ...` without restarting. Default off so
+  a fresh install never accidentally publishes; an operator opts
+  in once their `contactEmail` and harvest key are in place.
+  Refinements (m4i provenance fragments, KIP citation, per-
+  Collection toggle UI) queued as UH1b–UH1e.
 
 ## How you actually use it
 
