@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  shepard-v2-client-java — Kiota-generated Java client for shepard's /v2/ API.
+
+  Per ADR-0022 (aidocs/63), Kiota is the new baseline for /v2/ client
+  generation. This Maven module coexists with the legacy OpenAPI-Generator-
+  emitted client at ../../clients/java/ (different groupId/artifactId, so
+  both can sit on the same classpath without collision).
+
+  The generated sources live under
+    src/main/java/de/dlr/shepard/v2/clients/
+  and are re-emitted by  `make -C .. generate-java`  (or by the
+  .github/workflows/clients-kiota.yml workflow on every release tag).
+
+  Build locally:
+    mvn -pl java-kiota -DskipTests compile
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.dlr.shepard</groupId>
+    <artifactId>shepard-v2-client-java</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>shepard /v2/ Java Client (Kiota)</name>
+    <description>Kiota-generated Java client for shepard's /v2/ API surface.</description>
+    <url>https://github.com/noheton/shepard/tree/main/clients-v2/java-kiota</url>
+
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
+        <!-- Kiota Java runtime — track Kiota CLI minor (1.31.x). -->
+        <kiota.abstractions.version>1.8.4</kiota.abstractions.version>
+        <kiota.http.version>1.8.4</kiota.http.version>
+        <kiota.serialization-json.version>1.8.4</kiota.serialization-json.version>
+        <kiota.serialization-text.version>1.8.4</kiota.serialization-text.version>
+        <kiota.serialization-form.version>1.8.4</kiota.serialization-form.version>
+        <kiota.serialization-multipart.version>1.8.4</kiota.serialization-multipart.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-abstractions</artifactId>
+            <version>${kiota.abstractions.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-http-okHttp</artifactId>
+            <version>${kiota.http.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-json</artifactId>
+            <version>${kiota.serialization-json.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-text</artifactId>
+            <version>${kiota.serialization-text.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-form</artifactId>
+            <version>${kiota.serialization-form.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.kiota</groupId>
+            <artifactId>microsoft-kiota-serialization-multipart</artifactId>
+            <version>${kiota.serialization-multipart.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

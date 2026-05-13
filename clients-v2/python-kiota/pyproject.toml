@@ -1,0 +1,62 @@
+# shepard-v2-client (Python) — Kiota-generated client for shepard's /v2/ API.
+#
+# Per ADR-0022 (aidocs/63), Kiota is the new baseline for /v2/ clients.
+# This package coexists with the upstream-OpenAPI-Generator-emitted
+# `shepard-client` (which keeps targeting /shepard/api/...). They use
+# different distribution names, so a consumer can install both into the
+# same venv without collision.
+#
+# This pyproject is hand-maintained; the package contents under
+# shepard_v2/ are produced by `make -C ../ generate-python` and re-emitted
+# on every release tag via .github/workflows/clients-kiota.yml.
+
+[build-system]
+requires = ["hatchling>=1.18"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shepard-v2-client"
+version = "0.1.0"
+description = "Kiota-generated Python client for shepard's /v2/ API surface."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "shepard contributors" },
+]
+keywords = ["shepard", "kiota", "openapi", "v2-api", "research-data"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+# Kiota's Python runtime split into per-feature wheels — pin upper bounds
+# loosely; Kiota does its own minor-version compat tracking.
+dependencies = [
+    "microsoft-kiota-abstractions>=1.6.0,<2.0",
+    "microsoft-kiota-http>=1.6.0,<2.0",
+    "microsoft-kiota-serialization-json>=1.6.0,<2.0",
+    "microsoft-kiota-serialization-text>=1.6.0,<2.0",
+    "microsoft-kiota-serialization-form>=1.6.0,<2.0",
+    "microsoft-kiota-serialization-multipart>=1.6.0,<2.0",
+    "microsoft-kiota-authentication-azure>=1.6.0,<2.0",
+    "httpx>=0.27,<1.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.urls]
+Homepage = "https://github.com/noheton/shepard"
+Issues = "https://github.com/noheton/shepard/issues"
+"Source" = "https://github.com/noheton/shepard/tree/main/clients-v2/python-kiota"
+
+[tool.hatch.build.targets.wheel]
+packages = ["shepard_v2"]
