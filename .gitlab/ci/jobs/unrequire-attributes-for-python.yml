@@ -1,9 +1,12 @@
 unrequire_attributes_for_python:
   stage: build
   image: python:3.13-slim
+  # CG1b — input is the v1-shelf-sliced doc (per ADR-0022 / aidocs/57 §4.2)
+  # rather than the combined openapi.json, so the Python client targets
+  # `/shepard/api/...` only.
   script:
-    - python3 scripts/shepard_scripts/scripts/patch_openapi_for_python.py backend/target/openapi/openapi.json backend/target/openapi/openapi_no_required.json
-  needs: [build_backend]
+    - python3 scripts/shepard_scripts/scripts/patch_openapi_for_python.py backend/target/openapi/openapi_v1.json backend/target/openapi/openapi_v1_no_required.json
+  needs: [slice_openapi_v1]
 
   artifacts:
     expire_in: 2 days

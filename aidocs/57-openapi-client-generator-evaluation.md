@@ -261,7 +261,7 @@ shelf. Reasoning, against the §2 criteria:
 
 Keep **OpenAPI Generator** for the upstream-compat `/shepard/api/...`
 clients **as a still-maintained, never-deprecated legacy option**
-(per ADR-0022 / §8). Reasoning:
+(per ADR-0022 / §8 question 1). Reasoning:
 
 - **Zero-impact for upstream consumers** (`CLAUDE.md` API-version
   policy). Anyone built against `dlr-shepard-clients/*` keeps
@@ -273,6 +273,42 @@ clients **as a still-maintained, never-deprecated legacy option**
 - One existing dual-source-of-truth ledger (P17) doesn't get worse
   — the two generators target different `/` prefixes; client
   packages publish under different artifact coordinates (§6).
+
+**Status — CG1b shipped.** The existing OpenAPI Generator pipeline
+(`.gitlab/ci/clients/{java,python,typescript}.gitlab-ci.yml`,
+producing `clients/{java,python,typescript}/`) has been retargeted to
+read from the **v1-shelf-sliced** OpenAPI document
+(`backend/target/openapi/openapi_v1.json`) rather than the combined
+`openapi.json`. The slicer
+(`scripts/shepard_scripts/scripts/slice_openapi_v1.py`) is the
+build-time mirror of the runtime `V1OpenApiFilter` (Java) — it drops
+`/v2/...` paths and platform paths (`/healthz`, `/openapi`,
+`/swagger-ui`, `/metrics`), keeping every other path; semantics
+match `OpenApiShelfMembership.isV1Path` 1:1 across both the raw
+`/shepard/api/...` shape and the `ApiPathFilter`-stripped form. The
+runtime per-shelf endpoint (`GET /shepard/doc/openapi/v1.json`,
+shipped under P4c) is the same view, served live by the backend; the
+build-time slicer is the no-running-backend-needed equivalent for
+the CI client-generation pipeline.
+
+A per-language regression fence
+(`clients/tests/v1-scope-smoke-test.sh`) runs after each generator
+invocation, asserting (a) the generated client mentions a
+`Collection`-shaped class (positive canary — upstream's Collections
+API has been stable since 5.0.x) **and** (b) the generated client
+contains zero `/v2/` references anywhere. The fence is the
+regression lock for the v1-shelf scope: a future change that
+accidentally retargets the input back to the combined OpenAPI doc
+fails loudly in CI.
+
+The retarget is **behaviour-preserving** for downstream consumers —
+generator templates, version pins, artefact coordinates
+(`de.dlr.shepard:shepard-client` / `shepard-client` PyPI /
+`@dlr-shepard/shepard-client` npm), and the public Java / Python /
+TypeScript API surface of the generated client are all unchanged.
+Only the input spec is now v1-only. The dual-posture story is
+documented in [`clients/README.md`](../clients/README.md) and
+[`docs/reference/api.md`](../docs/reference/api.md).
 
 ### 4.3 Secondary, language-specific: Hey API for the TS `/v2/` ride-along
 
@@ -398,16 +434,23 @@ on the PR that lands CG1a notes:
 
 ## 7. Phasing — CG1 series
 
+Post-ADR-0022 the CG1 phasing is the dual-baseline split: CG1a is the
+new-Kiota half, CG1b is the still-maintained-legacy half (this PR);
+CG1c covers publishing and CG1d the regression-test layer.
+
 | ID | Slice | Size | Gate |
 |---|---|---|---|
 | **CG1a** ✓ shipped 2026-05-13 | Kiota CLI pinned at v1.31.1 in `clients-v2/Makefile`; `.github/workflows/clients-kiota.yml` emits Java + Python + TypeScript SDKs from `/shepard/doc/openapi/v2.json` on every release tag + weekly cron + manual dispatch. Vendored source per §8 q3. Per-language smoke tests in `clients-v2/tests/smoke/`. **No publishing yet** — that's CG1c. | M | P4c (shipped) |
-| **CG1b** | Publish the SDKs to Maven Central / PyPI / npm under the §6.2 coordinates via the existing release workflow. Versioning tracks the backend's `<revision>` (so client `5.2.0+noheton.4` matches backend `5.2.0+noheton.4`). | M | CG1a; release-workflow signing keys for `io.github.noheton.*` namespace |
-| **CG1c** | Golden-output regression: a small "Hello shepard" test client in each language (Java + Python + TS) compiled against the **published** artifact + run against a CI-booted compose stack — same pattern as `aidocs/49` screenshot pipeline. Catches "the generator output works but the published artifact is broken." | S | CG1b |
-| **CG1d** | User-facing docs page `docs/reference/clients.md` (per the `docs/reference/*.md` catalogue in `aidocs/49 §2.2`) documenting both client tracks (upstream `dlr-shepard-clients/*` for `/shepard/api/...` and the new `noheton-shepard-client` lineage for `/v2/`); install-line + hello-world per language. | S | CG1b + `aidocs/49` D1c2 |
+| **CG1b** ✓ shipped 2026-05-13 | **OpenAPI Generator legacy maintenance — retarget to v1 shelf + dual-posture docs.** Per ADR-0022, the still-maintained-legacy half of the dual baseline: retargets the existing `clients/{java,python,typescript}` pipeline to read from `/shepard/doc/openapi/v1.json` (via the new build-time slicer mirror of `V1OpenApiFilter`) instead of the combined OpenAPI doc. Per-language `v1-scope-smoke-test.sh` regression fence asserts the generated client (a) contains a `Collection`-shaped class and (b) contains zero `/v2/` references. `clients/README.md` + per-language sub-READMEs frame this as still-supported indefinitely. Behaviour-preserving for downstream `dlr-shepard-clients/*` consumers — same generator, same coordinates, same surface; only the input spec is now v1-only. | S-M | P4c (shipped); ADR-0022 |
+| **CG1c** | Publish the SDKs to Maven Central / PyPI / npm under the §6.2 coordinates via the existing release workflow. Versioning tracks the backend's `<revision>`. Covers **both** generator lineages — `clients/` (OpenAPI Generator, CG1b) and `clients-v2/` (Kiota, CG1a). | M | CG1a + CG1b; release-workflow signing keys for `io.github.noheton.*` namespace |
+| **CG1d** | Golden-output regression + user-facing docs. A small "Hello shepard" test client in each language compiled against the **published** artifact + run against a CI-booted compose stack — same pattern as `aidocs/49` screenshot pipeline. Plus the install-line + hello-world expansion in `docs/reference/api.md` (decision section landed in CG1a / CG1b). Applies to both `clients/` and `clients-v2/` lineages. | S | CG1c |
 
-Recommended order: **CG1a → CG1b → CG1c → CG1d**. CG1a is the
-hermetic-codegen step; CG1b adds distribution; CG1c is the
-trust-but-verify regression; CG1d closes the docs gap.
+Recommended order: **CG1b → CG1a → CG1c → CG1d**. CG1b is the
+still-maintained-legacy retarget (shipped first because it touches
+the existing pipeline already on `main`); CG1a is the new-Kiota
+baseline (sibling slice, separate PR); CG1c adds distribution; CG1d
+closes the regression-test + install-line gap once published
+artefacts exist to test against.
 
 **Deferred:**
 
@@ -432,7 +475,7 @@ trust-but-verify regression; CG1d closes the docs gap.
 
 The three forks-in-the-road:
 
-1. **Kiota vs OpenAPI Generator for `/v2/` (the headline).** **Resolved — 2026-05-13: ship both indefinitely.** Kiota is the **new baseline** for `/v2/` client generation (per-shelf v2 OpenAPI doc → Kiota → `clients-v2/`); OpenAPI Generator stays the **still-maintained legacy option** for the byte-frozen `/shepard/api/` surface (per-shelf v1 OpenAPI doc → OpenAPI Generator → `clients/`). Neither is on a deprecation path; the maintainer's intent is that an operator can keep using either client generation today and pick the one that fits their tooling. Decision recorded in **ADR-0022** (`aidocs/63`). Implementation lands in **CG1a** (Kiota baseline) + **CG1b** (OpenAPI Generator legacy maintenance).
+1. **Kiota vs OpenAPI Generator for `/v2/` (the headline).** **Resolved — 2026-05-13: ship both indefinitely.** Kiota is the **new baseline** for `/v2/` client generation (per-shelf v2 OpenAPI doc → Kiota → `clients-v2/`); OpenAPI Generator stays the **still-maintained legacy option** for the byte-frozen `/shepard/api/` surface (per-shelf v1 OpenAPI doc → OpenAPI Generator → `clients/`). Neither is on a deprecation path; the maintainer's intent is that an operator can keep using either client generation today and pick the one that fits their tooling. Decision recorded in **ADR-0022** (`aidocs/63`). Implementation lands in **CG1a** (Kiota baseline) + **CG1b** (OpenAPI Generator legacy maintenance + dual-posture docs — shipped).
 2. **Java + Python + TypeScript only — or stretch to Rust / Go for
    the engineering-physics community?** Kiota covers Go natively;
    it does **not** cover Rust (no template). If Rust matters,

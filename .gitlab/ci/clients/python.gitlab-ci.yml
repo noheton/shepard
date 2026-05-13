@@ -3,9 +3,14 @@
   image:
     name: openapitools/openapi-generator-cli:v7.12.0
     entrypoint: [""]
-  needs: [build_backend, get_version, unrequire_attributes_for_python]
+  # CG1b — input is the v1-shelf doc (post-slice, post-unrequire) per
+  # ADR-0022 / aidocs/57 §4.2. The /v2/ shelf has its own Kiota-generated
+  # Python client under clients-v2/python/ (CG1a).
+  needs: [slice_openapi_v1, get_version, unrequire_attributes_for_python]
   script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi_no_required.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi_v1_no_required.json -g python -o clients/python -p=packageName=shepard_client,packageVersion=${VERSION_NUMBER}
+    # Regression fence: assert the generated client contains no /v2/ references.
+    - bash clients/tests/v1-scope-smoke-test.sh python
   artifacts:
     expire_in: 2 days
     paths:

@@ -1,0 +1,19 @@
+# CG1b — build-time slicer for the v1 OpenAPI shelf.
+#
+# Mirrors the runtime `V1OpenApiFilter` (Java) on the on-disk
+# `openapi.json` smallrye-openapi produced at backend build time, so the
+# legacy OpenAPI Generator clients in `clients/{java,python,typescript}`
+# target the byte-frozen `/shepard/api/...` surface only — no `/v2/`
+# noise. Per ADR-0022 / `aidocs/57 §4.2` / `aidocs/16` CG1b.
+
+slice_openapi_v1:
+  stage: build
+  image: python:3.13-slim
+  script:
+    - python3 scripts/shepard_scripts/scripts/slice_openapi_v1.py backend/target/openapi/openapi.json backend/target/openapi/openapi_v1.json
+  needs: [build_backend]
+
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - backend/target/openapi
