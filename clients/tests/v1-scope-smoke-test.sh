@@ -55,12 +55,32 @@ readonly V1_CANARY_PATTERN="[Cc]ollection"
 # all contain the literal substring.
 readonly V2_LEAK_PATTERN="/v2/"
 
+# Per-language directory mapping. The Java generator emits its output
+# into a `client/` Maven sub-module under `clients/java/`, alongside the
+# checked-in `pom.xml` / `config.yaml`. Python and TypeScript generators
+# emit the whole package tree directly under their language directory.
+generator_output_dir_for() {
+    local lang="$1"
+    case "${lang}" in
+        java)
+            echo "${CLIENTS_DIR}/java/client"
+            ;;
+        python|typescript)
+            echo "${CLIENTS_DIR}/${lang}"
+            ;;
+        *)
+            echo "${CLIENTS_DIR}/${lang}"
+            ;;
+    esac
+}
+
 check_language() {
     local lang="$1"
-    local lang_dir="${CLIENTS_DIR}/${lang}"
+    local lang_dir
+    lang_dir="$(generator_output_dir_for "${lang}")"
 
     if [[ ! -d "${lang_dir}" ]]; then
-        yellow "[skip] ${lang}: directory ${lang_dir} not present (generator hasn't run for this language)"
+        yellow "[skip] ${lang}: ${lang_dir} not present — generator hasn't run for this language yet (in CI this runs after openapi-generator-cli; locally run the generate-client recipe first)"
         return 0
     fi
 
