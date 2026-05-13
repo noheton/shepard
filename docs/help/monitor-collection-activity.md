@@ -103,5 +103,28 @@ GET /v2/provenance/activities?targetAppId={collectionAppId}
 Accept: application/prov+json
 ```
 
+For **JSON-LD** export — feeds directly into Apache Jena, RDF4J,
+or any other SPARQL store — switch the Accept header. Plain
+PROV-O JSON-LD:
+
+```
+GET /v2/provenance/activities?targetAppId={collectionAppId}
+Accept: application/ld+json
+```
+
+For the **NFDI4Ing metadata4ing** flavour (engineering-research
+subtypes on top of PROV-O — `m4i:ProcessingStep`,
+`m4i:InvestigatedObject`, `m4i:Person`):
+
+```
+GET /v2/provenance/activities?targetAppId={collectionAppId}
+Accept: application/ld+json; profile="https://w3id.org/nfdi4ing/metadata4ing/"
+```
+
+`profile=metadata4ing` works as a short form. See the full
+[Provenance reference](../reference/provenance.md) for the wire
+shapes and field mappings.
+
 See [aidocs/55](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/55-provenance-and-activity-overhaul.md)
-for the full design.
+for the full design + [aidocs/64](https://gitlab.com/dlr-shepard/shepard/-/blob/main/aidocs/64-provenance-architecture.md)
+for the m4i mapping rules.

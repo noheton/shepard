@@ -154,16 +154,23 @@ These work the same way across every primitive:
 - **API keys** with optional `validUntil` expiry (L5, shipped) —
   you can hand a campaign-lead key to a sub-team without forever
   granting access.
-- **Activity dashboard + PROV-O provenance trail** (`aidocs/55`,
-  PROV1 series — PROV1a/b/c/d/f/g shipped). Every mutation generates
+- **Activity dashboard + PROV-O provenance trail + metadata4ing (m4i)
+  content-negotiation** (`aidocs/55`, `aidocs/64`, PROV1 series —
+  PROV1a/b/c/d/f/g/h shipped). Every mutation generates
   a W3C PROV-O `:Activity` node (`prov:Agent` + `prov:wasAssociatedWith`);
   the per-Collection sparkline ("how busy is this Collection?")
   renders inline on the Collection page with totals, distinct-agent
   count, action-kind histogram, and a cumulative-integral overlay.
   Time-range picker (7d / 30d / 90d / 1y). Reads opt-in via
-  `shepard.provenance.capture-reads`. PROV-N JSON export via
-  `Accept: application/prov+json` for downstream interop (RO-Crate,
-  OpenLineage). 2-year retention default.
+  `shepard.provenance.capture-reads`. **Three export shapes** on
+  `/v2/provenance/{activities,entity/{appId},count}` via content
+  negotiation: plain JSON (default), PROV-N JSON (`Accept:
+  application/prov+json`), PROV-O JSON-LD (`Accept:
+  application/ld+json`), or the **NFDI4Ing metadata4ing flavour**
+  (`Accept: application/ld+json; profile=metadata4ing`) with
+  `m4i:ProcessingStep` / `m4i:InvestigatedObject` / `m4i:Person`
+  dual-typed alongside the PROV-O parents — feeds straight into a
+  SPARQL store or an RO-Crate manifest. 2-year retention default.
   Instance-admin dashboard (PROV1e) queued behind A0's admin shell.
 
 ## How you actually use it
