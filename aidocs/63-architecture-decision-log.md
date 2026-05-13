@@ -1026,29 +1026,12 @@ Easy. The `GitAdapter` interface seam is internal; replacing
 GitLab-only with a different host (or removing the per-host split)
 is a refactor with no wire-format implication.
 
-## How to add a new entry
-
-1. Pick the next free `ADR-NNNN` id (chronological — increment from
-   the last entry).
-2. Add a one-line row to the index table at the top.
-3. Append the full entry below the last one, following the same
-   `Context / Decision / Rationale / Alternatives / Reversibility`
-   shape.
-4. Reference the ADR id in the commit message of the change that
-   applies the decision: `ADR-0019 in effect`.
-5. If the decision references other ADRs (supersedes, couples with,
-   etc.), name them explicitly in the body.
-
-If a decision is **overturned**, add a new ADR that supersedes the
-old one. Set the old entry's status to `superseded by ADR-NNNN` —
-don't edit the body of the old entry.
-
-
 ## ADR-0022 — OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy
 
 **Status.** accepted. **Date.** 2026-05-13.
 **Applied in.** `aidocs/57 §4` + §8 question 1; CG1a (Kiota baseline)
-and CG1b (OpenAPI Generator legacy maintenance).
+and CG1b (OpenAPI Generator legacy maintenance — shipped on
+`claude/cg1b-openapi-generator-legacy`).
 
 ### Context
 
@@ -1118,3 +1101,20 @@ affected package; downstream consumers would need to switch their
 generation pipeline. The decision is intended to be permanent —
 the cost of switching one side later is real but bounded to the
 clients/* tree.
+
+## How to add a new entry
+
+1. Pick the next free `ADR-NNNN` id (chronological — increment from
+   the last entry).
+2. Add a one-line row to the index table at the top.
+3. Append the full entry below the last one, following the same
+   `Context / Decision / Rationale / Alternatives / Reversibility`
+   shape.
+4. Reference the ADR id in the commit message of the change that
+   applies the decision: `ADR-0019 in effect`.
+5. If the decision references other ADRs (supersedes, couples with,
+   etc.), name them explicitly in the body.
+
+If a decision is **overturned**, add a new ADR that supersedes the
+old one. Set the old entry's status to `superseded by ADR-NNNN` —
+don't edit the body of the old entry.
