@@ -72,6 +72,12 @@ public class ShepardMain implements QuarkusApplication {
     // Fail-soft: a missing n10s plugin is logged + skipped, not
     // fatal — see N10sBootstrapHook javadoc.
     new N10sBootstrapHook().run();
+    // PM1a — plugin SPI discovery (ADR-0023). The PluginRegistry
+    // @ApplicationScoped bean observes Quarkus's StartupEvent which
+    // fires strictly *after* this @Startup hook returns, so plugin
+    // onRegister callbacks always see post-migration databases.
+    // Nothing to invoke explicitly here — the comment exists so a
+    // future reader of the bootstrap sequence sees the ordering.
   }
 
   @Override
