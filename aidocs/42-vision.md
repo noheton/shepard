@@ -103,8 +103,8 @@ Plus payload kinds (the things References point at):
   HSDS sidecar. The per-DataObject reference, the byte-identical
   download fallback, the permission bridge, and the
   shepard-API-key-to-`h5pyd`-bearer-token relay are queued (A5b–A5e).
-- **Git reference** *(mode-a shipped: loose link to repo URL + ref + path;
-  UI in-flight; tracked + pinned-snapshot modes coming with G1b/G1c)* →
+- **Git reference** *(loose, tracked (GitLab + GitHub + Gitea) shipped via
+  G1a/G1b/G1d; pinned planned via G1c; UI in-flight)* →
   pinned git commit + path, for analysis code provenance.
 
 ## The cross-cutting features
