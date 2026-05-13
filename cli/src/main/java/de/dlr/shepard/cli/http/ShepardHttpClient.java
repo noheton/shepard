@@ -183,19 +183,6 @@ public final class ShepardHttpClient {
     return send(builder.build(), path, false);
   }
 
-  /** Raw {@code DELETE} variant — used by UH1a's harvest-key revoke. */
-  public HttpResponse<String> delete(String path) {
-    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
-    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
-      .DELETE()
-      .timeout(Duration.ofSeconds(30))
-      .header("Accept", "application/json");
-    if (apiKey != null && !apiKey.isBlank()) {
-      builder.header("X-API-KEY", apiKey);
-    }
-    return send(builder.build(), path, false);
-  }
-
   /** Build a minimal RFC 7578 multipart/form-data body. */
   static byte[] buildMultipartBody(
     String boundary,

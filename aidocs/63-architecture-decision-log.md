@@ -1230,12 +1230,18 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   *Done in PM1a phase 2 (image creates `/deployments/plugins/`
   with uid 185 ownership; `SHEPARD_PLUGINS_DIR=/deployments/plugins`
   pinned).*
-- ⏳ **Admin REST + CLI parity** — `GET /v2/admin/plugins`,
+- ✅ **Admin REST + CLI parity** — `GET /v2/admin/plugins`,
   `PATCH /v2/admin/plugins/<id>` (per `aidocs/47 §2.5`), with
-  `shepard-admin plugins {list,enable <id>,disable <id>}`. *Queued
-  as PM1b; the underlying `PluginRegistry.list()` /
-  `isEnabled(id)` / `setEnabled(id, bool)` read+write surface is
-  already in place — only the REST + CLI wrapping is left.*
+  `shepard-admin plugins {list,enable <id>,disable <id>}`.
+  *Done in PM1b (this commit). `PluginsAdminRest` lives in
+  `de.dlr.shepard.v2.admin.plugins` (core; one of the
+  CLAUDE.md plugin-first exceptions — the runtime SPI registry
+  itself stays in-tree). RFC 7396 merge-patch shape on
+  `enabled` only; non-`enabled` fields hit a defensive 400
+  `plugin.config.read-only-field`; unknown id hits 404
+  `plugin.not-found`. CLI mirrors 1:1 with the shared L1
+  baseline flags. PROV1a captures each PATCH as an
+  `:Activity` row automatically.*
 - ✅ **Documentation** — operator runbook on `docs/reference/plugins.md`
   covering install / uninstall / enable / disable. *Done in PM1a
   phase 3 (this commit; the per-plugin pages at
