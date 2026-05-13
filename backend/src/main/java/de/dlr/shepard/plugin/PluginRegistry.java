@@ -16,14 +16,19 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.Set;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -108,8 +113,13 @@ public class PluginRegistry {
    * {@link #onShutdown} on the Quarkus startup / shutdown thread.
    * Marked volatile-by-LinkedHashMap-replacement on startup, then
    * frozen as an unmodifiable view.
+   *
+   * <p>Package-private so {@link PluginRegistryDependencyTest} can
+   * stage entries directly and exercise
+   * {@link #validateAndOrderDependencies()} without booting the full
+   * JAR-discovery path.
    */
-  private final Map<String, PluginEntry> entries = new LinkedHashMap<>();
+  final Map<String, PluginEntry> entries = new LinkedHashMap<>();
 
   /**
    * Runtime override of the per-plugin enabled flag — keyed by
@@ -150,6 +160,21 @@ public class PluginRegistry {
   /**
    * Drive the discovery + lifecycle. Package-private for direct
    * test invocation without booting Quarkus.
+   *
+   * <p>Discovery sequence (PM1c):
+   * <ol>
+   *   <li>Classpath ServiceLoader scan (collects manifests but
+   *       defers lifecycle).</li>
+   *   <li>JAR-walk scan (same — collects only).</li>
+   *   <li>{@link #validateAndOrderDependencies()} (PM1c) — checks
+   *       each non-failed entry's
+   *       {@link PluginManifest#dependencies()} against the
+   *       discovery set; marks FAILED on missing dependency, version
+   *       mismatch, or cycle; reorders the entries map by
+   *       topological order so dependencies register first.</li>
+   *   <li>{@link #invokeLifecycle()} — calls {@code onRegister} per
+   *       non-failed entry in topo-sorted order.</li>
+   * </ol>
    */
   void discover() {
     Log.info("PM1a: plugin discovery starting");
@@ -162,6 +187,7 @@ public class PluginRegistry {
     if (resolved != null) {
       discoverJarPlugins(resolved);
     }
+    validateAndOrderDependencies();
     invokeLifecycle();
     Log.infof(
       "PM1a: plugin discovery complete — %d discovered, %d enabled, %d disabled, %d failed",
@@ -375,6 +401,199 @@ public class PluginRegistry {
       entry.version(),
       entry.jarPath() == null ? "build classpath" : entry.jarPath()
     );
+  }
+
+  /**
+   * PM1c — resolve {@link PluginManifest#dependencies()} into a
+   * topological order; mark plugins FAILED that depend on a missing
+   * sibling, a version-incompatible sibling, or participate in a
+   * cycle. Non-failing plugins are reordered (in the {@link #entries}
+   * map) so dependencies register before dependents.
+   *
+   * <p>Failure modes:
+   * <ul>
+   *   <li>{@code plugin.dependency.missing} — declared dependency id
+   *       not present in the discovery set.</li>
+   *   <li>{@code plugin.dependency.version-mismatch} — sibling
+   *       discovered but its {@code version()} doesn't satisfy the
+   *       declared {@link PluginDependency#versionConstraint()}.</li>
+   *   <li>{@code plugin.dependency.cycle} — every plugin on a cycle
+   *       fails; the cycle is logged once.</li>
+   * </ul>
+   *
+   * <p>Algorithm: Kahn's topological sort over the non-FAILED entries.
+   * After dependency-validation, any plugin still in DISCOVERED state
+   * is eligible for the sort; the sort's output ordering is appended
+   * after all FAILED entries (which keep their insertion-order slot
+   * for operator readability). A separate FAILED-then-sorted ordering
+   * keeps {@link #list()} stable across restart for the failed rows
+   * (which an operator typically wants to fix first).
+   */
+  void validateAndOrderDependencies() {
+    // Step 1 — index the discovery set by id, but only the entries
+    // that aren't already FAILED (a duplicate-id row from PM1a's
+    // register() phase carries a synthetic key — we never want to
+    // consider it a dep target).
+    Map<String, PluginEntry> byId = new HashMap<>();
+    for (PluginEntry entry : entries.values()) {
+      if (entry.state() != PluginState.FAILED) {
+        byId.put(entry.id(), entry);
+      }
+    }
+
+    // Step 2 — validate each entry's dependencies. A failure here
+    // marks the entry FAILED and removes it from the graph for the
+    // topo-sort step. We walk a stable copy of the values so the
+    // iteration isn't disturbed by failures (no map mutation).
+    List<PluginEntry> candidates = new ArrayList<>(byId.values());
+    for (PluginEntry entry : candidates) {
+      List<PluginDependency> deps;
+      try {
+        deps = entry.dependencies();
+      } catch (RuntimeException ex) {
+        entry.markFailed(
+          "plugin.dependency.read-failed: " + ex.getClass().getSimpleName() + ": " + ex.getMessage()
+        );
+        Log.warnf(ex, "PM1c: plugin '%s' dependencies() threw — marking FAILED", entry.id());
+        byId.remove(entry.id());
+        continue;
+      }
+      if (deps == null || deps.isEmpty()) {
+        continue;
+      }
+      for (PluginDependency dep : deps) {
+        PluginEntry target = byId.get(dep.pluginId());
+        if (target == null) {
+          entry.markFailed(
+            "plugin.dependency.missing: required plugin '" + dep.pluginId() + "' not discovered"
+          );
+          Log.warnf(
+            "PM1c: plugin '%s' depends on missing plugin '%s' — plugin.dependency.missing",
+            entry.id(),
+            dep.pluginId()
+          );
+          byId.remove(entry.id());
+          break;
+        }
+        VersionRange range;
+        try {
+          range = VersionRange.parse(dep.versionConstraint());
+        } catch (IllegalArgumentException ex) {
+          entry.markFailed(
+            "plugin.dependency.version-mismatch: unparseable range '" + dep.versionConstraint() +
+            "' for '" + dep.pluginId() + "' (" + ex.getMessage() + ")"
+          );
+          Log.warnf(
+            "PM1c: plugin '%s' declares unparseable version range for '%s' — plugin.dependency.version-mismatch",
+            entry.id(),
+            dep.pluginId()
+          );
+          byId.remove(entry.id());
+          break;
+        }
+        if (!range.accepts(target.version())) {
+          entry.markFailed(
+            "plugin.dependency.version-mismatch: '" + dep.pluginId() + "' v" + target.version() +
+            " does not satisfy '" + range.raw() + "'"
+          );
+          Log.warnf(
+            "PM1c: plugin '%s' requires %s %s but discovered v%s — plugin.dependency.version-mismatch",
+            entry.id(),
+            dep.pluginId(),
+            range.raw(),
+            target.version()
+          );
+          byId.remove(entry.id());
+          break;
+        }
+      }
+    }
+
+    // Step 3 — Kahn's topo-sort over what's left.
+    // Edges go from dependency → dependent (dependency must be
+    // registered first).
+    Map<String, Set<String>> dependents = new HashMap<>();
+    Map<String, Integer> incoming = new HashMap<>();
+    for (PluginEntry entry : byId.values()) {
+      incoming.putIfAbsent(entry.id(), 0);
+      dependents.putIfAbsent(entry.id(), new HashSet<>());
+    }
+    for (PluginEntry entry : byId.values()) {
+      for (PluginDependency dep : entry.dependencies()) {
+        // A dep that drops out of byId via failure-pruning means the
+        // dependent was already marked FAILED in step 2 — skip.
+        if (!byId.containsKey(dep.pluginId())) {
+          continue;
+        }
+        Set<String> children = dependents.get(dep.pluginId());
+        if (children.add(entry.id())) {
+          incoming.merge(entry.id(), 1, Integer::sum);
+        }
+      }
+    }
+
+    Deque<String> queue = new ArrayDeque<>();
+    for (Map.Entry<String, Integer> e : incoming.entrySet()) {
+      if (e.getValue() == 0) {
+        queue.add(e.getKey());
+      }
+    }
+    List<String> sorted = new ArrayList<>(byId.size());
+    while (!queue.isEmpty()) {
+      String id = queue.poll();
+      sorted.add(id);
+      for (String child : dependents.get(id)) {
+        int n = incoming.merge(child, -1, Integer::sum);
+        if (n == 0) {
+          queue.add(child);
+        }
+      }
+    }
+
+    if (sorted.size() < byId.size()) {
+      // Cycle — every node with incoming > 0 is on a cycle.
+      List<String> onCycle = new ArrayList<>();
+      for (Map.Entry<String, Integer> e : incoming.entrySet()) {
+        if (e.getValue() > 0) {
+          onCycle.add(e.getKey());
+        }
+      }
+      Collections.sort(onCycle);
+      Log.warnf(
+        "PM1c: plugin dependency cycle detected across %s — every plugin on the cycle marked FAILED",
+        onCycle
+      );
+      for (String id : onCycle) {
+        PluginEntry e = byId.remove(id);
+        if (e != null) {
+          e.markFailed("plugin.dependency.cycle: participates in cycle " + onCycle);
+        }
+      }
+    }
+
+    // Step 4 — rebuild the entries map: previously-FAILED rows keep
+    // their original insertion-order position; the survivors are
+    // re-inserted in topo order. The original "#duplicate-..." rows
+    // (from PM1a duplicate-id detection) live in entries but not in
+    // byId — they stay put.
+    LinkedHashMap<String, PluginEntry> rebuilt = new LinkedHashMap<>();
+    // First pass: preserve all entries that aren't in byId at their
+    // original position (these are FAILED rows, duplicates,
+    // dep-failures we just marked).
+    Set<String> surviving = byId.keySet();
+    for (Map.Entry<String, PluginEntry> e : entries.entrySet()) {
+      if (!surviving.contains(e.getKey())) {
+        rebuilt.put(e.getKey(), e.getValue());
+      }
+    }
+    // Second pass: append survivors in topological order.
+    for (String id : sorted) {
+      if (surviving.contains(id)) {
+        rebuilt.put(id, byId.get(id));
+      }
+    }
+    entries.clear();
+    entries.putAll(rebuilt);
   }
 
   /** Drive {@code onRegister} for the enabled plugins. */

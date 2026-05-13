@@ -1,8 +1,11 @@
 package de.dlr.shepard.v2.admin.plugins.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import de.dlr.shepard.plugin.PluginDependency;
 import de.dlr.shepard.plugin.PluginEntry;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -49,7 +52,13 @@ public record PluginEntryIO(
   @Schema(required = true, description = "Effective enabled toggle (runtime override or config fallback).") boolean enabled,
   @Schema(description = "Path of the source JAR (null for build-classpath plugins).") String sourcePath,
   @Schema(required = true, description = "Wall-clock instant the registry first observed the plugin.") Date registeredAt,
-  @Schema(description = "Failure reason — populated only when state == FAILED.") String failureMessage
+  @Schema(description = "Failure reason — populated only when state == FAILED.") String failureMessage,
+  @Schema(description = "PM1c — human-readable display name (default: id).") String title,
+  @Schema(description = "PM1c — one-paragraph operator-facing description.") String description,
+  @Schema(description = "PM1c — plugin homepage URL.") String homepageUrl,
+  @Schema(description = "PM1c — plugin source-code repository URL.") String repositoryUrl,
+  @Schema(description = "PM1c — SPDX licence identifier.") String licence,
+  @Schema(description = "PM1c — required sibling plugins.") List<PluginDependencyIO> dependencies
 ) {
   /**
    * Project a {@link PluginEntry} onto the wire shape. {@code enabled}
@@ -57,6 +66,10 @@ public record PluginEntryIO(
    * reflects the runtime override that PM1b's PATCH may have set.
    */
   public static PluginEntryIO from(PluginEntry entry, boolean enabled) {
+    List<PluginDependencyIO> depIO = new ArrayList<>();
+    for (PluginDependency dep : entry.dependencies()) {
+      depIO.add(new PluginDependencyIO(dep.pluginId(), dep.versionConstraint()));
+    }
     return new PluginEntryIO(
       entry.id(),
       entry.version(),
@@ -65,7 +78,24 @@ public record PluginEntryIO(
       enabled,
       entry.jarPath() == null ? null : entry.jarPath().toString(),
       entry.registeredAt() == null ? null : Date.from(entry.registeredAt()),
-      entry.failureMessage()
+      entry.failureMessage(),
+      nullIfBlank(entry.title()),
+      nullIfBlank(entry.description()),
+      entry.homepageUrl().map(uri -> uri.toString()).orElse(null),
+      entry.repositoryUrl().map(uri -> uri.toString()).orElse(null),
+      nullIfBlank(entry.licence()),
+      depIO
     );
+  }
+
+  /**
+   * Collapses empty strings to {@code null} so the
+   * {@link JsonInclude.Include#NON_NULL} default omits them from
+   * the wire shape — clients that don't know about the new fields
+   * stay agnostic, and operators see real values instead of empty
+   * keys.
+   */
+  private static String nullIfBlank(String s) {
+    return s == null || s.isBlank() ? null : s;
   }
 }

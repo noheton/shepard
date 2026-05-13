@@ -3,6 +3,8 @@ package de.dlr.shepard.plugins.unhide;
 import de.dlr.shepard.plugin.PluginContext;
 import de.dlr.shepard.plugin.PluginManifest;
 import io.quarkus.logging.Log;
+import java.net.URI;
+import java.util.Optional;
 
 /**
  * UH1a — Helmholtz Unhide publish plugin manifest, discovered by
@@ -53,6 +55,28 @@ public final class UnhidePluginManifest implements PluginManifest {
    */
   private static final String SHEPARD_COMPATIBILITY = ">=5.2.0,<6";
 
+  /** PM1c — display name surfaced in admin REST + CLI. */
+  private static final String TITLE = "Helmholtz Unhide Publish";
+
+  /** PM1c — operator-facing summary. */
+  private static final String DESCRIPTION =
+    "Exposes the install's catalogue as a schema.org + metadata4ing JSON-LD feed for the " +
+    "Helmholtz Knowledge Graph (HKG / Unhide) harvester.";
+
+  /** PM1c — homepage of the upstream consumer (the Unhide service). */
+  private static final URI HOMEPAGE = URI.create("https://unhide.helmholtz-metadaten.de/");
+
+  /** PM1c — fork source-code repository. */
+  private static final URI REPOSITORY = URI.create("https://github.com/noheton/shepard");
+
+  /**
+   * PM1c — SPDX licence id. The plugin currently lives in-tree under
+   * the fork's Apache-2.0 licence (see {@code LICENSE}); when UH1
+   * graduates to a standalone {@code shepard-plugin-unhide}
+   * repository it inherits this licence unless explicitly relicensed.
+   */
+  private static final String LICENCE = "Apache-2.0";
+
   @Override
   public String id() {
     return ID;
@@ -67,6 +91,35 @@ public final class UnhidePluginManifest implements PluginManifest {
   public String shepardCompatibility() {
     return SHEPARD_COMPATIBILITY;
   }
+
+  @Override
+  public String title() {
+    return TITLE;
+  }
+
+  @Override
+  public String description() {
+    return DESCRIPTION;
+  }
+
+  @Override
+  public Optional<URI> homepageUrl() {
+    return Optional.of(HOMEPAGE);
+  }
+
+  @Override
+  public Optional<URI> repositoryUrl() {
+    return Optional.of(REPOSITORY);
+  }
+
+  @Override
+  public String licence() {
+    return LICENCE;
+  }
+
+  // dependencies() — left as the default (empty list). UH1a depends
+  // on the in-tree backend SPIs (PROV1, KIP1, GenericDAO) — not on
+  // any other plugin.
 
   @Override
   public void onRegister(PluginContext ctx) {

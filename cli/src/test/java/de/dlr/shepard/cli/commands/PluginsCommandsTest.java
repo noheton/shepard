@@ -60,7 +60,9 @@ class PluginsCommandsTest {
       rr -> "{\"plugins\":[{\"id\":\"unhide\",\"version\":\"1.0.0\"," +
         "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\",\"enabled\":true," +
         "\"sourcePath\":\"/deployments/plugins/shepard-plugin-unhide-1.0.0.jar\"," +
-        "\"registeredAt\":\"2026-05-13T05:00:00Z\"}]}"
+        "\"registeredAt\":\"2026-05-13T05:00:00Z\"," +
+        "\"title\":\"Helmholtz Unhide Publish\",\"licence\":\"Apache-2.0\"," +
+        "\"repositoryUrl\":\"https://github.com/noheton/shepard\"}]}"
     );
 
     Captured cap = CliRunner.run(new PluginsListCommand(), backend.baseUrl(), "test-key");
@@ -72,6 +74,62 @@ class PluginsCommandsTest {
     assertTrue(cap.stdout().contains("ENABLED"), "state rendered: " + cap.stdout());
     assertTrue(cap.stdout().contains("true"), "enabled toggle rendered: " + cap.stdout());
     assertTrue(cap.stdout().contains("shepard-plugin-unhide-1.0.0.jar"), "source path rendered: " + cap.stdout());
+    // PM1c — new columns rendered.
+    assertTrue(cap.stdout().contains("TITLE"), "TITLE header rendered: " + cap.stdout());
+    assertTrue(cap.stdout().contains("LICENCE"), "LICENCE header rendered: " + cap.stdout());
+    assertTrue(cap.stdout().contains("REPOSITORY"), "REPOSITORY header rendered: " + cap.stdout());
+    assertTrue(cap.stdout().contains("Helmholtz Unhide Publish"), "title rendered: " + cap.stdout());
+    assertTrue(cap.stdout().contains("Apache-2.0"), "licence rendered: " + cap.stdout());
+    assertTrue(cap.stdout().contains("github.com/noheton/shepard"), "repository rendered: " + cap.stdout());
+  }
+
+  @Test
+  void list_humanOutput_truncatesLongValuesWithEllipsis() {
+    // Title 35 chars (> TITLE_MAX=30) → truncated to 29 + "…".
+    // Repository 55 chars (> REPOSITORY_MAX=40) → truncated to 39 + "…".
+    String longTitle = "A Very Long Title That Cannot Fit Wide"; // 38 chars
+    String longRepo = "https://github.com/example/very-long-plugin-repo-name"; // 53 chars
+    backend.route(
+      "/v2/admin/plugins",
+      200,
+      rr -> "{\"plugins\":[{\"id\":\"wide\",\"version\":\"1.0.0\"," +
+        "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\",\"enabled\":true," +
+        "\"sourcePath\":null,\"registeredAt\":\"2026-05-13T05:00:00Z\"," +
+        "\"title\":\"" + longTitle + "\",\"licence\":\"Apache-2.0\"," +
+        "\"repositoryUrl\":\"" + longRepo + "\"}]}"
+    );
+
+    Captured cap = CliRunner.run(new PluginsListCommand(), backend.baseUrl(), "test-key");
+
+    assertEquals(0, cap.exit(), cap.stderr());
+    // Truncation marker present somewhere on stdout — confirms the
+    // width cap is applied (we don't pin a specific truncated prefix
+    // because the column code lives in PluginsListCommand, not here).
+    assertTrue(cap.stdout().contains("…"), "ellipsis on long values: " + cap.stdout());
+  }
+
+  @Test
+  void list_humanOutput_bareManifestRendersDashes() {
+    // No title / licence / repository — bare manifest. All three new
+    // columns collapse to "-".
+    backend.route(
+      "/v2/admin/plugins",
+      200,
+      rr -> "{\"plugins\":[{\"id\":\"bare\",\"version\":\"0.1.0\"," +
+        "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\",\"enabled\":true," +
+        "\"sourcePath\":null,\"registeredAt\":\"2026-05-13T05:00:00Z\"}]}"
+    );
+
+    Captured cap = CliRunner.run(new PluginsListCommand(), backend.baseUrl(), "test-key");
+
+    assertEquals(0, cap.exit(), cap.stderr());
+    // The bare row carries dashes for licence + repository (title
+    // falls back to id, "bare" — present in the row). The dash
+    // appears at least twice — once each for LICENCE and REPOSITORY.
+    long dashCount = cap.stdout().lines().filter(l -> l.contains("bare ")).flatMap(
+      l -> java.util.Arrays.stream(l.split("\\s+"))
+    ).filter("-"::equals).count();
+    assertTrue(dashCount >= 2, "at least 2 dashes for blank licence/repository: " + cap.stdout());
   }
 
   @Test
@@ -229,6 +287,26 @@ class PluginsCommandsTest {
     List<RecordedRequest> requests = backend.requests();
     assertEquals(1, requests.size());
     assertEquals("operator-key", requests.get(0).apiKeyHeader(), "X-API-KEY propagated to backend");
+  }
+
+  // ─── PM1c truncate helper ────────────────────────────────────────────────
+
+  @Test
+  void truncate_preservesShortValuesVerbatim() {
+    assertEquals("Hello", PluginsListCommand.truncate("Hello", 10));
+    assertEquals("12345", PluginsListCommand.truncate("12345", 5));
+  }
+
+  @Test
+  void truncate_appendsEllipsisWhenTooLong() {
+    String result = PluginsListCommand.truncate("abcdefghij", 5);
+    assertEquals("abcd…", result);
+    assertEquals(5, result.length());
+  }
+
+  @Test
+  void truncate_handlesNullAsDash() {
+    assertEquals("-", PluginsListCommand.truncate(null, 10));
   }
 
   // ─── parent wiring ───────────────────────────────────────────────────────

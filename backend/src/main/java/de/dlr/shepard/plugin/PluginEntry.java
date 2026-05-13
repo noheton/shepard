@@ -1,8 +1,11 @@
 package de.dlr.shepard.plugin;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * PM1a — registry entry for a single discovered plugin.
@@ -68,6 +71,56 @@ public final class PluginEntry {
 
   public String shepardCompatibility() {
     return manifest.shepardCompatibility();
+  }
+
+  /**
+   * PM1c — human-readable display name, projected from
+   * {@link PluginManifest#title()}. May be empty / equal to
+   * {@link #id()} if the plugin didn't override the default.
+   */
+  public String title() {
+    return manifest.title();
+  }
+
+  /**
+   * PM1c — operator-facing description, projected from
+   * {@link PluginManifest#description()}. May be empty.
+   */
+  public String description() {
+    return manifest.description();
+  }
+
+  /**
+   * PM1c — homepage URL, projected from
+   * {@link PluginManifest#homepageUrl()}. May be empty.
+   */
+  public Optional<URI> homepageUrl() {
+    return manifest.homepageUrl();
+  }
+
+  /**
+   * PM1c — repository URL, projected from
+   * {@link PluginManifest#repositoryUrl()}. May be empty.
+   */
+  public Optional<URI> repositoryUrl() {
+    return manifest.repositoryUrl();
+  }
+
+  /**
+   * PM1c — SPDX licence id, projected from
+   * {@link PluginManifest#licence()}. May be empty.
+   */
+  public String licence() {
+    return manifest.licence();
+  }
+
+  /**
+   * PM1c — declared plugin dependencies, projected from
+   * {@link PluginManifest#dependencies()}. Empty list if the plugin
+   * declares none.
+   */
+  public List<PluginDependency> dependencies() {
+    return manifest.dependencies();
   }
 
   public Path jarPath() {
