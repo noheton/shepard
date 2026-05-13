@@ -19,6 +19,7 @@
  * See `aidocs/66 §7` (KIP1e) and the CLAUDE.md scope-down note in
  * this slice's commit message.
  */
+import { useClipboard } from "@vueuse/core";
 import PublishModal from "./PublishModal.vue";
 import type {
   PublishableKind,
@@ -41,8 +42,11 @@ const emit = defineEmits<{
 }>();
 
 const { publish, isPublishing } = usePublishEntity();
+const { copy: copyToClipboard } = useClipboard();
 
 const showDialog = ref(false);
+const showSnackbar = ref(false);
+const lastPublication = ref<PublicationResponse | null>(null);
 
 const kindLabel = computed(() =>
   props.entityKind === "collections" ? "Collection" : "DataObject",
@@ -63,9 +67,22 @@ async function onSubmit() {
   const response = await publish(props.entityKind, props.entityAppId);
   if (response) {
     showDialog.value = false;
-    emitSuccess(`Published — PID: ${response.pid}`);
+    lastPublication.value = response;
+    showSnackbar.value = true;
     emit("published", response);
   }
+}
+
+function copyResolverUrl() {
+  if (!lastPublication.value) return;
+  copyToClipboard(lastPublication.value.resolverUrl);
+  emitSuccess("Resolver URL copied to clipboard");
+}
+
+function copyPid() {
+  if (!lastPublication.value) return;
+  copyToClipboard(lastPublication.value.pid);
+  emitSuccess("PID copied to clipboard");
 }
 </script>
 
@@ -93,6 +110,44 @@ async function onSubmit() {
       :loading="isPublishing"
       @submit="onSubmit"
     />
+
+    <v-snackbar
+      v-model="showSnackbar"
+      :timeout="10000"
+      color="success"
+      multi-line
+      location="bottom right"
+    >
+      <div v-if="lastPublication">
+        <div class="font-weight-bold">Published</div>
+        <div class="text-caption mt-1">
+          PID:
+          <code class="ml-1">{{ lastPublication.pid }}</code>
+        </div>
+      </div>
+      <template #actions>
+        <v-btn
+          variant="text"
+          aria-label="Copy resolver URL to clipboard"
+          @click="copyResolverUrl"
+        >
+          Copy resolver URL
+        </v-btn>
+        <v-btn
+          variant="text"
+          aria-label="Copy PID to clipboard"
+          @click="copyPid"
+        >
+          Copy PID
+        </v-btn>
+        <v-btn
+          variant="text"
+          icon="mdi-close"
+          aria-label="Dismiss publish notification"
+          @click="showSnackbar = false"
+        />
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
