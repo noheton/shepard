@@ -321,8 +321,68 @@
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
+      <!--
+        UH1a / ADR-0023 — first shepard-plugin-* module bundling.
+
+        The plugin's own resources directory is stitched in so the
+        Quarkus uber-jar picks up any META-INF files the plugin
+        ships. Mirrors the source-directory bridge below.
+      -->
+      <resource>
+        <directory>${project.basedir}/../plugins/unhide/src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
     </resources>
     <plugins>
+      <!--
+        UH1a / ADR-0023 — first shepard-plugin-* module bundling.
+
+        Phase 1 plugin build path: the plugin's `src/main/java` and
+        `src/test/java` trees live under `plugins/unhide/` for namespace
+        + future-SPI isolation, but are stitched into the backend
+        compilation unit here via build-helper. The plugin classes
+        end up in the same Quarkus uber-jar as the rest of the
+        backend — no JAR drop-in machinery yet.
+
+        When the `aidocs/47` PayloadKind SPI registry lands, this
+        plugin gets discovered via classpath + ServiceLoader instead
+        of source-stitching; the per-plugin `pom.xml` flips to
+        producing its own jar and the `<add-source>` blocks below
+        get removed. Future plugins (shepard-plugin-hdf-hsds,
+        shepard-plugin-video, shepard-plugin-aas) follow whichever
+        path is current at their landing time.
+      -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>add-plugin-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/../plugins/unhide/src/main/java</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-plugin-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/../plugins/unhide/src/test/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>

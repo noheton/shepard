@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  UH1a — first shepard-plugin-* module ever.
+
+  Phase 1 build path (ADR-0023): the plugin lives here for namespace
+  + future-SPI isolation, but its `src/main/java` and `src/test/java`
+  trees are stitched into the backend Quarkus build via the
+  build-helper-maven-plugin `add-source` / `add-test-source` goals in
+  `backend/pom.xml`. The plugin's classes thus bundle into the
+  backend uber-jar with no extra deployment ceremony.
+
+  This pom is *not* (yet) consumed as a Maven dependency by the
+  backend — it exists to:
+
+    1. Pin the plugin's package layout (`de.dlr.shepard.plugins.<name>`)
+       and document the SPI shape for the next plugin
+       (`shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
+       `shepard-plugin-aas`).
+    2. Reserve the artefact id so a future JAR-drop-in build path
+       (the `aidocs/47` PayloadKind SPI registry) can flip on without
+       moving source files.
+    3. Make the directory a recognisable Maven module for IDE tooling
+       and per-plugin tests.
+
+  When the JAR-drop-in path lands, this pom flips to packaging=jar
+  (it already is) plus adds the backend as `provided` scope and
+  `backend/pom.xml` drops the build-helper add-source bridge in
+  favour of a normal `<dependency>` line.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-unhide</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — Unhide (Helmholtz KG publish)</name>
+  <description>
+    Helmholtz Knowledge Graph (HKG / Unhide) publish-feed plugin.
+    Exposes `/v2/unhide/feed.jsonld` (schema.org + metadata4ing
+    JSON-LD) plus the `/v2/admin/unhide/...` admin surface for
+    runtime configuration + harvest-key minting. See
+    aidocs/67-unhide-publish-plugin.md.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>1.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <!--
+    No declared dependencies in Phase 1: the plugin is stitched into
+    backend at compile-time via build-helper-maven-plugin (see
+    backend/pom.xml). When the JAR-drop-in SPI lands, this becomes
+    `<dependency>backend (provided)</dependency>` and the build-helper
+    bridge in backend drops.
+  -->
+
+</project>
