@@ -2,30 +2,38 @@
 <!--
   UH1a — first shepard-plugin-* module ever.
 
-  Phase 1 build path (ADR-0023): the plugin lives here for namespace
-  + future-SPI isolation, but its `src/main/java` and `src/test/java`
-  trees are stitched into the backend Quarkus build via the
-  build-helper-maven-plugin `add-source` / `add-test-source` goals in
-  `backend/pom.xml`. The plugin's classes thus bundle into the
-  backend uber-jar with no extra deployment ceremony.
+  PM1a phase 3 (ADR-0023 + ADR-0024). The plugin produces a real
+  JAR (`shepard-plugin-unhide-X.Y.Z.jar`) carrying:
 
-  This pom is *not* (yet) consumed as a Maven dependency by the
-  backend — it exists to:
+    * `de.dlr.shepard.plugins.unhide.UnhidePluginManifest` —
+      implements `de.dlr.shepard.plugin.PluginManifest` so the
+      backend's PluginRegistry tracks UH1a in
+      `GET /v2/admin/plugins` and exposes the per-plugin
+      `shepard.plugins.unhide.enabled` runtime toggle.
+    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
+      pointing at the manifest class — the standard
+      `ServiceLoader` SPI contract.
+    * The full UH1a code tree (services, REST resources, DAOs,
+      IO records, the `:UnhideConfig` entity).
 
-    1. Pin the plugin's package layout (`de.dlr.shepard.plugins.<name>`)
-       and document the SPI shape for the next plugin
-       (`shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
-       `shepard-plugin-aas`).
-    2. Reserve the artefact id so a future JAR-drop-in build path
-       (the `aidocs/47` PayloadKind SPI registry) can flip on without
-       moving source files.
-    3. Make the directory a recognisable Maven module for IDE tooling
-       and per-plugin tests.
+  Phase 1 (ADR-0024) build shape: backend ALSO source-stitches
+  this module via `build-helper-maven-plugin` so Quarkus's
+  build-time CDI scanner picks up the @ApplicationScoped beans
+  and the @Path resources. The standalone JAR is the
+  operator-facing artefact (copied to `backend/plugins/` at image
+  build time so `ls` shows it), but the active CDI path is the
+  build-classpath stitch. PM1b removes the source-stitch once
+  child-classloader CDI integration lands.
 
-  When the JAR-drop-in path lands, this pom flips to packaging=jar
-  (it already is) plus adds the backend as `provided` scope and
-  `backend/pom.xml` drops the build-helper add-source bridge in
-  favour of a normal `<dependency>` line.
+  An operator who builds the plugin against an installed backend
+  artefact for a vendor-supplied install:
+    $ cd backend && mvn install -DskipTests
+    $ cd plugins/unhide && mvn package
+    $ cp plugins/unhide/target/shepard-plugin-unhide-*.jar backend/plugins/
+
+  This pom does NOT (yet) participate in the backend's reactor
+  build — the backend builds standalone, and `plugins/unhide` is
+  built explicitly after by the image-build workflow.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -64,14 +72,82 @@
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
   </properties>
 
-  <!--
-    No declared dependencies in Phase 1: the plugin is stitched into
-    backend at compile-time via build-helper-maven-plugin (see
-    backend/pom.xml). When the JAR-drop-in SPI lands, this becomes
-    `<dependency>backend (provided)</dependency>` and the build-helper
-    bridge in backend drops.
-  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
+  <dependencies>
+    <!--
+      backend as provided — the plugin needs the backend's core types
+      (User, Collection, ProblemJson, GenericDAO, the PluginManifest
+      SPI, Constants) at compile time but the runtime image already
+      carries them. `provided` means the plugin JAR does NOT bundle
+      backend.jar. Operators who build the plugin must `mvn install`
+      backend first so this resolves locally.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Quarkus runtime types used in plugin source (REST, CDI, logging). -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — same as backend for the IO records. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.44</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
