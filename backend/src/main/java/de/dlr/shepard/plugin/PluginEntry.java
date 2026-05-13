@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugin;
 
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -12,6 +13,11 @@ import java.util.Objects;
  * operator-readable {@code GET /v2/admin/plugins} output), and the
  * mutable lifecycle {@link PluginState} + failure cause if any.
  *
+ * <p>PM1b adds {@code registeredAt} — the wall-clock instant the
+ * registry first observed the plugin. Used by
+ * {@code GET /v2/admin/plugins} so an operator can see plugin
+ * discovery order chronologically (matching the startup log line).
+ *
  * <p>Mutability: {@code state} / {@code failureMessage} flip as the
  * registry transitions the plugin through its lifecycle; everything
  * else is immutable post-construction.
@@ -20,6 +26,7 @@ public final class PluginEntry {
 
   private final PluginManifest manifest;
   private final Path jarPath;
+  private final Instant registeredAt;
   private volatile PluginState state;
   private volatile String failureMessage;
 
@@ -31,8 +38,18 @@ public final class PluginEntry {
    *                 without a backing JAR still gets a registry row.
    */
   public PluginEntry(PluginManifest manifest, Path jarPath) {
+    this(manifest, jarPath, Instant.now());
+  }
+
+  /**
+   * Test-friendly constructor that lets the caller pin
+   * {@code registeredAt} — used by the admin-REST unit tests to keep
+   * timestamps deterministic across assertions.
+   */
+  public PluginEntry(PluginManifest manifest, Path jarPath, Instant registeredAt) {
     this.manifest = Objects.requireNonNull(manifest, "manifest");
     this.jarPath = jarPath;
+    this.registeredAt = registeredAt == null ? Instant.now() : registeredAt;
     this.state = PluginState.DISCOVERED;
     this.failureMessage = null;
   }
@@ -55,6 +72,15 @@ public final class PluginEntry {
 
   public Path jarPath() {
     return jarPath;
+  }
+
+  /**
+   * Wall-clock instant when this entry was constructed — i.e. when
+   * the registry first observed the plugin. Surfaced in the admin
+   * REST so an operator sees discovery order chronologically.
+   */
+  public Instant registeredAt() {
+    return registeredAt;
   }
 
   public PluginState state() {

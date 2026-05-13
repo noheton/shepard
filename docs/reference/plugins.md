@@ -123,6 +123,113 @@ A3b runtime-knob pattern — UH1a does both: the master
 `shepard.plugins.unhide.enabled` toggle AND the runtime
 `:UnhideConfig.enabled` knob).
 
+## Admin REST API
+
+PM1b ships the runtime SPI registry's REST surface. Both
+endpoints are `@RolesAllowed("instance-admin")`.
+
+### `GET /v2/admin/plugins`
+
+Lists every discovered plugin — including `DISABLED` + `FAILED`
+rows — in registry insertion order.
+
+```bash
+curl -H "X-API-KEY: $TOKEN" https://shepard.example.com/v2/admin/plugins
+```
+
+```json
+{
+  "plugins": [
+    {
+      "id": "unhide",
+      "version": "1.0.0",
+      "shepardCompatibility": ">=5.2.0,<6",
+      "state": "ENABLED",
+      "enabled": true,
+      "sourcePath": "/deployments/plugins/shepard-plugin-unhide-1.0.0.jar",
+      "registeredAt": "2026-05-13T05:00:00.000+00:00"
+    },
+    {
+      "id": "hdf-hsds",
+      "version": "0.5.0",
+      "shepardCompatibility": ">=5.0.0,<6",
+      "state": "DISABLED",
+      "enabled": false,
+      "sourcePath": "/deployments/plugins/shepard-plugin-hdf-hsds-0.5.0.jar",
+      "registeredAt": "2026-05-13T05:00:00.041+00:00"
+    }
+  ]
+}
+```
+
+The `enabled` field reflects the current effective toggle
+(runtime override wins; fall through to
+`shepard.plugins.<id>.enabled`). `state` is the lifecycle
+outcome at last `onRegister` invocation. `sourcePath` is
+`null` for build-classpath plugins (ADR-0024 Phase 1 shape).
+
+### `PATCH /v2/admin/plugins/{id}`
+
+RFC 7396 merge-patch. The only patchable field is `enabled`:
+
+```bash
+curl -X PATCH \
+  -H "X-API-KEY: $TOKEN" \
+  -H "Content-Type: application/merge-patch+json" \
+  -d '{"enabled": false}' \
+  https://shepard.example.com/v2/admin/plugins/unhide
+```
+
+Returns the updated row in the same shape as the list entry.
+
+Error responses use RFC 7807 `application/problem+json`:
+
+- **404 `/problems/plugin.not-found`** — unknown plugin id.
+- **400 `/problems/plugin.config.read-only-field`** — caller
+  named a field other than `enabled` in the patch body.
+- **403** — caller lacks the `instance-admin` role.
+
+PROV1a's `ProvenanceCaptureFilter` records each PATCH as an
+`:Activity` row (`targetKind=PluginEntry`) so the audit trail
+can be filtered to "who flipped which plugin when".
+
+## `shepard-admin plugins` subcommand
+
+The CLI mirrors the REST surface 1:1.
+
+```bash
+$ shepard-admin plugins list
+ID        VERSION  STATE     ENABLED  SOURCE
+unhide    1.0.0    ENABLED   true     /deployments/plugins/shepard-plugin-unhide-1.0.0.jar
+hdf-hsds  0.5.0    DISABLED  false    /deployments/plugins/shepard-plugin-hdf-hsds-0.5.0.jar
+```
+
+```bash
+$ shepard-admin plugins list --output=json
+{
+  "plugins" : [
+    { "id" : "unhide", "version" : "1.0.0", "state" : "ENABLED", ... }
+  ]
+}
+```
+
+```bash
+$ shepard-admin plugins disable unhide
+Plugin 'unhide' disabled — state=ENABLED (the runtime override survives until restart)
+
+$ shepard-admin plugins enable unhide
+Plugin 'unhide' enabled — state=ENABLED (the runtime override survives until restart; persist via shepard.plugins.unhide.enabled in application.properties)
+```
+
+Shared flags (per the L1 baseline): `--url <base>`,
+`--api-key <key>`, `--output={human,json}`. Default `--url` is
+`$SHEPARD_ADMIN_URL` or `http://localhost:8080`; default
+`--api-key` is `$SHEPARD_ADMIN_API_KEY`.
+
+Exit codes: `0` on success, `1` on HTTP / auth / IO error
+(stderr carries a one-line message; `--verbose` surfaces the
+stack), `2` on unexpected runtime exceptions.
+
 ## Uninstall a plugin
 
 ```bash
@@ -184,7 +291,13 @@ In PM1a (the baseline SPI), a plugin can:
 - Mount REST endpoints on the `/v2/` surface (NOT the upstream
   compat `/shepard/api/` shelf — that's frozen per CLAUDE.md).
 
-In PM1b (next slice) it'll also gain:
+PM1b adds:
+
+- **Admin REST + CLI parity** —
+  `GET / PATCH /v2/admin/plugins` + `shepard-admin plugins
+  {list, enable, disable}`. See the dedicated sections above.
+
+Still queued for follow-up:
 
 - A proper runtime classloader hookup so plugins that aren't on
   the build classpath can still discover their CDI beans.
