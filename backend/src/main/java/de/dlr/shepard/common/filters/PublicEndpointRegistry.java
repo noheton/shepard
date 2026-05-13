@@ -45,9 +45,31 @@ public class PublicEndpointRegistry {
   );
 
   /**
+   * Public-endpoint **prefixes** — paths matched by structural
+   * prefix rather than exact equality. Used for endpoint families
+   * whose URL carries a runtime-supplied suffix (e.g. KIP1b's
+   * {@code /v2/.well-known/kip/{pid-suffix}} resolver: the suffix
+   * is the freshly-minted PID and varies per row).
+   *
+   * <p>Entry semantics: {@code "/v2/.well-known/kip"} matches both
+   * the bare path and any descendant {@code /v2/.well-known/kip/anything}.
+   * The prefix MUST end without a trailing slash; the matcher requires
+   * either exact equality or the next character being a slash (so
+   * {@code /v2/.well-known/kip-foo} does NOT match the
+   * {@code /v2/.well-known/kip} prefix).
+   *
+   * <p>KIP1a/b — {@code /v2/.well-known/kip/{pid-suffix}} is public
+   * by design (resolver returns KIP record metadata, not entity
+   * payload — see {@code aidocs/66 §4.2}); the {@code landingPage}
+   * URL it points at may still require auth.
+   */
+  private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of("/v2/.well-known/kip");
+
+  /**
    * Returns {@code true} when the request path matches a registered public
    * endpoint exactly (modulo {@code /shepard/api/} prefix and trailing
-   * slash).
+   * slash), or when it sits under a registered structural prefix
+   * (see {@link #PUBLIC_PATH_PREFIXES}).
    *
    * <p>Earlier versions used {@code startsWith(path)} which had two
    * problems: (a) {@code /versionz/anything} would match — fine for today's
@@ -58,13 +80,37 @@ public class PublicEndpointRegistry {
    * actual traversal happening. Both vectors are closed by exact-match
    * against a normalised path. (`aidocs/07` H5.)
    *
+   * <p>Structural prefix matching (KIP1b) requires the next character
+   * after the prefix to be {@code /} — that closes the same foot-gun
+   * for prefix entries: {@code /v2/.well-known/kip-foo} does NOT match
+   * the {@code /v2/.well-known/kip} prefix; only {@code /v2/.well-known/kip}
+   * and {@code /v2/.well-known/kip/...} do.
+   *
    * <p>Post-P4 the request URI carries the {@code /shepard/api/} prefix;
    * {@link RequestPathHelper#applicationPath} strips it so the public-path
    * registry stays in application-relative form.
    */
   public static boolean isRequestPathPublic(ContainerRequestContext requestContext) {
     String applicationPath = RequestPathHelper.applicationPath(requestContext);
-    return PUBLIC_PATHS.contains(normalise(applicationPath));
+    String normalised = normalise(applicationPath);
+    if (PUBLIC_PATHS.contains(normalised)) return true;
+    for (String prefix : PUBLIC_PATH_PREFIXES) {
+      if (matchesPrefix(normalised, prefix)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Match {@code path} against a structural prefix: exact equality
+   * OR the prefix followed by a path separator. Closes the
+   * {@code prefix-foo}-style foot-gun that an unconditional
+   * {@code startsWith} would re-open.
+   */
+  static boolean matchesPrefix(String path, String prefix) {
+    if (path == null || prefix == null) return false;
+    if (path.equals(prefix)) return true;
+    if (!path.startsWith(prefix)) return false;
+    return path.charAt(prefix.length()) == '/';
   }
 
   static String normalise(String requestPath) {
