@@ -36,16 +36,31 @@ PAT from the G1-cred subsystem. Manage credentials at
 (API). Each credential is `(host, username, PAT)`; shepard picks the
 right one by host.
 
-## Adapter support
+## Supported hosts
 
-- **GitLab** ships in G1b. Adapter dispatch is host-substring match
-  on `gitlab` (so `gitlab.com`, `gitlab.dlr.de`, etc. work out of
-  the box). Self-hosted GitLab on a non-obvious DNS (e.g.
-  `code.example.org`) can be added via the operator config
-  `shepard.git.adapter.gitlab.hosts=code.example.org,...` (CSV).
-- **GitHub** + **Gitea** — queued (G1d). Until then, non-GitLab
-  hosts return RFC 7807 `git.adapter.unsupported-host` 501 on
-  `…/preview`.
+The TRACKED_ARTIFACT preview dispatches by hostname. Three per-host
+adapters ship; operators can widen each adapter's host claim via a
+CSV config key.
+
+| Adapter | Default-claimed hostnames | Config key (CSV widener) | Auth header | Slice |
+|---|---|---|---|---|
+| **GitLab** | any host containing `gitlab` (e.g. `gitlab.com`, `gitlab.dlr.de`) | `shepard.git.adapter.gitlab.hosts=` | `Authorization: Bearer <pat>` | G1b |
+| **GitHub** | `github.com`, any `*.github.com` subdomain | `shepard.git.adapter.github.hosts=` (intended for GitHub Enterprise on non-`*.github.com` DNS like `github.example.dlr.de`) | `Authorization: Bearer <pat>` | G1d |
+| **Gitea** | any host containing `gitea` (e.g. `gitea.com`, `gitea.dlr.de`) | `shepard.git.adapter.gitea.hosts=` (intended for **Forgejo** and **`codeberg.org`**) | `Authorization: token <pat>` (Gitea convention) | G1d |
+
+**Dispatch order.** Adapters are consulted most-specific to
+least-specific (GitHub → Gitea → GitLab) so a host added to one of
+the more-specific adapters' allowlists is never stolen by the GitLab
+substring-matcher fallback. A host claimed by no adapter returns
+RFC 7807 `git.adapter.unsupported-host` 501 on `…/preview`.
+
+**PAT scopes.** Each adapter surfaces the right scope hint in its
+4xx error messages:
+
+- GitLab: `read_repository`.
+- GitHub: `repo` (private) or `public_repo` for classic PATs;
+  `Contents: Read` for fine-grained PATs.
+- Gitea / Forgejo: `read:repository`.
 
 ## See also
 

@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import jakarta.enterprise.inject.Instance;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import org.junit.jupiter.api.Test;
 
 class GitAdapterRegistryTest {
@@ -54,5 +53,37 @@ class GitAdapterRegistryTest {
     when(i.iterator()).thenAnswer(inv -> Collections.<GitAdapter>emptyIterator());
     var reg = new GitAdapterRegistry(i);
     assertTrue(reg.findByHost("gitlab.com").isEmpty());
+  }
+
+  @Test
+  void findByHost_prefersLowerPriorityWhenMultipleAdaptersClaimHost() {
+    // Both adapters claim the host; the one with the lower priority wins
+    // (more-specific → checked first). G1d: GitHub allowlist (priority 100)
+    // beats GitLab fallback (priority 1000) for "*github*" hosts that an
+    // operator added to the GitHub allowlist.
+    GitAdapter specific = mock(GitAdapter.class);
+    when(specific.supports("gitlab-github.example.com")).thenReturn(true);
+    when(specific.priority()).thenReturn(100);
+    GitAdapter fallback = mock(GitAdapter.class);
+    when(fallback.supports("gitlab-github.example.com")).thenReturn(true);
+    when(fallback.priority()).thenReturn(1000);
+
+    var reg = new GitAdapterRegistry(stub(fallback, specific));
+    assertEquals(specific, reg.findByHost("gitlab-github.example.com").orElseThrow());
+  }
+
+  @Test
+  void findByHost_priorityOrderIsIndependentOfRegistrationOrder() {
+    GitAdapter low = mock(GitAdapter.class);
+    when(low.supports("h")).thenReturn(true);
+    when(low.priority()).thenReturn(50);
+    GitAdapter mid = mock(GitAdapter.class);
+    when(mid.supports("h")).thenReturn(true);
+    when(mid.priority()).thenReturn(500);
+
+    var regA = new GitAdapterRegistry(stub(low, mid));
+    var regB = new GitAdapterRegistry(stub(mid, low));
+    assertEquals(low, regA.findByHost("h").orElseThrow());
+    assertEquals(low, regB.findByHost("h").orElseThrow());
   }
 }
