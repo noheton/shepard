@@ -1,5 +1,30 @@
 # shepard
 
+> ## ⚠️ EXPERIMENTAL FORK — NOT THE PRODUCTION VERSION
+>
+> **This repository is an experimental fork of [shepard](https://gitlab.com/dlr-shepard/shepard).**
+> It is maintained independently of the upstream project and contains
+> **unreleased, unvalidated changes** that are not part of the production
+> shepard release line.
+>
+> - **Production users:** use upstream
+>   [`gitlab.com/dlr-shepard/shepard`](https://gitlab.com/dlr-shepard/shepard) —
+>   that is the canonical, supported version.
+> - **This fork:** a development / research workspace. Features land here
+>   first and may change shape, get reverted, or never reach upstream.
+>   APIs under `/v2/...` are explicitly the fork's development surface
+>   and are not stable. Compose / config / schema details may shift
+>   between commits.
+> - **Upstream-API compatibility:** the `/shepard/api/...` surface stays
+>   byte-frozen against upstream 5.2.0, so a client built against
+>   upstream keeps working. New endpoints land under `/v2/...` only.
+>
+> Do not run this fork in production unless you understand the above
+> trade-offs. See [`aidocs/34-upstream-upgrade-path.md`](aidocs/34-upstream-upgrade-path.md)
+> for the change ledger; [`aidocs/44-fork-vs-upstream-feature-matrix.md`](aidocs/44-fork-vs-upstream-feature-matrix.md)
+> for the per-feature status; [`aidocs/63-architecture-decision-log.md`](aidocs/63-architecture-decision-log.md)
+> for the architectural decisions.
+
 This is the source code repository for the shepard core system.
 It is designed as a monorepo containing frontend, backend and documentation.
 
