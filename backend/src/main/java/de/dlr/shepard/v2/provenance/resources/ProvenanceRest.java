@@ -1,10 +1,12 @@
 package de.dlr.shepard.v2.provenance.resources;
 
 import de.dlr.shepard.auth.security.AuthenticationContext;
+import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.output.OutputProfile;
 import de.dlr.shepard.common.output.OutputProfileResolver;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
 import de.dlr.shepard.provenance.services.ProvJsonRenderer;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.provenance.services.ProvenanceStatsService;
@@ -13,11 +15,13 @@ import de.dlr.shepard.v2.provenance.io.ProvenanceStatsIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -64,6 +68,9 @@ public class ProvenanceRest {
 
   @Inject
   ProvJsonRenderer provJsonRenderer;
+
+  @Inject
+  ProvJsonLdRenderer provJsonLdRenderer;
 
   @Inject
   ProvenanceStatsService statsService;
@@ -165,6 +172,52 @@ public class ProvenanceRest {
   }
 
   @GET
+  @Path("/activities")
+  @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "List provenance activities as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
+    description = "Same query semantics as the plain-JSON variant. Triggered by " +
+    "Accept: application/ld+json. Pass profile=\"https://w3id.org/nfdi4ing/metadata4ing/\" " +
+    "(or short form profile=metadata4ing) on the Accept header to receive the metadata4ing " +
+    "flavour — m4i:ProcessingStep / m4i:InvestigatedObject / m4i:Person nodes on top of the " +
+    "PROV-O parent types. Unknown profile → 406 RFC 7807 provenance.unsupported-profile."
+  )
+  @APIResponse(responseCode = "200", description = "Activities serialised as JSON-LD.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
+  @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
+  public Response listActivitiesJsonLd(
+    @QueryParam("agent") String agent,
+    @QueryParam("targetKind") String targetKind,
+    @QueryParam("targetAppId") String targetAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @QueryParam("limit") Integer limit,
+    @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    if (agent == null) {
+      if (!isAdmin) agent = caller;
+    } else if (!agent.equals(caller) && !isAdmin) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    Response profileError = enforceJsonLdProfile(acceptHeader);
+    if (profileError != null) return profileError;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+
+    int eff = limit == null ? 100 : limit;
+    List<Activity> rows = provenance.list(agent, targetKind, targetAppId, since, until, eff);
+    return Response.ok(provJsonLdRenderer.render(rows, profile))
+      .type(jsonLdMediaTypeFor(profile))
+      .build();
+  }
+
+  @GET
   @Path("/entity/{appId}")
   @Operation(
     summary = "Provenance trail for a single entity (most recent first).",
@@ -232,6 +285,43 @@ public class ProvenanceRest {
   }
 
   @GET
+  @Path("/entity/{appId}")
+  @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "Per-entity provenance trail as JSON-LD (PROV-O / metadata4ing).",
+    description = "Same query semantics as the plain-JSON variant. Triggered by " +
+    "Accept: application/ld+json; the m4i profile parameter switches to the metadata4ing flavour " +
+    "(see /v2/provenance/activities for full content-negotiation rules)."
+  )
+  @APIResponse(responseCode = "200", description = "Activities serialised as JSON-LD.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
+  public Response listEntityActivitiesJsonLd(
+    @PathParam("appId") String entityAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @QueryParam("limit") Integer limit,
+    @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    String agentFilter = isAdmin ? null : caller;
+
+    Response profileError = enforceJsonLdProfile(acceptHeader);
+    if (profileError != null) return profileError;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+
+    int eff = limit == null ? 100 : limit;
+    List<Activity> rows = provenance.list(agentFilter, null, entityAppId, since, until, eff);
+    return Response.ok(provJsonLdRenderer.render(rows, profile))
+      .type(jsonLdMediaTypeFor(profile))
+      .build();
+  }
+
+  @GET
   @Path("/count")
   @Operation(
     summary = "Count provenance activities matching the same filter set.",
@@ -258,6 +348,47 @@ public class ProvenanceRest {
 
     long c = provenance.count(agent, targetKind, targetAppId, since, until);
     return Response.ok(java.util.Map.of("count", c)).build();
+  }
+
+  @GET
+  @Path("/count")
+  @Produces(ProvJsonLdRenderer.MEDIA_TYPE)
+  @Operation(
+    summary = "Row count as JSON-LD (PROV-O default; metadata4ing profile opt-in).",
+    description = "JSON-LD variant of /count — wraps the integer as " +
+    "shepard:numberOfActivities under a typed @context. Same query semantics + " +
+    "Accept-header profile precedence as the /activities endpoint."
+  )
+  @APIResponse(responseCode = "200", description = "Row count, JSON-LD wrapped.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller asked for another user's rows without instance-admin role.")
+  @APIResponse(responseCode = "406", description = "Unknown profile= parameter on the Accept header.")
+  public Response countActivitiesJsonLd(
+    @QueryParam("agent") String agent,
+    @QueryParam("targetKind") String targetKind,
+    @QueryParam("targetAppId") String targetAppId,
+    @QueryParam("since") Long since,
+    @QueryParam("until") Long until,
+    @HeaderParam(HttpHeaders.ACCEPT) String acceptHeader,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    boolean isAdmin = securityContext.isUserInRole("instance-admin");
+    if (agent == null) {
+      if (!isAdmin) agent = caller;
+    } else if (!agent.equals(caller) && !isAdmin) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    Response profileError = enforceJsonLdProfile(acceptHeader);
+    if (profileError != null) return profileError;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+
+    long c = provenance.count(agent, targetKind, targetAppId, since, until);
+    java.util.Map<String, Object> body = provJsonLdRenderer.renderCount(c, profile);
+    return Response.ok(body).type(jsonLdMediaTypeFor(profile)).build();
   }
 
   @GET
@@ -343,5 +474,49 @@ public class ProvenanceRest {
   /** Clamp a user-supplied millis-since-epoch value to a non-negative long. */
   private static long clampToNonNegative(long v) {
     return Math.max(0L, v);
+  }
+
+  /**
+   * Validate the {@code profile=} parameter on the {@code Accept} header
+   * for the JSON-LD endpoints. Returns a RFC 7807 406 {@link Response}
+   * when the parameter is present but unrecognised, otherwise
+   * {@code null}.
+   *
+   * <p>Designed in {@code aidocs/64 §3.2} (PROV1h). The only currently
+   * recognised profile is metadata4ing
+   * ({@link ProvJsonLdRenderer#M4I_PROFILE_URI} / short
+   * {@link ProvJsonLdRenderer#M4I_PROFILE_SHORT}).
+   */
+  private static Response enforceJsonLdProfile(String acceptHeader) {
+    String raw = ProvJsonLdRenderer.extractProfileParam(acceptHeader);
+    if (raw == null || raw.isBlank()) return null;
+    ProvJsonLdRenderer.ProfileChoice profile = ProvJsonLdRenderer.resolveProfile(acceptHeader);
+    if (profile != null) return null;
+    ProblemJson body = new ProblemJson(
+      "https://noheton.github.io/shepard/errors/provenance.unsupported-profile",
+      "Unsupported JSON-LD profile",
+      Response.Status.NOT_ACCEPTABLE.getStatusCode(),
+      "The profile= parameter '" + raw + "' on the Accept header is not recognised. " +
+      "Supported: '" + ProvJsonLdRenderer.M4I_PROFILE_URI + "' (or short 'metadata4ing'). " +
+      "Omit the parameter for plain PROV-O JSON-LD.",
+      null
+    );
+    return Response.status(Response.Status.NOT_ACCEPTABLE)
+      .entity(body)
+      .type(MediaType.APPLICATION_JSON)
+      .build();
+  }
+
+  /**
+   * Build the JSON-LD content-type string with the {@code profile=}
+   * parameter echoed back to the caller when the m4i flavour was
+   * selected. The echoed profile lets a caching proxy distinguish
+   * the two flavours via {@code Vary: Accept} cleanly.
+   */
+  private static String jsonLdMediaTypeFor(ProvJsonLdRenderer.ProfileChoice profile) {
+    if (profile == ProvJsonLdRenderer.ProfileChoice.M4I) {
+      return ProvJsonLdRenderer.MEDIA_TYPE + ";profile=\"" + ProvJsonLdRenderer.M4I_PROFILE_URI + "\"";
+    }
+    return ProvJsonLdRenderer.MEDIA_TYPE;
   }
 }

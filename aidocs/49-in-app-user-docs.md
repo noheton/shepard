@@ -135,6 +135,7 @@ deep-dives:
 | Permissions | `docs/reference/permissions.md` |
 | Annotations | `docs/reference/annotations.md` |
 | Lab journal | `docs/reference/lab-journal.md` |
+| Provenance / activity log *(post-PROV1h)* | `docs/reference/provenance.md` |
 | Versions / Snapshots *(post-V2)* | `docs/reference/snapshots.md` |
 | Templates *(post-T1)* | `docs/reference/templates.md` |
 | Processes *(post-PR1)* | `docs/reference/processes.md` |
