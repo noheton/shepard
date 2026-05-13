@@ -22,6 +22,7 @@ on:
       - main
     paths:
       - "backend/**"
+      - "plugins/**"
       - "frontend/**"
       - "infrastructure/docker-compose.yml"
       - ".github/workflows/build-images.yml"
@@ -53,8 +54,33 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # PM1a phase 3 (ADR-0023): two-pass plugin/backend build —
+      # the backend now declares `shepard-plugin-unhide` as a
+      # <dependency>, which the plugin's `provided` backend dep
+      # forces us to bootstrap via a sequenced install. See
+      # backend-ci.yml + `docs/reference/plugins.md` for the
+      # same sequence at developer-loop level.
+      - name: Stub-install backend (so the plugin's provided dep resolves)
+        run: cd backend && mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install plugin modules (so the backend can resolve them)
+        run: cd plugins/unhide && mvn -B -DskipTests install
+
       - name: Build Quarkus app (skip tests — backend-ci.yml is the gate)
         run: cd backend && mvn -B -DskipTests package
+
+      # PM1a phase 3: stage the in-tree plugin JARs at
+      # `backend/plugins-stage/` so the Dockerfile's COPY into
+      # `/deployments/plugins/` picks them up. The same JAR is also
+      # already inside `quarkus-app/lib/main/` (Quarkus's CDI scan
+      # picks it up there); placing it under `/deployments/plugins/`
+      # too is purely for operator visibility (`ls` shows what's
+      # installed). PluginRegistry's classpath-then-jar dedup
+      # silently shadows the duplicate.
+      - name: Stage plugin JARs for image build
+        run: |
+          mkdir -p backend/plugins-stage
+          cp plugins/unhide/target/shepard-plugin-unhide-*.jar backend/plugins-stage/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

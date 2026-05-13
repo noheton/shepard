@@ -153,6 +153,19 @@ These work the same way across every primitive:
   seed loop on the next start. PROV-O + Relation Ontology stay
   required (admin disable refused with RFC 7807 `semantic.bundle.required`)
   so the audit-trail interop never silently breaks.
+- **Plugin extensibility** (`aidocs/47`, PM1a shipped). Every
+  shepard install can grow `shepard-plugin-*` JARs without
+  rebuilding the image. Drop a JAR into `backend/plugins/`
+  (or `/deployments/plugins/` in containers), restart — the
+  backend's `PluginRegistry` walks the directory at startup,
+  loads each plugin via Java's `ServiceLoader`, and runs the
+  `onRegister` lifecycle hook after database migrations apply.
+  The same per-plugin runtime toggle (`shepard.plugins.<id>.enabled`)
+  flips a plugin off without removing the JAR. UH1a (Helmholtz
+  Unhide publish) is the first plugin under the new shape; HDF5
+  / video / AAS / KIP minters / FS GridFS+S3 split / DBpedia
+  rich-reference all queue behind it following the same pattern
+  per ADR-0023.
 - **Subscriptions.** URL-pattern webhooks fire on entity changes
   for downstream pipeline glue.
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
@@ -320,7 +333,15 @@ Mid-horizon:
   of 12-file PR sprawls; existing storage-bound feature flags
   (spatial, hdf, files-s3) migrate to plugins; codegen archetype
   + `make dev` + unified test-resource make the casual + power
-  user paths both faster.
+  user paths both faster. **Foundation shipped** as PM1a: the
+  `PluginManifest` SPI (`de.dlr.shepard.plugin.PluginManifest`)
+  + drop-in JAR discovery (`backend/plugins/*.jar` walked at
+  startup via `ServiceLoader`) + per-plugin `shepard.plugins.<id>.enabled`
+  toggle. UH1a is the first plugin under the new shape; HDF5
+  (PL1c), Git references (PL1d), FS GridFS+S3 split (FS1), ePIC
+  / DataCite minters (KIP1c/d), DBpedia rich-reference (REF1a),
+  video (VID1a), AAS submodels (AAS1) all queue behind it
+  following the same drop-in JAR pattern per ADR-0023.
 - **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
   a `/help` route serving the same `docs/*.md` content as the
   Pages site, with screenshots auto-captured by Playwright against

@@ -44,3 +44,8 @@ nb-configuration.xml
 
 # Log file
 logs/
+
+# PM1a phase 3 — staging dir for plugin JARs copied into the
+# image at docker build time. The directory itself is tracked
+# (via .gitkeep); the JARs inside are generated.
+plugins-stage/*.jar
