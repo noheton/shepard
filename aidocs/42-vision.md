@@ -134,13 +134,18 @@ These work the same way across every primitive:
   whole setup for "I want to annotate `vibration_max` with the QUDT
   IRI for `g rms`." **Pre-seeded common ontologies** (PROV-O,
   Dublin Core, schema.org, FOAF, QUDT, OM-2, W3C Time, GeoSPARQL,
-  OBO Relation Ontology) ship with the install (N1b + ONT1a,
-  shipped) — nine SHA-256-pinned Turtle bundles imported into the
-  n10s repository on startup, so the casual annotation flow finds
-  resolvable IRIs out of the box. The Relation Ontology supplies
-  the cross-cutting relations researchers want for process-graph
-  edges (`part_of`, `has_part`, `derives_from`, `participates_in`,
-  `has_input`, `has_output`).
+  OBO Relation Ontology, NFDI4Ing metadata4ing) ship with the
+  install (N1b + ONT1a + ONT1b, shipped) — ten SHA-256-pinned
+  Turtle bundles imported into the n10s repository on startup, so
+  the casual annotation flow finds resolvable IRIs out of the box.
+  The Relation Ontology supplies the cross-cutting relations
+  researchers want for process-graph edges (`part_of`, `has_part`,
+  `derives_from`, `participates_in`, `has_input`, `has_output`).
+  metadata4ing is the NFDI4Ing engineering-research extension of
+  PROV-O — `m4i:ProcessingStep`, `m4i:Method`, `m4i:Tool`,
+  `m4i:InvestigatedObject`, `m4i:NumericalVariable` + QUDT units —
+  layering domain-specific provenance terms on top of the PROV-O
+  baseline.
 - **Subscriptions.** URL-pattern webhooks fire on entity changes
   for downstream pipeline glue.
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
@@ -318,9 +323,11 @@ Mid-horizon:
   drag-and-drop; navigable Collection graph view (cytoscape.js);
   `@`-mention autocomplete; `:CollectionProperties` properties-
   node (CP1a/CP1b shipped); RO ontology added to the pre-seed
-  bundle (ONT1a shipped — LUMEN seed citation queued under ONT1b);
-  DBpedia Databus rich-reference plugin; **GraphRAG** on shepard
-  via native Neo4j 5.13+ vector index.
+  bundle (ONT1a shipped); metadata4ing (NFDI4Ing) added to the
+  pre-seed bundle as the engineering-research extension of PROV-O
+  (ONT1b shipped — LUMEN seed citation queued under ONT1c, frontend
+  ontology-picker queued under ONT1d); DBpedia Databus rich-reference
+  plugin; **GraphRAG** on shepard via native Neo4j 5.13+ vector index.
 - **OpenAPI client-generator pick** (`aidocs/57`, CG1 series).
   Kiota for the `/v2/` shelf, OpenAPI Generator retained for the
   byte-frozen `/shepard/api/...` shelf; Hey API as a TS-only

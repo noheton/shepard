@@ -33,7 +33,7 @@ pre-seeded common ontologies (see table below) land into.
 
 ## Bundled ontologies
 
-shepard ships nine common ontologies as classpath-bundled Turtle
+shepard ships ten common ontologies as classpath-bundled Turtle
 files under `backend/src/main/resources/ontologies/`, each pinned
 by SHA-256 in `ontologies-manifest.json`. The `OntologySeedService`
 loads them into the `INTERNAL` repository on startup. To skip a
@@ -51,6 +51,7 @@ subset, set
 | **W3C Time Ontology** | `http://www.w3.org/2006/time#` | W3C Document License | Time interval / duration vocabulary; annotate timeseries spans and lab-journal events. |
 | **OGC GeoSPARQL** | `http://www.opengis.net/ont/geosparql#` | OGC Open Data Licence | Spatial-data references — Feature / Geometry / `hasGeometry` / `asWKT`. |
 | **OBO Relation Ontology (RO)** | `http://purl.obolibrary.org/obo/RO_` | CC0 1.0 | Cross-cutting relations — `part_of` / `has_part` / `derives_from` / `participates_in` / `has_input` / `has_output` / `precedes`-family. Widely used in life-sciences research-data work. |
+| **Metadata4Ing (NFDI4Ing) 1.4.0** | `http://w3id.org/nfdi4ing/metadata4ing/` | CC BY 4.0 | NFDI4Ing engineering-research extension of PROV-O — `m4i:ProcessingStep` (subtype of `prov:Activity`), `m4i:Method`, `m4i:Tool`, `m4i:InvestigatedObject` (subtype of `prov:Entity`), `m4i:NumericalVariable` + QUDT-unit hookup, `m4i:Person` / `m4i:Organization` subtypes of the `prov:` equivalents. Composes with shepard's PROV-O provenance baseline + RO-Crate export. A future PROV1h slice will render `/v2/provenance/*` in `m4i:`-flavoured shapes when `Accept: application/ld+json; profile=metadata4ing` is set. |
 
 The currently-bundled files are **minimum-viable Turtle stubs**
 carrying each ontology's canonical IRI prefix plus a handful of
@@ -140,8 +141,8 @@ hook is idempotent — safe to re-run on every startup.
 
 The internal-repo path is best for:
 
-- Pre-seeded common ontologies (PROV-O, QUDT, RO, …) that almost
-  every research deployment references.
+- Pre-seeded common ontologies (PROV-O, QUDT, RO, metadata4ing, …)
+  that almost every research deployment references.
 - Up to a few hundred MB of total ontology data.
 - Read-mostly workloads.
 

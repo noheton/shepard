@@ -1,0 +1,45 @@
+# Canonical source: https://w3id.org/nfdi4ing/metadata4ing/1.4.0/  (NFDI4Ing; Turtle under content negotiation)
+# Ontology IRI:    http://w3id.org/nfdi4ing/metadata4ing/
+# Term IRI prefix: http://w3id.org/nfdi4ing/metadata4ing/
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-bundled stub of the metadata4ing (m4i) ontology — the
+# NFDI4Ing engineering-research extension of W3C PROV-O. Carries the
+# canonical IRI prefix plus a handful of the headline classes /
+# properties shepard's PROV1-series rendering will reach for when the
+# planned `Accept: application/ld+json; profile=metadata4ing`
+# content-type lands on `/v2/provenance/*` (PROV1h, future slice):
+# ProcessingStep (subtype of prov:Activity), Method, Tool,
+# InvestigatedObject, NumericalVariable + QUDT-unit hookup, Person,
+# Organisation. Operators who need the full ~150-term vocabulary
+# either run the N1c refresh CLI or drop the canonical Turtle in
+# place and regenerate the matching manifest entry.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix m4i:     <http://w3id.org/nfdi4ing/metadata4ing/> .
+
+<http://w3id.org/nfdi4ing/metadata4ing/>
+       a owl:Ontology ;
+       dcterms:title   "Metadata4Ing (shepard-bundled stub)"@en ;
+       dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+       dcterms:source  <https://doi.org/10.5281/zenodo.7362037> ;
+       owl:versionInfo "1.4.0" ;
+       rdfs:label      "Metadata4Ing"@en ;
+       rdfs:comment    "NFDI4Ing ontology for describing the generation of research data within a scientific activity — engineering-research extension of W3C PROV-O."@en .
+
+m4i:ProcessingStep      a owl:Class ; rdfs:label "Processing Step"@en ; rdfs:subClassOf prov:Activity .
+m4i:Method              a owl:Class ; rdfs:label "Method"@en .
+m4i:Tool                a owl:Class ; rdfs:label "Tool"@en .
+m4i:InvestigatedObject  a owl:Class ; rdfs:label "Investigated Object"@en ; rdfs:subClassOf prov:Entity .
+m4i:NumericalVariable   a owl:Class ; rdfs:label "Numerical Variable"@en .
+m4i:Person              a owl:Class ; rdfs:label "Person"@en ; rdfs:subClassOf prov:Person .
+m4i:Organization        a owl:Class ; rdfs:label "Organization"@en ; rdfs:subClassOf prov:Organization .
+
+m4i:hasUnit         a owl:ObjectProperty   ; rdfs:label "has unit"@en .
+m4i:hasValue        a owl:DatatypeProperty ; rdfs:label "has value"@en .
+m4i:hasParticipant  a owl:ObjectProperty   ; rdfs:label "has participant"@en .

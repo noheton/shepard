@@ -442,8 +442,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // Per aidocs/48 §3.2 + ONT1a (aidocs/58 §6) the bundle ships exactly these 9 ontologies.
-    assertEquals(9, ids.size(), "expected 9 bundled ontologies (8 from N1b + RO from ONT1a)");
+    // Per aidocs/48 §3.2 + ONT1a (aidocs/58 §6) + ONT1b the bundle ships exactly these 10 ontologies.
+    assertEquals(10, ids.size(), "expected 10 bundled ontologies (8 from N1b + RO from ONT1a + metadata4ing from ONT1b)");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -453,6 +453,7 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("time"), "manifest missing time");
     assertTrue(ids.contains("geosparql"), "manifest missing geosparql");
     assertTrue(ids.contains("obo-relations"), "manifest missing obo-relations (ONT1a)");
+    assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
   }
 
   /**
@@ -489,10 +490,80 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(8, kept.size(), "skip-bundles=obo-relations should leave 8 entries");
+    assertEquals(9, kept.size(), "skip-bundles=obo-relations should leave 9 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
+    assertTrue(kept.contains("metadata4ing"), "skip-bundles=obo-relations must not affect metadata4ing");
+  }
+
+  // ONT1b — metadata4ing (NFDI4Ing) bundle.
+
+  /**
+   * ONT1b — manifest declares the metadata4ing bundle as the tenth
+   * entry alongside the eight original N1b bundles and the ONT1a RO
+   * bundle. Cardinality check is what catches an accidental drop /
+   * dup of the ONT1b entry in a future refactor.
+   */
+  @Test
+  void realManifest_metadata4ingIsTenthBundle() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
+    assertEquals(10, ids.size(), "ONT1b lifts the bundle count to 10 (8 N1b + RO + metadata4ing)");
+    assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
+  }
+
+  /**
+   * ONT1b — the metadata4ing bundle carries the canonical NFDI4Ing
+   * IRI prefix ({@code http://w3id.org/nfdi4ing/metadata4ing/}), is
+   * licensed CC BY 4.0, ships as {@code metadata4ing.ttl} in Turtle
+   * format, and pins the canonical w3id.org/1.4.0/ URL. These four
+   * fields are what an admin or a downstream tool keys off — any of
+   * them silently drifting would be a wire-break.
+   */
+  @Test
+  void realManifest_metadata4ingCarriesNfdi4ingIriPrefixAndCcBy4Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var m4i = svc
+      .loadManifest()
+      .stream()
+      .filter(e -> "metadata4ing".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("metadata4ing bundle missing from manifest"));
+    assertEquals("http://w3id.org/nfdi4ing/metadata4ing/", m4i.iriPrefix, "metadata4ing IRI prefix");
+    assertEquals("CC BY 4.0", m4i.license, "metadata4ing licence string");
+    assertEquals("metadata4ing.ttl", m4i.file, "metadata4ing bundle file name");
+    assertEquals("Turtle", m4i.format, "metadata4ing bundled format");
+    assertEquals(
+      "https://w3id.org/nfdi4ing/metadata4ing/1.4.0/",
+      m4i.canonicalUrl,
+      "metadata4ing canonical URL pinned to the 1.4.0 release"
+    );
+  }
+
+  /**
+   * ONT1b — {@code skip-bundles=metadata4ing} excludes only the
+   * metadata4ing entry from the seed pass and leaves the other nine
+   * bundles untouched (including the ONT1a RO bundle). Symmetric
+   * with the ONT1a skip-bundles test above.
+   */
+  @Test
+  void realManifest_skipBundlesMetadata4ing_excludesM4iButRetainsOthers() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    Set<String> skip = OntologySeedService.parseSkipBundles("metadata4ing");
+    List<String> kept = svc
+      .loadManifest()
+      .stream()
+      .map(e -> e.id)
+      .filter(id -> !skip.contains(id))
+      .toList();
+    assertEquals(9, kept.size(), "skip-bundles=metadata4ing should leave 9 entries");
+    assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
+    assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
+    assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
   }
 
   // ---------- helpers -------------------------------------------------------
