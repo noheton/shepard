@@ -231,14 +231,9 @@ public class OntologySeedService {
       return;
     }
 
-    if (!detectN10s()) {
-      Log.warn(
-        "OntologySeedService: neosemantics (n10s) procedures not registered. " +
-        "Skipping ontology pre-seed; INTERNAL repositories will resolve only against whatever the operator imports manually."
-      );
-      return;
-    }
-
+    // Load manifest first — needed to decide whether master-off can
+    // short-circuit (no required bundles → nothing forces seeding) or
+    // must still walk the loop to honour required-true.
     final List<OntologyEntry> entries;
     try {
       entries = loadAllEntries();
@@ -254,6 +249,27 @@ public class OntologySeedService {
 
     if (entries.isEmpty()) {
       Log.info("OntologySeedService: manifest has zero entries; nothing to seed.");
+      return;
+    }
+
+    // Master-off short-circuit: when neither the deploy-time toggle
+    // nor the runtime override is on, AND no manifest entry carries
+    // required=true, the entire pass is a no-op. We don't even
+    // touch n10s — matches the pre-N1c2 "I want a bare n10s" exit.
+    if (!masterEnabled && !hasRequiredEntry(entries)) {
+      Log.infof(
+        "OntologySeedService: master toggle off (deploy=%b runtime=%b) and no required bundles; skipping pre-seed.",
+        enabled,
+        runtime.preseedEnabled()
+      );
+      return;
+    }
+
+    if (!detectN10s()) {
+      Log.warn(
+        "OntologySeedService: neosemantics (n10s) procedures not registered. " +
+        "Skipping ontology pre-seed; INTERNAL repositories will resolve only against whatever the operator imports manually."
+      );
       return;
     }
 
@@ -340,6 +356,15 @@ public class OntologySeedService {
    *   <li>otherwise → {@link SeedDecision#SEED}.</li>
    * </ol>
    */
+  /** True if at least one manifest entry carries {@code required: true}. */
+  static boolean hasRequiredEntry(List<OntologyEntry> entries) {
+    if (entries == null) return false;
+    for (OntologyEntry e : entries) {
+      if (e != null && e.required) return true;
+    }
+    return false;
+  }
+
   SeedDecision shouldSeed(OntologyEntry entry, boolean masterEnabled, RuntimeConfig runtime) {
     if (entry.required) return SeedDecision.SEED;
     if (!masterEnabled) return SeedDecision.SKIP_MASTER_OFF;
