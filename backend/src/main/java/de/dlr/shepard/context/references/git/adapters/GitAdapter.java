@@ -45,4 +45,25 @@ public interface GitAdapter {
    * @throws GitAdapterException with operator-readable message on failure.
    */
   String resolveRef(String repoUrl, String ref, String pat);
+
+  /**
+   * Dispatch ordering hint for {@link GitAdapterRegistry}. Lower wins
+   * (more-specific first). Default is {@code 1000} (least specific) so
+   * the GitLab substring matcher keeps acting as the fallback for any
+   * unrecognised "*gitlab*" host that an existing operator already
+   * relies on (G1b shipped before G1d).
+   *
+   * <p>The G1d adapters use:
+   * <ul>
+   *   <li>{@code 100} — GitHub (exact host or {@code *.github.com}; very narrow).</li>
+   *   <li>{@code 200} — Gitea (substring match on {@code gitea}; narrow).</li>
+   *   <li>{@code 1000} — GitLab (substring match on {@code gitlab}; broadest).</li>
+   * </ul>
+   * Both new adapters also honour their own host-allowlist config keys
+   * ({@code shepard.git.adapter.{github,gitea}.hosts}) — those win
+   * because the adapter is checked before the GitLab default.
+   */
+  default int priority() {
+    return 1000;
+  }
 }
