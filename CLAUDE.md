@@ -195,3 +195,115 @@ feature-matrix currency (`aidocs/44`) rules above.
 (Internal refactors, performance work, security fixes, dependency
 bumps — none of these need a docs update unless they change a
 user-visible behaviour.)
+
+## Always: think plugin-first for new features
+
+The `aidocs/47 §2` PayloadKind / PayloadStorage SPI seam exists
+**because** shepard's value grows from extension, not from a
+monolithic core. When adding a new feature, the default question
+is "should this be a plugin?" — **not** "should this be in-tree?"
+
+The plugin-first heuristic, in order:
+
+1. **New payload kinds** (HDF5, video, AAS submodels, lab-bench
+   recordings, …) → **plugin from day one**. The SPI is the
+   reason; resist the temptation to add a one-off `data/<kind>/`
+   sibling to `data/file` / `data/timeseries` / etc.
+2. **New external integrations** (Helmholtz Unhide harvest feed,
+   git host adapters, AAS registry sync, Databus catalogue,
+   DBpedia rich references, …) → **plugin shape**. They have
+   their own release cadence, their own dependency tree, and
+   their own failure modes; isolating them from core is the
+   structural fix.
+3. **New cross-cutting infrastructure** (`PayloadKind` SPI,
+   `FileStorage` SPI, `Minter` interface, `GitAdapter`
+   interface, `SemanticConnector` interface) → **in-tree
+   interfaces** + **plugin implementations**. The interface
+   stays in core (so every plugin compiles against it); the
+   adapters live outside.
+4. **Domain features that touch existing payload kinds** —
+   default in-tree, but ask: is there a clean seam where this
+   could be a plugin? If yes, prefer the plugin even at slightly
+   higher friction; it pays back the moment a second team wants
+   a variant.
+
+When a design doc starts with "add a new `de.dlr.shepard.<feature>/`
+package", stop and ask whether `shepard-plugin-<feature>` is the
+right shape instead. The `aidocs/47` SPI keeps growing precisely
+because every "just add it in-tree" call accreted cost over time.
+
+The exceptions (things that stay in-tree by necessity):
+
+- Authentication / permissions surfaces (`PermissionsService`,
+  `JWTFilter`, role mechanisms) — security perimeter, not
+  pluggable.
+- Identity primitives (`appId`, `User`, `Collection`,
+  `DataObject` core graph) — the shapes every plugin compiles
+  against.
+- The runtime SPI registry itself.
+
+Everything else: **plugin first**. Cite this rule in the design
+doc; if a feature lands in-tree, the design doc must say why.
+
+## Always: surface operator knobs in the admin config
+
+Whenever a new feature ships a runtime knob — a feature toggle, a
+default that operators legitimately need to flip, an integration
+endpoint they need to authenticate, a retention window, a cap —
+the **default posture is admin-configurable at runtime**, not
+deploy-time-only.
+
+The pattern is established by:
+
+- **A3b** — `:FeatureToggleRegistry` + `GET/PATCH /v2/admin/features`
+  with CLI parity.
+- **N1c2** — `:SemanticConfig` singleton + `/v2/admin/semantic/ontologies`
+  enable/disable/upload/remove + CLI parity (`aidocs/65`).
+- **UH1a** — `:UnhideConfig` singleton + `/v2/admin/unhide/config`
+  PATCH + CLI parity (`aidocs/67 §5–6`).
+
+The shape:
+
+- A small `:*Config` Neo4j entity (`HasAppId`, single-instance
+  per the A3b pattern). Field set is the runtime-mutable subset
+  of the feature's knobs.
+- `GET /v2/admin/<feature>/config` returns the current shape.
+- `PATCH /v2/admin/<feature>/config` (RFC 7396 merge-patch,
+  `@RolesAllowed("instance-admin")`) flips fields at runtime.
+- Optional sister endpoints for mint-and-rotate of feature-bound
+  credentials (per-feature `harvest` API keys, per-feature
+  signing keys, …).
+- CLI parity under `shepard-admin <feature> {status,enable,
+  disable,set-<field>,…}` with shared `--output={human,json}` +
+  `--url` + `--api-key` flags (per the L1 baseline).
+- Precedence: **runtime `:*Config` value wins**; deploy-time
+  `application.properties` is the install default that seeds the
+  singleton on first start. The deploy-time key stays valid so an
+  operator can ship a baked-in default in their IaC, but it
+  doesn't override a runtime flip.
+- Mutations land in `:Activity` via `ProvenanceCaptureFilter`
+  (PROV1a, automatic — admin endpoints capture by default), so
+  the audit trail can be filtered for "who changed `<feature>`
+  settings when".
+
+When a design doc proposes a new `shepard.<feature>.*`
+deploy-time-only config key, ask: is there a use case for an
+operator to flip this without a restart? If yes, the design must
+include the `:*Config` + admin REST + CLI parity from day one —
+not as a follow-up.
+
+The exceptions (knobs that legitimately stay deploy-time-only):
+
+- Cluster identity / topology (`shepard.instance.id`, DB URLs,
+  the OIDC issuer URL) — these can't be flipped at runtime
+  without re-bootstrapping.
+- Pre-startup ordering invariants (`shepard.migrations.*`,
+  `shepard.health.recovery.interval`) — the runtime hook runs
+  before the DB is up.
+- Buffer sizes / page sizes where there's no operator need to
+  tune at runtime (e.g. `shepard.unhide.feed.page-size`).
+
+Everything else: **admin-configurable at runtime**. The same
+durability test applies — if the design doc only ships
+deploy-time-only config and there's no exception reason, the
+review should send it back for the `:*Config` shape.
