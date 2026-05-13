@@ -753,6 +753,23 @@
           <artifactId>shepard-plugin-minter-local</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          KIP1d — DataCite Fabrica DOI minter plugin. Same shape as
+          minter-local (sibling under `plugins/minter-datacite/`). The
+          plugin's `DataciteMinter` `@ApplicationScoped` bean +
+          `DataciteAdminRest` `@Path` resource are picked up by
+          Quarkus's build-time CDI scanner when this JAR is on the
+          backend's compile-time classpath via the index-dependency
+          block in `application.properties`. Activated when an
+          operator sets `shepard.publish.minter=datacite` after
+          configuring credentials via the admin REST / CLI.
+          See aidocs/16 KIP1d + aidocs/66 §6.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

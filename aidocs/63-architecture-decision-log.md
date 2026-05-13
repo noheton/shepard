@@ -52,6 +52,7 @@ re-deriving the trade-offs from scratch.
 | ADR-0022 | accepted | 2026-05-13 | OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy (both indefinitely) | moderate |
 | ADR-0023 | accepted | 2026-05-13 | Plugin distribution: drop-in JARs into `backend/plugins/` discovered via `ServiceLoader` (not compose-side sidecars, not forked Dockerfiles) | moderate |
 | ADR-0024 | accepted | 2026-05-13 | Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`); FS1b talks generic S3 via AWS SDK so any S3-compatible endpoint keeps working | easy |
+| ADR-0026 | accepted | 2026-05-13 | KIP1d DataCite Member password stored AES-GCM-encrypted (not hashed) on `:DataciteMinterConfig` because the DataCite REST API requires HTTP Basic auth at mint-time; key derives from `shepard.instance.id`. Operator-managed-secret level (not a KMS). | moderate |
 
 ---
 
@@ -1669,13 +1670,138 @@ versioned-PIDs Phase 1 wire-format change
   configured / active minter id is a follow-up; KIP1h shipped the
   core SPI relax but not the CLI surface (the runtime hook is
   deploy-time, so the CLI value is diagnostic-only).
-- **Per-minter `:*Config` patterns** — when KIP1c (ePIC) or KIP1d
-  (DataCite) lands, the per-minter runtime config (handle prefix,
-  DataCite credentials) follows the A3b / N1c2 / UH1a "operator
-  knobs" pattern. Out of scope for KIP1h.
+- **Per-minter `:*Config` patterns** — KIP1d shipped this pattern
+  for DataCite (`:DataciteMinterConfig` singleton +
+  `/v2/admin/minters/datacite/...` + `shepard-admin minters
+  datacite ...` CLI parity). KIP1c (ePIC) follows the same shape
+  when it lands. See ADR-0026 for the credential-at-rest decision
+  KIP1d ratified.
 - **ENT1 (versioning Phase 2)** — full `:EntityVersion` graph
   with `previousVersion` / `nextVersion` edges. Wire-shape
   compatible with KIP1h's `Publication.versionNumber` scalar.
+
+## ADR-0026 — KIP1d DataCite Member password is reversibly encrypted, not one-way hashed
+
+**Status.** accepted. **Date.** 2026-05-13.
+**Applied in.** `aidocs/16` KIP1d, `aidocs/34` KIP1d row,
+`docs/reference/minter-datacite.md` §"Credential at rest".
+**Couples with.** ADR-0023 (drop-in plugin JARs — KIP1d is the
+third minter plugin), ADR-0025 (Minter is optional; KIP1d slots
+into the optional posture).
+**Supersedes.** None.
+
+### Context
+
+KIP1d ships the `shepard-plugin-minter-datacite` Minter plugin
+that authenticates against DataCite's REST API using HTTP Basic
+auth (`user = repositoryId`, `pass = <DataCite Member password>`).
+The password is set by the operator via the admin REST / CLI and
+must be available at mint-time to construct the HTTP Basic auth
+header.
+
+This is a different shape from UH1a's harvest API key, which is
+shepard-generated, one-way-hashed (SHA-256), and verified via
+constant-time compare on incoming harvester requests. UH1a's key
+**must** be hashed because it's shepard's secret-to-keep — the
+operator only sees the plaintext exactly once at mint time. KIP1d's
+password is **the operator's secret**, shared with DataCite, that
+shepard needs to replay verbatim against an HTTPS endpoint.
+
+The question: how do we store the operator-provided DataCite
+password so it survives restart, is unreadable in casual Neo4j
+inspection (`MATCH (n:DataciteMinterConfig) RETURN n`), and yet
+recoverable to plaintext for HTTP Basic auth?
+
+### Decision
+
+Store the plaintext **AES-GCM-256-encrypted** on
+`:DataciteMinterConfig.passwordCipher`, with the key derived from
+`SHA-256("shepard:KIP1d:datacite:" ‖ <shepard.instance.id>)`
+(truncated to 32 bytes). Ciphertext format:
+`gcm1:` prefix + base64-url-no-padding of
+`IV(12 bytes) ‖ ciphertext ‖ tag(16 bytes)`. The `gcm1:` marker
+exists so a future cipher upgrade can recognise legacy shapes.
+
+A SHA-256 hex hash of the plaintext is also stored on
+`:DataciteMinterConfig.passwordHash`, surfaced only via its
+first-8-hex fingerprint to the admin GET / CLI status output (so
+an operator can confirm "yes, that's the password I set" without
+exposing material that helps an attacker).
+
+`shepard.instance.id` is already used elsewhere (PROV1a's
+`:Activity.instanceId`, KIP1h's `LocalMinter` PID namespace) — KIP1d
+reuses it rather than introducing a parallel
+`shepard.minters.datacite.cipher-key` key that would need its own
+operator-rotation runbook.
+
+### Rationale
+
+1. **The DataCite REST API requires plaintext at mint-time.** HTTP
+   Basic auth's wire format is `base64(user:pass)`; there's no
+   challenge-response or token-based alternative on DataCite's
+   API surface. We can't one-way hash like UH1a does.
+2. **Plaintext-at-rest is worse.** A casual Neo4j `MATCH ... RETURN
+   n` reveals the password verbatim; an attacker with read access
+   to the graph then has full DataCite Member impersonation.
+   AES-GCM raises the bar — the same attacker now also needs the
+   JVM's `shepard.instance.id`.
+3. **`shepard.instance.id` is already an operator-managed secret-ish
+   value.** It lives in `application.properties` or an env var;
+   PROV1a treats it as part of the audit trail's identity. Reusing
+   it for the cipher key matches the existing trust model.
+4. **AES-GCM-256 with per-call random IV** is the standard envelope
+   for "encrypt this at rest" — authenticated encryption, no
+   chosen-plaintext leaks, no nonce-reuse risk.
+5. **Operator-runbook honesty.** The reference doc states explicitly
+   that this is NOT a KMS — an attacker who reads both Neo4j AND
+   the JVM's `shepard.instance.id` recovers the plaintext. KIP1d
+   doesn't pretend to be more than it is.
+
+### Alternatives considered
+
+- **Hash the password (UH1a-style)**. Rejected — DataCite's HTTP
+  Basic API can't authenticate against a hash. Would force shepard
+  to fail every mint until the operator re-enters the plaintext
+  via a "mint" endpoint, which is operationally hostile (mints
+  must work unattended for the publish UI).
+- **Store plaintext, document loudly**. Rejected — bare plaintext
+  in Neo4j surfaces in routine queries, logs, and backups. The
+  attack surface (anyone with `MATCH ... RETURN n` access) is too
+  broad for a credential.
+- **External KMS integration (HashiCorp Vault, AWS KMS, Azure Key
+  Vault)**. Deferred — KIP1d is the first plugin needing reversible
+  credential storage; adding a KMS abstraction layer is premature
+  optimisation. A KIP1d-Phase-2 slice can introduce a
+  `CredentialBackend` SPI when (a) operator demand materialises,
+  or (b) a second secret needs reversible storage (e.g. KIP1c ePIC's
+  pre-shared signing key).
+- **Per-tenant cipher keys**. Deferred — shepard is single-tenant
+  in 5.x; multi-tenant story (`aidocs/63 ADR-0018-or-later` if it
+  lands) would introduce the matching credential-isolation slice.
+
+### Reversibility
+
+**Moderate.** The cipher format is forward-versioned (`gcm1:`
+prefix) so a future cipher upgrade can co-exist with legacy
+ciphertexts during a migration window. Rolling back to plaintext
+storage is straightforward but contraindicated.
+
+Two operator-visible consequences:
+
+- **Rotating `shepard.instance.id` post-mint invalidates the
+  stored cipher.** Decryption fails loudly with
+  `IllegalStateException`; the operator must re-set the password
+  via `shepard-admin minters datacite set-password`. This is
+  documented in the runbook + the CLI's error message points at
+  the rotation operator-action.
+- **Backups of `:DataciteMinterConfig` include the ciphertext.**
+  Restoring on a different `shepard.instance.id` invalidates the
+  password — same operator-action as a rotation.
+
+If a future KMS integration ships under a `CredentialBackend` SPI,
+the migration from `gcm1:` to `kms1:` is a one-way decrypt-then-
+re-encrypt at startup; the `gcm1:` prefix marker lets the
+migration recognise the legacy shape.
 
 ## How to add a new entry
 

@@ -81,12 +81,20 @@ jobs:
         working-directory: plugins/minter-local
         run: mvn -B -DskipTests install
 
+      - name: Install minter-datacite plugin module
+        working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
       - name: Run plugin unit tests (kip)
         working-directory: plugins/kip
         run: mvn -B test
 
       - name: Run plugin unit tests (minter-local)
         working-directory: plugins/minter-local
+        run: mvn -B test
+
+      - name: Run plugin unit tests (minter-datacite)
+        working-directory: plugins/minter-datacite
         run: mvn -B test
 
       - name: Run unit tests + JaCoCo report + coverage gate
@@ -152,6 +160,10 @@ jobs:
 
       - name: Install minter-local plugin module
         working-directory: plugins/minter-local
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-datacite plugin module
+        working-directory: plugins/minter-datacite
         run: mvn -B -DskipTests install
 
       - name: Run SpotBugs + findsecbugs (fail on High-confidence findings)

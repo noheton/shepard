@@ -211,8 +211,16 @@ These work the same way across every primitive:
   inputs return the same PID, a forced re-mint via `?force=true`
   bumps the version. **Minters are now optional plugins**
   (KIP1h): the legitimate default ships as
-  `shepard-plugin-minter-local`; ePIC handle service (KIP1c) and
-  DataCite REST (KIP1d) ship as sibling plugin JARs per ADR-0023.
+  `shepard-plugin-minter-local`. **Real DOIs via DataCite (KIP1d)**
+  ship as `shepard-plugin-minter-datacite` — an operator with a
+  DataCite Member contract configures the plugin
+  (`shepard-admin minters datacite set-prefix 10.5072 / set-repository-id /
+  set-password / enable`), flips `shepard.publish.minter=datacite`,
+  and subsequent `POST .../publish` calls mint real DOIs against
+  Fabrica test (default) or production — with `IsNewVersionOf` /
+  `HasVersion` chain links so re-publishes form a citable
+  version trail in DataCite Commons. ePIC handle service (KIP1c)
+  ships as a sibling plugin JAR per ADR-0023.
   Operators who want a resolver-only deployment (no PID
   minting, but the public `/v2/.well-known/kip/...` resolver
   keeps working against existing rows) set
