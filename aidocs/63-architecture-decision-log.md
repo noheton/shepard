@@ -51,6 +51,7 @@ re-deriving the trade-offs from scratch.
 | ADR-0021 | accepted | 2026-05-12 | GitLab-only adapter in G1b; GitHub + Gitea ship in G1d via the GitAdapter interface seam | easy |
 | ADR-0022 | accepted | 2026-05-13 | OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy (both indefinitely) | moderate |
 | ADR-0023 | accepted | 2026-05-13 | Plugin distribution: drop-in JARs into `backend/plugins/` discovered via `ServiceLoader` (not compose-side sidecars, not forked Dockerfiles) | moderate |
+| ADR-0024 | accepted | 2026-05-13 | Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`); FS1b talks generic S3 via AWS SDK so any S3-compatible endpoint keeps working | easy |
 
 ---
 
@@ -1229,12 +1230,224 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   covering install / uninstall / enable / disable; per-plugin
   pages at `docs/reference/plugins/<plugin-id>.md` per
   `aidocs/49 §2.2`.
+- **ADR-0024** — plugin-distribution sibling decision: object-store
+  reference for `infrastructure-local/` (Garage replaces MinIO).
+  Same shape of "pick a reference whose OSS posture matches
+  shepard's plugin-first / low-friction-quick-start direction."
 
 UH1a is exempt from the full ServiceLoader hookup as long as the
 PluginManifest SPI hasn't landed — UH1a ships as the module under
 `plugins/unhide/`, bundled into the uber-jar today, but designed
 so its conversion to a drop-in JAR is a packaging change only
 (no code reshuffle).
+
+## ADR-0024 — Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`)
+
+**Status.** accepted. **Date.** 2026-05-13.
+**Applied in.** `aidocs/45 §"Backend matrix"` (FS1b supported-backend
+table); follow-up swap of `infrastructure-local/docker-compose.yml`
+from `minio/minio` to `dxflrs/garage` will land alongside FS1b (the
+SPI doesn't exist yet, so the local stack doesn't actually wire any
+object store today). Cited by `aidocs/16` follow-up row.
+**Couples with.** ADR-0023 (plugin distribution) — sibling
+direction-setting decision: pick references whose OSS posture
+matches shepard's plugin-first / low-friction-quick-start
+expectation.
+
+### Context
+
+`aidocs/45` (FS1 series) designs the `FileStorage` SPI with two
+first-class plugin implementations — `shepard-plugin-file-gridfs`
+(default for casual installs) and `shepard-plugin-file-s3` (the
+S3-wire-protocol implementation talking generic S3 via AWS SDK v2).
+The original design (`aidocs/45 §2.2` C1) named **MinIO** as the
+lightweight self-hosted S3-compatible reference for the
+`infrastructure-local/` quick-start stack — the same idiom used by
+many projects in our neighbourhood. `infrastructure-local/docker-compose.yml`
+hasn't yet been wired with an object-store container (FS1b hasn't
+shipped), so today's local stack ships neither MinIO nor Garage —
+which makes this the cheapest possible moment to revisit the
+reference choice before the wire-up lands.
+
+`aidocs/68 §5` flags four still-open plugin-frame questions (Q1 HDF
+extraction, Q2 PayloadKind SPI ordering, Q4 convenience-wrapper
+shape, Q5 frontend plugins). The MinIO-as-default question lives
+under the same frame but wasn't explicit there — this ADR fills
+that gap before FS1b lands and bakes the choice in.
+
+The trigger is **MinIO's increasingly defeatured community
+edition**. Through late 2025 / early 2026 MinIO has moved
+admin-console features (per-tenant policies, identity browsers,
+bucket-replication wizards) out of the open-source release into a
+commercial-only "AIStor" tier; the AGPL relicensing posture
+(AGPL-3.0-only as of v4.x) tightens redistribution constraints for
+anyone bundling MinIO into a quick-start stack; community-channel
+maintenance signals are mixed. None of this is fatal — operators
+running MinIO today are fine, the S3 wire stays compatible — but
+it is misaligned with shepard's "low-friction quick-start" goal.
+Researchers picking shepard today should not be steered into a
+vendor whose OSS posture is degrading.
+
+### Decision
+
+For the `infrastructure-local/` quick-start stack, swap MinIO →
+**[Garage](https://garagehq.deuxfleurs.fr/)** as the default
+S3-compatible object store. The FS1b SPI implementation (when it
+lands) talks the **S3 wire protocol** via AWS SDK v2; any
+S3-compatible endpoint — real AWS S3, Cloudflare R2, Backblaze B2,
+Wasabi, Ceph RGW, SeaweedFS, MinIO if operators choose — continues
+to work without code changes. **Only the local-dev reference
+changes.**
+
+The `infrastructure-local/docker-compose.yml` swap itself is a
+follow-up tied to FS1b landing (see "Forward work flagged" below);
+this ADR locks the direction so FS1b can wire Garage from day one
+without re-litigating the reference choice mid-implementation.
+
+### Rationale
+
+- **MinIO posture risk.** Community-edition defeaturing
+  (admin-console capability migrating to the commercial "AIStor"
+  tier) + AGPL-3.0-only relicensing + mixed community-maintenance
+  signals introduce uncertainty that's misaligned with shepard's
+  "low-friction quick-start" goal. The local-stack reference
+  should not be a vendor whose OSS posture is actively eroding —
+  the cost of picking a different reference today is small (one
+  compose-file image swap), while the cost of un-picking MinIO
+  later (after operators have built muscle memory around it) is
+  larger. This is the same rationale shape as ADR-0023's
+  plugin-distribution choice: pick the reference that matches
+  shepard's structural posture, not the one that's most familiar.
+- **Garage matches shepard's profile.** Single-binary (Rust,
+  approximately 10 MB), S3 wire-compatible, designed for **small
+  geo-distributed clusters** — the same shape as a typical
+  research-lab shepard install (one institute, two or three nodes,
+  modest TB scale, possibly two campuses replicating). **MIT
+  licensed** (Garage core) — no AGPL footgun for operators
+  bundling it into their own internal distributions. The
+  single-binary + single-config-file deploy story matches the
+  `infrastructure-local/` brief ("quick test / evaluation setup"
+  per `README.md`) cleanly.
+- **Operational simplicity over hyperscale.** Ceph RGW is the
+  gold standard at 100-TB+ scale, but the ops surface (Mons, OSDs,
+  MGRs, cephx auth, CRUSH maps, placement groups) is wildly out
+  of scope for the `infrastructure-local/` quick-start. Garage is
+  "one binary, one config file, three nodes optional" — which is
+  exactly the right shape for an evaluation deployment. Operators
+  who outgrow Garage have a clean upgrade path to Ceph RGW / real
+  S3 / managed services without re-instrumenting shepard (the
+  AWS-SDK code path is the same).
+- **AWS-SDK posture preserved.** FS1b talks **generic S3** via
+  AWS SDK v2; the wire compatibility means operators with existing
+  MinIO clusters, real AWS S3, Cloudflare R2, Wasabi, Backblaze
+  B2, Ceph RGW, or SeaweedFS keep working without changes. The
+  choice is **only** about what container image the
+  `infrastructure-local/` Compose file pulls when an evaluator
+  runs `docker compose --profile tryout up -d` — not about which
+  endpoints production shepard supports.
+- **Production guidance unchanged.** `aidocs/45`'s amended
+  "Backend matrix" continues to recommend "any S3-compatible
+  endpoint" and explicitly lists the realistic production options
+  (real AWS S3 / Cloudflare R2 / Ceph RGW / Wasabi / Backblaze B2
+  / SeaweedFS / Garage / MinIO) without picking a single winner.
+  The matrix is the durability surface; the local-stack reference
+  is the entry point.
+
+### Alternatives considered
+
+- **Stay on MinIO.** Rejected — see "MinIO posture risk" above.
+  Operators today running MinIO are fine; the S3 wire stays
+  compatible. But shipping MinIO as the **new-install reference**
+  steers researchers into a vendor whose OSS posture is
+  actively eroding, which is the opposite of the "comfortable for
+  admins" rule. The cost of pivoting later — after `aidocs/45`,
+  `docs/admin.md`, and operator muscle memory have all coalesced
+  around MinIO — is higher than the cost today.
+- **Ceph RGW as the local-stack default.** Rejected —
+  operationally overkill. Ceph's ops surface is the right answer
+  at multi-tenant 100-TB+ scale, but defeats the purpose of
+  `infrastructure-local/` (the README explicitly calls it "quick
+  test / evaluation setup"). An evaluator who has to stand up a
+  Mon + 3 OSDs + a MGR + RGW just to try shepard's S3 backend is
+  not having a quick evaluation. Ceph RGW stays a **first-class
+  supported production option** in the matrix; it's just not the
+  local-stack reference.
+- **SeaweedFS.** Strong contender — Apache 2 licensed, Go-based,
+  mature S3 layer, well-maintained, light operational footprint.
+  Garage edges it for shepard's profile because Garage's
+  **"geo-distributed by design"** matches the research-lab
+  pattern (institutions with two campuses, on-prem nodes
+  replicating across a low-bandwidth link) better than SeaweedFS's
+  **datacentre-first** topology assumption, and Garage's
+  single-binary deploy is even simpler. SeaweedFS stays a
+  **first-class supported production option** — called out by
+  name in the FS1b backend matrix — and an operator who already
+  runs SeaweedFS in their environment continues to work without
+  changes. The choice between Garage and SeaweedFS for the
+  **local-stack default** is genuinely close; we picked Garage for
+  the geo-distributed shape match.
+- **JuiceFS.** Rejected as the *local-stack* default — JuiceFS is
+  a POSIX-on-object-store layer (filesystem semantics over a
+  backing store), not the object store itself. The local stack
+  needs an actual S3 endpoint for FS1b to talk to, not a layer on
+  top. JuiceFS could legitimately sit *behind* shepard's S3 layer
+  (operator points shepard at a JuiceFS-backed S3-compatible
+  endpoint), but that's an operator-side choice, not a reference
+  to ship.
+- **No local-stack object store; just GridFS for FS1a.** Rejected
+  because FS1b is the slice that proves the SPI works for
+  non-GridFS backends; the local stack needs an S3 endpoint to
+  test that path before operators wire up real S3 / Garage in
+  their own deployments. Shipping FS1a-only would leave the SPI
+  half-tested in the reference environment.
+
+### Reversibility
+
+**Easy.** Reversing means restoring `minio` in
+`infrastructure-local/docker-compose.yml` (one commit) plus
+`aidocs/45` matrix doc edits. No code change anywhere — the FS1b
+implementation talks the S3 wire protocol via AWS SDK v2, and the
+wire is identical between Garage, MinIO, real S3, R2, B2, Wasabi,
+Ceph RGW, and SeaweedFS. The choice is purely about what local
+image the quick-start Compose file pulls by default; operators
+who want a different reference flip one line in their own
+compose override file. The decision is intended to be durable but
+costs almost nothing to revisit if Garage's posture itself ever
+shifts.
+
+### Forward work flagged by this decision
+
+- **FS1b implementation slice** (designed in `aidocs/45 §3–§4`;
+  not yet scheduled). Talks generic S3 via AWS SDK v2; CI tests
+  against Garage locally + real S3 in a gated job. The plugin
+  shape (`shepard-plugin-file-s3`) lives outside `backend/` per
+  ADR-0023 once the PluginManifest SPI lands.
+- **`infrastructure-local/docker-compose.yml` swap** — from
+  `minio/minio` to `dxflrs/garage` under the `files-s3` profile
+  (per `aidocs/45 §9` FS1d). Small follow-up PR after FS1a/b
+  ship; the local stack doesn't actually wire any object store
+  today, so the swap lands with FS1b, not before. Tracked in
+  `aidocs/16` ("ADR-0024 implementation: swap
+  `infrastructure-local/docker-compose.yml` MinIO → Garage" —
+  queued, gated on FS1a/b).
+- **Operator migration path documented in `docs/admin.md`** —
+  anyone running MinIO today is fine: Garage and MinIO speak the
+  same S3 wire, so the migration is "stand up Garage, `mc mirror`
+  the bucket, repoint shepard's `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE`."
+  No data conversion, no schema migration, no client-code change.
+  Documented when FS1b's chapter lands in `docs/admin.md`.
+- **FS1b plugin's default endpoint config** — when the plugin
+  module ships, its packaged `application.properties` should
+  default `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE` to point at the
+  Garage container in `infrastructure-local/`'s network (`http://garage:3900`),
+  matching how the HSDS sidecar's URL defaults today. Operator
+  overrides via env vars per AWS SDK v2 conventions.
+- **CI matrix entry** — once FS1b ships, the integration-test
+  workflow runs the S3 plugin's test suite against a Garage
+  container (the reference); the matrix-extended job can
+  additionally run against MinIO and LocalStack to keep the wire
+  contract honest. Garage is the canary; MinIO + LocalStack are
+  the wire-compatibility regression guard.
 
 ## How to add a new entry
 
