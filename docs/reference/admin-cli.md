@@ -32,6 +32,16 @@ A future minor release will publish to a JBang catalogue and a GHCR
 container image; this page will update with the published commands
 when they land.
 
+**Plugin subcommands** (PM1d) — `shepard-admin` discovers any
+plugin JARs in its plugin directory at startup and surfaces each
+plugin's contributed subcommand group as a top-level verb. The
+directory defaults to `/deployments/plugins` (container) then
+`cli/plugins` (local dev); override with `$SHEPARD_PLUGINS_DIR` or
+`-Dshepard.plugins.dir=…`. The `unhide` subcommand group from the
+shepard-plugin-unhide JAR is discovered this way. See
+[plugins reference](/reference/plugins/) §"CLI extensibility" for
+how to write your own.
+
 ## Configure
 
 The CLI reads its target shepard URL and the API key it presents in

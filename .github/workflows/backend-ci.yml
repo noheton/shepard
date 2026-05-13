@@ -54,9 +54,19 @@ jobs:
       # documented in `docs/reference/plugins.md`. KIP1g adds the
       # `shepard-plugin-kip` module alongside UH1a; both build
       # independently against the stub backend.
+      #
+      # PM1d adds a CLI-side `provided` dep on `shepard-admin` (so
+      # plugins can ship Picocli subcommands via the
+      # `AdminCliCommandProvider` SPI) and a `test-jar` classifier
+      # dep on the CLI's test fixtures. CLI must be installed
+      # between the backend stub-install and the plugin install.
       - name: Stub-install backend (so plugin `provided` deps resolve)
         working-directory: backend
         run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI (so the plugin's CLI-side provided + test-jar deps resolve)
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
 
       - name: Install unhide plugin module
         working-directory: plugins/unhide
@@ -109,12 +119,18 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # PM1a phase 3 (ADR-0023): same two-pass plugin/backend
+      # PM1a phase 3 (ADR-0023) + PM1d: same two-pass plugin/backend
       # install dance as the unit-tests job above. KIP1g adds the
-      # second plugin (`shepard-plugin-kip`) alongside UH1a.
+      # second plugin (`shepard-plugin-kip`) alongside UH1a. PM1d
+      # inserts the CLI install before plugin installs so the
+      # `AdminCliCommandProvider` provided dep resolves.
       - name: Stub-install backend (so plugin `provided` deps resolve)
         working-directory: backend
         run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI (so the plugin's CLI-side provided + test-jar deps resolve)
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
 
       - name: Install unhide plugin module
         working-directory: plugins/unhide

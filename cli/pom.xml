@@ -45,6 +45,8 @@
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
+    <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
+    <maven-dependency-plugin.version>3.6.1</maven-dependency-plugin.version>
     <jacoco-plugin.version>0.8.12</jacoco-plugin.version>
     <flatten-plugin.version>1.6.0</flatten-plugin.version>
   </properties>
@@ -118,6 +120,26 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
+      </plugin>
+
+      <!--
+        PM1d — publish a `tests` classifier JAR carrying the
+        `de.dlr.shepard.cli.support` test harness (StubBackend +
+        CliRunner) so plugin modules can reuse it for their own
+        CLI-subcommand tests without having to copy it. Plugins
+        depend on it via `<type>test-jar</type>` + `<scope>test</scope>`.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
       <!-- Resolve ${revision} into the published POM so the deployed
@@ -207,4 +229,100 @@
       </plugin>
     </plugins>
   </build>
+
+  <!--
+    PM1d — `with-plugins` profile mirrors backend/pom.xml's shape:
+    when active, every in-tree `shepard-plugin-*` JAR is copied into
+    `target/plugins/` alongside the shaded `shepard-admin-*.jar`. The
+    container image's Dockerfile copies both into
+    `/deployments/plugins/` so the CLI's
+    `CliPluginBootstrap.discoverInto(...)` ServiceLoader-scan finds
+    each plugin's `AdminCliCommandProvider` at startup.
+
+    Active by default; deactivate with `-DnoPlugins` to break the
+    build-time circular reference when bootstrapping a plugin module
+    that depends on this CLI.
+  -->
+  <profiles>
+    <profile>
+      <id>with-plugins</id>
+      <activation>
+        <!--
+          Activate when the `noPlugins` system property is absent.
+          NOTE: do not combine with `<activeByDefault>true</activeByDefault>` —
+          Maven evaluates `activeByDefault` independently and a `true`
+          there fires the profile even when the property condition
+          would deactivate it. This shape mirrors the backend's own
+          `with-plugins` profile (see `backend/pom.xml`).
+        -->
+        <property>
+          <name>!noPlugins</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>${maven-dependency-plugin.version}</version>
+            <executions>
+              <execution>
+                <!--
+                  Copy every declared plugin dependency into
+                  target/plugins/ so the Dockerfile (or a local
+                  smoke test) can find them under one tree. The
+                  plugin JARs themselves are declared in the
+                  `<dependencies>` block above with
+                  `<scope>provided</scope>` so they don't get shaded
+                  into shepard-admin.jar — `provided` is consumed at
+                  copy-dependencies time but not at shade time.
+                -->
+                <id>copy-cli-plugins</id>
+                <phase>prepare-package</phase>
+                <goals>
+                  <goal>copy-dependencies</goal>
+                </goals>
+                <configuration>
+                  <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+                  <includeGroupIds>de.dlr.shepard.plugins</includeGroupIds>
+                  <includeScope>provided</includeScope>
+                  <stripVersion>false</stripVersion>
+                  <overWriteReleases>true</overWriteReleases>
+                  <overWriteSnapshots>true</overWriteSnapshots>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+
+      <dependencies>
+        <!--
+          shepard-plugin-unhide as a `provided` dep — the plugin's
+          classes are NOT shaded into shepard-admin.jar (the CLI
+          discovers them at runtime from
+          /deployments/plugins/). `provided` is the scope
+          maven-dependency-plugin's copy-dependencies picks up when
+          we ask for it via `includeScope=provided`.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+          <version>${revision}</version>
+          <scope>provided</scope>
+          <exclusions>
+            <!--
+              The plugin itself depends on this CLI module via
+              `provided` — keep the resolution acyclic when this
+              profile is active during the CLI's own build.
+            -->
+            <exclusion>
+              <groupId>de.dlr.shepard</groupId>
+              <artifactId>shepard-admin</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

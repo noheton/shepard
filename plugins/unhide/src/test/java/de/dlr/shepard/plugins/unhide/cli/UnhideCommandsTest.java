@@ -1,4 +1,4 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.unhide.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -20,8 +20,15 @@ import org.junit.jupiter.api.Test;
  * <p>Each test wires the picocli command against an in-process
  * {@link StubBackend} so we exercise the real {@code HttpClient} +
  * Jackson + Picocli wiring without booting Quarkus. Same harness
- * used by {@code FeaturesListCommandTest} +
- * {@code SemanticRefreshOntologiesCommandTest}.
+ * used by the core CLI command tests; the harness comes from the
+ * CLI's `tests` classifier JAR (PM1d).
+ *
+ * <p>PM1d — moved from {@code cli/src/test/...UnhideCommandsTest} to
+ * this plugin module's test tree once the
+ * {@code AdminCliCommandProvider} SPI shipped. The
+ * {@code shepard-admin unhide …} end-user UX is byte-identical —
+ * the test assertions on output strings and request bodies didn't
+ * change beyond the package-relocation imports.
  */
 class UnhideCommandsTest {
 
@@ -244,9 +251,13 @@ class UnhideCommandsTest {
   // ─── parent wiring ───────────────────────────────────────────────────────
 
   @Test
-  void shepardAdminTopLevel_wiresUnhideSubcommand() {
-    de.dlr.shepard.cli.ShepardAdmin admin = new de.dlr.shepard.cli.ShepardAdmin();
-    picocli.CommandLine cmd = new picocli.CommandLine(admin);
+  void shepardAdminTopLevel_wiresUnhideSubcommand_viaServiceLoader() {
+    // PM1d: `unhide` is no longer a hard-coded subcommand on the
+    // `ShepardAdmin` root — it's contributed via the
+    // `AdminCliCommandProvider` SPI. Use `ShepardAdmin.commandLine()`
+    // so the `CliPluginBootstrap` runs its classpath ServiceLoader
+    // pass and registers the verb.
+    picocli.CommandLine cmd = de.dlr.shepard.cli.ShepardAdmin.commandLine();
     assertNotNull(cmd.getSubcommands().get("unhide"), "shepard-admin must surface the unhide group");
     picocli.CommandLine sub = cmd.getSubcommands().get("unhide");
     // All seven verbs must be reachable from the unhide parent.

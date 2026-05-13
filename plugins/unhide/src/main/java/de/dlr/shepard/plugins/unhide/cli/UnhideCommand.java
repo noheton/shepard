@@ -1,4 +1,4 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.unhide.cli;
 
 import picocli.CommandLine.Command;
 
@@ -11,6 +11,15 @@ import picocli.CommandLine.Command;
  * "admin-configurable" rule (the same shape as A3b features +
  * N1c2 semantic config — every operator knob reachable from REST
  * has a matching CLI verb).
+ *
+ * <p>PM1d — moved out of the in-tree {@code cli/} module into this
+ * plugin module and contributed to {@code shepard-admin} via
+ * {@code UnhideAdminCliCommandProvider} (an
+ * {@link de.dlr.shepard.cli.plugin.AdminCliCommandProvider} declared
+ * in {@code META-INF/services/}). The {@code shepard-admin unhide …}
+ * end-user UX is byte-identical to the pre-PM1d behaviour — same
+ * verbs, same flags, same JSON shapes, same exit codes — only the
+ * source code's home moved.
  */
 @Command(
   name = "unhide",

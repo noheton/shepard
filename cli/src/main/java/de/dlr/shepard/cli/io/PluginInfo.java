@@ -12,8 +12,10 @@ import java.util.List;
  *
  * <p>Decoupled from the backend module so the CLI does not pull in
  * Quarkus / JAX-RS just for one DTO — same pattern as
- * {@link FeatureToggle}, {@link UnhideConfig}, and the rest of the
- * read-side CLI IO records.
+ * {@link FeatureToggle} and the rest of the read-side CLI IO
+ * records. (Plugin-side wire mirrors, e.g. unhide's
+ * {@code UnhideConfig}, live in their plugin module's
+ * {@code plugins/<id>/.../cli/io/} package post-PM1d.)
  *
  * <p>Unknown fields are ignored so a backend running ahead of this
  * CLI's view of the schema doesn't fail deserialisation; the table

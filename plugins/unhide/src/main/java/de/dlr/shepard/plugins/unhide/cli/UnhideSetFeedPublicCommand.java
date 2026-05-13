@@ -1,10 +1,10 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.unhide.cli;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
-import de.dlr.shepard.cli.io.UnhideConfig;
+import de.dlr.shepard.plugins.unhide.cli.io.UnhideConfig;
 import java.util.Map;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;

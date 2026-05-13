@@ -230,6 +230,157 @@ Exit codes: `0` on success, `1` on HTTP / auth / IO error
 (stderr carries a one-line message; `--verbose` surfaces the
 stack), `2` on unexpected runtime exceptions.
 
+## CLI extensibility (third-party `shepard-admin` subcommands)
+
+A plugin JAR can contribute its own `shepard-admin` subcommands
+via the **`AdminCliCommandProvider` SPI** (PM1d). The shape mirrors
+the backend's `PluginManifest` SPI from PM1a: ServiceLoader-based
+discovery, same plugin directory as the backend, same fail-soft
+posture per plugin.
+
+### What an operator needs to know
+
+`shepard-admin` walks the same plugin directory the backend
+uses — `$SHEPARD_PLUGINS_DIR` (or the `shepard.plugins.dir`
+JVM system property), defaulting to `/deployments/plugins` in
+the container image and `cli/plugins` for local development.
+Each JAR in that directory is opened in a child class loader,
+ServiceLoader-scanned for `AdminCliCommandProvider`
+implementations, and each provider's `@Command` class is
+registered as a top-level subcommand on `shepard-admin`.
+
+```bash
+$ ls /deployments/plugins/
+shepard-plugin-unhide-1.0.0-SNAPSHOT.jar
+shepard-plugin-acme-foo-0.3.0.jar
+
+$ shepard-admin --help
+Usage: shepard-admin [-hV] [COMMAND]
+Commands:
+  features    ...
+  health      ...
+  migrations  ...
+  plugins     ...
+  semantic    ...
+  unhide      Manage the Helmholtz Unhide publish plugin ...
+  acme-foo    ...                                          # contributed by the acme-foo plugin
+```
+
+The same JAR usually carries both sides — a `PluginManifest` for
+the backend (REST resources, CDI beans, payload-kind factories)
+AND an `AdminCliCommandProvider` for the CLI (Picocli
+subcommands). Operators install once: `cp …jar
+/deployments/plugins/`.
+
+If a plugin's CLI side is broken (e.g. it points at a class with
+no public no-arg constructor), the bootstrap logs a one-line
+WARN to stderr and skips that subcommand — every other subcommand
+still works. The CLI never crashes on a plugin defect.
+
+### What a plugin author needs to do
+
+Three small artefacts inside your plugin module:
+
+1. **A Picocli `@Command` class.** Same shape as
+   `UnhideCommand` — a no-op parent runnable that lists nested
+   verb commands via `subcommands = {…}`.
+
+   ```java
+   package com.example.shepard.foo.cli;
+
+   import picocli.CommandLine.Command;
+
+   @Command(
+     name = "foo",
+     description = "Manage the acme-foo extension.",
+     subcommands = { FooStatusCommand.class, FooRefreshCommand.class }
+   )
+   public final class FooCommand implements Runnable {
+     @Override public void run() { /* picocli prints the usage banner */ }
+   }
+   ```
+
+   Each verb command extends `de.dlr.shepard.cli.AbstractCommand`
+   so it gets the shared HTTP client / config / output-format /
+   error-envelope wiring for free.
+
+2. **An `AdminCliCommandProvider` implementation.**
+
+   ```java
+   package com.example.shepard.foo.cli;
+
+   import de.dlr.shepard.cli.plugin.AdminCliCommandProvider;
+
+   public final class FooAdminCliCommandProvider implements AdminCliCommandProvider {
+     @Override public Class<?> commandClass() { return FooCommand.class; }
+   }
+   ```
+
+3. **The `META-INF/services/` pointer.**
+
+   ```
+   # plugins/foo/src/main/resources/META-INF/services/de.dlr.shepard.cli.plugin.AdminCliCommandProvider
+   com.example.shepard.foo.cli.FooAdminCliCommandProvider
+   ```
+
+In your plugin's `pom.xml`, depend on the CLI module with
+`<scope>provided</scope>` (same as the backend dependency) so
+the CLI's own classes — including Picocli — are not bundled
+into the plugin JAR:
+
+```xml
+<dependency>
+  <groupId>de.dlr.shepard</groupId>
+  <artifactId>shepard-admin</artifactId>
+  <version>${shepard.version}</version>
+  <scope>provided</scope>
+</dependency>
+<dependency>
+  <groupId>info.picocli</groupId>
+  <artifactId>picocli</artifactId>
+  <version>4.7.6</version>
+  <scope>provided</scope>
+</dependency>
+```
+
+To reuse the CLI's `StubBackend` / `CliRunner` test fixtures in
+your plugin's own subcommand tests, pull the CLI's `tests`
+classifier JAR:
+
+```xml
+<dependency>
+  <groupId>de.dlr.shepard</groupId>
+  <artifactId>shepard-admin</artifactId>
+  <version>${shepard.version}</version>
+  <type>test-jar</type>
+  <scope>test</scope>
+</dependency>
+```
+
+That's the entire contract. Build the JAR, drop it into
+`/deployments/plugins/`, restart shepard, run
+`shepard-admin foo --help` — your subcommand is there. The
+`unhide` plugin under `plugins/unhide/` is the canonical example;
+its `UnhideAdminCliCommandProvider` is exactly the shape above.
+
+### Discovery hardening
+
+- **Path traversal.** Each JAR's real path must lie inside the
+  resolved plugin directory's real path. Symlinks pointing
+  outside the directory get rejected with a WARN and skipped.
+- **Subcommand name collisions.** If a plugin tries to register a
+  subcommand named identically to an existing one (a core verb
+  or a previously-registered plugin), the bootstrap logs a
+  one-line WARN to stderr and skips the second registration —
+  the first wins.
+- **Broken providers.** A provider that throws from
+  `commandClass()`, returns `null`, returns a class without a
+  public no-arg constructor, or returns a class without a
+  `@Command` annotation gets a WARN and is skipped.
+- **No service file.** A JAR that carries only the backend
+  `PluginManifest` (no `AdminCliCommandProvider`) is silently
+  ignored — not every plugin has CLI verbs, and that's fine.
+
 ## Uninstall a plugin
 
 ```bash

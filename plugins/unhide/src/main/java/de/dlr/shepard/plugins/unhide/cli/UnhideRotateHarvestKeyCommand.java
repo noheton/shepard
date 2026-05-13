@@ -1,10 +1,10 @@
-package de.dlr.shepard.cli.commands;
+package de.dlr.shepard.plugins.unhide.cli;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import de.dlr.shepard.cli.AbstractCommand;
 import de.dlr.shepard.cli.http.AdminCliException;
-import de.dlr.shepard.cli.io.HarvestKeyMinted;
+import de.dlr.shepard.plugins.unhide.cli.io.HarvestKeyMinted;
 import picocli.CommandLine.Command;
 
 /**

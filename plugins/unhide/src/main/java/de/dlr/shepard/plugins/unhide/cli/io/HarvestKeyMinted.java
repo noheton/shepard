@@ -1,10 +1,13 @@
-package de.dlr.shepard.cli.io;
+package de.dlr.shepard.plugins.unhide.cli.io;
 
 import java.util.Date;
 
 /**
  * CLI mirror of the backend's {@code HarvestKeyMintedIO} —
  * response of {@code POST /v2/admin/unhide/harvest-key/rotate}.
+ *
+ * <p>PM1d — relocated from {@code de.dlr.shepard.cli.io} alongside
+ * the rest of the {@code unhide} CLI subcommand group.
  */
 public final class HarvestKeyMinted {
 
