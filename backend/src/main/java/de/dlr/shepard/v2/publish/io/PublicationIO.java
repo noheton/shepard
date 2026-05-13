@@ -12,9 +12,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * minter id that produced the row + the resolver URL clients should
  * use to dereference the PID at this shepard instance.
  *
- * <p>Designed in {@code aidocs/66 §4.1}. Future KIP slices may widen
- * the wire shape; new fields land as additive optionals so KIP1a
- * clients keep working.
+ * <p>Designed in {@code aidocs/66 §4.1}. KIP1h additively grew the
+ * record with {@link #versionNumber} — the Phase-1 version number
+ * the {@code PublishService} computed before minting. Clients that
+ * don't parse the field ignore it per the additive-wire-shape
+ * convention. The {@link #from(Publication, String)} factory
+ * defaults the field to {@code 1} on pre-KIP1h rows where the
+ * property is null (V31 backfill sets the persisted value to 1; the
+ * Optional in the JSON response normalises the missing-property case
+ * for any rows that slipped through).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "Publication", description = "KIP1a publication record per aidocs/66.")
@@ -25,7 +31,7 @@ public record PublicationIO(
   String pid,
   @Schema(required = true, description = "Server-side wall-clock at the moment the minter returned.")
   Instant mintedAt,
-  @Schema(required = true, description = "Identifier of the minter that produced this row (e.g. 'mock', 'epic').")
+  @Schema(required = true, description = "Identifier of the minter that produced this row (e.g. 'local', 'epic').")
   String minterId,
   @Schema(
     required = true,
@@ -34,11 +40,20 @@ public record PublicationIO(
   String resolverUrl,
   @Schema(description = "Username of the publisher.") String publishedBy,
   @Schema(description = "URL-segment of the published entity's kind (e.g. 'data-objects').") String entityKind,
-  @Schema(description = "AppId of the published entity.") String entityAppId
+  @Schema(description = "AppId of the published entity.") String entityAppId,
+  @Schema(
+    required = true,
+    description = "KIP1h Phase-1 version number. 1-based ordinal of this Publication among the entity's :Publication rows."
+  )
+  Integer versionNumber
 ) {
   /**
    * Project a {@link Publication} onto the wire shape, computing the
-   * resolver URL from the supplied base.
+   * resolver URL from the supplied base. Pre-KIP1h rows that have a
+   * null {@code versionNumber} surface as {@code 1} in the wire
+   * shape (the V31 backfill writes 1 onto every legacy row; this
+   * Optional-default catches anything that slipped past the
+   * migration).
    *
    * @param p           the persisted Publication
    * @param resolverUrl the {@code <shepard.url>/v2/.well-known/kip/{pid-suffix}}
@@ -46,6 +61,8 @@ public record PublicationIO(
    */
   public static PublicationIO from(Publication p, String resolverUrl) {
     if (p == null) return null;
+    Integer version = p.getVersionNumber();
+    if (version == null || version < 1) version = 1;
     return new PublicationIO(
       p.getAppId(),
       p.getPid(),
@@ -54,7 +71,8 @@ public record PublicationIO(
       resolverUrl,
       p.getPublishedBy(),
       p.getEntityKind(),
-      p.getEntityAppId()
+      p.getEntityAppId(),
+      version
     );
   }
 }

@@ -19,14 +19,17 @@ import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.publish.minter.MintRequest;
 import de.dlr.shepard.publish.minter.MintResult;
 import de.dlr.shepard.publish.minter.Minter;
+import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.minter.MinterRegistry;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
@@ -45,8 +48,8 @@ class PublishServiceTest {
     publicationDAO = mock(PublicationDAO.class);
     session = mock(Session.class);
 
-    when(minterRegistry.activeMinter()).thenReturn(minter);
-    when(minter.id()).thenReturn("mock");
+    when(minterRegistry.activeMinter()).thenReturn(Optional.of(minter));
+    when(minter.id()).thenReturn("local");
 
     service = new PublishService() {
       @Override
@@ -82,8 +85,9 @@ class PublishServiceTest {
   void publishesFreshWhenEntityHasNoPriorPublication() {
     primeEntityExists();
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of());
+    when(publicationDAO.findLatestVersionNumber("01HF-A")).thenReturn(0);
     when(minter.mint(any(MintRequest.class))).thenReturn(
-      new MintResult("mock:shepard:data-objects:01HF-A:1747000000000", Instant.ofEpochMilli(1_747_000_000_000L), "mock")
+      new MintResult("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", Instant.ofEpochMilli(1_747_000_000_000L), "local")
     );
     when(publicationDAO.attachToEntity(any(Publication.class), eq("01HF-A"))).thenAnswer(inv -> {
       Publication p = inv.getArgument(0);
@@ -100,11 +104,12 @@ class PublishServiceTest {
     );
 
     assertTrue(outcome.fresh());
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000000", outcome.publication().getPid());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", outcome.publication().getPid());
     assertEquals("alice", outcome.publication().getPublishedBy());
     assertEquals("data-objects", outcome.publication().getEntityKind());
     assertEquals("01HF-A", outcome.publication().getEntityAppId());
-    assertEquals("mock", outcome.publication().getMinterId());
+    assertEquals("local", outcome.publication().getMinterId());
+    assertEquals(Integer.valueOf(1), outcome.publication().getVersionNumber());
     verify(publicationDAO).attachToEntity(any(Publication.class), eq("01HF-A"));
   }
 
@@ -113,12 +118,13 @@ class PublishServiceTest {
     primeEntityExists();
     Publication existing = new Publication();
     existing.setAppId("pub-app-id-existing");
-    existing.setPid("mock:shepard:data-objects:01HF-A:1700000000000");
+    existing.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     existing.setMintedAt(1_700_000_000_000L);
-    existing.setMinterId("mock");
+    existing.setMinterId("local");
     existing.setEntityAppId("01HF-A");
     existing.setEntityKind("data-objects");
     existing.setPublishedBy("alice");
+    existing.setVersionNumber(1);
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(existing));
 
     PublishService.PublishOutcome outcome = service.publish(
@@ -134,17 +140,26 @@ class PublishServiceTest {
     // Critical: no mint, no attach.
     verify(minter, never()).mint(any());
     verify(publicationDAO, never()).attachToEntity(any(), anyString());
+    // findLatestVersionNumber is also skipped on the idempotent path.
+    verify(publicationDAO, never()).findLatestVersionNumber(anyString());
   }
 
   @Test
-  void forceTrueMintsFreshEvenWhenPublicationExists() {
+  void forceTrueBumpsVersionEvenWhenPublicationExists() {
+    // KIP1h: force-remint now bumps the version instead of stamping
+    // a new epoch-millis suffix. The DAO query reports v3 as the
+    // current max → next mint is v4.
     primeEntityExists();
     Publication existing = new Publication();
-    existing.setPid("mock:shepard:data-objects:01HF-A:1700000000000");
+    existing.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v3");
     existing.setEntityAppId("01HF-A");
+    existing.setVersionNumber(3);
     when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of(existing));
-    when(minter.mint(any(MintRequest.class))).thenReturn(
-      new MintResult("mock:shepard:data-objects:01HF-A:1747000000001", Instant.ofEpochMilli(1_747_000_000_001L), "mock")
+    when(publicationDAO.findLatestVersionNumber("01HF-A")).thenReturn(3);
+
+    ArgumentCaptor<MintRequest> reqCaptor = ArgumentCaptor.forClass(MintRequest.class);
+    when(minter.mint(reqCaptor.capture())).thenReturn(
+      new MintResult("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v4", Instant.ofEpochMilli(1_747_000_000_001L), "local")
     );
     when(publicationDAO.attachToEntity(any(Publication.class), eq("01HF-A"))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -157,8 +172,63 @@ class PublishServiceTest {
     );
 
     assertTrue(outcome.fresh());
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000001", outcome.publication().getPid());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v4", outcome.publication().getPid());
+    assertEquals(Integer.valueOf(4), outcome.publication().getVersionNumber());
+    // The MintRequest carried versionNumber=4 — plugin authors rely on this.
+    assertEquals(4, reqCaptor.getValue().versionNumber());
     verify(minter).mint(any(MintRequest.class));
+  }
+
+  @Test
+  void firstPublishStampsVersionOne() {
+    // Fresh entity, never published. findLatestVersionNumber returns 0,
+    // next mint is v1.
+    primeEntityExists();
+    when(publicationDAO.findByEntityAppId("01HF-FRESH")).thenReturn(List.of());
+    when(publicationDAO.findLatestVersionNumber("01HF-FRESH")).thenReturn(0);
+
+    ArgumentCaptor<MintRequest> reqCaptor = ArgumentCaptor.forClass(MintRequest.class);
+    when(minter.mint(reqCaptor.capture())).thenReturn(
+      new MintResult("shepard:lab-a:data-objects:01HF-FRESH:v1", Instant.ofEpochMilli(1L), "local")
+    );
+    when(publicationDAO.attachToEntity(any(Publication.class), eq("01HF-FRESH"))).thenAnswer(inv -> inv.getArgument(0));
+
+    PublishService.PublishOutcome outcome = service.publish(
+      PublishableKind.DATA_OBJECTS,
+      "01HF-FRESH",
+      "https://x/v2/data-objects/01HF-FRESH",
+      "alice",
+      false
+    );
+
+    assertEquals(1, reqCaptor.getValue().versionNumber());
+    assertEquals(Integer.valueOf(1), outcome.publication().getVersionNumber());
+  }
+
+  @Test
+  void noActiveMinterRaisesMinterNotInstalled() {
+    // KIP1h: when the registry has no active minter the service
+    // refuses the call cleanly. The REST layer translates this into
+    // 503 RFC 7807 `publish.minter.not-installed`.
+    primeEntityExists();
+    when(publicationDAO.findByEntityAppId("01HF-A")).thenReturn(List.of());
+    when(minterRegistry.activeMinter()).thenReturn(Optional.empty());
+
+    MinterNotInstalledException ex = assertThrows(
+      MinterNotInstalledException.class,
+      () ->
+        service.publish(
+          PublishableKind.DATA_OBJECTS,
+          "01HF-A",
+          "https://shepard.example/v2/data-objects/01HF-A",
+          "alice",
+          false
+        )
+    );
+    assertTrue(ex.getMessage().contains("plugins/minter-local/"));
+    // Critical: when no minter is wired the publish flow must not
+    // touch the DAO (no half-written :Publication rows).
+    verify(publicationDAO, never()).attachToEntity(any(), anyString());
   }
 
   @Test

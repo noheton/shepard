@@ -38,12 +38,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * {@code aidocs/66 §4.2}.
  *
  * <p>The PID suffix is matched against the full PID string. PIDs
- * minted by {@link de.dlr.shepard.publish.minter.MockMinter} carry
- * colons (e.g. {@code mock:shepard:data-objects:01HF…:1747000000000})
- * and the path regex {@code .+} accepts those without URL-encoding.
- * ePIC handles (KIP1c) and DOIs (KIP1d) typically carry a single
- * slash (e.g. {@code 21.T11148/abc-def}) so the {@code .+} regex
- * absorbs the suffix verbatim too.
+ * minted by the {@code LocalMinter} (KIP1h) carry colons (e.g.
+ * {@code shepard:dlr.de/shepard-prod:data-objects:01HF…:v1}) and the
+ * path regex {@code .+} accepts those without URL-encoding. Pre-KIP1h
+ * rows minted by the in-core {@code MockMinter} (legacy
+ * {@code mock:shepard:<kind>:<appId>:<epoch>} shape) keep resolving
+ * cleanly — the resolver does a verbatim {@code findByPid} so the
+ * PID format is irrelevant. ePIC handles (KIP1c) and DOIs (KIP1d)
+ * typically carry a single slash (e.g. {@code 21.T11148/abc-def}) so
+ * the {@code .+} regex absorbs the suffix verbatim too.
  *
  * <p>The {@code .well-known/kip} prefix is registered in
  * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} (core)
@@ -136,6 +139,12 @@ public class KipResolverRest {
     // tolerates this (aidocs/66 §3 marks dateModified "recommended").
     String dateModified = dateCreated;
 
+    // KIP1h — surface the Phase-1 version segment. Pre-KIP1h rows
+    // have null versionNumber until V31's backfill runs; default to
+    // "v1" so the field is never absent for legacy data.
+    Integer version = p.getVersionNumber();
+    String digitalObjectVersion = "v" + (version == null || version < 1 ? 1 : version);
+
     KipRecordIO.KernelInformationProfile body = new KipRecordIO.KernelInformationProfile(
       p.getPid(),
       landingPage,
@@ -143,7 +152,8 @@ public class KipResolverRest {
       dateCreated,
       dateModified,
       p.getPublishedBy(),
-      null
+      null,
+      digitalObjectVersion
     );
     KipRecordIO record = new KipRecordIO(KipRecordIO.JSONLD_CONTEXT, p.getPid(), body);
     return Response.ok(record).build();

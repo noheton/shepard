@@ -6,6 +6,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.minter.MinterException;
+import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.services.PublishService;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -87,6 +88,10 @@ public class PublishRest {
   @APIResponse(responseCode = "403", description = "Caller lacks Write/Manage permission on the entity.")
   @APIResponse(responseCode = "404", description = "Unsupported `{kind}` segment, or no entity with `{appId}` of that kind.")
   @APIResponse(responseCode = "500", description = "Active Minter failed; problem+json carries the operator-readable reason.")
+  @APIResponse(
+    responseCode = "503",
+    description = "No minter installed (KIP1h). problem+json `publish.minter.not-installed` — install a minter plugin and set `shepard.publish.minter=<id>`."
+  )
   public Response publish(
     @Parameter(description = "Entity-kind URL segment (e.g. 'data-objects', 'collections').", required = true)
     @PathParam("kind") String kind,
@@ -140,6 +145,16 @@ public class PublishRest {
         "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
         "Entity is not of the requested kind",
         nfe.getMessage()
+      );
+    } catch (MinterNotInstalledException mnie) {
+      // KIP1h: no minter wired (unset config, missing plugin, or
+      // disabled bean). 503 RFC 7807 — operator gets an actionable
+      // hint pointing at plugins/minter-local/.
+      return problem(
+        Response.Status.SERVICE_UNAVAILABLE,
+        "https://shepard.dlr.de/problems/publish.minter.not-installed",
+        "No minter installed",
+        mnie.getMessage()
       );
     } catch (MinterException me) {
       return problem(

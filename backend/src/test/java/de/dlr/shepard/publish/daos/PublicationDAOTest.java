@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.publish.entities.Publication;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -37,11 +38,12 @@ class PublicationDAOTest extends BaseTestCase {
   private Publication publication() {
     Publication p = new Publication();
     p.setAppId("pub-1");
-    p.setPid("mock:shepard:data-objects:01HF-A:1747000000000");
+    p.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     p.setMintedAt(1_747_000_000_000L);
-    p.setMinterId("mock");
+    p.setMinterId("local");
     p.setEntityKind("data-objects");
     p.setEntityAppId("01HF-A");
+    p.setVersionNumber(1);
     return p;
   }
 
@@ -79,7 +81,8 @@ class PublicationDAOTest extends BaseTestCase {
     Publication a = publication();
     Publication b = publication();
     b.setAppId("pub-2");
-    b.setPid("mock:shepard:data-objects:01HF-A:1700000000000");
+    b.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v2");
+    b.setVersionNumber(2);
     when(session.query(eq(Publication.class), any(String.class), anyMap())).thenReturn(List.of(a, b));
     var out = dao.findByEntityAppId("01HF-A");
     assertEquals(2, out.size());
@@ -110,8 +113,9 @@ class PublicationDAOTest extends BaseTestCase {
     Publication p = new Publication();
     p.setPid("pid-x");
     p.setMintedAt(1L);
-    p.setMinterId("mock");
+    p.setMinterId("local");
     p.setEntityKind("data-objects");
+    p.setVersionNumber(1);
     // Stub the MERGE-edge runQuery: GenericDAO#runQuery returns a
     // boolean derived from queryStatistics.containsUpdates().
     Result mergeResult = mock(Result.class);
@@ -134,5 +138,76 @@ class PublicationDAOTest extends BaseTestCase {
   @Test
   void hasPublicationConstantValue() {
     assertEquals("HAS_PUBLICATION", PublicationDAO.HAS_PUBLICATION);
+  }
+
+  // ---------- KIP1h: findLatestVersionNumber ----------
+
+  @Test
+  void findLatestVersionNumberRejectsBlank() {
+    // Empty / null / blank short-circuits to 0 (no Cypher round-trip).
+    assertEquals(0, dao.findLatestVersionNumber(null));
+    assertEquals(0, dao.findLatestVersionNumber(""));
+    assertEquals(0, dao.findLatestVersionNumber("   "));
+    verify(session, never()).query(any(String.class), anyMap());
+  }
+
+  @Test
+  void findLatestVersionNumberReturnsZeroWhenNoPublications() {
+    // When the entity has no :Publication rows, coalesce(max(...), 0)
+    // returns 0 in the Cypher result.
+    Result r = mock(Result.class);
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(Map.<String, Object>of("maxVersion", 0L)).iterator();
+    when(r.iterator()).thenReturn(iter);
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertEquals(0, dao.findLatestVersionNumber("01HF-FRESH"));
+  }
+
+  @Test
+  void findLatestVersionNumberReturnsHighestVersion() {
+    // Entity already has v1, v2, v3 — next mint is v4.
+    Result r = mock(Result.class);
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(Map.<String, Object>of("maxVersion", 3L)).iterator();
+    when(r.iterator()).thenReturn(iter);
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertEquals(3, dao.findLatestVersionNumber("01HF-A"));
+  }
+
+  @Test
+  void findLatestVersionNumberHandlesEmptyResultIterator() {
+    // Defensive — if the query returned no rows at all (impossible in
+    // practice with coalesce, but pin the path) the DAO returns 0.
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(Collections.<Map<String, Object>>emptyList().iterator());
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertEquals(0, dao.findLatestVersionNumber("01HF-A"));
+  }
+
+  @Test
+  void findLatestVersionNumberHandlesNonNumericValue() {
+    // Defensive — a malformed row (string, null) returns 0 rather
+    // than throwing a ClassCastException.
+    Result r = mock(Result.class);
+    Iterator<Map<String, Object>> iter = List.<Map<String, Object>>of(
+      Map.<String, Object>of("maxVersion", "not-a-number")
+    ).iterator();
+    when(r.iterator()).thenReturn(iter);
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertEquals(0, dao.findLatestVersionNumber("01HF-A"));
+  }
+
+  @Test
+  void findLatestVersionNumberAcceptsIntegerAndLongResults() {
+    // Neo4j OGM may surface Integer or Long depending on the driver
+    // build; both intValue() cleanly to int.
+    Result r1 = mock(Result.class);
+    when(r1.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("maxVersion", Integer.valueOf(7))).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r1);
+    assertEquals(7, dao.findLatestVersionNumber("01HF-INT"));
   }
 }

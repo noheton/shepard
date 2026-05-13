@@ -10,12 +10,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * KIP1a registry — discovers every {@link Minter} CDI bean and
  * resolves which one is "active" via the deploy-time
- * {@code shepard.publish.minter} key (default {@code "mock"}).
+ * {@code shepard.publish.minter} key.
  *
  * <p>Designed in {@code aidocs/66 §5} and follows the
  * {@link de.dlr.shepard.context.references.git.adapters.GitAdapterRegistry}
@@ -23,12 +24,34 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * and surfaces the matching one — modulo G1's host-substring
  * matching being replaced here with a deploy-time-pinned id.
  *
- * <p>Fail-fast posture per {@code CLAUDE.md} "Migrations must be
- * idempotent and fail-fast" + the broader application-startup
- * convention: if the configured minter id has no matching bean the
- * registry aborts startup with a clear message. Operators see the
- * miss-config at the {@code mvn quarkus:dev} log line rather than
- * mid-request weeks later.
+ * <p><strong>Optional posture (KIP1h).</strong> Pre-KIP1h the
+ * registry fail-fasted on a missing configured-minter id —
+ * appropriate when the in-core {@code MockMinter} guaranteed at
+ * least one bean was always present. Post-KIP1h every minter lives
+ * in a plugin (per CLAUDE.md plugin-first heuristic #3), so an
+ * operator who hasn't picked a PID provider yet has a legitimate
+ * "no minter installed" install state. The registry now degrades
+ * cleanly:
+ *
+ * <ul>
+ *   <li><strong>Configured id matches</strong> → that minter is
+ *       active, {@link #activeMinter()} returns it wrapped in an
+ *       {@code Optional}.</li>
+ *   <li><strong>Configured id unset (or {@code none})</strong> →
+ *       no active minter. WARN logged at startup; publish endpoint
+ *       returns 503 {@code publish.minter.not-installed}.</li>
+ *   <li><strong>Configured id set but no matching bean</strong> →
+ *       no active minter. WARN logged at startup with the
+ *       operator-actionable hint ("install
+ *       shepard-plugin-minter-{id} or set shepard.publish.minter to
+ *       a registered id"). Publish endpoint returns the same 503.
+ *       <em>Not</em> fail-fast — the resolver
+ *       ({@code GET /v2/.well-known/kip/{pid-suffix}} in the kip
+ *       plugin) still works against pre-existing
+ *       {@code :Publication} rows.</li>
+ *   <li><strong>Configured id matches a disabled bean</strong> →
+ *       no active minter. WARN logged. Same 503 path.</li>
+ * </ul>
  *
  * <p>Duplicate ids ({@code two beans return id()="epic"}) log a
  * WARN and resolve to the first bean the iterator surfaces — that's
@@ -41,9 +64,19 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class MinterRegistry {
 
   /**
-   * Deploy-time key. {@code "mock"} is the only id that ships in
-   * KIP1a; {@code "epic"} (KIP1c) and {@code "datacite"} (KIP1d)
-   * arrive with their respective plugin Maven modules.
+   * Sentinel value an operator can set to explicitly disable the
+   * publish endpoint without uninstalling any plugin. Treated as
+   * "no active minter" identically to the unset / empty case.
+   */
+  public static final String NONE = "none";
+
+  /**
+   * Deploy-time key. Default {@code "local"} matches the
+   * {@code shepard-plugin-minter-local} id (KIP1h); {@code "epic"}
+   * (KIP1c) and {@code "datacite"} (KIP1d) arrive with their
+   * respective plugin Maven modules. Set to {@code "none"} (or
+   * leave blank) to disable the publish endpoint without
+   * uninstalling minter plugins.
    *
    * <p>Documented as deploy-time-only per {@code CLAUDE.md}
    * "cluster identity / topology" exception — switching the active
@@ -51,7 +84,7 @@ public class MinterRegistry {
    * runtime-flippable.
    */
   @Inject
-  @ConfigProperty(name = "shepard.publish.minter", defaultValue = "mock")
+  @ConfigProperty(name = "shepard.publish.minter", defaultValue = "local")
   String configuredMinterId;
 
   @Inject
@@ -72,8 +105,12 @@ public class MinterRegistry {
 
   /**
    * Quarkus startup hook — resolves the active minter once all CDI
-   * beans are constructed. Failing here aborts startup; that's the
-   * intended posture (see class javadoc).
+   * beans are constructed.
+   *
+   * <p>Post-KIP1h this method <strong>never throws</strong>: missing
+   * / disabled minters degrade to "no active minter" + a WARN, and
+   * the publish endpoint emits 503 {@code publish.minter.not-installed}
+   * on demand. The resolver path is unaffected.
    */
   void onStartup(@Observes StartupEvent ev) {
     resolve();
@@ -81,7 +118,8 @@ public class MinterRegistry {
 
   /**
    * Idempotent resolve. Builds the by-id map, picks the configured
-   * adapter, aborts if missing.
+   * adapter or leaves {@link #activeMinter} null if the install is
+   * minter-less.
    */
   void resolve() {
     Map<String, Minter> map = new LinkedHashMap<>();
@@ -108,24 +146,42 @@ public class MinterRegistry {
     }
     this.byId = Map.copyOf(map);
 
-    String want = configuredMinterId == null ? "mock" : configuredMinterId.trim();
+    String available = byId.isEmpty() ? "<none>" : String.join(", ", byId.keySet());
+    Log.infof("MinterRegistry: discovered %d minter(s): [%s]", byId.size(), available);
+
+    String want = configuredMinterId == null ? "" : configuredMinterId.trim();
+
+    if (want.isEmpty() || NONE.equalsIgnoreCase(want)) {
+      this.activeMinter = null;
+      Log.warnf(
+        "MinterRegistry: shepard.publish.minter is unset (or 'none') — publish endpoint will return 503 " +
+        "until shepard.publish.minter is set + the matching plugin is installed. " +
+        "The KIP resolver remains active for any pre-existing :Publication rows."
+      );
+      return;
+    }
+
     Minter picked = byId.get(want);
     if (picked == null) {
-      String available = byId.isEmpty() ? "<none>" : String.join(", ", byId.keySet());
-      throw new IllegalStateException(
-        "shepard.publish.minter=" +
-        want +
-        " — no Minter bean with that id is registered. Available: " +
-        available +
-        ". Did you forget to ship the shepard-plugin-minter-" +
-        want +
-        " module?"
+      this.activeMinter = null;
+      Log.warnf(
+        "MinterRegistry: shepard.publish.minter=%s — no matching Minter bean on the classpath. " +
+        "Available: %s. Install shepard-plugin-minter-%s (or another minter plugin and " +
+        "set shepard.publish.minter to its id). Publish endpoint will return 503; resolver still works.",
+        want,
+        available,
+        want
       );
+      return;
     }
     if (!picked.isEnabled()) {
-      throw new IllegalStateException(
-        "shepard.publish.minter=" + want + " is registered but reports isEnabled()=false. Check its configuration."
+      this.activeMinter = null;
+      Log.warnf(
+        "MinterRegistry: shepard.publish.minter=%s is registered but reports isEnabled()=false. " +
+        "Check its configuration. Publish endpoint will return 503; resolver still works.",
+        want
       );
+      return;
     }
     this.activeMinter = picked;
     Log.infof(
@@ -137,16 +193,23 @@ public class MinterRegistry {
   }
 
   /**
-   * @return the currently-active minter — guaranteed non-null
-   *         post-startup (otherwise startup would have aborted).
+   * @return the currently-active minter, or {@code Optional.empty()}
+   *         when the install has no minter wired (unset config,
+   *         missing plugin, or disabled bean). Callers in the
+   *         publish path translate empty into a 503 RFC 7807 problem
+   *         response.
    */
-  public Minter activeMinter() {
-    if (activeMinter == null) resolve();
-    return activeMinter;
+  public Optional<Minter> activeMinter() {
+    return Optional.ofNullable(activeMinter);
   }
 
-  /** @return the configured minter id (verbatim, post-trim). */
+  /**
+   * @return the configured minter id (verbatim, post-trim), or
+   *         {@code "<unset>"} when no minter is configured.
+   *         Diagnostic / log surface; the {@link #activeMinter()}
+   *         optional is the authoritative readiness signal.
+   */
   public String activeMinterId() {
-    return activeMinter().id();
+    return activeMinter == null ? "<unset>" : activeMinter.id();
   }
 }

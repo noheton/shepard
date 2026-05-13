@@ -51,9 +51,10 @@ jobs:
       # resolve its compile-time core types, then install the
       # plugins so the backend's package step can resolve them back.
       # CI sequence below replicates the local developer workflow
-      # documented in `docs/reference/plugins.md`. KIP1g adds the
-      # `shepard-plugin-kip` module alongside UH1a; both build
-      # independently against the stub backend.
+      # documented in `docs/reference/plugins.md`. KIP1g + KIP1h add
+      # the `shepard-plugin-kip` + `shepard-plugin-minter-local`
+      # modules alongside UH1a; all three build independently
+      # against the stub backend.
       #
       # PM1d adds a CLI-side `provided` dep on `shepard-admin` (so
       # plugins can ship Picocli subcommands via the
@@ -76,8 +77,16 @@ jobs:
         working-directory: plugins/kip
         run: mvn -B -DskipTests install
 
+      - name: Install minter-local plugin module
+        working-directory: plugins/minter-local
+        run: mvn -B -DskipTests install
+
       - name: Run plugin unit tests (kip)
         working-directory: plugins/kip
+        run: mvn -B test
+
+      - name: Run plugin unit tests (minter-local)
+        working-directory: plugins/minter-local
         run: mvn -B test
 
       - name: Run unit tests + JaCoCo report + coverage gate
@@ -120,10 +129,11 @@ jobs:
           cache: maven
 
       # PM1a phase 3 (ADR-0023) + PM1d: same two-pass plugin/backend
-      # install dance as the unit-tests job above. KIP1g adds the
-      # second plugin (`shepard-plugin-kip`) alongside UH1a. PM1d
-      # inserts the CLI install before plugin installs so the
-      # `AdminCliCommandProvider` provided dep resolves.
+      # install dance as the unit-tests job above. KIP1g + KIP1h add
+      # the `shepard-plugin-kip` + `shepard-plugin-minter-local`
+      # plugins alongside UH1a. PM1d inserts the CLI install before
+      # plugin installs so the `AdminCliCommandProvider` provided
+      # dep resolves.
       - name: Stub-install backend (so plugin `provided` deps resolve)
         working-directory: backend
         run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
@@ -138,6 +148,10 @@ jobs:
 
       - name: Install kip plugin module
         working-directory: plugins/kip
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-local plugin module
+        working-directory: plugins/minter-local
         run: mvn -B -DskipTests install
 
       - name: Run SpotBugs + findsecbugs (fail on High-confidence findings)

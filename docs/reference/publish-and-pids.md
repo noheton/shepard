@@ -9,12 +9,13 @@ permalink: /reference/publish-and-pids/
 shepard publishes entities by minting persistent identifiers (PIDs)
 through the HMC Kernel Information Profile (KIP) integration
 designed in [`aidocs/66`](https://github.com/noheton/shepard/blob/main/aidocs/66-hmc-kip-integration.md).
-The KIP1a baseline (this page) ships the `Minter` SPI seam, an
-in-core `MockMinter` for casual installs, the publish + resolver
-REST endpoints, and the `:Publication` Neo4j entity. Production
-adapters (ePIC handles, DataCite DOIs) ship as drop-in plugin JARs
-in KIP1c / KIP1d per the [plugin-distribution
-ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/63-architecture-decision-log.md#adr-0023).
+The KIP1a baseline (this page) ships the `Minter` SPI seam, the
+publish + resolver REST endpoints, and the `:Publication` Neo4j
+entity. Post-KIP1h every minter — including the legitimate-default
+`LocalMinter` — lives in a plugin per CLAUDE.md's plugin-first
+heuristic #3. Production adapters (ePIC handles, DataCite DOIs) ship
+as drop-in plugin JARs in KIP1c / KIP1d per the
+[plugin-distribution ADR-0023](https://github.com/noheton/shepard/blob/main/aidocs/63-architecture-decision-log.md#adr-0023).
 
 For the casual-task expression see [Publish a DataObject or
 Collection](/help/publish-data-object/).
@@ -42,13 +43,16 @@ DataObject  ─(:HAS_PUBLICATION)─►  Publication
                                    │ publishedBy     │
                                    │ entityKind      │
                                    │ entityAppId     │
+                                   │ versionNumber   │
                                    └─────────────────┘
 ```
 
 `:Publication` rows are **append-only** by KIP convention. The
 most-recent row attached to an entity is the "current" Publication;
 a force re-mint attaches a fresh row alongside, never replacing
-the old one.
+the old one. KIP1h's versioned-PIDs Phase 1 stamps the row's
+1-based `versionNumber` so the resolver can emit
+`digitalObjectVersion: "v<n>"` without a fan-out query.
 
 ## Publishing from the UI
 
@@ -114,21 +118,23 @@ POST /v2/{kind}/{appId}/publish[?force=true]
   `AccessType.Write` gate admits both).
 - **Idempotency.** Second call without `?force=true` returns the
   existing most-recent Publication (200 OK, no fresh mint).
-- **Forced re-mint.** `?force=true` mints a fresh PID and attaches
-  it as an additional `:Publication` row.
+- **Forced re-mint.** `?force=true` bumps the entity's
+  `versionNumber` and mints a new PID encoding the new version
+  (e.g. `v1` → `v2`). The previous Publication row is preserved.
 
 Response body (`application/json`):
 
 ```json
 {
   "appId": "01HF6N3R-pub-row",
-  "pid": "mock:shepard:data-objects:01HF...:1747000000000",
+  "pid": "shepard:dlr.de/shepard-prod:data-objects:01HF...:v1",
   "mintedAt": "2026-05-13T08:11:00Z",
-  "minterId": "mock",
+  "minterId": "local",
   "resolverUrl": "https://<shepard-host>/v2/.well-known/kip/<pid>",
   "publishedBy": "<username>",
   "entityKind": "data-objects",
-  "entityAppId": "01HF..."
+  "entityAppId": "01HF...",
+  "versionNumber": 1
 }
 ```
 
@@ -143,15 +149,16 @@ GET /v2/.well-known/kip/{pid-suffix}
   next-character-must-be-slash rule guards against
   `kip-foo` shaped foot-guns.
 - **Path matching.** `{pid-suffix}` is greedily matched via
-  JAX-RS `{suffix:.+}`. Both Mock-shaped PIDs (colon-separated) and
-  Handle/DOI-shaped PIDs (slash-separated) work verbatim — no URL
-  encoding required.
+  JAX-RS `{suffix:.+}`. Both `LocalMinter` PIDs (colon-separated)
+  and Handle/DOI-shaped PIDs (slash-separated) work verbatim — no
+  URL encoding required. Pre-KIP1h `mock:`-prefixed legacy PIDs
+  also keep resolving (the resolver does an opaque `findByPid`).
 - **Visibility.** The KIP record itself is findability metadata —
-  type, landing-page URL, timestamps, rights-holder — never entity
-  payload. The `landingPage` URL it points at *is* permission-gated;
-  an anonymous client gets the KIP record but hits 401 on the
-  landing page unless they're authorised. This mirrors the
-  `aas-server` `.well-known` posture.
+  type, landing-page URL, timestamps, rights-holder, version —
+  never entity payload. The `landingPage` URL it points at *is*
+  permission-gated; an anonymous client gets the KIP record but
+  hits 401 on the landing page unless they're authorised. This
+  mirrors the `aas-server` `.well-known` posture.
 
 Response body (`application/json`, JSON-LD-flavoured):
 
@@ -166,7 +173,8 @@ Response body (`application/json`, JSON-LD-flavoured):
     "dateCreated": "2026-05-13T08:11:00Z",
     "dateModified": "2026-05-13T08:11:00Z",
     "rightsHolder": "<username>",
-    "license": null
+    "license": null,
+    "digitalObjectVersion": "v1"
   }
 }
 ```
@@ -175,7 +183,8 @@ Response body (`application/json`, JSON-LD-flavoured):
 
 | Key | Default | Notes |
 |---|---|---|
-| `shepard.publish.minter` | `mock` | Active `Minter` adapter selected at startup. Deploy-time-only — switching the PID provider is a re-bootstrap decision (the "cluster identity / topology" exception in `CLAUDE.md`). |
+| `shepard.publish.minter` | `local` | Active `Minter` adapter selected at startup. Deploy-time-only — switching the PID provider is a re-bootstrap decision (the "cluster identity / topology" exception in `CLAUDE.md`). Set to `none` (or blank) to disable the publish endpoint while keeping the KIP resolver online for pre-existing rows. |
+| `shepard.instance.id` | `local` | Reused by `LocalMinter` as the `<instance.id>` segment of every locally-minted PID. Production deployments should set this to a namespaced value (e.g. `dlr.de/shepard-prod`) so PIDs minted by different instances don't collide. Operators on the `local` fallback see a startup WARN. |
 
 Per-minter knobs (ePIC handle prefix, DataCite credentials) ship
 with the matching plugin in KIP1c / KIP1d and use the standard
@@ -191,20 +200,63 @@ public interface Minter {
 }
 ```
 
-- **`MockMinter`** (`id="mock"`, ships in core) — synthetic Handle-
-  shaped PIDs: `mock:shepard:<kind>:<appId>:<epoch-millis>`. Never
-  throws. Default for fresh installs and any development environment
-  where calling an external service would be wrong.
-- **`epic` plugin** (KIP1c, queued) — real Handles via the
-  PID Consortium / ePIC handle service. Drops into
-  `backend/plugins/` as `shepard-plugin-minter-epic-*.jar`.
-- **`datacite` plugin** (KIP1d, queued) — DOIs via the DataCite
-  REST API. Same drop-in shape.
+Post-KIP1h **every minter ships as a plugin** per CLAUDE.md
+heuristic #3 ("SPIs in core, adapters in plugins").
 
-Plugins are discovered via `java.util.ServiceLoader<Minter>` per
-ADR-0023. The `MinterRegistry` fails startup if the configured
-`shepard.publish.minter=<id>` has no matching bean — operators see
-the misconfiguration at boot, not mid-request.
+- **`local` plugin** (`shepard-plugin-minter-local`, KIP1h, **the
+  default for fresh installs**) — mints stable, versioned,
+  local-instance PIDs of the form
+  `shepard:<instance.id>:<kind>:<appId>:v<n>`. Never throws. No
+  external service required. Renamed from the pre-KIP1h in-core
+  `MockMinter`; "mock" misled operators into thinking it was a
+  test-only fixture.
+- **`epic` plugin** (`shepard-plugin-minter-epic`, KIP1c, queued)
+  — real Handles via the PID Consortium / ePIC handle service.
+  Drops into `backend/plugins/` as `shepard-plugin-minter-epic-*.jar`.
+- **`datacite` plugin** (`shepard-plugin-minter-datacite`, KIP1d,
+  queued) — DOIs via the DataCite REST API. Same drop-in shape.
+
+### The optional-minter posture
+
+Post-KIP1h the `MinterRegistry` is **optional** — operators who
+haven't picked a PID provider yet (or who only want a resolver-only
+deployment) boot cleanly with no active minter. The publish endpoint
+returns 503 `publish.minter.not-installed` until either:
+
+1. A minter plugin is installed on the classpath AND
+   `shepard.publish.minter` is set to its id, **or**
+2. (Explicit-disable) `shepard.publish.minter=none` is set — the
+   sentinel value disables publish without uninstalling the plugin.
+
+The KIP resolver (`/v2/.well-known/kip/{pid-suffix}`) keeps working
+regardless — it reads pre-existing `:Publication` rows by PID.
+
+## Versioned PIDs (Phase 1)
+
+KIP1h shipped **versioned PIDs Phase 1**:
+
+- The `LocalMinter` encodes a 1-based version segment in every PID:
+  `shepard:<instance.id>:<kind>:<appId>:v<n>`. Same inputs → same
+  PID (the format is stable across re-mints).
+- The `:Publication` entity grows a `versionNumber: Integer`
+  property. Pre-KIP1h rows are backfilled to `versionNumber=1` via
+  `V31__Backfill_Publication_versionNumber.cypher` (idempotent).
+- The `PublishService` computes the next version as
+  `findLatestVersionNumber(appId) + 1` before minting, stamps it
+  onto both the `MintRequest` and the persisted `Publication`.
+- The `?force=true` re-mint **bumps the version** (v1 → v2 → v3)
+  instead of stamping a fresh epoch-millis suffix. The previous
+  Publication row stays — re-mint is additive per the KIP
+  append-only convention.
+- The `PublicationIO` response shape grows
+  `versionNumber: int` (additive).
+- The `KipRecordIO.KernelInformationProfile` body grows
+  `digitalObjectVersion: "v<n>"` (additive; JSON-LD open-world
+  semantics let pre-KIP1h clients ignore the new field).
+
+Phase 2 (full `:EntityVersion` graph with `previousVersion` /
+`nextVersion` edges) is queued as the ENT1 umbrella — the Phase-1
+scalar persists as a stable read-side denormalisation.
 
 ## Errors
 
@@ -214,6 +266,7 @@ All non-200 responses ship `application/problem+json` per RFC 7807.
 |---|---|---|
 | `publish.kind.unsupported` | 404 | URL segment isn't in the `PublishableKindRegistry`. |
 | `publish.entity.wrong-kind` | 404 | The appId exists but is a different label than the URL segment claims. |
+| `publish.minter.not-installed` | 503 | No active minter (KIP1h). The `detail` field guides the operator to install `plugins/minter-local/` (or another minter plugin) and set `shepard.publish.minter=<id>`. |
 | `publish.minter.failed` | 500 | Active Minter threw `MinterException`. `detail` carries the operator-readable message. |
 | `kip.pid.not-found` | 404 | No `:Publication` at this shepard has the requested PID. |
 
@@ -226,49 +279,64 @@ the rest of shepard's `/v2/` shelf.
 | Version | What it adds | Idempotent? |
 |---|---|---|
 | `V29__Add_appId_constraint_Publication.cypher` | V11-shape uniqueness constraint on the new `:Publication` label. | Yes — `CREATE CONSTRAINT IF NOT EXISTS`. |
+| `V31__Backfill_Publication_versionNumber.cypher` | KIP1h — stamps `versionNumber=1` on every pre-KIP1h `:Publication` row missing the property. | Yes — `WHERE p.versionNumber IS NULL` short-circuits re-runs. |
 
-No rollback file ships; an admin who needs to undo runs
+No rollback file ships for V29; an admin who needs to undo runs
 `DROP CONSTRAINT appId_unique_Publication IF EXISTS` and (if
-desired) `MATCH (p:Publication) DETACH DELETE p`. Future KIP slices
-that mutate the `:Publication` shape ship dedicated rollback files
-per the CLAUDE.md "comfort over cleverness" rule.
+desired) `MATCH (p:Publication) DETACH DELETE p`. For V31, the
+rollback is `MATCH (p:Publication) REMOVE p.versionNumber;`. Future
+KIP slices that mutate the `:Publication` shape ship dedicated
+rollback files per the CLAUDE.md "comfort over cleverness" rule.
 
 ## Plugin shape
 
-Post-KIP1g (per CLAUDE.md's plugin-first heuristic #2 — "external
-integrations → plugin shape"), the resolver and the KIP record
-JSON-LD shape live in a separate Maven module:
+Post-KIP1g + KIP1h (per CLAUDE.md's plugin-first heuristic #2
+"external integrations → plugin shape" and heuristic #3 "SPIs in
+core, adapters in plugins"), the resolver, the KIP record JSON-LD
+shape, and every `Minter` implementation live in separate Maven
+modules:
 
 - **`plugins/kip/`** — `shepard-plugin-kip-${revision}.jar`.
   Carries `KipResolverRest` (the `GET /v2/.well-known/kip/{pid-suffix}`
   resource) and `KipRecordIO` (the `kernelInformationProfile`
   envelope JSON-LD shape per the Helmholtz HMC standard:
   `digitalObjectType`, `landingPage`, `dateCreated`, `dateModified`,
-  `rightsHolder`, `license`).
-- **In core (`backend/`)** — `Minter` SPI, `MockMinter`,
+  `rightsHolder`, `license`, `digitalObjectVersion`).
+- **`plugins/minter-local/`** —
+  `shepard-plugin-minter-local-${revision}.jar`. Carries
+  `LocalMinter` (the default minter; mints
+  `shepard:<instance.id>:<kind>:<appId>:v<n>` PIDs). Operators who
+  build their own backend image with `-DnoPlugins` lose the
+  default minter and the publish endpoint returns 503 until a
+  minter is wired.
+- **In core (`backend/`)** — `Minter` SPI, `MintRequest`,
+  `MintResult`, `MinterException`, `MinterNotInstalledException`,
   `MinterRegistry`, `:Publication` entity, `PublicationDAO`,
-  `PublishableKindRegistry`, the generic `POST /v2/{kind}/{appId}/publish`
-  orchestration in `PublishRest`, and the generic `PublicationIO`
-  response shape. None of these depends on the HMC record format —
-  they would work identically against an alternative findability
-  protocol shipping in a different plugin.
+  `PublishableKindRegistry`, the generic
+  `POST /v2/{kind}/{appId}/publish` orchestration in `PublishRest`,
+  and the generic `PublicationIO` response shape. None of these
+  depends on the HMC record format or any specific minter — they
+  would work identically against an alternative findability
+  protocol or PID provider shipping in a different plugin.
 
 The `/v2/.well-known/kip/{pid-suffix}` endpoint path, the JSON-LD
-response body, and the RFC 7807 problem responses are
-**byte-identical** to the pre-KIP1g in-tree implementation; only
-the source location moved. Operators see no wire-shape difference.
+response body's existing fields, and the RFC 7807 problem responses
+are **byte-identical** to pre-KIP1g; KIP1h grew the response
+additively with `versionNumber` (`PublicationIO`) and
+`digitalObjectVersion` (`KipRecordIO`). Operators see no
+wire-shape regression.
 
-To opt out of the resolver (rare — operators who want the in-core
-publish endpoint without the KIP-specific record shape): set
-`shepard.plugins.kip.enabled=false` in `application.properties`
-and restart. The publish endpoint still mints PIDs; only the
-public resolver returns 404.
+To opt out of the local minter (rare — operators who want only the
+resolver, or who plan to mint via ePIC/DataCite once those plugins
+ship): set `shepard.publish.minter=none` in `application.properties`
+and restart. The KIP resolver keeps working against pre-existing
+`:Publication` rows; the publish endpoint returns 503.
 
-Distribution follows the ADR-0023 drop-in JAR shape: the plugin
-JAR is baked into `/deployments/plugins/` in the published
-backend image, and the backend's `with-plugins` Maven profile
-declares it as a `<dependency>` so Quarkus's build-time CDI
-scanner picks the `@Path` resource. See
+Distribution follows the ADR-0023 drop-in JAR shape: each plugin
+JAR is baked into `/deployments/plugins/` in the published backend
+image, and the backend's `with-plugins` Maven profile declares
+both as `<dependency>` items so Quarkus's build-time CDI scanner
+picks the `@Path` resources + `@ApplicationScoped` beans. See
 [plugins.md](/reference/plugins/) for the operator runbook.
 
 ## What's next
@@ -278,6 +346,7 @@ scanner picks the `@Path` resource. See
 - **KIP1e (Vue Publish button)** — UI surface + licence picker, **shipped** (see [Publishing from the UI](#publishing-from-the-ui) above).
 - **KIP1f (unpublish / retire)** — open question on retire-vs-tombstone semantics; KIP records are append-only by the HMC spec so a hard delete is the wrong shape.
 - **KIP1g (resolver as plugin)** — **shipped** (see [Plugin shape](#plugin-shape) above).
-- **KIP1h (`LocalMinter` rename + optional minter)** — pure rename of `MockMinter` to a name that doesn't mislead operators into thinking it's a test fixture, plus making the `MinterRegistry` fail-fast on missing-configured-id optional so a researcher can run the resolver against pre-existing rows without binding a PID provider; queued.
+- **KIP1h (`LocalMinter` plugin + optional minter + versioned PIDs Phase 1)** — **shipped** (see [Versioned PIDs (Phase 1)](#versioned-pids-phase-1) and [The optional-minter posture](#the-optional-minter-posture) above).
+- **ENT1 (versioning Phase 2 — `:EntityVersion` graph)** — queued; introduces first-class version nodes with `previousVersion` / `nextVersion` edges and `m4i:isNewVersionOf` semantics in the KIP record.
 
 See `aidocs/66` (design) and `aidocs/16` KIP1 rows (live status).

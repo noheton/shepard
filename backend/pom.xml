@@ -733,6 +733,26 @@
           <artifactId>shepard-plugin-kip</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          KIP1h — the legitimate-default Local PID minter
+          (`shepard-plugin-minter-local`, the renamed pre-KIP1h
+          in-core `MockMinter`). Same `with-plugins` profile
+          pattern as UH1a + KIP1g: the plugin's `LocalMinter`
+          `@ApplicationScoped` bean is picked up by Quarkus's
+          build-time CDI scanner when the JAR is on the backend's
+          compile-time classpath. Operators consuming the published
+          image get a working local-minter "for free"; operators
+          building their own backend image with `-DnoPlugins` get
+          a clean 503 `publish.minter.not-installed` on the publish
+          endpoint (the resolver still works against pre-existing
+          rows).
+          See aidocs/16 KIP1h + aidocs/66.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
