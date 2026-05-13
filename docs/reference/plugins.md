@@ -109,11 +109,14 @@ shepard-admin plugins disable unhide
 shepard-admin plugins enable unhide
 ```
 
-The runtime override is **in-memory only**. It survives the
-current backend process but not a restart; for persistence,
-edit `application.properties` instead. (PM1c will persist
-runtime overrides to the database; per-call admin endpoints
-already track these via PROV1a's `:Activity` audit trail.)
+The runtime override is **persisted** to the
+`:PluginRuntimeOverride` Neo4j table (since PM1e). Once you've
+flipped a plugin, the new state survives a backend restart
+without any `application.properties` edit — the registry seeds
+its in-memory cache from the table on startup. Flipping back to
+the deploy-time default deletes the row, keeping the table
+sparse (it only ever carries rows that differ from the install
+default).
 
 Toggling a plugin off doesn't unload its classes; the plugin
 stays present and its REST resources continue to mount, but
@@ -189,9 +192,23 @@ Error responses use RFC 7807 `application/problem+json`:
   named a field other than `enabled` in the patch body.
 - **403** — caller lacks the `instance-admin` role.
 
+The flip is **persisted** synchronously within the request
+(PM1e). The backend writes a row to the `:PluginRuntimeOverride`
+Neo4j table; the override survives across restart. Resetting a
+plugin to its deploy-time default deletes the row instead of
+upserting it, keeping the table sparse.
+
 PROV1a's `ProvenanceCaptureFilter` records each PATCH as an
 `:Activity` row (`targetKind=PluginEntry`) so the audit trail
-can be filtered to "who flipped which plugin when".
+can be filtered to "who flipped which plugin when". The
+persisted `:PluginRuntimeOverride` row also carries
+`updatedBy` for fast lookups without scanning the activity log:
+
+```cypher
+MATCH (o:PluginRuntimeOverride)
+RETURN o.pluginId, o.enabled, o.updatedAt, o.updatedBy
+ORDER BY o.updatedAt DESC
+```
 
 ## `shepard-admin plugins` subcommand
 
@@ -215,10 +232,10 @@ $ shepard-admin plugins list --output=json
 
 ```bash
 $ shepard-admin plugins disable unhide
-Plugin 'unhide' disabled — state=ENABLED (the runtime override survives until restart)
+Plugin 'unhide' disabled — state=ENABLED (override persisted; survives restart)
 
 $ shepard-admin plugins enable unhide
-Plugin 'unhide' enabled — state=ENABLED (the runtime override survives until restart; persist via shepard.plugins.unhide.enabled in application.properties)
+Plugin 'unhide' enabled — state=ENABLED (override persisted; survives restart)
 ```
 
 Shared flags (per the L1 baseline): `--url <base>`,
@@ -493,9 +510,16 @@ wasn't created); restart shepard.
 
 **A plugin shows `DISCOVERED` but never `ENABLED`.**
 The `shepard.plugins.<id>.enabled` toggle is `false` — either
-in `application.properties` or via a stale runtime override.
-Flip it back on with `shepard-admin plugins enable <id>` or
-edit `application.properties` and restart.
+in `application.properties` or via a persisted runtime override.
+Flip it back on with `shepard-admin plugins enable <id>` (which
+DELETEs the `:PluginRuntimeOverride` row when the deploy-time
+default is `true`) or edit `application.properties` and restart.
+To inspect what overrides exist:
+
+```cypher
+MATCH (o:PluginRuntimeOverride)
+RETURN o.pluginId, o.enabled, o.updatedBy, o.updatedAt
+```
 
 **The plugin JAR is in `/deployments/plugins/` but doesn't
 appear in `shepard-admin plugins list`.**

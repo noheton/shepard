@@ -1280,6 +1280,25 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   before). CLI's `with-plugins` Maven profile copies every
   `de.dlr.shepard.plugins:*` `provided` dep into `target/plugins/`
   at packaging time, mirroring backend's profile shape.*
+- ✅ **Persist runtime overrides** — the in-memory toggle PM1a
+  shipped (`PluginRegistry.runtimeOverrides`) is lost on restart;
+  for the "operator-knob" promise to hold (CLAUDE.md "Always:
+  surface operator knobs in the admin config") the override must
+  survive across restart without an `application.properties`
+  edit. *Done in PM1e (this commit). New Neo4j label
+  `:PluginRuntimeOverride` (one row per plugin id) with V32
+  uniqueness constraint; `PluginRegistry.seedOverridesFromDao()`
+  at startup; `PluginRegistry.setEnabled(id, enabled, actorSub)`
+  writes through synchronously. Sparse-table semantics — reset
+  to deploy-time default DELETEs the row rather than upserts, so
+  the table only ever carries rows that actually differ from
+  `shepard.plugins.<id>.enabled`. Fail-soft on DAO outage —
+  startup falls back to deploy-time defaults; PATCH-time write
+  failures keep the in-memory cache current. Matches the
+  A3b / N1c2 / UH1a "admin-configurable" idiom with the
+  persistent-override variant (per-plugin row rather than a
+  global singleton — the natural shape for "one override per
+  plugin").*
 - **ADR-0024** — plugin-distribution sibling decision: object-store
   reference for `infrastructure-local/` (Garage replaces MinIO).
   Same shape of "pick a reference whose OSS posture matches

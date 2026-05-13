@@ -10,17 +10,18 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 /**
- * {@code shepard-admin plugins enable <id>} — PM1b.
+ * {@code shepard-admin plugins enable <id>} — PM1b (CLI shape) +
+ * PM1e (persistent override).
  *
  * <p>Flips the named plugin's runtime override to {@code enabled=true}
  * via {@code PATCH /v2/admin/plugins/<id>} with body
  * {@code {"enabled": true}}.
  *
- * <p>The flip is in-memory only — surviving across restart requires
- * editing {@code shepard.plugins.<id>.enabled} in
- * {@code application.properties} (PM1a's drop-in model). The CLI
- * surface intentionally mirrors the REST shape so the same admin
- * can operate from either pathway.
+ * <p>PM1e — the flip is persisted to the
+ * {@code :PluginRuntimeOverride} table on the backend, so it
+ * survives across restart without editing
+ * {@code application.properties}. (Flipping back to the deploy-time
+ * default deletes the row, keeping the table sparse.)
  */
 @Command(
   name = "enable",
@@ -48,8 +49,7 @@ public final class PluginsEnableCommand extends AbstractCommand {
 
     out().println(
       "Plugin '" + updated.getId() + "' enabled — state=" + updated.getState() +
-        " (the runtime override survives until restart; persist via shepard.plugins." +
-        updated.getId() + ".enabled in application.properties)"
+        " (override persisted; survives restart)"
     );
     return 0;
   }

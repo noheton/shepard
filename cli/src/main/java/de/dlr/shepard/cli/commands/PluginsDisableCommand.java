@@ -10,16 +10,19 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 /**
- * {@code shepard-admin plugins disable <id>} — PM1b.
+ * {@code shepard-admin plugins disable <id>} — PM1b (CLI shape) +
+ * PM1e (persistent override).
  *
  * <p>Flips the named plugin's runtime override to {@code enabled=false}
  * via {@code PATCH /v2/admin/plugins/<id>} with body
  * {@code {"enabled": false}}.
  *
- * <p>Same caveat as {@link PluginsEnableCommand}: the flip is
- * in-memory only — the deploy-time
- * {@code shepard.plugins.<id>.enabled} key in
- * {@code application.properties} is restored on next start.
+ * <p>PM1e — the flip is persisted to the
+ * {@code :PluginRuntimeOverride} table on the backend, so the
+ * disabled state survives across restart. To restore the plugin to
+ * its deploy-time default, run
+ * {@code shepard-admin plugins enable <id>} (which deletes the
+ * persisted row).
  */
 @Command(
   name = "disable",
@@ -47,7 +50,7 @@ public final class PluginsDisableCommand extends AbstractCommand {
 
     out().println(
       "Plugin '" + updated.getId() + "' disabled — state=" + updated.getState() +
-        " (the runtime override survives until restart)"
+        " (override persisted; survives restart)"
     );
     return 0;
   }
