@@ -208,6 +208,19 @@ neither generator is on a deprecation path.
 
 ### 4.1 Primary (new baseline): Microsoft Kiota for `/v2/` clients
 
+**Status — shipped as CG1a (2026-05-13).** The Kiota baseline now lives
+at the top-level `clients-v2/` directory; the Makefile pins Kiota v1.31.1;
+three languages are wired in this slice: **Python**
+(`clients-v2/python-kiota/`, distributed as `shepard-v2-client`),
+**TypeScript** (`clients-v2/typescript-kiota/`, distributed as
+`@dlr-shepard/v2-client`), and **Java** (`clients-v2/java-kiota/`,
+distributed as `de.dlr.shepard:shepard-v2-client-java`). The CI workflow
+`.github/workflows/clients-kiota.yml` regenerates the trees on every
+release tag + weekly cron + manual dispatch; per-language smoke tests
+verify the generated surface against a CI-booted backend. Go / Rust /
+C# stretch languages defer to **CG1d**; publication to PyPI / npm /
+Maven Central defers to **CG1c**.
+
 Pick **Kiota** as the **primary** generator for the `/v2/` client
 shelf. Reasoning, against the §2 criteria:
 
@@ -328,6 +341,17 @@ Upstream ships three generated-client packages from
 
 ### 6.2 Distribution after Kiota lands
 
+**Status — pipeline shipped (CG1a, 2026-05-13).** Source generation now
+happens in `clients-v2/{python-kiota,typescript-kiota,java-kiota}/` via
+`clients-v2/Makefile`; the CI workflow re-emits the trees on every
+release tag for reproducibility (vendored-into-monorepo per §8 q3). The
+distribution names below were chosen to coexist with the
+`dlr-shepard-clients/*` upstream packages — operators who only ever
+touch the byte-frozen `/shepard/api/...` surface (and thus `clients/`)
+see no change. The PyPI / npm / Maven-Central publish step itself is
+**CG1c** (not yet shipped); until then, consumers build locally from
+`clients-v2/`.
+
 The `/shepard/api/...` byte-compat surface keeps shipping from
 the same upstream pipeline. Nothing changes for an admin pulling
 the upstream client.
@@ -376,7 +400,7 @@ on the PR that lands CG1a notes:
 
 | ID | Slice | Size | Gate |
 |---|---|---|---|
-| **CG1a** | Pin Kiota (`microsoft/openapi-kiota:1.31.1` or newer-stable) in CI; add a `clients-v2:codegen` job that emits Java + Python + TypeScript SDKs from `openapi-v2.json` on every `main` build; commit a smoke-test SDK to `clients-v2/<lang>/` so the diff is visible per PR. **No publishing yet.** | M | P4c (per-shelf OpenAPI split — already queued in `aidocs/16`) |
+| **CG1a** ✓ shipped 2026-05-13 | Kiota CLI pinned at v1.31.1 in `clients-v2/Makefile`; `.github/workflows/clients-kiota.yml` emits Java + Python + TypeScript SDKs from `/shepard/doc/openapi/v2.json` on every release tag + weekly cron + manual dispatch. Vendored source per §8 q3. Per-language smoke tests in `clients-v2/tests/smoke/`. **No publishing yet** — that's CG1c. | M | P4c (shipped) |
 | **CG1b** | Publish the SDKs to Maven Central / PyPI / npm under the §6.2 coordinates via the existing release workflow. Versioning tracks the backend's `<revision>` (so client `5.2.0+noheton.4` matches backend `5.2.0+noheton.4`). | M | CG1a; release-workflow signing keys for `io.github.noheton.*` namespace |
 | **CG1c** | Golden-output regression: a small "Hello shepard" test client in each language (Java + Python + TS) compiled against the **published** artifact + run against a CI-booted compose stack — same pattern as `aidocs/49` screenshot pipeline. Catches "the generator output works but the published artifact is broken." | S | CG1b |
 | **CG1d** | User-facing docs page `docs/reference/clients.md` (per the `docs/reference/*.md` catalogue in `aidocs/49 §2.2`) documenting both client tracks (upstream `dlr-shepard-clients/*` for `/shepard/api/...` and the new `noheton-shepard-client` lineage for `/v2/`); install-line + hello-world per language. | S | CG1b + `aidocs/49` D1c2 |
