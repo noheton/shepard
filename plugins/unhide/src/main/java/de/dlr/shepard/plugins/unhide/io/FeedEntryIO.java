@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * UH1a / UH1b — single feed entry in
+ * UH1a / UH1b / UH1c — single feed entry in
  * {@code GET /v2/unhide/feed.jsonld}.
  *
  * <p>Field order follows the JSON-LD convention of {@code @id} +
@@ -29,11 +29,32 @@ import java.util.List;
  * correct semantics — and Unhide's inward-mappings handle the
  * missing-field case cleanly).
  *
+ * <p>UH1c adds three KIP citation fields when the Collection has
+ * one or more {@code (:Collection)-[:HAS_PUBLICATION]->(:Publication)}
+ * edges (KIP1a per {@code aidocs/66}):
+ *
+ * <ul>
+ *   <li>{@code schema:identifier} — schema.org {@code PropertyValue}
+ *       carrying the PID under {@code propertyID="pid"}.
+ *   <li>{@code schema:url} — the public
+ *       {@code /v2/.well-known/kip/<pid-suffix>} resolver URL.
+ *   <li>{@code m4i:hasIdentifier} — the same PID, m4i-flavoured for
+ *       NFDI4Ing consumers that prefer the engineering ontology.
+ * </ul>
+ *
+ * <p>When a Collection has multiple Publications (idempotent
+ * re-publish via {@code POST /publish?force=true}), the
+ * most-recent ({@code mintedAt} DESC) is the "current" KIP record
+ * cited. Collections without a Publication omit the three fields
+ * entirely — absent-fields, not nulls, not hints, per the schema.org
+ * spec.
+ *
  * <p>{@code @JsonInclude(NON_NULL)} so optional fields drop
  * gracefully — a Collection without a description, license, creator,
- * or processing-step trail just omits those JSON members rather
- * than emitting {@code "license": null} which Unhide's
- * inward-mappings would try to reify as a {@code dcat:License} URI.
+ * processing-step trail, or KIP citation just omits those JSON
+ * members rather than emitting {@code "license": null} which
+ * Unhide's inward-mappings would try to reify as a
+ * {@code dcat:License} URI.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -45,6 +66,9 @@ import java.util.List;
   "dateModified",
   "license",
   "creator",
+  "schema:identifier",
+  "schema:url",
+  "m4i:hasIdentifier",
   "m4i:hasProcessingStep"
 })
 public record FeedEntryIO(
@@ -56,5 +80,8 @@ public record FeedEntryIO(
   @JsonProperty("dateModified") Date dateModified,
   @JsonProperty("license") String license,
   @JsonProperty("creator") Object creator,
+  @JsonProperty("schema:identifier") Object schemaIdentifier,
+  @JsonProperty("schema:url") String schemaUrl,
+  @JsonProperty("m4i:hasIdentifier") String m4iHasIdentifier,
   @JsonProperty("m4i:hasProcessingStep") List<Object> hasProcessingStep
 ) {}

@@ -9,23 +9,27 @@ import de.dlr.shepard.plugins.unhide.io.FeedIO;
 import de.dlr.shepard.provenance.daos.ActivityDAO;
 import de.dlr.shepard.provenance.entities.Activity;
 import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
+import de.dlr.shepard.publish.daos.PublicationDAO;
+import de.dlr.shepard.publish.entities.Publication;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * UH1a / UH1b — feed-assembly service.
+ * UH1a / UH1b / UH1c — feed-assembly service.
  *
  * <p>Owns the "list every Collection on the instance (visible to
  * the harvest caller), project each onto the schema.org +
- * metadata4ing JSON-LD frame with m4i provenance fragments, return
- * the cursor-paged page."
+ * metadata4ing JSON-LD frame with optional m4i provenance
+ * fragments and KIP citation, return the cursor-paged page."
  *
  * <p>Phase 1 (UH1a) scope: Collections only; no publish-toggle
  * filter yet (the per-Collection {@code publishToHelmholtzKG} is
@@ -40,6 +44,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * property (default 5; "buffer-sizing" exception per the CLAUDE.md
  * admin-config rule — no operator demand for per-window tuning at
  * runtime).
+ *
+ * <p>UH1c extension: each entry's body grows {@code schema:identifier}
+ * + {@code schema:url} + {@code m4i:hasIdentifier} citing the
+ * current KIP1a Publication ({@code mintedAt} DESC most-recent)
+ * when one exists. Collections without a Publication omit the three
+ * fields entirely.
  *
  * <p>Pagination via {@code ?page=N&page-size=N} (page-size capped at
  * {@link #MAX_PAGE_SIZE}). Cursor-based pagination per
@@ -71,6 +81,9 @@ public class UnhideFeedService {
 
   @Inject
   ActivityDAO activityDAO;
+
+  @Inject
+  PublicationDAO publicationDAO;
 
   @Inject
   ProvJsonLdRenderer provJsonLdRenderer;
@@ -155,6 +168,9 @@ public class UnhideFeedService {
     // this Collection's appId, rendered via the PROV1h renderer.
     List<Object> processingSteps = buildProcessingSteps(c.getAppId());
 
+    // UH1c — KIP citation: current Publication's PID + resolver URL.
+    KipCitation kip = buildKipCitation(c.getAppId(), baseUrl);
+
     return new FeedEntryIO(
       id,
       List.of("schema:Dataset", "m4i:Dataset"),
@@ -164,6 +180,9 @@ public class UnhideFeedService {
       c.getUpdatedAt(),
       null, // license — Collection schema doesn't carry one yet; UH1d wires it via CP1a properties
       creator,
+      kip == null ? null : kip.schemaIdentifier,
+      kip == null ? null : kip.schemaUrl,
+      kip == null ? null : kip.m4iHasIdentifier,
       processingSteps
     );
   }
@@ -212,6 +231,60 @@ public class UnhideFeedService {
       }
     }
     return out.isEmpty() ? null : out;
+  }
+
+  /**
+   * UH1c — fetch the most-recent {@link Publication} attached to
+   * the given Collection appId and project it onto the three KIP
+   * citation fields ({@code schema:identifier}, {@code schema:url},
+   * {@code m4i:hasIdentifier}).
+   *
+   * <p>Returns {@code null} when no Publication exists — the
+   * {@code @JsonInclude(NON_NULL)} on {@link FeedEntryIO} drops the
+   * three fields entirely (no hint, no null), per the schema.org
+   * spec for absent identifiers.
+   *
+   * @param collectionAppId the Collection's {@code appId}; {@code null}
+   *     yields {@code null}.
+   * @param baseUrl the resolver URL base (e.g.
+   *     {@code https://shepard.example.dlr.de}, no trailing slash).
+   * @return a populated {@link KipCitation}, or {@code null} when no
+   *     Publication exists or PID is blank.
+   */
+  KipCitation buildKipCitation(String collectionAppId, String baseUrl) {
+    if (collectionAppId == null || collectionAppId.isBlank()) {
+      return null;
+    }
+    List<Publication> pubs;
+    try {
+      pubs = publicationDAO.findByEntityAppId(collectionAppId);
+    } catch (RuntimeException e) {
+      Log.warnf(e, "UH1c: could not load publications for Collection appId=%s; omitting KIP citation fields", collectionAppId);
+      return null;
+    }
+    if (pubs == null || pubs.isEmpty()) {
+      return null;
+    }
+    // findByEntityAppId already orders DESC by mintedAt, but harden
+    // against any future DAO change with an explicit max() — a stale
+    // citation is worse than a slightly-redundant sort.
+    Publication current = pubs.stream()
+      .filter(p -> p != null && p.getPid() != null && !p.getPid().isBlank())
+      .max(Comparator.comparing(p -> p.getMintedAt() == null ? 0L : p.getMintedAt()))
+      .orElse(null);
+    if (current == null) {
+      return null;
+    }
+    String pid = current.getPid();
+
+    Map<String, Object> identifier = new LinkedHashMap<>();
+    identifier.put("@type", "PropertyValue");
+    identifier.put("propertyID", "pid");
+    identifier.put("value", pid);
+
+    String resolverUrl = baseUrl + "/v2/.well-known/kip/" + pid;
+
+    return new KipCitation(identifier, resolverUrl, pid);
   }
 
   /**
@@ -266,5 +339,22 @@ public class UnhideFeedService {
   private static String stripTrailingSlash(String s) {
     if (s == null) return "";
     return s.endsWith("/") ? s.substring(0, s.length() - 1) : s;
+  }
+
+  /**
+   * UH1c — minimal value holder for the three KIP citation fields
+   * threaded through {@link FeedEntryIO}. Package-visible for tests.
+   */
+  static final class KipCitation {
+
+    final Object schemaIdentifier;
+    final String schemaUrl;
+    final String m4iHasIdentifier;
+
+    KipCitation(Object schemaIdentifier, String schemaUrl, String m4iHasIdentifier) {
+      this.schemaIdentifier = schemaIdentifier;
+      this.schemaUrl = schemaUrl;
+      this.m4iHasIdentifier = m4iHasIdentifier;
+    }
   }
 }
