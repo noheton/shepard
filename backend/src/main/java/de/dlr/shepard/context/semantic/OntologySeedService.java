@@ -22,9 +22,10 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.session.Session;
 
 /**
- * N1b (+ ONT1a) — seeds shepard's internal neosemantics ("n10s") repository
- * with the bundled common ontologies (PROV-O / Dublin Core / schema.org /
- * FOAF / QUDT / OM-2 / W3C Time / GeoSPARQL / OBO Relation Ontology).
+ * N1b (+ ONT1a + ONT1b) — seeds shepard's internal neosemantics ("n10s")
+ * repository with the ten bundled common ontologies (PROV-O / Dublin
+ * Core / schema.org / FOAF / QUDT / OM-2 / W3C Time / GeoSPARQL / OBO
+ * Relation Ontology / NFDI4Ing metadata4ing).
  *
  * <p>The service:
  * <ol>

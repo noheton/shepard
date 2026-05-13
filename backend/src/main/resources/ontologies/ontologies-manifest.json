@@ -1,10 +1,12 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b (+ ONT1a addition) — manifest of common ontologies pre-seeded",
-    "into the internal neosemantics (n10s) semantic repository on",
-    "shepard startup. Currently nine bundles (eight from N1b plus the",
-    "OBO Relation Ontology added by ONT1a, see aidocs/58 §6). Each",
+    "N1b (+ ONT1a + ONT1b additions) — manifest of common ontologies",
+    "pre-seeded into the internal neosemantics (n10s) semantic",
+    "repository on shepard startup. Currently ten bundles (eight from",
+    "N1b plus the OBO Relation Ontology added by ONT1a, see",
+    "aidocs/58 §6, plus the NFDI4Ing metadata4ing ontology added by",
+    "ONT1b — engineering-research extension of PROV-O). Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
     "import a file whose hash drifted from this manifest. To refresh a",
@@ -159,6 +161,21 @@
       "retrievedAt": "2026-05-12",
       "sha256": "197c6622bd4b0c66b9b5086fdd7ebced1fe730b0f8a9835332a9a9c382189232",
       "sizeBytes": 2333
+    },
+    {
+      "id": "metadata4ing",
+      "name": "Metadata4Ing (NFDI4Ing)",
+      "file": "metadata4ing.ttl",
+      "iriPrefix": "http://w3id.org/nfdi4ing/metadata4ing/",
+      "format": "Turtle",
+      "canonicalUrl": "https://w3id.org/nfdi4ing/metadata4ing/1.4.0/",
+      "sourceRationale": "NFDI4Ing publishes the canonical Turtle serialisation under the w3id.org permanent identifier with content negotiation; the 1.4.0 release (Dec 2025) is the current stable. Added per ONT1b — metadata4ing extends PROV-O for engineering-research provenance (m4i:ProcessingStep subtype of prov:Activity, m4i:Method, m4i:Tool, m4i:InvestigatedObject, m4i:NumericalVariable + QUDT-unit hookup) and unblocks the future `Accept: application/ld+json; profile=metadata4ing` content-type on /v2/provenance/* (PROV1h).",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "1.4.0",
+      "retrievedAt": "2026-05-13",
+      "sha256": "9c00942c02309ef47e7e444f288ecc3d02a747aac0c31cf409a87d8f7ae35979",
+      "sizeBytes": 2746
     }
   ]
 }

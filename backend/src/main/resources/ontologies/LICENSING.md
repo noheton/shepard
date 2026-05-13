@@ -1,9 +1,10 @@
 # Bundled ontology licensing
 
-This directory ships nine ontologies as **shepard-bundled Turtle
+This directory ships ten ontologies as **shepard-bundled Turtle
 files** for the N1b "pre-seeded common ontologies" feature (see
 `aidocs/48 §4`) plus the ONT1a follow-up that adds the OBO Relation
-Ontology. All nine are openly licensed for redistribution.
+Ontology and the ONT1b follow-up that adds NFDI4Ing's metadata4ing.
+All ten are openly licensed for redistribution.
 
 | File | Ontology | Licence | Licence URL |
 |---|---|---|---|
@@ -16,6 +17,15 @@ Ontology. All nine are openly licensed for redistribution.
 | `time.ttl`          | W3C Time Ontology                 | W3C Document License  | <https://www.w3.org/Consortium/Legal/2015/doc-license> |
 | `geosparql.ttl`     | OGC GeoSPARQL                     | OGC Open Data Licence | <https://www.ogc.org/legal/> |
 | `obo-relations.ttl` | OBO Relation Ontology (RO)        | CC0 1.0               | <https://creativecommons.org/publicdomain/zero/1.0/> |
+| `metadata4ing.ttl`  | Metadata4Ing (NFDI4Ing) 1.4.0    | CC BY 4.0             | <https://creativecommons.org/licenses/by/4.0/> |
+
+### Citations
+
+- **Metadata4Ing.** Metadata4Ing Workgroup (2025). *Metadata4Ing:
+  An ontology for describing the generation of research data
+  within a scientific activity.*
+  <http://w3id.org/nfdi4ing/metadata4ing/1.4.0/>.
+  <https://doi.org/10.5281/zenodo.7362037>
 
 None of these licences fall in the banned families
 (GPL / AGPL / SSPL) tracked by `.github/dependency-review-config.yml`.
