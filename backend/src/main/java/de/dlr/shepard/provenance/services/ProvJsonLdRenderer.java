@@ -54,6 +54,76 @@ public class ProvJsonLdRenderer {
   }
 
   /**
+   * Render a single {@link Activity} as a free-standing m4i
+   * {@code ProcessingStep} node — the same per-activity body the
+   * {@link #renderMetadata4ing(List)} path would emit, but without
+   * the surrounding {@code @context} / {@code @graph} wrapper and
+   * without the dereferenced agent / entity sibling nodes.
+   *
+   * <p>UH1b uses this to embed each activity directly under a
+   * Collection's {@code m4i:hasProcessingStep} array in the Unhide
+   * feed — the feed already declares a top-level {@code @context}
+   * for schema.org + m4i, so the inner activity nodes can use the
+   * compact {@code prov:} / {@code m4i:} prefixed terms without a
+   * per-node context. Agent / entity references collapse to
+   * {@code @id}-only stubs (the same dereferenceable shape they
+   * carry inside {@link #renderMetadata4ing(List)}'s full graph);
+   * a downstream JSON-LD framer that wants the full node bodies
+   * can dereference the {@code @id} back through PROV1h's
+   * {@code /v2/provenance/activities} endpoint.
+   *
+   * <p>Returns a fresh {@link LinkedHashMap} on every call — the
+   * caller owns the map and can mutate it.
+   *
+   * @param activity the activity to render; must not be {@code null}.
+   *     {@code null} yields an empty map (defensive — surface as an
+   *     empty entry in the feed rather than NPE'ing the whole page).
+   * @return the per-activity m4i node body (no enclosing
+   *     {@code @context} or {@code @graph}).
+   */
+  public Map<String, Object> renderActivityAsM4iNode(Activity activity) {
+    Map<String, Object> actNode = new LinkedHashMap<>();
+    if (activity == null) {
+      return actNode;
+    }
+    String actId = "shepard:activity/" + (activity.getAppId() == null ? "anon" : activity.getAppId());
+    actNode.put("@id", actId);
+    actNode.put("@type", activityTypes(true));
+    if (activity.getStartedAtMillis() != null) {
+      actNode.put("prov:startedAtTime", typedDateTime(activity.getStartedAtMillis()));
+    }
+    if (activity.getEndedAtMillis() != null) {
+      actNode.put("prov:endedAtTime", typedDateTime(activity.getEndedAtMillis()));
+    }
+    if (activity.getActionKind() != null) {
+      actNode.put("prov:type", "shepard:" + activity.getActionKind());
+      actNode.put("m4i:hasMethod", "shepard:method/" + activity.getActionKind());
+    }
+    if (activity.getSummary() != null) actNode.put("shepard:summary", activity.getSummary());
+    if (activity.getOriginInstance() != null) actNode.put("shepard:originInstance", activity.getOriginInstance());
+
+    if (activity.getAgentUsername() != null) {
+      String agentId = "shepard:agent/" + activity.getAgentUsername();
+      actNode.put("prov:wasAssociatedWith", Map.of("@id", agentId));
+    }
+
+    if (activity.getTargetAppId() != null) {
+      String entityId = "shepard:entity/" + activity.getTargetAppId();
+      boolean isRead = ProvJsonRenderer.isReadAction(activity.getActionKind());
+      boolean isWrite = ProvJsonRenderer.isWriteAction(activity.getActionKind());
+      if (isRead) {
+        actNode.put("prov:used", Map.of("@id", entityId));
+        actNode.put("m4i:hasInput", Map.of("@id", entityId));
+      } else if (isWrite) {
+        actNode.put("prov:generated", Map.of("@id", entityId));
+        actNode.put("m4i:hasOutput", Map.of("@id", entityId));
+      }
+    }
+
+    return actNode;
+  }
+
+  /**
    * Render the activity list as metadata4ing-flavoured JSON-LD.
    * The PROV-O parent types are preserved in each node's
    * {@code @type} array so a PROV-O-only client still resolves the

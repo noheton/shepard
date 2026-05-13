@@ -6,6 +6,10 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
+import de.dlr.shepard.provenance.daos.ActivityDAO;
+import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.services.ProvJsonLdRenderer;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -13,33 +17,34 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * UH1a — feed-assembly service.
+ * UH1a / UH1b — feed-assembly service.
  *
- * <p>Owns the Phase 1 logic of "list every Collection on the
- * instance (visible to the harvest caller), project each onto the
- * schema.org + metadata4ing JSON-LD frame, return the cursor-paged
- * page."
+ * <p>Owns the "list every Collection on the instance (visible to
+ * the harvest caller), project each onto the schema.org +
+ * metadata4ing JSON-LD frame with m4i provenance fragments, return
+ * the cursor-paged page."
  *
- * <p>Phase 1 scope per the slice ticket:
+ * <p>Phase 1 (UH1a) scope: Collections only; no publish-toggle
+ * filter yet (the per-Collection {@code publishToHelmholtzKG} is
+ * the UH1d milestone). For now every non-deleted Collection visible
+ * to the caller appears in the feed; the master toggle on
+ * {@code :UnhideConfig.enabled} is the only gate.
  *
- * <ul>
- *   <li>Collections only (DataObjects come later — once KIP1a /
- *       publication wiring lands a DataObject can earn its own PID).</li>
- *   <li>No publish-toggle filter yet (CP1a's {@code publishToHelmholtzKG}
- *       is the design's per-Collection opt-in; it's not yet wired
- *       through — UH1d shipping the per-Collection toggle UI is the
- *       milestone after this one). For now every Collection visible
- *       to the caller appears in the feed; the master toggle on
- *       {@code :UnhideConfig.enabled} is the only gate.</li>
- *   <li>No m4i {@code hasProcessingStep} bodies — UH1b plugs those
- *       in when PROV1h content-neg ships.</li>
- *   <li>Pagination via {@code ?page=N&page-size=N} (page-size capped
- *       at {@link #MAX_PAGE_SIZE}). Cursor-based pagination per
- *       {@code aidocs/13 §2.6} is the upgrade once we have a stable
- *       sort-key — Phase 1 keeps it simple.</li>
- * </ul>
+ * <p>UH1b extension: each entry's body grows a
+ * {@code m4i:hasProcessingStep} array of the most-recent N
+ * {@code :Activity} rows targeting the Collection. Window size is
+ * the deploy-time-only {@code shepard.unhide.feed.provenance-window}
+ * property (default 5; "buffer-sizing" exception per the CLAUDE.md
+ * admin-config rule — no operator demand for per-window tuning at
+ * runtime).
+ *
+ * <p>Pagination via {@code ?page=N&page-size=N} (page-size capped at
+ * {@link #MAX_PAGE_SIZE}). Cursor-based pagination per
+ * {@code aidocs/13 §2.6} is the upgrade once we have a stable
+ * sort-key — Phase 1 keeps it simple.
  */
 @ApplicationScoped
 public class UnhideFeedService {
@@ -50,8 +55,28 @@ public class UnhideFeedService {
   /** Default + minimum page size when the caller omits the parameter. */
   public static final int DEFAULT_PAGE_SIZE = 100;
 
+  /**
+   * Default provenance window when no operator-supplied override is
+   * present. Five activities is the "what changed lately" eye-test —
+   * enough to give Unhide a representative slice without bloating
+   * every feed entry with the full history.
+   */
+  public static final int DEFAULT_PROVENANCE_WINDOW = 5;
+
+  /** Hard cap on the provenance-window so a typo doesn't bloat the feed. */
+  static final int MAX_PROVENANCE_WINDOW = 100;
+
   @Inject
   CollectionDAO collectionDAO;
+
+  @Inject
+  ActivityDAO activityDAO;
+
+  @Inject
+  ProvJsonLdRenderer provJsonLdRenderer;
+
+  @ConfigProperty(name = "shepard.unhide.feed.provenance-window", defaultValue = "5")
+  int provenanceWindow;
 
   /**
    * Build a paged feed page from the visible Collections. Caller is
@@ -75,10 +100,6 @@ public class UnhideFeedService {
     int clampedSize = clampPageSize(pageSize);
     String rootBase = stripTrailingSlash(baseUrl);
 
-    // Phase 1: load all collections, project to the visible window.
-    // The list is bounded by the install's Collection count; future
-    // slices (UH1c) will push pagination into the Cypher query
-    // proper once the publish-toggle filter lands.
     List<Collection> all = new ArrayList<>(collectionDAO.findAll());
     all.removeIf(c -> c == null || c.isDeleted());
     // Stable sort: oldest createdAt first so pagination is consistent
@@ -129,6 +150,11 @@ public class UnhideFeedService {
   FeedEntryIO toFeedEntry(Collection c, String baseUrl) {
     String id = baseUrl + "/v2/collections/" + (c.getAppId() == null ? "" : c.getAppId());
     Object creator = creatorOf(c.getCreatedBy());
+
+    // UH1b — m4i:hasProcessingStep: most-recent N activities targeting
+    // this Collection's appId, rendered via the PROV1h renderer.
+    List<Object> processingSteps = buildProcessingSteps(c.getAppId());
+
     return new FeedEntryIO(
       id,
       List.of("schema:Dataset", "m4i:Dataset"),
@@ -136,11 +162,56 @@ public class UnhideFeedService {
       c.getDescription(),
       c.getCreatedAt(),
       c.getUpdatedAt(),
-      null, // license — Collection schema doesn't carry one yet; UH1b adds it via CP1a properties
+      null, // license — Collection schema doesn't carry one yet; UH1d wires it via CP1a properties
       creator,
-      // m4i:isAbout placeholder — UH1b will populate from PROV1h trail.
-      List.of()
+      processingSteps
     );
+  }
+
+  /**
+   * UH1b — fetch the most-recent {@code N} {@code :Activity} rows
+   * targeting the given Collection appId and render each as a m4i
+   * {@code ProcessingStep} node via {@link ProvJsonLdRenderer}.
+   *
+   * <p>Returns {@code null} (not {@code []}) when the Collection has
+   * no activities — the {@code @JsonInclude(NON_NULL)} on
+   * {@link FeedEntryIO} drops the field, which is the correct
+   * JSON-LD semantics for "no provenance available."
+   *
+   * @param collectionAppId the Collection's {@code appId}; {@code null}
+   *     yields {@code null}.
+   * @return a list of m4i ProcessingStep node bodies (most-recent
+   *     first per {@code ActivityDAO#list}'s default DESC sort), or
+   *     {@code null} when no activities exist.
+   */
+  List<Object> buildProcessingSteps(String collectionAppId) {
+    if (collectionAppId == null || collectionAppId.isBlank()) {
+      return null;
+    }
+    int window = clampProvenanceWindow(provenanceWindow);
+    List<Activity> recent;
+    try {
+      recent = activityDAO.list(null, null, collectionAppId, null, null, window);
+    } catch (RuntimeException e) {
+      // Defence in depth: a Cypher hiccup on one Collection's
+      // provenance read shouldn't fail the whole feed page. Log,
+      // omit the field, carry on. Same fail-soft posture as the
+      // UnhideConfigService startup-seed (ADR-0014's "ontology
+      // bootstrap failure is non-fatal" precedent).
+      Log.warnf(e, "UH1b: could not load activities for Collection appId=%s; omitting m4i:hasProcessingStep", collectionAppId);
+      return null;
+    }
+    if (recent == null || recent.isEmpty()) {
+      return null;
+    }
+    List<Object> out = new ArrayList<>(recent.size());
+    for (Activity a : recent) {
+      Map<String, Object> node = provJsonLdRenderer.renderActivityAsM4iNode(a);
+      if (node != null && !node.isEmpty()) {
+        out.add(node);
+      }
+    }
+    return out.isEmpty() ? null : out;
   }
 
   /**
@@ -185,6 +256,11 @@ public class UnhideFeedService {
   static int clampPageSize(int requested) {
     if (requested <= 0) return DEFAULT_PAGE_SIZE;
     return Math.min(requested, MAX_PAGE_SIZE);
+  }
+
+  static int clampProvenanceWindow(int requested) {
+    if (requested <= 0) return DEFAULT_PROVENANCE_WINDOW;
+    return Math.min(requested, MAX_PROVENANCE_WINDOW);
   }
 
   private static String stripTrailingSlash(String s) {
