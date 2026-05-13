@@ -22,10 +22,18 @@
     "(`shepard-admin semantic refresh-ontologies`) automates that.",
     "",
     "Entries are loaded in declaration order so cross-references (e.g.",
-    " dcterms used by schema-org and qudt) resolve correctly."
+    " dcterms used by schema-org and qudt) resolve correctly.",
+    "",
+    "N1c2 — each entry carries a 'required' boolean. Required bundles",
+    "(prov-o and obo-relations today) are always seeded, even when an",
+    "operator names them in skip-bundles or runtime-disables them via",
+    "the admin endpoint. The PROV-O bundle backs the PROV1 audit-trail",
+    "and the Relation Ontology supplies the cross-cutting relations",
+    "(part_of / has_part / derives_from) the LUMEN-inspired showcase",
+    "and PROV-extending ontologies cite. See aidocs/65 §2.1."
   ],
   "version": 1,
-  "snapshotDate": "2026-05-12",
+  "snapshotDate": "2026-05-13",
   "ontologies": [
     {
       "id": "prov-o",
@@ -40,7 +48,8 @@
       "version": "Recommendation 30 April 2013",
       "retrievedAt": "2026-05-12",
       "sha256": "cf175f348dc46c63768c3b120acdd3df3a112d46a60e4fa5ceed176d59f98259",
-      "sizeBytes": 1892
+      "sizeBytes": 1892,
+      "required": true
     },
     {
       "id": "dublin-core",
@@ -55,7 +64,8 @@
       "version": "DCMI Metadata Terms 2020-01-20",
       "retrievedAt": "2026-05-12",
       "sha256": "3a6dcb7cc8db7d9b745bc5f751f70b95a5fae1b60be28b6c89c65f1c9473a0cb",
-      "sizeBytes": 2174
+      "sizeBytes": 2174,
+      "required": false
     },
     {
       "id": "schema-org",
@@ -70,7 +80,8 @@
       "version": "current-https",
       "retrievedAt": "2026-05-12",
       "sha256": "bbcdd549d17655a976b1831b08e361defe6a0b6e6c08038fcd952de3965fd834",
-      "sizeBytes": 2068
+      "sizeBytes": 2068,
+      "required": false
     },
     {
       "id": "foaf",
@@ -85,7 +96,8 @@
       "version": "0.99 (2014-01-14)",
       "retrievedAt": "2026-05-12",
       "sha256": "ce80a549d74025e578bee98cad207979042c9cfe84648906a709b0379dbf5d57",
-      "sizeBytes": 1692
+      "sizeBytes": 1692,
+      "required": false
     },
     {
       "id": "qudt",
@@ -100,7 +112,8 @@
       "version": "QUDT 2.1",
       "retrievedAt": "2026-05-12",
       "sha256": "21ed0bc4557408d7837acb94a35a2f40e6d974af03661ebb3396afebe2995712",
-      "sizeBytes": 2271
+      "sizeBytes": 2271,
+      "required": false
     },
     {
       "id": "om-2",
@@ -115,7 +128,8 @@
       "version": "OM 2.0",
       "retrievedAt": "2026-05-12",
       "sha256": "b5a1e84594ec7ea2820a19df0351b7df3e31fca92775c3755b473d4cce888557",
-      "sizeBytes": 1830
+      "sizeBytes": 1830,
+      "required": false
     },
     {
       "id": "time",
@@ -130,7 +144,8 @@
       "version": "Recommendation 19 October 2017",
       "retrievedAt": "2026-05-12",
       "sha256": "830aa8d21bb091b9ab7e495ae57554ad75078a786c1e620e8f193431b202f7a4",
-      "sizeBytes": 1801
+      "sizeBytes": 1801,
+      "required": false
     },
     {
       "id": "geosparql",
@@ -145,7 +160,8 @@
       "version": "GeoSPARQL 1.0",
       "retrievedAt": "2026-05-12",
       "sha256": "e5225c78e067a85f428058c7449742ecebd42740813f1eb96ac624c2381d67d6",
-      "sizeBytes": 1946
+      "sizeBytes": 1946,
+      "required": false
     },
     {
       "id": "obo-relations",
@@ -160,7 +176,8 @@
       "version": "Relation Ontology (current OBO release)",
       "retrievedAt": "2026-05-12",
       "sha256": "197c6622bd4b0c66b9b5086fdd7ebced1fe730b0f8a9835332a9a9c382189232",
-      "sizeBytes": 2333
+      "sizeBytes": 2333,
+      "required": true
     },
     {
       "id": "metadata4ing",
@@ -175,7 +192,8 @@
       "version": "1.4.0",
       "retrievedAt": "2026-05-13",
       "sha256": "9c00942c02309ef47e7e444f288ecc3d02a747aac0c31cf409a87d8f7ae35979",
-      "sizeBytes": 2746
+      "sizeBytes": 2746,
+      "required": false
     }
   ]
 }
