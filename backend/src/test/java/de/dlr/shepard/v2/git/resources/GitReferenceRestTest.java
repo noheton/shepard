@@ -19,7 +19,10 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
+import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import de.dlr.shepard.context.references.git.io.GitReferenceIO;
+import de.dlr.shepard.context.references.git.services.GitReferenceService;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -50,6 +53,9 @@ class GitReferenceRestTest {
   EntityIdResolver entityIdResolver;
 
   @Mock
+  GitReferenceService gitReferenceService;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -65,6 +71,7 @@ class GitReferenceRestTest {
     resource.dataObjectDAO = dataObjectDAO;
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
+    resource.gitReferenceService = gitReferenceService;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
@@ -386,5 +393,199 @@ class GitReferenceRestTest {
     assertEquals("https://gitlab.dlr.de/g/r", captor.getValue().getRepoUrl());
     assertEquals("main", captor.getValue().getRef());
     assertEquals("src", captor.getValue().getPath());
+  }
+
+  // ── G1b: mode field on create ──────────────────────────────────────────
+
+  @Test
+  void create_acceptsTrackedArtifactModeWhenRefAndPathSet() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    var saved = new GitReference("https://gitlab.com/g/r", "main", "README.md");
+    saved.setAppId(GR_APP_ID);
+    saved.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenReturn(saved);
+
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setRef("main");
+    body.setPath("README.md");
+    body.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(201, r.getStatus());
+    ArgumentCaptor<GitReference> cap = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(cap.capture());
+    assertEquals(GitReferenceMode.TRACKED_ARTIFACT, cap.getValue().getMode());
+  }
+
+  @Test
+  void create_rejectsTrackedArtifactWithoutRef() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setPath("README.md");
+    body.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void create_rejectsTrackedArtifactWithoutPath() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setRef("main");
+    body.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void create_defaultsToLooseLinkWhenModeOmitted() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    // mode unset
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(201, r.getStatus());
+    ArgumentCaptor<GitReference> cap = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(cap.capture());
+    assertEquals(GitReferenceMode.LOOSE_LINK, cap.getValue().getMode());
+  }
+
+  // ── G1b: mode on patch ─────────────────────────────────────────────────
+
+  @Test
+  void patch_acceptsModeField() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"mode\":\"TRACKED_ARTIFACT\"}"), securityContext);
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<GitReference> cap = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(cap.capture());
+    assertEquals(GitReferenceMode.TRACKED_ARTIFACT, cap.getValue().getMode());
+  }
+
+  @Test
+  void patch_rejectsTrackedWithoutRefOrPath() {
+    GitReference gr = new GitReference("https://gitlab.com/g/r", null, null);
+    var parent = new DataObject();
+    parent.setAppId(DO_APP_ID);
+    gr.setAppId(GR_APP_ID);
+    gr.setDataObject(parent);
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"mode\":\"TRACKED_ARTIFACT\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void patch_rejectsUnknownMode() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"mode\":\"BOGUS\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+  }
+
+  @Test
+  void patch_modeNullClearsToLooseLink() {
+    GitReference gr = existingGr();
+    gr.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    when(gitReferenceDAO.createOrUpdate(any(GitReference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"mode\":null}"), securityContext);
+    assertEquals(200, r.getStatus());
+    ArgumentCaptor<GitReference> cap = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(cap.capture());
+    assertEquals(GitReferenceMode.LOOSE_LINK, cap.getValue().getMode());
+  }
+
+  // ── G1b: GET /{appId}/preview ──────────────────────────────────────────
+
+  @Test
+  void preview_returns200WithPreviewPayload() {
+    GitReference gr = existingGr();
+    gr.setMode(GitReferenceMode.TRACKED_ARTIFACT);
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var preview = new GitArtifactPreviewIO();
+    preview.setAvailable(true);
+    preview.setSha("abc123");
+    preview.setMimeType("text/markdown");
+    preview.setContent("# hi");
+    when(gitReferenceService.previewArtifact(eq(gr), eq(CALLER))).thenReturn(preview);
+
+    var r = resource.preview(DO_APP_ID, GR_APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("abc123", ((GitArtifactPreviewIO) r.getEntity()).getSha());
+  }
+
+  @Test
+  void preview_returns200_whenNotAvailable_butReasonNotUnsupportedHost() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var preview = new GitArtifactPreviewIO();
+    preview.setAvailable(false);
+    preview.setReason("no-credential");
+    when(gitReferenceService.previewArtifact(any(), any())).thenReturn(preview);
+
+    var r = resource.preview(DO_APP_ID, GR_APP_ID, securityContext);
+    assertEquals(200, r.getStatus());
+    assertEquals("no-credential", ((GitArtifactPreviewIO) r.getEntity()).getReason());
+  }
+
+  @Test
+  void preview_returns501ProblemJson_whenUnsupportedHost() {
+    GitReference gr = existingGr();
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    var preview = new GitArtifactPreviewIO();
+    preview.setAvailable(false);
+    preview.setReason("unsupported-host");
+    when(gitReferenceService.previewArtifact(any(), any())).thenReturn(preview);
+
+    var r = resource.preview(DO_APP_ID, GR_APP_ID, securityContext);
+    assertEquals(501, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+  }
+
+  @Test
+  void preview_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    assertEquals(401, resource.preview(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
+  }
+
+  @Test
+  void preview_returns403WhenNoReadPermission() {
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    assertEquals(403, resource.preview(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
+  }
+
+  @Test
+  void preview_returns404WhenGitReferenceMissing() {
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(null);
+    assertEquals(404, resource.preview(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
+  }
+
+  @Test
+  void preview_returns404WhenGitReferenceBelongsToDifferentDataObject() {
+    var other = new DataObject();
+    other.setAppId("different");
+    var gr = new GitReference("https://gitlab.com/g/r", "main", "x");
+    gr.setAppId(GR_APP_ID);
+    gr.setDataObject(other);
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+    assertEquals(404, resource.preview(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
   }
 }

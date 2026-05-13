@@ -28,6 +28,19 @@ import org.neo4j.ogm.annotation.NodeEntity;
 public class GitReference extends BasicReference {
 
   /**
+   * Which of the three modes from {@code aidocs/38 §2} this reference is.
+   * Stored as a string property in Neo4j. Defaults to {@link GitReferenceMode#LOOSE_LINK}
+   * — rows persisted before G1b have no {@code mode} property; the auto-migration
+   * V26 backfills them as {@link GitReferenceMode#LOOSE_LINK} so the field is
+   * non-null for every row post-migration.
+   *
+   * <p>The accessor below defaults to {@link GitReferenceMode#LOOSE_LINK} so
+   * even pre-migration code paths see a sensible value (defence-in-depth
+   * against transient migration races / test fixtures that bypass V26).
+   */
+  private GitReferenceMode mode = GitReferenceMode.LOOSE_LINK;
+
+  /**
    * Git repository URL, e.g.
    * {@code https://gitlab.dlr.de/group/repo}. Required.
    */
@@ -63,6 +76,16 @@ public class GitReference extends BasicReference {
    * properties without adding a converter import here.
    */
   private Long resolvedAtMillis;
+
+  /**
+   * Defensive read-side default — if Neo4j returned a row missing
+   * {@code mode} (a race against migration V26, or a hand-crafted
+   * test fixture) we still surface {@link GitReferenceMode#LOOSE_LINK}
+   * rather than {@code null}.
+   */
+  public GitReferenceMode getMode() {
+    return mode == null ? GitReferenceMode.LOOSE_LINK : mode;
+  }
 
   /**
    * For testing purposes only.

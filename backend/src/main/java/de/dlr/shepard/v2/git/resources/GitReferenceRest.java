@@ -8,7 +8,10 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
+import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import de.dlr.shepard.context.references.git.io.GitReferenceIO;
+import de.dlr.shepard.context.references.git.services.GitReferenceService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -63,6 +66,9 @@ public class GitReferenceRest {
   @Inject
   EntityIdResolver entityIdResolver;
 
+  @Inject
+  GitReferenceService gitReferenceService;
+
   @GET
   @Operation(summary = "List GitReferences hanging off a DataObject.")
   @APIResponse(
@@ -116,6 +122,19 @@ public class GitReferenceRest {
     if (parent == null) return Response.status(Response.Status.NOT_FOUND).build();
 
     GitReference gr = new GitReference(body.getRepoUrl(), body.getRef(), body.getPath());
+    GitReferenceMode mode = body.getMode() == null ? GitReferenceMode.LOOSE_LINK : body.getMode();
+    // TRACKED_ARTIFACT requires both ref and path so the adapter has
+    // enough to fetch a single file. LOOSE_LINK has no such requirement.
+    if (mode == GitReferenceMode.TRACKED_ARTIFACT) {
+      if (body.getRef() == null || body.getRef().isBlank() ||
+          body.getPath() == null || body.getPath().isBlank()) {
+        return Response
+          .status(Response.Status.BAD_REQUEST)
+          .entity("TRACKED_ARTIFACT mode requires non-blank `ref` and `path`")
+          .build();
+      }
+    }
+    gr.setMode(mode);
     gr.setDataObject(parent);
     GitReference saved = gitReferenceDAO.createOrUpdate(gr);
     return Response.status(Response.Status.CREATED).entity(new GitReferenceIO(saved)).build();
@@ -171,11 +190,12 @@ public class GitReferenceRest {
   @Path("/{appId}")
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
-    summary = "Partially update a GitReference (mode-a fields).",
-    description = "RFC 7396 JSON Merge Patch. Accepted fields: repoUrl, ref, path. " +
+    summary = "Partially update a GitReference (mode-a + mode-b fields).",
+    description = "RFC 7396 JSON Merge Patch. Accepted fields: repoUrl, ref, path, mode. " +
     "Fields absent from the body are preserved; explicit JSON null clears the field " +
     "(except repoUrl — null or blank repoUrl is rejected with 400). " +
-    "Returns 200 + the updated GitReferenceIO. Requires Write permission on the parent DataObject."
+    "Returns 200 + the updated GitReferenceIO. Requires Write permission on the parent DataObject. " +
+    "Switching to TRACKED_ARTIFACT requires non-blank `ref` and `path` (existing values or newly-set in the same PATCH)."
   )
   @APIResponse(
     responseCode = "200",
@@ -226,9 +246,83 @@ public class GitReferenceRest {
       JsonNode node = body.get("path");
       gr.setPath(node.isNull() ? null : node.asText());
     }
+    if (body.has("mode")) {
+      JsonNode node = body.get("mode");
+      if (node.isNull()) {
+        gr.setMode(GitReferenceMode.LOOSE_LINK);
+      } else {
+        try {
+          gr.setMode(GitReferenceMode.valueOf(node.asText()));
+        } catch (IllegalArgumentException iae) {
+          return Response.status(Response.Status.BAD_REQUEST)
+            .entity("mode must be one of LOOSE_LINK, TRACKED_ARTIFACT, PINNED_SNAPSHOT")
+            .build();
+        }
+      }
+    }
+    // Cross-field invariant: TRACKED_ARTIFACT needs ref + path.
+    if (gr.getMode() == GitReferenceMode.TRACKED_ARTIFACT) {
+      if (gr.getRef() == null || gr.getRef().isBlank() ||
+          gr.getPath() == null || gr.getPath().isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("TRACKED_ARTIFACT mode requires non-blank `ref` and `path`")
+          .build();
+      }
+    }
 
     GitReference saved = gitReferenceDAO.createOrUpdate(gr);
     return Response.ok(new GitReferenceIO(saved)).build();
+  }
+
+  @GET
+  @Path("/{appId}/preview")
+  @Operation(
+    summary = "Server-side inline preview of a tracked-artifact GitReference (G1b).",
+    description = "Resolves the GitReference, picks the caller's PAT for the matching git host (via " +
+    "G1-cred), routes through the per-host GitAdapter, and returns the file content (UTF-8) up to " +
+    "shepard.git.preview.max-bytes (default 1 MB). All non-fatal failure modes are reported as " +
+    "200 with `available=false` + a `reason` discriminator so the UI can render the explanation " +
+    "inline rather than as an error. Possible reasons: not-tracked, unsupported-host, no-credential, " +
+    "invalid-repo-url, fetch-failed."
+  )
+  @APIResponse(
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = GitArtifactPreviewIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No DataObject or GitReference with those appIds.")
+  @APIResponse(responseCode = "501", description = "Host has no adapter (e.g. non-GitLab host in v1).")
+  public Response preview(
+    @PathParam("dataObjectAppId") String dataObjectAppId,
+    @PathParam("appId") String gitReferenceAppId,
+    @Context SecurityContext securityContext
+  ) {
+    var gate = checkAccess(dataObjectAppId, AccessType.Read, securityContext);
+    if (gate != null) return gate;
+
+    GitReference gr = gitReferenceDAO.findByAppId(gitReferenceAppId);
+    if (gr == null || gr.getDataObject() == null || !dataObjectAppId.equals(gr.getDataObject().getAppId())) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    String caller = securityContext.getUserPrincipal().getName();
+    GitArtifactPreviewIO out = gitReferenceService.previewArtifact(gr, caller);
+    // "unsupported-host" maps to 501 per the RFC 7807 contract in the spec
+    // (`git.adapter.unsupported-host`). Other "available=false" reasons
+    // are non-fatal — keep them at 200 so the UI can render the message.
+    if (!out.isAvailable() && "unsupported-host".equals(out.getReason())) {
+      var problem = new java.util.LinkedHashMap<String, Object>();
+      problem.put("type", "https://shepard.dlr.de/problems/git.adapter.unsupported-host");
+      problem.put("title", "No GitAdapter is registered for this host.");
+      problem.put("status", 501);
+      problem.put("detail", "v1 ships a GitLab adapter only; GitHub and Gitea ship in G1d.");
+      return Response.status(Response.Status.NOT_IMPLEMENTED)
+        .type("application/problem+json")
+        .entity(problem)
+        .build();
+    }
+    return Response.ok(out).build();
   }
 
   /**
