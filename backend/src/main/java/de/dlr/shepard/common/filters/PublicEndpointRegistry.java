@@ -12,6 +12,21 @@ import java.util.Set;
  *
  * <p>A0 adds {@code /v2/admin/bootstrap} — the bootstrap-token
  * endpoint must be reachable before any user is authenticated.
+ *
+ * <p><strong>Plugin-contributed public endpoints.</strong> The
+ * {@link #PUBLIC_PATHS} + {@link #PUBLIC_PATH_PREFIXES} sets also
+ * carry entries owned by plugin modules (today: UH1a's
+ * {@code /v2/unhide/feed.jsonld} feed and KIP1g's
+ * {@code /v2/.well-known/kip} resolver prefix). The plugin owning
+ * the path does not register itself at runtime — the entry is
+ * kept here as a static fact for the auth filter's benefit. This
+ * keeps the auth surface explicit (one place to audit "what's
+ * reachable without a JWT?") at the cost of cross-module
+ * coupling: a plugin author adding a new public path must update
+ * this registry in the same PR. A follow-up slice may introduce
+ * a {@code PluginContext.registerPublicPrefix(String)} API so
+ * plugins self-declare their public-prefix contributions; until
+ * then, the static list here is the canonical source of truth.
  */
 public class PublicEndpointRegistry {
 
@@ -71,7 +86,11 @@ public class PublicEndpointRegistry {
    * <p>KIP1a/b — {@code /v2/.well-known/kip/{pid-suffix}} is public
    * by design (resolver returns KIP record metadata, not entity
    * payload — see {@code aidocs/66 §4.2}); the {@code landingPage}
-   * URL it points at may still require auth.
+   * URL it points at may still require auth. Post-KIP1g the
+   * resolver itself lives in {@code shepard-plugin-kip}, but the
+   * prefix stays registered here per the class-level Javadoc:
+   * plugin-contributed public paths are tracked centrally so the
+   * auth filter has a single source of truth.
    */
   private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of("/v2/.well-known/kip");
 

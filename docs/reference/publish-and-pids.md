@@ -233,11 +233,51 @@ desired) `MATCH (p:Publication) DETACH DELETE p`. Future KIP slices
 that mutate the `:Publication` shape ship dedicated rollback files
 per the CLAUDE.md "comfort over cleverness" rule.
 
+## Plugin shape
+
+Post-KIP1g (per CLAUDE.md's plugin-first heuristic #2 — "external
+integrations → plugin shape"), the resolver and the KIP record
+JSON-LD shape live in a separate Maven module:
+
+- **`plugins/kip/`** — `shepard-plugin-kip-${revision}.jar`.
+  Carries `KipResolverRest` (the `GET /v2/.well-known/kip/{pid-suffix}`
+  resource) and `KipRecordIO` (the `kernelInformationProfile`
+  envelope JSON-LD shape per the Helmholtz HMC standard:
+  `digitalObjectType`, `landingPage`, `dateCreated`, `dateModified`,
+  `rightsHolder`, `license`).
+- **In core (`backend/`)** — `Minter` SPI, `MockMinter`,
+  `MinterRegistry`, `:Publication` entity, `PublicationDAO`,
+  `PublishableKindRegistry`, the generic `POST /v2/{kind}/{appId}/publish`
+  orchestration in `PublishRest`, and the generic `PublicationIO`
+  response shape. None of these depends on the HMC record format —
+  they would work identically against an alternative findability
+  protocol shipping in a different plugin.
+
+The `/v2/.well-known/kip/{pid-suffix}` endpoint path, the JSON-LD
+response body, and the RFC 7807 problem responses are
+**byte-identical** to the pre-KIP1g in-tree implementation; only
+the source location moved. Operators see no wire-shape difference.
+
+To opt out of the resolver (rare — operators who want the in-core
+publish endpoint without the KIP-specific record shape): set
+`shepard.plugins.kip.enabled=false` in `application.properties`
+and restart. The publish endpoint still mints PIDs; only the
+public resolver returns 404.
+
+Distribution follows the ADR-0023 drop-in JAR shape: the plugin
+JAR is baked into `/deployments/plugins/` in the published
+backend image, and the backend's `with-plugins` Maven profile
+declares it as a `<dependency>` so Quarkus's build-time CDI
+scanner picks the `@Path` resource. See
+[plugins.md](/reference/plugins/) for the operator runbook.
+
 ## What's next
 
 - **KIP1c (ePIC plugin)** — real Handles, queued.
 - **KIP1d (DataCite plugin)** — DOIs, queued.
 - **KIP1e (Vue Publish button)** — UI surface + licence picker, **shipped** (see [Publishing from the UI](#publishing-from-the-ui) above).
 - **KIP1f (unpublish / retire)** — open question on retire-vs-tombstone semantics; KIP records are append-only by the HMC spec so a hard delete is the wrong shape.
+- **KIP1g (resolver as plugin)** — **shipped** (see [Plugin shape](#plugin-shape) above).
+- **KIP1h (`LocalMinter` rename + optional minter)** — pure rename of `MockMinter` to a name that doesn't mislead operators into thinking it's a test fixture, plus making the `MinterRegistry` fail-fast on missing-configured-id optional so a researcher can run the resolver against pre-existing rows without binding a PID provider; queued.
 
 See `aidocs/66` (design) and `aidocs/16` KIP1 rows (live status).

@@ -713,6 +713,26 @@
           <artifactId>shepard-plugin-unhide</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          KIP1g — the Helmholtz Kernel Information Profile resolver
+          + record shape extracted from the backend into a drop-in
+          JAR. Same `with-plugins` profile pattern as UH1a: the
+          plugin's `KipResolverRest` `@Path` resource is picked up
+          by Quarkus's build-time CDI scanner when the JAR is on
+          the backend's compile-time classpath. Operators consuming
+          the published image get the resolver "for free"; operators
+          building their own backend image without this dep lose
+          the resolver while the generic publish endpoint still
+          works (the in-core `PublishRest` produces no longer
+          dereferenceable `resolverUrl` field in that posture, but
+          the freshly-minted PID is still returned).
+          See aidocs/16 KIP1g + aidocs/66.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
