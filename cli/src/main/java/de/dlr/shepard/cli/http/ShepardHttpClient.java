@@ -103,6 +103,40 @@ public final class ShepardHttpClient {
     });
   }
 
+  /**
+   * Perform a multipart-form {@code POST} with a single file part
+   * + a single JSON metadata part, decode the response as JSON of
+   * the given type. Used by {@code semantic ontologies upload}
+   * (N1c2): {@code file=<bytes>} + {@code metadata=<json>} →
+   * {@link de.dlr.shepard.cli.io.OntologyBundle}. Throws
+   * {@link AdminCliException} on non-2xx / transport.
+   */
+  public <T> T postMultipart(
+    String path,
+    String fileFieldName,
+    String filename,
+    byte[] fileBytes,
+    String metadataFieldName,
+    String metadataJson,
+    TypeReference<T> responseType
+  ) {
+    HttpResponse<String> response = postMultipartRaw(
+      path,
+      fileFieldName,
+      filename,
+      fileBytes,
+      metadataFieldName,
+      metadataJson
+    );
+    return decode(response.body(), body -> {
+      try {
+        return MAPPER.readValue(body, responseType);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
   /** Raw {@code PATCH} variant — serialises {@code requestBody} via Jackson. */
   public HttpResponse<String> patch(String path, Object requestBody) {
     final String json;
@@ -126,6 +160,29 @@ public final class ShepardHttpClient {
     return send(builder.build(), path, false);
   }
 
+  /** Internal multipart POST — visible-for-tests so the body shape can be asserted. */
+  HttpResponse<String> postMultipartRaw(
+    String path,
+    String fileFieldName,
+    String filename,
+    byte[] fileBytes,
+    String metadataFieldName,
+    String metadataJson
+  ) {
+    String boundary = "----shepard-admin-cli-" + Long.toHexString(System.nanoTime());
+    byte[] body = buildMultipartBody(boundary, fileFieldName, filename, fileBytes, metadataFieldName, metadataJson);
+    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+      .timeout(Duration.ofSeconds(120))
+      .header("Accept", "application/json")
+      .header("Content-Type", "multipart/form-data; boundary=" + boundary);
+    if (apiKey != null && !apiKey.isBlank()) {
+      builder.header("X-API-KEY", apiKey);
+    }
+    return send(builder.build(), path, false);
+  }
+
   /** Raw {@code DELETE} variant — used by UH1a's harvest-key revoke. */
   public HttpResponse<String> delete(String path) {
     URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
@@ -137,6 +194,51 @@ public final class ShepardHttpClient {
       builder.header("X-API-KEY", apiKey);
     }
     return send(builder.build(), path, false);
+  }
+
+  /** Build a minimal RFC 7578 multipart/form-data body. */
+  static byte[] buildMultipartBody(
+    String boundary,
+    String fileFieldName,
+    String filename,
+    byte[] fileBytes,
+    String metadataFieldName,
+    String metadataJson
+  ) {
+    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+    try {
+      String dashBoundary = "--" + boundary;
+      // metadata part
+      if (metadataFieldName != null && metadataJson != null) {
+        buf.write((dashBoundary + "\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        buf.write(
+          ("Content-Disposition: form-data; name=\"" + metadataFieldName + "\"\r\n").getBytes(
+            java.nio.charset.StandardCharsets.UTF_8
+          )
+        );
+        buf.write(("Content-Type: application/json\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        buf.write(metadataJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        buf.write(("\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      }
+      // file part
+      if (fileFieldName != null && fileBytes != null) {
+        buf.write((dashBoundary + "\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        String safeName = filename == null ? "upload.bin" : filename.replace("\"", "");
+        buf.write(
+          (
+            "Content-Disposition: form-data; name=\"" + fileFieldName + "\"; filename=\"" + safeName + "\"\r\n"
+          ).getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+        buf.write(("Content-Type: application/octet-stream\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        buf.write(fileBytes);
+        buf.write(("\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      }
+      // closing boundary
+      buf.write((dashBoundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    } catch (IOException ex) {
+      throw new IllegalStateException("Failed to assemble multipart body", ex);
+    }
+    return buf.toByteArray();
   }
 
   /** Raw {@code POST} variant — serialises {@code requestBody} via Jackson. */
@@ -153,6 +255,24 @@ public final class ShepardHttpClient {
       .timeout(Duration.ofSeconds(120))
       .header("Accept", "application/json")
       .header("Content-Type", "application/json");
+    if (apiKey != null && !apiKey.isBlank()) {
+      builder.header("X-API-KEY", apiKey);
+    }
+    return send(builder.build(), path, false);
+  }
+
+  /**
+   * Perform a {@code DELETE} against {@code path}. Returns the raw
+   * {@link HttpResponse} so the caller can inspect 204 / non-JSON
+   * responses. Throws {@link AdminCliException} on non-2xx /
+   * transport (404 stays surfaced as the standard message).
+   */
+  public HttpResponse<String> delete(String path) {
+    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      .DELETE()
+      .timeout(Duration.ofSeconds(60))
+      .header("Accept", "application/json");
     if (apiKey != null && !apiKey.isBlank()) {
       builder.header("X-API-KEY", apiKey);
     }

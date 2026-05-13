@@ -58,9 +58,39 @@ class OntologySeedServiceTest {
   @Test
   void seed_disabledByConfig_isNoOp() {
     Session session = mock(Session.class);
+    // Empty manifest + master-off → early return, no Cypher at all.
+    // (Pre-N1c2 contract preserved: deploy-time enabled=false is the
+    // "bare n10s" exit when there's nothing required to seed.)
     var svc = new OntologySeedService(session, false, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
     svc.seedIfNeeded();
     verify(session, never()).query(any(String.class), any());
+  }
+
+  @Test
+  void seed_disabledByConfig_butRequiredBundlePresent_stillSeedsRequired() {
+    Session session = mock(Session.class);
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    Result count = singleRow(Map.of("total", 0L));
+    Result imp = singleRow(Map.of("status", "OK", "loaded", 5L, "parsed", 5L, "info", ""));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(imp);
+
+    String manifest = manifestJson(List.of(entryRequired("must", "must.ttl", SAMPLE_SHA, SAMPLE_TTL.length(), true)));
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifest.getBytes(StandardCharsets.UTF_8),
+        "ontologies/must.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+
+    var svc = new OntologySeedService(session, false, Set.of(), new ObjectMapper(), cl);
+    svc.seedIfNeeded();
+
+    // Required bundles bypass the master-off check.
+    verify(session).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
   }
 
   @Test
@@ -69,7 +99,19 @@ class OntologySeedServiceTest {
     Result detect = singleRow(Map.of("available", Boolean.FALSE));
     when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
 
-    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    // N1c2 reorder: the seed service loads the manifest before
+    // probing n10s (so a master-off + no-required-bundles case can
+    // skip the detect probe). A single-entry manifest gets us past
+    // the emptiness short-circuit so detect runs.
+    ClassLoader cl = classLoaderWith(
+      Map.of(
+        "ontologies/ontologies-manifest.json",
+        manifestJson(List.of(entry("ex", "ex.ttl", SAMPLE_SHA, SAMPLE_TTL.length()))).getBytes(StandardCharsets.UTF_8),
+        "ontologies/ex.ttl",
+        SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+      )
+    );
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
     svc.seedIfNeeded();
 
     verify(session).query(eq(OntologySeedService.DETECT_CYPHER), any());
@@ -610,6 +652,13 @@ class OntologySeedServiceTest {
     m.put("format", "Turtle");
     m.put("sha256", sha);
     m.put("sizeBytes", size);
+    return m;
+  }
+
+  /** Like {@link #entry} but with N1c2's {@code required} field set. */
+  private static Map<String, Object> entryRequired(String id, String file, String sha, long size, boolean required) {
+    Map<String, Object> m = entry(id, file, sha, size);
+    m.put("required", required);
     return m;
   }
 

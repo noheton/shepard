@@ -61,10 +61,21 @@ import org.neo4j.ogm.session.Session;
 public class OntologySeedService {
 
   /** Config key — master toggle. Default ON; flip to false for a bare-n10s install. */
-  static final String ENABLED_PROPERTY = "shepard.semantic.internal.preseed-ontologies.enabled";
+  public static final String ENABLED_PROPERTY = "shepard.semantic.internal.preseed-ontologies.enabled";
 
   /** Config key — CSV of bundle {@code id}s to skip (e.g. {@code "qudt,om-2"}). Default empty. */
-  static final String SKIP_BUNDLES_PROPERTY = "shepard.semantic.internal.preseed-ontologies.skip-bundles";
+  public static final String SKIP_BUNDLES_PROPERTY = "shepard.semantic.internal.preseed-ontologies.skip-bundles";
+
+  /**
+   * Config key (N1c2) — filesystem directory under which the
+   * operator-uploaded user bundles + their on-disk TTL files live.
+   * Default {@code /var/lib/shepard/ontologies/}. Deploy-time only
+   * per the {@code aidocs/65 §2.3} exception (filesystem topology).
+   */
+  public static final String USER_BUNDLES_DIR_PROPERTY = "shepard.semantic.internal.user-bundles-dir";
+
+  /** Default filesystem location for operator-uploaded bundle TTLs. */
+  public static final String DEFAULT_USER_BUNDLES_DIR = "/var/lib/shepard/ontologies/";
 
   /** Classpath location of the manifest. */
   static final String MANIFEST_RESOURCE = "/ontologies/ontologies-manifest.json";
@@ -97,18 +108,61 @@ public class OntologySeedService {
   private final ObjectMapper objectMapper;
   private final ClassLoader classLoader;
 
-  /** Production ctor — pulls the OGM session at call time. */
+  /**
+   * N1c2 — supplier of runtime-overridable preseed knobs. Re-read on
+   * every {@link #seedIfNeeded()} invocation so post-startup admin
+   * mutations land on the next seed pass. Production injects the
+   * Neo4j-backed {@code :SemanticConfig} reader via {@code OntologyConfigService};
+   * pre-N1c2 tests inject {@link RuntimeConfig#deployTimeOnly()} for
+   * the legacy "no runtime config" behaviour.
+   */
+  private final java.util.function.Supplier<RuntimeConfig> runtimeConfigSupplier;
+
+  /**
+   * N1c2 — supplier of operator-uploaded {@link OntologyEntry}
+   * records. Production injects the Neo4j-backed
+   * {@code OntologyConfigService.listUserEntries()}; pre-N1c2 tests
+   * supply {@code List::of}.
+   */
+  private final java.util.function.Supplier<List<OntologyEntry>> userEntriesSupplier;
+
+  /**
+   * Production ctor — pulls the OGM session at call time and wires
+   * the runtime-config + user-entries suppliers via a freshly
+   * instantiated {@link de.dlr.shepard.context.semantic.services.OntologyConfigService}.
+   * The service is request-scoped at the CDI layer but its DAOs work
+   * outside a request when manually constructed (every DAO pulls the
+   * OGM session via {@code NeoConnector.getInstance()} on its no-arg
+   * ctor), so the startup-hook code path is supported.
+   */
   public OntologySeedService() {
     this(
       de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession(),
       readBooleanConfig(ENABLED_PROPERTY, true),
       parseSkipBundles(readStringConfig(SKIP_BUNDLES_PROPERTY, "")),
       new ObjectMapper(),
-      OntologySeedService.class.getClassLoader()
+      OntologySeedService.class.getClassLoader(),
+      () -> productionConfigService().loadRuntimeConfig(),
+      () -> productionConfigService().listUserEntries()
     );
   }
 
-  /** Test seam — accept session + config + classloader injection. */
+  /**
+   * Construct a production-ready {@link
+   * de.dlr.shepard.context.semantic.services.OntologyConfigService}
+   * with manually-wired DAOs. Used by the no-arg ctor above for the
+   * startup-hook code path. Visible-for-tests-package-private so
+   * tests can replace the production wiring with a mock.
+   */
+  static de.dlr.shepard.context.semantic.services.OntologyConfigService productionConfigService() {
+    de.dlr.shepard.context.semantic.daos.SemanticConfigDAO cfgDao =
+      new de.dlr.shepard.context.semantic.daos.SemanticConfigDAO();
+    de.dlr.shepard.context.semantic.daos.UserOntologyBundleDAO userDao =
+      new de.dlr.shepard.context.semantic.daos.UserOntologyBundleDAO();
+    return new de.dlr.shepard.context.semantic.services.OntologyConfigService(cfgDao, userDao);
+  }
+
+  /** Pre-N1c2 test seam — accept session + config + classloader injection. */
   public OntologySeedService(
     Session session,
     boolean enabled,
@@ -116,40 +170,73 @@ public class OntologySeedService {
     ObjectMapper objectMapper,
     ClassLoader classLoader
   ) {
+    this(session, enabled, skipBundles, objectMapper, classLoader, RuntimeConfig::deployTimeOnly, List::of);
+  }
+
+  /**
+   * N1c2 test seam — accept session + deploy-time config + classloader
+   * + a runtime-config supplier + a user-entries supplier. Production
+   * code wires the latter two from {@code OntologyConfigService}; tests
+   * pass closures.
+   */
+  public OntologySeedService(
+    Session session,
+    boolean enabled,
+    Set<String> skipBundles,
+    ObjectMapper objectMapper,
+    ClassLoader classLoader,
+    java.util.function.Supplier<RuntimeConfig> runtimeConfigSupplier,
+    java.util.function.Supplier<List<OntologyEntry>> userEntriesSupplier
+  ) {
     this.session = session;
     this.enabled = enabled;
     this.skipBundles = skipBundles == null ? Collections.emptySet() : skipBundles;
     this.objectMapper = objectMapper == null ? new ObjectMapper() : objectMapper;
     this.classLoader = classLoader == null ? OntologySeedService.class.getClassLoader() : classLoader;
+    this.runtimeConfigSupplier = runtimeConfigSupplier == null ? RuntimeConfig::deployTimeOnly : runtimeConfigSupplier;
+    this.userEntriesSupplier = userEntriesSupplier == null ? List::of : userEntriesSupplier;
   }
 
   /**
    * Run the seed import. Idempotent — safe to call on every startup.
    * Never throws on ontology-related errors; logs at WARN and proceeds.
+   *
+   * <p><b>Precedence (post-N1c2).</b>
+   * <ol>
+   *   <li><b>Master enable.</b> Runtime
+   *       {@link RuntimeConfig#preseedEnabled} wins over the
+   *       deploy-time {@link #ENABLED_PROPERTY}. When either is
+   *       {@code false}, the entire pass is a no-op — except
+   *       required bundles, which are always seeded.</li>
+   *   <li><b>Required bundles always seed.</b> A manifest entry
+   *       with {@code required: true} bypasses every disable
+   *       check; the only way to skip it is to remove the entry
+   *       from the manifest entirely.</li>
+   *   <li><b>Per-bundle disable.</b> A bundle id in the runtime
+   *       {@link RuntimeConfig#disabledBundles} set OR in the
+   *       deploy-time {@code skip-bundles} CSV is skipped.</li>
+   * </ol>
+   *
+   * <p>Built-in bundles are processed first (manifest declaration
+   * order), then user-uploaded bundles ({@code bundleId} ASC), so
+   * cross-references resolve correctly.
    */
   public void seedIfNeeded() {
-    if (!enabled) {
-      Log.info(
-        "OntologySeedService: disabled via shepard.semantic.internal.preseed-ontologies.enabled=false; skipping."
-      );
-      return;
-    }
+    RuntimeConfig runtime = runtimeConfigSupplier.get();
+    if (runtime == null) runtime = RuntimeConfig.deployTimeOnly();
+    boolean masterEnabled = enabled && runtime.preseedEnabled();
+
     if (session == null) {
       Log.warn("OntologySeedService: no OGM session available; skipping pre-seed.");
       return;
     }
 
-    if (!detectN10s()) {
-      Log.warn(
-        "OntologySeedService: neosemantics (n10s) procedures not registered. " +
-        "Skipping ontology pre-seed; INTERNAL repositories will resolve only against whatever the operator imports manually."
-      );
-      return;
-    }
-
+    // Load manifest first — needed to decide whether master-off can
+    // short-circuit (no required bundles → nothing forces seeding) or
+    // must still walk the loop to honour required-true.
     final List<OntologyEntry> entries;
     try {
-      entries = loadManifest();
+      entries = loadAllEntries();
     } catch (RuntimeException ex) {
       Log.warnf(
         "OntologySeedService: failed to load manifest %s (%s: %s); skipping pre-seed entirely.",
@@ -165,13 +252,54 @@ public class OntologySeedService {
       return;
     }
 
+    // Master-off short-circuit: when neither the deploy-time toggle
+    // nor the runtime override is on, AND no manifest entry carries
+    // required=true, the entire pass is a no-op. We don't even
+    // touch n10s — matches the pre-N1c2 "I want a bare n10s" exit.
+    if (!masterEnabled && !hasRequiredEntry(entries)) {
+      Log.infof(
+        "OntologySeedService: master toggle off (deploy=%b runtime=%b) and no required bundles; skipping pre-seed.",
+        enabled,
+        runtime.preseedEnabled()
+      );
+      return;
+    }
+
+    if (!detectN10s()) {
+      Log.warn(
+        "OntologySeedService: neosemantics (n10s) procedures not registered. " +
+        "Skipping ontology pre-seed; INTERNAL repositories will resolve only against whatever the operator imports manually."
+      );
+      return;
+    }
+
+    if (!masterEnabled) {
+      // Master-off — required bundles still seed; everything else
+      // is skipped without complaint. This is the
+      // "I want a bare n10s" path that still has PROV-O for audit.
+      Log.infof(
+        "OntologySeedService: master toggle off (deploy=%b runtime=%b); seeding required bundles only.",
+        enabled,
+        runtime.preseedEnabled()
+      );
+    }
+
     int seeded = 0;
     int skipped = 0;
     int failed = 0;
     long beforeTotal = readResourceCount();
     for (OntologyEntry entry : entries) {
-      if (skipBundles.contains(entry.id)) {
-        Log.infof("OntologySeedService: bundle '%s' skipped via skip-bundles.", entry.id);
+      SeedDecision decision = shouldSeed(entry, masterEnabled, runtime);
+      if (decision == SeedDecision.SKIP_DISABLED) {
+        Log.infof("OntologySeedService: bundle '%s' admin-disabled; skipping.", entry.id);
+        skipped++;
+        continue;
+      }
+      if (decision == SeedDecision.SKIP_MASTER_OFF) {
+        Log.infof(
+          "OntologySeedService: bundle '%s' skipped (master toggle off, not required).",
+          entry.id
+        );
         skipped++;
         continue;
       }
@@ -200,6 +328,85 @@ public class OntologySeedService {
       afterTotal,
       Math.max(0L, delta)
     );
+  }
+
+  /**
+   * Decision for one bundle on one pass. Visible-for-tests so the
+   * precedence rules can be asserted directly without standing up
+   * the full seed loop.
+   */
+  enum SeedDecision {
+    /** Bundle seeds (required-true, or master-on and not in any disable set). */
+    SEED,
+    /** Bundle is in the runtime or deploy-time disable set. */
+    SKIP_DISABLED,
+    /** Master toggle is off and bundle is not required. */
+    SKIP_MASTER_OFF,
+  }
+
+  /**
+   * Apply the precedence rules. Visible-for-tests.
+   *
+   * <p>Order (each row returns immediately):
+   * <ol>
+   *   <li>{@code required=true} → {@link SeedDecision#SEED}.</li>
+   *   <li>master off → {@link SeedDecision#SKIP_MASTER_OFF}.</li>
+   *   <li>id in {@code runtime.disabledBundles ∪ skipBundles} →
+   *       {@link SeedDecision#SKIP_DISABLED}.</li>
+   *   <li>otherwise → {@link SeedDecision#SEED}.</li>
+   * </ol>
+   */
+  /** True if at least one manifest entry carries {@code required: true}. */
+  static boolean hasRequiredEntry(List<OntologyEntry> entries) {
+    if (entries == null) return false;
+    for (OntologyEntry e : entries) {
+      if (e != null && e.required) return true;
+    }
+    return false;
+  }
+
+  SeedDecision shouldSeed(OntologyEntry entry, boolean masterEnabled, RuntimeConfig runtime) {
+    if (entry.required) return SeedDecision.SEED;
+    if (!masterEnabled) return SeedDecision.SKIP_MASTER_OFF;
+    Set<String> runtimeDisabled = runtime == null ? Collections.emptySet() : runtime.disabledBundles();
+    if (runtimeDisabled.contains(entry.id) || skipBundles.contains(entry.id)) {
+      return SeedDecision.SKIP_DISABLED;
+    }
+    return SeedDecision.SEED;
+  }
+
+  /**
+   * Combine the classpath-manifest built-ins with the user-uploaded
+   * entries (from the supplier injected at construction). Order is
+   * stable: built-ins first (manifest declaration order), then user
+   * uploads in the supplier's order.
+   */
+  List<OntologyEntry> loadAllEntries() {
+    List<OntologyEntry> builtins = loadManifest();
+    List<OntologyEntry> userEntries = userEntriesSupplier.get();
+    if (userEntries == null || userEntries.isEmpty()) {
+      return builtins;
+    }
+    Set<String> builtinIds = new java.util.LinkedHashSet<>(builtins.size());
+    for (OntologyEntry b : builtins) builtinIds.add(b.id);
+    List<OntologyEntry> out = new ArrayList<>(builtins.size() + userEntries.size());
+    out.addAll(builtins);
+    for (OntologyEntry u : userEntries) {
+      if (u == null) continue;
+      if (builtinIds.contains(u.id)) {
+        // Defence-in-depth: the upload endpoint refuses a user
+        // bundle whose id collides with a built-in. If the data
+        // ended up here anyway (manual DB tinkering, for example),
+        // we log + drop the user entry rather than double-seed.
+        Log.warnf(
+          "OntologySeedService: user bundle '%s' shadows a built-in id; skipping the user entry.",
+          u.id
+        );
+        continue;
+      }
+      out.add(u);
+    }
+    return out;
   }
 
   /**
@@ -276,8 +483,12 @@ public class OntologySeedService {
     }
   }
 
-  /** Read the manifest from classpath. Visible-for-tests. */
-  List<OntologyEntry> loadManifest() {
+  /**
+   * Read the manifest from classpath. Visible-for-tests and to the
+   * N1c2 admin REST layer (which needs the built-in `required` flags
+   * to render the merged list / refuse disable on required bundles).
+   */
+  public List<OntologyEntry> loadManifest() {
     InputStream in = classLoader.getResourceAsStream(stripLeadingSlash(MANIFEST_RESOURCE));
     if (in == null) {
       throw new OntologySeedException("Classpath resource " + MANIFEST_RESOURCE + " not found.");
@@ -365,7 +576,12 @@ public class OntologySeedService {
     }
   }
 
-  static Set<String> parseSkipBundles(String csv) {
+  /**
+   * Visible-to-the-N1c2 config service so the merged-listing endpoint
+   * can compute the union of deploy-time skip-bundles + runtime
+   * disabledBundles.
+   */
+  public static Set<String> parseSkipBundles(String csv) {
     if (csv == null || csv.isBlank()) return Collections.emptySet();
     Set<String> out = new LinkedHashSet<>();
     for (String part : csv.split(",")) {
@@ -391,21 +607,48 @@ public class OntologySeedService {
     }
   }
 
-  /** Manifest row — visible-for-tests so the sanity test can inspect it. */
-  static final class OntologyEntry {
+  /**
+   * Manifest row — visible-for-tests so the sanity test can inspect it.
+   *
+   * <p>Post-N1c2 carries two new fields:
+   * <ul>
+   *   <li>{@code required} — when {@code true}, the bundle is seeded
+   *       unconditionally even if the operator names it in
+   *       {@code disabledBundles} or the deploy-time
+   *       {@code skip-bundles} CSV. Required wins.</li>
+   *   <li>{@code source} — {@link Source#BUILTIN} for classpath
+   *       bundles shipped in the JAR; {@link Source#USER} for
+   *       operator-uploaded bundles managed by
+   *       {@code OntologyConfigService}.</li>
+   * </ul>
+   *
+   * <p>{@code file} is the on-disk path the seed service reads
+   * bytes from. For built-ins this is a classpath-relative slug
+   * ({@code "prov-o.ttl"} → {@code "/ontologies/prov-o.ttl"}); for
+   * user uploads it's an absolute filesystem path.
+   */
+  public static final class OntologyEntry {
 
-    final String id;
-    final String name;
-    final String file;
-    final String iriPrefix;
-    final String format;
-    final String canonicalUrl;
-    final String license;
-    final String version;
-    final String sha256;
-    final long sizeBytes;
+    /** Origin of the bundle — classpath ("builtin") or operator upload ("user"). */
+    public enum Source {
+      BUILTIN,
+      USER,
+    }
 
-    OntologyEntry(
+    public final String id;
+    public final String name;
+    public final String file;
+    public final String iriPrefix;
+    public final String format;
+    public final String canonicalUrl;
+    public final String license;
+    public final String version;
+    public final String sha256;
+    public final long sizeBytes;
+    public final boolean required;
+    public final Source source;
+
+    public OntologyEntry(
       String id,
       String name,
       String file,
@@ -417,6 +660,23 @@ public class OntologySeedService {
       String sha256,
       long sizeBytes
     ) {
+      this(id, name, file, iriPrefix, format, canonicalUrl, license, version, sha256, sizeBytes, false, Source.BUILTIN);
+    }
+
+    public OntologyEntry(
+      String id,
+      String name,
+      String file,
+      String iriPrefix,
+      String format,
+      String canonicalUrl,
+      String license,
+      String version,
+      String sha256,
+      long sizeBytes,
+      boolean required,
+      Source source
+    ) {
       this.id = Objects.requireNonNull(id, "id");
       this.name = name;
       this.file = Objects.requireNonNull(file, "file");
@@ -427,6 +687,8 @@ public class OntologySeedService {
       this.version = version;
       this.sha256 = Objects.requireNonNull(sha256, "sha256");
       this.sizeBytes = sizeBytes;
+      this.required = required;
+      this.source = source == null ? Source.BUILTIN : source;
     }
 
     static OntologyEntry fromJson(JsonNode n) {
@@ -448,7 +710,9 @@ public class OntologySeedService {
         textOrNull(n, "license"),
         textOrNull(n, "version"),
         sha,
-        n.path("sizeBytes").asLong(-1L)
+        n.path("sizeBytes").asLong(-1L),
+        n.path("required").asBoolean(false),
+        Source.BUILTIN
       );
     }
 

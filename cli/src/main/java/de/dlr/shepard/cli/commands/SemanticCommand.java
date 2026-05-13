@@ -4,16 +4,16 @@ import picocli.CommandLine.Command;
 
 /**
  * Container for {@code shepard-admin semantic <verb>} sub-commands.
- * Phase 1 (post-L1) ships {@code refresh-ontologies} (N1c) — the
- * operator-triggered refresh of the bundled ontologies against their
- * pinned canonical URLs. Later slices may add {@code list-bundles},
- * {@code verify}, etc., per {@code aidocs/22 §4.x} and {@code aidocs/48}.
+ * Phase 1 (post-L1) ships {@code refresh-ontologies} (N1c); N1c2
+ * adds the {@code ontologies} sub-group ({@code list}, {@code enable},
+ * {@code disable}, {@code upload}, {@code remove}) per
+ * {@code aidocs/65 §2.5}.
  */
 @Command(
   name = "semantic",
   mixinStandardHelpOptions = true,
   description = "Manage the internal (n10s) semantic repository — refresh bundled ontologies, etc.",
-  subcommands = { SemanticRefreshOntologiesCommand.class }
+  subcommands = { SemanticRefreshOntologiesCommand.class, SemanticOntologiesCommand.class }
 )
 public final class SemanticCommand implements Runnable {
 

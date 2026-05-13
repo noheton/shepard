@@ -145,7 +145,14 @@ These work the same way across every primitive:
   PROV-O — `m4i:ProcessingStep`, `m4i:Method`, `m4i:Tool`,
   `m4i:InvestigatedObject`, `m4i:NumericalVariable` + QUDT units —
   layering domain-specific provenance terms on top of the PROV-O
-  baseline.
+  baseline. **Admins can extend the semantic vocabulary at runtime**
+  (N1c2, shipped): the pre-seeded bundles can be flipped on/off
+  per-instance, and lab-specific TTL ontologies can be uploaded
+  through the admin API or `shepard-admin semantic ontologies
+  upload` — no rebuild, no restart for the upload itself, joins the
+  seed loop on the next start. PROV-O + Relation Ontology stay
+  required (admin disable refused with RFC 7807 `semantic.bundle.required`)
+  so the audit-trail interop never silently breaks.
 - **Subscriptions.** URL-pattern webhooks fire on entity changes
   for downstream pipeline glue.
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
