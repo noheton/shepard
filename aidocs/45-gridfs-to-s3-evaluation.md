@@ -56,7 +56,7 @@ read path.
 
 | # | Cost | Notes |
 |---|---|---|
-| C1 | **New infrastructure dependency** — operators run an S3-compatible service | MinIO is the lightweight self-hosted answer (~50 MB binary, S3-compatible, BSL/AGPL-licensed). For all-in-one shepard installs, MinIO joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
+| C1 | **New infrastructure dependency** — operators run an S3-compatible service | **Garage** (~10 MB Rust single-binary, MIT-licensed, S3-compatible, geo-distributed by design) is the `infrastructure-local/` reference per ADR-0024. Any S3-compatible endpoint works — see §3a backend matrix. For all-in-one shepard installs the reference joins the compose stack as a profile-bound service alongside HSDS (`aidocs/35`). |
 | C2 | **Auth bridge** — shepard's per-Collection / per-DataObject permissions vs S3's IAM/bucket-policy model | Two paths: (a) the **backend stays in the data path** for permission enforcement (proxies streams from S3, defeats W1); (b) **presigned URLs** carry per-request scope (does W1 properly but requires careful URL TTL + revocation thinking). Recommend (b) with short TTLs (≤ 5 min). Detailed in §4. |
 | C3 | **Migration cost** — copying existing FileContainers from GridFS to S3 takes wall-clock and bytes-out from Mongo | A 1 TB shepard install needs ~1 TB read from Mongo + 1 TB write to S3, single-pass. Doable in hours; needs a background job not a `docker compose up` migration. Detailed in §6. |
 | C4 | **Multi-region complexity** | Mongo replica sets handle this for GridFS; S3 cross-region replication needs operator config. For single-region installs, no extra work. |
@@ -125,10 +125,16 @@ indefinitely, picked per-install:
   (`software.amazon.awssdk:s3`), configured via standard AWS env
   / config (`AWS_REGION`, `AWS_ACCESS_KEY_ID`,
   `AWS_SECRET_ACCESS_KEY`, `SHEPARD_FILES_S3_ENDPOINT_OVERRIDE`
-  for MinIO). Optional `presignedDownloadUrl` /
-  `presignedUploadUrl` return real presigned URLs; the GridFs
-  plugin returns `Optional.empty()` and callers fall back to
-  backend-proxied streams.
+  for self-hosted endpoints — see §3a). Optional
+  `presignedDownloadUrl` / `presignedUploadUrl` return real
+  presigned URLs; the GridFs plugin returns `Optional.empty()`
+  and callers fall back to backend-proxied streams.
+
+  The plugin talks the **generic S3 wire protocol**; any
+  S3-compatible endpoint works. The `infrastructure-local/`
+  quick-start reference is **Garage** per ADR-0024 (see §3a
+  backend matrix below); production deployments pick the
+  endpoint that fits their environment.
 
 Selection at startup: `shepard.payload.file.backend = gridfs | s3`
 (default `gridfs`). Resolved by the `PayloadStorage` SPI
@@ -151,6 +157,39 @@ Verdict: **out of scope for v1.** Adds significant complexity
 (per-FileContainer storage tag in Neo4j, two paths in every read,
 migration between backends within a Collection). Revisit if real
 demand surfaces.
+
+## 3a. Backend matrix (FS1b supported S3-compatible endpoints)
+
+The `shepard-plugin-file-s3` plugin talks the **generic S3 wire
+protocol** via AWS SDK v2. Any endpoint that speaks S3 works; the
+choice is operator-side. The matrix below characterises the
+realistic options and is the durability surface — operators
+consulting `docs/admin.md` see the same shape.
+
+| Backend | Posture for shepard | Notes |
+|---|---|---|
+| **Real AWS S3** | Production / hosted | The canonical reference; everything else compares to it. Egress charges apply; consider lifecycle policies for cold tiers. |
+| **Cloudflare R2** | Production / hosted, zero egress fees | Popular for read-heavy workloads (the egress story changes the cost model materially). |
+| **Backblaze B2** | Production / hosted, low cost | Good fit for archival tiers; long-lived blobs at low per-GB rate. |
+| **Wasabi** | Production / hosted, flat-rate egress | Mid-market hosted option; predictable bill. |
+| **Garage** | Production / on-prem, small-to-medium scale | **Default in `infrastructure-local/`** (ADR-0024). Single Rust binary (~10 MB), MIT licensed, designed for small geo-distributed clusters. Matches the research-lab institution profile. |
+| **Ceph RGW** | Production / on-prem, hyperscale | Heaviest ops surface (Mons, OSDs, MGRs, CRUSH maps). The right answer at multi-tenant 100-TB+ scale; overkill below that. |
+| **SeaweedFS** | Production / on-prem, simple ops | Strong Apache-2 alternative to Garage. Datacentre-first topology assumption (vs Garage's geo-first); both are first-class supported. |
+| **MinIO** | Supported, **not recommended for new installs** | Community-edition posture has eroded (admin-console features moved to commercial "AIStor"; AGPL-3.0-only relicensing). Existing MinIO users continue to work — the AWS SDK doesn't care. New deployments should pick Garage / SeaweedFS / Ceph RGW / a hosted provider. |
+| **LocalStack** | Dev / CI only | Not production. Useful for the FS1b integration-test matrix as a wire-compatibility regression guard. |
+
+**Reference choice (ADR-0024).** The `infrastructure-local/`
+quick-start stack pulls **Garage** by default when FS1b lands;
+the swap from `minio/minio` to `dxflrs/garage` is tracked as an
+FS1b-gated follow-up in `aidocs/16`. The plugin code is identical
+regardless of endpoint — only the local-dev compose image changes.
+
+**Operator migration path** (for anyone running MinIO today, when
+they decide to move to Garage / another endpoint): stand up the
+new endpoint, `mc mirror` the bucket across, repoint shepard's
+`SHEPARD_FILES_S3_ENDPOINT_OVERRIDE`. No data conversion, no
+shepard-side migration script, no client-code change. Documented
+in `docs/admin.md` when FS1b ships.
 
 ## 4. Auth bridge — the careful piece
 
@@ -187,15 +226,16 @@ For an institute running shepard:
 
 | Setup | Mongo file storage | S3 file storage |
 |---|---|---|
-| **100 GB** of files | ~$10–$30 / month (managed Mongo) or NVMe $$ amortised | ~$2.30 / month (S3 Standard) or $0 (self-hosted MinIO + box you already own) |
+| **100 GB** of files | ~$10–$30 / month (managed Mongo) or NVMe $$ amortised | ~$2.30 / month (S3 Standard) or $0 (self-hosted Garage / SeaweedFS / Ceph + box you already own) |
 | **1 TB** of files | ~$100–$300 / month or NVMe sizing pain | ~$23 / month (S3) or self-hosted equivalent |
 | **10 TB** | impractical on managed Mongo's per-shard limits | ~$230 / month (S3) or self-hosted |
 
 For DLR-style on-prem deployments the comparison is between
-"buy/expand the Mongo machine's NVMe" and "stand up MinIO on a
-storage node with cheap spinning disks." MinIO on rust-disk is
-~10-100× cheaper than Mongo on NVMe per GB and the perf differential
-for large files is small.
+"buy/expand the Mongo machine's NVMe" and "stand up Garage (or
+SeaweedFS / Ceph RGW) on a storage node with cheap spinning
+disks." An on-prem S3-compatible object store on rust-disk is
+~10-100× cheaper than Mongo on NVMe per GB and the perf
+differential for large files is small.
 
 ## 6. Migration runway (when an operator flips the toggle)
 
@@ -302,9 +342,10 @@ the pattern doesn't fragment.
 **Yes — migrate, via path (B) pluggable storage backend.** The
 combination of W1 (presigned URLs) + W2 (cost) + W6 (operational
 separation) is decisive for any deployment ≥ 100 GB of files. The
-cost is one new dependency (S3-compatible service, MinIO is a
-trivial sidecar) and ~3-4 weeks of implementation work for the
-storage abstraction + migration tooling. **Worth it.**
+cost is one new dependency (S3-compatible service; Garage is a
+trivial sidecar — single ~10 MB Rust binary, MIT licensed, per
+ADR-0024) and ~3-4 weeks of implementation work for the storage
+abstraction + migration tooling. **Worth it.**
 
 GridFS stays as the default for new all-in-one installs — keeps
 the "5-minute setup" story intact for evaluation deployments. S3
@@ -316,9 +357,9 @@ up automatically when the operator configures it.
 | ID | Slice | Size | Gate |
 |---|---|---|---|
 | **FS1a** | `FileStorage` interface + `GridFsFileStorage` extracted from `FileService` (pure refactor; behaviour-equivalent). Tests pin existing behaviour. | M | None |
-| **FS1b** | `S3FileStorage` implementation using AWS SDK v2 + endpoint-override config for MinIO. New `shepard.files.storage` config key + CDI selector. Backend-proxied path works against both. | M | FS1a |
+| **FS1b** | `S3FileStorage` implementation using AWS SDK v2 + endpoint-override config (Garage by default per ADR-0024; any S3-compatible endpoint works — see §3a). New `shepard.files.storage` config key + CDI selector. Backend-proxied path works against both. | M | FS1a |
 | **FS1c** | Presigned-URL `/v2/` endpoints (`/files/{containerAppId}/upload-url`, `/files/{appId}/download-url`). Returns 404 when backend doesn't support presigned URLs. | S | FS1b |
-| **FS1d** | MinIO sidecar in `infrastructure/docker-compose.yml` under `files-s3` profile (off by default; mirrors `spatial`/`hdf` patterns). One-line operator switch. | S | FS1b + `aidocs/22 §4.6a` profile-bound toggles |
+| **FS1d** | Object-store sidecar in `infrastructure/docker-compose.yml` under `files-s3` profile (off by default; mirrors `spatial`/`hdf` patterns). **Garage** image (`dxflrs/garage`) per ADR-0024. One-line operator switch. | S | FS1b + `aidocs/22 §4.6a` profile-bound toggles |
 | **FS1e** | `shepard-admin files migrate` CLI command (big-bang and background-sweep modes), progress via P3 pattern. | M | FS1a + FS1b + `aidocs/22` |
 | **FS1f** | Frontend update — large-file uploads use the `/v2/upload-url` presigned path when available, fall back to backend-proxied. | M | FS1c + frontend changes |
 | **FS1g** | RO-Crate export delivery (`aidocs/31 §O3`) returns presigned URLs when backend = s3. | S | FS1c + `aidocs/31` |
@@ -326,9 +367,9 @@ up automatically when the operator configures it.
 
 Recommended order: **FS1a → FS1b → FS1d → FS1c → FS1e → FS1f → FS1g**.
 FS1a is a behaviour-preserving refactor that ships independently
-(low risk, prepares the ground). FS1d (MinIO sidecar) ships before
-FS1c (presigned endpoints) so operators have something to point at
-when the new endpoints land.
+(low risk, prepares the ground). FS1d (object-store sidecar —
+Garage per ADR-0024) ships before FS1c (presigned endpoints) so
+operators have something to point at when the new endpoints land.
 
 ## 10. Risks
 
@@ -350,8 +391,10 @@ when the new endpoints land.
 - **Cost surprise on egress.** AWS S3 charges for egress. If a
   shepard install has lots of internet downloads, the S3 bill can
   surprise. Document the per-deployment cost model in
-  `docs/admin.md` under the storage chapter; recommend MinIO for
-  high-egress installs.
+  `docs/admin.md` under the storage chapter; recommend an on-prem
+  endpoint (Garage / SeaweedFS / Ceph RGW) or a zero-egress hosted
+  option (Cloudflare R2) for high-egress installs. See §3a backend
+  matrix.
 - **CORS misconfiguration.** A wrong CORS rule on the S3 bucket
   manifests as silent failures in the browser. Provide a known-good
   CORS template in `docs/deploy.md`.
@@ -370,3 +413,7 @@ when the new endpoints land.
 - **Issues:** **#27** (Evaluate Object Storages — this design is
   the answer; close on FS1a landing).
 - **Backlog:** new **FS1** umbrella + sub-IDs in `aidocs/16`.
+- **ADRs:** ADR-0024 (Garage as the `infrastructure-local/` S3
+  reference; see `aidocs/63`) — locks the §3a matrix's
+  reference choice; couples with ADR-0023 (plugin-distribution
+  shape).
