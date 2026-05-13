@@ -41,7 +41,17 @@ public class PublicEndpointRegistry {
     // /shepard/api/ prefix never reaches application code because the
     // resource @Path is /shepard/doc/openapi/{v1,v2}.json directly.
     "/shepard/doc/openapi/v1.json",
-    "/shepard/doc/openapi/v2.json"
+    "/shepard/doc/openapi/v2.json",
+    // UH1a — the Helmholtz Unhide publish feed. Bypasses JWT auth
+    // because its access model is runtime-mutable: feedPublic=true
+    // ⇒ truly public; feedPublic=false ⇒ requires X-API-KEY matching
+    // :UnhideConfig.harvestApiKeyHash OR an instance-admin caller.
+    // The UnhideFeedRest resource performs the per-call auth check
+    // (config-load + key compare) because a static registry can't
+    // express a runtime-mutable predicate. When enabled=false the
+    // feed returns 503 unhide.feed.disabled before any auth path
+    // runs.
+    "/v2/unhide/feed.jsonld"
   );
 
   /**

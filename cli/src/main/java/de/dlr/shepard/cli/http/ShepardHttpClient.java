@@ -86,6 +86,59 @@ public final class ShepardHttpClient {
     });
   }
 
+  /**
+   * Perform a {@code PATCH} against {@code path} with a JSON-serialised
+   * {@code requestBody} and decode the response as JSON of the given
+   * {@code responseType}. RFC 7396 merge-patch endpoints (e.g.
+   * UH1a's {@code PATCH /v2/admin/unhide/config}) use this.
+   */
+  public <T> T patchJson(String path, Object requestBody, TypeReference<T> responseType) {
+    HttpResponse<String> response = patch(path, requestBody);
+    return decode(response.body(), body -> {
+      try {
+        return MAPPER.readValue(body, responseType);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
+  /** Raw {@code PATCH} variant — serialises {@code requestBody} via Jackson. */
+  public HttpResponse<String> patch(String path, Object requestBody) {
+    final String json;
+    try {
+      json = requestBody == null ? "{}" : MAPPER.writeValueAsString(requestBody);
+    } catch (IOException e) {
+      throw new AdminCliException("Could not serialise request body to JSON: " + e.getMessage(), e);
+    }
+    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      // java.net.http rejects PATCH on the standard PATCH/POST/PUT shortcut
+      // methods because PATCH isn't in HttpMethod's whitelist; the .method()
+      // setter accepts arbitrary verbs.
+      .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+      .timeout(Duration.ofSeconds(120))
+      .header("Accept", "application/json")
+      .header("Content-Type", "application/merge-patch+json");
+    if (apiKey != null && !apiKey.isBlank()) {
+      builder.header("X-API-KEY", apiKey);
+    }
+    return send(builder.build(), path, false);
+  }
+
+  /** Raw {@code DELETE} variant — used by UH1a's harvest-key revoke. */
+  public HttpResponse<String> delete(String path) {
+    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      .DELETE()
+      .timeout(Duration.ofSeconds(30))
+      .header("Accept", "application/json");
+    if (apiKey != null && !apiKey.isBlank()) {
+      builder.header("X-API-KEY", apiKey);
+    }
+    return send(builder.build(), path, false);
+  }
+
   /** Raw {@code POST} variant — serialises {@code requestBody} via Jackson. */
   public HttpResponse<String> post(String path, Object requestBody) {
     final String json;

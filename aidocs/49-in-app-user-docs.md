@@ -116,6 +116,8 @@ screenshots, links forward to the reference for depth. Lives at
 - `docs/help/lab-journal.md` — "How do I write a lab journal entry?"
 - `docs/help/dashboard.md` — "How do I get a chart from my data?"
   (post-AI1e snap dashboards)
+- `docs/help/publish-to-helmholtz-unhide.md` — "How do I expose my
+  shepard to the Helmholtz Knowledge Graph?" (UH1a, shipped)
 
 **Track B — "Reference / Every feature" (comprehensive).**
 Feature-shaped, complete per shipped feature. Lives at the existing
@@ -143,6 +145,7 @@ deep-dives:
 | AI features *(post-AI1)* | `docs/reference/ai-features.md` |
 | Configuration / preferences | `docs/reference/preferences.md` |
 | Admin CLI *(L1 Phase 1, shipped)* | `docs/reference/admin-cli.md` |
+| Unhide publish plugin *(UH1a, shipped)* | `docs/reference/unhide-publish.md` |
 
 Existing `user-guide.md` becomes the **bridge index** that links
 into both tracks; `getting-started.md` stays the API-quickstart
