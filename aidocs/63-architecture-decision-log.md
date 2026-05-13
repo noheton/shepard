@@ -50,6 +50,7 @@ re-deriving the trade-offs from scratch.
 | ADR-0020 | accepted | 2026-05-12 | shepard is source of truth for HDF container ACLs (HSDS-side mutations clobbered) | moderate |
 | ADR-0021 | accepted | 2026-05-12 | GitLab-only adapter in G1b; GitHub + Gitea ship in G1d via the GitAdapter interface seam | easy |
 | ADR-0022 | accepted | 2026-05-13 | OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy (both indefinitely) | moderate |
+| ADR-0023 | accepted | 2026-05-13 | Plugin distribution: drop-in JARs into `backend/plugins/` discovered via `ServiceLoader` (not compose-side sidecars, not forked Dockerfiles) | moderate |
 
 ---
 
@@ -1101,6 +1102,139 @@ affected package; downstream consumers would need to switch their
 generation pipeline. The decision is intended to be permanent —
 the cost of switching one side later is real but bounded to the
 clients/* tree.
+
+## ADR-0023 — Plugin distribution: drop-in JARs via ServiceLoader
+
+**Status.** accepted. **Date.** 2026-05-13.
+**Applied in.** `aidocs/68 §5` question 3 (resolved); UH1a
+(`plugins/unhide/` — first plugin under the new shape).
+
+### Context
+
+`aidocs/68 §5` question 3 left three candidate plugin-distribution
+shapes open:
+
+1. **Compose-side sidecar** — separate Dockerfile per plugin,
+   side-by-side with `backend/`. High operator friction; doesn't
+   match the SPI model in `aidocs/47 §2.5`.
+2. **JAR drop-in** — plugin JARs into a `backend/plugins/`
+   directory, discovered at startup via Java's `ServiceLoader`
+   over each plugin's `PluginManifest`. Low operator friction —
+   install / uninstall is "copy / delete a file." Requires the
+   SPI to be stable enough to be a published surface.
+3. **Forked Dockerfile per install** — monolithic image bakes in
+   selected plugins at build time. Medium friction; loses
+   "install/uninstall without rebuild." Roughly today's shape
+   (everything in-tree).
+
+UH1a (the first `shepard-plugin-*` module) is in-flight as the
+forcing function — the shape it lands under sets precedent for
+every subsequent plugin (`shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
+`shepard-plugin-aas`, `shepard-plugin-minter-{epic,datacite}`, …).
+
+### Decision
+
+**Plugins distribute as drop-in JARs into `backend/plugins/`,
+discovered at startup via `ServiceLoader`.**
+
+Mechanical shape:
+
+- Each plugin is a standalone Maven module producing a JAR.
+- The JAR carries `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
+  per Java's `ServiceLoader` SPI contract.
+- The backend at startup walks `backend/plugins/*.jar`, adds each
+  to a child classloader, and runs `ServiceLoader.load(PluginManifest.class)`
+  against it. Each manifest binds its CDI beans / REST resources /
+  payload-kind factories through the registries documented in
+  `aidocs/47 §2.5` (`PayloadKindRegistry`, future `MinterRegistry`,
+  future `AdapterRegistry` family).
+- An operator's install path: `cp shepard-plugin-foo-X.Y.Z.jar
+  backend/plugins/ && restart shepard`. Uninstall is `rm` + restart.
+- The `shepard.plugins.<plugin-id>.enabled=true/false` config key
+  per plugin (per `aidocs/47 §2.5`) becomes the runtime opt-out
+  without removing the JAR.
+
+The SPI surfaces (`PluginManifest`, `PayloadKind`, `PayloadStorage`,
+`FileStorage`, `Minter`, `GitAdapter`, `SemanticConnector`) stay
+in core; the implementations live in the dropped-in JARs.
+
+### Rationale
+
+- **Lowest operator friction of the three.** Install / uninstall
+  without rebuilding the image is the only shape that matches
+  shepard's "plugin-first for new features" CLAUDE.md rule. The
+  rule is meaningless if every plugin requires a forked image.
+- **Matches the existing Quarkus + ServiceLoader pattern.** Quarkus
+  has first-class support for runtime classpath additions via the
+  `fast-jar` packaging form's `quarkus-app/lib/` directory; the
+  `backend/plugins/` directory is conceptually a sibling that
+  shepard's own bootstrap walks.
+- **Composes with the `shepard.plugins.<plugin-id>.enabled` runtime
+  toggle.** Operators can ship every plugin into `backend/plugins/`
+  and gate each one via the admin REST / CLI (`A3b` shape +
+  `aidocs/47 §2.5`). The two knobs cooperate: presence of the JAR
+  is the install gate, the runtime toggle is the per-install
+  on/off.
+- **Plugins can ship their own release cadence.** A
+  `shepard-plugin-hdf-hsds-1.2.3.jar` and a
+  `shepard-plugin-video-0.5.0.jar` can live in the same install
+  without their version-bump cycles touching each other. The
+  upstream-fork shepard core stays small.
+- **Operator clarity on what's installed.** `ls backend/plugins/`
+  reads as inventory; the admin REST surface exposes the same
+  list via `GET /v2/admin/plugins` (future shape).
+
+### Alternatives considered
+
+- **Compose-side sidecar (option 1).** Rejected — every plugin
+  would need its own Dockerfile, ports, volumes, env vars. Doubles
+  the install surface area per plugin. Doesn't match the
+  in-process SPI model.
+- **Forked Dockerfile per install (option 3).** Rejected — losing
+  "install/uninstall without rebuild" is the structural cost that
+  the plugin-first rule was built to avoid. An operator pulling
+  one new plugin should not have to re-bake their image.
+- **Single-classloader (no isolation).** Tempting because Quarkus's
+  CDI scanning prefers a single classloader; child-classloader
+  loading adds complexity. Rejected because two plugins with
+  conflicting transitive deps would otherwise fail to coexist;
+  the isolation cost is real.
+
+### Reversibility
+
+Moderate. Reversing to "everything in-tree" requires extracting
+each shipped plugin's logic back into `backend/` and removing the
+`backend/plugins/` discovery hook. Reversing to "compose-side
+sidecars" requires per-plugin Dockerfiles + IPC wiring (HTTP /
+gRPC) — much bigger lift. The decision is intended to be durable;
+the first plugin (UH1a) is the precedent and the SPI surfaces
+in `aidocs/47 §2.5` are designed for this distribution mode.
+
+### Forward work flagged by this decision
+
+- **`PluginManifest` SPI surface** — the `META-INF/services/` shape
+  needs the actual `PluginManifest` interface defined in core.
+  Lands alongside / immediately after UH1a's first plugin module.
+- **`ServiceLoader`-based bootstrap hook** — runs from
+  `ShepardMain.init` after `MigrationsRunner.apply()`, before the
+  REST endpoints come up. Pre-existing `aidocs/47 §2.5` design.
+- **`backend/plugins/` directory in the Dockerfile** — must exist
+  as a mount-point that an operator can populate. The
+  `infrastructure-local/docker-compose.yml` mounts it as a named
+  volume so a `docker cp` is the install action.
+- **Admin REST + CLI parity** — `GET /v2/admin/plugins`,
+  `PATCH /v2/admin/plugins/<id>` (per `aidocs/47 §2.5`), with
+  `shepard-admin plugins {list,enable <id>,disable <id>}`.
+- **Documentation** — operator runbook on `docs/reference/plugins.md`
+  covering install / uninstall / enable / disable; per-plugin
+  pages at `docs/reference/plugins/<plugin-id>.md` per
+  `aidocs/49 §2.2`.
+
+UH1a is exempt from the full ServiceLoader hookup as long as the
+PluginManifest SPI hasn't landed — UH1a ships as the module under
+`plugins/unhide/`, bundled into the uber-jar today, but designed
+so its conversion to a drop-in JAR is a packaging change only
+(no code reshuffle).
 
 ## How to add a new entry
 
