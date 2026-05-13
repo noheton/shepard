@@ -98,6 +98,45 @@ class PublicEndpointRegistryTest {
     assertFalse(isPublic("shepard/api/v2/aas/.well-known/aas-server/subpath"));
   }
 
+  // KIP1b — /v2/.well-known/kip/{pid-suffix} is a prefix-matched public
+  // endpoint (the suffix is the runtime-minted PID).
+
+  @Test
+  void kipResolverBarePrefixIsPublic() {
+    // The prefix itself (no PID suffix) is also public — JAX-RS would
+    // return 404 anyway, but the auth filter should not reject it.
+    assertTrue(isPublic("shepard/api/v2/.well-known/kip"));
+    assertTrue(isPublic("shepard/api/v2/.well-known/kip/"));
+  }
+
+  @Test
+  void kipResolverWithPidSuffixIsPublic() {
+    // Mock-shaped PIDs carry colons; Handle/DOI shapes carry slashes —
+    // both must pass through the filter without auth.
+    assertTrue(isPublic("shepard/api/v2/.well-known/kip/mock:shepard:data-objects:01HF:1747000000000"));
+    assertTrue(isPublic("shepard/api/v2/.well-known/kip/21.T11148/abc-def"));
+  }
+
+  @Test
+  void kipResolverPrefixFootGunGuarded() {
+    // /v2/.well-known/kip-foo must NOT match the /v2/.well-known/kip prefix.
+    assertFalse(isPublic("shepard/api/v2/.well-known/kip-foo"));
+    assertFalse(isPublic("shepard/api/v2/.well-known/kip-evil/abc"));
+  }
+
+  @Test
+  void matchesPrefixHelperExactAndChildOnly() {
+    // Exact equality matches.
+    assertTrue(PublicEndpointRegistry.matchesPrefix("/v2/.well-known/kip", "/v2/.well-known/kip"));
+    // Child path matches.
+    assertTrue(PublicEndpointRegistry.matchesPrefix("/v2/.well-known/kip/abc", "/v2/.well-known/kip"));
+    // Non-/ continuation does not match.
+    assertFalse(PublicEndpointRegistry.matchesPrefix("/v2/.well-known/kip-foo", "/v2/.well-known/kip"));
+    // Nulls return false (defensive).
+    assertFalse(PublicEndpointRegistry.matchesPrefix(null, "/v2/.well-known/kip"));
+    assertFalse(PublicEndpointRegistry.matchesPrefix("/v2/.well-known/kip", null));
+  }
+
   // helper
 
   private static boolean isPublic(String path) {
