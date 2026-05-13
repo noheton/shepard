@@ -65,6 +65,95 @@ into `n10s` when the hash differs from the bundled stub. The
 backend endpoint behind it is `POST /v2/admin/semantic/refresh-ontologies`
 (instance-admin gated).
 
+## Admin-configurable preseed (N1c2)
+
+Two bundles are **required** — `prov-o` (PROV-O audit-trail interop)
+and `obo-relations` (cross-cutting Relation-Ontology relations PROV-
+extending ontologies cite). Required bundles are always seeded;
+attempts to disable them at runtime return `409` with RFC 7807
+`semantic.bundle.required`.
+
+Every other bundle is **operator-controllable at runtime**, and an
+operator can add their own TTL ontology without rebuilding shepard:
+
+- **`GET /v2/admin/semantic/ontologies`** — list every bundle
+  (built-in + operator-uploaded) with `{id, source, required,
+  enabled, iriPrefix, canonicalUrl, license, sha256, byteSize}`.
+- **`POST /v2/admin/semantic/ontologies/{id}/enable`** — flip a
+  bundle on (removes from runtime `disabledBundles` set).
+- **`POST /v2/admin/semantic/ontologies/{id}/disable`** — flip a
+  bundle off. `409 semantic.bundle.required` for `prov-o` /
+  `obo-relations`.
+- **`POST /v2/admin/semantic/ontologies`** (multipart) — upload a
+  custom `.ttl`. Multipart parts: `file=<bytes>` + `metadata=<JSON
+  with id, iriPrefix, license, optionally name and canonicalUrl>`.
+  Server SHA-256s the bytes, refuses duplicates, refuses >10 MB,
+  refuses non-Turtle, persists a `:UserOntologyBundle` row, writes
+  the bytes to `<shepard.semantic.internal.user-bundles-dir>/<id>.ttl`,
+  and the bundle joins the seed loop on the next restart. For an
+  immediate import, run `shepard-admin semantic refresh-ontologies
+  --bundles=<id>`.
+- **`DELETE /v2/admin/semantic/ontologies/{id}`** — remove an
+  operator-uploaded bundle. `409 semantic.bundle.builtin-not-removable`
+  for built-ins (those ship in the JAR and update via release
+  upgrades).
+
+All five endpoints are `@RolesAllowed("instance-admin")` on the
+`/v2/` development surface. The CLI parity is documented under
+[admin CLI reference — `semantic ontologies` subgroup](/reference/admin-cli/#shepard-admin-semantic-ontologies).
+
+### Precedence rules
+
+The seed pass at startup applies these rules in order (per
+`aidocs/65 §2.6`):
+
+1. **`required: true` always seeds.** Even if the operator named
+   the bundle in `disabledBundles` or in the deploy-time
+   `skip-bundles` CSV.
+2. **Master toggle off and no required bundles** → no-op exit.
+3. **Otherwise**: a bundle is skipped if its id appears in the
+   runtime `:SemanticConfig.disabledBundles` set OR in the
+   deploy-time `shepard.semantic.internal.preseed-ontologies.skip-bundles`
+   CSV.
+
+The deploy-time keys
+(`shepard.semantic.internal.preseed-ontologies.{enabled,skip-bundles}`)
+keep working — they're the **install defaults** that seed the
+`:SemanticConfig` singleton on first start. Runtime mutations via
+the admin REST / CLI win forever after (per CLAUDE.md "Always:
+surface operator knobs"). The new deploy-time-only key
+`shepard.semantic.internal.user-bundles-dir` (default
+`/var/lib/shepard/ontologies/`) is the filesystem directory the
+upload endpoint writes TTLs to; mount it persistently in container
+deployments.
+
+### Custom-bundle example
+
+```bash
+# Upload a lab-specific TTL extension of metadata4ing
+shepard-admin semantic ontologies upload \
+  --file=lab-vocab.ttl \
+  --id=acme-lab-vocab \
+  --iri-prefix=https://acme.example.org/vocab/ \
+  --license="CC BY 4.0"
+
+# Confirm it joined the catalogue
+shepard-admin semantic ontologies list
+
+# Re-import canonical-URL-pinned bundles AND your new upload
+shepard-admin semantic refresh-ontologies --bundles=acme-lab-vocab
+
+# Disable a built-in you don't need
+shepard-admin semantic ontologies disable qudt
+```
+
+Attempting to disable a required bundle:
+
+```bash
+$ shepard-admin semantic ontologies disable prov-o
+error: 409 ... — Bundle 'prov-o' is required and cannot be disabled.
+```
+
 ## `INTERNAL` — neosemantics inside shepard's Neo4j
 
 The `INTERNAL` type is backed by the

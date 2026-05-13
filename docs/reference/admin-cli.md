@@ -246,6 +246,105 @@ exposure. Refresh is a controlled-cadence action; canonical
 ontology hosts are often rate-limited and re-importing under
 routine clicks would be hostile.
 
+### `shepard-admin semantic ontologies` (N1c2)
+
+The N1c2 sub-group surfaces the runtime bundle-management knobs
+described under
+[semantic repositories — admin-configurable preseed](/reference/semantic-repositories/#admin-configurable-preseed-n1c2).
+Every subcommand is `instance-admin`-gated and supports the shared
+`--output={human,json}` / `--url` / `--api-key` / `--verbose`
+flags.
+
+#### `shepard-admin semantic ontologies list`
+
+Calls `GET /v2/admin/semantic/ontologies` and renders a table of
+every pre-seeded + operator-uploaded bundle. Built-ins first
+(manifest order), then user uploads (id ASC).
+
+```text
+$ shepard-admin semantic ontologies list
+ID             SOURCE   ENABLED  REQ   LICENSE                 IRI PREFIX
+-------------  -------  -------  ----  ----------------------  ---------------------------------
+prov-o         builtin  true     yes   W3C Document License    http://www.w3.org/ns/prov#
+dublin-core    builtin  true     -     CC BY 4.0               http://purl.org/dc/terms/
+qudt           builtin  false    -     CC BY 4.0               http://qudt.org/vocab/unit/
+obo-relations  builtin  true     yes   CC0 1.0                 http://purl.obolibrary.org/obo/RO_
+acme-lab       user     true     -     CC BY 4.0               https://acme.example.org/vocab/
+```
+
+`ENABLED` reflects the **effective** state (required wins over any
+disable list). `REQ=yes` rows can't be runtime-disabled.
+
+#### `shepard-admin semantic ontologies enable <id>`
+
+Flips a previously-disabled bundle back on:
+
+```text
+$ shepard-admin semantic ontologies enable qudt
+Bundle 'qudt' is now enabled=true (source=builtin).
+```
+
+No-op if the id is not currently disabled. The bundle (re-)joins
+the seed loop on the next restart.
+
+#### `shepard-admin semantic ontologies disable <id>`
+
+Flips a bundle off:
+
+```text
+$ shepard-admin semantic ontologies disable qudt
+Bundle 'qudt' is now enabled=false (source=builtin).
+```
+
+Required bundles refuse the operation with a `409`:
+
+```text
+$ shepard-admin semantic ontologies disable prov-o
+error: Unexpected HTTP 409 from http://localhost:8080/v2/admin/semantic/ontologies/prov-o/disable: …
+$ echo $?
+1
+```
+
+#### `shepard-admin semantic ontologies upload`
+
+Multipart upload of a custom Turtle file:
+
+```text
+$ shepard-admin semantic ontologies upload \
+    --file=lab-vocab.ttl \
+    --id=acme-lab \
+    --name="ACME Lab vocab" \
+    --iri-prefix=https://acme.example.org/vocab/ \
+    --canonical-url=https://acme.example.org/vocab/v1.ttl \
+    --license="CC BY 4.0"
+Uploaded bundle 'acme-lab' (source=user, 12345 bytes, sha256=ab12cd…). It will join the seed loop on the next restart; or run `shepard-admin semantic refresh-ontologies --bundles=acme-lab` for an immediate import.
+```
+
+Required fields: `--file`, `--id`, `--iri-prefix`, `--license`.
+Optional: `--name` (defaults to `id`), `--canonical-url` (omitted
+for local-only bundles that never get refreshed).
+
+Validation refusals:
+
+| Stderr | Cause |
+|---|---|
+| `409 ...` | Id collides with a built-in or another user bundle (`semantic.bundle.duplicate-id`). |
+| `400 ...` | Payload > 10 MB (`semantic.bundle.too-large`), does not look like Turtle (`semantic.bundle.invalid-ttl`), or is missing required metadata (`semantic.bundle.bad-metadata`). |
+| `error: Could not read /path/to/file.ttl: …` | Local-file IO failure (no shepard call made). |
+
+#### `shepard-admin semantic ontologies remove <id>`
+
+Drops an operator-uploaded bundle (catalogue row + on-disk
+file):
+
+```text
+$ shepard-admin semantic ontologies remove acme-lab
+Bundle 'acme-lab' removed.
+```
+
+Built-in bundles refuse removal with a `409 semantic.bundle.builtin-not-removable`
+— they ship in the JAR and update via release upgrades.
+
 ## Exit codes
 
 | Code | Meaning |
