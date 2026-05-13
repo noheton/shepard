@@ -198,20 +198,28 @@ These work the same way across every primitive:
   by KIP convention — a forced re-mint via `?force=true` attaches
   a fresh row; the most recent is "current."
 - **Publish to the Helmholtz Knowledge Graph (Unhide)** (`aidocs/67`,
-  UH1a shipped). A first-class shepard plugin
+  UH1a + UH1b + UH1c shipped). A first-class shepard plugin
   (`shepard-plugin-unhide`) exposes
   `GET /v2/unhide/feed.jsonld` — a schema.org + metadata4ing
   JSON-LD feed the HKG / Unhide harvester pulls daily. Every
   Collection on the instance becomes a `schema:Dataset` +
   `m4i:Dataset` entry with creator (firstName/lastName/displayName
-  + ORCID `@id`), dates, and a back-link to shepard. Admin-
-  configurable at runtime — flip the master toggle, the
-  feed-public flag, or rotate the harvest API key via
-  `shepard-admin unhide ...` without restarting. Default off so
-  a fresh install never accidentally publishes; an operator opts
-  in once their `contactEmail` and harvest key are in place.
-  Refinements (m4i provenance fragments, KIP citation, per-
-  Collection toggle UI) queued as UH1b–UH1e.
+  + ORCID `@id`), dates, and a back-link to shepard. Each entry
+  also carries **machine-readable provenance** (UH1b) — a
+  `m4i:hasProcessingStep` array inlining the most-recent
+  metadata4ing `ProcessingStep` nodes targeting the Collection,
+  rendered via the same PROV1h pipeline that powers
+  `/v2/provenance/*` — and a **KIP citation** (UH1c) when the
+  Collection has been published via KIP1a, surfacing the PID
+  under `schema:identifier` + a public resolver URL under
+  `schema:url` so a harvester can chain straight into the
+  `.well-known/kip` record. Admin-configurable at runtime — flip
+  the master toggle, the feed-public flag, or rotate the harvest
+  API key via `shepard-admin unhide ...` without restarting.
+  Default off so a fresh install never accidentally publishes;
+  an operator opts in once their `contactEmail` and harvest key
+  are in place. Refinements (per-Collection toggle UI, SHACL
+  diagnostic) queued as UH1d–UH1e.
 
 ## How you actually use it
 

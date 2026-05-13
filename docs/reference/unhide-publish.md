@@ -32,10 +32,158 @@ extension of W3C PROV-O). Each entry carries:
 | `dateCreated` | Collection `createdAt` |
 | `dateModified` | Collection `updatedAt` |
 | `creator` | `schema:Person` built from User's `displayName` / `firstName lastName` / `username`; `@id` = `https://orcid.org/<ORCID>` when an ORCID is on file |
-| `m4i:isAbout` | Placeholder `[]` in Phase 1; populated by UH1b once the PROV1h m4i render endpoint ships |
+| `m4i:hasProcessingStep` *(UH1b)* | Array of the most-recent N `m4i:ProcessingStep` nodes targeting this Collection (default N=5; see [Provenance fragments](#provenance-fragments-uh1b)). Absent when the Collection has no activities. |
+| `schema:identifier` *(UH1c)* | `schema.org` `PropertyValue` carrying the KIP1a PID under `propertyID="pid"`. Absent when the Collection has not been published via `POST /v2/{kind}/{appId}/publish`. |
+| `schema:url` *(UH1c)* | Public resolver URL `https://<your-shepard>/v2/.well-known/kip/<pid-suffix>` for the KIP record. Absent in the same cases as `schema:identifier`. |
+| `m4i:hasIdentifier` *(UH1c)* | The same PID as `schema:identifier.value`, m4i-flavoured for NFDI4Ing consumers that prefer the m4i namespace. |
 
 `license` is currently omitted (the data model doesn't carry a
 per-Collection licence yet; UH1d wires it through `:CollectionProperties`).
+
+## Provenance fragments (UH1b)
+
+Each feed entry inlines a `m4i:hasProcessingStep` array of the
+most-recent N `:Activity` rows that targeted the Collection,
+rendered as self-contained metadata4ing `ProcessingStep` nodes by
+the same PROV1h pipeline that powers
+[`/v2/provenance/*`](provenance.md). The fragments use the feed's
+top-level `@context` for namespace expansion — no per-node
+`@context` is needed.
+
+Each step carries:
+
+- `@id` — `shepard:activity/<activityAppId>` (or
+  `shepard:activity/anon` when the activity has no appId).
+- `@type` — `["m4i:ProcessingStep", "prov:Activity"]` (dual-typed
+  so PROV-O-only readers still parse).
+- `prov:startedAtTime` / `prov:endedAtTime` — typed
+  `xsd:dateTime`.
+- `prov:type` — `shepard:<ACTION_KIND>` (e.g. `shepard:CREATE`,
+  `shepard:UPDATE`, `shepard:READ`).
+- `m4i:hasMethod` — `shepard:method/<ACTION_KIND>` (mirrors the
+  PROV-O type as a m4i Method reference).
+- `prov:wasAssociatedWith` — `{"@id": "shepard:agent/<username>"}`
+  (agent reference by id only; dereferenceable via PROV1h's
+  `/v2/provenance/*` endpoints).
+- `prov:used` + `m4i:hasInput` — entity reference when the
+  activity is a read (only present on READ-flavoured actions).
+- `prov:generated` + `m4i:hasOutput` — entity reference when the
+  activity is a write (CREATE / UPDATE / DELETE / EXECUTE).
+- `shepard:summary` — the operator-facing one-liner from
+  `:Activity.summary`.
+- `shepard:originInstance` — useful when a future federation slice
+  surfaces activities harvested from sibling shepard instances.
+
+The window size is the deploy-time-only
+`shepard.unhide.feed.provenance-window` config key (default `5`,
+hard cap `100`; a buffer-sizing CLAUDE.md exception — no
+operator demand for per-window runtime tuning). Collections
+without activities **omit the field entirely** (absent-key, not
+`[]`, not `null` — JSON-LD's open-world semantics for
+"unavailable").
+
+A Cypher-level failure on the activity read is **fail-soft**:
+the field is omitted (a single Collection's provenance hiccup
+never fails the whole feed page) and a WARN line is logged.
+
+## KIP citation (UH1c)
+
+When a Collection has been published via KIP1a
+(`POST /v2/collections/<appId>/publish`), the feed entry carries
+three citation fields:
+
+```json
+{
+  "schema:identifier": {
+    "@type": "PropertyValue",
+    "propertyID": "pid",
+    "value": "mock:shepard:collection:01HF…:1747112400000"
+  },
+  "schema:url": "https://shepard.example.dlr.de/v2/.well-known/kip/mock:shepard:collection:01HF%E2%80%A6:1747112400000",
+  "m4i:hasIdentifier": "mock:shepard:collection:01HF…:1747112400000"
+}
+```
+
+- `schema:identifier` is a schema.org
+  [`PropertyValue`](https://schema.org/PropertyValue) carrying the
+  PID under `propertyID="pid"`. This is the schema.org-native shape
+  Unhide's harvester maps onto its `identifier` graph.
+- `schema:url` is the unauthenticated KIP1a resolver URL —
+  harvesters can dereference it to get the public
+  [HMC KIP record](https://docs.hmc.helmholtz.de/kernel-information-profile/).
+- `m4i:hasIdentifier` is the same PID, m4i-flavoured for
+  NFDI4Ing consumers that prefer the m4i namespace.
+
+Collections without a `:Publication` row omit **all three fields
+entirely** (schema.org's "no identifier" semantics). When a
+Collection has been re-published via `?force=true`, the entry
+cites the row with the most recent `mintedAt`. The plugin reuses
+KIP1a's `PublicationDAO`; it never reads `:Publication` nodes
+directly.
+
+DAO failures on the publication lookup are **fail-soft** in the
+same shape as the UH1b provenance fetch — log + omit fields,
+never fail the page.
+
+## Example feed entry with both extensions
+
+A Collection that has both a recent CREATE activity (UH1b) and a
+mock-minter publication (UH1c) produces an entry shaped like:
+
+```json
+{
+  "@id": "https://shepard.example.dlr.de/v2/collections/01HF…",
+  "@type": ["schema:Dataset", "m4i:Dataset"],
+  "name": "Cyclic-fatigue test campaign 2026-Q1",
+  "description": "…",
+  "dateCreated": "2026-01-15T10:23:00Z",
+  "dateModified": "2026-02-01T12:00:00Z",
+  "creator": {
+    "@type": "schema:Person",
+    "@id": "https://orcid.org/0000-0002-1825-0097",
+    "name": "Alice Researcher"
+  },
+  "schema:identifier": {
+    "@type": "PropertyValue",
+    "propertyID": "pid",
+    "value": "mock:shepard:collection:01HF…:1747112400000"
+  },
+  "schema:url": "https://shepard.example.dlr.de/v2/.well-known/kip/mock:shepard:collection:01HF…:1747112400000",
+  "m4i:hasIdentifier": "mock:shepard:collection:01HF…:1747112400000",
+  "m4i:hasProcessingStep": [
+    {
+      "@id": "shepard:activity/01HFACT…",
+      "@type": ["m4i:ProcessingStep", "prov:Activity"],
+      "prov:startedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-15T10:23:00Z"
+      },
+      "prov:endedAtTime": {
+        "@type": "xsd:dateTime",
+        "@value": "2026-01-15T10:23:00.500Z"
+      },
+      "prov:type": "shepard:CREATE",
+      "m4i:hasMethod": "shepard:method/CREATE",
+      "shepard:summary": "Created Collection 'Cyclic-fatigue test campaign 2026-Q1'",
+      "shepard:originInstance": "local",
+      "prov:wasAssociatedWith": {
+        "@id": "shepard:agent/alice"
+      },
+      "prov:generated": {
+        "@id": "shepard:entity/01HF…"
+      },
+      "m4i:hasOutput": {
+        "@id": "shepard:entity/01HF…"
+      }
+    }
+  ]
+}
+```
+
+The `@context` declared at the top of the feed (see
+[Response shape](#response-shape) below) brings the `m4i:` /
+`prov:` / `xsd:` / `schema:` / `shepard:` prefixes into scope, so
+the inner ProcessingStep nodes don't need their own `@context`.
 
 ## Endpoints
 
@@ -202,7 +350,7 @@ shepard-admin unhide rotate-harvest-key \
 
 ## Configuration
 
-Four install-time defaults in `application.properties`. The first
+Five install-time defaults in `application.properties`. The first
 three seed `:UnhideConfig` on first start; once an operator
 PATCHes the runtime config the deploy-time value becomes a fallback
 only used on a fresh DB.
@@ -213,6 +361,7 @@ only used on a fresh DB.
 | `shepard.unhide.feed.public` | `false` | Seeds the feed-visibility flag | Yes |
 | `shepard.unhide.contact-email` | (empty) | Seeds the contact email | Yes |
 | `shepard.unhide.feed.page-size` | `100` | Cursor page size, capped at `1000` | **No** — deploy-time only (buffer-sizing exception) |
+| `shepard.unhide.feed.provenance-window` | `5` | UH1b window — number of most-recent `m4i:hasProcessingStep` entries per Collection. Capped at `100`. | **No** — deploy-time only (buffer-sizing exception) |
 
 ## Auth model
 
@@ -233,8 +382,8 @@ surface, not a deploy-time-only config. Three states:
 > this — the harvest key is the sole non-public auth path. The
 > admin inspection flow is "mint a key, curl with it", which
 > matches how `shepard-admin unhide rotate-harvest-key` works. The
-> instance-admin fallback can graft on in UH1b if operator feedback
-> wants it.
+> instance-admin fallback can graft on in a follow-up slice if
+> operator feedback wants it.
 
 ## Registering with Unhide
 
