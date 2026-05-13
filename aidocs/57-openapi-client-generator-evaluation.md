@@ -200,7 +200,13 @@ which scales poorly as the surface grows (shepard already has
 
 ## 4. Recommendation
 
-### 4.1 Primary: Microsoft Kiota for `/v2/` clients
+**Dual-generator baseline locked 2026-05-13** (per ADR-0022 / §8):
+ship Kiota for `/v2/` and OpenAPI Generator for `/shepard/api/`,
+both indefinitely supported. The "primary / secondary" framing
+below is shorthand for "new-baseline / still-maintained-legacy" —
+neither generator is on a deprecation path.
+
+### 4.1 Primary (new baseline): Microsoft Kiota for `/v2/` clients
 
 Pick **Kiota** as the **primary** generator for the `/v2/` client
 shelf. Reasoning, against the §2 criteria:
@@ -238,10 +244,11 @@ shelf. Reasoning, against the §2 criteria:
   directly without going through the generated client — same
   shape as today.
 
-### 4.2 Secondary: OpenAPI Generator for `/shepard/api/...` continuity
+### 4.2 Secondary (still-maintained legacy): OpenAPI Generator for `/shepard/api/...` continuity
 
 Keep **OpenAPI Generator** for the upstream-compat `/shepard/api/...`
-clients. Reasoning:
+clients **as a still-maintained, never-deprecated legacy option**
+(per ADR-0022 / §8). Reasoning:
 
 - **Zero-impact for upstream consumers** (`CLAUDE.md` API-version
   policy). Anyone built against `dlr-shepard-clients/*` keeps
@@ -401,11 +408,7 @@ trust-but-verify regression; CG1d closes the docs gap.
 
 The three forks-in-the-road:
 
-1. **Kiota vs OpenAPI Generator for `/v2/` (the headline).** This
-   design recommends Kiota. The honest alternative is "stay on
-   OpenAPI Generator for `/v2/` too, accept the per-template
-   quirks, get one-tool simplicity across both shelves." Pick a
-   side before CG1a.
+1. **Kiota vs OpenAPI Generator for `/v2/` (the headline).** **Resolved — 2026-05-13: ship both indefinitely.** Kiota is the **new baseline** for `/v2/` client generation (per-shelf v2 OpenAPI doc → Kiota → `clients-v2/`); OpenAPI Generator stays the **still-maintained legacy option** for the byte-frozen `/shepard/api/` surface (per-shelf v1 OpenAPI doc → OpenAPI Generator → `clients/`). Neither is on a deprecation path; the maintainer's intent is that an operator can keep using either client generation today and pick the one that fits their tooling. Decision recorded in **ADR-0022** (`aidocs/63`). Implementation lands in **CG1a** (Kiota baseline) + **CG1b** (OpenAPI Generator legacy maintenance).
 2. **Java + Python + TypeScript only — or stretch to Rust / Go for
    the engineering-physics community?** Kiota covers Go natively;
    it does **not** cover Rust (no template). If Rust matters,
