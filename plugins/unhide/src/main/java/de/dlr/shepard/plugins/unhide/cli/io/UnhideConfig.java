@@ -1,4 +1,4 @@
-package de.dlr.shepard.cli.io;
+package de.dlr.shepard.plugins.unhide.cli.io;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
@@ -12,6 +12,11 @@ import java.util.Date;
  * {@code Map<String, Object>} bodies (the absent / null distinction
  * is hard to model on a Jackson POJO without {@code @JsonSetter}
  * tracking we don't need on the CLI side).
+ *
+ * <p>PM1d — relocated from {@code de.dlr.shepard.cli.io} alongside
+ * the rest of the {@code unhide} CLI subcommand group, which moved
+ * from the in-tree {@code cli/} module to {@code plugins/unhide/}
+ * once the {@code AdminCliCommandProvider} SPI shipped.
  */
 public final class UnhideConfig {
 

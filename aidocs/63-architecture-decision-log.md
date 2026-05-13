@@ -1268,6 +1268,18 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   `docs/reference/plugins/<plugin-id>.md` per `aidocs/49 §2.2`
   remain a queued follow-up — the UH1a-specific runbook lives at
   `docs/reference/unhide-publish.md` already).*
+- ✅ **CLI extensibility SPI** — plugin JARs ship their own
+  `shepard-admin` Picocli subcommands via
+  `de.dlr.shepard.cli.plugin.AdminCliCommandProvider` +
+  `META-INF/services/`, discovered at startup by
+  `CliPluginBootstrap`'s ServiceLoader scan of the same plugin
+  directory the backend uses. *Done in PM1d (this commit). The
+  `unhide` subcommand moved from the in-tree `cli/` module into
+  `plugins/unhide/` as the proof-of-shape; end-user UX
+  byte-identical (`shepard-admin unhide …` works exactly as
+  before). CLI's `with-plugins` Maven profile copies every
+  `de.dlr.shepard.plugins:*` `provided` dep into `target/plugins/`
+  at packaging time, mirroring backend's profile shape.*
 - **ADR-0024** — plugin-distribution sibling decision: object-store
   reference for `infrastructure-local/` (Garage replaces MinIO).
   Same shape of "pick a reference whose OSS posture matches

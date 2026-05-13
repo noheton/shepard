@@ -54,15 +54,20 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # PM1a phase 3 (ADR-0023): two-pass plugin/backend build —
-      # the backend declares `shepard-plugin-*` modules as
-      # <dependency>s in the `with-plugins` profile, and the
-      # plugins' `provided` backend dep forces a sequenced install.
-      # See backend-ci.yml + `docs/reference/plugins.md` for the
-      # same sequence at developer-loop level. KIP1g adds the
-      # `shepard-plugin-kip` module alongside UH1a.
+      # PM1a phase 3 (ADR-0023) + PM1d + KIP1g: three-pass build —
+      # backend stub-install so plugins' `provided` backend deps
+      # resolve, CLI install so plugins' `AdminCliCommandProvider`-side
+      # `provided` dep + test-jar classifier resolve, then plugin
+      # installs so the backend's full build picks them up via the
+      # default-active `with-plugins` profile. See backend-ci.yml +
+      # `docs/reference/plugins.md` for the same sequence at
+      # developer-loop level. KIP1g adds the `shepard-plugin-kip`
+      # module alongside UH1a.
       - name: Stub-install backend (so plugin `provided` deps resolve)
         run: cd backend && mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI (so the plugin's CLI-side provided + test-jar deps resolve)
+        run: cd cli && mvn -B -DnoPlugins -DskipTests install
 
       - name: Install unhide plugin module
         run: cd plugins/unhide && mvn -B -DskipTests install
@@ -72,6 +77,9 @@ jobs:
 
       - name: Build Quarkus app (skip tests — backend-ci.yml is the gate)
         run: cd backend && mvn -B -DskipTests package
+
+      - name: Build CLI uber-jar (shaded `shepard-admin.jar` + `target/plugins/`)
+        run: cd cli && mvn -B -DskipTests package
 
       # PM1a phase 3: stage the in-tree plugin JARs at
       # `backend/plugins-stage/` so the Dockerfile's COPY into

@@ -87,6 +87,7 @@
     <junit.version>5.10.5</junit.version>
     <mockito.version>5.22.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
+    <picocli.version>4.7.6</picocli.version>
   </properties>
 
   <dependencyManagement>
@@ -193,6 +194,41 @@
       <scope>provided</scope>
     </dependency>
 
+    <!--
+      PM1d — CLI side: the plugin contributes a Picocli subcommand
+      group (`shepard-admin unhide …`) to the `shepard-admin` CLI
+      via the `AdminCliCommandProvider` SPI shipped in
+      `de.dlr.shepard.cli.plugin`. The CLI itself is `provided` so
+      its classes are not bundled into the plugin JAR — the
+      drop-in JAR shape from ADR-0023 expects the CLI's own
+      `shepard-admin.jar` to carry them. Picocli too is `provided`
+      since the shaded CLI JAR already bundles it.
+
+      Same `provided`-with-self-exclusion shape as the backend
+      dependency below — when the CLI's `with-plugins` profile is
+      active it `<dependency>`-pulls this plugin back onto its
+      classpath, so we exclude that self-reference here to keep
+      the build acyclic.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- ====== test scope ====== -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -211,6 +247,26 @@
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
       <scope>test</scope>
+    </dependency>
+    <!--
+      PM1d — pull the CLI's test fixtures (`StubBackend`,
+      `CliRunner`) so the relocated `UnhideCommandsTest` can hit a
+      localhost stub backend without re-implementing the harness.
+      The CLI publishes a `tests` classifier JAR via the
+      maven-jar-plugin `test-jar` execution.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!--
       The existing `plugins/unhide/src/test/java/**` tests
