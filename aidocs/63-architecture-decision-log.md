@@ -49,6 +49,7 @@ re-deriving the trade-offs from scratch.
 | ADR-0019 | accepted | 2026-05-12 | Pre-seed common ontologies default-on for casual users on day one | easy |
 | ADR-0020 | accepted | 2026-05-12 | shepard is source of truth for HDF container ACLs (HSDS-side mutations clobbered) | moderate |
 | ADR-0021 | accepted | 2026-05-12 | GitLab-only adapter in G1b; GitHub + Gitea ship in G1d via the GitAdapter interface seam | easy |
+| ADR-0022 | accepted | 2026-05-13 | OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy (both indefinitely) | moderate |
 
 ---
 
@@ -1041,3 +1042,79 @@ is a refactor with no wire-format implication.
 If a decision is **overturned**, add a new ADR that supersedes the
 old one. Set the old entry's status to `superseded by ADR-NNNN` —
 don't edit the body of the old entry.
+
+
+## ADR-0022 — OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy
+
+**Status.** accepted. **Date.** 2026-05-13.
+**Applied in.** `aidocs/57 §4` + §8 question 1; CG1a (Kiota baseline)
+and CG1b (OpenAPI Generator legacy maintenance).
+
+### Context
+
+`aidocs/57` evaluated client generators and left **§8 question 1**
+open: "Kiota vs OpenAPI Generator for `/v2/` — pick a side before
+CG1a." The two-shelf API split (`/shepard/api/` frozen-upstream,
+`/v2/` fork-development) makes this less binary than it sounds —
+the two surfaces can in principle use different generators.
+
+P4c shipped the per-shelf OpenAPI split (`/shepard/doc/openapi/v1.json`
+and `/shepard/doc/openapi/v2.json`) which means each generator can
+target the exact shelf it's best at without dragging the other along.
+
+### Decision
+
+**Ship both generators indefinitely.** Neither is on a deprecation
+path:
+
+- **Kiota** is the **new baseline** for `/v2/` clients. Generates
+  against `/shepard/doc/openapi/v2.json` into `clients-v2/<lang>/`.
+- **OpenAPI Generator** is the **still-maintained legacy option**
+  for `/shepard/api/...` clients. Generates against
+  `/shepard/doc/openapi/v1.json` into `clients/<lang>/` (the
+  existing path; behaviour-preserving).
+
+The maintainer's stated intent: an operator can keep using either
+client generation today and pick whichever fits their tooling. The
+secondary framing in `aidocs/57 §4` (originally "primary / secondary")
+maps to "new-baseline / legacy-still-maintained" — semantic, not
+deprecation.
+
+### Rationale
+
+- **Zero breakage for upstream-API consumers.** Anyone built against
+  `dlr-shepard-clients/*` via OpenAPI Generator keeps generating
+  the same client. `CLAUDE.md §API-version-policy` covers wire
+  shape; this extends the same posture to generator continuity.
+- **Best tool per surface.** Kiota's fluent path-builder fits
+  `/v2/`'s `appId`-keyed hierarchy beautifully (per `aidocs/57 §4.1`);
+  OpenAPI Generator's mature templates are exactly what the
+  upstream-frozen surface needs.
+- **Two paths shrink the migration story.** Operators don't have
+  to choose / migrate / re-test under a "new generator everywhere"
+  rollout. They opt in to Kiota on `/v2/` when their use case wants
+  it.
+- The per-shelf OpenAPI emission (P4c) already makes this trivial
+  to wire — each generator reads its own canonical input.
+
+### Alternatives considered
+
+- **Kiota everywhere, deprecate OpenAPI Generator.** Rejected;
+  breaks the upstream-compat promise for downstream consumers
+  generating against `dlr-shepard-clients`.
+- **OpenAPI Generator everywhere, skip Kiota.** Rejected per the
+  §4.1 analysis — Kiota's `/v2/` ergonomics + MCP-tool-name
+  surfacing (per `aidocs/56`) are a meaningful win on the
+  development shelf.
+- **Commercial generator (Speakeasy / Stainless / Fern).**
+  Rejected per `aidocs/57 §5`; no current value gap justifies
+  the licence cost or vendor coupling.
+
+### Reversibility
+
+Moderate. Reversing either half requires regenerating clients
+under the other tool and publishing a major-version bump on the
+affected package; downstream consumers would need to switch their
+generation pipeline. The decision is intended to be permanent —
+the cost of switching one side later is real but bounded to the
+clients/* tree.
