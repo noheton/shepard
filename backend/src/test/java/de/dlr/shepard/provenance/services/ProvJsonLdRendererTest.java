@@ -467,4 +467,119 @@ class ProvJsonLdRendererTest {
     Map<String, Object> typed = (Map<String, Object>) out.get("shepard:numberOfActivities");
     assertEquals("0", typed.get("@value"));
   }
+
+  // --- renderActivityAsM4iNode (UH1b — single-activity m4i body) ----------
+
+  @Test
+  void renderActivityAsM4iNode_nullInput_yieldsEmptyMap() {
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(null);
+    assertNotNull(node);
+    assertTrue(node.isEmpty(),
+      "null activity must not NPE — return empty map and let the caller decide whether to embed it");
+  }
+
+  @Test
+  void renderActivityAsM4iNode_carriesDualType() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    @SuppressWarnings("unchecked")
+    List<String> types = (List<String>) node.get("@type");
+    assertEquals(List.of("m4i:ProcessingStep", "prov:Activity"), types,
+      "single-activity m4i node carries the same dual-type as the full-graph m4i path");
+  }
+
+  @Test
+  void renderActivityAsM4iNode_carriesIdFromAppId() {
+    Activity a = make("a-42", "UPDATE", "bob", "Collection", "c-99");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertEquals("shepard:activity/a-42", node.get("@id"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_withoutAppId_carriesAnonSuffix() {
+    Activity a = new Activity();
+    a.setActionKind("CREATE");
+    a.setStartedAtMillis(1L);
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertEquals("shepard:activity/anon", node.get("@id"),
+      "no appId means there's nothing stable to cite — use a clear 'anon' sentinel");
+  }
+
+  @Test
+  void renderActivityAsM4iNode_startedAtTime_isTypedXsdDateTime() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    @SuppressWarnings("unchecked")
+    Map<String, Object> startedAt = (Map<String, Object>) node.get("prov:startedAtTime");
+    assertEquals("xsd:dateTime", startedAt.get("@type"));
+    assertTrue(startedAt.get("@value").toString().endsWith("Z"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_createMapsToHasOutput() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertNotNull(node.get("m4i:hasOutput"));
+    assertNotNull(node.get("prov:generated"));
+    assertNull(node.get("m4i:hasInput"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_readMapsToHasInput() {
+    Activity a = make("a-r", "READ", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertNotNull(node.get("m4i:hasInput"));
+    assertNotNull(node.get("prov:used"));
+    assertNull(node.get("m4i:hasOutput"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_agent_collapsesToIdStub() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    @SuppressWarnings("unchecked")
+    Map<String, Object> assoc = (Map<String, Object>) node.get("prov:wasAssociatedWith");
+    assertEquals("shepard:agent/alice", assoc.get("@id"),
+      "single-activity m4i node references the agent by @id only — no sibling agent node " +
+      "(the wrapping feed's @context covers the namespace expansion)");
+  }
+
+  @Test
+  void renderActivityAsM4iNode_hasMethod_setOnActionKind() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertEquals("shepard:method/CREATE", node.get("m4i:hasMethod"));
+    assertEquals("shepard:CREATE", node.get("prov:type"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_summaryAndOriginInstancePropagate() {
+    Activity a = make("a-1", "UPDATE", "alice", "Collection", "c-1");
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertEquals("test UPDATE", node.get("shepard:summary"));
+    assertEquals("local", node.get("shepard:originInstance"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_omitsTargetFields_whenNoTargetAppId() {
+    Activity a = new Activity();
+    a.setAppId("a-1");
+    a.setActionKind("EXECUTE");
+    a.setStartedAtMillis(1L);
+    Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
+    assertNull(node.get("m4i:hasInput"));
+    assertNull(node.get("m4i:hasOutput"));
+    assertNull(node.get("prov:used"));
+    assertNull(node.get("prov:generated"));
+  }
+
+  @Test
+  void renderActivityAsM4iNode_returnsFreshMap_onEachCall() {
+    Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
+    Map<String, Object> first = renderer.renderActivityAsM4iNode(a);
+    Map<String, Object> second = renderer.renderActivityAsM4iNode(a);
+    first.put("scratch", "value");
+    assertNull(second.get("scratch"),
+      "caller-owned maps — each call returns a fresh LinkedHashMap");
+  }
 }
