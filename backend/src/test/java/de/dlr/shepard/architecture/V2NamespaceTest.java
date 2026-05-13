@@ -41,6 +41,23 @@ import org.junit.jupiter.api.Test;
  * compile-time string {@code "shepard/api/x"}. JAX-RS prepends a {@code /}
  * at routing time, so for the purposes of this fence the prefix check is
  * shape-equivalent to {@code "shepard/api/"}.
+ *
+ * <p>Exemptions to rule 2 and rule 3:
+ *
+ * <ul>
+ *   <li><b>OpenAPI emission</b> ({@code de.dlr.shepard.common.openapi}) —
+ *       mounts at {@code /shepard/doc/...} to mirror the smallrye-openapi
+ *       extension's combined-doc path. Documentation routes sit beside
+ *       the {@code /shepard/api/...} and {@code /v2/...} shelves.
+ *   <li><b>Plugins</b> ({@code de.dlr.shepard.plugins..}) — the CLAUDE.md
+ *       "plugin-first" rule deliberately puts new payload kinds and
+ *       external integrations under {@code de.dlr.shepard.plugins.<name>}
+ *       (not under {@code de.dlr.shepard.v2..}) so each plugin owns its
+ *       package namespace. Plugins still target {@code /v2/} because the
+ *       API-version policy says all new endpoints live there; the v2
+ *       package is the core's path-prefix convention, not a plugin's.
+ *       UH1a (`shepard-plugin-unhide`) is the precedent.
+ * </ul>
  */
 class V2NamespaceTest {
 
@@ -79,6 +96,13 @@ class V2NamespaceTest {
     ArchRuleDefinition.classes()
       .that()
       .resideOutsideOfPackage(V2_PACKAGE + "..")
+      // Plugins (`de.dlr.shepard.plugins..`) are the deliberate exception:
+      // the CLAUDE.md "plugin-first" rule puts new payload kinds + external
+      // integrations under `de.dlr.shepard.plugins.<name>`, but the API-
+      // version policy still mandates `/v2/` for all new endpoints. UH1a's
+      // UnhideFeedRest + UnhideAdminRest are the precedent.
+      .and()
+      .resideOutsideOfPackage("de.dlr.shepard.plugins..")
       .and()
       .areAnnotatedWith(Path.class)
       .should(notHaveJaxRsPathStartingWith(V2_PREFIX_WITH_SLASH, V2_PREFIX_NO_SLASH))
@@ -98,6 +122,11 @@ class V2NamespaceTest {
       // Exempt from the API-prefix rule by package.
       .and()
       .resideOutsideOfPackage("de.dlr.shepard.common.openapi")
+      // Plugins use the `/v2/` shelf by policy; they don't sit under the
+      // `/shepard/api/` upstream-compat surface. Same exemption shape as
+      // the non-v2-prefix rule above.
+      .and()
+      .resideOutsideOfPackage("de.dlr.shepard.plugins..")
       .and()
       .areAnnotatedWith(Path.class)
       .should(haveJaxRsPathStartingWith(API_PREFIX_WITH_SLASH, API_PREFIX_NO_SLASH))
