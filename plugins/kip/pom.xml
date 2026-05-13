@@ -1,29 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  UH1a — first shepard-plugin-* module ever, flipped to drop-in JAR
-  shape by PM1a phase 3 (ADR-0023).
+  KIP1g — second shepard-plugin-* module, extracts the
+  Helmholtz Kernel Information Profile (KIP) resolver from
+  the backend into a drop-in JAR per the plugin-first heuristic
+  #2 ("New external integrations → plugin shape", CLAUDE.md).
 
   This module produces a real
-  `shepard-plugin-unhide-${revision}.jar` carrying:
+  `shepard-plugin-kip-${revision}.jar` carrying:
 
-    * `de.dlr.shepard.plugins.unhide.UnhidePluginManifest` —
+    * `de.dlr.shepard.plugins.kip.KipPluginManifest` —
       implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's `PluginRegistry` tracks UH1a in
+      backend's `PluginRegistry` tracks KIP1g in
       `GET /v2/admin/plugins` and exposes the per-plugin
-      `shepard.plugins.unhide.enabled` runtime toggle.
+      `shepard.plugins.kip.enabled` runtime toggle.
     * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
       pointing at the manifest class — the standard
       `ServiceLoader` SPI contract.
-    * The full UH1a code tree (services, REST resources, DAOs,
-      IO records, the `:UnhideConfig` entity) in package
-      `de.dlr.shepard.plugins.unhide.*`.
+    * `de.dlr.shepard.plugins.kip.resources.KipResolverRest` —
+      the public `GET /v2/.well-known/kip/{pid-suffix}` resolver.
+      The endpoint path is byte-identical to the pre-KIP1g
+      in-tree implementation; only the source location changed.
+    * `de.dlr.shepard.plugins.kip.io.KipRecordIO` — the HMC
+      Kernel Information Profile record JSON-LD shape
+      (`digitalObjectType`, `kernelInformationProfile`, etc. —
+      Helmholtz HMC standard).
 
-  Build order (PM1a phase 3): the backend is `<dependency>`-ing
-  this plugin in its own pom. Both modules participate in a
-  two-pass build:
+  Generic publish/Minter primitives stay in core
+  (`de.dlr.shepard.publish.*`, `de.dlr.shepard.v2.publish.io.PublicationIO`,
+  `PublishRest`): the `Minter` SPI seam every minter compiles
+  against per CLAUDE.md plugin-first heuristic #3, plus the
+  POST-publish orchestration that is independent of the KIP
+  record shape.
 
-    $ cd plugins/unhide && mvn -B install -DskipTests
-    $ cd backend && mvn -B package
+  Build order (same two-pass dance as UH1a, see ADR-0023):
+
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/unhide && mvn -DskipTests install
+    $ cd plugins/kip && mvn -DskipTests install
+    $ cd backend && mvn package
 
   The `provided` scope on the backend dep is the trick that keeps
   the build acyclic: when the plugin compiles, it resolves
@@ -31,16 +45,10 @@
   beforehand by CI or developer); when the backend compiles, it
   pulls the freshly-installed plugin JAR back onto its classpath
   so Quarkus's build-time CDI scanner picks the plugin's
-  `@ApplicationScoped` beans and `@Path` resources.
+  `@RequestScoped` beans and `@Path` resources.
 
-  Operator workflow (vendor-supplied drop-in install):
-    $ cd backend && mvn install -DskipTests
-    $ cd plugins/unhide && mvn package
-    $ cp plugins/unhide/target/shepard-plugin-unhide-*.jar \\
-         /path/to/shepard/backend/plugins/
-
-  See `docs/reference/plugins.md` for the full operator runbook
-  and `aidocs/63 ADR-0023` for the design rationale.
+  See `docs/reference/plugins.md` for the operator runbook
+  and `aidocs/63 ADR-0023` + `aidocs/66` for the design rationale.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -48,17 +56,19 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-unhide</artifactId>
+  <artifactId>shepard-plugin-kip</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — Unhide (Helmholtz KG publish)</name>
+  <name>shepard plugin — KIP (Helmholtz Kernel Information Profile)</name>
   <description>
-    Helmholtz Knowledge Graph (HKG / Unhide) publish-feed plugin.
-    Exposes `/v2/unhide/feed.jsonld` (schema.org + metadata4ing
-    JSON-LD) plus the `/v2/admin/unhide/...` admin surface for
-    runtime configuration + harvest-key minting. See
-    aidocs/67-unhide-publish-plugin.md.
+    Helmholtz Kernel Information Profile (KIP) resolver plugin.
+    Exposes `GET /v2/.well-known/kip/{pid-suffix}` returning the
+    HMC KIP record (JSON-LD-flavoured `kernelInformationProfile`
+    envelope per aidocs/66 §3.2). The generic publish endpoint
+    + Minter SPI + :Publication entity stay in core; this
+    plugin owns only the HMC-flavoured record shape + resolver.
+    See aidocs/66 + aidocs/16 KIP1g.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -104,17 +114,18 @@
   <dependencies>
     <!--
       backend as provided — the plugin needs the backend's core
-      types (User, Collection, ProblemJson, HasAppId, GenericDAO,
-      CollectionDAO, Constants, the PluginManifest SPI) at compile
-      time. `provided` means the plugin JAR does NOT bundle
-      backend.jar — at runtime the backend image already carries
-      its own classes, and the plugin's URLClassLoader parent is
-      the backend's loader (per `PluginRegistry`).
+      types (PublishableKindRegistry, PublicationDAO, Publication,
+      PublishableKind, the PluginManifest SPI) at compile time.
+      `provided` means the plugin JAR does NOT bundle backend.jar
+      — at runtime the backend image already carries its own
+      classes, and the plugin's URLClassLoader parent is the
+      backend's loader (per `PluginRegistry`).
 
-      The build order documented in the module-level comment above
-      keeps this acyclic: backend installs first, plugin resolves
-      against the installed backend, then backend rebuilds with
-      the freshly-installed plugin on its classpath.
+      The same self-reference exclusion UH1a uses applies: the
+      backend's `with-plugins` profile pulls this plugin onto its
+      classpath, so without the exclusion Maven would try to
+      resolve the still-uninstalled artefact transitively when the
+      plugin itself compiles.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -122,17 +133,6 @@
       <version>${revision}</version>
       <scope>provided</scope>
       <exclusions>
-        <!--
-          Defence against the build-time circular reference: the
-          backend's pom carries a default-active `with-plugins`
-          profile that pulls every `de.dlr.shepard.plugins:*` JAR
-          back onto its dependency list. When this plugin module
-          compiles against `backend`, Maven would otherwise resolve
-          those transitive references and fail with "Could not find
-          artifact ... shepard-plugin-*". The exclusions keep the
-          plugin's compile classpath self-consistent. Add a new
-          line per shipped plugin (KIP1g added shepard-plugin-kip).
-        -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-unhide</artifactId>
@@ -165,31 +165,7 @@
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-validator</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!--
-      Neo4j-OGM — UnhideConfig is a @NodeEntity, the DAO uses
-      neo4j-ogm core types. Same provided-by-backend pattern.
-    -->
-    <dependency>
-      <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-ogm-core</artifactId>
-      <version>5.0.3</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Lombok — same as backend for the IO records / entity. -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.44</version>
       <scope>provided</scope>
     </dependency>
 
@@ -212,18 +188,10 @@
       <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
-    <!--
-      The existing `plugins/unhide/src/test/java/**` tests
-      reference backend mock classes (User, Collection, etc.) and
-      DAO mocks. They need backend on the test classpath. The
-      `provided` declaration above flows in to `test`, so the
-      tests resolve fine — Maven's "provided scope is also visible
-      to test" rule does the work.
-    -->
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-unhide-${revision}</finalName>
+    <finalName>shepard-plugin-kip-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

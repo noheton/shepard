@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.publish.io;
+package de.dlr.shepard.plugins.kip.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,6 +19,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * envelope per the HMC spec: top-level {@code @context} +
  * {@code id} (the PID itself); the substantive fields live in the
  * {@link KernelInformationProfile} nested record.
+ *
+ * <p>KIP1g moved this record from in-tree
+ * {@code de.dlr.shepard.v2.publish.io.KipRecordIO} to the
+ * {@code shepard-plugin-kip} module — the HMC-flavoured record
+ * shape belongs alongside the resolver per CLAUDE.md's
+ * plugin-first heuristic #2 ("New external integrations → plugin
+ * shape"). The wire shape is byte-identical to the pre-KIP1g
+ * in-tree implementation; only the source location changed.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "@context", "id", "kernelInformationProfile" })

@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.publish.resources;
+package de.dlr.shepard.plugins.kip.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.plugins.kip.io.KipRecordIO;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
-import de.dlr.shepard.v2.publish.io.KipRecordIO;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;

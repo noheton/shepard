@@ -1,10 +1,10 @@
-package de.dlr.shepard.v2.publish.resources;
+package de.dlr.shepard.plugins.kip.resources;
 
+import de.dlr.shepard.plugins.kip.io.KipRecordIO;
 import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
-import de.dlr.shepard.v2.publish.io.KipRecordIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -45,10 +45,23 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * slash (e.g. {@code 21.T11148/abc-def}) so the {@code .+} regex
  * absorbs the suffix verbatim too.
  *
- * <p>Listed in
- * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} so
- * {@link de.dlr.shepard.common.filters.JWTFilter} doesn't reject the
- * call before the response is built.
+ * <p>The {@code .well-known/kip} prefix is registered in
+ * {@link de.dlr.shepard.common.filters.PublicEndpointRegistry} (core)
+ * so {@link de.dlr.shepard.common.filters.JWTFilter} doesn't reject
+ * the call before the response is built. The core-side registry
+ * tracks plugin-contributed public prefixes by path string; the
+ * plugin owning the path doesn't self-register today — see
+ * KIP1g's tracker row for the rationale and the PM1d follow-up
+ * that would introduce a {@code PluginContext.registerPublicPrefix(...)}
+ * API.
+ *
+ * <p>KIP1g moved this resource from in-tree
+ * {@code de.dlr.shepard.v2.publish.resources.KipResolverRest} to
+ * the {@code shepard-plugin-kip} module — the resolver implementation
+ * + HMC-flavoured record shape together form an "external
+ * integration" per CLAUDE.md plugin-first heuristic #2. The wire
+ * shape (path, JSON-LD body, RFC 7807 problem responses) is
+ * byte-identical to the pre-KIP1g in-tree implementation.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/v2/.well-known/kip")
@@ -59,8 +72,9 @@ public class KipResolverRest {
   /**
    * Prefix the {@code PublicEndpointRegistry} bypass uses to admit
    * any {@code /v2/.well-known/kip/...} sub-path through the JWT
-   * filter. Centralised so the registry can reference it without
-   * a fragile string-literal duplication.
+   * filter. Kept here as a public constant so future refactors that
+   * want to read the canonical prefix string have a single source of
+   * truth — the core-side registry hard-codes the same string today.
    */
   public static final String PUBLIC_PATH_PREFIX = "/v2/.well-known/kip";
 
@@ -145,7 +159,7 @@ public class KipResolverRest {
    */
   String landingPage(UriInfo uriInfo, Publication p) {
     String kindSeg = p.getEntityKind() != null ? p.getEntityKind() : "data-objects";
-    return PublishRest.absoluteUrl(uriInfo, "/v2/" + kindSeg + "/" + p.getEntityAppId());
+    return absoluteUrl(uriInfo, "/v2/" + kindSeg + "/" + p.getEntityAppId());
   }
 
   /**
@@ -163,6 +177,35 @@ public class KipResolverRest {
       .bySegment(p.getEntityKind())
       .map(PublishableKind::digitalObjectType)
       .orElse("http://shepard.dlr.de/types/dlr:Unknown");
+  }
+
+  /**
+   * Build a fully-qualified URL at the supplied application-relative
+   * path (e.g. {@code /v2/data-objects/01HF.../publish}) using the
+   * request's own scheme + host + port — i.e. the URL the caller is
+   * actually reaching this shepard at. No new config key required.
+   *
+   * <p>Pre-KIP1g this helper lived as a package-private static method
+   * on {@code de.dlr.shepard.v2.publish.resources.PublishRest} and the
+   * sibling {@code KipResolverRest} called it directly. After the
+   * KIP1g plugin extraction, the resolver lives in a different module
+   * + package; the helper is inlined here rather than promoted to a
+   * public core API surface (which would constrain future refactors of
+   * the in-core publish orchestration).
+   */
+  static String absoluteUrl(UriInfo uriInfo, String applicationPath) {
+    if (uriInfo == null) return applicationPath;
+    var base = uriInfo.getBaseUri();
+    String scheme = base.getScheme();
+    String host = base.getHost();
+    int port = base.getPort();
+    StringBuilder sb = new StringBuilder();
+    sb.append(scheme).append("://").append(host);
+    if (port > 0 && !((scheme.equals("http") && port == 80) || (scheme.equals("https") && port == 443))) {
+      sb.append(":").append(port);
+    }
+    sb.append(applicationPath.startsWith("/") ? applicationPath : "/" + applicationPath);
+    return sb.toString();
   }
 
   private static Response problem(Response.Status status, String type, String title, String detail) {

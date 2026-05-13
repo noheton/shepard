@@ -1261,6 +1261,33 @@ build-time CDI scanner picks the beans) and is also baked into
 silently shadows the duplicate). UH1a now follows the standard
 drop-in JAR shape that every future plugin will follow.
 
+**Worked example: KIP1g (`aidocs/16` KIP1g).** The second plugin
+to land under ADR-0023's shape demonstrates the durability of
+the SPI surface against an *extraction* rather than a from-scratch
+greenfield. KIP1a had landed the `Minter` SPI + `:Publication`
+entity + publish/resolve endpoints all in-tree; KIP1g moved the
+HMC-flavoured resolver (`KipResolverRest`) + KIP record JSON-LD
+shape (`KipRecordIO`) into a new `plugins/kip/` module while
+keeping the `Minter` SPI seam, `:Publication` entity, generic
+`POST /v2/{kind}/{appId}/publish` orchestration, and generic
+`PublicationIO` wire shape in core. The split tracks CLAUDE.md's
+plugin-first heuristic exactly: heuristic #3 ("SPI seams stay
+in-tree") keeps `Minter` in core; heuristic #2 ("external
+integrations → plugin shape") moves the HMC Kernel Information
+Profile record + resolver to a plugin (the HMC spec has its own
+release cadence and could be replaced by an alternative
+findability protocol without touching the `Minter` SPI or
+`:Publication` entity). The wire shape — endpoint path,
+JSON-LD body, RFC 7807 problem responses — is byte-identical
+to pre-KIP1g; only the source location moved. The
+`PublicEndpointRegistry` `.well-known/kip` prefix entry stays
+in core for the auth filter's benefit, with the registry's
+class Javadoc updated to document the convention that
+plugin-contributed public paths are tracked centrally (a
+follow-up slice may introduce `PluginContext.registerPublicPrefix(...)`
+so plugins self-declare). This is the structural shape every
+future "external integration" plugin extraction can copy.
+
 ## ADR-0024 — Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`)
 
 **Status.** accepted. **Date.** 2026-05-13.

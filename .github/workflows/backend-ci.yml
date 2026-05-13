@@ -44,21 +44,31 @@ jobs:
           java-version: "21"
           cache: maven
 
-      # PM1a phase 3 (ADR-0023): UH1a ships as the drop-in plugin
-      # JAR `shepard-plugin-unhide`, declared as a backend
-      # <dependency>. The plugin's `provided`-scope backend dep
-      # forces a two-pass install: first stub-install the backend
-      # so the plugin can resolve its compile-time core types,
-      # then install the plugin so the backend's package step can
-      # resolve it back. CI sequence below replicates the local
-      # developer workflow documented in `docs/reference/plugins.md`.
-      - name: Stub-install backend (so the plugin's provided dep resolves)
+      # PM1a phase 3 (ADR-0023): plugin JARs are declared as
+      # backend `<dependency>` items in the `with-plugins` profile.
+      # The plugin's `provided`-scope backend dep forces a two-pass
+      # install: first stub-install the backend so each plugin can
+      # resolve its compile-time core types, then install the
+      # plugins so the backend's package step can resolve them back.
+      # CI sequence below replicates the local developer workflow
+      # documented in `docs/reference/plugins.md`. KIP1g adds the
+      # `shepard-plugin-kip` module alongside UH1a; both build
+      # independently against the stub backend.
+      - name: Stub-install backend (so plugin `provided` deps resolve)
         working-directory: backend
         run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
 
-      - name: Install plugin modules (so the backend can resolve them)
+      - name: Install unhide plugin module
         working-directory: plugins/unhide
         run: mvn -B -DskipTests install
+
+      - name: Install kip plugin module
+        working-directory: plugins/kip
+        run: mvn -B -DskipTests install
+
+      - name: Run plugin unit tests (kip)
+        working-directory: plugins/kip
+        run: mvn -B test
 
       - name: Run unit tests + JaCoCo report + coverage gate
         working-directory: backend
@@ -100,13 +110,18 @@ jobs:
           cache: maven
 
       # PM1a phase 3 (ADR-0023): same two-pass plugin/backend
-      # install dance as the unit-tests job above.
-      - name: Stub-install backend (so the plugin's provided dep resolves)
+      # install dance as the unit-tests job above. KIP1g adds the
+      # second plugin (`shepard-plugin-kip`) alongside UH1a.
+      - name: Stub-install backend (so plugin `provided` deps resolve)
         working-directory: backend
         run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
 
-      - name: Install plugin modules (so the backend can resolve them)
+      - name: Install unhide plugin module
         working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin module
+        working-directory: plugins/kip
         run: mvn -B -DskipTests install
 
       - name: Run SpotBugs + findsecbugs (fail on High-confidence findings)
