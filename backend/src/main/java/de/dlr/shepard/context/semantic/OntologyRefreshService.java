@@ -2,6 +2,7 @@ package de.dlr.shepard.context.semantic;
 
 import de.dlr.shepard.context.semantic.OntologySeedService.OntologyEntry;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -55,6 +56,7 @@ import org.neo4j.ogm.session.Session;
  * @see OntologySeedService
  * @see de.dlr.shepard.v2.admin.semantic.SemanticAdminRest
  */
+@ApplicationScoped
 public class OntologyRefreshService {
 
   /** Default per-bundle HTTP-fetch timeout. Big-enough for QUDT (~5 MB). */
