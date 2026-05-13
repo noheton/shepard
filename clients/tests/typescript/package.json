@@ -4,7 +4,7 @@
   "scripts": {
     "compare-exports": "ts-node src/compareExports.ts",
     "compare-exports:with-client-generation": "npm run generate-client && npm run compare-exports",
-    "generate-client": "cd ../../.. && docker run -it --rm -v ./clients/typescript:/clients/typescript -v ./backend/target/openapi:/backend/target/openapi openapitools/openapi-generator-cli:v7.7.0 docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g typescript-fetch -o clients/typescript/ -p=npmName=@dlr-shepard/shepard-client,npmRepository=bliblu/projects/blabla/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true"
+    "generate-client": "cd ../../.. && python3 scripts/shepard_scripts/scripts/slice_openapi_v1.py backend/target/openapi/openapi.json backend/target/openapi/openapi_v1.json && docker run -it --rm -v ./clients/typescript:/clients/typescript -v ./backend/target/openapi:/backend/target/openapi openapitools/openapi-generator-cli:v7.7.0 docker-entrypoint.sh generate -i backend/target/openapi/openapi_v1.json -g typescript-fetch -o clients/typescript/ -p=npmName=@dlr-shepard/shepard-client,npmRepository=bliblu/projects/blabla/packages/npm/,npmVersion=${VERSION_NUMBER},supportsES6=true,typescriptThreePlus=true"
   },
   "dependencies": {
     "@dlr-shepard/shepard-client": "5.1.2"

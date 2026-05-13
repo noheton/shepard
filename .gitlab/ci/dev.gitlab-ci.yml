@@ -13,6 +13,7 @@ include:
   - local: .gitlab/ci/jobs/check-scripts.yml
   - local: .gitlab/ci/jobs/check-schema-name.yml
   - local: .gitlab/ci/jobs/build-backend.yml
+  - local: .gitlab/ci/jobs/slice-openapi-v1.yml
   - local: .gitlab/ci/jobs/unrequire-attributes-for-python.yml
   - local: .gitlab/ci/jobs/build-frontend.yml
   - local: .gitlab/ci/jobs/test-backend.yml

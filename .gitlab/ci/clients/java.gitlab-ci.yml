@@ -3,9 +3,14 @@
   image:
     name: openapitools/openapi-generator-cli:v7.16.0
     entrypoint: [""]
-  needs: [build_backend, get_version]
+  # CG1b — input is the v1-shelf doc (per ADR-0022 / aidocs/57 §4.2), so
+  # the Java client covers /shepard/api/... only. The /v2/ shelf has its
+  # own Kiota-generated client under clients-v2/ (CG1a).
+  needs: [slice_openapi_v1, get_version]
   script:
-    - docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g java -o clients/java/client -c clients/java/config.yaml -p=artifactVersion=${VERSION_NUMBER}
+    - docker-entrypoint.sh generate -i backend/target/openapi/openapi_v1.json -g java -o clients/java/client -c clients/java/config.yaml -p=artifactVersion=${VERSION_NUMBER}
+    # Regression fence: assert the generated client contains no /v2/ references.
+    - bash clients/tests/v1-scope-smoke-test.sh java
   artifacts:
     expire_in: 2 days
     paths:

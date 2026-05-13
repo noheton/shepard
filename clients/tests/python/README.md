@@ -10,9 +10,13 @@ There, the generated client is already available as build artifact.
 
 To create the Python client call the following command.
 **Make sure to call this command from the repository root level!**
-It generates a Python client based on the `backend/target/openapi.json` file and stores the client package in `clients/python`:
 
-- `docker run -it --rm -v ./clients/python:/clients/python -v ./backend/target/openapi:/backend/target/openapi openapitools/openapi-generator-cli:v7.7.0 docker-entrypoint.sh generate -i backend/target/openapi/openapi.json -g python -o clients/python -p=packageName=shepard_client`
+Per **CG1b** / ADR-0022 (see `clients/README.md`) the OpenAPI Generator
+clients target the **v1 shelf** only — `/shepard/api/...` — so we first
+slice the combined `openapi.json` down to v1 before running the generator:
+
+- `python3 scripts/shepard_scripts/scripts/slice_openapi_v1.py backend/target/openapi/openapi.json backend/target/openapi/openapi_v1.json`
+- `docker run -it --rm -v ./clients/python:/clients/python -v ./backend/target/openapi:/backend/target/openapi openapitools/openapi-generator-cli:v7.7.0 docker-entrypoint.sh generate -i backend/target/openapi/openapi_v1.json -g python -o clients/python -p=packageName=shepard_client`
 
 Now change the directory into this folder:
 
