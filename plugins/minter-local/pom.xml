@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KIP1h — third shepard-plugin-* module, extracts the legitimate
+  default `LocalMinter` (the renamed `MockMinter`) out of the
+  backend into a drop-in JAR per the plugin-first heuristic #3
+  ("SPIs in core, adapters in plugins", CLAUDE.md) and the user's
+  "MockMinter is a plugin" architectural call.
+
+  This module produces a real
+  `shepard-plugin-minter-local-${revision}.jar` carrying:
+
+    * `de.dlr.shepard.plugins.minter.local.LocalMinterPluginManifest` —
+      implements `de.dlr.shepard.plugin.PluginManifest` so the
+      backend's `PluginRegistry` tracks KIP1h in
+      `GET /v2/admin/plugins` and exposes the per-plugin
+      `shepard.plugins.minter-local.enabled` runtime toggle.
+    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
+      pointing at the manifest class — the standard
+      `ServiceLoader` SPI contract.
+    * `de.dlr.shepard.plugins.minter.local.LocalMinter` —
+      `@ApplicationScoped Minter` impl producing versioned PIDs of
+      the form `shepard:<instance.id>:<kind>:<appId>:v<n>`. This is
+      the default minter for fresh shepard installs (no external
+      service required).
+
+  Generic publish/Minter primitives stay in core
+  (`de.dlr.shepard.publish.minter.{Minter,MintRequest,MintResult,
+  MinterException,MinterRegistry}`): the SPI seam every minter
+  compiles against per CLAUDE.md plugin-first heuristic #3, plus
+  the POST-publish orchestration that is independent of the active
+  minter's wire format.
+
+  Build order (same two-pass dance as UH1a + KIP1g, see ADR-0023):
+
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/unhide && mvn -DskipTests install
+    $ cd plugins/kip && mvn -DskipTests install
+    $ cd plugins/minter-local && mvn -DskipTests install
+    $ cd backend && mvn package
+
+  See `docs/reference/plugins.md` for the operator runbook
+  and `aidocs/63 ADR-0023` + `aidocs/66` for the design rationale.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-minter-local</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — Local PID Minter</name>
+  <description>
+    Local-instance PID minter plugin. Mints versioned PIDs of the
+    form `shepard:&lt;instance.id&gt;:&lt;kind&gt;:&lt;appId&gt;:v&lt;n&gt;` against
+    the active shepard. Default minter for fresh installs — no
+    external Handle / DOI service required. KIP1c (ePIC) +
+    KIP1d (DataCite) ship as sibling plugins for operators that
+    need real globally-resolvable PIDs.
+    See aidocs/66 + aidocs/16 KIP1h.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>1.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      backend as provided — the plugin needs the backend's core
+      types (`Minter`, `MintRequest`, `MintResult`, `MinterException`,
+      the `PluginManifest` SPI) at compile time. `provided` means
+      the plugin JAR does NOT bundle backend.jar — at runtime the
+      backend image already carries its own classes, and the
+      plugin's URLClassLoader parent is the backend's loader
+      (per `PluginRegistry`).
+
+      The same self-reference exclusion UH1a + KIP1g use applies:
+      the backend's `with-plugins` profile pulls this plugin onto
+      its classpath, so without the exclusion Maven would try to
+      resolve the still-uninstalled artefact transitively when the
+      plugin itself compiles.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!--
+      Quarkus runtime types used in plugin source (CDI, logging).
+      `provided` because the backend image carries them.
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-minter-local-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

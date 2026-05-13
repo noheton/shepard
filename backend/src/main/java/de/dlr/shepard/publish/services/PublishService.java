@@ -7,6 +7,8 @@ import de.dlr.shepard.publish.daos.PublicationDAO;
 import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.publish.minter.MintRequest;
 import de.dlr.shepard.publish.minter.MintResult;
+import de.dlr.shepard.publish.minter.Minter;
+import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.minter.MinterRegistry;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -30,6 +32,22 @@ import org.neo4j.ogm.session.Session;
  * {@code force=true}, a fresh PID is minted and attached as an
  * additional row — the most recent one is "current" per the
  * append-only KIP convention.
+ *
+ * <p>KIP1h additions:
+ * <ul>
+ *   <li>The minter is now optional. If {@link MinterRegistry#activeMinter()}
+ *       is empty (no plugin installed, or operator set
+ *       {@code shepard.publish.minter=none}), this service throws
+ *       {@link MinterNotInstalledException}; the REST layer maps that
+ *       to a 503 RFC 7807 {@code publish.minter.not-installed}.</li>
+ *   <li>Every mint computes a Phase-1 version number from the
+ *       entity's existing {@code :Publication} count + 1, stamps it
+ *       onto the {@link MintRequest}, and persists it onto the
+ *       {@link Publication} row. The {@code LocalMinter} encodes
+ *       the version as a {@code v<n>} segment in the PID; ePIC /
+ *       DataCite ignore it for the PID body but still expose it in
+ *       the KIP record.</li>
+ * </ul>
  *
  * <p>Permission gates live in the REST layer (the caller is the
  * authoritative source of who's calling); this service trusts its
@@ -65,6 +83,7 @@ public class PublishService {
    * @return outcome carrying the Publication and a flag indicating
    *         whether a fresh mint happened
    * @throws NotFoundException if the entity doesn't exist
+   * @throws MinterNotInstalledException if the install has no active minter
    * @throws de.dlr.shepard.publish.minter.MinterException if the mint fails
    */
   public PublishOutcome publish(
@@ -97,9 +116,26 @@ public class PublishService {
       }
     }
 
+    // KIP1h — minter is now optional. Refuse the call cleanly when
+    // the install has no active minter; the REST layer translates
+    // this into a 503 RFC 7807 problem response.
+    Optional<Minter> minterOpt = minterRegistry.activeMinter();
+    if (minterOpt.isEmpty()) {
+      throw new MinterNotInstalledException(
+        "shepard.publish.minter is unset or no matching plugin is installed. " +
+        "Install plugins/minter-local/ (or another minter plugin) and set " +
+        "shepard.publish.minter=<minter-id> in application.properties."
+      );
+    }
+    Minter minter = minterOpt.get();
+
+    // KIP1h Phase-1 versioning — next version is one above the
+    // existing max (1 for entities that have never been published).
+    int nextVersion = publicationDAO.findLatestVersionNumber(entityAppId) + 1;
+
     Map<String, String> metadata = buildMetadata(kind, entityAppId);
-    MintRequest req = new MintRequest(kind.urlSegment(), entityAppId, locatorUrl, metadata);
-    MintResult result = minterRegistry.activeMinter().mint(req);
+    MintRequest req = new MintRequest(kind.urlSegment(), entityAppId, locatorUrl, nextVersion, metadata);
+    MintResult result = minter.mint(req);
 
     Publication pub = new Publication();
     pub.setPid(result.pid());
@@ -108,11 +144,13 @@ public class PublishService {
     pub.setPublishedBy(publishedBy);
     pub.setEntityKind(kind.urlSegment());
     pub.setEntityAppId(entityAppId);
+    pub.setVersionNumber(nextVersion);
     Publication saved = publicationDAO.attachToEntity(pub, entityAppId);
     Log.infof(
-      "PublishService: published entityAppId=%s as PID=%s via minter=%s (force=%s)",
+      "PublishService: published entityAppId=%s as PID=%s (v%d) via minter=%s (force=%s)",
       entityAppId,
       saved.getPid(),
+      nextVersion,
       saved.getMinterId(),
       force
     );

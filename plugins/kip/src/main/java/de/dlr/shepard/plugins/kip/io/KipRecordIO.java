@@ -12,8 +12,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>Shape per {@code aidocs/66 §3.2} — a thin JSON-LD-flavoured
  * record that any HMC PID resolver can consume. Unauthenticated
  * surface (capability metadata, not entity payload) — the
- * {@link #landingPage} URL the record points at may still require
- * auth, which is correct per {@code aidocs/66 §4.2}.
+ * {@link KernelInformationProfile#landingPage} URL the record points
+ * at may still require auth, which is correct per
+ * {@code aidocs/66 §4.2}.
  *
  * <p>The record wraps a small {@code kernelInformationProfile}
  * envelope per the HMC spec: top-level {@code @context} +
@@ -25,15 +26,21 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * {@code shepard-plugin-kip} module — the HMC-flavoured record
  * shape belongs alongside the resolver per CLAUDE.md's
  * plugin-first heuristic #2 ("New external integrations → plugin
- * shape"). The wire shape is byte-identical to the pre-KIP1g
- * in-tree implementation; only the source location changed.
+ * shape").
+ *
+ * <p>KIP1h additively grew the envelope with a
+ * {@link KernelInformationProfile#digitalObjectVersion} field
+ * — the Phase-1 version segment ({@code v<n>}) the
+ * {@code LocalMinter} encodes in its PID. Clients that don't parse
+ * the new field ignore it per JSON-LD's open-world semantics; pre-KIP1h
+ * rows surface as {@code "v1"} via the resolver's defaulting logic.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "@context", "id", "kernelInformationProfile" })
 @Schema(name = "KipRecord", description = "HMC Kernel Information Profile record per aidocs/66 §3.2.")
 public record KipRecordIO(
   @JsonProperty("@context") @Schema(description = "JSON-LD @context (constant for KIP).") String context,
-  @Schema(required = true, description = "The PID itself (e.g. 'mock:shepard:data-objects:01HF...:1747000000000').")
+  @Schema(required = true, description = "The PID itself (e.g. 'shepard:dlr.de/shepard-prod:data-objects:01HF...:v1').")
   String id,
   @Schema(required = true, description = "The KIP profile body — see KernelInformationProfile.")
   KernelInformationProfile kernelInformationProfile
@@ -56,6 +63,8 @@ public record KipRecordIO(
     String dateModified,
     @Schema(description = "Username of the publisher — KIP rightsHolder.") String rightsHolder,
     @Schema(description = "License string ('CC-BY-4.0', etc.). Null unless an operator sets a default or the caller supplies one (KIP1e).")
-    String license
+    String license,
+    @Schema(description = "KIP1h Phase-1 version segment of the published entity ('v1', 'v2', ...).")
+    String digitalObjectVersion
   ) {}
 }

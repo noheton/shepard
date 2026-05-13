@@ -59,6 +59,41 @@ public class PublicationDAO extends GenericDAO<Publication> {
   }
 
   /**
+   * KIP1h — return the highest {@code versionNumber} among all
+   * {@code :Publication} rows attached to the entity, or {@code 0}
+   * when the entity has no Publications yet.
+   *
+   * <p>Used by {@code PublishService} before minting: the next PID's
+   * version is {@code findLatestVersionNumber(appId) + 1}. The query
+   * uses {@code coalesce(max(p.versionNumber), 0)} so:
+   * <ul>
+   *   <li>fresh entities with zero Publications return {@code 0} (so
+   *       the next mint is {@code v1}),</li>
+   *   <li>existing entities with at least one Publication return
+   *       the max version (so the next forced re-mint is one
+   *       higher),</li>
+   *   <li>and pre-KIP1h rows missing the {@code versionNumber}
+   *       property are still counted via the V31 backfill (every
+   *       legacy row has {@code versionNumber=1} after migration).</li>
+   * </ul>
+   */
+  public int findLatestVersionNumber(String entityAppId) {
+    if (entityAppId == null || entityAppId.isBlank()) return 0;
+    if (session == null) return 0;
+    String query =
+      "MATCH (e {appId: $entityAppId})-[:" +
+      HAS_PUBLICATION +
+      "]->(p:Publication) " +
+      "RETURN coalesce(max(p.versionNumber), 0) AS maxVersion";
+    var result = session.query(query, Map.of("entityAppId", entityAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return 0;
+    Object raw = iter.next().get("maxVersion");
+    if (raw instanceof Number n) return n.intValue();
+    return 0;
+  }
+
+  /**
    * Find every Publication attached to a given entity, ordered by
    * {@code mintedAt} descending (most-recent first — the
    * "current" Publication per the KIP1a append-only convention).

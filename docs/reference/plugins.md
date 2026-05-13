@@ -44,6 +44,24 @@ shape: `shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
 `shepard-plugin-aas`, `shepard-plugin-minter-{epic,datacite}`,
 `shepard-plugin-spatial-postgis`, etc.
 
+## Bundled plugins
+
+The published backend image bakes three plugins into
+`/deployments/plugins/` by default. They activate automatically
+via the `with-plugins` Maven profile; operators don't need to
+copy any JAR by hand.
+
+| Plugin id | Module | Purpose | Source |
+|---|---|---|---|
+| `unhide` | `plugins/unhide/` (`shepard-plugin-unhide`) | Helmholtz Unhide publish feed — `GET /v2/unhide/feed.jsonld` schema.org + metadata4ing JSON-LD for the HKG / Unhide harvester. Admin-configurable runtime: `:UnhideConfig` singleton + `/v2/admin/unhide/config` + `shepard-admin unhide ...` CLI parity. | UH1a–UH1c |
+| `kip` | `plugins/kip/` (`shepard-plugin-kip`) | HMC Kernel Information Profile resolver — `GET /v2/.well-known/kip/{pid-suffix}` returns the public JSON-LD KIP record per `aidocs/66 §3.2`. | KIP1g |
+| `minter-local` | `plugins/minter-local/` (`shepard-plugin-minter-local`) | Default `Minter` plugin — mints local-instance versioned PIDs of the form `shepard:<instance.id>:<kind>:<appId>:v<n>`. Replaces the pre-KIP1h in-core `MockMinter`. Optional: set `shepard.publish.minter=none` for resolver-only deployments. See [Publish and PIDs](/reference/publish-and-pids/). | KIP1h |
+
+To opt out of a bundled plugin without removing the JAR: set
+`shepard.plugins.<id>.enabled=false` in `application.properties`
+and restart (or `shepard-admin plugins disable <id>` for an
+in-memory override until the next restart).
+
 ## Install a plugin
 
 The default drop-in directory inside the container is

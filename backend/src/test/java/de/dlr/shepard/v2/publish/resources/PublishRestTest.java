@@ -18,6 +18,7 @@ import de.dlr.shepard.publish.PublishableKind;
 import de.dlr.shepard.publish.PublishableKindRegistry;
 import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.publish.minter.MinterException;
+import de.dlr.shepard.publish.minter.MinterNotInstalledException;
 import de.dlr.shepard.publish.services.PublishService;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.ws.rs.NotFoundException;
@@ -64,10 +65,11 @@ class PublishRestTest {
     p.setAppId("pub-app-id");
     p.setPid(pid);
     p.setMintedAt(1_747_000_000_000L);
-    p.setMinterId("mock");
+    p.setMinterId("local");
     p.setPublishedBy("alice");
     p.setEntityKind("data-objects");
     p.setEntityAppId("01HF-A");
+    p.setVersionNumber(1);
     return p;
   }
 
@@ -75,7 +77,7 @@ class PublishRestTest {
   void happyPathReturns200WithPublicationAndResolverUrl() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice")).thenReturn(true);
-    Publication pub = publication("mock:shepard:data-objects:01HF-A:1747000000000");
+    Publication pub = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     when(publishService.publish(eq(PublishableKind.DATA_OBJECTS), eq("01HF-A"), anyString(), eq("alice"), eq(false)))
       .thenReturn(new PublishService.PublishOutcome(pub, true));
 
@@ -83,14 +85,15 @@ class PublishRestTest {
 
     assertEquals(200, r.getStatus());
     PublicationIO io = (PublicationIO) r.getEntity();
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000000", io.pid());
-    assertEquals("mock", io.minterId());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", io.pid());
+    assertEquals("local", io.minterId());
     assertEquals("alice", io.publishedBy());
     assertEquals(
-      "https://shepard.example.dlr.de:8443/v2/.well-known/kip/mock:shepard:data-objects:01HF-A:1747000000000",
+      "https://shepard.example.dlr.de:8443/v2/.well-known/kip/shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1",
       io.resolverUrl()
     );
     assertNotNull(io.mintedAt());
+    assertEquals(Integer.valueOf(1), io.versionNumber());
   }
 
   @Test
@@ -148,10 +151,29 @@ class PublishRestTest {
   }
 
   @Test
+  void minterNotInstalledReturns503WithProblemJson() {
+    // KIP1h: when no minter is wired the service throws
+    // MinterNotInstalledException; REST maps it to 503 RFC 7807
+    // `publish.minter.not-installed` with an actionable hint.
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice")).thenReturn(true);
+    when(publishService.publish(any(), anyString(), anyString(), anyString(), anyBoolean()))
+      .thenThrow(new MinterNotInstalledException("shepard.publish.minter is unset or no matching plugin is installed. Install plugins/minter-local/ ..."));
+
+    Response r = rest.publish("data-objects", "01HF-A", false, securityContext, uriInfo);
+
+    assertEquals(503, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    String body = r.getEntity().toString();
+    assertTrue(body.contains("publish.minter.not-installed"));
+    assertTrue(body.contains("plugins/minter-local/"));
+  }
+
+  @Test
   void idempotentSecondCallReturnsExistingPublication() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice")).thenReturn(true);
-    Publication existing = publication("mock:shepard:data-objects:01HF-A:1700000000000");
+    Publication existing = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     when(publishService.publish(any(), anyString(), anyString(), anyString(), eq(false)))
       .thenReturn(new PublishService.PublishOutcome(existing, false));
 
@@ -159,21 +181,21 @@ class PublishRestTest {
 
     assertEquals(200, r.getStatus());
     PublicationIO io = (PublicationIO) r.getEntity();
-    assertEquals("mock:shepard:data-objects:01HF-A:1700000000000", io.pid());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1", io.pid());
   }
 
   @Test
   void forceTrueIsPropagatedToService() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
     when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice")).thenReturn(true);
-    Publication fresh = publication("mock:shepard:data-objects:01HF-A:1747000000001");
+    Publication fresh = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v2");
     when(publishService.publish(any(), anyString(), anyString(), anyString(), eq(true)))
       .thenReturn(new PublishService.PublishOutcome(fresh, true));
 
     Response r = rest.publish("data-objects", "01HF-A", true, securityContext, uriInfo);
     assertEquals(200, r.getStatus());
     PublicationIO io = (PublicationIO) r.getEntity();
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000001", io.pid());
+    assertEquals("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v2", io.pid());
   }
 
   @Test
@@ -204,7 +226,7 @@ class PublishRestTest {
     // the same code path as 'data-objects'.
     when(entityIdResolver.resolveLong("01HF-C")).thenReturn(99L);
     when(permissionsService.isAccessTypeAllowedForUser(99L, AccessType.Write, "alice")).thenReturn(true);
-    Publication pub = publication("mock:shepard:collections:01HF-C:1747000000000");
+    Publication pub = publication("shepard:dlr.de/shepard-prod:collections:01HF-C:v1");
     pub.setEntityKind("collections");
     pub.setEntityAppId("01HF-C");
     when(publishService.publish(eq(PublishableKind.COLLECTIONS), eq("01HF-C"), anyString(), eq("alice"), eq(false)))

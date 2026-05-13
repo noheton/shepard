@@ -53,9 +53,14 @@ public class Publication implements HasId, HasAppId {
 
   /**
    * The minted persistent identifier — verbatim string the active
-   * minter returned (e.g. {@code "mock:shepard:data-objects:01HF…:1747000000000"}
-   * for the {@link de.dlr.shepard.publish.minter.MockMinter}, a
-   * Handle for ePIC, a DOI for DataCite).
+   * minter returned (e.g.
+   * {@code "shepard:dlr.de/shepard-prod:data-objects:01HF…:v1"}
+   * for the {@code LocalMinter} (KIP1h), a Handle for ePIC, a DOI
+   * for DataCite). Pre-KIP1h rows minted by the in-core
+   * {@code MockMinter} carry the legacy
+   * {@code mock:shepard:<kind>:<appId>:<epoch-millis>} format and
+   * keep resolving cleanly via the public {@code .well-known/kip}
+   * resolver — the V31 backfill preserves them verbatim.
    *
    * <p>{@code @Index} so the {@code .well-known/kip/{pid-suffix}}
    * resolver lookup is O(1) — see
@@ -75,13 +80,31 @@ public class Publication implements HasId, HasAppId {
   /**
    * Identifier of the minter that produced the row — verbatim
    * {@link de.dlr.shepard.publish.minter.Minter#id()} of the active
-   * adapter at mint time ({@code "mock"} / {@code "epic"} /
-   * {@code "datacite"}). Kept on the row so an operator can trace
-   * "which minter minted this PID" even after the active minter has
-   * been switched.
+   * adapter at mint time ({@code "local"} / {@code "epic"} /
+   * {@code "datacite"}; pre-KIP1h rows carry {@code "mock"} from
+   * the in-core {@code MockMinter}). Kept on the row so an operator
+   * can trace "which minter minted this PID" even after the active
+   * minter has been switched.
    */
   @Property("minterId")
   private String minterId;
+
+  /**
+   * KIP1h Phase-1 version number — 1-based ordinal of this
+   * Publication among the entity's {@code :Publication} rows
+   * ({@code 1} for the first publish, bumped to {@code 2} after the
+   * first {@code force=true} re-mint, etc.). Stamped here so the
+   * resolver / KIP record can emit the {@code digitalObjectVersion}
+   * field without a fan-out query.
+   *
+   * <p>Backfilled to {@code 1} on every pre-KIP1h row by
+   * {@code V31__Backfill_Publication_versionNumber.cypher}; new rows
+   * always carry a non-null value. Phase 2 (ENT1 umbrella) replaces
+   * this scalar with a full {@code :EntityVersion} graph but
+   * preserves this property as a stable read-side denormalisation.
+   */
+  @Property("versionNumber")
+  private Integer versionNumber;
 
   /**
    * Username of the publisher — the caller who hit

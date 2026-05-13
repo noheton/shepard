@@ -1547,6 +1547,136 @@ shifts.
   contract honest. Garage is the canary; MinIO + LocalStack are
   the wire-compatibility regression guard.
 
+## ADR-0025 — Minter is optional; default in fresh installs is the LocalMinter plugin
+
+**Status.** accepted. **Date.** 2026-05-13.
+**Applied in.** `aidocs/16` KIP1h, `aidocs/34` KIP1h row,
+`aidocs/66 §5` (forward-work checklist).
+**Couples with.** ADR-0023 (drop-in plugin JARs via
+ServiceLoader) — operationalises ADR-0023's plugin-first shape for
+the `Minter` SPI; sibling to ADR-0024's "pick references whose OSS
+posture matches shepard's low-friction quick-start expectation".
+
+### Context
+
+ADR-0023 + CLAUDE.md heuristic #3 ("SPIs in core, adapters in
+plugins") fix the structural direction: cross-cutting interfaces
+stay in `backend/`, every implementation ships as a separate Maven
+module. KIP1a applied the pattern partially — it shipped the
+`Minter` SPI in core but kept the default impl (`MockMinter`) also
+in core, paired with a startup fail-fast in `MinterRegistry` that
+required at least one matching minter on the classpath.
+
+Two problems with the partial application surfaced once KIP1g
+extracted the resolver into `shepard-plugin-kip`:
+
+1. **`MockMinter` violated the plugin-first rule.** The class was
+   in `de.dlr.shepard.publish.minter` rather than
+   `plugins/minter-local/`. The "Mock" prefix also misled
+   operators into thinking it was a test-only fixture rather than
+   the legitimate default for fresh installs.
+
+2. **The fail-fast posture broke resolver-only deployments.**
+   A researcher who only wants to dereference existing
+   `:Publication` rows (operator inherits an instance, runs the
+   resolver as part of an archival mirror, etc.) had no way to
+   boot without binding a real PID provider. With KIP1g, the
+   resolver lives in a different plugin from the minter — but
+   the registry's fail-fast tied them together at startup.
+
+The user flagged both in one architectural call: "MockMinter is a
+plugin" + "the minter is optional".
+
+### Decision
+
+1. **Rename and extract.** `MockMinter` becomes `LocalMinter` and
+   ships as `plugins/minter-local/` (new Maven module mirroring
+   `plugins/kip/` shape). The in-core `Minter` SPI seam,
+   `MintRequest`, `MintResult`, `MinterException`, and
+   `MinterRegistry` stay in `backend/`; only the impl moves.
+2. **Relax the registry to optional posture.**
+   `MinterRegistry.activeMinter()` returns `Optional<Minter>`. No
+   matching minter (or `shepard.publish.minter` unset / `none`) →
+   no active minter, registry logs a WARN, the publish endpoint
+   returns 503 RFC 7807 `publish.minter.not-installed` on
+   demand. The resolver path is unaffected.
+3. **Default flips from `mock` to `local`.** Fresh installs run
+   with `shepard.publish.minter=local`, matching the
+   `shepard-plugin-minter-local` id. Operators who don't want
+   publish set `shepard.publish.minter=none` (or leave blank) —
+   the resolver keeps working.
+
+KIP1h shipped this triple in one slice, alongside the
+versioned-PIDs Phase 1 wire-format change
+(`shepard:<instance.id>:<kind>:<appId>:v<n>`).
+
+### Rationale
+
+- **Plugin-first parity.** Every other `Minter` ships as a plugin
+  (ePIC = `shepard-plugin-minter-epic`, DataCite =
+  `shepard-plugin-minter-datacite`). Treating the default
+  identically — rather than carving out an in-tree exception —
+  removes the "is this minter special?" cognitive load for plugin
+  authors. The same logic ADR-0023 applies to the SPI ↔ adapter
+  split.
+- **Resolver-only deployments are legitimate.** Operators who run
+  shepard as an archival mirror, who only want to host the public
+  KIP record for an already-published catalogue, should not need
+  a PID provider. The optional posture lets them boot cleanly.
+- **Cleaner operator-facing semantics.** "Mock" misled — the
+  rename to "Local" honestly reflects that the PIDs are locally
+  resolvable, just not registered with a global Handle / DOI
+  authority. Operators on the new name don't reach for the
+  "is this a real install?" question.
+- **`shepard.publish.minter` stays deploy-time-only.** Switching
+  the active PID provider mid-flight is unsafe — a Publication
+  minted by `local` cannot be dereferenced through the ePIC
+  resolver, and vice versa. The "cluster identity / topology"
+  CLAUDE.md exception applies (same as `shepard.instance.id`).
+  Per-minter knobs (ePIC handle prefix, DataCite credentials)
+  still get the runtime `:*Config` shape via the CLAUDE.md
+  "operator knobs" rule when KIP1c/d ship.
+
+### Consequences
+
+- **Operators upgrading from KIP1a must change one config value.**
+  `shepard.publish.minter=mock` is no longer valid (no plugin
+  registers id `mock`); operators set `=local` (or `=none`) before
+  upgrade. The `aidocs/34` KIP1h row marks this as **BREAKING**.
+- **The `Publication.minterId` field becomes a useful audit
+  signal.** Pre-KIP1h every row had `minterId="mock"`; post-KIP1h
+  fresh rows have `minterId="local"` and the legacy rows keep
+  their `"mock"` stamp. An operator can grep
+  `MATCH (p:Publication) WHERE p.minterId = 'mock'` to find every
+  pre-upgrade Publication.
+- **Build-without-plugins (`-DnoPlugins`) becomes a meaningful
+  posture.** Operators building their own backend image without
+  the `with-plugins` profile lose the default minter and the
+  publish endpoint returns 503 — same posture as KIP1g's resolver
+  removal. The pre-KIP1h "the default just works" baseline is gone
+  for `-DnoPlugins` builds; operators in that mode must explicitly
+  ship a minter plugin or live with the 503.
+- **Versioned PIDs Phase 1 (the third leg of KIP1h) shipped in the
+  same slice for scope discipline.** The wire-format change from
+  `mock:...:<epoch>` to `shepard:...:v<n>` happens once; bundling
+  the plugin extract + the optional-minter relax + the
+  version-segment change in one slice means one breaking-wire
+  change for operators rather than three sequenced ones.
+
+### Forward work flagged
+
+- **CLI parity** — `shepard-admin publish status` showing the
+  configured / active minter id is a follow-up; KIP1h shipped the
+  core SPI relax but not the CLI surface (the runtime hook is
+  deploy-time, so the CLI value is diagnostic-only).
+- **Per-minter `:*Config` patterns** — when KIP1c (ePIC) or KIP1d
+  (DataCite) lands, the per-minter runtime config (handle prefix,
+  DataCite credentials) follows the A3b / N1c2 / UH1a "operator
+  knobs" pattern. Out of scope for KIP1h.
+- **ENT1 (versioning Phase 2)** — full `:EntityVersion` graph
+  with `previousVersion` / `nextVersion` edges. Wire-shape
+  compatible with KIP1h's `Publication.versionNumber` scalar.
+
 ## How to add a new entry
 
 1. Pick the next free `ADR-NNNN` id (chronological — increment from

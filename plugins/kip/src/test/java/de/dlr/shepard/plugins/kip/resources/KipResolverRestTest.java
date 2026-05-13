@@ -37,35 +37,75 @@ class KipResolverRestTest {
   private Publication publication() {
     Publication p = new Publication();
     p.setAppId("pub-1");
-    p.setPid("mock:shepard:data-objects:01HF-A:1747000000000");
+    p.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     p.setMintedAt(1_747_000_000_000L);
-    p.setMinterId("mock");
+    p.setMinterId("local");
     p.setPublishedBy("alice");
     p.setEntityKind("data-objects");
     p.setEntityAppId("01HF-A");
+    p.setVersionNumber(1);
     return p;
   }
 
   @Test
   void happyPathReturnsKipRecord() {
-    when(publicationDAO.findByPid("mock:shepard:data-objects:01HF-A:1747000000000"))
-      .thenReturn(Optional.of(publication()));
+    Publication p = publication();
+    when(publicationDAO.findByPid(p.getPid())).thenReturn(Optional.of(p));
 
-    Response r = rest.resolve("mock:shepard:data-objects:01HF-A:1747000000000", uriInfo);
+    Response r = rest.resolve(p.getPid(), uriInfo);
     assertEquals(200, r.getStatus());
 
     KipRecordIO record = (KipRecordIO) r.getEntity();
     assertEquals(KipRecordIO.JSONLD_CONTEXT, record.context());
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000000", record.id());
+    assertEquals(p.getPid(), record.id());
     KipRecordIO.KernelInformationProfile body = record.kernelInformationProfile();
     assertNotNull(body);
-    assertEquals("mock:shepard:data-objects:01HF-A:1747000000000", body.id());
+    assertEquals(p.getPid(), body.id());
     assertEquals("https://shepard.example.dlr.de/v2/data-objects/01HF-A", body.landingPage());
     assertEquals("http://shepard.dlr.de/types/dlr:DataObject", body.digitalObjectType());
     assertEquals("alice", body.rightsHolder());
     assertEquals(java.time.Instant.ofEpochMilli(1_747_000_000_000L).toString(), body.dateCreated());
     assertEquals(body.dateCreated(), body.dateModified());
     assertNull(body.license());
+    // KIP1h: digitalObjectVersion segment surfaces as v1 for a fresh
+    // publish.
+    assertEquals("v1", body.digitalObjectVersion());
+  }
+
+  @Test
+  void higherVersionNumberSurfacesAsDigitalObjectVersion() {
+    Publication p = publication();
+    p.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v7");
+    p.setVersionNumber(7);
+    when(publicationDAO.findByPid(p.getPid())).thenReturn(Optional.of(p));
+
+    Response r = rest.resolve(p.getPid(), uriInfo);
+    KipRecordIO record = (KipRecordIO) r.getEntity();
+    assertEquals("v7", record.kernelInformationProfile().digitalObjectVersion());
+  }
+
+  @Test
+  void legacyMockPidWithNullVersionDefaultsToV1() {
+    // KIP1h: a row that escaped the V31 backfill (rare; defensive
+    // behaviour) still surfaces a cleanly-formed digitalObjectVersion
+    // rather than null. The resolver's default-to-1 logic catches it.
+    Publication legacy = new Publication();
+    legacy.setAppId("pub-legacy");
+    legacy.setPid("mock:shepard:data-objects:01HF-A:1700000000000");
+    legacy.setMintedAt(1_700_000_000_000L);
+    legacy.setMinterId("mock");
+    legacy.setEntityKind("data-objects");
+    legacy.setEntityAppId("01HF-A");
+    legacy.setPublishedBy("alice");
+    legacy.setVersionNumber(null);
+    when(publicationDAO.findByPid(legacy.getPid())).thenReturn(Optional.of(legacy));
+
+    Response r = rest.resolve(legacy.getPid(), uriInfo);
+    assertEquals(200, r.getStatus());
+    KipRecordIO record = (KipRecordIO) r.getEntity();
+    assertEquals("v1", record.kernelInformationProfile().digitalObjectVersion());
+    // The legacy PID format still resolves cleanly.
+    assertEquals(legacy.getPid(), record.id());
   }
 
   @Test
@@ -90,7 +130,7 @@ class KipResolverRestTest {
     Publication p = publication();
     p.setEntityKind("collections");
     p.setEntityAppId("01HF-C");
-    p.setPid("mock:shepard:collections:01HF-C:1747000000000");
+    p.setPid("shepard:dlr.de/shepard-prod:collections:01HF-C:v1");
     when(publicationDAO.findByPid(p.getPid())).thenReturn(Optional.of(p));
 
     Response r = rest.resolve(p.getPid(), uriInfo);
@@ -107,7 +147,7 @@ class KipResolverRestTest {
     Publication p = publication();
     p.setEntityKind("future-kind");
     p.setEntityAppId("01HF-FK");
-    p.setPid("mock:shepard:future-kind:01HF-FK:1747000000000");
+    p.setPid("shepard:dlr.de/shepard-prod:future-kind:01HF-FK:v1");
     when(publicationDAO.findByPid(p.getPid())).thenReturn(Optional.of(p));
 
     Response r = rest.resolve(p.getPid(), uriInfo);
