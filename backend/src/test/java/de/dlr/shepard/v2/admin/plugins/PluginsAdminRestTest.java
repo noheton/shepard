@@ -9,15 +9,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.plugin.PluginContext;
+import de.dlr.shepard.plugin.PluginDependency;
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginManifest;
 import de.dlr.shepard.plugin.PluginRegistry;
+import de.dlr.shepard.v2.admin.plugins.io.PluginDependencyIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginEntryIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginListIO;
 import de.dlr.shepard.v2.admin.plugins.io.PluginPatchIO;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
@@ -117,6 +120,59 @@ class PluginsAdminRestTest {
     assertTrue(hdfRow.enabled());
     assertTrue(hdfRow.sourcePath().endsWith("shepard-plugin-hdf-hsds-0.3.0.jar"));
     assertNotNull(hdfRow.registeredAt());
+  }
+
+  @Test
+  void listEnrichedManifest_surfacesPm1cFields() {
+    // A manifest that overrides every PM1c default — title / description /
+    // homepage / repository / licence / dependencies all visible in the IO.
+    PluginEntry enriched = new PluginEntry(richManifest(), null, Instant.parse("2026-05-13T05:00:00Z"));
+    Mockito.when(registry.list()).thenReturn(List.of(enriched));
+    Mockito.when(registry.isEnabled("rich")).thenReturn(true);
+
+    Response r = resource.list();
+
+    assertEquals(200, r.getStatus());
+    PluginListIO body = (PluginListIO) r.getEntity();
+    assertEquals(1, body.plugins().size());
+    PluginEntryIO io = body.plugins().get(0);
+
+    assertEquals("Rich Plugin", io.title());
+    assertEquals("A plugin with all the new PM1c metadata filled in.", io.description());
+    assertEquals("https://example.com/rich", io.homepageUrl());
+    assertEquals("https://github.com/example/rich", io.repositoryUrl());
+    assertEquals("MIT", io.licence());
+    assertNotNull(io.dependencies());
+    assertEquals(1, io.dependencies().size());
+    PluginDependencyIO dep = io.dependencies().get(0);
+    assertEquals("base", dep.pluginId());
+    assertEquals("[1.0,2.0)", dep.versionConstraint());
+  }
+
+  @Test
+  void listBareManifest_collapsesBlankPm1cFieldsToNull() {
+    // A bare manifest takes every PM1c default. title() defaults to id();
+    // description() / licence() are empty strings; URLs are Optional.empty.
+    // The IO collapses blank strings to null so they're omitted under
+    // JsonInclude.NON_NULL — clients see only what the plugin declared.
+    PluginEntry bare = new PluginEntry(
+      stubManifest("bare", "0.1.0", ">=5.2.0,<6"),
+      null,
+      Instant.parse("2026-05-13T05:00:00Z")
+    );
+    Mockito.when(registry.list()).thenReturn(List.of(bare));
+    Mockito.when(registry.isEnabled("bare")).thenReturn(true);
+
+    Response r = resource.list();
+
+    PluginEntryIO io = ((PluginListIO) r.getEntity()).plugins().get(0);
+    assertEquals("bare", io.title(), "title defaults to id, surfaced non-null");
+    assertNull(io.description(), "blank description collapses to null");
+    assertNull(io.homepageUrl(), "Optional.empty collapses to null");
+    assertNull(io.repositoryUrl());
+    assertNull(io.licence(), "blank licence collapses to null");
+    assertNotNull(io.dependencies(), "dependencies is always a list, never null");
+    assertTrue(io.dependencies().isEmpty());
   }
 
   // ─── PATCH happy paths ──────────────────────────────────────────────────
@@ -306,6 +362,56 @@ class PluginsAdminRestTest {
       @Override
       public void onRegister(PluginContext ctx) {
         // no-op for tests
+      }
+    };
+  }
+
+  /** PM1c — exercises every overridable default method. */
+  private PluginManifest richManifest() {
+    return new PluginManifest() {
+      @Override
+      public String id() {
+        return "rich";
+      }
+
+      @Override
+      public String version() {
+        return "2.5.0";
+      }
+
+      @Override
+      public String shepardCompatibility() {
+        return ">=5.2.0,<6";
+      }
+
+      @Override
+      public String title() {
+        return "Rich Plugin";
+      }
+
+      @Override
+      public String description() {
+        return "A plugin with all the new PM1c metadata filled in.";
+      }
+
+      @Override
+      public Optional<URI> homepageUrl() {
+        return Optional.of(URI.create("https://example.com/rich"));
+      }
+
+      @Override
+      public Optional<URI> repositoryUrl() {
+        return Optional.of(URI.create("https://github.com/example/rich"));
+      }
+
+      @Override
+      public String licence() {
+        return "MIT";
+      }
+
+      @Override
+      public List<PluginDependency> dependencies() {
+        return List.of(new PluginDependency("base", "[1.0,2.0)"));
       }
     };
   }

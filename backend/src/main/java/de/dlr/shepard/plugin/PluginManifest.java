@@ -1,5 +1,9 @@
 package de.dlr.shepard.plugin;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * PM1a — the SPI contract every shepard plugin implements.
  *
@@ -67,6 +71,93 @@ public interface PluginManifest {
    * admin REST. PM1b adds the actual compatibility check.
    */
   String shepardCompatibility();
+
+  /**
+   * Human-readable display name for the plugin — surfaced in the
+   * admin REST + CLI list table and, eventually, the frontend admin
+   * tile. Default: {@link #id()} (so a manifest that doesn't
+   * override the method still produces a usable column).
+   *
+   * <p>PM1c addition. Existing plugins keep compiling without
+   * change because the method is a default.
+   */
+  default String title() {
+    return id();
+  }
+
+  /**
+   * One-paragraph operator-facing description. Surfaced in
+   * {@code GET /v2/admin/plugins} for the admin UI's plugin-detail
+   * view (PM1d candidate) and in the CLI {@code --output=json}
+   * shape. Default: empty string.
+   *
+   * <p>PM1c addition.
+   */
+  default String description() {
+    return "";
+  }
+
+  /**
+   * Plugin homepage / project page. Distinct from
+   * {@link #repositoryUrl()} (which points at the source) — the
+   * homepage is the "marketing-facing" link a researcher follows to
+   * learn what the plugin does. Default: {@code Optional.empty()}.
+   *
+   * <p>PM1c addition.
+   */
+  default Optional<URI> homepageUrl() {
+    return Optional.empty();
+  }
+
+  /**
+   * Plugin source-code repository (the GitHub / GitLab / Codeberg URL).
+   * Distinct from {@link #homepageUrl()} — a single plugin can have
+   * one of each, both, or neither. Default: {@code Optional.empty()}.
+   *
+   * <p>PM1c addition.
+   */
+  default Optional<URI> repositoryUrl() {
+    return Optional.empty();
+  }
+
+  /**
+   * SPDX licence identifier (e.g. {@code "Apache-2.0"},
+   * {@code "MIT"}, {@code "EPL-2.0"}). Surfaced in
+   * {@code GET /v2/admin/plugins} so an operator can see at-a-glance
+   * whether a plugin's licence is compatible with their deployment
+   * policy — same audit signal as the dependency-review gate in
+   * {@code .github/dependency-review-config.yml}.
+   *
+   * <p>Default: empty string (plugin chose not to declare; surfaced
+   * verbatim in the admin REST).
+   *
+   * <p>PM1c addition.
+   */
+  default String licence() {
+    return "";
+  }
+
+  /**
+   * Plugins this plugin depends on. Each entry names a sibling
+   * plugin by id and a Maven-style version range that the sibling's
+   * declared {@link #version()} must satisfy. Default: empty.
+   *
+   * <p>The {@link PluginRegistry} topologically sorts the dependency
+   * graph at startup and registers in dependency order — so a
+   * plugin's {@code onRegister} is guaranteed to run after all its
+   * declared dependencies have completed theirs. Missing
+   * dependencies, version-mismatches, and cycles all mark the
+   * affected plugin {@link PluginState#FAILED} fail-soft (the rest
+   * of the registry continues).
+   *
+   * <p>PM1c addition.
+   *
+   * @see PluginDependency
+   * @see VersionRange
+   */
+  default List<PluginDependency> dependencies() {
+    return List.of();
+  }
 
   /**
    * Lifecycle hook invoked after the JAR's classes are loaded and

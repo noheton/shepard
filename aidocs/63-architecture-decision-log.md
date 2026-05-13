@@ -1242,6 +1242,26 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   `plugin.not-found`. CLI mirrors 1:1 with the shared L1
   baseline flags. PROV1a captures each PATCH as an
   `:Activity` row automatically.*
+- ✅ **Manifest enrichment + dependency resolution** — the
+  `PluginManifest` SPI grows admin-visible metadata
+  (`title()` / `description()` / `homepageUrl()` /
+  `repositoryUrl()` / `licence()`) and an inter-plugin
+  dependency declaration (`dependencies()` returning a list
+  of `PluginDependency`); the registry topo-sorts the
+  graph and fails plugins fail-soft on missing /
+  version-mismatched / cyclic dependencies. *Done in PM1c
+  (this commit). All six new methods are `default` so the
+  SPI surface stays backwards-compatible — existing plugins
+  keep compiling. Version-range parsing handled in-tree by
+  `de.dlr.shepard.plugin.VersionRange` (Maven-style syntax;
+  no `org.apache.maven:maven-artifact` dependency added —
+  same in-tree-parser posture as N1c2's ontology-bundle
+  slug parser). `GET /v2/admin/plugins` wire shape grows
+  six fields all backwards-compatible additive; CLI table
+  grows three width-capped columns; UnhidePluginManifest
+  fills every field in (title="Helmholtz Unhide Publish",
+  licence="Apache-2.0", deps=empty since UH1a depends on
+  in-tree backend SPIs only).*
 - ✅ **Documentation** — operator runbook on `docs/reference/plugins.md`
   covering install / uninstall / enable / disable. *Done in PM1a
   phase 3 (this commit; the per-plugin pages at
