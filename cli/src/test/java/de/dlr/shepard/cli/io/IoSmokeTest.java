@@ -54,6 +54,42 @@ final class IoSmokeTest {
   }
 
   @Test
+  void refreshOntologiesResultDecodes() throws Exception {
+    RefreshOntologiesResult r = mapper.readValue(
+      """
+      {
+        "requested": 9,
+        "refreshed": 7,
+        "alreadyCurrent": 2,
+        "errors": [
+          {"bundle": "qudt", "reason": "timeout"}
+        ]
+      }
+      """,
+      RefreshOntologiesResult.class
+    );
+
+    assertThat(r.getRequested()).isEqualTo(9);
+    assertThat(r.getRefreshed()).isEqualTo(7);
+    assertThat(r.getAlreadyCurrent()).isEqualTo(2);
+    assertThat(r.hasErrors()).isTrue();
+    assertThat(r.getErrors()).hasSize(1);
+    assertThat(r.getErrors().get(0).getBundle()).isEqualTo("qudt");
+    assertThat(r.getErrors().get(0).getReason()).isEqualTo("timeout");
+  }
+
+  @Test
+  void refreshOntologiesResultTolerantOfMissingErrors() throws Exception {
+    RefreshOntologiesResult r = mapper.readValue(
+      "{\"requested\":3,\"refreshed\":3,\"alreadyCurrent\":0}",
+      RefreshOntologiesResult.class
+    );
+
+    assertThat(r.hasErrors()).isFalse();
+    assertThat(r.getErrors()).isEmpty();
+  }
+
+  @Test
   void migrationProgressDecodes() throws Exception {
     List<MigrationProgress> list = mapper.readValue(
       """

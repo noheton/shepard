@@ -4,13 +4,15 @@ title: Admin CLI (reference)
 permalink: /reference/admin-cli/
 ---
 
-# `shepard-admin` reference (L1 Phase 1)
+# `shepard-admin` reference
 
 `shepard-admin` is the operator command-line tool that wraps the
 `/v2/admin/...` and operator-only `/shepard/api/temp/migrations/...`
-endpoints. Phase 1 ships three read-only commands; mutation, RO-Crate
-import/export, and the first-run TUI wizard land in later phases (see
-`aidocs/22`).
+endpoints. L1 Phase 1 ships three read-only commands (features /
+health / migrations); N1c then grafts the first mutation
+subcommand on — `semantic refresh-ontologies` — for refreshing
+the bundled ontologies. RO-Crate import/export and the first-run
+TUI wizard land in later phases (see `aidocs/22`).
 
 ## Install
 
@@ -176,6 +178,74 @@ container 13 errors: schema column missing on batch 3
 JSON output is symmetric — a list when no `containerId` is given, a
 single object when one is.
 
+### `shepard-admin semantic refresh-ontologies`
+
+Calls `POST /v2/admin/semantic/refresh-ontologies` on the backend.
+Walks the bundled-ontology manifest (per N1b / ADR-0019), fetches
+each bundle's pinned `canonicalUrl`, recomputes its SHA-256, and
+re-imports into the internal `n10s` repository when the hash
+differs from the bundled stub.
+
+The shipped ontology bundles are **minimum-viable Turtle stubs**
+(per-bundle 1-2 KB, ~16 KB total) — enough for the casual
+annotation flow on a fresh install. `refresh-ontologies` is the
+operator's escape hatch for landing the full canonical Turtle
+(~13 MB) without waiting for the next shepard release.
+
+```text
+$ shepard-admin semantic refresh-ontologies
+Refresh complete — requested=9 refreshed=7 alreadyCurrent=2 errors=0
+```
+
+Scope to specific bundles (use the manifest's `id` field —
+`prov-o`, `dublin-core`, `schema-org`, `foaf`, `qudt`, `om-2`,
+`time`, `geosparql`, `obo-relations`):
+
+```text
+$ shepard-admin semantic refresh-ontologies --bundles=qudt,prov-o
+Refresh complete — requested=2 refreshed=2 alreadyCurrent=0 errors=0
+```
+
+Force a re-import even when the canonical Turtle hash matches the
+bundled stub (useful after an n10s data reset):
+
+```text
+$ shepard-admin semantic refresh-ontologies --force
+Refresh complete — requested=9 refreshed=9 alreadyCurrent=0 errors=0
+```
+
+Per-bundle failures surface under the summary line (and **set the
+exit code to 1** for shell-pipeline integration):
+
+```text
+$ shepard-admin semantic refresh-ontologies
+Refresh complete — requested=9 refreshed=7 alreadyCurrent=1 errors=1
+
+BUNDLE  REASON
+------  -------------------------------------------------------------
+qudt    Could not fetch http://qudt.org/2.1/vocab/unit.ttl: timeout
+
+$ echo $?
+1
+```
+
+JSON output mirrors the wire shape:
+
+```text
+$ shepard-admin semantic refresh-ontologies --output json
+{
+  "requested" : 9,
+  "refreshed" : 7,
+  "alreadyCurrent" : 2,
+  "errors" : [ ]
+}
+```
+
+The command is **operator-only** by design — there's no frontend
+exposure. Refresh is a controlled-cadence action; canonical
+ontology hosts are often rate-limited and re-importing under
+routine clicks would be hostile.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -199,3 +269,7 @@ Phase 2 will add `shepard-admin cleanup deleted-entities --dry-run`
 (`aidocs/22 §4.1`). Phase 3 adds RO-Crate import/export
 (`aidocs/22 §4.7`). Phase 4 lands the `init` TUI wizard, JBang
 distribution, and the universal-TUI patterns from `aidocs/22 §4.x`.
+`semantic refresh-ontologies` (N1c) is the first mutation
+subcommand on top of L1 Phase 1; later N1-series work (LUMEN seed
+integration, frontend annotation picker) lives on the data /
+frontend side rather than the CLI.

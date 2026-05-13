@@ -47,10 +47,15 @@ public final class StubBackend implements AutoCloseable {
   /** Register a route with explicit status code. */
   public StubBackend route(String path, int status, Function<RecordedRequest, String> bodyFn) {
     server.createContext(path, exchange -> {
+      byte[] requestBody;
+      try (var in = exchange.getRequestBody()) {
+        requestBody = in.readAllBytes();
+      }
       RecordedRequest rr = new RecordedRequest(
         exchange.getRequestMethod(),
         exchange.getRequestURI().getPath(),
-        exchange.getRequestHeaders().getFirst("X-API-KEY")
+        exchange.getRequestHeaders().getFirst("X-API-KEY"),
+        new String(requestBody, StandardCharsets.UTF_8)
       );
       received.add(rr);
       String body;
@@ -86,5 +91,11 @@ public final class StubBackend implements AutoCloseable {
   }
 
   /** Lightweight value object — captures the parts of the request the CLI tests care about. */
-  public record RecordedRequest(String method, String path, String apiKeyHeader) {}
+  public record RecordedRequest(String method, String path, String apiKeyHeader, String body) {
+
+    /** Back-compat constructor for callers built before the body field landed. */
+    public RecordedRequest(String method, String path, String apiKeyHeader) {
+      this(method, path, apiKeyHeader, "");
+    }
+  }
 }
