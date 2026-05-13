@@ -18,6 +18,17 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
 
+// PROV1d: the activity sparkline dashboard is keyed by Collection appId
+// (the L2 native identifier; backend `/v2/provenance/stats` rejects the
+// legacy numeric id). The generated `Collection` model doesn't yet
+// expose `appId` directly, but the wire shape does carry it; read
+// defensively so older backend builds don't crash the page.
+const collectionAppId = computed<string | null>(() => {
+  if (!collection.value) return null;
+  const raw = (collection.value as unknown as { appId?: string | null }).appId;
+  return raw ?? null;
+});
+
 watch(collection, () => {
   useHead({
     title: collection.value?.name + " | shepard",
@@ -107,6 +118,16 @@ watch(collection, () => {
                       :collection-id="routeParams.collectionId"
                       :data-object-map="dataObjectsMap"
                       @number-of-entries-changed="onLabJournalCountChanged"
+                    />
+                  </div>
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="Activity"
+                >
+                  <div class="pt-4">
+                    <ActivitySparklineCard
+                      :collection-app-id="collectionAppId"
                     />
                   </div>
                 </ExpansionPanelItem>
