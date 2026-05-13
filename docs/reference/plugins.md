@@ -46,7 +46,7 @@ shape: `shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
 
 ## Bundled plugins
 
-The published backend image bakes three plugins into
+The published backend image bakes four plugins into
 `/deployments/plugins/` by default. They activate automatically
 via the `with-plugins` Maven profile; operators don't need to
 copy any JAR by hand.
@@ -56,6 +56,7 @@ copy any JAR by hand.
 | `unhide` | `plugins/unhide/` (`shepard-plugin-unhide`) | Helmholtz Unhide publish feed — `GET /v2/unhide/feed.jsonld` schema.org + metadata4ing JSON-LD for the HKG / Unhide harvester. Admin-configurable runtime: `:UnhideConfig` singleton + `/v2/admin/unhide/config` + `shepard-admin unhide ...` CLI parity. | UH1a–UH1c |
 | `kip` | `plugins/kip/` (`shepard-plugin-kip`) | HMC Kernel Information Profile resolver — `GET /v2/.well-known/kip/{pid-suffix}` returns the public JSON-LD KIP record per `aidocs/66 §3.2`. | KIP1g |
 | `minter-local` | `plugins/minter-local/` (`shepard-plugin-minter-local`) | Default `Minter` plugin — mints local-instance versioned PIDs of the form `shepard:<instance.id>:<kind>:<appId>:v<n>`. Replaces the pre-KIP1h in-core `MockMinter`. Optional: set `shepard.publish.minter=none` for resolver-only deployments. See [Publish and PIDs](/reference/publish-and-pids/). | KIP1h |
+| `minter-datacite` | `plugins/minter-datacite/` (`shepard-plugin-minter-datacite`) | DataCite Fabrica DOI minter — mints real DOIs against DataCite (test or production). Activated by `shepard.publish.minter=datacite` once credentials are configured. Admin-configurable runtime: `:DataciteMinterConfig` singleton + `/v2/admin/minters/datacite/...` + `shepard-admin minters datacite ...` CLI parity. AES-GCM credential cipher; versioned-PID chain via DataCite `IsNewVersionOf` / `HasVersion`. See [DataCite DOI minter](/reference/minter-datacite/). | KIP1d |
 
 To opt out of a bundled plugin without removing the JAR: set
 `shepard.plugins.<id>.enabled=false` in `application.properties`

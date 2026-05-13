@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KIP1d — DataCite Fabrica minter plugin.
+
+  Implements the in-tree `de.dlr.shepard.publish.minter.Minter` SPI
+  (KIP1a) by issuing JSON:API DOI mint calls against DataCite
+  Fabrica's REST API (test environment `api.test.datacite.org`
+  or production `api.datacite.org`, operator's choice per the
+  `:DataciteMinterConfig.apiBaseUrl` runtime knob).
+
+  This module produces a real
+  `shepard-plugin-minter-datacite-${revision}.jar` carrying:
+
+    * `de.dlr.shepard.plugins.minter.datacite.DataciteMinter` — the
+      in-tree Minter SPI implementation. Activated when the deploy-
+      time `shepard.publish.minter=datacite` key picks it.
+    * `de.dlr.shepard.plugins.minter.datacite.DataciteMinterPluginManifest`
+      — implements the PluginManifest SPI so PluginRegistry tracks
+      KIP1d in `GET /v2/admin/plugins`.
+    * `:DataciteMinterConfig` runtime singleton + admin REST surface
+      (`/v2/admin/minters/datacite/...`) + matching CLI subcommand
+      group (`shepard-admin minters datacite ...`) per the
+      "Always: surface operator knobs in the admin config" rule.
+    * `META-INF/services/` declarations for both the backend
+      PluginManifest SPI and the CLI AdminCliCommandProvider SPI.
+
+  Build order matches UH1a / KIP1g (PM1a phase 3 + PM1d):
+
+    $ cd backend && mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd cli && mvn -B -DnoPlugins -DskipTests install
+    $ cd plugins/minter-datacite && mvn -B install
+    $ cd backend && mvn -B package
+
+  See `docs/reference/minter-datacite.md` for the operator runbook
+  and `aidocs/66 §6 + aidocs/16 KIP1d` for the design rationale.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-minter-datacite</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — DataCite DOI minter</name>
+  <description>
+    Mints DataCite DOIs against DataCite Fabrica (test or production)
+    for shepard publish flows. Implements the in-tree Minter SPI;
+    activated by `shepard.publish.minter=datacite`. See
+    `aidocs/16` KIP1d + `aidocs/66 §6`.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>1.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+    <picocli.version>4.7.6</picocli.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      backend as provided — same pattern as UH1a. Self-exclusion on
+      every sibling shepard-plugin-* artefact to break the build-time
+      circular ref introduced by the backend's `with-plugins` profile.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Neo4j-OGM — :DataciteMinterConfig is a @NodeEntity. -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>5.0.3</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — entity getter/setter shape. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.44</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!--
+      PM1d — CLI side: ship a Picocli subcommand group
+      (`shepard-admin minters datacite …`) via the
+      AdminCliCommandProvider SPI.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>${picocli.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      PM1d — pull the CLI's test fixtures (StubBackend / CliRunner)
+      so DataciteCommandsTest can target a stub backend.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-minter-datacite-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

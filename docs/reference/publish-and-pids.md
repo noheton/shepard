@@ -214,7 +214,10 @@ heuristic #3 ("SPIs in core, adapters in plugins").
   — real Handles via the PID Consortium / ePIC handle service.
   Drops into `backend/plugins/` as `shepard-plugin-minter-epic-*.jar`.
 - **`datacite` plugin** (`shepard-plugin-minter-datacite`, KIP1d,
-  queued) — DOIs via the DataCite REST API. Same drop-in shape.
+  **shipped** — see [DataCite DOI minter](#datacite-doi-minter)
+  below and [minter-datacite.md](/reference/minter-datacite/) for
+  the full operator runbook) — real DOIs via the DataCite REST
+  API against Fabrica test or production.
 
 ### The optional-minter posture
 
@@ -327,10 +330,36 @@ additively with `versionNumber` (`PublicationIO`) and
 wire-shape regression.
 
 To opt out of the local minter (rare — operators who want only the
-resolver, or who plan to mint via ePIC/DataCite once those plugins
-ship): set `shepard.publish.minter=none` in `application.properties`
-and restart. The KIP resolver keeps working against pre-existing
-`:Publication` rows; the publish endpoint returns 503.
+resolver, or who plan to mint via ePIC once that plugin ships, or
+who flip the active minter to `datacite`): set
+`shepard.publish.minter=none` in `application.properties` (or
+`=datacite` to switch to the DataCite plugin per [the DataCite
+runbook](/reference/minter-datacite/)) and restart. The KIP resolver
+keeps working against pre-existing `:Publication` rows; the publish
+endpoint returns 503 when no active minter is wired.
+
+## DataCite DOI minter
+
+KIP1d ships **`shepard-plugin-minter-datacite`** — a drop-in JAR
+under `plugins/minter-datacite/` that activates when
+`shepard.publish.minter=datacite` and DataCite Member credentials
+are configured. The plugin mints real DOIs against DataCite Fabrica
+(test, default) or production; subsequent re-mints form an
+`IsNewVersionOf` / `HasVersion` chain in DataCite Commons.
+
+The plugin's runtime knobs (apiBaseUrl, handlePrefix, repositoryId,
+publisher, landingPageBase, defaultState, password) are all
+admin-configurable via the `/v2/admin/minters/datacite/...`
+endpoints + the `shepard-admin minters datacite ...` CLI subgroup —
+per CLAUDE.md "Always: surface operator knobs in the admin config".
+The password is set via `POST /credential` only (never on the
+command line, never in `application.properties`); plaintext is
+AES-GCM-encrypted at rest and the response masks it as an 8-hex
+fingerprint.
+
+See **[the DataCite runbook](/reference/minter-datacite/)** for the
+end-to-end operator flow, the security posture details, the
+DataCite resource-type mapping, and the troubleshooting playbook.
 
 Distribution follows the ADR-0023 drop-in JAR shape: each plugin
 JAR is baked into `/deployments/plugins/` in the published backend
@@ -342,7 +371,10 @@ picks the `@Path` resources + `@ApplicationScoped` beans. See
 ## What's next
 
 - **KIP1c (ePIC plugin)** — real Handles, queued.
-- **KIP1d (DataCite plugin)** — DOIs, queued.
+- **KIP1d (DataCite plugin)** — DOIs, **shipped** (see
+  [DataCite DOI minter](#datacite-doi-minter) below and the
+  [minter-datacite reference](/reference/minter-datacite/) for the
+  full operator runbook).
 - **KIP1e (Vue Publish button)** — UI surface + licence picker, **shipped** (see [Publishing from the UI](#publishing-from-the-ui) above).
 - **KIP1f (unpublish / retire)** — open question on retire-vs-tombstone semantics; KIP records are append-only by the HMC spec so a hard delete is the wrong shape.
 - **KIP1g (resolver as plugin)** — **shipped** (see [Plugin shape](#plugin-shape) above).
