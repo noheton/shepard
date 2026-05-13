@@ -17,9 +17,11 @@ import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,13 +60,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * mutations automatically, so each PATCH lands an {@code :Activity}
  * row (targetKind=PluginEntry, action=patch). No extra wiring here.
  *
- * <p>Precedence: the runtime PATCH wins for the lifetime of the JVM
- * (the {@code PluginRegistry}'s in-memory {@code runtimeOverrides}
- * map). The deploy-time {@code shepard.plugins.<id>.enabled} key in
- * {@code application.properties} stays valid as the install default —
- * it seeds the toggle on startup but the runtime override always wins
- * until restart, matching the A3b / N1c2 / UH1a "admin-configurable"
- * pattern.
+ * <p>Precedence: the runtime PATCH wins forever after (PM1e — the
+ * flip is persisted to the {@code :PluginRuntimeOverride} table
+ * synchronously within the request so it survives restart). The
+ * deploy-time {@code shepard.plugins.<id>.enabled} key in
+ * {@code application.properties} stays valid as the install default
+ * — it seeds the toggle on first start when no override row exists.
+ * Flipping back to the install default DELETEs the override row
+ * (keeps the table sparse), matching the A3b / N1c2 / UH1a
+ * "admin-configurable" pattern with the persistent-override
+ * variant.
  *
  * @see PluginRegistry
  * @see de.dlr.shepard.plugin.PluginEntry
@@ -115,12 +120,13 @@ public class PluginsAdminRest {
   @jakarta.ws.rs.Path("/{id}")
   @Operation(
     summary = "RFC 7396 merge-patch a plugin's enabled toggle.",
-    description = "Patchable fields: `enabled` (Boolean). The flip is in-memory only — the " +
-    "runtime override stays in effect for the lifetime of the JVM; surviving across restart " +
-    "requires editing shepard.plugins.<id>.enabled in application.properties (PM1a's drop-in " +
-    "model — runtime mutation wins until restart). Returns the updated entry. " +
+    description = "Patchable fields: `enabled` (Boolean). PM1e — the flip is persisted to the " +
+    ":PluginRuntimeOverride table synchronously within this request so it survives restart. " +
+    "Flipping back to the deploy-time default (shepard.plugins.<id>.enabled, default true) " +
+    "DELETEs the override row so the table stays sparse. Returns the updated entry. " +
     "PROV1a's ProvenanceCaptureFilter captures this PATCH as an :Activity row " +
-    "(targetKind=PluginEntry) so the audit trail records who flipped which plugin when."
+    "(targetKind=PluginEntry) so the audit trail records who flipped which plugin when; " +
+    "the persisted row also carries updatedBy for fast lookups without scanning :Activity."
   )
   @APIResponse(
     responseCode = "200",
@@ -139,7 +145,7 @@ public class PluginsAdminRest {
     description = "No plugin with that id (RFC 7807).",
     content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemJson.class))
   )
-  public Response patch(@PathParam("id") String id, PluginPatchIO body) {
+  public Response patch(@PathParam("id") String id, PluginPatchIO body, @Context SecurityContext securityContext) {
     final PluginPatchIO patch = body == null ? new PluginPatchIO() : body;
 
     Set<String> unknown = patch.unknownFields();
@@ -168,8 +174,8 @@ public class PluginsAdminRest {
       boolean targetState = patch.getEnabled();
       boolean currentState = registry.isEnabled(id);
       if (targetState != currentState) {
-        registry.setEnabled(id, targetState);
-        Log.infof("PM1b: plugin '%s' enabled toggle flipped to %s via admin REST", id, targetState);
+        registry.setEnabled(id, targetState, callerSub(securityContext));
+        Log.infof("PM1e: plugin '%s' enabled toggle flipped to %s via admin REST (persisted)", id, targetState);
       } else {
         Log.debugf("PM1b: plugin '%s' already enabled=%s — PATCH is a no-op", id, targetState);
       }
@@ -178,6 +184,25 @@ public class PluginsAdminRest {
 
     PluginEntry refreshed = registry.get(id).orElse(existing.get());
     return Response.ok(PluginEntryIO.from(refreshed, registry.isEnabled(id))).build();
+  }
+
+  /** Convenience overload — keeps existing tests that don't pass a SecurityContext source-compatible. */
+  public Response patch(String id, PluginPatchIO body) {
+    return patch(id, body, null);
+  }
+
+  /**
+   * Resolve the admin's subject identifier from the
+   * {@link SecurityContext} for the PM1e audit-mirror on the
+   * persisted override row. Returns {@code null} when the context
+   * isn't injected (test path) or doesn't carry a principal — the
+   * registry then writes {@code "anonymous"} into
+   * {@code updatedBy}.
+   */
+  private static String callerSub(SecurityContext sc) {
+    if (sc == null || sc.getUserPrincipal() == null) return null;
+    String n = sc.getUserPrincipal().getName();
+    return n == null || n.isBlank() ? null : n;
   }
 
   // ─── helpers ────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -76,6 +77,19 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * the configured plugin dir's real path (see
  * {@link #discoverJarPlugins(Path)}). Signature verification is
  * out of scope for PM1a and flagged as PM1b follow-up work.
+ *
+ * <p>PM1e — runtime overrides are persisted via
+ * {@link PluginRuntimeOverrideDAO} (Neo4j {@code :PluginRuntimeOverride}
+ * label, V32 uniqueness constraint). On startup we seed the
+ * in-memory cache from the DAO so a {@code disable} survives a
+ * restart; on {@link #setEnabled(String, boolean)} we write
+ * through the DAO synchronously (when overriding the default) or
+ * delete the row (when resetting to the default), keeping the
+ * table sparse. The deploy-time
+ * {@code shepard.plugins.<id>.enabled} key in
+ * {@code application.properties} stays the install default — the
+ * persisted row wins forever after, matching the A3b / N1c2 / UH1a
+ * "operator-knob" idiom.
  */
 @ApplicationScoped
 public class PluginRegistry {
@@ -101,6 +115,18 @@ public class PluginRegistry {
   @Inject
   BeanManager beanManager;
 
+  /**
+   * PM1e — DAO for {@link PluginRuntimeOverride} rows. Resolved
+   * lazily via {@link Instance} so tests can construct a
+   * {@link PluginRegistry} reflectively without a CDI container
+   * (matching the {@link PluginRegistryTest} fixture's posture);
+   * when the DAO isn't available (i.e. {@link #overrideDao} resolves
+   * to unsatisfied), the registry falls back to the in-memory-only
+   * behaviour PM1a-c shipped.
+   */
+  @Inject
+  Instance<PluginRuntimeOverrideDAO> overrideDao;
+
   @ConfigProperty(name = CONFIG_PLUGINS_DIR, defaultValue = DEFAULT_PLUGIN_DIR)
   String pluginsDir;
 
@@ -123,10 +149,16 @@ public class PluginRegistry {
 
   /**
    * Runtime override of the per-plugin enabled flag — keyed by
-   * plugin id. {@code Optional.empty()} = no override, fall through
-   * to the config-property value. Volatile read; mutations happen
-   * only via {@link #setEnabled(String, boolean)} (the admin REST /
-   * CLI surface).
+   * plugin id. Absent entry = no override, fall through to the
+   * config-property value. Volatile read; mutations happen only via
+   * {@link #setEnabled(String, boolean)} (the admin REST / CLI
+   * surface).
+   *
+   * <p>PM1e — this map mirrors the persistent
+   * {@code :PluginRuntimeOverride} table; it is seeded from the DAO
+   * on startup (see {@link #seedOverridesFromDao()}) and kept in
+   * step with each {@code setEnabled} write. Reads stay on the
+   * in-memory cache so hot paths don't hit the DB.
    */
   private final Map<String, Boolean> runtimeOverrides = new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -178,6 +210,12 @@ public class PluginRegistry {
    */
   void discover() {
     Log.info("PM1a: plugin discovery starting");
+    // PM1e — load persisted runtime overrides BEFORE the lifecycle
+    // pass so the seeded values are visible to isEnabled() during
+    // invokeLifecycle(). Failing to seed (e.g. Neo4j not reachable)
+    // is logged + treated as "no overrides" — the registry then
+    // behaves exactly as it did pre-PM1e.
+    seedOverridesFromDao();
     if (classpathScanEnabled) {
       discoverClasspathPlugins();
     } else {
@@ -196,6 +234,36 @@ public class PluginRegistry {
       countByState(PluginState.DISABLED),
       countByState(PluginState.FAILED)
     );
+  }
+
+  /**
+   * PM1e — seed the in-memory {@link #runtimeOverrides} map from the
+   * persisted {@link PluginRuntimeOverride} rows. Idempotent
+   * (replaces any in-memory state with the DB truth). When the DAO
+   * isn't injected (test path) or is unreachable (DB down at
+   * startup), logs and continues — the registry then falls back to
+   * the deploy-time defaults exactly as PM1a-c did.
+   */
+  void seedOverridesFromDao() {
+    if (overrideDao == null || overrideDao.isUnsatisfied()) {
+      Log.debug("PM1e: PluginRuntimeOverrideDAO not injected — skipping seed (in-memory-only mode)");
+      return;
+    }
+    try {
+      List<PluginRuntimeOverride> rows = overrideDao.get().findAllOverrides();
+      runtimeOverrides.clear();
+      for (PluginRuntimeOverride row : rows) {
+        if (row.getPluginId() != null && !row.getPluginId().isBlank()) {
+          runtimeOverrides.put(row.getPluginId(), row.isEnabled());
+        }
+      }
+      Log.infof("PM1e: loaded %d persistent runtime override(s)", rows.size());
+    } catch (RuntimeException ex) {
+      // Fail-soft — a DB blip at startup must not kneecap plugin
+      // discovery; the registry continues with the deploy-time
+      // defaults. The blip is loud in the log so an operator notices.
+      Log.warnf(ex, "PM1e: could not seed runtime overrides from DAO — falling back to deploy-time defaults");
+    }
   }
 
   /**
@@ -679,24 +747,119 @@ public class PluginRegistry {
 
   /**
    * Flip the runtime override for a plugin. Returns the new effective
-   * value. The flip is in-memory only — surviving across restart
-   * requires either editing {@code application.properties} or
-   * persisting the override (PM1c).
+   * value.
+   *
+   * <p>PM1e — the flip is persisted to the
+   * {@code :PluginRuntimeOverride} table synchronously within the
+   * caller's request so a {@code disable} survives a restart. The
+   * write is sparse: if the new value matches the deploy-time
+   * default ({@code shepard.plugins.<id>.enabled}, default
+   * {@code true}), the row is DELETEd rather than updated to match
+   * — the table only ever carries rows that differ from the
+   * install default.
    *
    * <p>Does <em>not</em> re-invoke {@code onRegister} on a plugin
-   * that was {@code DISABLED} at startup — hot-toggle is PM1b
+   * that was {@code DISABLED} at startup — hot-toggle is PM1b2
    * follow-up work. Flipping to {@code false} also does not
    * invoke {@code onUnregister}; the plugin stays {@code ENABLED}
    * with the override read by callers (e.g. UH1a's own
    * {@code shepard.unhide.enabled} gates the feed at request time).
+   *
+   * @param id      the plugin id (must be registered)
+   * @param enabled the target enabled value
+   * @return the new effective value (matches {@code enabled})
    */
   public boolean setEnabled(String id, boolean enabled) {
+    return setEnabled(id, enabled, null);
+  }
+
+  /**
+   * PM1e — overload carrying the actor identifier ({@code sub}
+   * claim, or the sentinel {@code "anonymous"}) for the audit-trail
+   * mirror on the persisted row. The two-argument
+   * {@link #setEnabled(String, boolean)} delegates here with a
+   * {@code null} actor so existing call-sites stay source-compatible.
+   *
+   * @param id        the plugin id (must be registered)
+   * @param enabled   the target enabled value
+   * @param actorSub  the admin's subject identifier, or {@code null}
+   *                  if the caller cannot resolve it (e.g. CDI-less
+   *                  test path); persisted to
+   *                  {@link PluginRuntimeOverride#getUpdatedBy()} for
+   *                  fast "who flipped this most recently" queries.
+   * @return the new effective value
+   */
+  public boolean setEnabled(String id, boolean enabled, String actorSub) {
     if (!entries.containsKey(id)) {
       throw new IllegalArgumentException("No plugin registered with id '" + id + "'");
     }
     runtimeOverrides.put(id, enabled);
-    Log.infof("PM1a: plugin '%s' runtime override set to enabled=%s (no restart performed)", id, enabled);
+    persistOverride(id, enabled, actorSub);
+    Log.infof("PM1e: plugin '%s' runtime override persisted with enabled=%s (survives restart)", id, enabled);
     return enabled;
+  }
+
+  /**
+   * PM1e — write-through helper. If {@code enabled} matches the
+   * deploy-time default, deletes the row (keeps the table sparse);
+   * otherwise upserts the override.
+   *
+   * <p>Fail-soft on DAO errors — the in-memory cache has already
+   * been mutated, so the override is still in effect for the
+   * current JVM; a WARN-level log records the persistence failure.
+   * (Tests that don't wire a DAO take the same path.)
+   */
+  private void persistOverride(String id, boolean enabled, String actorSub) {
+    if (overrideDao == null || overrideDao.isUnsatisfied()) {
+      Log.debugf("PM1e: PluginRuntimeOverrideDAO not injected — runtime override for '%s' is in-memory only", id);
+      return;
+    }
+    boolean deployDefault = readDeployTimeDefault(id);
+    try {
+      PluginRuntimeOverrideDAO dao = overrideDao.get();
+      if (enabled == deployDefault) {
+        // Reset to default → delete the row, free the in-memory
+        // entry from the override map so isEnabled() falls through
+        // to the deploy-time default again.
+        boolean removed = dao.deleteByPluginId(id);
+        runtimeOverrides.remove(id);
+        if (removed) {
+          Log.infof("PM1e: plugin '%s' override reset to deploy-time default (enabled=%s) — row deleted", id, enabled);
+        } else {
+          Log.debugf("PM1e: plugin '%s' already at deploy-time default — no-op delete", id);
+        }
+        return;
+      }
+      Optional<PluginRuntimeOverride> existing = dao.findByPluginId(id);
+      PluginRuntimeOverride row = existing.orElseGet(PluginRuntimeOverride::new);
+      row.setPluginId(id);
+      row.setEnabled(enabled);
+      row.setUpdatedAt(java.time.Instant.now());
+      row.setUpdatedBy(actorSub == null || actorSub.isBlank() ? "anonymous" : actorSub);
+      dao.save(row);
+    } catch (RuntimeException ex) {
+      // In-memory cache is already mutated; the override is in
+      // effect for the lifetime of the JVM. Log loudly so the
+      // operator can re-flip after the DB recovers.
+      Log.warnf(
+        ex,
+        "PM1e: could not persist runtime override for '%s' (enabled=%s) — in-memory state is current; row will not survive restart until next successful PATCH",
+        id,
+        enabled
+      );
+    }
+  }
+
+  /**
+   * Read the deploy-time default for a plugin's enabled flag —
+   * the {@code shepard.plugins.<id>.enabled} key, defaulting to
+   * {@code true} when absent (the PM1a posture).
+   */
+  private boolean readDeployTimeDefault(String id) {
+    String key = String.format(CONFIG_PLUGIN_ENABLED_TPL, id);
+    return ConfigProvider.getConfig()
+      .getOptionalValue(key, Boolean.class)
+      .orElse(Boolean.TRUE);
   }
 
   // -----------------------------------------------------------------

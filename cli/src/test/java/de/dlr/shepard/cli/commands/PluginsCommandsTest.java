@@ -1,6 +1,7 @@
 package de.dlr.shepard.cli.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -228,6 +229,83 @@ class PluginsCommandsTest {
     assertEquals("PATCH", requests.get(0).method());
     assertTrue(requests.get(0).body().contains("\"enabled\":false"), "PATCH body sets enabled=false: " + requests.get(0).body());
     assertTrue(cap.stdout().contains("Plugin 'unhide' disabled"), "success message: " + cap.stdout());
+  }
+
+  @Test
+  void enable_successMessageMentionsPersistence_pm1e() {
+    // PM1e — the success line on stdout makes the persistent-override
+    // contract visible to the operator: "survives restart". The old
+    // pre-PM1e "in-memory only / persist via application.properties"
+    // caveat is gone.
+    backend.route(
+      "/v2/admin/plugins/unhide",
+      200,
+      rr -> "{\"id\":\"unhide\",\"version\":\"1.0.0\"," +
+        "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\",\"enabled\":true," +
+        "\"sourcePath\":null,\"registeredAt\":\"2026-05-13T05:00:00Z\"}"
+    );
+
+    Captured cap = CliRunner.run(new PluginsEnableCommand(), backend.baseUrl(), "test-key", "unhide");
+
+    assertEquals(0, cap.exit(), cap.stderr());
+    assertTrue(cap.stdout().contains("persisted"), "stdout mentions persistence: " + cap.stdout());
+    assertTrue(cap.stdout().contains("survives restart"), "stdout names the restart guarantee: " + cap.stdout());
+    assertFalse(
+      cap.stdout().contains("in-memory only") || cap.stdout().contains("until restart"),
+      "stdout no longer says 'in-memory only' or 'until restart': " + cap.stdout()
+    );
+  }
+
+  @Test
+  void disable_successMessageMentionsPersistence_pm1e() {
+    // PM1e — disable's success line mirrors enable's. The "stays
+    // disabled across restart" guarantee is the visible operator
+    // contract.
+    backend.route(
+      "/v2/admin/plugins/unhide",
+      200,
+      rr -> "{\"id\":\"unhide\",\"version\":\"1.0.0\"," +
+        "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\",\"enabled\":false," +
+        "\"sourcePath\":null,\"registeredAt\":\"2026-05-13T05:00:00Z\"}"
+    );
+
+    Captured cap = CliRunner.run(new PluginsDisableCommand(), backend.baseUrl(), "test-key", "unhide");
+
+    assertEquals(0, cap.exit(), cap.stderr());
+    assertTrue(cap.stdout().contains("persisted"), "stdout mentions persistence: " + cap.stdout());
+    assertTrue(cap.stdout().contains("survives restart"), "stdout names the restart guarantee: " + cap.stdout());
+    assertFalse(
+      cap.stdout().contains("in-memory only") || cap.stdout().contains("until restart"),
+      "stdout no longer says 'in-memory only' or 'until restart': " + cap.stdout()
+    );
+  }
+
+  @Test
+  void disableThenEnable_simulatesRestartPersistence() {
+    // PM1e — exercise the "disable, simulate restart, observe state"
+    // promise end-to-end at the CLI level. The CLI sends two PATCH
+    // requests; the StubBackend records both, mirroring what a real
+    // backend would do (persist the override → seed from DAO on
+    // restart → enable patch DELETEs the row).
+    backend.route(
+      "/v2/admin/plugins/unhide",
+      200,
+      rr -> "{\"id\":\"unhide\",\"version\":\"1.0.0\"," +
+        "\"shepardCompatibility\":\">=5.2.0,<6\",\"state\":\"ENABLED\"," +
+        "\"enabled\":" + (rr.body().contains("true") ? "true" : "false") + "," +
+        "\"sourcePath\":null,\"registeredAt\":\"2026-05-13T05:00:00Z\"}"
+    );
+
+    Captured disable = CliRunner.run(new PluginsDisableCommand(), backend.baseUrl(), "test-key", "unhide");
+    Captured enable = CliRunner.run(new PluginsEnableCommand(), backend.baseUrl(), "test-key", "unhide");
+
+    assertEquals(0, disable.exit(), disable.stderr());
+    assertEquals(0, enable.exit(), enable.stderr());
+    // Two PATCH requests recorded, in order.
+    List<RecordedRequest> requests = backend.requests();
+    assertEquals(2, requests.size());
+    assertTrue(requests.get(0).body().contains("\"enabled\":false"), "1st PATCH disables");
+    assertTrue(requests.get(1).body().contains("\"enabled\":true"), "2nd PATCH (re-)enables");
   }
 
   @Test

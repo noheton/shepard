@@ -183,10 +183,11 @@ class PluginsAdminRestTest {
     Mockito.when(registry.get("unhide")).thenReturn(Optional.of(unhide));
     // Before the flip, the registry reports DISABLED; we use an
     // AtomicBoolean to flip-through to true on setEnabled, mimicking
-    // the real registry's in-memory override.
+    // the real registry's persistent-override behaviour.
     AtomicBoolean effective = new AtomicBoolean(false);
     Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
-    Mockito.when(registry.setEnabled("unhide", true)).thenAnswer(inv -> {
+    // PM1e — the resource calls the 3-arg setEnabled(id, enabled, actorSub).
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(true), Mockito.any())).thenAnswer(inv -> {
       effective.set(true);
       return true;
     });
@@ -200,7 +201,7 @@ class PluginsAdminRestTest {
     PluginEntryIO io = (PluginEntryIO) r.getEntity();
     assertEquals("unhide", io.id());
     assertTrue(io.enabled(), "after PATCH the IO reflects the flipped state");
-    Mockito.verify(registry).setEnabled("unhide", true);
+    Mockito.verify(registry).setEnabled(Mockito.eq("unhide"), Mockito.eq(true), Mockito.any());
   }
 
   @Test
@@ -209,7 +210,7 @@ class PluginsAdminRestTest {
     Mockito.when(registry.get("unhide")).thenReturn(Optional.of(uh));
     AtomicBoolean effective = new AtomicBoolean(true);
     Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
-    Mockito.when(registry.setEnabled("unhide", false)).thenAnswer(inv -> {
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.any())).thenAnswer(inv -> {
       effective.set(false);
       return false;
     });
@@ -222,7 +223,7 @@ class PluginsAdminRestTest {
     assertEquals(200, r.getStatus());
     PluginEntryIO io = (PluginEntryIO) r.getEntity();
     assertFalse(io.enabled());
-    Mockito.verify(registry).setEnabled("unhide", false);
+    Mockito.verify(registry).setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.any());
   }
 
   @Test
@@ -239,6 +240,7 @@ class PluginsAdminRestTest {
     assertEquals(200, r.getStatus());
     PluginEntryIO io = (PluginEntryIO) r.getEntity();
     assertTrue(io.enabled());
+    Mockito.verify(registry, Mockito.never()).setEnabled(Mockito.anyString(), Mockito.anyBoolean(), Mockito.any());
     Mockito.verify(registry, Mockito.never()).setEnabled(Mockito.anyString(), Mockito.anyBoolean());
   }
 
@@ -253,6 +255,7 @@ class PluginsAdminRestTest {
     assertEquals(200, r.getStatus());
     PluginEntryIO io = (PluginEntryIO) r.getEntity();
     assertEquals("unhide", io.id());
+    Mockito.verify(registry, Mockito.never()).setEnabled(Mockito.anyString(), Mockito.anyBoolean(), Mockito.any());
     Mockito.verify(registry, Mockito.never()).setEnabled(Mockito.anyString(), Mockito.anyBoolean());
   }
 
@@ -266,6 +269,113 @@ class PluginsAdminRestTest {
 
     assertEquals(200, r.getStatus());
     assertInstanceOf(PluginEntryIO.class, r.getEntity());
+  }
+
+  // ─── PM1e — actor capture from SecurityContext ──────────────────────────
+
+  @Test
+  void patchPropagatesCallerSubFromSecurityContext() {
+    // PM1e — the resource resolves the admin's sub from the
+    // SecurityContext and passes it to the 3-arg setEnabled so the
+    // persisted override row carries `updatedBy=<sub>`.
+    PluginEntry uh = newEntry("unhide", "1.0.0", ">=5.2.0,<6", null, true);
+    Mockito.when(registry.get("unhide")).thenReturn(Optional.of(uh));
+    AtomicBoolean effective = new AtomicBoolean(true);
+    Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.eq("alice")))
+      .thenAnswer(inv -> {
+        effective.set(false);
+        return false;
+      });
+
+    jakarta.ws.rs.core.SecurityContext sc = Mockito.mock(jakarta.ws.rs.core.SecurityContext.class);
+    java.security.Principal principal = Mockito.mock(java.security.Principal.class);
+    Mockito.when(principal.getName()).thenReturn("alice");
+    Mockito.when(sc.getUserPrincipal()).thenReturn(principal);
+
+    PluginPatchIO body = new PluginPatchIO();
+    body.setEnabled(Boolean.FALSE);
+
+    Response r = resource.patch("unhide", body, sc);
+
+    assertEquals(200, r.getStatus());
+    Mockito.verify(registry).setEnabled("unhide", false, "alice");
+  }
+
+  @Test
+  void patchPassesNullActorWhenPrincipalAbsent() {
+    // No principal on the SecurityContext → resource passes null,
+    // registry persists "anonymous".
+    PluginEntry uh = newEntry("unhide", "1.0.0", ">=5.2.0,<6", null, true);
+    Mockito.when(registry.get("unhide")).thenReturn(Optional.of(uh));
+    AtomicBoolean effective = new AtomicBoolean(true);
+    Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.isNull()))
+      .thenAnswer(inv -> {
+        effective.set(false);
+        return false;
+      });
+
+    jakarta.ws.rs.core.SecurityContext sc = Mockito.mock(jakarta.ws.rs.core.SecurityContext.class);
+    Mockito.when(sc.getUserPrincipal()).thenReturn(null);
+
+    PluginPatchIO body = new PluginPatchIO();
+    body.setEnabled(Boolean.FALSE);
+
+    Response r = resource.patch("unhide", body, sc);
+
+    assertEquals(200, r.getStatus());
+    Mockito.verify(registry).setEnabled("unhide", false, null);
+  }
+
+  @Test
+  void patchPassesNullActorWhenPrincipalNameIsBlank() {
+    PluginEntry uh = newEntry("unhide", "1.0.0", ">=5.2.0,<6", null, true);
+    Mockito.when(registry.get("unhide")).thenReturn(Optional.of(uh));
+    AtomicBoolean effective = new AtomicBoolean(true);
+    Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.isNull()))
+      .thenAnswer(inv -> {
+        effective.set(false);
+        return false;
+      });
+
+    jakarta.ws.rs.core.SecurityContext sc = Mockito.mock(jakarta.ws.rs.core.SecurityContext.class);
+    java.security.Principal principal = Mockito.mock(java.security.Principal.class);
+    Mockito.when(principal.getName()).thenReturn("   ");
+    Mockito.when(sc.getUserPrincipal()).thenReturn(principal);
+
+    PluginPatchIO body = new PluginPatchIO();
+    body.setEnabled(Boolean.FALSE);
+
+    Response r = resource.patch("unhide", body, sc);
+
+    assertEquals(200, r.getStatus());
+    Mockito.verify(registry).setEnabled("unhide", false, null);
+  }
+
+  @Test
+  void twoArgPatchOverloadStillWorks_passingNullSecurityContext() {
+    // The 2-arg patch(id, body) overload exists for source
+    // compatibility with the PM1b tests; it delegates to the 3-arg
+    // path with a null SecurityContext (→ null actor).
+    PluginEntry uh = newEntry("unhide", "1.0.0", ">=5.2.0,<6", null, true);
+    Mockito.when(registry.get("unhide")).thenReturn(Optional.of(uh));
+    AtomicBoolean effective = new AtomicBoolean(true);
+    Mockito.when(registry.isEnabled("unhide")).thenAnswer(inv -> effective.get());
+    Mockito.when(registry.setEnabled(Mockito.eq("unhide"), Mockito.eq(false), Mockito.isNull()))
+      .thenAnswer(inv -> {
+        effective.set(false);
+        return false;
+      });
+
+    PluginPatchIO body = new PluginPatchIO();
+    body.setEnabled(Boolean.FALSE);
+
+    Response r = resource.patch("unhide", body);
+
+    assertEquals(200, r.getStatus());
+    Mockito.verify(registry).setEnabled("unhide", false, null);
   }
 
   // ─── PATCH error paths ──────────────────────────────────────────────────
