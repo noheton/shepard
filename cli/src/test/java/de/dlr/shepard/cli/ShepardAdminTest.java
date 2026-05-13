@@ -7,6 +7,8 @@ import de.dlr.shepard.cli.commands.FeaturesListCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.MigrationsStatusCommand;
+import de.dlr.shepard.cli.commands.SemanticCommand;
+import de.dlr.shepard.cli.commands.SemanticRefreshOntologiesCommand;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.junit.jupiter.api.Test;
@@ -15,16 +17,16 @@ import picocli.CommandLine;
 /**
  * Smoke tests for the Picocli wiring on the top-level
  * {@code ShepardAdmin} entry point: usage banner, version provider,
- * and that all three sub-commands are discoverable.
+ * and that all four top-level sub-commands are discoverable.
  */
 final class ShepardAdminTest {
 
   @Test
-  void allThreeTopLevelSubcommandsAreRegistered() {
+  void allTopLevelSubcommandsAreRegistered() {
     CommandLine cmd = new CommandLine(new ShepardAdmin());
 
     assertThat(cmd.getSubcommands().keySet())
-      .contains("features", "health", "migrations");
+      .contains("features", "health", "migrations", "semantic");
   }
 
   @Test
@@ -105,6 +107,24 @@ final class ShepardAdminTest {
   @Test
   void migrationsAloneIsAccessible() {
     int exit = new CommandLine(new ShepardAdmin()).execute("migrations");
+    assertThat(exit).isEqualTo(0);
+  }
+
+  @Test
+  void semanticSubcommandHasRefreshOntologiesUnderIt() {
+    CommandLine cmd = new CommandLine(new ShepardAdmin());
+
+    CommandLine semantic = cmd.getSubcommands().get("semantic");
+    assertThat(semantic).isNotNull();
+    assertThat((Object) semantic.getCommand()).isInstanceOf(SemanticCommand.class);
+    assertThat(semantic.getSubcommands().keySet()).contains("refresh-ontologies");
+    assertThat((Object) semantic.getSubcommands().get("refresh-ontologies").getCommand())
+      .isInstanceOf(SemanticRefreshOntologiesCommand.class);
+  }
+
+  @Test
+  void semanticAloneIsAccessible() {
+    int exit = new CommandLine(new ShepardAdmin()).execute("semantic");
     assertThat(exit).isEqualTo(0);
   }
 }

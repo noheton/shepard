@@ -55,9 +55,14 @@ subset, set
 The currently-bundled files are **minimum-viable Turtle stubs**
 carrying each ontology's canonical IRI prefix plus a handful of
 representative classes / properties — enough for the casual
-annotation flow on a fresh install. The forthcoming
-`shepard-admin semantic refresh-ontologies` CLI (N1c) swaps in the
-full canonical Turtle in bulk.
+annotation flow on a fresh install. Operators who want the full
+canonical vocabularies run `shepard-admin semantic refresh-ontologies`
+(N1c) — see [admin CLI reference](/reference/admin-cli/#shepard-admin-semantic-refresh-ontologies)
+for the invocation; the command walks the manifest, fetches each
+bundle's pinned `canonicalUrl`, recomputes SHA-256, and re-imports
+into `n10s` when the hash differs from the bundled stub. The
+backend endpoint behind it is `POST /v2/admin/semantic/refresh-ontologies`
+(instance-admin gated).
 
 ## `INTERNAL` — neosemantics inside shepard's Neo4j
 

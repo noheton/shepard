@@ -1057,6 +1057,15 @@ them. Concretely the shipped artefact is:
   - `shepard-admin migrations status [containerId]` —
     `GET /shepard/api/temp/migrations/state` or
     `GET /shepard/api/temp/migrations/{containerId}`.
+- **N1c (shipped post-Phase-1)** — first mutation subcommand:
+  - `shepard-admin semantic refresh-ontologies [--bundles=…] [--force]`
+    — `POST /v2/admin/semantic/refresh-ontologies` (instance-admin
+    gated). Walks the bundled-ontology manifest, fetches each
+    bundle's pinned canonical URL, recomputes SHA-256, and
+    re-imports via `n10s.rdf.import.inline` when the hash differs.
+    Best-effort per bundle (partial failures live in `errors[]`
+    with 200 OK overall); exit code 0 on full success, 1 on any
+    per-bundle error.
 - Every command supports `--output human` (default, plain-text
   column-aligned table — pipes cleanly into `awk`) and
   `--output json` (pretty-printed Jackson).

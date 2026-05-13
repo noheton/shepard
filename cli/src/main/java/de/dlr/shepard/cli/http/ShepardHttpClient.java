@@ -69,6 +69,43 @@ public final class ShepardHttpClient {
     });
   }
 
+  /**
+   * Perform a {@code POST} against {@code path} with a JSON-serialised
+   * {@code requestBody}, decode the response as JSON of the given
+   * {@code responseType}. Throws {@link AdminCliException} on any
+   * non-2xx response or transport failure.
+   */
+  public <T> T postJson(String path, Object requestBody, TypeReference<T> responseType) {
+    HttpResponse<String> response = post(path, requestBody);
+    return decode(response.body(), body -> {
+      try {
+        return MAPPER.readValue(body, responseType);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+
+  /** Raw {@code POST} variant — serialises {@code requestBody} via Jackson. */
+  public HttpResponse<String> post(String path, Object requestBody) {
+    final String json;
+    try {
+      json = requestBody == null ? "{}" : MAPPER.writeValueAsString(requestBody);
+    } catch (IOException e) {
+      throw new AdminCliException("Could not serialise request body to JSON: " + e.getMessage(), e);
+    }
+    URI uri = URI.create(baseUrl + ensureLeadingSlash(path));
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      .POST(HttpRequest.BodyPublishers.ofString(json))
+      .timeout(Duration.ofSeconds(120))
+      .header("Accept", "application/json")
+      .header("Content-Type", "application/json");
+    if (apiKey != null && !apiKey.isBlank()) {
+      builder.header("X-API-KEY", apiKey);
+    }
+    return send(builder.build(), path, false);
+  }
+
   /** Raw {@code GET} variant — useful for endpoints that may return non-JSON (e.g. plain text). */
   public HttpResponse<String> get(String path) {
     return get(path, false);
@@ -89,7 +126,16 @@ public final class ShepardHttpClient {
     if (apiKey != null && !apiKey.isBlank()) {
       builder.header("X-API-KEY", apiKey);
     }
-    HttpRequest request = builder.build();
+    return send(builder.build(), path, allow503);
+  }
+
+  /**
+   * Dispatch a fully-built request and map status codes / transport
+   * failures to {@link AdminCliException}. Shared by the GET, POST,
+   * and any future PATCH/PUT/DELETE paths so the operator-readable
+   * error messages stay consistent.
+   */
+  HttpResponse<String> send(HttpRequest request, String path, boolean allow503) {
     HttpResponse<String> response;
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
