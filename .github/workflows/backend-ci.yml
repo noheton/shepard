@@ -12,10 +12,12 @@ on:
       - "claude/**"
     paths:
       - "backend/**"
+      - "plugins/**"
       - ".github/workflows/backend-ci.yml"
   pull_request:
     paths:
       - "backend/**"
+      - "plugins/**"
       - ".github/workflows/backend-ci.yml"
   workflow_dispatch:
 
@@ -32,9 +34,6 @@ jobs:
   unit-tests-coverage:
     name: Unit tests + coverage gate
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
@@ -45,7 +44,24 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # PM1a phase 3 (ADR-0023): UH1a ships as the drop-in plugin
+      # JAR `shepard-plugin-unhide`, declared as a backend
+      # <dependency>. The plugin's `provided`-scope backend dep
+      # forces a two-pass install: first stub-install the backend
+      # so the plugin can resolve its compile-time core types,
+      # then install the plugin so the backend's package step can
+      # resolve it back. CI sequence below replicates the local
+      # developer workflow documented in `docs/reference/plugins.md`.
+      - name: Stub-install backend (so the plugin's provided dep resolves)
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install plugin modules (so the backend can resolve them)
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
       - name: Run unit tests + JaCoCo report + coverage gate
+        working-directory: backend
         run: |
           mvn -B -P unit-test \
               -DskipITs \
@@ -73,9 +89,6 @@ jobs:
   spotbugs-findsecbugs:
     name: SpotBugs + findsecbugs
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
@@ -86,7 +99,18 @@ jobs:
           java-version: "21"
           cache: maven
 
+      # PM1a phase 3 (ADR-0023): same two-pass plugin/backend
+      # install dance as the unit-tests job above.
+      - name: Stub-install backend (so the plugin's provided dep resolves)
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install plugin modules (so the backend can resolve them)
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
       - name: Run SpotBugs + findsecbugs (fail on High-confidence findings)
+        working-directory: backend
         run: |
           mvn -B -DskipTests \
               -Dspotbugs.failOnError=true \

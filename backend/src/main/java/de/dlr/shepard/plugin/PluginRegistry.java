@@ -84,11 +84,23 @@ public class PluginRegistry {
   /** Per-plugin runtime-toggle key template — fed plugin id. */
   public static final String CONFIG_PLUGIN_ENABLED_TPL = "shepard.plugins.%s.enabled";
 
+  /**
+   * Opt-out for the build-classpath ServiceLoader pass — set to
+   * {@code false} to scan only the drop-in JAR directory. Mainly
+   * useful in unit tests where the test classpath may carry plugin
+   * manifests (e.g. UH1a as a build dependency) that the test
+   * doesn't want to discover. Default {@code true} (scan).
+   */
+  public static final String CONFIG_CLASSPATH_SCAN_ENABLED = "shepard.plugins.classpath-scan.enabled";
+
   @Inject
   BeanManager beanManager;
 
   @ConfigProperty(name = CONFIG_PLUGINS_DIR, defaultValue = DEFAULT_PLUGIN_DIR)
   String pluginsDir;
+
+  @ConfigProperty(name = CONFIG_CLASSPATH_SCAN_ENABLED, defaultValue = "true")
+  boolean classpathScanEnabled;
 
   /**
    * Insertion-ordered map keyed by plugin id. Reads happen on the
@@ -141,7 +153,11 @@ public class PluginRegistry {
    */
   void discover() {
     Log.info("PM1a: plugin discovery starting");
-    discoverClasspathPlugins();
+    if (classpathScanEnabled) {
+      discoverClasspathPlugins();
+    } else {
+      Log.debug("PM1a: classpath scan disabled via shepard.plugins.classpath-scan.enabled=false");
+    }
     Path resolved = resolvePluginDir();
     if (resolved != null) {
       discoverJarPlugins(resolved);
@@ -238,20 +254,74 @@ public class PluginRegistry {
       Thread.currentThread().getContextClassLoader()
     );
     childLoaders.add(childLoader);
-    try {
-      ServiceLoader<PluginManifest> loader = ServiceLoader.load(PluginManifest.class, childLoader);
-      boolean any = false;
-      for (PluginManifest manifest : loader) {
-        any = true;
-        register(new PluginEntry(manifest, realJar));
-      }
-      if (!any) {
-        Log.warnf("PM1a: %s carries no META-INF/services/PluginManifest — ignored", realJar.getFileName());
-      }
-    } catch (ServiceConfigurationError e) {
-      // plugin.discovery.failed — record but continue with other JARs.
-      Log.warnf(e, "PM1a: ServiceLoader failed for %s — plugin.discovery.failed", realJar.getFileName());
+    // ServiceLoader.load(class, loader) walks the loader AND its
+    // parents for `META-INF/services/...` entries — so if the
+    // backend's own classloader already carries
+    // `META-INF/services/PluginManifest` (e.g. UH1a as a build
+    // dependency), the child-loader pass would re-discover the
+    // backend-classpath service and double-register it. To keep
+    // the JAR-walk strictly about the JAR itself, we read the
+    // service-file entries directly from the JAR and resolve
+    // each implementation class via the child loader.
+    List<String> implClasses = readServiceImplsFromJar(realJar);
+    if (implClasses.isEmpty()) {
+      Log.warnf("PM1a: %s carries no META-INF/services/PluginManifest — ignored", realJar.getFileName());
+      return;
     }
+    for (String implClass : implClasses) {
+      try {
+        Class<?> cls = Class.forName(implClass, true, childLoader);
+        if (!PluginManifest.class.isAssignableFrom(cls)) {
+          Log.warnf(
+            "PM1a: %s names %s in META-INF/services/PluginManifest but it's not a PluginManifest — skipping",
+            realJar.getFileName(),
+            implClass
+          );
+          continue;
+        }
+        PluginManifest manifest = (PluginManifest) cls.getDeclaredConstructor().newInstance();
+        register(new PluginEntry(manifest, realJar));
+      } catch (ReflectiveOperationException | LinkageError e) {
+        // plugin.discovery.failed — record but continue.
+        Log.warnf(e, "PM1a: failed to instantiate %s from %s — plugin.discovery.failed", implClass, realJar.getFileName());
+      }
+    }
+  }
+
+  /**
+   * Read implementation-class names from the JAR's own
+   * {@code META-INF/services/de.dlr.shepard.plugin.PluginManifest}
+   * entry — without using {@link ServiceLoader#load}, because that
+   * would also walk the parent classloader and return entries
+   * already discovered there.
+   */
+  private List<String> readServiceImplsFromJar(Path jar) {
+    List<String> result = new ArrayList<>();
+    try (java.util.jar.JarFile jf = new java.util.jar.JarFile(jar.toFile())) {
+      java.util.jar.JarEntry entry = jf.getJarEntry("META-INF/services/" + PluginManifest.class.getName());
+      if (entry == null) {
+        return result;
+      }
+      try (java.io.BufferedReader r = new java.io.BufferedReader(
+          new java.io.InputStreamReader(jf.getInputStream(entry), java.nio.charset.StandardCharsets.UTF_8))) {
+        String line;
+        while ((line = r.readLine()) != null) {
+          // ServiceLoader file syntax: ignore lines past `#`, trim,
+          // skip blanks.
+          int hash = line.indexOf('#');
+          if (hash >= 0) {
+            line = line.substring(0, hash);
+          }
+          line = line.trim();
+          if (!line.isEmpty()) {
+            result.add(line);
+          }
+        }
+      }
+    } catch (IOException e) {
+      Log.warnf(e, "PM1a: error reading service file from %s", jar);
+    }
+    return result;
   }
 
   /**
@@ -267,6 +337,25 @@ public class PluginRegistry {
     }
     if (entries.containsKey(id)) {
       PluginEntry existing = entries.get(id);
+      // PM1a phase 3: a plugin that lives on the build classpath
+      // (e.g. UH1a as a Maven dependency of the backend, per
+      // ADR-0023) is *also* commonly present as a JAR in
+      // `backend/plugins/` for operator visibility (`ls` shows it).
+      // The classpath ServiceLoader pass runs first; when the same
+      // id then shows up from a JAR walk we treat the duplicate as
+      // benign and skip the second occurrence — the classpath
+      // version is already wired through Quarkus's build-time CDI
+      // scan and is the active runtime path.
+      boolean firstIsClasspath = existing.jarPath() == null;
+      boolean secondIsJar = entry.jarPath() != null;
+      if (firstIsClasspath && secondIsJar) {
+        Log.infof(
+          "PM1a: plugin '%s' already discovered on the build classpath — JAR at %s shadowed (benign; the classpath bean wiring wins)",
+          id,
+          entry.jarPath()
+        );
+        return;
+      }
       entry.markFailed("duplicate plugin id (already loaded from " + existing.jarPath() + ")");
       Log.warnf(
         "PM1a: duplicate plugin id '%s' — second occurrence from %s rejected (already loaded from %s)",

@@ -62,6 +62,15 @@ import org.junit.jupiter.api.Test;
 class V2NamespaceTest {
 
   private static final String V2_PACKAGE = "de.dlr.shepard.v2";
+  /**
+   * PM1a phase 3: in-tree plugin modules (`shepard-plugin-*`) live
+   * under `de.dlr.shepard.plugins..` and ship their REST resources
+   * on the {@code /v2/} surface alongside the in-tree v2 shelf —
+   * matching CLAUDE.md's "all new endpoints we add land under /v2/"
+   * rule. The fence treats this package as equally entitled to the
+   * {@code /v2/} prefix as {@code de.dlr.shepard.v2..}.
+   */
+  private static final String PLUGINS_PACKAGE = "de.dlr.shepard.plugins";
   private static final String V2_PREFIX_WITH_SLASH = "/v2/";
   private static final String V2_PREFIX_NO_SLASH = "v2/";
   private static final String API_PREFIX_WITH_SLASH = "/shepard/api/";
@@ -78,12 +87,14 @@ class V2NamespaceTest {
 
   @Test
   void v2PackageResourcesMustUseV2PathPrefix() {
-    // No /v2/ resources land in this slice — L2d (`aidocs/25 §4 Phase 4`)
-    // populates the package. allowEmptyShould keeps the rule armed; once
-    // L2d ships its first resource the rule starts evaluating real
-    // classes without needing a tweak here.
+    // L2d (`aidocs/25 §4 Phase 4`) populates `de.dlr.shepard.v2..`;
+    // PM1a phase 3's UH1a is the first `de.dlr.shepard.plugins..`
+    // tenant of the /v2/ surface. The rule is armed for both
+    // packages — allowEmptyShould keeps it from tripping when the
+    // pure-v2 package is empty (the plugins package already has
+    // contributors).
     ArchRuleDefinition.classes()
-      .that(are(inV2Package()))
+      .that(are(inV2Package()).or(are(inPluginsPackage())))
       .and()
       .areAnnotatedWith(Path.class)
       .should(haveJaxRsPathStartingWith(V2_PREFIX_WITH_SLASH, V2_PREFIX_NO_SLASH))
@@ -104,6 +115,9 @@ class V2NamespaceTest {
       .and()
       .resideOutsideOfPackage("de.dlr.shepard.plugins..")
       .and()
+      // PM1a phase 3: plugin modules are an equal-tier /v2/ tenant.
+      .resideOutsideOfPackage(PLUGINS_PACKAGE + "..")
+      .and()
       .areAnnotatedWith(Path.class)
       .should(notHaveJaxRsPathStartingWith(V2_PREFIX_WITH_SLASH, V2_PREFIX_NO_SLASH))
       .check(shepardClasses);
@@ -114,6 +128,11 @@ class V2NamespaceTest {
     ArchRuleDefinition.classes()
       .that()
       .resideOutsideOfPackage(V2_PACKAGE + "..")
+      .and()
+      // PM1a phase 3: plugin modules mount on the /v2/ shelf, not
+      // the upstream-compat /shepard/api/ one. Exempt from the
+      // API-prefix rule by package.
+      .resideOutsideOfPackage(PLUGINS_PACKAGE + "..")
       // OpenAPI emission classes mount at `/shepard/doc/...` to mirror
       // the existing smallrye-openapi extension's combined-doc path
       // (`/openapi.json` / `/shepard/doc/openapi.json`). These are
@@ -141,6 +160,16 @@ class V2NamespaceTest {
       public boolean test(JavaClass javaClass) {
         String pkg = javaClass.getPackageName();
         return pkg.equals(V2_PACKAGE) || pkg.startsWith(V2_PACKAGE + ".");
+      }
+    };
+  }
+
+  private static DescribedPredicate<JavaClass> inPluginsPackage() {
+    return new DescribedPredicate<>("reside in package " + PLUGINS_PACKAGE + "..") {
+      @Override
+      public boolean test(JavaClass javaClass) {
+        String pkg = javaClass.getPackageName();
+        return pkg.equals(PLUGINS_PACKAGE) || pkg.startsWith(PLUGINS_PACKAGE + ".");
       }
     };
   }

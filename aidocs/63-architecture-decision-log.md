@@ -1213,33 +1213,47 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
 
 ### Forward work flagged by this decision
 
-- **`PluginManifest` SPI surface** — the `META-INF/services/` shape
+- ✅ **`PluginManifest` SPI surface** — the `META-INF/services/` shape
   needs the actual `PluginManifest` interface defined in core.
   Lands alongside / immediately after UH1a's first plugin module.
-- **`ServiceLoader`-based bootstrap hook** — runs from
+  *Done in PM1a phase 1 (`de.dlr.shepard.plugin.PluginManifest` +
+  `PluginContext` + `PluginEntry` + `PluginState`).*
+- ✅ **`ServiceLoader`-based bootstrap hook** — runs from
   `ShepardMain.init` after `MigrationsRunner.apply()`, before the
   REST endpoints come up. Pre-existing `aidocs/47 §2.5` design.
-- **`backend/plugins/` directory in the Dockerfile** — must exist
+  *Done in PM1a phase 1 (`PluginRegistry` observes `StartupEvent`
+  which fires strictly after the `@Startup` migrations hook).*
+- ✅ **`backend/plugins/` directory in the Dockerfile** — must exist
   as a mount-point that an operator can populate. The
   `infrastructure-local/docker-compose.yml` mounts it as a named
   volume so a `docker cp` is the install action.
-- **Admin REST + CLI parity** — `GET /v2/admin/plugins`,
+  *Done in PM1a phase 2 (image creates `/deployments/plugins/`
+  with uid 185 ownership; `SHEPARD_PLUGINS_DIR=/deployments/plugins`
+  pinned).*
+- ⏳ **Admin REST + CLI parity** — `GET /v2/admin/plugins`,
   `PATCH /v2/admin/plugins/<id>` (per `aidocs/47 §2.5`), with
-  `shepard-admin plugins {list,enable <id>,disable <id>}`.
-- **Documentation** — operator runbook on `docs/reference/plugins.md`
-  covering install / uninstall / enable / disable; per-plugin
-  pages at `docs/reference/plugins/<plugin-id>.md` per
-  `aidocs/49 §2.2`.
+  `shepard-admin plugins {list,enable <id>,disable <id>}`. *Queued
+  as PM1b; the underlying `PluginRegistry.list()` /
+  `isEnabled(id)` / `setEnabled(id, bool)` read+write surface is
+  already in place — only the REST + CLI wrapping is left.*
+- ✅ **Documentation** — operator runbook on `docs/reference/plugins.md`
+  covering install / uninstall / enable / disable. *Done in PM1a
+  phase 3 (this commit; the per-plugin pages at
+  `docs/reference/plugins/<plugin-id>.md` per `aidocs/49 §2.2`
+  remain a queued follow-up — the UH1a-specific runbook lives at
+  `docs/reference/unhide-publish.md` already).*
 - **ADR-0024** — plugin-distribution sibling decision: object-store
   reference for `infrastructure-local/` (Garage replaces MinIO).
   Same shape of "pick a reference whose OSS posture matches
   shepard's plugin-first / low-friction-quick-start direction."
 
-UH1a is exempt from the full ServiceLoader hookup as long as the
-PluginManifest SPI hasn't landed — UH1a ships as the module under
-`plugins/unhide/`, bundled into the uber-jar today, but designed
-so its conversion to a drop-in JAR is a packaging change only
-(no code reshuffle).
+UH1a's exemption from the full ServiceLoader hookup is lifted —
+PM1a phase 3 flipped UH1a to a real `shepard-plugin-unhide.jar`
+that ships as a backend Maven `<dependency>` (so Quarkus's
+build-time CDI scanner picks the beans) and is also baked into
+`/deployments/plugins/` (operator visibility; the PluginRegistry
+silently shadows the duplicate). UH1a now follows the standard
+drop-in JAR shape that every future plugin will follow.
 
 ## ADR-0024 — Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`)
 

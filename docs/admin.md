@@ -332,6 +332,41 @@ the `handleVocabUris` mode via the
 (default `IGNORE`), or fully disable the bootstrap with
 `shepard.semantic.internal.enabled=false`.
 
+## shepard plugins
+
+shepard core stays small; new payload kinds, external
+integrations, and identifier providers ship as
+`shepard-plugin-*` JARs that an operator drops into
+`/deployments/plugins/` without rebaking the image. The first
+shipped plugin is the [Helmholtz Unhide publish
+feed]({{ '/reference/unhide-publish/' | relative_url }}) (UH1a);
+HDF5, video, AAS, ePIC, DataCite, GridFS-vs-S3, and others
+queue behind it.
+
+Quick install:
+
+```bash
+cp shepard-plugin-foo-1.2.3.jar /deployments/plugins/
+# restart shepard so PluginRegistry picks it up
+docker compose restart shepard-backend
+```
+
+Inspect what's loaded:
+
+```bash
+shepard-admin plugins list
+# Plugin       Version   State      Source
+# unhide       1.0.0     ENABLED    build classpath
+```
+
+Full operator runbook, lifecycle states, troubleshooting in
+**[Plugins (reference)]({{ '/reference/plugins/' | relative_url }})**.
+
+The design rationale (drop-in JARs via Java `ServiceLoader`,
+not compose-side sidecars or per-install Dockerfile forks)
+is recorded in
+[ADR-0023]({{ '/aidocs/63-architecture-decision-log#adr-0023' | relative_url }}).
+
 ## Upgrades
 
 The Neo4j and MongoDB images are pinned with explicit comments in

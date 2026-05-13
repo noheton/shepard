@@ -38,6 +38,12 @@ class PluginRegistryTest {
   void setUp() throws Exception {
     registry = new PluginRegistry();
     setField(registry, "pluginsDir", tempDir.toString());
+    // PM1a phase 3: tests run with the plugin module(s) on the
+    // backend test classpath (UH1a et al.), so we disable the
+    // classpath ServiceLoader pass to keep each test scoped to
+    // its own tempDir JAR fixtures. The classpath-scan path is
+    // exercised separately in `classpathPlugin_thenJarDuplicate_isSilentlyShadowed`.
+    setField(registry, "classpathScanEnabled", false);
     // beanManager left null — DefaultPluginContext tolerates this.
   }
 
@@ -198,6 +204,75 @@ class PluginRegistryTest {
     PluginRegistryTestSupport.OnUnregisterCalls.reset();
     registry.onShutdown(null);
     assertThat(PluginRegistryTestSupport.OnUnregisterCalls.get()).isEqualTo(1);
+  }
+
+  /**
+   * PM1a phase 3 — when a plugin manifest is reachable from the
+   * build classpath AND a JAR carrying the same id is dropped into
+   * the plugins dir, the JAR is silently shadowed (no FAILED entry,
+   * no extra synthetic key, no WARN). This covers the operator's
+   * "I copied the JAR into backend/plugins/ for visibility but the
+   * plugin is also bundled" workflow that the UH1a drop-in shape
+   * normalises.
+   */
+  @Test
+  void classpathPlugin_thenJarDuplicate_isSilentlyShadowed() throws Exception {
+    // Re-enable classpath scan for this one test.
+    setField(registry, "classpathScanEnabled", true);
+    // The test classpath carries de.dlr.shepard.plugins.unhide.UnhidePluginManifest
+    // (the UH1a `provided` dependency). Drop a JAR with the same
+    // "unhide" id into the plugins dir and expect a silent shadow.
+    Path duplicateJar = tempDir.resolve("shadow-unhide.jar");
+    Manifest manifest = new Manifest();
+    manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
+    try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(duplicateJar), manifest)) {
+      JarEntry serviceFile = new JarEntry("META-INF/services/de.dlr.shepard.plugin.PluginManifest");
+      out.putNextEntry(serviceFile);
+      out.write(
+        "de.dlr.shepard.plugins.unhide.UnhidePluginManifest".getBytes(StandardCharsets.UTF_8)
+      );
+      out.closeEntry();
+    }
+    registry.discover();
+
+    // Exactly one "unhide" entry — the classpath one. No synthetic
+    // duplicate key with FAILED state.
+    long unhideEntries = registry.list().stream()
+      .filter(e -> "unhide".equals(e.id()))
+      .count();
+    assertThat(unhideEntries).isEqualTo(1);
+    long failedDuplicates = registry.list().stream()
+      .filter(e -> e.state() == PluginState.FAILED)
+      .filter(e -> e.failureMessage() != null && e.failureMessage().contains("duplicate"))
+      .count();
+    assertThat(failedDuplicates).isEqualTo(0);
+  }
+
+  /**
+   * PM1a phase 3 smoke test — UH1a's {@link
+   * de.dlr.shepard.plugins.unhide.UnhidePluginManifest} is
+   * discoverable through Java's {@code ServiceLoader.load} on the
+   * standard class loader, proving the
+   * `META-INF/services/de.dlr.shepard.plugin.PluginManifest` file
+   * is correctly packaged inside the drop-in JAR.
+   */
+  @Test
+  void unhidePluginManifest_isDiscoverableViaServiceLoader() {
+    boolean foundUnhide = java.util.stream.StreamSupport
+      .stream(
+        java.util.ServiceLoader.load(
+          PluginManifest.class,
+          Thread.currentThread().getContextClassLoader()
+        ).spliterator(),
+        false
+      )
+      .anyMatch(m ->
+        "unhide".equals(m.id()) &&
+        "de.dlr.shepard.plugins.unhide.UnhidePluginManifest".equals(m.getClass().getName())
+      );
+    assertThat(foundUnhide)
+      .as("UnhidePluginManifest must be discoverable via ServiceLoader from META-INF/services")
+      .isTrue();
   }
 
   // ----------------------------------------------------------------

@@ -1,39 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  UH1a — first shepard-plugin-* module ever.
+  UH1a — first shepard-plugin-* module ever, flipped to drop-in JAR
+  shape by PM1a phase 3 (ADR-0023).
 
-  PM1a phase 3 (ADR-0023 + ADR-0024). The plugin produces a real
-  JAR (`shepard-plugin-unhide-X.Y.Z.jar`) carrying:
+  This module produces a real
+  `shepard-plugin-unhide-${revision}.jar` carrying:
 
     * `de.dlr.shepard.plugins.unhide.UnhidePluginManifest` —
       implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's PluginRegistry tracks UH1a in
+      backend's `PluginRegistry` tracks UH1a in
       `GET /v2/admin/plugins` and exposes the per-plugin
       `shepard.plugins.unhide.enabled` runtime toggle.
     * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
       pointing at the manifest class — the standard
       `ServiceLoader` SPI contract.
     * The full UH1a code tree (services, REST resources, DAOs,
-      IO records, the `:UnhideConfig` entity).
+      IO records, the `:UnhideConfig` entity) in package
+      `de.dlr.shepard.plugins.unhide.*`.
 
-  Phase 1 (ADR-0024) build shape: backend ALSO source-stitches
-  this module via `build-helper-maven-plugin` so Quarkus's
-  build-time CDI scanner picks up the @ApplicationScoped beans
-  and the @Path resources. The standalone JAR is the
-  operator-facing artefact (copied to `backend/plugins/` at image
-  build time so `ls` shows it), but the active CDI path is the
-  build-classpath stitch. PM1b removes the source-stitch once
-  child-classloader CDI integration lands.
+  Build order (PM1a phase 3): the backend is `<dependency>`-ing
+  this plugin in its own pom. Both modules participate in a
+  two-pass build:
 
-  An operator who builds the plugin against an installed backend
-  artefact for a vendor-supplied install:
+    $ cd plugins/unhide && mvn -B install -DskipTests
+    $ cd backend && mvn -B package
+
+  The `provided` scope on the backend dep is the trick that keeps
+  the build acyclic: when the plugin compiles, it resolves
+  whichever `backend.jar` is in the local Maven repo (installed
+  beforehand by CI or developer); when the backend compiles, it
+  pulls the freshly-installed plugin JAR back onto its classpath
+  so Quarkus's build-time CDI scanner picks the plugin's
+  `@ApplicationScoped` beans and `@Path` resources.
+
+  Operator workflow (vendor-supplied drop-in install):
     $ cd backend && mvn install -DskipTests
     $ cd plugins/unhide && mvn package
-    $ cp plugins/unhide/target/shepard-plugin-unhide-*.jar backend/plugins/
+    $ cp plugins/unhide/target/shepard-plugin-unhide-*.jar \\
+         /path/to/shepard/backend/plugins/
 
-  This pom does NOT (yet) participate in the backend's reactor
-  build — the backend builds standalone, and `plugins/unhide` is
-  built explicitly after by the image-build workflow.
+  See `docs/reference/plugins.md` for the full operator runbook
+  and `aidocs/63 ADR-0023` for the design rationale.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -73,9 +80,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
   </properties>
 
   <dependencyManagement>
@@ -92,21 +103,47 @@
 
   <dependencies>
     <!--
-      backend as provided — the plugin needs the backend's core types
-      (User, Collection, ProblemJson, GenericDAO, the PluginManifest
-      SPI, Constants) at compile time but the runtime image already
-      carries them. `provided` means the plugin JAR does NOT bundle
-      backend.jar. Operators who build the plugin must `mvn install`
-      backend first so this resolves locally.
+      backend as provided — the plugin needs the backend's core
+      types (User, Collection, ProblemJson, HasAppId, GenericDAO,
+      CollectionDAO, Constants, the PluginManifest SPI) at compile
+      time. `provided` means the plugin JAR does NOT bundle
+      backend.jar — at runtime the backend image already carries
+      its own classes, and the plugin's URLClassLoader parent is
+      the backend's loader (per `PluginRegistry`).
+
+      The build order documented in the module-level comment above
+      keeps this acyclic: backend installs first, plugin resolves
+      against the installed backend, then backend rebuilds with
+      the freshly-installed plugin on its classpath.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
       <artifactId>backend</artifactId>
       <version>${revision}</version>
       <scope>provided</scope>
+      <exclusions>
+        <!--
+          Defence against the build-time circular reference: the
+          backend's pom carries a default-active `with-plugins`
+          profile that pulls
+          `de.dlr.shepard.plugins:shepard-plugin-unhide` back onto
+          its dependency list. When this plugin module compiles
+          against `backend`, Maven would otherwise resolve that
+          transitive self-reference and fail with "Could not find
+          artifact ... shepard-plugin-unhide". This exclusion keeps
+          the plugin's compile classpath self-consistent.
+        -->
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
-    <!-- Quarkus runtime types used in plugin source (REST, CDI, logging). -->
+    <!--
+      Quarkus runtime types used in plugin source (REST, CDI,
+      logging). `provided` because the backend image carries them.
+    -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
@@ -127,17 +164,62 @@
       <artifactId>quarkus-hibernate-validator</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
-    <!-- Lombok — same as backend for the IO records. -->
+    <!--
+      Neo4j-OGM — UnhideConfig is a @NodeEntity, the DAO uses
+      neo4j-ogm core types. Same provided-by-backend pattern.
+    -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>5.0.3</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — same as backend for the IO records / entity. -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>1.18.44</version>
       <scope>provided</scope>
     </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!--
+      The existing `plugins/unhide/src/test/java/**` tests
+      reference backend mock classes (User, Collection, etc.) and
+      DAO mocks. They need backend on the test classpath. The
+      `provided` declaration above flows in to `test`, so the
+      tests resolve fine — Maven's "provided scope is also visible
+      to test" rule does the work.
+    -->
   </dependencies>
 
   <build>
+    <finalName>shepard-plugin-unhide-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -147,6 +229,10 @@
             <arg>-parameters</arg>
           </compilerArgs>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
       </plugin>
     </plugins>
   </build>
