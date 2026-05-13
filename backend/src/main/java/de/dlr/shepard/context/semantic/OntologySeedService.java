@@ -126,15 +126,40 @@ public class OntologySeedService {
    */
   private final java.util.function.Supplier<List<OntologyEntry>> userEntriesSupplier;
 
-  /** Production ctor — pulls the OGM session at call time. */
+  /**
+   * Production ctor — pulls the OGM session at call time and wires
+   * the runtime-config + user-entries suppliers via a freshly
+   * instantiated {@link de.dlr.shepard.context.semantic.services.OntologyConfigService}.
+   * The service is request-scoped at the CDI layer but its DAOs work
+   * outside a request when manually constructed (every DAO pulls the
+   * OGM session via {@code NeoConnector.getInstance()} on its no-arg
+   * ctor), so the startup-hook code path is supported.
+   */
   public OntologySeedService() {
     this(
       de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession(),
       readBooleanConfig(ENABLED_PROPERTY, true),
       parseSkipBundles(readStringConfig(SKIP_BUNDLES_PROPERTY, "")),
       new ObjectMapper(),
-      OntologySeedService.class.getClassLoader()
+      OntologySeedService.class.getClassLoader(),
+      () -> productionConfigService().loadRuntimeConfig(),
+      () -> productionConfigService().listUserEntries()
     );
+  }
+
+  /**
+   * Construct a production-ready {@link
+   * de.dlr.shepard.context.semantic.services.OntologyConfigService}
+   * with manually-wired DAOs. Used by the no-arg ctor above for the
+   * startup-hook code path. Visible-for-tests-package-private so
+   * tests can replace the production wiring with a mock.
+   */
+  static de.dlr.shepard.context.semantic.services.OntologyConfigService productionConfigService() {
+    de.dlr.shepard.context.semantic.daos.SemanticConfigDAO cfgDao =
+      new de.dlr.shepard.context.semantic.daos.SemanticConfigDAO();
+    de.dlr.shepard.context.semantic.daos.UserOntologyBundleDAO userDao =
+      new de.dlr.shepard.context.semantic.daos.UserOntologyBundleDAO();
+    return new de.dlr.shepard.context.semantic.services.OntologyConfigService(cfgDao, userDao);
   }
 
   /** Pre-N1c2 test seam — accept session + config + classloader injection. */
@@ -433,8 +458,12 @@ public class OntologySeedService {
     }
   }
 
-  /** Read the manifest from classpath. Visible-for-tests. */
-  List<OntologyEntry> loadManifest() {
+  /**
+   * Read the manifest from classpath. Visible-for-tests and to the
+   * N1c2 admin REST layer (which needs the built-in `required` flags
+   * to render the merged list / refuse disable on required bundles).
+   */
+  public List<OntologyEntry> loadManifest() {
     InputStream in = classLoader.getResourceAsStream(stripLeadingSlash(MANIFEST_RESOURCE));
     if (in == null) {
       throw new OntologySeedException("Classpath resource " + MANIFEST_RESOURCE + " not found.");
@@ -522,7 +551,12 @@ public class OntologySeedService {
     }
   }
 
-  static Set<String> parseSkipBundles(String csv) {
+  /**
+   * Visible-to-the-N1c2 config service so the merged-listing endpoint
+   * can compute the union of deploy-time skip-bundles + runtime
+   * disabledBundles.
+   */
+  public static Set<String> parseSkipBundles(String csv) {
     if (csv == null || csv.isBlank()) return Collections.emptySet();
     Set<String> out = new LinkedHashSet<>();
     for (String part : csv.split(",")) {
