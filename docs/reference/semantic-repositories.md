@@ -29,9 +29,35 @@ shepard already uses.
 For typical research-data workflows, **`INTERNAL` is the new
 default for casual users.** It needs zero infrastructure beyond
 what shepard already requires, and it's the connector that the
-pre-seeded common ontologies (PROV-O, QUDT, schema.org, Dublin
-Core, FOAF, OM-2, W3C Time, GeoSPARQL — coming in N1b) will land
-into.
+pre-seeded common ontologies (see table below) land into.
+
+## Bundled ontologies
+
+shepard ships nine common ontologies as classpath-bundled Turtle
+files under `backend/src/main/resources/ontologies/`, each pinned
+by SHA-256 in `ontologies-manifest.json`. The `OntologySeedService`
+loads them into the `INTERNAL` repository on startup. To skip a
+subset, set
+`shepard.semantic.internal.preseed-ontologies.skip-bundles=<csv>`.
+
+| Ontology | IRI prefix | Licence | What it gives you |
+|---|---|---|---|
+| **W3C PROV-O** | `http://www.w3.org/ns/prov#` | W3C Document License | Provenance vocabulary — Entity / Activity / Agent + `wasGeneratedBy` / `wasDerivedFrom` / `used`. Pairs with shepard's lineage design (`aidocs/30`). |
+| **DCMI Metadata Terms** (Dublin Core) | `http://purl.org/dc/terms/` | CC BY 4.0 | Common metadata properties — creator, title, created, license, modified, … |
+| **schema.org core** | `https://schema.org/` | CC BY-SA 3.0 | Web-style metadata vocabulary; what RO-Crate exports already use, so pre-seeding makes those terms resolvable. |
+| **FOAF** | `http://xmlns.com/foaf/0.1/` | CC BY 1.0 | Person / Agent / Organization for author-style annotations. |
+| **QUDT 2.1 Units** | `http://qudt.org/vocab/unit/` | CC BY 4.0 | Units of measure for scientific values. |
+| **OM-2** (Ontology of Units of Measure) | `http://www.ontology-of-units-of-measure.org/resource/om-2/` | CC BY 4.0 | Alternative units ontology; QUDT is the default but OM-2 ships for cross-compat. |
+| **W3C Time Ontology** | `http://www.w3.org/2006/time#` | W3C Document License | Time interval / duration vocabulary; annotate timeseries spans and lab-journal events. |
+| **OGC GeoSPARQL** | `http://www.opengis.net/ont/geosparql#` | OGC Open Data Licence | Spatial-data references — Feature / Geometry / `hasGeometry` / `asWKT`. |
+| **OBO Relation Ontology (RO)** | `http://purl.obolibrary.org/obo/RO_` | CC0 1.0 | Cross-cutting relations — `part_of` / `has_part` / `derives_from` / `participates_in` / `has_input` / `has_output` / `precedes`-family. Widely used in life-sciences research-data work. |
+
+The currently-bundled files are **minimum-viable Turtle stubs**
+carrying each ontology's canonical IRI prefix plus a handful of
+representative classes / properties — enough for the casual
+annotation flow on a fresh install. The forthcoming
+`shepard-admin semantic refresh-ontologies` CLI (N1c) swaps in the
+full canonical Turtle in bulk.
 
 ## `INTERNAL` — neosemantics inside shepard's Neo4j
 
@@ -109,7 +135,7 @@ hook is idempotent — safe to re-run on every startup.
 
 The internal-repo path is best for:
 
-- Pre-seeded common ontologies (PROV-O, QUDT, …) that almost
+- Pre-seeded common ontologies (PROV-O, QUDT, RO, …) that almost
   every research deployment references.
 - Up to a few hundred MB of total ontology data.
 - Read-mostly workloads.

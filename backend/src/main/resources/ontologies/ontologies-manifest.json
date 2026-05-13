@@ -1,8 +1,10 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b — manifest of common ontologies pre-seeded into the internal",
-    "neosemantics (n10s) semantic repository on shepard startup. Each",
+    "N1b (+ ONT1a addition) — manifest of common ontologies pre-seeded",
+    "into the internal neosemantics (n10s) semantic repository on",
+    "shepard startup. Currently nine bundles (eight from N1b plus the",
+    "OBO Relation Ontology added by ONT1a, see aidocs/58 §6). Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
     "import a file whose hash drifted from this manifest. To refresh a",
@@ -142,6 +144,21 @@
       "retrievedAt": "2026-05-12",
       "sha256": "e5225c78e067a85f428058c7449742ecebd42740813f1eb96ac624c2381d67d6",
       "sizeBytes": 1946
+    },
+    {
+      "id": "obo-relations",
+      "name": "OBO Relation Ontology (RO)",
+      "file": "obo-relations.ttl",
+      "iriPrefix": "http://purl.obolibrary.org/obo/RO_",
+      "format": "Turtle",
+      "canonicalUrl": "http://purl.obolibrary.org/obo/ro.owl",
+      "sourceRationale": "OBO Foundry serves the canonical RO at purl.obolibrary.org/obo/ro.owl as OWL/RDF-XML; n10s accepts both serialisations and the bundled Turtle equivalent ships alongside for human-readable cypher-shell inspection. Added per aidocs/58 §6 (ONT1a) — RO supplies derives_from / has_input / has_output / part_of relations the LUMEN-inspired showcase cites.",
+      "license": "CC0 1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "version": "Relation Ontology (current OBO release)",
+      "retrievedAt": "2026-05-12",
+      "sha256": "197c6622bd4b0c66b9b5086fdd7ebced1fe730b0f8a9835332a9a9c382189232",
+      "sizeBytes": 2333
     }
   ]
 }

@@ -442,7 +442,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // Per aidocs/48 §3.2 the bundle ships exactly these 8 ontologies.
+    // Per aidocs/48 §3.2 + ONT1a (aidocs/58 §6) the bundle ships exactly these 9 ontologies.
+    assertEquals(9, ids.size(), "expected 9 bundled ontologies (8 from N1b + RO from ONT1a)");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -451,6 +452,47 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("om-2"), "manifest missing om-2");
     assertTrue(ids.contains("time"), "manifest missing time");
     assertTrue(ids.contains("geosparql"), "manifest missing geosparql");
+    assertTrue(ids.contains("obo-relations"), "manifest missing obo-relations (ONT1a)");
+  }
+
+  /**
+   * ONT1a — the RO bundle has its own row + own IRI prefix
+   * ({@code http://purl.obolibrary.org/obo/RO_}) and the {@code
+   * skip-bundles=obo-relations} toggle removes it cleanly from the
+   * seed pass without dragging any of the eight original N1b
+   * bundles with it.
+   */
+  @Test
+  void realManifest_roBundleCarriesObolibraryIriPrefixAndCc0Licence() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var ro = svc
+      .loadManifest()
+      .stream()
+      .filter(e -> "obo-relations".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("RO bundle missing from manifest"));
+    assertEquals("http://purl.obolibrary.org/obo/RO_", ro.iriPrefix, "RO IRI prefix");
+    assertEquals("CC0 1.0", ro.license, "RO licence string");
+    assertEquals("obo-relations.ttl", ro.file, "RO bundle file name");
+    assertEquals("Turtle", ro.format, "RO bundled format");
+  }
+
+  @Test
+  void realManifest_skipBundlesObolibrary_excludesRoButRetainsOthers() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    Set<String> skip = OntologySeedService.parseSkipBundles("obo-relations");
+    List<String> kept = svc
+      .loadManifest()
+      .stream()
+      .map(e -> e.id)
+      .filter(id -> !skip.contains(id))
+      .toList();
+    assertEquals(8, kept.size(), "skip-bundles=obo-relations should leave 8 entries");
+    assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
+    assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
+    assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
   }
 
   // ---------- helpers -------------------------------------------------------
