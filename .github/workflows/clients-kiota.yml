@@ -1,0 +1,226 @@
+name: Kiota /v2/ clients (CG1a)
+
+# Regenerates the Kiota-emitted Python / TypeScript / Java clients for
+# shepard's /v2/ API surface and runs per-language smoke tests on the
+# regenerated tree. Implements CG1a (aidocs/16 row + ADR-0022 in aidocs/63).
+#
+# Triggers:
+#  - tag push v*.*.*   — reproducibility check at release time (the
+#    vendored clients-v2/ tree must regenerate cleanly from the released
+#    OpenAPI doc).
+#  - weekly cron       — catches Kiota CLI drift / upstream API regressions.
+#  - manual dispatch   — for one-off regeneration runs.
+#
+# Publishing the regenerated clients to PyPI / npm / Maven Central is
+# OUT OF SCOPE here — that's CG1c. This workflow only emits build
+# artefacts that a maintainer can inspect.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  schedule:
+    # Mondays 04:13 UTC — staggered off the dependency-check cron in security.yml.
+    - cron: "13 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      kiota_input_url:
+        description: "OpenAPI v2 source URL (defaults to localhost; override to a tagged-release URL)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clients-kiota-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Pinned per aidocs/57 §4.1 — bump this in lockstep with the Makefile.
+  KIOTA_VERSION: "1.31.1"
+
+jobs:
+  generate-and-smoke:
+    name: Generate + smoke-test (Python + TypeScript + Java)
+    runs-on: ubuntu-latest
+
+    services:
+      # We need shepard up so /shepard/doc/openapi/v2.json is reachable for
+      # the localhost-default Makefile. The "real" backend boot lives in
+      # backend-ci.yml; here we use the already-published GHCR image plus
+      # the three persistent stores so the OpenAPI emit path is exercised
+      # end-to-end. If the image isn't available (PR-time dry-runs), the
+      # workflow falls back to the workflow_dispatch input URL.
+      neo4j:
+        image: neo4j:5-community
+        env:
+          NEO4J_AUTH: neo4j/testpassword
+          NEO4J_PLUGINS: '["n10s"]'
+          NEO4J_dbms_security_procedures_unrestricted: "n10s.*,apoc.*"
+          NEO4J_dbms_security_procedures_allowlist: "n10s.*,apoc.*"
+        ports:
+          - 7687:7687
+          - 7474:7474
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Toolchain --------------------------------------------------
+      - name: Set up .NET 8 (for Kiota CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Kiota CLI (pinned)
+        run: |
+          dotnet tool install --global Microsoft.OpenApi.Kiota --version "${KIOTA_VERSION}"
+          echo "${HOME}/.dotnet/tools" >> "${GITHUB_PATH}"
+
+      - name: Verify Kiota CLI
+        run: |
+          kiota --version
+          make -C clients-v2 check
+
+      - name: Set up JDK 21 (for backend boot + Java smoke)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Set up Node 24 (for TS smoke)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up Python 3.12 (for Python smoke)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # --- Boot the backend (Quarkus dev-mode against the running Neo4j) --
+      # We start Quarkus in the background; `mvn -DskipTests package` then
+      # `java -jar` is overkill for a doc dump. Quarkus `quarkus:dev` boots
+      # in under a minute and serves /shepard/doc/openapi/v2.json the same
+      # way a production binary would.
+      - name: Boot backend (Quarkus dev) and wait for /v2 OpenAPI
+        id: boot
+        run: |
+          cd backend
+          # Configure backend to talk to the workflow-services neo4j.
+          export QUARKUS_NEO4J_URI="bolt://localhost:7687"
+          export QUARKUS_NEO4J_AUTHENTICATION_USERNAME="neo4j"
+          export QUARKUS_NEO4J_AUTHENTICATION_PASSWORD="testpassword"
+          # Skip the optional infra (Mongo / Influx / Postgres) for the
+          # OpenAPI dump — the doc emit path doesn't depend on them.
+          export SHEPARD_HDF_ENABLED=false
+          export SHEPARD_TIMESERIES_QUALITY_SCORING_ENABLED=false
+          nohup mvn -B -DskipTests quarkus:dev > ../quarkus-dev.log 2>&1 &
+          echo "QUARKUS_PID=$!" >> "${GITHUB_OUTPUT}"
+          # Wait up to 5 min for the OpenAPI v2 doc to be served.
+          for i in $(seq 1 60); do
+            if curl -fsS "http://localhost:8080/shepard/doc/openapi/v2.json" > /dev/null 2>&1; then
+              echo "Backend up after ${i} attempts."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Backend did NOT become reachable in 5 min. Tail of quarkus-dev.log:"
+          tail -200 ../quarkus-dev.log || true
+          exit 1
+        continue-on-error: true
+
+      - name: Resolve KIOTA_INPUT_URL
+        id: resolve-url
+        run: |
+          if [[ -n "${{ github.event.inputs.kiota_input_url }}" ]]; then
+            echo "url=${{ github.event.inputs.kiota_input_url }}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "url=http://localhost:8080/shepard/doc/openapi/v2.json" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Capture OpenAPI v2 doc (artefact for diff inspection)
+        if: steps.boot.outcome == 'success'
+        run: |
+          curl -fsS "${{ steps.resolve-url.outputs.url }}" \
+            -o openapi-v2-snapshot.json
+          jq '.info' openapi-v2-snapshot.json || true
+
+      - name: Upload OpenAPI v2 snapshot
+        if: steps.boot.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-v2-snapshot
+          path: openapi-v2-snapshot.json
+
+      # --- Generate clients -----------------------------------------------
+      - name: Generate all three Kiota clients
+        if: steps.boot.outcome == 'success'
+        run: |
+          cd clients-v2
+          KIOTA_INPUT_URL="${{ steps.resolve-url.outputs.url }}" make generate-all
+
+      # --- Per-language smoke tests --------------------------------------
+      - name: Python smoke — install + import + ctor-signature check
+        if: steps.boot.outcome == 'success'
+        run: |
+          cd clients-v2/python-kiota
+          python -m pip install --upgrade pip
+          # Install the regenerated package + test deps (pytest only).
+          pip install -e ".[test]"
+          # Run the smoke pytest from the dedicated tests tree.
+          pytest -q ../tests/smoke/test_kiota_python.py
+
+      - name: TypeScript smoke — typecheck + import resolution
+        if: steps.boot.outcome == 'success'
+        run: |
+          cd clients-v2/typescript-kiota
+          npm install
+          # Strict typecheck on the generated tree.
+          npx tsc --noEmit
+          # And resolve the smoke import against the local workspace.
+          npm pack --pack-destination /tmp
+          cd ../tests/smoke
+          # Use a throwaway package to consume the packed tarball + tsx-run
+          # the smoke script.
+          npm init -y > /dev/null
+          npm install /tmp/*.tgz tsx typescript
+          npx tsx ./kiota-typescript.test.ts
+
+      - name: Java smoke — compile + reflection check
+        if: steps.boot.outcome == 'success'
+        run: |
+          cd clients-v2/java-kiota
+          mvn -B -DskipTests compile
+          # Copy the smoke test into the module's test source tree, then run.
+          mkdir -p src/test/java/de/dlr/shepard/v2/clients
+          cp ../tests/smoke/KiotaJavaSmokeTest.java \
+             src/test/java/de/dlr/shepard/v2/clients/
+          mvn -B -DskipTests test-compile
+          mvn -B exec:java \
+              -Dexec.mainClass=de.dlr.shepard.v2.clients.KiotaJavaSmokeTest \
+              -Dexec.classpathScope=test || \
+            { echo "Java smoke test failed"; exit 1; }
+
+      # --- Publish the regenerated trees as a workflow artefact ----------
+      - name: Upload regenerated client trees
+        if: steps.boot.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: clients-v2-generated-${{ github.ref_name }}
+          path: |
+            clients-v2/python-kiota/shepard_v2/
+            clients-v2/typescript-kiota/src/
+            clients-v2/java-kiota/src/main/java/
+          if-no-files-found: error
+
+      - name: Tail Quarkus log on failure
+        if: failure()
+        run: |
+          tail -200 quarkus-dev.log || true
+
+      - name: Stop Quarkus
+        if: always() && steps.boot.outputs.QUARKUS_PID
+        run: |
+          kill "${{ steps.boot.outputs.QUARKUS_PID }}" 2>/dev/null || true
