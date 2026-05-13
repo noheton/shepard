@@ -149,6 +149,17 @@ These work the same way across every primitive:
 - **API keys** with optional `validUntil` expiry (L5, shipped) —
   you can hand a campaign-lead key to a sub-team without forever
   granting access.
+- **Activity dashboard + PROV-O provenance trail** (`aidocs/55`,
+  PROV1 series — PROV1a/b/c/d/f/g shipped). Every mutation generates
+  a W3C PROV-O `:Activity` node (`prov:Agent` + `prov:wasAssociatedWith`);
+  the per-Collection sparkline ("how busy is this Collection?")
+  renders inline on the Collection page with totals, distinct-agent
+  count, action-kind histogram, and a cumulative-integral overlay.
+  Time-range picker (7d / 30d / 90d / 1y). Reads opt-in via
+  `shepard.provenance.capture-reads`. PROV-N JSON export via
+  `Accept: application/prov+json` for downstream interop (RO-Crate,
+  OpenLineage). 2-year retention default.
+  Instance-admin dashboard (PROV1e) queued behind A0's admin shell.
 
 ## How you actually use it
 
@@ -267,11 +278,11 @@ Mid-horizon:
   shipped). Single role tier (`instance-admin`); dual-source role
   check (IdP claim OR Neo4j `:HAS_ROLE` edge); bootstrap-token
   mechanism for first-admin; `/v2/admin/...` REST surface.
-- **PROV-O provenance + activity dashboard** (`aidocs/55`, PROV1
-  series). Casual-user sparkline ("3.2 GB files captured, 18M
-  timeseries points, 4 contributors active over 90 days") backed
-  by a W3C PROV-O graph; per-Collection + instance-admin scopes;
-  PROV-N JSON export.
+- **Instance-admin activity dashboard** (`aidocs/55`, PROV1e —
+  per-Collection casual-user dashboard already shipped under PROV1d
+  in §"What's in the box"). All-instance sparkline + dormant-
+  Collections panel + top-active-Collections leaderboard at
+  `/admin/dashboard`. Gated on A0's instance-admin role.
 - **Video as a first-class payload** (`aidocs/53`, VID1 series).
   Dedicated PayloadStorage plugin; segments + HLS manifest on
   object store; navigation by video-time and wall-clock; live
