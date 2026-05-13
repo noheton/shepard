@@ -152,19 +152,21 @@ Recurring patterns that show up as design debt:
    each invent their own shape. PL1a is a one-time cost that
    pays back per kind.
 
-3. **Plugin-by-package distribution.** When plugins land,
-   how do operators install? Three shapes:
-   - Compose-side: separate `Dockerfile` per plugin, sidecar
-     extension to `backend/`. Friction high.
-   - JAR drop-in: plugin JARs into `backend/plugins/`,
-     discovered via `ServiceLoader`. Friction low; needs SPI to
-     be stable.
-   - Forked Dockerfile per install: monolithic image bakes in
-     selected plugins at build time. Friction medium; loses
-     "install/uninstall without rebuild."
-   The third is current shape (everything in-tree). The first
-   doesn't match the SPI model. The second is the design
-   target.
+3. **Plugin-by-package distribution.** **Resolved 2026-05-13:
+   JAR drop-in via `ServiceLoader`** — see `aidocs/63` ADR-0023.
+   Each plugin is a standalone Maven module producing a JAR
+   carrying `META-INF/services/de.dlr.shepard.plugin.PluginManifest`;
+   the backend bootstrap walks `backend/plugins/*.jar` after
+   `MigrationsRunner.apply()` and registers each plugin's CDI
+   beans / REST resources / payload-kind factories. Operator
+   install path: `cp shepard-plugin-foo-X.Y.Z.jar backend/plugins/`
+   + restart. Uninstall: `rm` + restart. The two rejected shapes
+   (compose-side sidecar; forked Dockerfile per install) are
+   documented in ADR-0023's "Alternatives considered" — neither
+   matches the plugin-first rule's "install/uninstall without
+   rebuild" expectation. UH1a (in flight) is the first module
+   under the new shape; the `PluginManifest` SPI itself lands
+   alongside it.
 
 4. **Where does the convenience-wrapper (`shepard-py` /
    `shepard-ts`, `aidocs/27`) sit?** Currently a separate
