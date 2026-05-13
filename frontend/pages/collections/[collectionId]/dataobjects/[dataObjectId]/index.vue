@@ -3,6 +3,7 @@ import EditDataObjectDescriptionDialog from "~/components/context/data-object/ed
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
+import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -75,6 +76,17 @@ watch(dataObject, () => {
               <TitleAndMetadataDisplay
                 :entity="dataObject"
                 id-label="Data Object ID"
+              />
+            </v-row>
+            <v-row
+              v-if="dataObject.appId && isAllowedToEditCollection"
+              no-gutters
+              class="justify-end pb-2"
+            >
+              <PublishButton
+                entity-kind="data-objects"
+                :entity-app-id="dataObject.appId"
+                :entity-name="dataObject.name"
               />
             </v-row>
             <v-row no-gutters>
