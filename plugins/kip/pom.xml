@@ -141,6 +141,14 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-kip</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
