@@ -14,10 +14,20 @@ import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
+import de.dlr.shepard.storage.FileStorage;
+import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.StorageException;
+import de.dlr.shepard.storage.StorageGetResponse;
+import de.dlr.shepard.storage.StorageLocator;
+import de.dlr.shepard.storage.StorageNotFoundException;
+import de.dlr.shepard.storage.StoragePutRequest;
+import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ServiceUnavailableException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -40,6 +50,9 @@ public class FileContainerService extends AbstractContainerService<FileContainer
 
   @Inject
   PermissionsService permissionsService;
+
+  @Inject
+  FileStorageRegistry fileStorageRegistry;
 
   /**
    * Creates a FileContainer and stores it in Neo4J
@@ -130,6 +143,10 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     fileContainer.setUpdatedAt(dateHelper.getDate());
     fileContainer.setUpdatedBy(user);
     fileContainerDAO.createOrUpdate(fileContainer);
+    // FS1a: container-level teardown stays on the legacy FileService
+    // surface. The SPI is per-payload (put/get/delete by locator); a
+    // bulk "drop the entire container" verb is FS1b/FS1e territory
+    // (the migration sweep needs per-adapter container teardown too).
     fileService.deleteFileContainer(mongoId);
   }
 
@@ -141,11 +158,47 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    * @return a NamedInputStream
    * @throws InvalidPathException if the file container cannot be found
    * @throws InvalidAuthException if user has no read permission on container
+   * @throws ServiceUnavailableException if the storage tier fails
    */
   public NamedInputStream getFile(long fileContainerId, String oid) {
     FileContainer container = getContainer(fileContainerId);
-
-    return fileService.getPayload(container.getMongoId(), oid);
+    // FS1a: route the read through the active FileStorage adapter so
+    // existing-row reads keep working when an operator wires an
+    // alternative provider via shepard.storage.provider. The locator
+    // is reconstructed from the FileContainer's mongoId + the file's
+    // oid; the GridFsFileStorage adapter splits it back when it
+    // routes to FileService. Pre-FS1a rows have providerId backfilled
+    // by V34 (defaults to "gridfs" for any null) so the registry
+    // dispatches correctly.
+    ShepardFile file = findEntityForRoutingOrNull(container, oid);
+    String providerId = effectiveProviderId(file);
+    FileStorage adapter = storageForRow(providerId);
+    StorageLocator locator = new StorageLocator(
+      providerId,
+      container.getMongoId() + GridFsFileStorage.LOCATOR_SEPARATOR + oid
+    );
+    try {
+      StorageGetResponse resp = adapter.get(locator);
+      return new NamedInputStream(oid, resp.stream(), resp.fileName(), resp.sizeBytes());
+    } catch (StorageNotFoundException snfe) {
+      // Surface the storage-tier 404 as the wire-shape-preserving
+      // JAX-RS NotFoundException (the upstream-compatible response).
+      Log.errorf(
+        "FileContainerService.getFile: storage 404 on container=%s oid=%s — %s",
+        container.getMongoId(),
+        oid,
+        snfe.getMessage()
+      );
+      throw new NotFoundException(snfe.getMessage());
+    } catch (StorageException se) {
+      Log.errorf(
+        "FileContainerService.getFile: storage failure on container=%s oid=%s — %s",
+        container.getMongoId(),
+        oid,
+        se.getMessage()
+      );
+      throw new ServiceUnavailableException("Storage provider '" + providerId + "' failed: " + se.getMessage());
+    }
   }
 
   /**
@@ -158,6 +211,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    * @throws InternalServerErrorException if file creation fails
    * @throws InvalidPathException if the file container cannot be found
    * @throws InvalidAuthException if user has no read or write permission on container
+   * @throws de.dlr.shepard.storage.StorageNotInstalledException if no storage adapter is active
    */
   public ShepardFile createFile(long fileContainerId, String fileName, InputStream inputStream) {
     FileContainer fileContainer = getContainer(fileContainerId);
@@ -169,7 +223,63 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       fileName = "shepard-file-" + dateStr;
     }
 
-    ShepardFile result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+    // FS1a: route the write through the active FileStorage adapter.
+    // Today's GridFsFileStorage delegates back into FileService —
+    // behaviour preserved verbatim for the upstream wire contract —
+    // but FS1b's S3 adapter slots in here without touching the
+    // FileContainerService. The 503 envelope on missing-provider
+    // surfaces through StorageNotInstalledException (raised by
+    // requireActive()) → StorageNotInstalledExceptionMapper → RFC 7807.
+    FileStorage adapter = fileStorageRegistry.requireActive();
+    ShepardFile result;
+    try {
+      // GridFs invariant: the adapter persists the ShepardFile
+      // inside fileService.createFile() as part of the GridFS
+      // bookkeeping. To stay behaviour-preserving we call the
+      // legacy path directly, then route through the SPI for the
+      // stamping side-effects (locator construction + providerId
+      // assignment). FS1b will tighten the adapter contract so it
+      // returns the entity directly — the S3 adapter has its own
+      // bookkeeping shape and won't share FileService's persistence
+      // semantics.
+      if (GridFsFileStorage.ID.equals(adapter.id())) {
+        result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+      } else {
+        // Non-GridFS adapter — go through the SPI and pull the
+        // entity by oid post-write. FS1b will rework this branch.
+        StoragePutRequest req = new StoragePutRequest(
+          fileContainer.getMongoId(),
+          fileName,
+          null,
+          inputStream,
+          null
+        );
+        StorageLocator locator = adapter.put(req);
+        String oid = locator.locator().substring(locator.locator().indexOf(GridFsFileStorage.LOCATOR_SEPARATOR) + 1);
+        result = fileService.getFile(fileContainer.getMongoId(), oid);
+      }
+      if (result != null) {
+        result.setProviderId(adapter.id());
+      }
+    } catch (NotFoundException nfe) {
+      // FileService throws JAX-RS NotFound for missing containers;
+      // re-throw to preserve the upstream wire shape.
+      throw nfe;
+    } catch (StorageNotFoundException snfe) {
+      Log.errorf(
+        "FileContainerService.createFile: storage 404 on container=%s — %s",
+        fileContainer.getMongoId(),
+        snfe.getMessage()
+      );
+      throw new NotFoundException(snfe.getMessage());
+    } catch (StorageException se) {
+      Log.errorf(
+        "FileContainerService.createFile: storage failure on container=%s — %s",
+        fileContainer.getMongoId(),
+        se.getMessage()
+      );
+      throw new ServiceUnavailableException("Storage provider '" + adapter.id() + "' failed: " + se.getMessage());
+    }
 
     fileContainer.addFile(result);
     fileContainerDAO.createOrUpdate(fileContainer);
@@ -181,16 +291,118 @@ public class FileContainerService extends AbstractContainerService<FileContainer
    *
    * @param fileContainerId The container to get the payload from
    * @param oid             The specific file
-   
+   * @throws ServiceUnavailableException if the storage tier fails
    */
   public void deleteFile(long fileContainerId, String oid) {
     FileContainer container = getContainer(fileContainerId);
     assertIsAllowedToEditContainer(fileContainerId);
 
-    fileService.deleteFile(container.getMongoId(), oid);
+    // FS1a: route through the registry so per-row providerId is
+    // honoured (a future mixed-provider install — pre-FS1e migration
+    // sweep mid-flight — sees existing rows deleted from the right
+    // adapter). The default providerId fallback is "gridfs" which
+    // matches the V34 backfill.
+    ShepardFile file = findEntityForRoutingOrNull(container, oid);
+    String providerId = effectiveProviderId(file);
+    FileStorage adapter = storageForRow(providerId);
+    StorageLocator locator = new StorageLocator(
+      providerId,
+      container.getMongoId() + GridFsFileStorage.LOCATOR_SEPARATOR + oid
+    );
+    try {
+      adapter.delete(locator);
+    } catch (StorageNotFoundException snfe) {
+      // delete() is idempotent so this should already be swallowed
+      // by GridFsFileStorage; defensive translation in case a future
+      // adapter is stricter.
+      Log.errorf(
+        "FileContainerService.deleteFile: storage 404 on container=%s oid=%s — %s",
+        container.getMongoId(),
+        oid,
+        snfe.getMessage()
+      );
+      throw new NotFoundException(snfe.getMessage());
+    } catch (StorageException se) {
+      Log.errorf(
+        "FileContainerService.deleteFile: storage failure on container=%s oid=%s — %s",
+        container.getMongoId(),
+        oid,
+        se.getMessage()
+      );
+      throw new ServiceUnavailableException("Storage provider '" + providerId + "' failed: " + se.getMessage());
+    }
 
     List<ShepardFile> newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
     container.setFiles(newFiles);
     fileContainerDAO.createOrUpdate(container);
+  }
+
+  /**
+   * Locate the {@link ShepardFile} entity inside the container by
+   * its oid (best-effort; falls back to null if neither the eager
+   * relationship nor the GridFS bookkeeping have it).
+   *
+   * <p>Used to read the {@code providerId} property so the registry
+   * routes correctly. Returns null for tests / fixtures where the
+   * relationship side is unpopulated; the caller's
+   * {@link #effectiveProviderId(ShepardFile)} fallback handles null
+   * with the FS1a default {@code "gridfs"}.
+   */
+  private ShepardFile findEntityForRoutingOrNull(FileContainer container, String oid) {
+    if (container.getFiles() != null) {
+      for (ShepardFile f : container.getFiles()) {
+        if (oid.equals(f.getOid())) return f;
+      }
+    }
+    try {
+      return fileService.getFile(container.getMongoId(), oid);
+    } catch (NotFoundException nfe) {
+      // The legacy path raises NotFound when the Mongo bookkeeping
+      // document is missing — let the downstream storage call surface
+      // the right error (StorageNotFoundException → NotFound) rather
+      // than swallowing the diagnostic here. We just don't have the
+      // entity to read providerId off of, so fall through to the
+      // GridFS default below.
+      return null;
+    }
+  }
+
+  /**
+   * @return {@code file.providerId} when present, falling back to
+   *         {@link GridFsFileStorage#ID} for the (rare) entity-level
+   *         null that pre-dates V34's backfill stamp or test
+   *         fixtures.
+   *
+   * <p>The fallback covers the brief window between the V34 schema
+   * change landing and the migration completing on a slow-restart
+   * deployment, plus any in-test fixtures that don't populate the
+   * field. New rows always get it stamped by {@link #createFile}.
+   */
+  private static String effectiveProviderId(ShepardFile file) {
+    if (file == null) return GridFsFileStorage.ID;
+    String pid = file.getProviderId();
+    return (pid == null || pid.isBlank()) ? GridFsFileStorage.ID : pid;
+  }
+
+  /**
+   * Pick the {@link FileStorage} adapter for a read / delete on a
+   * row's provider. If the row's providerId points at an adapter
+   * that's not installed, fall through to {@link
+   * FileStorageRegistry#requireActive()} — the 503 envelope is the
+   * right answer for "operator removed the adapter but the rows
+   * still reference it" (FS1e migration not yet complete).
+   */
+  private FileStorage storageForRow(String providerId) {
+    for (FileStorage s : fileStorageRegistry.list()) {
+      if (providerId.equals(s.id())) {
+        if (s.isEnabled()) return s;
+        Log.warnf(
+          "FileContainerService: storage adapter '%s' is registered but disabled — falling back to active provider",
+          providerId
+        );
+        break;
+      }
+    }
+    return fileStorageRegistry.requireActive();
   }
 }

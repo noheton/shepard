@@ -1,0 +1,109 @@
+package de.dlr.shepard.storage;
+
+/**
+ * FS1a SPI seam — a {@code FileStorage} adapter persists file
+ * payload bytes for shepard's file payload kind. Mirrors the
+ * {@link de.dlr.shepard.publish.minter.Minter} SPI shape: an
+ * in-tree interface every plugin compiles against, with the
+ * interface itself living in core and every adapter implementing
+ * it from a sibling Maven module (or, for the default GridFS
+ * adapter, from core itself).
+ *
+ * <p>Designed in {@code aidocs/45 §3.2} ("pluggable storage
+ * backend"). Plugin-first heuristic #3 in {@code CLAUDE.md}: SPI
+ * stays in core, adapters live wherever fits — the default
+ * {@link de.dlr.shepard.storage.gridfs.GridFsFileStorage} ships in
+ * core (zero-extra-deps install), the S3 adapter
+ * ({@code shepard-plugin-file-s3}) lands in FS1b under
+ * {@code plugins/storage-s3/}, future Seaweed / Wasabi / Garage
+ * direct-binding adapters follow.
+ *
+ * <p>Lifecycle: discovered by CDI under {@code @ApplicationScoped} +
+ * {@code @Default}; resolved by {@link FileStorageRegistry} via the
+ * deploy-time {@code shepard.storage.provider} key. Switching the
+ * active provider is a re-bootstrap decision (storage backend
+ * change re-points the bytes pipeline; not safely runtime-flippable —
+ * the {@code CLAUDE.md} "cluster identity / topology" exception
+ * applies), so FS1a keeps this as a deploy-time-only knob.
+ * Per-adapter admin config (e.g. S3 endpoint / bucket) lands with
+ * the relevant plugin in FS1b and uses the runtime {@code :*Config}
+ * pattern then.
+ *
+ * <p><strong>Optional posture.</strong> {@link FileStorageRegistry}
+ * does not fail-fast when no provider matches the configured id —
+ * the install boots with no active storage and any attempt to
+ * upload or download a file payload returns RFC 7807
+ * {@code storage.provider.not-installed} (503) until an operator
+ * sets {@code shepard.storage.provider=<id>} + the matching adapter
+ * is present. This matches the post-KIP1h
+ * {@link de.dlr.shepard.publish.minter.MinterRegistry} relaxation.
+ */
+public interface FileStorage {
+  /**
+   * Stable identifier for this storage adapter — e.g.
+   * {@code "gridfs"} (the in-core default), {@code "s3"} (FS1b
+   * plugin). Must match the value an operator would put in
+   * {@code shepard.storage.provider=…} to activate this adapter.
+   *
+   * <p>If two beans return the same {@code id()} the registry logs
+   * a WARN and picks the first one CDI hands it (defensive, not
+   * fail-fast — same shape as {@code MinterRegistry}).
+   */
+  String id();
+
+  /**
+   * Whether this storage adapter is currently usable (credentials
+   * present, upstream reachable, feature toggle on). The default
+   * {@code GridFsFileStorage} returns {@code true} when the MongoDB
+   * connection is up; FS1b's {@code S3FileStorage} returns
+   * {@code false} when its bucket / credentials aren't configured.
+   *
+   * <p>The registry refuses to activate a {@code !isEnabled()}
+   * adapter — operators see a clean RFC 7807 error rather than a
+   * cryptic upstream 5xx mid-upload.
+   */
+  boolean isEnabled();
+
+  /**
+   * Store bytes; return an opaque locator the caller persists
+   * alongside the payload metadata (filename, md5, size, …). The
+   * locator format is provider-specific — GridFS uses
+   * {@code "<containerMongoId>:<fileOid>"}, S3 will use
+   * {@code "<bucket>/<key>"} — and is treated as opaque by the
+   * rest of shepard.
+   *
+   * @throws StorageException with operator-readable message when
+   *                          the storage tier rejects the upload
+   *                          (network failure, quota exceeded,
+   *                          credential expiry).
+   * @throws StorageQuotaExceededException specifically when an
+   *                                       operator-side quota has
+   *                                       been exhausted.
+   */
+  StorageLocator put(StoragePutRequest request) throws StorageException;
+
+  /**
+   * Fetch by locator. Caller closes the stream.
+   *
+   * @throws StorageNotFoundException when the locator points at no
+   *                                  known blob (404 surface).
+   * @throws StorageProviderUnavailableException when the storage
+   *                                             tier is reachable
+   *                                             but unhealthy (503).
+   * @throws StorageException for any other storage-tier failure.
+   */
+  StorageGetResponse get(StorageLocator locator) throws StorageException;
+
+  /**
+   * Delete by locator. Idempotent — missing keys must not throw.
+   * Implementations should swallow {@code StorageNotFoundException}
+   * at this layer so that double-deletes after a partial failure
+   * are safe to retry.
+   *
+   * @throws StorageProviderUnavailableException when the storage
+   *                                             tier is reachable
+   *                                             but unhealthy.
+   * @throws StorageException for any other storage-tier failure.
+   */
+  void delete(StorageLocator locator) throws StorageException;
+}
