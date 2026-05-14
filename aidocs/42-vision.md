@@ -106,6 +106,15 @@ Plus payload kinds (the things References point at):
 - **Git reference** *(loose, tracked (GitLab + GitHub + Gitea) shipped via
   G1a/G1b/G1d; pinned planned via G1c; UI in-flight)* →
   pinned git commit + path, for analysis code provenance.
+- **DBpedia Databus reference** *(REF1c shipped; off-by-default until an
+  admin enables the plugin)* → typed reference to a
+  [DBpedia Databus](https://databus.dbpedia.org) artifact. When attached
+  to a DataObject, shepard fetches the artifact's JSON-LD metadata and
+  caches title, abstract, version, licence, and distribution list
+  (24 h TTL; supports private Databus instances via OAuth
+  client-credentials). Admin-configurable singleton (`:DbpediaDatabusConfig`)
+  with allowedHosts security allowlist. Operator runbook:
+  `docs/reference/reference-dbpedia-databus.md`.
 
 ## The cross-cutting features
 
@@ -348,8 +357,8 @@ Mid-horizon:
   startup via `ServiceLoader`) + per-plugin `shepard.plugins.<id>.enabled`
   toggle. UH1a is the first plugin under the new shape; HDF5
   (PL1c), Git references (PL1d), FS GridFS+S3 split (FS1), ePIC
-  / DataCite minters (KIP1c/d), DBpedia rich-reference (REF1a),
-  video (VID1a), AAS submodels (AAS1) all queue behind it
+  / DataCite minters (KIP1c/d), DBpedia rich-reference (**REF1c
+  shipped**), video (VID1a), AAS submodels (AAS1) all queue behind it
   following the same drop-in JAR pattern per ADR-0023.
 - **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
   a `/help` route serving the same `docs/*.md` content as the
@@ -411,8 +420,10 @@ Mid-horizon:
   bundle (ONT1a shipped); metadata4ing (NFDI4Ing) added to the
   pre-seed bundle as the engineering-research extension of PROV-O
   (ONT1b shipped — LUMEN seed citation queued under ONT1c, frontend
-  ontology-picker queued under ONT1d); DBpedia Databus rich-reference
-  plugin; **GraphRAG** on shepard via native Neo4j 5.13+ vector index.
+  ontology-picker queued under ONT1d); **DBpedia Databus rich-reference
+  plugin shipped** (REF1c — `shepard-plugin-reference-dbpedia-databus`,
+  off-by-default, see `docs/reference/reference-dbpedia-databus.md`);
+  **GraphRAG** on shepard via native Neo4j 5.13+ vector index.
 - **OpenAPI client-generator pick** (`aidocs/57`, CG1 series).
   Kiota for the `/v2/` shelf, OpenAPI Generator retained for the
   byte-frozen `/shepard/api/...` shelf; Hey API as a TS-only

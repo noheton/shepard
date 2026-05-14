@@ -753,6 +753,22 @@
           <artifactId>shepard-plugin-minter-local</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          REF1c — the DBpedia Databus rich-reference plugin
+          (`shepard-plugin-reference-dbpedia-databus`). Provides
+          `/v2/data-objects/{appId}/dbpedia-databus-references` CRUD
+          + `/v2/admin/references/dbpedia-databus/*` admin REST +
+          `shepard-admin references dbpedia-databus ...` CLI parity.
+          Same `with-plugins` profile pattern as UH1a / KIP1g / KIP1h.
+          Off-by-default at runtime (enabled=false in the seeded
+          :DbpediaDatabusConfig singleton) until an operator flips it.
+          See aidocs/16 REF1c.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-reference-dbpedia-databus</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
