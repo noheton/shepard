@@ -11,5 +11,5 @@
 // (e.g. two pods racing at first-boot before quorum) fail hard rather than
 // silently producing two :S3StorageConfig nodes.
 //
-// Rollback: V35_R__Rollback_S3StorageConfig_constraint.cypher (see below).
+// Rollback: V36_R__Rollback_S3StorageConfig_constraint.cypher (see below).
 CREATE CONSTRAINT IF NOT EXISTS FOR (n:S3StorageConfig) REQUIRE n.appId IS UNIQUE;
