@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +20,8 @@ import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
+import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
@@ -29,6 +30,7 @@ import jakarta.ws.rs.NotFoundException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusComponentTest
@@ -52,8 +54,44 @@ public class FileContainerServiceTest {
   @InjectMock
   AuthenticationContext authenticationContext;
 
+  @InjectMock
+  FileStorageRegistry fileStorageRegistry;
+
   @Inject
   FileContainerService service;
+
+  /**
+   * FS1a: every test that exercises {@code createFile} / {@code getFile} /
+   * {@code deleteFile} routes through the registry, so seed the mock
+   * with the in-core GridFS adapter active. The real
+   * {@link GridFsFileStorage} bean delegates to the (still mocked)
+   * {@link FileService}, which lets the existing legacy-shape tests
+   * keep asserting on {@code fileService.getPayload} / {@code fileService.deleteFile}
+   * stubs without bypassing the new SPI layer.
+   *
+   * <p>Individual tests can swap the registry's response if they want
+   * to exercise the SPI's not-installed / disabled / non-GridFS
+   * branches.
+   */
+  @BeforeEach
+  void stubStorageRegistry() {
+    GridFsFileStorage gridfs = new GridFsFileStorage();
+    // The real bean injects FileService via @Inject; in the test we
+    // wire it manually since Quarkus only constructs the bean we ask
+    // for (FileContainerService).
+    try {
+      var field = GridFsFileStorage.class.getDeclaredField("fileService");
+      field.setAccessible(true);
+      field.set(gridfs, fileService);
+      var enabledField = GridFsFileStorage.class.getDeclaredField("enabled");
+      enabledField.setAccessible(true);
+      enabledField.set(gridfs, true);
+    } catch (ReflectiveOperationException e) {
+      throw new AssertionError("Failed to wire mock FileService into GridFsFileStorage", e);
+    }
+    when(fileStorageRegistry.requireActive()).thenReturn(gridfs);
+    when(fileStorageRegistry.list()).thenReturn(List.of(gridfs));
+  }
 
   private final User defaultUser = new User("Anna");
 
@@ -380,16 +418,21 @@ public class FileContainerServiceTest {
 
   @Test
   public void deleteFileTest_deletedFalse() {
+    // FS1a: the storage SPI contract makes delete() idempotent —
+    // a missing locator is a no-op, not a throw. The legacy
+    // FileService.deleteFile still throws JAX-RS NotFound for the
+    // file-missing case, but GridFsFileStorage swallows that
+    // exception (see GridFsFileStorage#delete) so a double-delete
+    // after a partial failure is safe. The Neo4j bookkeeping side
+    // (FileContainerDAO.createOrUpdate) still runs because the
+    // domain row has already been removed from the container's
+    // files list — making the call idempotent end-to-end.
     ShepardFile file1 = new ShepardFile("abc", new Date(), "name", "md5");
     ShepardFile file2 = new ShepardFile("123", new Date(), "name", "md5");
 
     FileContainer container = new FileContainer(1L);
     container.setMongoId("mongoId");
     container.setFiles(List.of(file1, file2));
-
-    FileContainer updated = new FileContainer(1L);
-    updated.setMongoId("mongoId");
-    updated.setFiles(List.of(file2));
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
 
@@ -404,9 +447,8 @@ public class FileContainerServiceTest {
       true
     );
 
-    assertThrows(NotFoundException.class, () -> service.deleteFile(1L, "abc"));
-
-    verify(dao, never()).createOrUpdate(updated);
+    // Idempotent contract: no throw. The Neo4j side updates anyway.
+    assertDoesNotThrow(() -> service.deleteFile(1L, "abc"));
   }
 
   @Test
@@ -425,5 +467,88 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
 
     assertThrows(InvalidPathException.class, () -> service.deleteFile(1L, "oid"));
+  }
+
+  // ---------- FS1a: storage SPI integration ----------
+
+  @Test
+  public void createFileStampsProviderId() {
+    // The newly-created ShepardFile should be stamped with the
+    // active adapter's id ("gridfs" for the default install) so
+    // subsequent reads route through the right adapter.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    ShepardFile created = new ShepardFile("oid", new Date(), "name", "md5");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.createFile("mongoId", "filename", null)).thenReturn(created);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    ShepardFile actual = service.createFile(1L, "filename", null);
+
+    assertEquals("gridfs", actual.getProviderId());
+  }
+
+  @Test
+  public void createFileThrowsStorageNotInstalledWhenNoActiveProvider() {
+    // Operator hasn't set shepard.storage.provider (or set it to
+    // an id with no matching adapter). The registry's
+    // requireActive() throws StorageNotInstalledException, which
+    // the mapper turns into a 503 RFC 7807. Verified here at the
+    // service layer.
+    var container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(fileStorageRegistry.requireActive()).thenThrow(
+      new de.dlr.shepard.storage.StorageNotInstalledException("no provider")
+    );
+
+    assertThrows(
+      de.dlr.shepard.storage.StorageNotInstalledException.class,
+      () -> service.createFile(1L, "filename", null)
+    );
+  }
+
+  @Test
+  public void getFileRoutesThroughTheRegistryByRowProviderId() {
+    // FS1a row stamped with providerId="gridfs" — verify the read
+    // goes through the GridFS adapter (which delegates to
+    // FileService) and surfaces a NamedInputStream identical to
+    // the legacy path.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    ShepardFile file = new ShepardFile("oid", new Date(), "name", "md5");
+    file.setProviderId("gridfs");
+    container.setFiles(List.of(file));
+
+    NamedInputStream payload = new NamedInputStream("oid", null, "name", 42L);
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.getPayload("mongoId", "oid")).thenReturn(payload);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    var actual = service.getFile(1L, "oid");
+    // The downstream stream + size + name come from FileService.
+    assertEquals("name", actual.getName());
+    assertEquals(42L, actual.getSize());
+    verify(fileService).getPayload("mongoId", "oid");
   }
 }
