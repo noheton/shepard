@@ -225,7 +225,9 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | OWASP Dependency-Check (weekly + on pom changes; `failBuildOnCVSS=7`) | none | shipped via `.github/workflows/security.yml`; suppressions in `backend/dependency-check-suppressions.xml` with CVE+reason format | **✓ ↑** | `.github/workflows/security.yml` |
 | Secret scanning (gitleaks weekly + on push) | none | shipped via `.github/workflows/security.yml` | **✓ ↑** | `.github/workflows/security.yml` |
 | GitHub Pages site CI | none | shipped (separate workflow) | **✓ ↑** | `.github/workflows/pages.yml` |
-| Container images published to GHCR (`ghcr.io/noheton/shepard-{backend,frontend}:{latest,sha-<7>,vX.Y.Z}`) | upstream publishes to gitlab.com | shipped via `.github/workflows/build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
+| Container images published to GHCR (`ghcr.io/noheton/shepard-{backend,frontend}:{latest,sha-<7>,vX.Y.Z}`) | upstream publishes to gitlab.com | shipped via `.github/workflows/ci.yml` `build-images` job (gated on unit-tests + spotbugs) | **✓ ↑** | `.github/workflows/ci.yml` |
+| **Demo auto-seeder** (`seeder` one-shot Docker Compose service in `docker-compose.override.yml`; Keycloak ROPC → bootstrap → API-key → `seed.py --regenerate`; `SHEPARD_BOOTSTRAP_TOKEN_PATH` shared via named volume; idempotent; `restart: "no"`) | none | shipped — CI2 commit | **✓ ↑** | `infrastructure/docker-compose.override.yml` + `examples/seed-showcase/entrypoint.sh` |
+| **Playwright e2e test suite** (`@playwright/test` 1.49; targeting production `https://shepard.nuclide.systems`; auth helper, collections CRUD, nav coverage, smoke API health) | none | shipped — CI2 commit | **✓ ↑** | `e2e/` |
 | **CodeQL** SAST (Java + JS/TS, `security-extended` query set) | none | shipped via `.github/workflows/codeql.yml`; weekly + per-PR; SARIF → Code Scanning | **✓ ↑** | `.github/workflows/codeql.yml` |
 | **Trivy** container scan on every published GHCR image (CRITICAL+HIGH, ignore-unfixed) | none | shipped in `build-images.yml`; SARIF → Code Scanning per-image | **✓ ↑** | `.github/workflows/build-images.yml` |
 | **SBOM** (CycloneDX) per published image via `anchore/sbom-action`; uploaded as artifact + attached to GitHub releases | none | shipped in `build-images.yml` | **✓ ↑** | `.github/workflows/build-images.yml` |
@@ -319,7 +321,7 @@ namespace; core enforces the shape.
 | Live ecosystem doc (SPW + sTC + others) | none | shipped (`aidocs/40-ecosystem.md`) | **✓ ↑** | `aidocs/40` |
 | Upstream upgrade-path tracker (admin-facing) | n/a | shipped (`aidocs/34-upstream-upgrade-path.md`, Live) | **✓ ↑** | `aidocs/34` |
 | **This** fork-vs-upstream feature matrix (contributor-facing) | n/a | this doc | **✓ ↑** | this doc |
-| LUMEN-inspired showcase seed + analysis notebook | none | shipped (`examples/seed-showcase/`) | **✓ ↑** | PR #1001 |
+| LUMEN-inspired showcase seed + analysis notebook (expanded to 25 channels × 15 runs; 2 hold days; 4 new signal profiles: valve, tank, gimbal, combustion) | none | shipped (PR #1001; expanded in CI2 commit — `N_RUNS=15`, 25 channels, `examples/seed-showcase/data/generate.py`) | **✓ ↑** | PR #1001 + CI2 |
 | Upstream-current parallel import script (`import_upstream.py`) for the same showcase data | n/a (the upstream itself) | shipped | **✓ ↑** | PR #1001 |
 | **In-app user docs** — Nuxt `/help` route serving `docs/*.md` from the same source as the Pages site | none | TBD; same source, two presentations | 📐 (queued, D1a) | `aidocs/49` |
 | **Playwright screenshot pipeline** capturing against a CI-booted compose stack, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
@@ -351,7 +353,7 @@ namespace; core enforces the shape.
 
 ## Headline state of progress
 
-**Shipped on this fork (vs upstream 5.2.0):** 6 DB-resilience improvements, 5 config/cache improvements, 1 API-key auth feature (L5), 4 security fixes (M2/M4/M5 + the L2a additive identifier substrate), 5 endpoint-additive features (P3, P14, R2/b/c/d/d2), the GitHub Pages docs site with three deploy guides, the LUMEN showcase seed + notebook, and **two Live tracking docs** (`aidocs/34` admin-facing + this matrix contributor-facing).
+**Shipped on this fork (vs upstream 5.2.0):** 6 DB-resilience improvements, 5 config/cache improvements, 1 API-key auth feature (L5), 4 security fixes (M2/M4/M5 + the L2a additive identifier substrate), 5 endpoint-additive features (P3, P14, R2/b/c/d/d2), the GitHub Pages docs site with three deploy guides, the **25-channel LUMEN showcase seed + notebook** (15 runs, 2 hold days, 4 signal profiles), **demo auto-seeder** service with bootstrap flow, **Playwright e2e test suite**, API Docs nav link, and **two Live tracking docs** (`aidocs/34` admin-facing + this matrix contributor-facing).
 
 **In flight (agents dispatched):** none currently — C5/C5b/L2b/L2c have all landed; the remaining L2 chain (L2d/L2e) is gated on P4 + H4.
 

@@ -257,7 +257,10 @@ Five typical entry points:
 
 1. **The web UI.** Browse, search, edit. Add lab-journal entries.
    Configure your profile (post-U1c). Spin up a process run
-   (post-PR1b).
+   (post-PR1b). The **API Docs** link in the nav bar (or the button
+   on the landing page) opens the live Swagger UI at
+   `/shepard/api/q/swagger-ui` — useful for trying endpoints
+   interactively without leaving the browser.
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/seed-showcase/notebooks/` are the canonical
