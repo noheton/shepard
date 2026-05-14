@@ -49,7 +49,7 @@ public class TimeseriesAnnotationDAO extends GenericDAO<TimeseriesAnnotation> {
       "(a:TimeseriesAnnotation {appId: $annId}) DELETE rel",
       Map.of("refAppId", refAppId, "annId", annotation.getAppId())
     );
-    delete(annotation);
+    deleteByNeo4jId(annotation.getId());
   }
 
   @Override
