@@ -6,7 +6,7 @@ export function parseJwtPayload(token: string): Record<string, unknown> | null {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const payload = parts[1];
+    const payload = parts[1] as string; // length === 3 guarantees index 1 exists
     // Convert URL-safe base64 to standard base64
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
     const json = decodeURIComponent(

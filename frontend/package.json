@@ -17,6 +17,7 @@
     "@mdi/font": "7.4.47",
     "@nuxt/fonts": "0.14.0",
     "@sidebase/nuxt-auth": "0.10.1",
+    "next-auth": "4.21.1",
     "@tiptap/extension-bullet-list": "3.20.0",
     "@tiptap/extension-code": "3.20.0",
     "@tiptap/extension-code-block-lowlight": "3.20.0",
