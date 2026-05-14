@@ -1,7 +1,7 @@
 name: CodeQL
 
 # GitHub-native SAST. Multi-language taint analysis broader than the
-# SpotBugs+findsecbugs gate in `backend-ci.yml`. Findings flow to the
+# SpotBugs+findsecbugs gate in `ci.yml`. Findings flow to the
 # repo's Security tab → Code scanning, and (in PRs) inline annotations.
 #
 # Triggers:

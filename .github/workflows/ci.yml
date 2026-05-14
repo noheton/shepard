@@ -1,0 +1,391 @@
+name: CI
+
+# Unified pipeline: backend tests → container images.
+# Images are only pushed once both test gates pass.
+#
+# Job graph:
+#   unit-tests ──┐
+#                ├──► build-images  (main push / tag only)
+#   spotbugs ────┘
+#
+# Published image tags (GHCR):
+#   ghcr.io/noheton/shepard-{backend,frontend}:latest      (main push)
+#   ghcr.io/noheton/shepard-{backend,frontend}:sha-<7>     (every push)
+#   ghcr.io/noheton/shepard-{backend,frontend}:v<x.y.z>   (tag push)
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - "backend/**"
+      - "plugins/**"
+      - "frontend/**"
+      - "cli/**"
+      - "infrastructure/docker-compose.yml"
+      - ".github/workflows/ci.yml"
+    tags:
+      - "v*.*.*"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "plugins/**"
+      - "frontend/**"
+      - "cli/**"
+      - ".github/workflows/ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write          # GHCR push
+  pull-requests: write     # PR coverage comment
+  checks: write            # JaCoCo annotations
+  security-events: write   # Trivy + CodeQL SARIF
+  id-token: write          # SBOM signing
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reusable composite: three-pass plugin dance
+# Each job that needs compiled backend artifacts runs this sequence.
+# Maven's local-repo cache (via actions/cache) makes repeats fast.
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 1. Unit tests + JaCoCo coverage gate
+  # ───────────────────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit tests + coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Stub-install backend
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-local plugin
+        working-directory: plugins/minter-local
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-datacite plugin
+        working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Plugin unit tests (kip)
+        working-directory: plugins/kip
+        run: mvn -B test
+
+      - name: Plugin unit tests (minter-local)
+        working-directory: plugins/minter-local
+        run: mvn -B test
+
+      - name: Plugin unit tests (minter-datacite)
+        working-directory: plugins/minter-datacite
+        run: mvn -B test
+
+      - name: Backend unit tests + JaCoCo coverage gate
+        working-directory: backend
+        run: |
+          mvn -B -P unit-test \
+              -DskipITs \
+              -Djacoco.haltOnFailure=true \
+              verify
+
+      - name: Upload JaCoCo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: backend/target/jacoco-report/
+
+      - name: Post coverage summary to PR
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.1
+        with:
+          paths: backend/target/jacoco-report/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 60
+          min-coverage-changed-files: 70
+          title: "Backend coverage"
+          update-comment: true
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 2. SpotBugs + findsecbugs SAST
+  # ───────────────────────────────────────────────────────────────────────────
+  spotbugs:
+    name: SpotBugs + findsecbugs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Stub-install backend
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-local plugin
+        working-directory: plugins/minter-local
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-datacite plugin
+        working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: SpotBugs + findsecbugs (fail on High-confidence findings)
+        working-directory: backend
+        run: |
+          mvn -B -DskipTests \
+              -Dspotbugs.failOnError=true \
+              compile spotbugs:check
+
+      - name: Upload SpotBugs report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-report
+          path: backend/target/spotbugsXml.xml
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # 3. Build + push container images
+  #    Only runs on main push or tag — gated on both test jobs passing.
+  # ───────────────────────────────────────────────────────────────────────────
+  build-backend:
+    name: Build backend image
+    runs-on: ubuntu-latest
+    needs: [unit-tests, spotbugs]
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Stub-install backend
+        working-directory: backend
+        run: mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+
+      - name: Install CLI
+        working-directory: cli
+        run: mvn -B -DnoPlugins -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-local plugin
+        working-directory: plugins/minter-local
+        run: mvn -B -DskipTests install
+
+      - name: Install minter-datacite plugin
+        working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Build Quarkus app (tests already passed in unit-tests job)
+        working-directory: backend
+        run: mvn -B -DskipTests package
+
+      - name: Build CLI uber-jar
+        working-directory: cli
+        run: mvn -B -DskipTests package
+
+      - name: Stage plugin JARs for image build
+        run: |
+          mkdir -p backend/plugins-stage
+          cp plugins/unhide/target/shepard-plugin-unhide-*.jar backend/plugins-stage/
+          cp plugins/kip/target/shepard-plugin-kip-*.jar backend/plugins-stage/
+          cp plugins/minter-local/target/shepard-plugin-minter-local-*.jar backend/plugins-stage/
+          cp plugins/minter-datacite/target/shepard-plugin-minter-datacite-*.jar backend/plugins-stage/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          REPO=ghcr.io/${{ github.repository_owner }}/shepard-backend
+          TAGS="$REPO:sha-$SHA"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAGS="$TAGS,$REPO:latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAGS="$TAGS,$REPO:${GITHUB_REF_NAME}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build + push backend image
+        id: build-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-backend.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: true
+
+      - name: Trivy scan — backend image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/shepard-backend@${{ steps.build-backend.outputs.digest }}
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF (backend) to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+
+  build-frontend:
+    name: Build frontend image
+    runs-on: ubuntu-latest
+    needs: [unit-tests, spotbugs]
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Nuxt
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          REPO=ghcr.io/${{ github.repository_owner }}/shepard-frontend
+          TAGS="$REPO:sha-$SHA"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TAGS="$TAGS,$REPO:latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAGS="$TAGS,$REPO:${GITHUB_REF_NAME}"
+          fi
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+
+      - name: Build + push frontend image
+        id: build-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
+          format: cyclonedx-json
+          output-file: sbom-frontend.cyclonedx.json
+          upload-artifact: true
+          upload-release-assets: true
+
+      - name: Trivy scan — frontend image
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/shepard-frontend@${{ steps.build-frontend.outputs.digest }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload Trivy SARIF (frontend) to Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend

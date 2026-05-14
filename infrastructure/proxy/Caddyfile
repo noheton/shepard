@@ -1,68 +1,14 @@
-# The Caddyfile is an easy way to configure your Caddy web server.
+# Caddyfile for shepard behind Zoraxy (TLS terminated upstream)
+# Zoraxy routes:
+#   https://shepard.nuclide.systems     → 192.168.1.49:80  → this Caddy → frontend:3000
+#   https://shepard-api.nuclide.systems → 192.168.1.49:8080 → backend directly
 #
-# Unless the file starts with a global options block, the first
-# uncommented line is always the address of your site.
-#
-# To use your own domain name (with automatic HTTPS), first make
-# sure your domain's A/AAAA DNS records are properly pointed to
-# this machine's public IP, then replace ":80" below with your
-# domain name.
+# All vhosts are served over plain HTTP; Zoraxy provides TLS.
+
 {
-	auto_https disable_certs
+	auto_https off
 }
 
-https://hostname_placeholder_do_not_change {
-	# Set this path to your site's directory.
-	root * /var/www/shepard/
-
-	# Enable the static file server.
-	file_server
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-https://backend.hostname_placeholder_do_not_change {
-	reverse_proxy backend:8080
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-https://frontend.hostname_placeholder_do_not_change {
+:80 {
 	reverse_proxy frontend:3000
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
 }
-
-https://frontend-old.hostname_placeholder_do_not_change {
-	reverse_proxy frontend-old:80
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-
-http://neo4j.hostname_placeholder_do_not_change {
-	reverse_proxy neo4j:7474
-
-	#tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-https://mongodb.hostname_placeholder_do_not_change {
-	reverse_proxy mongoexpress:8081
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-https://influxdb.hostname_placeholder_do_not_change {
-	reverse_proxy chronograf:8888
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-https://grafana.hostname_placeholder_do_not_change {
-	reverse_proxy grafana:3000
-
-	tls /etc/caddy/ssl/shepard.crt /etc/caddy/ssl/shepard.key
-}
-
-# Refer to the Caddy docs for more information:
-# https://caddyserver.com/docs/caddyfile
