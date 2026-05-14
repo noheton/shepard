@@ -52,6 +52,7 @@ re-deriving the trade-offs from scratch.
 | ADR-0022 | accepted | 2026-05-13 | OpenAPI client generators: Kiota new baseline + OpenAPI Generator still-maintained legacy (both indefinitely) | moderate |
 | ADR-0023 | accepted | 2026-05-13 | Plugin distribution: drop-in JARs into `backend/plugins/` discovered via `ServiceLoader` (not compose-side sidecars, not forked Dockerfiles) | moderate |
 | ADR-0024 | accepted | 2026-05-13 | Object-store reference implementation: Garage (replaces MinIO in `infrastructure-local/`); FS1b talks generic S3 via AWS SDK so any S3-compatible endpoint keeps working | easy |
+| ADR-0025 | accepted | 2026-05-14 | ENT1a scope decisions: CoW file payloads (gated on FS1a, deferred to ENT1b), one ACL per version (not parent-inherited), Collection + DataObject only (not all primitives), server-suggested-but-user-overridable labels | moderate |
 | ADR-0026 | accepted | 2026-05-13 | KIP1d DataCite Member password stored AES-GCM-encrypted (not hashed) on `:DataciteMinterConfig` because the DataCite REST API requires HTTP Basic auth at mint-time; key derives from `shepard.instance.id`. Operator-managed-secret level (not a KMS). | moderate |
 
 ---
@@ -1739,6 +1740,151 @@ versioned-PIDs Phase 1 wire-format change
   with `previousVersion` / `nextVersion` edges. Wire-shape
   compatible with KIP1h's `Publication.versionNumber` scalar.
 
+## ADR-0025 — ENT1a scope decisions for the entity-versioning baseline
+
+**Status.** accepted. **Date.** 2026-05-14.
+**Applied in.** `aidocs/16` ENT1a + this PR (the
+`de.dlr.shepard.versioning.*` package + `/v2/{kind}/{appId}/versions/...`
+REST surface + V35 migration).
+
+### Context
+
+ENT1a is the first slice of the ENT1 umbrella (`aidocs/16` ENT1) —
+the foundation for first-class entity versioning on shepard. The
+user explicitly pinned four scope decisions before code landed:
+
+| Question | Direction |
+|---|---|
+| Snapshot semantics | Copy-on-write (defer file-payload CoW to ENT1b — gated on FS1a's `FileStorage` SPI) |
+| Permission inheritance | One ACL per version (operator can flip per-version ACL independently); new version inherits previous version's ACL on creation |
+| Cardinality | Collection + DataObject only (matches current KIP1a publish kinds); Bundle / File / Reference deferred to ENT1e |
+| Label semantics | Server suggests `v<n+1>`; user can override with arbitrary string (e.g. `1.0.0-rc.1`) subject to shape validation |
+
+These were architectural calls — they pin behaviour that's hard to
+reverse once data exists in the graph. Documenting them here
+prevents re-litigation in ENT1b–e.
+
+### Decision
+
+ENT1a ships with the four scope decisions above. The implementation
+is the `de.dlr.shepard.versioning.*` package (core, not a plugin —
+versioning is an identity primitive every plugin compiles against)
++ a `/v2/{kind}/{appId}/versions/...` REST shelf + a V35 Cypher
+migration that backfills a `v1 :EntityVersion` for every existing
+Collection + DataObject.
+
+### Rationale
+
+- **CoW over blob-sharing.** A "snapshot" with implicitly-shared
+  file blobs would have surprising semantics: an admin retiring a
+  blob from v3 would also retire it from v1 / v2. CoW preserves the
+  reproducibility researchers expect from a versioned dataset.
+  ENT1a defers the blob-clone implementation to ENT1b (gated on
+  FS1a's `FileStorage` SPI) because the SPI seam is the only sane
+  place to ship a per-backend (GridFS / S3 / Garage / future) CoW
+  hook — building it in-tree against GridFS-only would block the
+  S3 plugin path.
+- **One ACL per version, not parent-inherited.** A retired version
+  may have stricter access requirements than the current head (a
+  v1 with PII redacted; a v3 with the PII still present). Sharing
+  the parent's ACL conflates "what I can read now" with "what I
+  could read when this version was current." The clone-on-create
+  default keeps the casual UX simple ("new version inherits the
+  ACL") while leaving the structural seam for operators who need
+  per-version divergence.
+- **Collection + DataObject only.** Adding Bundle / File / Reference
+  in ENT1a would double the surface area before the casual ACL +
+  CoW flows are validated against real users. The
+  `PublishableKindRegistry` is the seam ENT1e will widen — one row
+  per kind, no URL-shape change. KIP1a established the same
+  staged-cardinality pattern; ENT1a mirrors it.
+- **Server-suggested labels with user override.** Pure
+  ordinal-based labels (`v1`, `v2`, …) are correct for the
+  database but lose researcher intent (a `1.0.0-rc.1` carries
+  meaning the next-mint script can't infer). Pure user-supplied
+  labels make the next-mint script awkward (the server needs a
+  sensible default for the empty-body case). The hybrid keeps the
+  casual flow trivial (POST with no body → next sequential
+  version) and the power-user flow expressive (POST with
+  `{"label": "1.0.0-rc.1"}` → user-chosen label). The
+  `versionOrdinal` int is the "true" monotonic sort order
+  underneath the label string.
+
+### Alternatives considered
+
+- **Blob-sharing across versions (rejected).** Lower storage cost,
+  but breaks the "v1 is what v1 was" reproducibility contract that
+  motivates versioning in the first place. Operators who need
+  storage efficiency can post-process via a per-blob dedup at the
+  `FileStorage` plugin layer (S3 has CAS-style dedup; GridFS
+  doesn't natively but a hash-keyed index is possible) — that's
+  an orthogonal optimisation that doesn't change the graph shape.
+- **Parent-inherited ACL with explicit-override flag (rejected).**
+  Smaller graph footprint (one `:Permissions` per entity, not per
+  version), but the implicit "inherit until I override" semantics
+  surprised reviewers in pre-ENT1a discussion — operators would
+  expect that changing the entity's ACL doesn't retroactively
+  re-permission old versions. The one-ACL-per-version shape makes
+  that invariant structural rather than convention.
+- **Pure-numeric labels (rejected).** Cleanest grammar, but loses
+  the casual-research expressivity ("we're at `1.0.0-rc.1`" is the
+  way researchers actually talk about versions). The hybrid keeps
+  both expressivity AND a monotonic sort key (`versionOrdinal`).
+- **All-kinds-at-once cardinality (rejected).** Bundle / File /
+  Reference primitives have a different ACL story (FileBundle
+  inherits from its containing DataObject's ACL in the current
+  shape) — folding them in would have required a bigger ACL
+  redesign in ENT1a. Staging cardinality keeps the surface area
+  tractable; ENT1e widens it.
+
+### Reversibility
+
+Moderate. Each decision could be revisited but with operator cost:
+
+- CoW: ENT1b is the implementation, so the decision is only
+  "structural" in ENT1a. If we ever wanted to flip to
+  blob-sharing, the wire shape doesn't change but the migration
+  story for existing operators would be painful (CoW snapshots
+  would still exist on disk).
+- One ACL per version: the simpler direction (sharing the
+  parent's ACL) is recoverable via a migration that drops every
+  per-version `:Permissions` node and re-wires the version's
+  `has_permissions` edge to point at the parent's `:Permissions`.
+  Loses any per-version ACL divergence operators had set in the
+  interim.
+- Cardinality: pure additive expansion (ENT1e), reversible only
+  in the sense that an operator could ignore the new endpoints.
+- Label semantics: easy reversal — the `versionLabel` property
+  could be regenerated from `versionOrdinal` if the hybrid shape
+  ever became a problem (but the property is user-facing so the
+  reversal would surprise researchers who'd picked custom labels).
+
+### Forward work flagged
+
+- **ENT1b** — Copy-on-Write file payloads. Listens to the
+  `VersionCreatedEvent` CDI seam ENT1a ships and instructs the
+  `FileStorage` SPI to clone blobs into the new version's
+  namespace. Gated on FS1a.
+- **ENT1c** — Publish hookup. `POST /publish` implicitly creates
+  the next `:EntityVersion` and the freshly-minted `:Publication`
+  cites that specific version. Reconciles KIP1h's
+  `Publication.versionNumber` scalar with ENT1a's
+  `EntityVersion.versionOrdinal`.
+- **ENT1d** — Vue version selector dropdown on Collection +
+  DataObject detail panes.
+- **ENT1e** — Cross-cardinality expansion. One row per kind in
+  `PublishableKindRegistry`; per-kind permission seam wiring.
+- **`TargetEntityResolver` plural** — ENT1a's
+  `PROV1a`-captured `:Activity` rows show `targetKind=Entityversion`
+  (from the title-cased default fallback in `TargetEntityResolver`).
+  Adding `"versions" -> "EntityVersion"` to the explicit mapping
+  is a one-line follow-up. Low-priority — the audit trail works
+  either way.
+- **Migration regression test** — testcontainer fixture for V35's
+  two-phase shape (constraint + backfill, run twice for
+  idempotency, then assert every Collection / DataObject has
+  exactly one v1) lands alongside the broader Neo4j migration
+  testcontainer scaffold tracked under PM1a / KIP1a / KIP1h.
 ## ADR-0026 — KIP1d DataCite Member password is reversibly encrypted, not one-way hashed
 
 **Status.** accepted. **Date.** 2026-05-13.

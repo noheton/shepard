@@ -313,6 +313,20 @@ The four things on the near horizon, in priority order:
 
 Mid-horizon:
 
+- **Entity versioning** (`aidocs/16` ENT1 series, **ENT1a shipped**).
+  Every Collection and DataObject grows a first-class
+  `:EntityVersion` graph: append-only, per-version ACL (one ACL per
+  version — operators can independently flip per-version
+  reader/writer/manager grants), user-supplied labels (`v3`,
+  `1.0.0-rc.1`) or server-suggested `v<n+1>`. The REST surface lives
+  under `/v2/{kind}/{appId}/versions/...` with `POST` (create),
+  `GET` (list / single), `PATCH` (per-version ACL), `DELETE`
+  (refuses the last remaining version). V35 backfills a `v1` for
+  every existing entity inheriting its current ACL. Next in the
+  chain: Copy-on-Write file payloads per version (ENT1b, gated on
+  FS1a), publish hookup so `POST /publish` implicitly creates the
+  next version (ENT1c), a Vue selector dropdown (ENT1d), and
+  cross-cardinality expansion to Bundle / File / Reference (ENT1e).
 - **Snapshots** (`aidocs/41`, V2 series). Reproducible reads, deep
   exports, lineage diff.
 - **Git artifact tracking** (`aidocs/38`, G1 series). Commit-SHA
