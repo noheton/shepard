@@ -178,6 +178,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 |---|---|---|---|---|
 | OpenAI-compatible BYOK + admin-fallback infrastructure (per-user `ai.apiKey` / `ai.baseUrl` / `ai.model`) | none | TBD; **shepard ships zero models** | 📐 (queued, AI1a) | `aidocs/43 §4` |
 | Anomaly detection on timeseries (rolling-median + isolation-forest) | none | TBD; pure-Python, LLM-independent | 📐 (queued, AI1b) | `aidocs/43 §3.1` |
+| **Timeseries interval/point annotations** (TA1a) — `TimeseriesAnnotation` Neo4j entity with `startNs`, `endNs`, `label`, `description`, `aiGenerated`, `confidence`; linked from `TimeseriesReference` via `has_timeseries_annotation`; `/v2/timeseries-references/{refAppId}/annotations` CRUD; V35 migration; 15 unit tests | none | **TA1a shipped** — full CRUD REST surface, auth piggybacks DataObject permissions, `aiGenerated` flag ready for TA1c anomaly output | **✓ ↑** | `aidocs/16 TA1a` |
 | Channel-quality scoring (background job: `TimeseriesReference.qualityScore` ∈ `[0.0, 1.0]` — completeness + coverage + stability heuristic; opt-in via `shepard.timeseries.quality-scoring.enabled`) | none | pure-heuristic scorer, no LLM | ✓ (AI1c) | `aidocs/43 §3.2`, `aidocs/16` AI1c |
 | Embedding-based similarity (`/data-objects/{appId}/similar`) | none | TBD; needs `/v1/embeddings` endpoint | 📐 (queued, AI1d) | `aidocs/43 §3.5` |
 | **Snap dashboards** — Claude-chat-style chat sidebar with closed tool-use catalogue + Vega-Lite v5 inline rendering | none | TBD; **headline killer feature** | 📐 (queued, AI1e) | `aidocs/43 §5.8` |

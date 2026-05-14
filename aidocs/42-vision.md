@@ -73,7 +73,13 @@ shepard organises everything into five primitives:
 Plus payload kinds (the things References point at):
 
 - **TimeseriesReference** → time-stamped numeric data, stored in
-  TimescaleDB.
+  TimescaleDB. Each reference can carry **timeseries annotations**
+  (TA1a shipped): labelled intervals or point events (e.g. "fuel
+  ramp", "combustion instability onset") attached to a reference via
+  `/v2/timeseries-references/{appId}/annotations`. Annotations carry
+  `startNs` / `endNs` / `label` (required), plus optional
+  `description`, `confidence`, and an `aiGenerated` flag ready for
+  the TA1c anomaly-detection hook.
 - **FileReference (singleton)** → a single file attached to a
   DataObject (one PDF, one CSV result, one photo). Bytes live in a
   shared `_shepard_files` MongoDB / GridFS namespace — no per-Reference
@@ -325,10 +331,13 @@ Mid-horizon:
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
-- **Other AI features** (`aidocs/43`). Anomaly detection (extracting
-  the showcase notebook's algorithm); semantic-annotation
-  suggestion; lab-journal authoring assist; auto-summarisation;
-  natural-language search. All BYOK / admin-fallback gated.
+- **Other AI features** (`aidocs/43`). **TA1a shipped** — timeseries
+  annotations (interval + point) with `aiGenerated` flag ready for
+  the scriptable anomaly-detection hook (TA1c). Queued: automatic
+  anomaly detection (`POST /v2/timeseries-references/{appId}/detect-anomalies`,
+  TA1c); semantic-annotation suggestion; lab-journal authoring
+  assist; auto-summarisation; natural-language search. All AI
+  inference BYOK / admin-fallback gated.
 - **S3-compatible file storage** (`aidocs/45`, FS series). The
   **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
   + the in-core GridFS default adapter, with `shepard.storage.provider`
