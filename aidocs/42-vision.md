@@ -253,6 +253,13 @@ These work the same way across every primitive:
 
 ## How you actually use it
 
+> **Just want to see it?** `git clone && cd shepard && make demo-up` —
+> a complete, seeded shepard at <http://localhost:3000/> in well
+> under 90 seconds. Five example Collections covering engineering /
+> climate / lab-journal / private / public-showcase use cases,
+> four test users, a resolvable KIP PID, the DBpedia Databus plugin
+> already wired. See `infrastructure-local/README-demo.md`. (DX5a.)
+
 Five typical entry points:
 
 1. **The web UI.** Browse, search, edit. Add lab-journal entries.
