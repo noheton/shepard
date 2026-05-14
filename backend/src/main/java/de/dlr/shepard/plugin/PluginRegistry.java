@@ -112,8 +112,29 @@ public class PluginRegistry {
    */
   public static final String CONFIG_CLASSPATH_SCAN_ENABLED = "shepard.plugins.classpath-scan.enabled";
 
+  /**
+   * PM1b2 — strict {@code shepardCompatibility()} enforcement.
+   * Default {@code true}: incompatible plugins (running version
+   * outside the manifest's declared range) land in FAILED state and
+   * don't have their lifecycle hooks invoked. Set {@code false} for
+   * an operator who wants to override the check (with a loud WARN
+   * logged); a malformed range string still fails the plugin so
+   * vendors get clear feedback on their declaration bug.
+   */
+  public static final String CONFIG_COMPATIBILITY_STRICT = "shepard.plugins.compatibility.strict";
+
   @Inject
   BeanManager beanManager;
+
+  /**
+   * PM1b2 — JAR signature verifier, resolved lazily via
+   * {@link Instance} so unit tests can construct a
+   * {@link PluginRegistry} reflectively without CDI. When unsatisfied
+   * (test path) the registry skips signature verification entirely —
+   * matches the PM1a posture.
+   */
+  @Inject
+  Instance<JarSignatureVerifier> signatureVerifier;
 
   /**
    * PM1e — DAO for {@link PluginRuntimeOverride} rows. Resolved
@@ -132,6 +153,26 @@ public class PluginRegistry {
 
   @ConfigProperty(name = CONFIG_CLASSPATH_SCAN_ENABLED, defaultValue = "true")
   boolean classpathScanEnabled;
+
+  /**
+   * PM1b2 — strict semver-range enforcement of
+   * {@link PluginManifest#shepardCompatibility()}. Default {@code true}:
+   * an incompatible plugin lands in FAILED state with
+   * {@code plugin.compatibility.failed}. Set {@code false} to log
+   * the mismatch as WARN but register the plugin anyway (operator
+   * override; same posture as {@code signing.required=false}).
+   */
+  @ConfigProperty(name = CONFIG_COMPATIBILITY_STRICT, defaultValue = "true")
+  boolean compatibilityStrict;
+
+  /**
+   * PM1b2 — the running shepard version. Surfaced into compatibility
+   * messages and used to evaluate each manifest's declared
+   * {@link PluginManifest#shepardCompatibility()} range. Injected via
+   * the same {@code shepard.version} key {@code VersionzRest} reads.
+   */
+  @ConfigProperty(name = "shepard.version", defaultValue = "0.0.0-unknown")
+  String shepardVersion;
 
   /**
    * Insertion-ordered map keyed by plugin id. Reads happen on the
@@ -225,15 +266,105 @@ public class PluginRegistry {
     if (resolved != null) {
       discoverJarPlugins(resolved);
     }
+    // PM1b2 — enforce semver compat against the running shepard
+    // version BEFORE dependency-resolution so an incompatible plugin
+    // is removed from the dependency graph (otherwise a dependent
+    // would fail with `plugin.dependency.missing` rather than the
+    // more accurate `plugin.compatibility.failed` for its parent).
+    enforceCompatibility();
     validateAndOrderDependencies();
     invokeLifecycle();
     Log.infof(
-      "PM1a: plugin discovery complete — %d discovered, %d enabled, %d disabled, %d failed",
+      "PM1a: plugin discovery complete — %d discovered, %d enabled, %d disabled, %d failed, %d degraded",
       entries.size(),
       countByState(PluginState.ENABLED),
       countByState(PluginState.DISABLED),
-      countByState(PluginState.FAILED)
+      countByState(PluginState.FAILED),
+      countByState(PluginState.DEGRADED)
     );
+  }
+
+  /**
+   * PM1b2 — enforce {@link PluginManifest#shepardCompatibility()}
+   * against the running shepard version. Plugins whose declared
+   * range doesn't accept the running version land in FAILED with
+   * {@code plugin.compatibility.failed} (or
+   * {@code plugin.compatibility.unparseable} for a malformed range
+   * string). Empty / blank constraint = "any version" (no
+   * enforcement). When {@code shepard.plugins.compatibility.strict}
+   * is {@code false}, an incompatible plugin is logged as WARN but
+   * still registers — operator override valve.
+   */
+  void enforceCompatibility() {
+    String runningVersion = shepardVersion == null ? "" : shepardVersion;
+    for (PluginEntry entry : entries.values()) {
+      if (entry.state() == PluginState.FAILED) {
+        // Already failed (duplicate id, manifest invalid) — skip.
+        continue;
+      }
+      String constraint;
+      try {
+        constraint = entry.shepardCompatibility();
+      } catch (RuntimeException ex) {
+        if (compatibilityStrict) {
+          entry.markFailed(
+            "plugin.compatibility.read-failed: " +
+            ex.getClass().getSimpleName() + ": " + ex.getMessage()
+          );
+        }
+        Log.warnf(ex, "PM1b2: plugin '%s' shepardCompatibility() threw — strict=%s", entry.id(), compatibilityStrict);
+        continue;
+      }
+      if (constraint == null || constraint.isBlank()) {
+        // Empty constraint = "any shepard version" — admitted but
+        // logged at debug so a vendor can spot a missed declaration.
+        Log.debugf("PM1b2: plugin '%s' declares no shepardCompatibility — accepting any version", entry.id());
+        continue;
+      }
+      VersionRange range;
+      try {
+        range = VersionRange.parse(constraint);
+      } catch (IllegalArgumentException ex) {
+        String msg = "plugin.compatibility.unparseable: '" + constraint + "' (" + ex.getMessage() + ")";
+        if (compatibilityStrict) {
+          entry.markFailed(msg);
+          Log.warnf(
+            "PM1b2: plugin '%s' declares unparseable shepardCompatibility '%s' — plugin.compatibility.unparseable",
+            entry.id(),
+            constraint
+          );
+        } else {
+          Log.warnf(
+            "PM1b2: plugin '%s' declares unparseable shepardCompatibility '%s' but strict=false — registering anyway. PLEASE FIX",
+            entry.id(),
+            constraint
+          );
+        }
+        continue;
+      }
+      if (!range.accepts(runningVersion)) {
+        String msg = "plugin.compatibility.failed: requires shepard " + constraint +
+          ", running " + runningVersion;
+        if (compatibilityStrict) {
+          entry.markFailed(msg);
+          Log.warnf(
+            "PM1b2: plugin '%s' incompatible — requires shepard %s, running %s — plugin.compatibility.failed",
+            entry.id(),
+            constraint,
+            runningVersion
+          );
+        } else {
+          // Loud WARN — operator's override means the dial is one
+          // restart away from breaking on a real version mismatch.
+          Log.warnf(
+            "PM1b2: plugin '%s' INCOMPATIBLE with running shepard %s (requires %s) but strict=false — registering anyway. THIS IS A DANGER ZONE",
+            entry.id(),
+            runningVersion,
+            constraint
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -335,6 +466,13 @@ public class PluginRegistry {
       Log.warnf("PM1a: plugin JAR %s resolves outside %s — skipping for safety", jar, expectedParent);
       return;
     }
+    // PM1b2 — JAR signature verification. When the verifier is
+    // available + signing.required=true + the JAR doesn't pass, the
+    // entry is registered FAILED (so operators see WHY the plugin
+    // didn't load in `GET /v2/admin/plugins`) and the class-loading
+    // step is skipped. When signing.required=false we log the
+    // verifier's outcome at INFO and proceed (PM1a posture).
+    JarSignatureVerifier.VerifyResult sigResult = verifyJarSignature(realJar);
     URL jarUrl;
     try {
       jarUrl = realJar.toUri().toURL();
@@ -374,10 +512,95 @@ public class PluginRegistry {
           continue;
         }
         PluginManifest manifest = (PluginManifest) cls.getDeclaredConstructor().newInstance();
-        register(new PluginEntry(manifest, realJar));
+        PluginEntry entry = new PluginEntry(manifest, realJar);
+        // PM1b2 — apply signature verification outcome BEFORE register
+        // so the entry lands FAILED for an untrusted/unsigned JAR
+        // when signing.required=true. We still register the entry
+        // (operator visibility in `GET /v2/admin/plugins`) — just
+        // with FAILED state and the failureMessage explaining why.
+        applySignatureOutcome(entry, sigResult, realJar);
+        register(entry);
       } catch (ReflectiveOperationException | LinkageError e) {
         // plugin.discovery.failed — record but continue.
         Log.warnf(e, "PM1a: failed to instantiate %s from %s — plugin.discovery.failed", implClass, realJar.getFileName());
+      }
+    }
+  }
+
+  /**
+   * PM1b2 — run the signature verifier (if available) for the given
+   * JAR. Returns the {@link JarSignatureVerifier.VerifyResult} or
+   * {@code null} when the verifier isn't available (test path) so
+   * callers can short-circuit. Catches {@link JarSignatureException}
+   * + treats it as a TRUSTED-shaped "could not verify" outcome when
+   * signing isn't required; surfaces it as a failure otherwise.
+   */
+  private JarSignatureVerifier.VerifyResult verifyJarSignature(Path realJar) {
+    if (signatureVerifier == null || signatureVerifier.isUnsatisfied()) {
+      // Test path — same posture as PM1e's DAO injection.
+      return null;
+    }
+    JarSignatureVerifier verifier;
+    try {
+      verifier = signatureVerifier.get();
+    } catch (RuntimeException ex) {
+      Log.warnf(ex, "PM1b2: could not resolve JarSignatureVerifier — skipping signature check for %s", realJar);
+      return null;
+    }
+    try {
+      JarSignatureVerifier.VerifyResult result = verifier.verify(realJar);
+      Log.infof(
+        "PM1b2: signature check for %s → %s (%s)",
+        realJar.getFileName(),
+        result.status(),
+        result.message()
+      );
+      return result;
+    } catch (JarSignatureException ex) {
+      // Tampered / malformed JAR — synthesise an UNTRUSTED-shaped
+      // result so register() can fail it visibly.
+      Log.warnf(
+        ex,
+        "PM1b2: signature verification raised for %s — treating as UNTRUSTED",
+        realJar
+      );
+      return new JarSignatureVerifier.VerifyResult(
+        JarSignatureVerifier.VerifyResult.Status.UNTRUSTED,
+        java.util.List.of(),
+        "JAR signature parse failed: " + ex.getMessage()
+      );
+    }
+  }
+
+  /**
+   * PM1b2 — apply the signature outcome to a freshly-constructed
+   * {@link PluginEntry}. When signing is required and the JAR didn't
+   * pass, the entry is marked FAILED with a clear failureMessage so
+   * an operator sees the cause in {@code GET /v2/admin/plugins}.
+   * When signing isn't required, the result is informational only
+   * (already logged at INFO by {@link #verifyJarSignature}).
+   */
+  private void applySignatureOutcome(PluginEntry entry, JarSignatureVerifier.VerifyResult result, Path jar) {
+    if (result == null) {
+      return; // verifier not present — PM1a posture.
+    }
+    JarSignatureVerifier verifier = signatureVerifier.get();
+    if (!verifier.isSigningRequired()) {
+      return; // INFO-only mode.
+    }
+    switch (result.status()) {
+      case TRUSTED -> {
+        // Trusted — register as normal.
+      }
+      case UNSIGNED -> entry.markFailed(
+        "plugin.signature.unsigned: JAR " + jar.getFileName() +
+        " has no signature; shepard.plugins.signing.required=true"
+      );
+      case UNTRUSTED -> entry.markFailed(
+        "plugin.signature.untrusted: " + result.message()
+      );
+      default -> {
+        // Defensive — switch is exhaustive over the enum.
       }
     }
   }

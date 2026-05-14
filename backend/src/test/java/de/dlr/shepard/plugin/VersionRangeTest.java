@@ -104,4 +104,71 @@ class VersionRangeTest {
     assertThat(r.accepts("")).isFalse();
     assertThat(r.accepts("   ")).isFalse();
   }
+
+  // ─── PM1b2: operator-comma syntax (>=5.2.0,<6) ───────────────────
+
+  @Test
+  void operatorComma_geAndLt_acceptsInRange() {
+    // The shape every PluginManifest's shepardCompatibility() uses.
+    VersionRange r = VersionRange.parse(">=5.2.0,<6");
+    assertThat(r.accepts("5.2.0")).isTrue();
+    assertThat(r.accepts("5.2.1")).isTrue();
+    assertThat(r.accepts("5.9.99")).isTrue();
+    assertThat(r.accepts("5.1.99")).isFalse();
+    assertThat(r.accepts("6.0.0")).isFalse();
+    assertThat(r.accepts("4.0")).isFalse();
+  }
+
+  @Test
+  void operatorComma_singleClause_geOnly() {
+    VersionRange r = VersionRange.parse(">=2.0");
+    assertThat(r.accepts("2.0")).isTrue();
+    assertThat(r.accepts("2.0.1")).isTrue();
+    assertThat(r.accepts("1.99")).isFalse();
+  }
+
+  @Test
+  void operatorComma_singleClause_ltOnly() {
+    VersionRange r = VersionRange.parse("<3.0");
+    assertThat(r.accepts("2.9.9")).isTrue();
+    assertThat(r.accepts("3.0")).isFalse();
+    assertThat(r.accepts("3.0.1")).isFalse();
+  }
+
+  @Test
+  void operatorComma_equalsOperator_matchesExact() {
+    VersionRange r = VersionRange.parse("=1.2.3");
+    assertThat(r.accepts("1.2.3")).isTrue();
+    assertThat(r.accepts("1.2.4")).isFalse();
+  }
+
+  @Test
+  void operatorComma_emptyClause_throws() {
+    assertThatThrownBy(() -> VersionRange.parse(">=1.0,"))
+      .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void operatorComma_malformedClause_throws() {
+    assertThatThrownBy(() -> VersionRange.parse(">=not-a-version"))
+      .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void operatorComma_semverNumericCompare() {
+    VersionRange r = VersionRange.parse(">=1.2,<1.10");
+    assertThat(r.accepts("1.2")).isTrue();
+    assertThat(r.accepts("1.9")).isTrue();
+    // 1.10 must be rejected (semver-numeric: 1.10 > 1.9 > 1.2).
+    assertThat(r.accepts("1.10")).isFalse();
+  }
+
+  @Test
+  void operatorComma_bareClauseTreatedAsExact() {
+    // Composer-style: a bare version literal between commas is "= that version".
+    VersionRange r = VersionRange.parse(">=1.0,1.5.0");
+    assertThat(r.accepts("1.5.0")).isTrue();
+    assertThat(r.accepts("1.5.1")).isFalse(); // = clause excludes other 1.5+
+    assertThat(r.accepts("1.0")).isFalse();
+  }
 }

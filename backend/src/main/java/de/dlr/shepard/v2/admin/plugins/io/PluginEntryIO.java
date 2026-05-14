@@ -48,7 +48,7 @@ public record PluginEntryIO(
   @Schema(required = true, description = "Stable plugin identifier (matches shepard.plugins.<id>.enabled).") String id,
   @Schema(required = true, description = "Plugin-side semver version.") String version,
   @Schema(description = "Semver range the plugin claims compatibility with.") String shepardCompatibility,
-  @Schema(required = true, description = "Lifecycle state: DISCOVERED / ENABLED / DISABLED / FAILED.") String state,
+  @Schema(required = true, description = "Lifecycle state: DISCOVERED / ENABLED / DISABLED / FAILED / DEGRADED (PM1b2).") String state,
   @Schema(required = true, description = "Effective enabled toggle (runtime override or config fallback).") boolean enabled,
   @Schema(description = "Path of the source JAR (null for build-classpath plugins).") String sourcePath,
   @Schema(required = true, description = "Wall-clock instant the registry first observed the plugin.") Date registeredAt,
