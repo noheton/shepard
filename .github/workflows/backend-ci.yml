@@ -85,6 +85,10 @@ jobs:
         working-directory: plugins/minter-datacite
         run: mvn -B -DskipTests install
 
+      - name: Install storage-s3 plugin module
+        working-directory: plugins/storage-s3
+        run: mvn -B -DskipTests install
+
       - name: Run plugin unit tests (kip)
         working-directory: plugins/kip
         run: mvn -B test
@@ -95,6 +99,10 @@ jobs:
 
       - name: Run plugin unit tests (minter-datacite)
         working-directory: plugins/minter-datacite
+        run: mvn -B test
+
+      - name: Run plugin unit tests (storage-s3)
+        working-directory: plugins/storage-s3
         run: mvn -B test
 
       - name: Run unit tests + JaCoCo report + coverage gate
@@ -164,6 +172,10 @@ jobs:
 
       - name: Install minter-datacite plugin module
         working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Install storage-s3 plugin module
+        working-directory: plugins/storage-s3
         run: mvn -B -DskipTests install
 
       - name: Run SpotBugs + findsecbugs (fail on High-confidence findings)

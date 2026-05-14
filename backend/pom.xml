@@ -770,6 +770,25 @@
           <artifactId>shepard-plugin-minter-datacite</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          FS1b — S3-compatible storage adapter plugin. Implements the
+          FS1a FileStorage SPI (`de.dlr.shepard.storage`) against any
+          S3-compatible endpoint (AWS S3, Garage, MinIO, Ceph RGW,
+          Cloudflare R2, Backblaze B2, Wasabi, SeaweedFS). The plugin's
+          `S3FileStorage` `@ApplicationScoped` bean + `S3StorageAdminRest`
+          `@Path` resource are picked up by Quarkus's build-time CDI
+          scanner when this JAR is on the backend's compile-time classpath
+          via the index-dependency block in `application.properties`.
+          Activated when an operator sets `shepard.storage.provider=s3`
+          after configuring endpoint + bucket + credentials via the admin
+          REST / CLI.
+          See aidocs/16 FS1b + aidocs/45 §3.2 + aidocs/63 ADR-0024.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-storage-s3</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
