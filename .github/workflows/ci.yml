@@ -326,7 +326,7 @@ jobs:
       - name: Build Nuxt
         run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
 
       - name: Set up Docker Buildx
