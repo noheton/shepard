@@ -5,6 +5,7 @@ import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
+import de.dlr.shepard.cli.commands.StorageCommand;
 import de.dlr.shepard.cli.plugin.CliPluginBootstrap;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -43,6 +44,7 @@ import picocli.CommandLine.Command;
     MigrationsCommand.class,
     PluginsCommand.class,
     SemanticCommand.class,
+    StorageCommand.class,
   }
 )
 public final class ShepardAdmin implements Runnable {

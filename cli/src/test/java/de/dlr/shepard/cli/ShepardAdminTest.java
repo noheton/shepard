@@ -9,6 +9,8 @@ import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.MigrationsStatusCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
 import de.dlr.shepard.cli.commands.SemanticRefreshOntologiesCommand;
+import de.dlr.shepard.cli.commands.StorageCommand;
+import de.dlr.shepard.cli.commands.StorageStatusCommand;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.junit.jupiter.api.Test;
@@ -26,7 +28,7 @@ final class ShepardAdminTest {
     CommandLine cmd = new CommandLine(new ShepardAdmin());
 
     assertThat(cmd.getSubcommands().keySet())
-      .contains("features", "health", "migrations", "semantic");
+      .contains("features", "health", "migrations", "semantic", "storage");
   }
 
   @Test
@@ -125,6 +127,24 @@ final class ShepardAdminTest {
   @Test
   void semanticAloneIsAccessible() {
     int exit = new CommandLine(new ShepardAdmin()).execute("semantic");
+    assertThat(exit).isEqualTo(0);
+  }
+
+  @Test
+  void storageSubcommandHasStatusUnderIt() {
+    CommandLine cmd = new CommandLine(new ShepardAdmin());
+
+    CommandLine storage = cmd.getSubcommands().get("storage");
+    assertThat(storage).isNotNull();
+    assertThat((Object) storage.getCommand()).isInstanceOf(StorageCommand.class);
+    assertThat(storage.getSubcommands().keySet()).contains("status");
+    assertThat((Object) storage.getSubcommands().get("status").getCommand())
+      .isInstanceOf(StorageStatusCommand.class);
+  }
+
+  @Test
+  void storageAloneIsAccessible() {
+    int exit = new CommandLine(new ShepardAdmin()).execute("storage");
     assertThat(exit).isEqualTo(0);
   }
 }

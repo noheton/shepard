@@ -326,11 +326,18 @@ Mid-horizon:
   the showcase notebook's algorithm); semantic-annotation
   suggestion; lab-journal authoring assist; auto-summarisation;
   natural-language search. All BYOK / admin-fallback gated.
-- **S3-compatible file storage** (`aidocs/45`, FS series). Pluggable
-  backend with MinIO / S3 / Azure Blob / Ceph as opt-in alongside
-  the default GridFS. Presigned URLs unblock direct large-file
-  uploads + downloads + RO-Crate ZIP delivery; closes the
-  long-standing issue #27.
+- **S3-compatible file storage** (`aidocs/45`, FS series). The
+  **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
+  + the in-core GridFS default adapter, with `shepard.storage.provider`
+  as the deploy-time switch. The S3-compatible adapter
+  (`shepard-plugin-file-s3`, FS1b) drops into `plugins/storage-s3/`
+  next — any S3-compatible endpoint (AWS S3, Cloudflare R2,
+  Backblaze B2, Wasabi, Garage, SeaweedFS, Ceph RGW, MinIO).
+  Presigned URLs (FS1c) unblock direct large-file uploads +
+  downloads + RO-Crate ZIP delivery; closes the long-standing
+  issue #27. GridFS stays a first-class supported backend
+  indefinitely per the user direction (2026-05-12) — not a
+  deprecation path.
 - **Internal semantic repository — pre-seeded ontologies + UX**
   (`aidocs/48`, N1 series). The internal repo itself is **shipped**
   (N1a): the neosemantics plugin runs inside shepard's existing

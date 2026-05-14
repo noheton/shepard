@@ -208,7 +208,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Capability | Upstream | This fork | Status | Refs |
 |---|---|---|---|---|
 | Files stored in MongoDB GridFS (1 MiB chunks, one bucket per FileContainer) | **=** | **=** (today) | **=** | `FileService.java` |
-| **Two file-storage plugins** — `shepard-plugin-file-gridfs` (default) + `shepard-plugin-file-s3` (MinIO / S3 / Azure Blob / Ceph) — co-existing as first-class supported backends; operator picks per install via `shepard.payload.file.backend` | none | TBD | 📐 (queued, FS1a-b) | `aidocs/45 §3.2` + `aidocs/47 §3.2` |
+| **`FileStorage` SPI seam in core** — `de.dlr.shepard.storage.{FileStorage, FileStorageRegistry, StorageLocator, StoragePutRequest, StorageGetResponse, StorageException}` family. In-core `GridFsFileStorage` default adapter (wraps `FileService`); `shepard.storage.provider=gridfs` deploy-time key (cluster-identity exception). Optional-posture registry (no fail-fast on missing/disabled adapter — 503 `storage.provider.not-installed` envelope). `:ShepardFile.providerId` Neo4j property + V34 backfill. `shepard-admin storage status` CLI verb. | none | shipped (FS1a) | **✓ ↑** | `aidocs/45 §3.2`, `de.dlr.shepard.storage.*` |
+| **S3-compatible adapter plugin** (`shepard-plugin-file-s3`) — any S3-compatible endpoint (AWS S3, Cloudflare R2, Backblaze B2, Wasabi, Garage, SeaweedFS, Ceph RGW, MinIO); slots into the FS1a SPI without touching `FileContainerService` | none | TBD | 📐 (queued, FS1b) | `aidocs/45 §3.2` + §3a backend matrix |
 | Presigned-URL `/v2/` endpoints for upload + download (frees backend from being the bytes proxy) | none | TBD | 📐 (queued, FS1c) | `aidocs/45 §4` |
 | MinIO sidecar profile in compose (operator one-line switch) | none | TBD | 📐 (queued, FS1d) | `aidocs/45 §9` |
 | `shepard-admin files migrate` CLI (greenfield / big-bang / dual-store-with-background-sweep) | none | TBD | 📐 (queued, FS1e) | `aidocs/45 §6` |

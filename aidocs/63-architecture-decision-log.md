@@ -1568,11 +1568,18 @@ shifts.
 
 ### Forward work flagged by this decision
 
+- **FS1a in-tree `FileStorage` SPI seam** — **✓ shipped.** Lives at
+  `de.dlr.shepard.storage.*`; mirror of the `Minter` SPI shape per
+  CLAUDE.md plugin-first heuristic #3. `GridFsFileStorage` is the
+  in-core default adapter (wraps `FileService`); FS1b's S3 plugin
+  slots in alongside without touching `FileContainerService`. See
+  `aidocs/16` FS1a row + `aidocs/34` FS1a row.
 - **FS1b implementation slice** (designed in `aidocs/45 §3–§4`;
   not yet scheduled). Talks generic S3 via AWS SDK v2; CI tests
   against Garage locally + real S3 in a gated job. The plugin
   shape (`shepard-plugin-file-s3`) lives outside `backend/` per
-  ADR-0023 once the PluginManifest SPI lands.
+  ADR-0023 once the PluginManifest SPI lands. Compiles against
+  the FS1a SPI; drops in as a sibling adapter.
 - **`infrastructure-local/docker-compose.yml` swap** — from
   `minio/minio` to `dxflrs/garage` under the `files-s3` profile
   (per `aidocs/45 §9` FS1d). Small follow-up PR after FS1a/b
