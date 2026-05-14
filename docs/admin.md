@@ -1,8 +1,23 @@
 ---
 layout: default
 title: Admin
-description: Operational guide — docker-compose stack, configuration, health endpoints, backups.
+description: Day-2 operations for shepard — running, monitoring, troubleshooting features against an already-deployed instance.
 ---
+
+> **Deploying shepard for the first time?**
+> Start at
+> **[Deploying shepard]({{ '/reference/deployment/' | relative_url }})** — the
+> structured operator guide that walks you through pre-flight
+> checklist → sizing → OIDC → storage → secrets → backup → monitoring
+> → upgrade → TLS → troubleshooting.
+>
+> Just kicking the tyres on a laptop?
+> **[Quickstart: local demo]({{ '/reference/deployment-quickstart/' | relative_url }})**
+> is the five-minute path.
+>
+> This page is **day-2 operations** — running, monitoring, and
+> troubleshooting **features** (HDF5 sidecar, plugins, n10s, Grafana)
+> against an already-deployed instance.
 
 This page describes how to run shepard. It cites only what is actually in the
 repository today. A read-only admin CLI ([`shepard-admin`](reference/admin-cli/))
@@ -11,7 +26,11 @@ remain in design.
 
 ## Deploy paths beyond docker-compose
 
-For paths that go beyond running the bundled compose locally — paid
+For the comprehensive day-1 deployment runbooks (production OIDC,
+real TLS, backup strategy, sizing, upgrade path), see
+**[Deploying shepard]({{ '/reference/deployment/' | relative_url }})**.
+
+For lightweight evaluation paths beyond the bundled compose — paid
 VPS, managed-services split, ephemeral cloud dev — see
 **[Deploy options](deploy/)**.
 

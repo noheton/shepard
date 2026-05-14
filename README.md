@@ -36,9 +36,30 @@ A GitHub Pages site is published from `docs/` on this mirror:
 
 **<https://noheton.github.io/shepard/>**
 
-Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python quickstart (`/getting-started`) · user guide (`/user-guide`) · admin guide (`/admin`) · system requirements (`/system-requirements`) · [deploy options](https://noheton.github.io/shepard/deploy) (Oracle Free, self-hosted behind Zoraxy, paid VPS, managed-services split).
+Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python quickstart (`/getting-started`) · user guide (`/user-guide`) · **[deploying shepard](https://noheton.github.io/shepard/reference/deployment/)** (production runbooks) · admin guide (`/admin`) · system requirements (`/system-requirements`) · [deploy options](https://noheton.github.io/shepard/deploy) (Oracle Free, self-hosted behind Zoraxy, paid VPS, managed-services split).
 
 Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main`. The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
+
+## Deployment
+
+Two paths, depending on what you need:
+
+- **Local demo, five minutes** — `make demo-up` boots a seeded
+  shepard with mock OIDC and the LUMEN showcase Collection
+  (DX5a — in flight). See
+  [Quickstart: local demo](https://noheton.github.io/shepard/reference/deployment-quickstart/)
+  (`docs/reference/deployment-quickstart.md`).
+- **Production deploy** — real OIDC, real DNS + TLS, real
+  storage, real backups. See
+  [Deploying shepard](https://noheton.github.io/shepard/reference/deployment/)
+  (`docs/reference/deployment.md`), the front door for operator
+  runbooks covering pre-flight checklist, sizing, OIDC, storage,
+  secrets, backup, monitoring, upgrade, TLS, and troubleshooting.
+
+The deployment docs live at `docs/reference/deployment*.md` —
+also surfaced inside the running shepard via the `/help` route
+(D1a, design at
+[`aidocs/49`](aidocs/49-in-app-user-docs.md)).
 
 ## Quick test / evaluation setup
 
