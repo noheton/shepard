@@ -4,6 +4,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +54,9 @@ public class TimeseriesReference extends BasicReference {
   @ToString.Exclude
   @Relationship(type = Constants.IS_IN_CONTAINER)
   private TimeseriesContainer timeseriesContainer;
+
+  @Relationship(type = Constants.HAS_TIMESERIES_ANNOTATION)
+  private List<TimeseriesAnnotation> timeseriesAnnotations = new ArrayList<>();
 
   /**
    * For testing purposes only

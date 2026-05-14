@@ -89,6 +89,16 @@ public class TimeseriesReferenceDAO extends VersionableEntityDAO<TimeseriesRefer
     return StreamSupport.stream(queryResult.spliterator(), false).collect(Collectors.toList());
   }
 
+  public TimeseriesReference findByAppId(String appId) {
+    String query =
+      "MATCH " +
+      CypherQueryHelper.getObjectPart("r", "TimeseriesReference", false) +
+      " WHERE r.appId = $appId " +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
   @Override
   public Class<TimeseriesReference> getEntityType() {
     return TimeseriesReference.class;
