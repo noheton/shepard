@@ -223,8 +223,8 @@ shepard.references.dbpedia-databus.auth-mode=none
 
 | File | What it does |
 |---|---|
-| `V33__Add_appId_constraint_DbpediaDatabusReference.cypher` | Uniqueness on `:DbpediaDatabusReference.appId` |
-| `V34__Add_appId_constraint_DbpediaDatabusConfig.cypher` | Uniqueness on `:DbpediaDatabusConfig.appId` (singleton) |
+| `V37__Add_appId_constraint_DbpediaDatabusReference.cypher` | Uniqueness on `:DbpediaDatabusReference.appId` |
+| `V38__Add_appId_constraint_DbpediaDatabusConfig.cypher` | Uniqueness on `:DbpediaDatabusConfig.appId` (singleton) |
 
 Both migrations are idempotent (`IF NOT EXISTS`) and fail-fast (abort startup
 on error per the `MigrationsRunner` behaviour).
