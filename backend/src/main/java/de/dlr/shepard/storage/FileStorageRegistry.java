@@ -7,6 +7,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +144,7 @@ public class FileStorageRegistry {
         }
       }
     }
-    this.byId = Map.copyOf(map);
+    this.byId = Collections.unmodifiableMap(map);
 
     String available = byId.isEmpty() ? "<none>" : String.join(", ", byId.keySet());
     Log.infof("FileStorageRegistry: discovered %d storage adapter(s): [%s]", byId.size(), available);
