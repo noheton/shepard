@@ -40,6 +40,18 @@ Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python qui
 
 Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main`. The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
 
+## Try it locally — `make demo-up`
+
+> ```bash
+> git clone https://github.com/noheton/shepard.git
+> cd shepard
+> make demo-up
+> ```
+
+One command brings up a complete, seeded shepard instance at **<http://localhost:3000/>** — backend, frontend, Neo4j, MongoDB, TimescaleDB, Keycloak, four shipped plugins (`unhide`, `kip`, `minter-local`, `reference-dbpedia-databus`), and example data already loaded (five Collections covering engineering / climate / lab-journal / private / public-showcase use cases). Log in as `alice / alice-demo` (Manager), `bob / bob-demo` (Reader), or `admin / admin-demo` (instance-admin).
+
+Runs in well under 90 seconds (after the first image build). Full operator runbook: [`infrastructure-local/README-demo.md`](infrastructure-local/README-demo.md). Public-docs entry point: [`docs/reference/deployment-quickstart.md`](docs/reference/deployment-quickstart.md).
+
 ## Quick test / evaluation setup
 
 There is a Docker Compose configuration in `infrastructure-local` which you can use to quickly try out shepard.

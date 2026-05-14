@@ -1,0 +1,127 @@
+# DX5a — seeded-demo overlay for the local infrastructure-local stack.
+#
+# Goal: `make demo-up` brings up a complete, seeded shepard instance
+# at http://localhost:3000 (frontend) / :8080 (backend) in well under
+# 90 seconds (assuming images cached).
+#
+# Layered on top of `docker-compose.yml` — invoke as:
+#   docker compose \
+#     -f infrastructure-local/docker-compose.yml \
+#     -f infrastructure-local/docker-compose.demo.yml up -d
+#
+# Or, more conveniently, from the repo root:  `make demo-up`.
+#
+# CAVEAT: this is the *demo* posture, not a production deployment.
+# Every credential is obviously-fake and committed to git on purpose
+# (gitleaks ignores the `-demo` suffix convention). Do NOT deploy
+# this overlay to anything reachable from outside the laptop.
+#
+# What this overlay adds on top of the base file:
+#  - A pre-imported Keycloak realm with three fixed test users
+#    (alice / bob / admin) + a service account (harvester), so the
+#    OIDC stack comes up without an interactive setup step.
+#  - A `demo-seeder` one-shot service that waits for the backend's
+#    bootstrap token to appear, then drives `cypher-shell` to mint
+#    example Collections / DataObjects / references / Publications.
+#  - Backend env overrides so the demo posture uses `local` minter,
+#    `unhide.enabled=false`, DataCite gated on KIP1d, and the
+#    semantic / DBpedia / KIP plugins all enabled by default so
+#    a casual user can poke at every shipped feature.
+#  - Frontend pinned to http://localhost:3000 with the demo realm.
+
+services:
+  keycloak:
+    # Re-import the demo realm on every start so the test users +
+    # client config are guaranteed-present. The `--import-realm`
+    # flag on `start-dev` plus a volume-mounted JSON is idempotent
+    # across re-ups.
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "--http-port=8082"
+    volumes:
+      - ./demo-seed/keycloak/shepard-demo-realm.json:/opt/keycloak/data/import/shepard-demo-realm.json:ro
+
+  backend:
+    environment:
+      # Demo posture: the instance id is `local.demo.shepard` so
+      # operators see PIDs of shape
+      # `shepard:local.demo.shepard:collection:01HF...:v1` and
+      # can tell at a glance they're looking at the demo data
+      # versus a real deployment.
+      SHEPARD_INSTANCE_ID: "local.demo.shepard"
+      # KIP1a/h — LocalMinter is the active PID provider; no
+      # external service calls during the demo. Operators with a
+      # DataCite Fabrica account can flip to `datacite` after
+      # `shepard-admin minters datacite enable`.
+      SHEPARD_PUBLISH_MINTER: "local"
+      # Plugins enabled by default — the demo wants to show off
+      # the plugin-ecosystem breadth. Operators in production can
+      # flip individual ones off via the admin REST / CLI.
+      SHEPARD_PLUGINS_UNHIDE_ENABLED: "false"
+      SHEPARD_PLUGINS_KIP_ENABLED: "true"
+      SHEPARD_PLUGINS_MINTER_LOCAL_ENABLED: "true"
+      SHEPARD_PLUGINS_REFERENCE_DBPEDIA_DATABUS_ENABLED: "true"
+      # UH1a — start disabled. The demo overlay lights up the
+      # feed only after `shepard-admin unhide enable`.
+      SHEPARD_UNHIDE_ENABLED: "false"
+      SHEPARD_UNHIDE_CONTACT_EMAIL: "demo-operator@example.org"
+      # Bootstrap token written to a writable container path so the
+      # demo-seeder can read it without poking inside /opt/shepard.
+      SHEPARD_BOOTSTRAP_TOKEN_PATH: "/tmp/shepard-bootstrap/.bootstrap-token"
+      # OIDC pointed at the locally-imported demo realm.
+      OIDC_AUTHORITY: "http://keycloak:8082/realms/shepard-demo"
+      # Semantic preseed — keep on (covers PROV-O / Dublin Core /
+      # schema.org / FOAF / QUDT / OM-2 / time / GeoSPARQL).
+      SHEPARD_SEMANTIC_INTERNAL_PRESEED_ONTOLOGIES_ENABLED: "true"
+    volumes:
+      - shepard-bootstrap:/tmp/shepard-bootstrap
+      - ./demo-seed/seed-files:/var/shepard-demo/seed-files:ro
+
+  frontend:
+    environment:
+      AUTH_ORIGIN: "http://localhost:3000/api/auth"
+      NUXT_PUBLIC_BACKEND_API_URL: "http://localhost:8080/shepard/api"
+      NUXT_OIDC_ISSUER: "http://localhost:8082/realms/shepard-demo"
+      NUXT_OIDC_CLIENT_ID: "frontend-dev"
+      NUXT_AUTH_SECRET: "demo-auth-secret-not-for-prod"
+
+  # One-shot seeder. Waits for the backend's bootstrap token, then
+  # consumes it via `POST /v2/admin/bootstrap` to mint an admin
+  # ApiKey (the seeder uses that key for every subsequent admin
+  # call). Then drives `cypher-shell` to load
+  # `demo-seed/cypher/*.cypher` in alphanumeric order. The seeder
+  # is idempotent: each Cypher file uses `MERGE` / `WHERE NOT
+  # EXISTS` patterns so re-running it on a populated graph is a
+  # no-op.
+  #
+  # Exits 0 on success, non-zero on any per-file failure (so
+  # `make demo-up` surfaces the error and operators can read the
+  # logs).
+  demo-seeder:
+    image: neo4j:5.24
+    depends_on:
+      backend:
+        condition: service_started
+      neo4j:
+        condition: service_started
+    environment:
+      NEO4J_HOST: "neo4j"
+      NEO4J_USER: "neo4j"
+      NEO4J_PASSWORD: "${NEO4J_PW-demo-neo4j-password}"
+      BACKEND_HOST: "backend:8080"
+      BOOTSTRAP_TOKEN_PATH: "/tmp/shepard-bootstrap/.bootstrap-token"
+      DEMO_ADMIN_USER: "admin"
+      DEMO_ADMIN_API_KEY_NAME: "demo-admin-api-key"
+    volumes:
+      - shepard-bootstrap:/tmp/shepard-bootstrap
+      - ./demo-seed:/demo-seed:ro
+    networks:
+      - shepard
+    entrypoint: ["/bin/bash", "/demo-seed/run-seeder.sh"]
+    restart: "no"
+    profiles:
+      - demo
+
+volumes:
+  shepard-bootstrap:

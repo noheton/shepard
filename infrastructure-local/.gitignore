@@ -1,1 +1,6 @@
 .env*
+# DX5a — the .env.demo file carries obvious-fake credentials by
+# design (every value is `demo-*` / `*-demo`), so it's the one
+# .env* that ships in the repo. gitleaks treats the convention
+# as the exemption.
+!.env.demo
