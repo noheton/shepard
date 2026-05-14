@@ -161,4 +161,18 @@ public final class PluginEntry {
     this.state = PluginState.FAILED;
     this.failureMessage = message;
   }
+
+  /**
+   * PM1b2 — used by {@link PluginRegistry} when a JAR-walk plugin's
+   * lifecycle hooks ran but its CDI beans weren't picked up by
+   * Quarkus's build-time scanner (no {@code with-plugins} Maven
+   * dependency declaration). The plugin is loaded but its REST
+   * resources / beans are inert. Operators see the row with this
+   * state in {@code GET /v2/admin/plugins} alongside a message
+   * pointing at the operator runbook.
+   */
+  void markDegraded(String message) {
+    this.state = PluginState.DEGRADED;
+    this.failureMessage = message;
+  }
 }

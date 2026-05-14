@@ -1300,6 +1300,58 @@ in `aidocs/47 §2.5` are designed for this distribution mode.
   persistent-override variant (per-plugin row rather than a
   global singleton — the natural shape for "one override per
   plugin").*
+- ✅ **JAR signature verifier** — operators in security-conscious
+  environments need to know a JAR dropped into
+  `/deployments/plugins/` is actually signed by a trusted
+  publisher. *Done in PM1b2 (this commit). New
+  `de.dlr.shepard.plugin.JarSignatureVerifier` `@ApplicationScoped`
+  bean that runs before the URLClassLoader is built; uses
+  `KeyStore.getInstance("JKS"/"PKCS12")` for trust-anchor
+  loading and JDK's `JarFile(verify=true)` for signature
+  parsing. Four `shepard.plugins.signing.*` config keys
+  (`required=false` default — backward-compatible with PM1a
+  shape where bundled plugins ship unsigned). When `required=true`
+  an UNSIGNED / UNTRUSTED outcome lands the entry FAILED with
+  `failureMessage=plugin.signature.unsigned` /
+  `plugin.signature.untrusted` so operators see the cause in
+  `GET /v2/admin/plugins`. Operator runbook at
+  `docs/reference/plugins.md` §"Signing + compatibility
+  enforcement" covers the `keytool` + `jarsigner` workflow.*
+- ✅ **Semver-range enforcement of `shepardCompatibility()`** —
+  pre-PM1b2 the field was informational; a plugin's declared
+  compatibility range wasn't actually checked against the running
+  shepard version. *Done in PM1b2 (this commit).
+  `PluginRegistry.enforceCompatibility()` runs between discovery
+  and dependency-resolution so compat failures pre-empt the
+  dependent's `plugin.dependency.missing` (more accurate
+  root-cause). Incompatible plugins land FAILED with
+  `plugin.compatibility.failed: requires shepard <range>,
+  running <version>` (or `plugin.compatibility.unparseable:
+  <details>` for a malformed range). New
+  `shepard.plugins.compatibility.strict=true` default +
+  operator-override valve. `VersionRange.parse` extended with
+  npm/Composer-style operator-comma syntax (`>=5.2.0,<6`) —
+  unblocks the enforcement because every existing plugin manifest
+  writes that shape, not the Maven-bracket form. Three bundled
+  plugins (`unhide`, `kip`, `minter-local`) declare
+  `">=5.2.0,<6"` and now pass cleanly against the 5.2.x running
+  version.*
+- **Child-classloader CDI integration** — the "true drop-in"
+  workflow where a vendor drops `shepard-plugin-foo.jar` into
+  `/deployments/plugins/` and its `@ApplicationScoped` beans +
+  `@Path` resources come up without declaring the plugin in the
+  backend's `with-plugins` Maven profile. *Deferred to PM1b3 —
+  full design doc at `aidocs/69-runtime-plugin-cdi.md`. The PM1b2
+  scope-exploration verified against Quarkus 3.27.x source that
+  Arc doesn't expose a runtime bean-addition API; the
+  structurally correct fix is Option B (extend `PluginContext`
+  with `registerHttpRoute(pathPattern, handler)` so plugins ship
+  non-CDI Vert.x handlers), which deserves its own slice rather
+  than being cargo-culted into PM1b2. PM1b2 ships the
+  prerequisites: new `PluginState.DEGRADED` lifecycle state +
+  `PluginEntry.markDegraded()` hook (operator visibility in
+  `GET /v2/admin/plugins` for "discovered but inert") so PM1b3's
+  detection logic has a target state to mark.*
 - **ADR-0024** — plugin-distribution sibling decision: object-store
   reference for `infrastructure-local/` (Garage replaces MinIO).
   Same shape of "pick a reference whose OSS posture matches

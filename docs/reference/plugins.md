@@ -417,6 +417,139 @@ its `UnhideAdminCliCommandProvider` is exactly the shape above.
   `PluginManifest` (no `AdminCliCommandProvider`) is silently
   ignored — not every plugin has CLI verbs, and that's fine.
 
+## Signing + compatibility enforcement
+
+PM1b2 adds two operator gates the registry runs at discovery
+time. Both are **default-safe** (the gates match the pre-PM1b2
+behaviour so an upgrade is zero-touch); set the keys below to opt
+in to stricter enforcement.
+
+### JAR signature verification
+
+`shepard.plugins.signing.required=true` makes the registry refuse
+to load any JAR that isn't signed by a trusted publisher. The
+default is `false` (the JARs we ship today are unsigned;
+operators upgrade in place without breaking the plugin chain).
+
+Five keys drive the gate:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `shepard.plugins.signing.required` | `false` | When `true`, unsigned / untrusted JARs land in `FAILED` state and don't have their lifecycle hooks invoked. |
+| `shepard.plugins.signing.truststore.path` | empty | Filesystem path to a JKS or PKCS12 truststore. Each certificate alias becomes a trust anchor. |
+| `shepard.plugins.signing.truststore.password` | empty | Password for the truststore (empty = no password). |
+| `shepard.plugins.signing.trust-anchors` | empty | CSV of alternative trust-anchor identifiers (reserved for forward compat with PEM-on-disk anchors; the truststore path takes precedence). |
+| `shepard.plugins.compatibility.strict` | `true` | Enforce the plugin's `shepardCompatibility()` semver range against the running shepard version. |
+
+#### Setting up a signed-plugins instance
+
+1. **Mint a publisher cert** (or reuse one your build pipeline
+   already has):
+
+   ```bash
+   keytool -genkeypair -alias my-publisher \
+     -keyalg RSA -keysize 2048 -validity 3650 \
+     -dname "CN=My Publisher, O=My Org" \
+     -keystore my-keystore.jks \
+     -storepass changeit -keypass changeit
+   ```
+
+2. **Sign each plugin JAR** before dropping it into
+   `/deployments/plugins/`:
+
+   ```bash
+   jarsigner -keystore my-keystore.jks \
+     -storepass changeit \
+     shepard-plugin-foo-1.0.0.jar my-publisher
+   ```
+
+3. **Export the publisher cert** and import it into the shepard
+   truststore (or use the same keystore — JKS supports both
+   key entries and trusted-cert entries):
+
+   ```bash
+   keytool -exportcert -alias my-publisher \
+     -keystore my-keystore.jks -storepass changeit \
+     -file my-publisher.cer
+   keytool -importcert -alias my-publisher \
+     -keystore /etc/shepard/truststore.jks \
+     -storepass changeit -file my-publisher.cer
+   ```
+
+4. **Configure shepard** via `application.properties` (or the
+   matching environment variables — Quarkus's MicroProfile
+   Config picks both up):
+
+   ```properties
+   shepard.plugins.signing.required=true
+   shepard.plugins.signing.truststore.path=/etc/shepard/truststore.jks
+   shepard.plugins.signing.truststore.password=changeit
+   ```
+
+5. **Restart shepard**. `GET /v2/admin/plugins` now reports a
+   `state=FAILED` row with `failureMessage=plugin.signature.unsigned`
+   for any JAR that hasn't been signed by a trusted publisher.
+
+The bundled `unhide`, `kip`, and `minter-local` plugins ship
+**unsigned** today. Setting `signing.required=true` will fail
+them unless you sign them yourself with `jarsigner` before
+shepard starts. (The PM1b3 design — `aidocs/69` — explores how to
+move the build-classpath plugins to a signed-by-default release
+flow.)
+
+### Compatibility (semver-range) enforcement
+
+`PluginManifest.shepardCompatibility()` returns a semver range
+the plugin claims to be compatible with (e.g. `">=5.2.0,<6"`).
+PM1b2 enforces the range against the running shepard version
+during discovery:
+
+- A plugin whose manifest declares an incompatible range lands
+  in `state=FAILED` with
+  `failureMessage=plugin.compatibility.failed: requires shepard <range>, running <version>`.
+- A plugin whose range string is malformed (a bug in the
+  vendor's manifest) lands in `state=FAILED` with
+  `failureMessage=plugin.compatibility.unparseable: <details>`.
+- An empty / null range admits any version (matches PM1a
+  posture — vendors who haven't filled the field in keep
+  registering).
+
+Default is `shepard.plugins.compatibility.strict=true`. Set
+`false` to override the check (incompatible plugins still
+register, with a loud `THIS IS A DANGER ZONE` WARN in the
+log). The override is the escape valve for the "we forked
+shepard 5.2 to 5.3 and vendor X hasn't refreshed their manifest
+yet" case; flip it back to `true` as soon as the vendor publishes
+a fix.
+
+### Operator runbook
+
+`shepard-admin plugins list` shows the new states in its `STATE`
+column verbatim. To inspect why a plugin failed:
+
+```bash
+shepard-admin plugins list --output=json \
+  | jq '.plugins[] | select(.state == "FAILED") | {id, failureMessage}'
+```
+
+Common outcomes:
+
+| `failureMessage` prefix | Meaning |
+|---|---|
+| `plugin.signature.unsigned` | `signing.required=true` and the JAR has no signature. Sign it with `jarsigner` or set `signing.required=false`. |
+| `plugin.signature.untrusted` | The JAR is signed, but the signer's cert isn't in the truststore. Import the cert via `keytool -importcert`. |
+| `plugin.compatibility.failed` | The running shepard's version is outside the plugin's declared range. Upgrade the plugin, or set `compatibility.strict=false`. |
+| `plugin.compatibility.unparseable` | The vendor's manifest carries a broken range string. Open an issue against the vendor; meanwhile, `compatibility.strict=false` re-admits the plugin. |
+| `plugin.dependency.missing` | The plugin declares a sibling plugin in `dependencies()` that isn't in `/deployments/plugins/`. Install the sibling. |
+| `plugin.dependency.version-mismatch` | The sibling is present but a version range isn't satisfied. Upgrade the sibling. |
+| `plugin.dependency.cycle` | The dependency graph has a loop. Vendor fix — drop one of the cycle's edges. |
+
+The `DEGRADED` state is a forward placeholder (PM1b2 ships the
+state + lifecycle hook ahead of the PM1b3 design at `aidocs/69`
+that will use it for runtime-only JAR detection). Today no
+production code path puts a plugin into `DEGRADED` — the row
+appears only in the unit-test fixture.
+
 ## Uninstall a plugin
 
 ```bash

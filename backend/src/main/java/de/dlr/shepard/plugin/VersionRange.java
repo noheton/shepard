@@ -19,6 +19,16 @@ import java.util.regex.Pattern;
  *       {@code [} / {@code ]} = inclusive, {@code (} / {@code )} =
  *       exclusive. Either bound may be empty: {@code "[1.5,)"} =
  *       "at least 1.5"; {@code "(,3.0]"} = "up to 3.0 inclusive".</li>
+ *   <li><strong>Operator-comma range</strong> (PM1b2): {@code ">=5.2.0,<6"} —
+ *       npm/Composer-style shorthand favoured by every
+ *       {@code shepardCompatibility()} declaration today. Each
+ *       comma-separated clause is an operator
+ *       ({@code >}, {@code >=}, {@code <}, {@code <=}, {@code =})
+ *       followed by a version literal; all clauses must hold
+ *       simultaneously (logical AND). Two operator forms suffice to
+ *       cover the "needs at least X, breaks at Y" idiom every
+ *       PluginManifest writes; we deliberately don't try to be
+ *       Composer-complete (no caret / tilde / pipe-OR).</li>
  *   <li><strong>Wildcard</strong>: empty string or {@code null} →
  *       matches any version. The registry surfaces a WARN on parse;
  *       admitted because some dependencies genuinely don't care
@@ -42,6 +52,17 @@ public final class VersionRange {
   /** Matches a single dotted-number+optional-suffix version. */
   private static final Pattern VERSION = Pattern.compile("^\\s*([0-9]+(?:\\.[0-9]+)*)([-+].*)?\\s*$");
 
+  /**
+   * PM1b2 — matches a single operator-comma clause:
+   * {@code ">=5.2.0"}, {@code "<6"}, {@code ">=1.0.0-rc1"}.
+   * The operator is captured as group 1; the version literal as
+   * group 2. The version literal is the same dotted-number+suffix
+   * shape {@link #VERSION} accepts.
+   */
+  private static final Pattern OPERATOR_CLAUSE = Pattern.compile(
+    "^\\s*(>=|<=|>|<|=)\\s*([0-9]+(?:\\.[0-9]+)*(?:[-+][A-Za-z0-9.+-]*)?)\\s*$"
+  );
+
   private final String raw;
   private final boolean anyAllowed;
   private final boolean exactMatch;
@@ -50,6 +71,14 @@ public final class VersionRange {
   private final String high;
   private final boolean lowInclusive;
   private final boolean highInclusive;
+  /**
+   * PM1b2 — operator-comma clauses (e.g. {@code ">=5.2.0"} + {@code "<6"}).
+   * Null for non-operator-comma ranges; non-null + non-empty otherwise.
+   * Each {@link OperatorClause} carries its operator and version
+   * literal; {@link #accepts(String)} applies the logical AND across
+   * all clauses.
+   */
+  private final OperatorClause[] operatorClauses;
 
   private VersionRange(
     String raw,
@@ -61,6 +90,20 @@ public final class VersionRange {
     boolean lowInclusive,
     boolean highInclusive
   ) {
+    this(raw, anyAllowed, exactMatch, exactValue, low, high, lowInclusive, highInclusive, null);
+  }
+
+  private VersionRange(
+    String raw,
+    boolean anyAllowed,
+    boolean exactMatch,
+    String exactValue,
+    String low,
+    String high,
+    boolean lowInclusive,
+    boolean highInclusive,
+    OperatorClause[] operatorClauses
+  ) {
     this.raw = raw;
     this.anyAllowed = anyAllowed;
     this.exactMatch = exactMatch;
@@ -69,6 +112,7 @@ public final class VersionRange {
     this.high = high;
     this.lowInclusive = lowInclusive;
     this.highInclusive = highInclusive;
+    this.operatorClauses = operatorClauses;
   }
 
   /**
@@ -99,6 +143,43 @@ public final class VersionRange {
       String highVal = m.group(3).isEmpty() ? null : m.group(3);
       return new VersionRange(trimmed, false, false, null, lowVal, highVal, lowIncl, highIncl);
     }
+    // PM1b2 — operator-comma shape (`>=5.2.0,<6`). Detect by either a
+    // leading operator character or the presence of a comma at the
+    // top level (no bracket prefix). Operator characters that would
+    // otherwise be unambiguous with the exact-version literal form
+    // disqualify the exact-match short-circuit below.
+    if (
+      trimmed.startsWith(">") ||
+      trimmed.startsWith("<") ||
+      trimmed.startsWith("=") ||
+      trimmed.contains(",")
+    ) {
+      // -1 limit so trailing empty clauses (e.g. ">=1.0,") are
+      // preserved and flagged as malformed below.
+      String[] parts = trimmed.split(",", -1);
+      OperatorClause[] clauses = new OperatorClause[parts.length];
+      for (int i = 0; i < parts.length; i++) {
+        String part = parts[i].trim();
+        if (part.isEmpty()) {
+          throw new IllegalArgumentException("Empty clause in operator-comma range: '" + input + "'");
+        }
+        Matcher m = OPERATOR_CLAUSE.matcher(part);
+        if (!m.matches()) {
+          // A bare-literal clause (no operator) is treated as `=` —
+          // matches Composer's convention. If even that doesn't parse
+          // as a version, throw.
+          if (!VERSION.matcher(part).matches()) {
+            throw new IllegalArgumentException(
+              "Malformed clause '" + part + "' in operator-comma range: '" + input + "'"
+            );
+          }
+          clauses[i] = new OperatorClause("=", part);
+        } else {
+          clauses[i] = new OperatorClause(m.group(1), m.group(2));
+        }
+      }
+      return new VersionRange(trimmed, false, false, null, null, null, false, false, clauses);
+    }
     // Otherwise treat as exact-version literal.
     if (!VERSION.matcher(trimmed).matches()) {
       throw new IllegalArgumentException("Unparseable version literal: '" + input + "'");
@@ -123,6 +204,15 @@ public final class VersionRange {
     if (exactMatch) {
       return exactValue.equals(trimmed);
     }
+    if (operatorClauses != null) {
+      // PM1b2 — logical AND across all operator clauses.
+      for (OperatorClause c : operatorClauses) {
+        if (!c.accepts(trimmed)) {
+          return false;
+        }
+      }
+      return true;
+    }
     if (low != null) {
       int cmp = compare(trimmed, low);
       if (lowInclusive ? cmp < 0 : cmp <= 0) {
@@ -136,6 +226,25 @@ public final class VersionRange {
       }
     }
     return true;
+  }
+
+  /**
+   * PM1b2 — a single operator-comma clause (e.g. {@code ">=5.2.0"}).
+   * The operator is one of {@code >}, {@code >=}, {@code <},
+   * {@code <=}, {@code =}; the version literal is verbatim.
+   */
+  private record OperatorClause(String operator, String version) {
+    boolean accepts(String candidate) {
+      int cmp = compare(candidate, version);
+      return switch (operator) {
+        case ">=" -> cmp >= 0;
+        case ">" -> cmp > 0;
+        case "<=" -> cmp <= 0;
+        case "<" -> cmp < 0;
+        case "=" -> cmp == 0;
+        default -> false;
+      };
+    }
   }
 
   /** The original input string (post-trim) — for diagnostic logging. */
