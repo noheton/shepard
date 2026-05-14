@@ -158,7 +158,14 @@ const shepardExplainedIconSrc = computed(() => {
           </div>
         </template>
         <template #actions>
-          <div class="d-flex justify-end w-100">
+          <div class="d-flex justify-end gap-3 w-100">
+            <v-btn
+              variant="outlined"
+              href="/shepard/api/q/swagger-ui"
+              target="_blank"
+            >
+              Go to API Docs
+            </v-btn>
             <v-btn
               class="bg-primary text-canvas"
               variant="flat"

@@ -3,7 +3,7 @@
   "sample_rate_hz": 100,
   "duration_s": 30,
   "samples_per_channel": 3000,
-  "n_runs": 7,
+  "n_runs": 15,
   "channels": [
     "pc_chamber",
     "pc_nozzle",
@@ -14,7 +14,22 @@
     "tc_chamber",
     "vib_fuel_pump",
     "vib_lox_pump",
-    "t_coolant_out"
+    "t_coolant_out",
+    "p_inj_fuel",
+    "p_inj_lox",
+    "p_tank_fuel",
+    "p_tank_lox",
+    "tc_nozzle",
+    "tc_injector",
+    "t_coolant_in",
+    "t_lox_inlet",
+    "thrust_kn",
+    "valve_fuel",
+    "valve_lox",
+    "vib_chamber",
+    "strain_nozzle",
+    "acc_gimbal_x",
+    "acc_gimbal_y"
   ],
   "phases": [
     {
@@ -148,6 +163,141 @@
           "max": 527.9206728492958,
           "mean": 462.7217892030312,
           "csv": "timeseries/tr-001-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 98.06516232642241,
+          "mean": 67.7434263078148,
+          "csv": "timeseries/tr-001-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.76574919274275,
+          "mean": 69.85088087457349,
+          "csv": "timeseries/tr-001-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.783949169263333,
+          "max": 4.6158904860809855,
+          "mean": 4.391192867927732,
+          "csv": "timeseries/tr-001-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5287651828261657,
+          "max": 4.283916212815185,
+          "mean": 4.099161342000077,
+          "csv": "timeseries/tr-001-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 279.90763081006855,
+          "max": 2246.670927784481,
+          "mean": 1698.3026237302354,
+          "csv": "timeseries/tr-001-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 293.8791161502265,
+          "max": 473.1369269912085,
+          "mean": 418.3631076530457,
+          "csv": "timeseries/tr-001-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.10750539045618,
+          "max": 301.04733056644886,
+          "mean": 161.96326765260676,
+          "csv": "timeseries/tr-001-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.43501656205048,
+          "max": 300.91899552498955,
+          "mean": 144.46059177943002,
+          "csv": "timeseries/tr-001-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.947002911294547,
+          "mean": 17.825500746400948,
+          "csv": "timeseries/tr-001-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25788052753909,
+          "csv": "timeseries/tr-001-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25764661567679,
+          "csv": "timeseries/tr-001-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.9933596151741915,
+          "mean": 2.660400013676512,
+          "csv": "timeseries/tr-001-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -7.983190529409024,
+          "max": 474.4119574387902,
+          "mean": 320.8358079890574,
+          "csv": "timeseries/tr-001-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.28018782709936163,
+          "max": 0.2844096166184273,
+          "mean": 0.0014064493331881604,
+          "csv": "timeseries/tr-001-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2397447331987854,
+          "max": 0.21047157501874614,
+          "mean": 0.0018668191718061416,
+          "csv": "timeseries/tr-001-acc_gimbal_y.csv"
         }
       ]
     },
@@ -161,8 +311,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 92.29887174481681,
-          "mean": 64.17256561678188,
+          "max": 92.027910135614,
+          "mean": 64.16388791165505,
           "csv": "timeseries/tr-002-pc_chamber.csv"
         },
         {
@@ -170,8 +320,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 10.46095819879046,
-          "mean": 7.127510254143409,
+          "max": 10.48415761385281,
+          "mean": 7.130470721829423,
           "csv": "timeseries/tr-002-pc_nozzle.csv"
         },
         {
@@ -179,8 +329,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 85571.35139487499,
-          "mean": 61579.707587214725,
+          "max": 85648.92546439392,
+          "mean": 61582.6493040977,
           "csv": "timeseries/tr-002-rpm_fuel_pump.csv"
         },
         {
@@ -188,8 +338,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 62523.179616649875,
-          "mean": 44919.70477906338,
+          "max": 62468.2911051039,
+          "mean": 44920.18023605202,
           "csv": "timeseries/tr-002-rpm_lox_pump.csv"
         },
         {
@@ -197,8 +347,8 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.0622279037126416,
-          "mean": 1.432011369183945,
+          "max": 2.063317583246449,
+          "mean": 1.4325277365479838,
           "csv": "timeseries/tr-002-mdot_fuel.csv"
         },
         {
@@ -206,17 +356,17 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 6.964211587390106,
-          "mean": 4.870909714151341,
+          "max": 6.9786663171181385,
+          "mean": 4.869230552228932,
           "csv": "timeseries/tr-002-mdot_lox.csv"
         },
         {
           "name": "tc_chamber",
           "unit": "K",
           "rows": 3000,
-          "min": 286.7355214574908,
-          "max": 3339.04120146556,
-          "mean": 2508.5602804031587,
+          "min": 289.30034159598347,
+          "max": 3338.7019376247354,
+          "mean": 2508.534616238169,
           "csv": "timeseries/tr-002-tc_chamber.csv"
         },
         {
@@ -224,8 +374,8 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 3.188858667511939,
-          "mean": 1.8280385431000856,
+          "max": 3.320980742996924,
+          "mean": 1.8286110546410625,
           "csv": "timeseries/tr-002-vib_fuel_pump.csv"
         },
         {
@@ -233,18 +383,153 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.644084862056191,
-          "mean": 1.520921991241697,
+          "max": 2.718048433556784,
+          "mean": 1.5213031446156977,
           "csv": "timeseries/tr-002-vib_lox_pump.csv"
         },
         {
           "name": "t_coolant_out",
           "unit": "K",
           "rows": 3000,
-          "min": 296.1717472323071,
-          "max": 529.1159493262816,
-          "mean": 462.6925093282278,
+          "min": 294.7294551104898,
+          "max": 529.9918372663374,
+          "mean": 462.8423080011281,
           "csv": "timeseries/tr-002-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.99976607728308,
+          "mean": 67.7427626417328,
+          "csv": "timeseries/tr-002-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 101.18232873908242,
+          "mean": 69.89387863965302,
+          "csv": "timeseries/tr-002-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.783296255180001,
+          "max": 4.618419233231218,
+          "mean": 4.3910154351921,
+          "csv": "timeseries/tr-002-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.543187529493807,
+          "max": 4.283117537198363,
+          "mean": 4.098674874524092,
+          "csv": "timeseries/tr-002-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 282.57121286678114,
+          "max": 2248.952491347172,
+          "mean": 1698.448568051324,
+          "csv": "timeseries/tr-002-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.04245753572064,
+          "max": 472.05873783999476,
+          "mean": 418.4339891183693,
+          "csv": "timeseries/tr-002-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 110.83957975422668,
+          "max": 301.3345595413835,
+          "mean": 161.9447215528539,
+          "csv": "timeseries/tr-002-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.84779538658638,
+          "max": 300.8322663171473,
+          "mean": 144.44089879219544,
+          "csv": "timeseries/tr-002-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.973604507335583,
+          "mean": 17.82044577888054,
+          "csv": "timeseries/tr-002-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25484142065717,
+          "csv": "timeseries/tr-002-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26191536144594,
+          "csv": "timeseries/tr-002-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.9192953818940985,
+          "mean": 2.656401356752045,
+          "csv": "timeseries/tr-002-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -15.305205220716964,
+          "max": 471.8424721050983,
+          "mean": 320.6808564187563,
+          "csv": "timeseries/tr-002-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.30311160292584743,
+          "max": 0.28083939716069384,
+          "mean": -0.0008469550750526616,
+          "csv": "timeseries/tr-002-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.3032139056898385,
+          "max": 0.26809250676681673,
+          "mean": -0.0009854016294512942,
+          "csv": "timeseries/tr-002-acc_gimbal_y.csv"
         }
       ]
     },
@@ -258,8 +543,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 91.83772715689183,
-          "mean": 64.1586288983154,
+          "max": 91.71158469228028,
+          "mean": 64.153782236771,
           "csv": "timeseries/tr-003-pc_chamber.csv"
         },
         {
@@ -267,8 +552,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 10.560009855690321,
-          "mean": 7.129473375805692,
+          "max": 10.503811994617669,
+          "mean": 7.12631271571103,
           "csv": "timeseries/tr-003-pc_nozzle.csv"
         },
         {
@@ -276,8 +561,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 85697.48449825114,
-          "mean": 61585.69514042707,
+          "max": 85628.51270769814,
+          "mean": 61579.9020072051,
           "csv": "timeseries/tr-003-rpm_fuel_pump.csv"
         },
         {
@@ -285,8 +570,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 62497.0662197033,
-          "mean": 44922.535961199006,
+          "max": 62543.62882457107,
+          "mean": 44922.53445016908,
           "csv": "timeseries/tr-003-rpm_lox_pump.csv"
         },
         {
@@ -294,8 +579,8 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.0625025961824606,
-          "mean": 1.4330423533137886,
+          "max": 2.0671210054381497,
+          "mean": 1.4323802778465198,
           "csv": "timeseries/tr-003-mdot_fuel.csv"
         },
         {
@@ -303,17 +588,17 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 6.968992511301165,
-          "mean": 4.870718715309686,
+          "max": 6.954269367717639,
+          "mean": 4.870597426961951,
           "csv": "timeseries/tr-003-mdot_lox.csv"
         },
         {
           "name": "tc_chamber",
           "unit": "K",
           "rows": 3000,
-          "min": 287.8890673225346,
-          "max": 3338.732609108225,
-          "mean": 2508.55471321333,
+          "min": 288.90136142827623,
+          "max": 3344.3408542410234,
+          "mean": 2508.6985934316604,
           "csv": "timeseries/tr-003-tc_chamber.csv"
         },
         {
@@ -321,8 +606,8 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 3.3049381321988767,
-          "mean": 1.8228327549004644,
+          "max": 3.153162773282876,
+          "mean": 1.8218394842936807,
           "csv": "timeseries/tr-003-vib_fuel_pump.csv"
         },
         {
@@ -330,18 +615,153 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.799346434874508,
-          "mean": 1.5203503304093393,
+          "max": 2.7261286216324634,
+          "mean": 1.5217336944868918,
           "csv": "timeseries/tr-003-vib_lox_pump.csv"
         },
         {
           "name": "t_coolant_out",
           "unit": "K",
           "rows": 3000,
-          "min": 295.9898636955369,
-          "max": 529.4976374869674,
-          "mean": 462.6941846809825,
+          "min": 296.0648978653892,
+          "max": 530.9326409105877,
+          "mean": 462.6712640390997,
           "csv": "timeseries/tr-003-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.50746763567378,
+          "mean": 67.73921469346485,
+          "csv": "timeseries/tr-003-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.87241257214423,
+          "mean": 69.86245688612242,
+          "csv": "timeseries/tr-003-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.787948668603983,
+          "max": 4.596109755296828,
+          "mean": 4.391655008553321,
+          "csv": "timeseries/tr-003-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.539035765086707,
+          "max": 4.273352022589465,
+          "mean": 4.099074546976129,
+          "csv": "timeseries/tr-003-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 278.74451828285646,
+          "max": 2252.3305693878483,
+          "mean": 1698.5363682551024,
+          "csv": "timeseries/tr-003-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 293.6517185060125,
+          "max": 473.0972640387386,
+          "mean": 418.32336537118425,
+          "csv": "timeseries/tr-003-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.0950318760801,
+          "max": 301.3964545822977,
+          "mean": 161.95744956985018,
+          "csv": "timeseries/tr-003-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.60083751991814,
+          "max": 300.6788509175275,
+          "mean": 144.46330864657202,
+          "csv": "timeseries/tr-003-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.981288395551893,
+          "mean": 17.816652341245796,
+          "csv": "timeseries/tr-003-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26149253792424,
+          "csv": "timeseries/tr-003-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25107439531963,
+          "csv": "timeseries/tr-003-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 5.023116837890947,
+          "mean": 2.657506384719444,
+          "csv": "timeseries/tr-003-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -9.940376736929002,
+          "max": 470.6522960836595,
+          "mean": 320.6610286842131,
+          "csv": "timeseries/tr-003-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2627130533311965,
+          "max": 0.29486628241607277,
+          "mean": 0.001224078176922863,
+          "csv": "timeseries/tr-003-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.240853848575815,
+          "max": 0.2570680550108163,
+          "mean": 0.0007824835095105392,
+          "csv": "timeseries/tr-003-acc_gimbal_y.csv"
         }
       ]
     },
@@ -355,8 +775,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 92.14399580541766,
-          "mean": 64.1459989556117,
+          "max": 92.1979300546126,
+          "mean": 64.15109635292328,
           "csv": "timeseries/tr-004-pc_chamber.csv"
         },
         {
@@ -364,8 +784,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 10.483774220309193,
-          "mean": 7.130273704681872,
+          "max": 10.500701472459896,
+          "mean": 7.125585567609838,
           "csv": "timeseries/tr-004-pc_nozzle.csv"
         },
         {
@@ -373,8 +793,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 85651.37813225256,
-          "mean": 61586.777636223196,
+          "max": 85739.25660912898,
+          "mean": 61584.16031804221,
           "csv": "timeseries/tr-004-rpm_fuel_pump.csv"
         },
         {
@@ -382,8 +802,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 62502.45105887184,
-          "mean": 44920.63346219914,
+          "max": 62455.09728860697,
+          "mean": 44922.82754372454,
           "csv": "timeseries/tr-004-rpm_lox_pump.csv"
         },
         {
@@ -391,8 +811,8 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.0666122484422496,
-          "mean": 1.4335447818317921,
+          "max": 2.070473256787408,
+          "mean": 1.4331126489976032,
           "csv": "timeseries/tr-004-mdot_fuel.csv"
         },
         {
@@ -400,17 +820,17 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 6.987485379830193,
-          "mean": 4.871387626102227,
+          "max": 6.985042536379295,
+          "mean": 4.870271953535472,
           "csv": "timeseries/tr-004-mdot_lox.csv"
         },
         {
           "name": "tc_chamber",
           "unit": "K",
           "rows": 3000,
-          "min": 284.8232127192708,
-          "max": 3342.4310498544323,
-          "mean": 2508.8437364124916,
+          "min": 287.58290407533104,
+          "max": 3338.6327606929135,
+          "mean": 2508.620389758244,
           "csv": "timeseries/tr-004-tc_chamber.csv"
         },
         {
@@ -418,8 +838,8 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 12.668945782858062,
-          "mean": 2.034134259539353,
+          "max": 12.734654365156207,
+          "mean": 2.0328715672397437,
           "csv": "timeseries/tr-004-vib_fuel_pump.csv"
         },
         {
@@ -427,18 +847,153 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.7095604579234314,
-          "mean": 1.516491561661087,
+          "max": 2.6651016723985483,
+          "mean": 1.5233310530963882,
           "csv": "timeseries/tr-004-vib_lox_pump.csv"
         },
         {
           "name": "t_coolant_out",
           "unit": "K",
           "rows": 3000,
-          "min": 296.2818431517905,
-          "max": 529.0440533799961,
-          "mean": 462.77584105961046,
+          "min": 296.6204288200202,
+          "max": 531.6461621762712,
+          "mean": 462.60996195243774,
           "csv": "timeseries/tr-004-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 98.06238161963937,
+          "mean": 67.72265258707642,
+          "csv": "timeseries/tr-004-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.7739366056104,
+          "mean": 69.8469253766921,
+          "csv": "timeseries/tr-004-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7776650745425377,
+          "max": 4.647495303022227,
+          "mean": 4.3917673328943785,
+          "csv": "timeseries/tr-004-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.536111635631498,
+          "max": 4.2697499795154465,
+          "mean": 4.099143784496803,
+          "csv": "timeseries/tr-004-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 284.0549502984985,
+          "max": 2249.1119215741305,
+          "mean": 1698.5522714619515,
+          "csv": "timeseries/tr-004-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 294.83957915642577,
+          "max": 472.1408476772232,
+          "mean": 418.32851116486825,
+          "csv": "timeseries/tr-004-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.4544731549103,
+          "max": 301.2494027445342,
+          "mean": 161.97785028154888,
+          "csv": "timeseries/tr-004-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.62126715508708,
+          "max": 300.86064901750376,
+          "mean": 144.46231313989293,
+          "csv": "timeseries/tr-004-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.971244927900624,
+          "mean": 17.82832020144442,
+          "csv": "timeseries/tr-004-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25994121123402,
+          "csv": "timeseries/tr-004-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.2557467225094,
+          "csv": "timeseries/tr-004-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.952638710850067,
+          "mean": 2.6682024712598533,
+          "csv": "timeseries/tr-004-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -6.82941545978462,
+          "max": 473.1228890519579,
+          "mean": 320.9247593749169,
+          "csv": "timeseries/tr-004-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2851669820853508,
+          "max": 0.2811728767006329,
+          "mean": -0.0015017771184330068,
+          "csv": "timeseries/tr-004-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2584031910805282,
+          "max": 0.2385527024016578,
+          "mean": 0.0003768796280168803,
+          "csv": "timeseries/tr-004-acc_gimbal_y.csv"
         }
       ]
     },
@@ -458,8 +1013,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 91.97139753494704,
-          "mean": 64.15347585790302,
+          "max": 91.91438215661347,
+          "mean": 64.1537549816654,
           "csv": "timeseries/tr-006-pc_chamber.csv"
         },
         {
@@ -467,8 +1022,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 10.51927259624779,
-          "mean": 7.128863175723949,
+          "max": 10.481612730610932,
+          "mean": 7.132356679594712,
           "csv": "timeseries/tr-006-pc_nozzle.csv"
         },
         {
@@ -476,8 +1031,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 85649.06967155705,
-          "mean": 61581.366871341146,
+          "max": 85677.98673631999,
+          "mean": 61587.14634835429,
           "csv": "timeseries/tr-006-rpm_fuel_pump.csv"
         },
         {
@@ -485,8 +1040,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 62478.18278579949,
-          "mean": 44918.36150440667,
+          "max": 62472.09580545308,
+          "mean": 44915.90863663735,
           "csv": "timeseries/tr-006-rpm_lox_pump.csv"
         },
         {
@@ -494,8 +1049,8 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.0639357482084284,
-          "mean": 1.4327519709019483,
+          "max": 2.0732588092400484,
+          "mean": 1.4325623422161564,
           "csv": "timeseries/tr-006-mdot_fuel.csv"
         },
         {
@@ -503,17 +1058,17 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 6.946461792205083,
-          "mean": 4.869774170114897,
+          "max": 6.968521717409443,
+          "mean": 4.8709681433053955,
           "csv": "timeseries/tr-006-mdot_lox.csv"
         },
         {
           "name": "tc_chamber",
           "unit": "K",
           "rows": 3000,
-          "min": 287.13393390734234,
-          "max": 3337.444237894454,
-          "mean": 2508.3569650678714,
+          "min": 289.57415987089405,
+          "max": 3337.8998148356104,
+          "mean": 2508.34839855775,
           "csv": "timeseries/tr-006-tc_chamber.csv"
         },
         {
@@ -521,8 +1076,8 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.8194979751838707,
-          "mean": 1.7333248549195124,
+          "max": 2.8254506864431668,
+          "mean": 1.7355665656130748,
           "csv": "timeseries/tr-006-vib_fuel_pump.csv"
         },
         {
@@ -530,18 +1085,153 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.8483626289309,
-          "mean": 1.518040245624943,
+          "max": 2.668805632080152,
+          "mean": 1.5236354291876268,
           "csv": "timeseries/tr-006-vib_lox_pump.csv"
         },
         {
           "name": "t_coolant_out",
           "unit": "K",
           "rows": 3000,
-          "min": 295.5304700082403,
-          "max": 530.0762398923534,
-          "mean": 462.6116757206358,
+          "min": 296.0942106010657,
+          "max": 529.3356276713446,
+          "mean": 462.6880417326417,
           "csv": "timeseries/tr-006-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.2519523949965,
+          "mean": 67.72545861947579,
+          "csv": "timeseries/tr-006-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.75886709658053,
+          "mean": 69.87565413946392,
+          "csv": "timeseries/tr-006-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7794542946761354,
+          "max": 4.623973094826117,
+          "mean": 4.391471261097407,
+          "csv": "timeseries/tr-006-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.542343830729504,
+          "max": 4.2965577032758056,
+          "mean": 4.099534143360131,
+          "csv": "timeseries/tr-006-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 283.4715886309377,
+          "max": 2254.3455353640675,
+          "mean": 1698.8518539409333,
+          "csv": "timeseries/tr-006-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 292.78815730254166,
+          "max": 474.70941348891483,
+          "mean": 418.28196129171664,
+          "csv": "timeseries/tr-006-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.05919925580567,
+          "max": 301.36768503179763,
+          "mean": 161.92182954622,
+          "csv": "timeseries/tr-006-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.5498826159937,
+          "max": 300.8418796389435,
+          "mean": 144.44706673396507,
+          "csv": "timeseries/tr-006-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.914806552577005,
+          "mean": 17.817842960342247,
+          "csv": "timeseries/tr-006-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25816428324264,
+          "csv": "timeseries/tr-006-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26014612818066,
+          "csv": "timeseries/tr-006-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 5.01740868139274,
+          "mean": 2.6729097281606804,
+          "csv": "timeseries/tr-006-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -7.321434787593074,
+          "max": 472.90980692742414,
+          "mean": 320.80523356426517,
+          "csv": "timeseries/tr-006-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.32056113123340013,
+          "max": 0.2934785710409137,
+          "mean": 0.0018364028391714955,
+          "csv": "timeseries/tr-006-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.27189766457766096,
+          "max": 0.23576607557957585,
+          "mean": 0.0009604595891900673,
+          "csv": "timeseries/tr-006-acc_gimbal_y.csv"
         }
       ]
     },
@@ -555,8 +1245,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 91.88553812309443,
-          "mean": 64.14816518148452,
+          "max": 92.41167402801393,
+          "mean": 64.17041099446065,
           "csv": "timeseries/tr-007-pc_chamber.csv"
         },
         {
@@ -564,8 +1254,8 @@
           "unit": "bar",
           "rows": 3000,
           "min": 0.0,
-          "max": 10.543628824571066,
-          "mean": 7.13268822950538,
+          "max": 10.518632324503805,
+          "mean": 7.13192996098158,
           "csv": "timeseries/tr-007-pc_nozzle.csv"
         },
         {
@@ -573,8 +1263,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 85671.2100543815,
-          "mean": 61582.07009572636,
+          "max": 85633.23642676606,
+          "mean": 61587.94551083867,
           "csv": "timeseries/tr-007-rpm_fuel_pump.csv"
         },
         {
@@ -582,8 +1272,8 @@
           "unit": "rpm",
           "rows": 3000,
           "min": 0.0,
-          "max": 62462.808103152915,
-          "mean": 44920.63850782823,
+          "max": 62564.87740304878,
+          "mean": 44924.923518882475,
           "csv": "timeseries/tr-007-rpm_lox_pump.csv"
         },
         {
@@ -591,8 +1281,8 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.073901423735039,
-          "mean": 1.4328582604671973,
+          "max": 2.0688911005213915,
+          "mean": 1.432474236420829,
           "csv": "timeseries/tr-007-mdot_fuel.csv"
         },
         {
@@ -600,17 +1290,17 @@
           "unit": "kg/s",
           "rows": 3000,
           "min": 0.0,
-          "max": 6.9506325546565755,
-          "mean": 4.869851552185901,
+          "max": 6.976029860647836,
+          "mean": 4.87008845025853,
           "csv": "timeseries/tr-007-mdot_lox.csv"
         },
         {
           "name": "tc_chamber",
           "unit": "K",
           "rows": 3000,
-          "min": 287.8087001217512,
-          "max": 3338.6212504588193,
-          "mean": 2508.585485184936,
+          "min": 288.31574706646506,
+          "max": 3337.262976635976,
+          "mean": 2508.346402139294,
           "csv": "timeseries/tr-007-tc_chamber.csv"
         },
         {
@@ -618,8 +1308,8 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 3.3110534092156447,
-          "mean": 1.822700833532013,
+          "max": 3.2558337061389464,
+          "mean": 1.8278283924806669,
           "csv": "timeseries/tr-007-vib_fuel_pump.csv"
         },
         {
@@ -627,18 +1317,1783 @@
           "unit": "g_rms",
           "rows": 3000,
           "min": 0.0,
-          "max": 2.6348663343615866,
-          "mean": 1.5229757798089862,
+          "max": 2.6783882236477643,
+          "mean": 1.5232901700050052,
           "csv": "timeseries/tr-007-vib_lox_pump.csv"
         },
         {
           "name": "t_coolant_out",
           "unit": "K",
           "rows": 3000,
-          "min": 296.79898087719135,
-          "max": 529.5747085738141,
-          "mean": 462.68101338238904,
+          "min": 294.35754915721617,
+          "max": 528.2057668499199,
+          "mean": 462.6675650228899,
           "csv": "timeseries/tr-007-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.80780580354057,
+          "mean": 67.73132010892712,
+          "csv": "timeseries/tr-007-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.94948908500196,
+          "mean": 69.83884226807368,
+          "csv": "timeseries/tr-007-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7756721164790044,
+          "max": 4.5947213219661505,
+          "mean": 4.3913926665828935,
+          "csv": "timeseries/tr-007-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5456674517102673,
+          "max": 4.318790000116023,
+          "mean": 4.098747348267353,
+          "csv": "timeseries/tr-007-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 287.1013952697718,
+          "max": 2252.001936503698,
+          "mean": 1698.7088848995377,
+          "csv": "timeseries/tr-007-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 293.7083151376445,
+          "max": 471.9737539125788,
+          "mean": 418.35523012133524,
+          "csv": "timeseries/tr-007-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.33726971801738,
+          "max": 301.35800791832287,
+          "mean": 161.9698484619416,
+          "csv": "timeseries/tr-007-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.64198367464301,
+          "max": 300.8365629021816,
+          "mean": 144.4423541195777,
+          "csv": "timeseries/tr-007-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.910030421093456,
+          "mean": 17.82241477780577,
+          "csv": "timeseries/tr-007-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25895290104074,
+          "csv": "timeseries/tr-007-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25966845104874,
+          "csv": "timeseries/tr-007-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.976540838462506,
+          "mean": 2.6537707589142845,
+          "csv": "timeseries/tr-007-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -9.471381457465661,
+          "max": 470.3052341386386,
+          "mean": 320.7106967204171,
+          "csv": "timeseries/tr-007-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.28503210983013255,
+          "max": 0.3318720646879864,
+          "mean": -0.0006938363754753567,
+          "csv": "timeseries/tr-007-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.24491063188845677,
+          "max": 0.23372352335905527,
+          "mean": -0.0007066582973065952,
+          "csv": "timeseries/tr-007-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-008",
+      "is_fired": true,
+      "t0_ns": 1722243600000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 92.35739497231171,
+          "mean": 64.16592585070416,
+          "csv": "timeseries/tr-008-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.446340490602577,
+          "mean": 7.1319716439793455,
+          "csv": "timeseries/tr-008-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85644.89888643436,
+          "mean": 61586.79401229921,
+          "csv": "timeseries/tr-008-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62467.92071917056,
+          "mean": 44921.982796792276,
+          "csv": "timeseries/tr-008-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.0610392562104263,
+          "mean": 1.4324172351139983,
+          "csv": "timeseries/tr-008-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.970145594123919,
+          "mean": 4.869990821919167,
+          "csv": "timeseries/tr-008-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 286.04282485547736,
+          "max": 3335.4528630120353,
+          "mean": 2508.3912573985053,
+          "csv": "timeseries/tr-008-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.3041249384830143,
+          "mean": 1.8174251490077935,
+          "csv": "timeseries/tr-008-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.7919638086674614,
+          "mean": 1.5209461618346267,
+          "csv": "timeseries/tr-008-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.95464221047735,
+          "max": 528.4450888354655,
+          "mean": 462.6411594449488,
+          "csv": "timeseries/tr-008-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.50686706305468,
+          "mean": 67.72331020773376,
+          "csv": "timeseries/tr-008-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 101.11780878802095,
+          "mean": 69.8543457509499,
+          "csv": "timeseries/tr-008-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.779002212706779,
+          "max": 4.605163959204211,
+          "mean": 4.392839664282772,
+          "csv": "timeseries/tr-008-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5387389429842533,
+          "max": 4.286495949156752,
+          "mean": 4.098531799361102,
+          "csv": "timeseries/tr-008-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 281.8136386792964,
+          "max": 2247.8145853481274,
+          "mean": 1698.461787848123,
+          "csv": "timeseries/tr-008-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.093080655353,
+          "max": 473.22956194611885,
+          "mean": 418.3985354192437,
+          "csv": "timeseries/tr-008-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.06108949724555,
+          "max": 301.38431196336404,
+          "mean": 161.96481794259532,
+          "csv": "timeseries/tr-008-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.87531875108728,
+          "max": 300.73829312008326,
+          "mean": 144.4357252021133,
+          "csv": "timeseries/tr-008-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.920132926338418,
+          "mean": 17.812474894173448,
+          "csv": "timeseries/tr-008-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25285943582504,
+          "csv": "timeseries/tr-008-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25888442052128,
+          "csv": "timeseries/tr-008-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.953701315148885,
+          "mean": 2.6665266345571568,
+          "csv": "timeseries/tr-008-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -9.527006912586543,
+          "max": 477.77245035809483,
+          "mean": 320.90283333609625,
+          "csv": "timeseries/tr-008-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.3093200295010656,
+          "max": 0.2561920416748793,
+          "mean": -0.00037588604471456606,
+          "csv": "timeseries/tr-008-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.25057277580240556,
+          "max": 0.2647220537395859,
+          "mean": 0.0008011209708146383,
+          "csv": "timeseries/tr-008-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-009",
+      "is_fired": true,
+      "t0_ns": 1722502800000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 91.80382085661114,
+          "mean": 64.15261358872077,
+          "csv": "timeseries/tr-009-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.524129067079219,
+          "mean": 7.133463746522728,
+          "csv": "timeseries/tr-009-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85678.92380630391,
+          "mean": 61586.27769685517,
+          "csv": "timeseries/tr-009-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62520.41015848505,
+          "mean": 44916.91180829611,
+          "csv": "timeseries/tr-009-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.074300594139646,
+          "mean": 1.4324902940275364,
+          "csv": "timeseries/tr-009-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.989943795779081,
+          "mean": 4.870947632662812,
+          "csv": "timeseries/tr-009-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 289.7013033569175,
+          "max": 3343.137577167183,
+          "mean": 2508.6825174207406,
+          "csv": "timeseries/tr-009-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.1487562518214958,
+          "mean": 1.8273216554045375,
+          "csv": "timeseries/tr-009-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.968802472742849,
+          "mean": 1.521659478357307,
+          "csv": "timeseries/tr-009-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.86199407931764,
+          "max": 532.305615441334,
+          "mean": 462.739055619043,
+          "csv": "timeseries/tr-009-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.77880834400919,
+          "mean": 67.74011628998761,
+          "csv": "timeseries/tr-009-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.71156296467187,
+          "mean": 69.87418041860893,
+          "csv": "timeseries/tr-009-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7682245113148234,
+          "max": 4.6250090076528965,
+          "mean": 4.392049263257002,
+          "csv": "timeseries/tr-009-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5369689320706352,
+          "max": 4.273635754607867,
+          "mean": 4.09915145639728,
+          "csv": "timeseries/tr-009-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 283.76463870388443,
+          "max": 2251.2488690634923,
+          "mean": 1698.8351437397077,
+          "csv": "timeseries/tr-009-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 290.20052808297845,
+          "max": 473.11321004902794,
+          "mean": 418.3563405579209,
+          "csv": "timeseries/tr-009-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.07913853567375,
+          "max": 301.48121739369736,
+          "mean": 161.9372627599633,
+          "csv": "timeseries/tr-009-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.79631122701778,
+          "max": 300.7276278532411,
+          "mean": 144.43896272167015,
+          "csv": "timeseries/tr-009-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 26.387846860185174,
+          "mean": 17.814356494368862,
+          "csv": "timeseries/tr-009-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25454675610764,
+          "csv": "timeseries/tr-009-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25859545721495,
+          "csv": "timeseries/tr-009-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.950237209546513,
+          "mean": 2.6568632839999187,
+          "csv": "timeseries/tr-009-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -6.436015914828815,
+          "max": 472.19166253222954,
+          "mean": 320.7482898831868,
+          "csv": "timeseries/tr-009-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2910647417394456,
+          "max": 0.2569410525208351,
+          "mean": -0.00170319931108567,
+          "csv": "timeseries/tr-009-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.21659088088697243,
+          "max": 0.27371914913791384,
+          "mean": -0.00022183444127803827,
+          "csv": "timeseries/tr-009-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-010",
+      "is_fired": true,
+      "t0_ns": 1722762000000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 91.8956260458001,
+          "mean": 64.17631308920436,
+          "csv": "timeseries/tr-010-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.44982514464782,
+          "mean": 7.132266124727748,
+          "csv": "timeseries/tr-010-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85713.59841287478,
+          "mean": 61579.66614391065,
+          "csv": "timeseries/tr-010-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62420.44853731948,
+          "mean": 44919.565917088956,
+          "csv": "timeseries/tr-010-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.0558725538383196,
+          "mean": 1.432448542618011,
+          "csv": "timeseries/tr-010-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.960503371760012,
+          "mean": 4.870738304092515,
+          "csv": "timeseries/tr-010-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 285.8570409796406,
+          "max": 3340.6668650628394,
+          "mean": 2508.285298773851,
+          "csv": "timeseries/tr-010-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.2801362489050394,
+          "mean": 1.825263693818264,
+          "csv": "timeseries/tr-010-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.675795150091831,
+          "mean": 1.5236623304781087,
+          "csv": "timeseries/tr-010-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.68239287609657,
+          "max": 530.06563435616,
+          "mean": 462.67002507887196,
+          "csv": "timeseries/tr-010-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 98.02062155403345,
+          "mean": 67.74417448872838,
+          "csv": "timeseries/tr-010-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.72052724554403,
+          "mean": 69.88555504853109,
+          "csv": "timeseries/tr-010-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7818806940135996,
+          "max": 4.6019425335617345,
+          "mean": 4.392480166715668,
+          "csv": "timeseries/tr-010-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.538188979252011,
+          "max": 4.2717209860948016,
+          "mean": 4.099683780771072,
+          "csv": "timeseries/tr-010-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 268.661794676294,
+          "max": 2250.053230475386,
+          "mean": 1698.4174832581039,
+          "csv": "timeseries/tr-010-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.4598205146734,
+          "max": 472.36326171399014,
+          "mean": 418.4262666646333,
+          "csv": "timeseries/tr-010-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.78649633048622,
+          "max": 301.31842637825997,
+          "mean": 161.94426818760047,
+          "csv": "timeseries/tr-010-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.92565638198539,
+          "max": 300.8980643784372,
+          "mean": 144.45368271676807,
+          "csv": "timeseries/tr-010-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 26.096116637098522,
+          "mean": 17.816982967693978,
+          "csv": "timeseries/tr-010-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26735321733646,
+          "csv": "timeseries/tr-010-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25525653617169,
+          "csv": "timeseries/tr-010-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.817265624807932,
+          "mean": 2.64966320693249,
+          "csv": "timeseries/tr-010-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -19.10574971791341,
+          "max": 472.57382303214206,
+          "mean": 320.91626403319026,
+          "csv": "timeseries/tr-010-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.24660575447146574,
+          "max": 0.30127989626044227,
+          "mean": -0.001323405802919698,
+          "csv": "timeseries/tr-010-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.22520371783232362,
+          "max": 0.26232409911895327,
+          "mean": 1.1882433898467622e-05,
+          "csv": "timeseries/tr-010-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-011",
+      "is_fired": true,
+      "t0_ns": 1723021200000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 92.03534960307009,
+          "mean": 64.1489268144507,
+          "csv": "timeseries/tr-011-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.450355471181773,
+          "mean": 7.131887390842194,
+          "csv": "timeseries/tr-011-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85614.06279711572,
+          "mean": 61577.36550461988,
+          "csv": "timeseries/tr-011-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62567.78863693488,
+          "mean": 44921.30128017511,
+          "csv": "timeseries/tr-011-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.054925649158677,
+          "mean": 1.4316426446611015,
+          "csv": "timeseries/tr-011-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.950532911732574,
+          "mean": 4.8690296684267365,
+          "csv": "timeseries/tr-011-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 287.0766566489568,
+          "max": 3335.4569703786137,
+          "mean": 2508.418148385855,
+          "csv": "timeseries/tr-011-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.146704616900063,
+          "mean": 1.8308327149536616,
+          "csv": "timeseries/tr-011-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.591058724838522,
+          "mean": 1.5177697712845633,
+          "csv": "timeseries/tr-011-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.3305146919646,
+          "max": 529.5906796167988,
+          "mean": 462.7713542790604,
+          "csv": "timeseries/tr-011-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.44393028201462,
+          "mean": 67.74671708267091,
+          "csv": "timeseries/tr-011-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 101.11073977294622,
+          "mean": 69.86300660097372,
+          "csv": "timeseries/tr-011-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.783089881215708,
+          "max": 4.618850515505734,
+          "mean": 4.3919213521795974,
+          "csv": "timeseries/tr-011-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.536646258239543,
+          "max": 4.2946659548492505,
+          "mean": 4.098757420905632,
+          "csv": "timeseries/tr-011-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 282.2230227191283,
+          "max": 2249.879858371135,
+          "mean": 1698.5284324117372,
+          "csv": "timeseries/tr-011-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.8084850146424,
+          "max": 473.1647034913407,
+          "mean": 418.3481677856908,
+          "csv": "timeseries/tr-011-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.18160972026229,
+          "max": 301.4413529001732,
+          "mean": 161.93805450537795,
+          "csv": "timeseries/tr-011-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.66749855483722,
+          "max": 300.80365063968134,
+          "mean": 144.45421827137838,
+          "csv": "timeseries/tr-011-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.81124282185445,
+          "mean": 17.824166130986107,
+          "csv": "timeseries/tr-011-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26045261105692,
+          "csv": "timeseries/tr-011-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.24848379955243,
+          "csv": "timeseries/tr-011-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.717340188474237,
+          "mean": 2.6644748470908644,
+          "csv": "timeseries/tr-011-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -9.425908100998578,
+          "max": 473.6256535822588,
+          "mean": 320.8397110794519,
+          "csv": "timeseries/tr-011-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2832405604390397,
+          "max": 0.3144450882993503,
+          "mean": 0.0006516597030550928,
+          "csv": "timeseries/tr-011-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2569431688831942,
+          "max": 0.24419545617652386,
+          "mean": -0.00011587603995570491,
+          "csv": "timeseries/tr-011-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-012",
+      "is_fired": false,
+      "t0_ns": 1723280400000000000,
+      "channels": []
+    },
+    {
+      "test_run_id": "TR-013",
+      "is_fired": true,
+      "t0_ns": 1723539600000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 92.1155017208333,
+          "mean": 64.16187756624346,
+          "csv": "timeseries/tr-013-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.516175329806554,
+          "mean": 7.131053601530805,
+          "csv": "timeseries/tr-013-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85624.17993221318,
+          "mean": 61580.401806131136,
+          "csv": "timeseries/tr-013-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62465.100345457184,
+          "mean": 44919.45385243781,
+          "csv": "timeseries/tr-013-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.078159023525195,
+          "mean": 1.4327526568468423,
+          "csv": "timeseries/tr-013-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.981657815139604,
+          "mean": 4.871596862304101,
+          "csv": "timeseries/tr-013-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 286.4712608325151,
+          "max": 3339.9565200879483,
+          "mean": 2508.4372801225595,
+          "csv": "timeseries/tr-013-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.1843853883236966,
+          "mean": 1.8218151291718176,
+          "csv": "timeseries/tr-013-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.7448217268911854,
+          "mean": 1.5209411335031073,
+          "csv": "timeseries/tr-013-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.5342572046946,
+          "max": 529.343945500292,
+          "mean": 462.63627046255874,
+          "csv": "timeseries/tr-013-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.35798933035032,
+          "mean": 67.72235706371652,
+          "csv": "timeseries/tr-013-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.85814868271837,
+          "mean": 69.84122355331529,
+          "csv": "timeseries/tr-013-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.79304589911731,
+          "max": 4.599813957166475,
+          "mean": 4.392209327572661,
+          "csv": "timeseries/tr-013-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5400137772232276,
+          "max": 4.2967378310578175,
+          "mean": 4.099247046757521,
+          "csv": "timeseries/tr-013-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 286.5377080118701,
+          "max": 2258.8550104556675,
+          "mean": 1698.6946628777657,
+          "csv": "timeseries/tr-013-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.54751145313355,
+          "max": 473.6043593622371,
+          "mean": 418.3440312771448,
+          "csv": "timeseries/tr-013-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.14404256527563,
+          "max": 301.19874576077035,
+          "mean": 162.01561013351338,
+          "csv": "timeseries/tr-013-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.77904631087286,
+          "max": 300.582478005018,
+          "mean": 144.4546481838503,
+          "csv": "timeseries/tr-013-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 26.004827933875372,
+          "mean": 17.829933039545597,
+          "csv": "timeseries/tr-013-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25724165724868,
+          "csv": "timeseries/tr-013-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.25630314262783,
+          "csv": "timeseries/tr-013-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.748930413415063,
+          "mean": 2.6671068139897773,
+          "csv": "timeseries/tr-013-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -7.678113701638704,
+          "max": 474.2289577412286,
+          "mean": 320.58104131695166,
+          "csv": "timeseries/tr-013-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.36337439889423906,
+          "max": 0.29561113696252467,
+          "mean": 0.0024705282293129354,
+          "csv": "timeseries/tr-013-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2702956916244702,
+          "max": 0.26067416802245147,
+          "mean": -0.000618773681670943,
+          "csv": "timeseries/tr-013-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-014",
+      "is_fired": true,
+      "t0_ns": 1723798800000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 91.95573873176451,
+          "mean": 64.17538177953162,
+          "csv": "timeseries/tr-014-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.51391536119692,
+          "mean": 7.131732483082215,
+          "csv": "timeseries/tr-014-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85651.712937906,
+          "mean": 61586.162691769285,
+          "csv": "timeseries/tr-014-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62523.394809319456,
+          "mean": 44920.702233349584,
+          "csv": "timeseries/tr-014-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.0764990068179725,
+          "mean": 1.432423419065423,
+          "csv": "timeseries/tr-014-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.973235826301549,
+          "mean": 4.871588646394869,
+          "csv": "timeseries/tr-014-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 287.18210267567,
+          "max": 3338.4649983569625,
+          "mean": 2508.8853603944485,
+          "csv": "timeseries/tr-014-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.278050778422977,
+          "mean": 1.824415227697389,
+          "csv": "timeseries/tr-014-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.922086173504085,
+          "mean": 1.514874027158224,
+          "csv": "timeseries/tr-014-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 296.4304965642713,
+          "max": 531.9467161457892,
+          "mean": 462.7372596983264,
+          "csv": "timeseries/tr-014-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.6987594233341,
+          "mean": 67.74979544151351,
+          "csv": "timeseries/tr-014-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 101.8687309310196,
+          "mean": 69.86329414717395,
+          "csv": "timeseries/tr-014-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.790137001904778,
+          "max": 4.616071916904383,
+          "mean": 4.391350220434281,
+          "csv": "timeseries/tr-014-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.5274977276882664,
+          "max": 4.26833010022877,
+          "mean": 4.098175541707477,
+          "csv": "timeseries/tr-014-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 277.72946771115517,
+          "max": 2249.9521269313586,
+          "mean": 1699.1187743007472,
+          "csv": "timeseries/tr-014-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 290.4205905309404,
+          "max": 473.39946966493824,
+          "mean": 418.29053819154984,
+          "csv": "timeseries/tr-014-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.00813073239591,
+          "max": 301.5530231531375,
+          "mean": 161.95969179236042,
+          "csv": "timeseries/tr-014-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.73822449568827,
+          "max": 301.07945179817943,
+          "mean": 144.45304357469757,
+          "csv": "timeseries/tr-014-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.930142413034652,
+          "mean": 17.830256130582242,
+          "csv": "timeseries/tr-014-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.2581912328326,
+          "csv": "timeseries/tr-014-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.2507813895231,
+          "csv": "timeseries/tr-014-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.857400777840078,
+          "mean": 2.654691880730819,
+          "csv": "timeseries/tr-014-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -8.927054512947583,
+          "max": 476.4239744996736,
+          "mean": 320.7150561690489,
+          "csv": "timeseries/tr-014-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2716252767622697,
+          "max": 0.25783250467457064,
+          "mean": 0.00044538749755784285,
+          "csv": "timeseries/tr-014-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.23260256840438473,
+          "max": 0.2698769450203713,
+          "mean": -0.0011666841253008275,
+          "csv": "timeseries/tr-014-acc_gimbal_y.csv"
+        }
+      ]
+    },
+    {
+      "test_run_id": "TR-015",
+      "is_fired": true,
+      "t0_ns": 1724058000000000000,
+      "channels": [
+        {
+          "name": "pc_chamber",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 92.07844673798067,
+          "mean": 64.16432894072263,
+          "csv": "timeseries/tr-015-pc_chamber.csv"
+        },
+        {
+          "name": "pc_nozzle",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 10.514657140595354,
+          "mean": 7.136154154734899,
+          "csv": "timeseries/tr-015-pc_nozzle.csv"
+        },
+        {
+          "name": "rpm_fuel_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 85626.49171958593,
+          "mean": 61581.44729328444,
+          "csv": "timeseries/tr-015-rpm_fuel_pump.csv"
+        },
+        {
+          "name": "rpm_lox_pump",
+          "unit": "rpm",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 62560.59883723401,
+          "mean": 44917.28766411668,
+          "csv": "timeseries/tr-015-rpm_lox_pump.csv"
+        },
+        {
+          "name": "mdot_fuel",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.0600586554265843,
+          "mean": 1.4325577011325976,
+          "csv": "timeseries/tr-015-mdot_fuel.csv"
+        },
+        {
+          "name": "mdot_lox",
+          "unit": "kg/s",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 6.963229761799167,
+          "mean": 4.871154948699732,
+          "csv": "timeseries/tr-015-mdot_lox.csv"
+        },
+        {
+          "name": "tc_chamber",
+          "unit": "K",
+          "rows": 3000,
+          "min": 287.9349210929036,
+          "max": 3344.711910884523,
+          "mean": 2508.3217623324554,
+          "csv": "timeseries/tr-015-tc_chamber.csv"
+        },
+        {
+          "name": "vib_fuel_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 3.321229896353072,
+          "mean": 1.8284773039344522,
+          "csv": "timeseries/tr-015-vib_fuel_pump.csv"
+        },
+        {
+          "name": "vib_lox_pump",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 2.6946254499125906,
+          "mean": 1.5182403792156656,
+          "csv": "timeseries/tr-015-vib_lox_pump.csv"
+        },
+        {
+          "name": "t_coolant_out",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.95190235335394,
+          "max": 529.990048056551,
+          "mean": 462.7234439203216,
+          "csv": "timeseries/tr-015-t_coolant_out.csv"
+        },
+        {
+          "name": "p_inj_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 97.83505742015143,
+          "mean": 67.72065976341491,
+          "csv": "timeseries/tr-015-p_inj_fuel.csv"
+        },
+        {
+          "name": "p_inj_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 101.20364251797926,
+          "mean": 69.83456321951202,
+          "csv": "timeseries/tr-015-p_inj_lox.csv"
+        },
+        {
+          "name": "p_tank_fuel",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.7753743472835306,
+          "max": 4.622309297555709,
+          "mean": 4.3941735048659245,
+          "csv": "timeseries/tr-015-p_tank_fuel.csv"
+        },
+        {
+          "name": "p_tank_lox",
+          "unit": "bar",
+          "rows": 3000,
+          "min": 3.534507660062679,
+          "max": 4.301208318400317,
+          "mean": 4.098781590364762,
+          "csv": "timeseries/tr-015-p_tank_lox.csv"
+        },
+        {
+          "name": "tc_nozzle",
+          "unit": "K",
+          "rows": 3000,
+          "min": 281.76098343899355,
+          "max": 2247.731124392867,
+          "mean": 1698.7862114035593,
+          "csv": "timeseries/tr-015-tc_nozzle.csv"
+        },
+        {
+          "name": "tc_injector",
+          "unit": "K",
+          "rows": 3000,
+          "min": 295.935545920747,
+          "max": 473.8079530448318,
+          "mean": 418.32054057435397,
+          "csv": "timeseries/tr-015-tc_injector.csv"
+        },
+        {
+          "name": "t_coolant_in",
+          "unit": "K",
+          "rows": 3000,
+          "min": 111.30985545719236,
+          "max": 301.594904682021,
+          "mean": 161.95036901906911,
+          "csv": "timeseries/tr-015-t_coolant_in.csv"
+        },
+        {
+          "name": "t_lox_inlet",
+          "unit": "K",
+          "rows": 3000,
+          "min": 89.88130559376353,
+          "max": 301.36936764805967,
+          "mean": 144.46972766141383,
+          "csv": "timeseries/tr-015-t_lox_inlet.csv"
+        },
+        {
+          "name": "thrust_kn",
+          "unit": "kN",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 25.842098993455107,
+          "mean": 17.81870721352277,
+          "csv": "timeseries/tr-015-thrust_kn.csv"
+        },
+        {
+          "name": "valve_fuel",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.26983906723656,
+          "csv": "timeseries/tr-015-valve_fuel.csv"
+        },
+        {
+          "name": "valve_lox",
+          "unit": "pct",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 100.0,
+          "mean": 70.2572072583719,
+          "csv": "timeseries/tr-015-valve_lox.csv"
+        },
+        {
+          "name": "vib_chamber",
+          "unit": "g_rms",
+          "rows": 3000,
+          "min": 0.0,
+          "max": 4.841948077156812,
+          "mean": 2.6569304068797517,
+          "csv": "timeseries/tr-015-vib_chamber.csv"
+        },
+        {
+          "name": "strain_nozzle",
+          "unit": "ustrain",
+          "rows": 3000,
+          "min": -12.654867794331166,
+          "max": 471.56027495554036,
+          "mean": 320.92030744043774,
+          "csv": "timeseries/tr-015-strain_nozzle.csv"
+        },
+        {
+          "name": "acc_gimbal_x",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.27265257653352243,
+          "max": 0.2678195547631244,
+          "mean": -0.00041034836084836074,
+          "csv": "timeseries/tr-015-acc_gimbal_x.csv"
+        },
+        {
+          "name": "acc_gimbal_y",
+          "unit": "g",
+          "rows": 3000,
+          "min": -0.2531519598139046,
+          "max": 0.2308848243379079,
+          "mean": 0.000807259643996566,
+          "csv": "timeseries/tr-015-acc_gimbal_y.csv"
         }
       ]
     }
@@ -646,8 +3101,8 @@
   "anomaly_summary": {
     "run": "TR-004",
     "channel": "vib_fuel_pump",
-    "peak_value_g_rms": 12.669,
-    "peak_t_seconds": 7.85,
+    "peak_value_g_rms": 12.735,
+    "peak_t_seconds": 8.09,
     "duration_s_above_8g": 0.65
   }
 }

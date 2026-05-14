@@ -26,6 +26,13 @@
         About
       </v-btn>
       <v-btn
+        href="/shepard/api/q/swagger-ui"
+        target="_blank"
+        class="nav-item"
+      >
+        API Docs
+      </v-btn>
+      <v-btn
         icon="mdi-account-outline"
         :to="{ path: '/user', hash: '#profile' }"
       />

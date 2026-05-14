@@ -1,0 +1,98 @@
+# Dev/deployment override — fork images + direct port exposure.
+# Zoraxy handles TLS termination upstream; no Caddy needed for dev.
+#
+# External routing (via Zoraxy):
+#   https://shepard.nuclide.systems     → 192.168.1.49:80  → frontend:3000
+#   https://shepard-api.nuclide.systems → 192.168.1.49:8080 → backend:8080
+#   http://192.168.1.49:8082            → keycloak:8082 (OIDC)
+#
+# The `Deploy to test instance` workflow sets SHEPARD_BACKEND_IMAGE /
+# SHEPARD_FRONTEND_IMAGE env vars before invoking `docker compose pull && up -d`.
+#
+# Demo seeding: the `seeder` service runs once after the backend is healthy.
+# It bootstraps the admin user, creates an API key, and runs seed.py.
+# On subsequent `docker compose up` the seeder exits immediately (seed is idempotent).
+# To re-seed from scratch: docker compose run --rm seeder bash -c "cd /seed && python seed.py --reset --regenerate --host http://backend:8080/shepard/api --apikey <key>"
+
+services:
+  backend:
+    image: ${SHEPARD_BACKEND_IMAGE:-ghcr.io/noheton/shepard-backend:latest}
+    ports:
+      - "8080:8080"
+    environment:
+      # Backend uses the same Keycloak URL as the browser so tokens' `iss`
+      # claim matches the userinfo endpoint's expectation.
+      OIDC_AUTHORITY: "http://192.168.1.49:8082/realms/shepard-demo"
+      # Write the one-shot bootstrap token to a volume shared with the seeder.
+      SHEPARD_BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
+    volumes:
+      - bootstrap-token:/opt/shepard-bootstrap
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/q/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 90s
+
+  frontend:
+    image: ${SHEPARD_FRONTEND_IMAGE:-ghcr.io/noheton/shepard-frontend:latest}
+    environment:
+      # Browser-facing Keycloak URL for the OIDC flow.
+      NUXT_OIDC_ISSUER: "http://192.168.1.49:8082/realms/shepard-demo/"
+      NUXT_OIDC_CLIENT_ID: "frontend-dev"
+
+  # Keycloak — imports the pre-seeded demo realm on first start.
+  # Realm: shepard-demo / Client: frontend-dev (public)
+  # Test users: alice/alice-demo, bob/bob-demo, admin/admin-demo, harvester/harvester-demo
+  # Data is persisted in a named volume so the RSA signing key survives restarts.
+  # If you need to re-import a changed realm JSON, run:
+  #   docker compose stop keycloak && docker volume rm infrastructure_keycloak-data && docker compose up -d keycloak
+  keycloak:
+    image: keycloak/keycloak:latest
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "--http-port=8082"
+    ports:
+      - "8082:8082"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "admin"
+      KC_HTTP_PORT: "8082"
+    volumes:
+      - ./keycloak/shepard-demo-realm.json:/opt/keycloak/data/import/shepard-demo-realm.json:ro
+      - keycloak-data:/opt/keycloak/data
+    networks:
+      - shepard
+    restart: unless-stopped
+
+  # Caddy proxies frontend:3000 on HTTP port 80.
+  # TLS is terminated upstream by Zoraxy.
+  # No SSL certs needed; Caddyfile uses auto_https off.
+
+  # One-shot demo seeder — runs once after backend is healthy, then exits.
+  # Installs numpy + shepard-client, bootstraps admin, and runs seed.py.
+  seeder:
+    image: python:3.12-slim
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: "http://backend:8080/shepard/api"
+      KC_URL: "http://keycloak:8082"
+      KC_REALM: "shepard-demo"
+      KC_CLIENT_ID: "frontend-dev"
+      KC_ADMIN_USER: "admin"
+      KC_ADMIN_PASS: "admin-demo"
+      BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
+    volumes:
+      - bootstrap-token:/opt/shepard-bootstrap:ro
+      - ../examples/seed-showcase:/seed:ro
+    command: /seed/entrypoint.sh
+    networks:
+      - shepard
+    restart: "no"
+
+volumes:
+  keycloak-data:
+  bootstrap-token:

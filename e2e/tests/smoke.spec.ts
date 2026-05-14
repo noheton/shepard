@@ -4,7 +4,7 @@
  */
 import { test, expect } from "@playwright/test";
 
-const BACKEND = process.env.BACKEND_URL || "http://localhost:8080";
+const BACKEND = process.env.BACKEND_URL || "https://shepard-api.nuclide.systems";
 
 test("frontend home page loads", async ({ page }) => {
   const res = await page.goto("/");

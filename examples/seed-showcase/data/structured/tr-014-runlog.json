@@ -1,0 +1,23 @@
+{
+  "test_run_id": "TR-014",
+  "campaign": "lumen-inspired-q3-2024",
+  "bench": "P3-Lampoldshausen",
+  "propellant": "LOX/LCH4",
+  "scheduled_at": "2024-08-16T09:00:00+00:00",
+  "shift": "late",
+  "test_engineer": "L. Voss",
+  "is_fired": true,
+  "duration_s": 30,
+  "target_thrust_kN": 25,
+  "target_mixture_ratio": 3.4,
+  "lox_lot_id": "LOX-2024-05",
+  "lch4_lot_id": "CH4-2024-07",
+  "weather": {
+    "temp_c": 23,
+    "wind_kmh": 10,
+    "humidity_pct": 53,
+    "cloud": "OVC"
+  },
+  "igniter_check": "PASS",
+  "notes_brief": "Qualification fire 1. Full test matrix executed. Strain gauges and gimbal nominal throughout."
+}

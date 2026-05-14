@@ -1,0 +1,23 @@
+{
+  "test_run_id": "TR-008",
+  "campaign": "lumen-inspired-q3-2024",
+  "bench": "P3-Lampoldshausen",
+  "propellant": "LOX/LCH4",
+  "scheduled_at": "2024-07-29T09:00:00+00:00",
+  "shift": "late",
+  "test_engineer": "S. Holzwarth",
+  "is_fired": true,
+  "duration_s": 30,
+  "target_thrust_kN": 25,
+  "target_mixture_ratio": 3.4,
+  "lox_lot_id": "LOX-2024-03",
+  "lch4_lot_id": "CH4-2024-04",
+  "weather": {
+    "temp_c": 21,
+    "wind_kmh": 7,
+    "humidity_pct": 63,
+    "cloud": "OVC"
+  },
+  "igniter_check": "PASS",
+  "notes_brief": "Phase 2 commissioning fire. All sensors nominal. Baseline re-established after Phase 1."
+}

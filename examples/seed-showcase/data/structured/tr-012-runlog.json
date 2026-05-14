@@ -1,0 +1,23 @@
+{
+  "test_run_id": "TR-012",
+  "campaign": "lumen-inspired-q3-2024",
+  "bench": "P3-Lampoldshausen",
+  "propellant": "LOX/LCH4",
+  "scheduled_at": "2024-08-10T09:00:00+00:00",
+  "shift": "late",
+  "test_engineer": "T. Marek",
+  "is_fired": false,
+  "duration_s": 0,
+  "target_thrust_kN": 25,
+  "target_mixture_ratio": 3.4,
+  "lox_lot_id": "LOX-2024-04",
+  "lch4_lot_id": "CH4-2024-06",
+  "weather": {
+    "temp_c": 26,
+    "wind_kmh": 6,
+    "humidity_pct": 44,
+    "cloud": "FEW"
+  },
+  "igniter_check": null,
+  "notes_brief": "Hold day. Pre-certification inspection: nozzle throat survey, injector dye-penetrant check. No anomalies."
+}

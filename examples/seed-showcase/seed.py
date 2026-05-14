@@ -82,9 +82,9 @@ COLLECTION_DESCRIPTION = (
     "(numpy.random.default_rng(2024)). Used to exercise shepard's feature "
     "surface end-to-end."
 )
-N_RUNS = 7
-TR5_HOLD_DAY = 5  # TR-005 is a teardown / hold day, no fire
-ANOMALY_RUN = 4  # TR-004 is the fuel-turbopump vibration anomaly
+N_RUNS = 15
+HOLD_DAYS = {5, 12}  # TR-005 bearing teardown, TR-012 pre-cert inspection
+ANOMALY_RUN = 4       # TR-004 fuel-turbopump vibration anomaly
 
 CHANNELS: list[tuple[str, str]] = [
     ("pc_chamber",    "bar"),
@@ -97,6 +97,21 @@ CHANNELS: list[tuple[str, str]] = [
     ("vib_fuel_pump", "g_rms"),
     ("vib_lox_pump",  "g_rms"),
     ("t_coolant_out", "K"),
+    ("p_inj_fuel",    "bar"),
+    ("p_inj_lox",     "bar"),
+    ("p_tank_fuel",   "bar"),
+    ("p_tank_lox",    "bar"),
+    ("tc_nozzle",     "K"),
+    ("tc_injector",   "K"),
+    ("t_coolant_in",  "K"),
+    ("t_lox_inlet",   "K"),
+    ("thrust_kn",     "kN"),
+    ("valve_fuel",    "pct"),
+    ("valve_lox",     "pct"),
+    ("vib_chamber",   "g_rms"),
+    ("strain_nozzle", "ustrain"),
+    ("acc_gimbal_x",  "g"),
+    ("acc_gimbal_y",  "g"),
 ]
 
 PHASES: list[tuple[str, float, float]] = [
@@ -242,7 +257,7 @@ def ensure_collection(apis: Apis) -> Collection:
 
 
 def ensure_run_data_objects(apis: Apis, coll: Collection) -> dict[int, DataObject]:
-    """TR-001 .. TR-007 + the analysis sub-tree. Predecessors form a chain;
+    """TR-001 .. TR-015 + the analysis sub-tree. Predecessors form a chain;
     TR-006 also receives the analysis DataObject as a predecessor so the
     narrative reads investigation -> bearing replaced -> re-tested."""
     runs: dict[int, DataObject] = {}
@@ -257,10 +272,14 @@ def ensure_run_data_objects(apis: Apis, coll: Collection) -> dict[int, DataObjec
             "propellant": "LOX/LCH4",
             "target_thrust_kN": "25",
             "target_mixture_ratio": "3.4",
-            "duration_s": "30" if n != TR5_HOLD_DAY else "0",
-            "test_engineer": ["T. Marek", "S. Holzwarth", "A. Reuter", "T. Marek", "L. Voss", "T. Marek", "A. Reuter"][n - 1],
+            "duration_s": "30" if n not in HOLD_DAYS else "0",
+            "test_engineer": [
+                "T. Marek", "S. Holzwarth", "A. Reuter", "T. Marek", "L. Voss",
+                "T. Marek", "A. Reuter", "S. Holzwarth", "T. Marek", "L. Voss",
+                "A. Reuter", "T. Marek", "S. Holzwarth", "A. Reuter", "T. Marek",
+            ][n - 1],
             "notes_brief": _short_note_for_run(n),
-            "is_fired": "true" if n != TR5_HOLD_DAY else "false",
+            "is_fired": "true" if n not in HOLD_DAYS else "false",
         }
         existing = _find_child_data_object(apis, coll.id, name, parent_id=None)
         if existing is not None:
@@ -290,13 +309,21 @@ def ensure_run_data_objects(apis: Apis, coll: Collection) -> dict[int, DataObjec
 
 def _short_note_for_run(n: int) -> str:
     notes = {
-        1: "Bench commissioning fire. All sensors green.",
-        2: "Repeat reference fire. Vibration nominal.",
-        3: "Reference fire pre-anomaly. Fuel-pump vibration trending +0.4 g rms vs TR-001.",
-        4: "Vibration spike on fuel turbopump during ramp_up at t=8s, peak ~12 g rms.",
-        5: "Hold day. Bearing teardown / replacement / re-balance. No fire.",
-        6: "Re-test post bearing replacement. Fuel-pump vibration nominal.",
-        7: "Confirmation fire. Campaign complete.",
+        1:  "Bench commissioning fire. All sensors green.",
+        2:  "Repeat reference fire. Vibration nominal.",
+        3:  "Reference fire pre-anomaly. Fuel-pump vibration trending +0.4 g rms vs TR-001.",
+        4:  "Vibration spike on fuel turbopump during ramp_up at t=8s, peak ~12 g rms.",
+        5:  "Hold day. Bearing teardown / replacement / re-balance. No fire.",
+        6:  "Re-test post bearing replacement. Fuel-pump vibration nominal.",
+        7:  "Confirmation fire. Phase 1 campaign complete.",
+        8:  "Phase 2 commissioning fire. All sensors nominal. Baseline re-established.",
+        9:  "Mixture ratio sweep — o/f stepped to 3.6 during throttle point.",
+        10: "Throttle-deep test — 40% thrust sustained 6 s. Stable combustion.",
+        11: "New LOX batch LOX-2024-04 validated. All channels within Phase 1 envelope.",
+        12: "Hold day. Pre-certification inspection: nozzle survey + injector dye-penetrant. No anomalies.",
+        13: "Pre-certification reference fire. All channels within Phase 1 envelope. Cleared for qualification.",
+        14: "Qualification fire 1. Full test matrix. Strain and gimbal nominal throughout.",
+        15: "Qualification fire 2 — repeat confirmation. Campaign complete. All channels within spec.",
     }
     return notes[n]
 
@@ -470,7 +497,7 @@ def upload_run_timeseries(
     """Create one Timeseries per channel in `tsc`, batch-uploading 1000 rows
     at a time. Then create a TimeseriesReference on the run's DataObject
     that bundles all 10 timeseries for that run."""
-    if run_idx == TR5_HOLD_DAY:
+    if run_idx in HOLD_DAYS:
         _log("SKIP", f"tr-{run_idx:03d}-sensors", "TimeseriesReference (hold day)")
         return None
     ref_name = f"tr-{run_idx:03d}-sensors"

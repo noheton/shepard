@@ -98,3 +98,19 @@ build/
 
 # Claude Code agent worktrees and local session state
 .claude/
+
+# Maven build output
+**/target/
+
+# Runtime data volumes (Docker bind-mounts — never commit database files)
+mongodb/
+neo4j/
+timescaledb/
+
+# Caddy runtime state (TLS certs, config snapshots)
+caddy/config/
+caddy/data/
+
+# Backend signing keys + bootstrap token (generated at first start)
+backend/config/keys/
+.bootstrap-token

@@ -8,7 +8,7 @@ export default defineConfig({
   retries: 1,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:80",
+    baseURL: process.env.BASE_URL || "https://shepard.nuclide.systems",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

@@ -8,7 +8,7 @@ Run:
     python data/generate.py [--out data]
 
 This produces:
-    data/timeseries/tr-{N}-{channel}.csv      (10 channels x 7 runs)
+    data/timeseries/tr-{N}-{channel}.csv      (25 channels x 15 runs)
     data/structured/tr-{N}-runlog.json        (operator run log per run)
     data/structured/schema.json               (run-log JSON schema sketch)
     data/files/tr-{N}-cad-stub.bin            (4 KB placeholder per run)
@@ -23,7 +23,7 @@ import argparse
 import csv
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable
@@ -35,7 +35,7 @@ RNG_SEED = 2024
 SAMPLE_RATE_HZ = 100
 DURATION_S = 30
 N_SAMPLES = SAMPLE_RATE_HZ * DURATION_S  # 3000 per channel per run
-N_RUNS = 7
+N_RUNS = 15
 
 # ---- campaign metadata -----------------------------------------------------
 CAMPAIGN_START_DATE = datetime(2024, 7, 8, 9, 0, 0, tzinfo=timezone.utc)
@@ -44,13 +44,21 @@ PROPELLANT = "LOX/LCH4"
 TARGET_THRUST_KN = 25
 TARGET_MIXTURE_RATIO = 3.4
 TEST_ENGINEERS = [
-    "T. Marek",
-    "S. Holzwarth",
-    "A. Reuter",
-    "T. Marek",
-    "L. Voss",
-    "T. Marek",
-    "A. Reuter",
+    "T. Marek",       # TR-001
+    "S. Holzwarth",   # TR-002
+    "A. Reuter",      # TR-003
+    "T. Marek",       # TR-004
+    "L. Voss",        # TR-005 (hold day)
+    "T. Marek",       # TR-006
+    "A. Reuter",      # TR-007
+    "S. Holzwarth",   # TR-008
+    "T. Marek",       # TR-009
+    "L. Voss",        # TR-010
+    "A. Reuter",      # TR-011
+    "T. Marek",       # TR-012 (hold day)
+    "S. Holzwarth",   # TR-013
+    "L. Voss",        # TR-014
+    "T. Marek",       # TR-015
 ]
 
 # ---- phases (start_s, end_s) inclusive-exclusive --------------------------
@@ -74,19 +82,37 @@ class ChannelSpec:
     steady: float           # nominal steady-state value
     noise_sigma: float      # gaussian noise sigma
     throttle_factor: float  # multiplier during 'throttle' (relative to steady)
+    profile: str = "combustion"  # envelope profile: combustion | tank | valve | gimbal
 
 
 CHANNELS: list[ChannelSpec] = [
-    ChannelSpec("pc_chamber",    "bar",  "combustion-chamber pressure",          90.0,  0.6,  0.78),
-    ChannelSpec("pc_nozzle",     "bar",  "nozzle exit pressure",                 10.0,  0.15, 0.78),
-    ChannelSpec("rpm_fuel_pump", "rpm",  "fuel turbopump speed",              85000.0,200.0,  0.85),
-    ChannelSpec("rpm_lox_pump",  "rpm",  "LOX turbopump speed",               62000.0,150.0,  0.85),
-    ChannelSpec("mdot_fuel",     "kg/s", "fuel mass flow",                        2.0,  0.02, 0.80),
-    ChannelSpec("mdot_lox",      "kg/s", "LOX mass flow",                         6.8,  0.05, 0.80),
-    ChannelSpec("tc_chamber",    "K",    "combustion-chamber temperature",     3300.0, 12.0,  0.92),
-    ChannelSpec("vib_fuel_pump", "g_rms","fuel turbopump vibration",              2.4,  0.25, 1.05),
-    ChannelSpec("vib_lox_pump",  "g_rms","LOX turbopump vibration",               2.0,  0.20, 1.05),
-    ChannelSpec("t_coolant_out", "K",    "regen-cooling outlet temperature",    520.0,  3.0,  0.94),
+    # --- original 10 channels (unchanged) ---
+    ChannelSpec("pc_chamber",    "bar",   "combustion-chamber pressure",          90.0,  0.6,  0.78),
+    ChannelSpec("pc_nozzle",     "bar",   "nozzle exit pressure",                 10.0,  0.15, 0.78),
+    ChannelSpec("rpm_fuel_pump", "rpm",   "fuel turbopump speed",              85000.0,200.0,  0.85),
+    ChannelSpec("rpm_lox_pump",  "rpm",   "LOX turbopump speed",               62000.0,150.0,  0.85),
+    ChannelSpec("mdot_fuel",     "kg/s",  "fuel mass flow",                        2.0,  0.02, 0.80),
+    ChannelSpec("mdot_lox",      "kg/s",  "LOX mass flow",                         6.8,  0.05, 0.80),
+    ChannelSpec("tc_chamber",    "K",     "combustion-chamber temperature",     3300.0, 12.0,  0.92),
+    ChannelSpec("vib_fuel_pump", "g_rms", "fuel turbopump vibration",              2.4,  0.25, 1.05),
+    ChannelSpec("vib_lox_pump",  "g_rms", "LOX turbopump vibration",               2.0,  0.20, 1.05),
+    ChannelSpec("t_coolant_out", "K",     "regen-cooling outlet temperature",    520.0,  3.0,  0.94),
+    # --- 15 new channels ---
+    ChannelSpec("p_inj_fuel",    "bar",    "fuel injector manifold pressure",       95.0,  0.8,  0.78,  "combustion"),
+    ChannelSpec("p_inj_lox",     "bar",    "LOX injector manifold pressure",        98.0,  0.9,  0.78,  "combustion"),
+    ChannelSpec("p_tank_fuel",   "bar",    "fuel tank ullage pressure",              4.5,  0.04, 0.98,  "tank"),
+    ChannelSpec("p_tank_lox",    "bar",    "LOX tank ullage pressure",               4.2,  0.03, 0.98,  "tank"),
+    ChannelSpec("tc_nozzle",     "K",      "nozzle throat temperature",           2200.0, 15.0,  0.92,  "combustion"),
+    ChannelSpec("tc_injector",   "K",      "injector face temperature",            460.0,  4.0,  0.94,  "combustion"),
+    ChannelSpec("t_coolant_in",  "K",      "regen-cooling inlet temperature",      115.0,  1.2,  0.98,  "combustion"),
+    ChannelSpec("t_lox_inlet",   "K",      "LOX inlet temperature",                 92.0,  0.7,  0.99,  "combustion"),
+    ChannelSpec("thrust_kn",     "kN",     "measured thrust",                        25.0,  0.3,  0.78,  "combustion"),
+    ChannelSpec("valve_fuel",    "pct",    "fuel main valve position",             100.0,  0.3,  0.78,  "valve"),
+    ChannelSpec("valve_lox",     "pct",    "LOX main valve position",              100.0,  0.3,  0.78,  "valve"),
+    ChannelSpec("vib_chamber",   "g_rms",  "combustion-chamber vibration",           3.5,  0.4,  1.05,  "combustion"),
+    ChannelSpec("strain_nozzle", "ustrain","nozzle throat hoop strain",            450.0,  7.0,  0.78,  "combustion"),
+    ChannelSpec("acc_gimbal_x",  "g",      "gimbal actuator x-axis acceleration",    0.05,  0.08, 1.0,   "gimbal"),
+    ChannelSpec("acc_gimbal_y",  "g",      "gimbal actuator y-axis acceleration",    0.04,  0.07, 1.0,   "gimbal"),
 ]
 
 CHANNEL_BY_NAME = {c.name: c for c in CHANNELS}
@@ -102,16 +128,73 @@ def _phase_at(t: float) -> str:
 def _baseline_envelope(spec: ChannelSpec, t: np.ndarray) -> np.ndarray:
     """A smooth envelope that follows the canonical 7-phase burn shape.
 
-    Resting (precool) is ~0 for active sensors (pressures, flows, vibration,
-    pump RPM, chamber temperature) and approximately ambient (300 K) for
-    thermal channels. Ramp_up is a smooth tanh climb to the steady-state
-    target; throttle is a multiplicative dip; shutdown is a smooth fall to
-    near-zero (or ambient). Purge is residual / decaying.
+    Profile dispatch:
+      - "combustion" (default): resting ~0 for active sensors, ~300 K for
+        thermal channels; tanh ramp_up; throttle dip; smooth shutdown.
+      - "tank": pre-pressurised (0.85 * steady at rest); gentle monotone
+        decrease from steady at ignition to 0.97 * steady at purge end.
+      - "valve": resting at 0; linear ignition open 0→20%; tanh ramp 20→100%;
+        steady_state at 100%; throttle at throttle_factor; linear shutdown to 0;
+        purge decays to 0.
+      - "gimbal": near-zero throughout; small sinusoidal flutter during
+        ramp_up and steady_state phases.
     """
     out = np.zeros_like(t)
+
+    if spec.profile == "valve":
+        out[:] = 0.0
+        for name, lo, hi in PHASES:
+            m = (t >= lo) & (t < hi)
+            if not np.any(m):
+                continue
+            tt = t[m]
+            frac = (tt - lo) / max(hi - lo, 1e-9)
+            if name == "precool":
+                out[m] = 0.0
+            elif name == "ignition":
+                # linear 0 → 20%
+                out[m] = frac * 20.0
+            elif name == "ramp_up":
+                # tanh-shaped smooth rise from 20% → 100%
+                shaped = 0.20 + 0.80 * (np.tanh(4.0 * (frac - 0.4)) * 0.5 + 0.5)
+                out[m] = shaped * spec.steady
+            elif name == "steady_state":
+                out[m] = spec.steady
+            elif name == "throttle":
+                out[m] = spec.steady * spec.throttle_factor
+            elif name == "shutdown":
+                start_val = spec.steady * spec.throttle_factor
+                out[m] = start_val + frac * (0.0 - start_val)
+            elif name == "purge":
+                out[m] = 5.0 * np.exp(-3.0 * frac)
+        return out
+
+    if spec.profile == "tank":
+        rest = spec.steady * 0.85
+        out[:] = rest
+        # Burn spans ignition start (t=2) to purge end (t=30): 28 s linear drop.
+        burn_start = PHASES[1][1]   # ignition lo = 2.0
+        burn_end   = PHASES[-1][2]  # purge hi  = 30.0
+        span = burn_end - burn_start
+        # Pre-burn: pre-pressurised rest.
+        pre_mask = t < burn_start
+        out[pre_mask] = rest
+        # Burn window: gentle linear decrease from steady → 0.97 * steady.
+        burn_mask = t >= burn_start
+        burn_frac = (t[burn_mask] - burn_start) / span
+        out[burn_mask] = spec.steady - (spec.steady - spec.steady * 0.97) * burn_frac
+        return out
+
+    if spec.profile == "gimbal":
+        out[:] = 0.0
+        # Small sinusoidal flutter during ramp_up and steady_state.
+        flutter_mask = (t >= PHASES[2][1]) & (t < PHASES[3][2])  # [3,22)
+        out[flutter_mask] = 0.02 * np.sin(2.0 * np.pi * 0.8 * t[flutter_mask])
+        return out
+
+    # --- "combustion" profile (existing logic, unchanged) ---
     is_thermal = spec.unit == "K"
     rest = 300.0 if is_thermal else 0.0
-    # Default to rest baseline, then overwrite per phase.
     out[:] = rest
     for name, lo, hi in PHASES:
         m = (t >= lo) & (t < hi)
@@ -192,8 +275,12 @@ def _generate_channel(
     if spec.name == "vib_fuel_pump" and run_idx == 6:
         # Slightly tighter envelope: cap noise and trim baseline slightly.
         val = base * 0.95 + rng.normal(0.0, spec.noise_sigma * 0.6, size=t.shape)
-    # Clip pressures and flows to non-negative
+    # Clip by unit
     if spec.unit in ("bar", "kg/s", "rpm", "g_rms"):
+        val = np.clip(val, 0.0, None)
+    if spec.unit == "pct":
+        val = np.clip(val, 0.0, 100.0)
+    if spec.unit == "kN":
         val = np.clip(val, 0.0, None)
     return t, val
 
@@ -239,17 +326,33 @@ def _write_runlog(path: Path, run_idx: int) -> None:
         5: "Hold day. Bearing teardown / replacement / re-balance. No fire.",
         6: "Re-test post bearing replacement. Fuel-pump vibration nominal across the full burn (peak ~3.6 g rms ramp_up, <2.4 g steady_state).",
         7: "Confirmation fire. Steady envelopes match TR-001/TR-002. Campaign complete.",
+        8:  "Phase 2 commissioning fire. All sensors nominal. Baseline re-established after Phase 1.",
+        9:  "Mixture ratio sweep — LOX/LCH4 o/f ratio stepped to 3.6 during steady_state throttle point.",
+        10: "Throttle-deep test — minimum throttle point sustained 6 s at 40% thrust. Stable combustion.",
+        11: "New LOX batch LOX-2024-04 validated. All channels nominal, pressures within 0.5% of Phase 1 baseline.",
+        12: "Hold day. Pre-certification inspection: nozzle throat survey, injector dye-penetrant check. No anomalies.",
+        13: "Pre-certification reference fire. All channels within Phase 1 envelope. Cleared for qualification.",
+        14: "Qualification fire 1. Full test matrix executed. Strain gauges and gimbal nominal throughout.",
+        15: "Qualification fire 2 — repeat confirmation. Campaign complete. All channels within spec.",
     }
     weather = {
-        1: {"temp_c": 24, "wind_kmh": 6, "humidity_pct": 52, "cloud": "FEW"},
-        2: {"temp_c": 22, "wind_kmh": 9, "humidity_pct": 60, "cloud": "SCT"},
-        3: {"temp_c": 26, "wind_kmh": 4, "humidity_pct": 48, "cloud": "FEW"},
-        4: {"temp_c": 28, "wind_kmh": 7, "humidity_pct": 41, "cloud": "FEW"},
-        5: {"temp_c": 30, "wind_kmh": 11,"humidity_pct": 38, "cloud": "BKN"},
-        6: {"temp_c": 25, "wind_kmh": 5, "humidity_pct": 55, "cloud": "SCT"},
-        7: {"temp_c": 23, "wind_kmh": 8, "humidity_pct": 58, "cloud": "OVC"},
+        1:  {"temp_c": 24, "wind_kmh": 6,  "humidity_pct": 52, "cloud": "FEW"},
+        2:  {"temp_c": 22, "wind_kmh": 9,  "humidity_pct": 60, "cloud": "SCT"},
+        3:  {"temp_c": 26, "wind_kmh": 4,  "humidity_pct": 48, "cloud": "FEW"},
+        4:  {"temp_c": 28, "wind_kmh": 7,  "humidity_pct": 41, "cloud": "FEW"},
+        5:  {"temp_c": 30, "wind_kmh": 11, "humidity_pct": 38, "cloud": "BKN"},
+        6:  {"temp_c": 25, "wind_kmh": 5,  "humidity_pct": 55, "cloud": "SCT"},
+        7:  {"temp_c": 23, "wind_kmh": 8,  "humidity_pct": 58, "cloud": "OVC"},
+        8:  {"temp_c": 21, "wind_kmh": 7,  "humidity_pct": 63, "cloud": "OVC"},
+        9:  {"temp_c": 19, "wind_kmh": 12, "humidity_pct": 71, "cloud": "BKN"},
+        10: {"temp_c": 22, "wind_kmh": 5,  "humidity_pct": 58, "cloud": "FEW"},
+        11: {"temp_c": 24, "wind_kmh": 9,  "humidity_pct": 50, "cloud": "SCT"},
+        12: {"temp_c": 26, "wind_kmh": 6,  "humidity_pct": 44, "cloud": "FEW"},
+        13: {"temp_c": 25, "wind_kmh": 8,  "humidity_pct": 47, "cloud": "SCT"},
+        14: {"temp_c": 23, "wind_kmh": 10, "humidity_pct": 53, "cloud": "OVC"},
+        15: {"temp_c": 20, "wind_kmh": 7,  "humidity_pct": 67, "cloud": "BKN"},
     }
-    if run_idx == 5:
+    if run_idx in {5, 12}:
         igniter = None
         is_fired = False
     else:
@@ -320,13 +423,16 @@ SCHEMA: dict = {
 
 
 def _write_test_report(path: Path, run_idx: int) -> None:
-    fired_block = (
-        "**Fired:** yes\n\n"
-        f"Burn duration: {DURATION_S} s. Phases executed: precool / ignition / "
-        "ramp_up / steady_state / throttle / shutdown / purge.\n"
-    )
     if run_idx == 5:
         fired_block = "**Fired:** no — hold day for bearing teardown.\n"
+    elif run_idx == 12:
+        fired_block = "**Fired:** no — hold day for pre-certification inspection.\n"
+    else:
+        fired_block = (
+            "**Fired:** yes\n\n"
+            f"Burn duration: {DURATION_S} s. Phases executed: precool / ignition / "
+            "ramp_up / steady_state / throttle / shutdown / purge.\n"
+        )
     extra = ""
     if run_idx == 4:
         extra = (
@@ -342,6 +448,58 @@ def _write_test_report(path: Path, run_idx: int) -> None:
             "Post-bearing-replacement re-fire. `vib_fuel_pump` nominal across "
             "the full burn (peak ~3.6 g rms ramp_up; ≤ 2.4 g rms steady_state). "
             "Bearing replacement deemed effective.\n"
+        )
+    if run_idx == 8:
+        extra = (
+            "\n## Phase 2 commissioning\n\n"
+            "Phase 2 campaign opened with a full reference fire. All 25 channels "
+            "nominal. Baseline re-established and compared to Phase 1 envelope; "
+            "no statistically significant drift observed.\n"
+        )
+    if run_idx == 9:
+        extra = (
+            "\n## Mixture ratio sweep\n\n"
+            "LOX/LCH4 o/f ratio stepped from 3.4 to 3.6 during the steady_state "
+            "throttle point. `mdot_lox` increased ~5%; combustion chamber pressure "
+            "and temperature responded within expected bounds.\n"
+        )
+    if run_idx == 10:
+        extra = (
+            "\n## Deep-throttle test\n\n"
+            "Minimum throttle point (40% thrust) sustained for 6 s during the "
+            "throttle phase. Combustion remained stable throughout; no oscillation "
+            "detected on `pc_chamber` or `vib_chamber`.\n"
+        )
+    if run_idx == 11:
+        extra = (
+            "\n## New LOX batch validation\n\n"
+            "LOX batch LOX-2024-04 introduced. Injector manifold pressures and "
+            "mass flow ratios all within 0.5% of Phase 1 baseline.\n"
+        )
+    if run_idx == 12:
+        extra = (
+            "\n## Inspection findings\n\n"
+            "Nozzle throat survey: throat diameter within drawing tolerance. "
+            "Injector face dye-penetrant inspection: no indications. Cleared "
+            "for pre-certification reference fire TR-013.\n"
+        )
+    if run_idx == 13:
+        extra = (
+            "\n## Pre-certification clearance\n\n"
+            "All channels within Phase 1 envelope. Strain gauges and gimbal "
+            "accelerometers nominal. Engine cleared for qualification firing.\n"
+        )
+    if run_idx == 14:
+        extra = (
+            "\n## Qualification fire 1\n\n"
+            "Full qualification test matrix executed. `strain_nozzle` and "
+            "`acc_gimbal_x`/`acc_gimbal_y` nominal throughout. No anomalies.\n"
+        )
+    if run_idx == 15:
+        extra = (
+            "\n## Qualification fire 2 — campaign close\n\n"
+            "Repeat confirmation of qualification fire. All 25 channels within "
+            "spec. Campaign formally complete.\n"
         )
     body = (
         f"# TR-{run_idx:03d} test report (synthetic)\n\n"
@@ -416,8 +574,8 @@ def generate(out_dir: Path) -> dict:
 
     for run_idx in range(1, N_RUNS + 1):
         run_t0_ns = _run_t0_ns(run_idx)
-        # Skip TR-005 timeseries (hold day, no fire)
-        is_fired = run_idx != 5
+        # Skip TR-005 (bearing teardown) and TR-012 (pre-certification inspection)
+        is_fired = run_idx not in {5, 12}
         run_record = {
             "test_run_id": f"TR-{run_idx:03d}",
             "is_fired": is_fired,
