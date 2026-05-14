@@ -71,6 +71,13 @@
   </properties>
   <dependencyManagement>
     <dependencies>
+      <!-- Override postgresql JDBC driver ahead of the Quarkus BOM to address
+           CVEs in 42.7.7 (CVE-2026-42198 et al) fixed in 42.7.11. -->
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>42.7.11</version>
+      </dependency>
       <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
