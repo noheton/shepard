@@ -323,6 +323,7 @@ namespace; core enforces the shape.
 | **Playwright screenshot pipeline** capturing against a CI-booted compose stack, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
 | Task-shaped help pages (upload-data / share-collection / export-rocrate / process-step) for casual users | none | TBD | 📐 (queued, D1c) | `aidocs/49 §2.2` |
 | Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
+| **Comprehensive deployment docs** — structured `docs/reference/deployment*.md` tree (front door + eleven specialised runbooks: checklist / sizing / OIDC / storage / secrets / backup / monitoring / upgrade / TLS / troubleshooting + DX5a-stub quickstart). Cross-links to `aidocs/34` upgrade ledger, `aidocs/45` storage design, `aidocs/51` instance-admin, `aidocs/22` admin-CLI, `aidocs/35` HDF5. Surfaces via the public Pages site today; will surface in the in-app `/help` route once D1a ships. | none | shipped | **✓ ↑** | DOC-DEPLOY (this PR) / `aidocs/16` DOC-DEPLOY / `aidocs/34` DOC-DEPLOY row |
 
 ## 16a. Experiment orchestration
 

@@ -146,12 +146,16 @@ deep-dives:
 | Configuration / preferences | `docs/reference/preferences.md` |
 | Admin CLI *(L1 Phase 1, shipped)* | `docs/reference/admin-cli.md` |
 | Unhide publish plugin *(UH1a, shipped)* | `docs/reference/unhide-publish.md` |
+| **Deploying shepard *(DOC-DEPLOY, shipped)*** — operator-facing **deployment** subtree: front-door `docs/reference/deployment.md` plus eleven specialised runbooks (`deployment-{quickstart,checklist,sizing,oidc,storage,secrets,backup,monitoring,upgrade,tls,troubleshooting}.md`). Different audience from the per-primitive Track-B pages above (operator vs end-user) but shipped under the same `docs/reference/` permalink shelf so D1a's `/help` route picks them up by the same bundling mechanism. `docs/_config.yml` grows a `deployment_nav` block so the public Pages site (and, post-D1a, the in-app `/help` sidebar) renders the eleven pages as a sub-tree under the `deployment.md` front-door. | `docs/reference/deployment.md` (+ eleven `deployment-*.md` files) |
 
 Existing `user-guide.md` becomes the **bridge index** that links
 into both tracks; `getting-started.md` stays the API-quickstart
 flavour for power users; `architecture.md` / `system-requirements.md`
-/ `admin.md` / `deploy*.md` stay where they are (admin/operator
-audience, untouched).
+stay where they are. `admin.md` is reshaped by DOC-DEPLOY into
+**day-2 operations** with a top-of-page pointer to the new
+`deployment.md` front-door for first-time deployers. The legacy
+`deploy.md` (hosting-option comparison matrix) stays — it sits
+adjacent to the new `deployment.md` and is cross-linked from it.
 
 **Track-A pages always link to track-B for depth.** Track-B
 pages always link back to track-A "common tasks." A casual user

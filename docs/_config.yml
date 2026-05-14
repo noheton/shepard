@@ -39,13 +39,46 @@ nav:
     url: /getting-started
   - title: User guide
     url: /user-guide
+  - title: Deploying
+    url: /reference/deployment
   - title: Admin
     url: /admin
   - title: System requirements
     url: /system-requirements
 
+# Sub-navigation for the deployment section, surfaced as a tree by
+# the in-app /help route (D1a) and by the public Pages site sidebar.
+# Order is operational: front-door, then specialised runbooks in
+# rough order of "things you think about when standing up an
+# instance" (per docs/reference/deployment.md).
+deployment_nav:
+  - title: Deploying shepard
+    url: /reference/deployment
+  - title: "Quickstart: local demo"
+    url: /reference/deployment-quickstart
+  - title: Pre-flight checklist
+    url: /reference/deployment-checklist
+  - title: Sizing recommendations
+    url: /reference/deployment-sizing
+  - title: OIDC / authentication
+    url: /reference/deployment-oidc
+  - title: Storage backends
+    url: /reference/deployment-storage
+  - title: Secrets management
+    url: /reference/deployment-secrets
+  - title: Backup + restore
+    url: /reference/deployment-backup
+  - title: Monitoring + observability
+    url: /reference/deployment-monitoring
+  - title: Upgrade path
+    url: /reference/deployment-upgrade
+  - title: TLS + reverse proxy
+    url: /reference/deployment-tls
+  - title: Troubleshooting
+    url: /reference/deployment-troubleshooting
+
 # Snapshot date — bump when content is refreshed.
-snapshot_date: 2026-05-07
+snapshot_date: 2026-05-14
 
 exclude:
   - README.md
