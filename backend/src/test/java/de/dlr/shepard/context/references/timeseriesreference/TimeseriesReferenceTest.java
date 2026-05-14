@@ -10,6 +10,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.timeseriesreference.model.ReferencedTimeseriesNodeEntity;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -29,6 +30,7 @@ public class TimeseriesReferenceTest extends BaseTestCase {
       .withPrefabValues(UserGroup.class, new UserGroup(1L), new UserGroup(2L))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
       .withPrefabValues(Permissions.class, new Permissions(1L), new Permissions(2L))
+      .withPrefabValues(TimeseriesAnnotation.class, new TimeseriesAnnotation(1L), new TimeseriesAnnotation(2L))
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
       .withIgnoredFields("appId")
       .verify();

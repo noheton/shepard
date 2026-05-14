@@ -75,7 +75,7 @@ public class TimeseriesReference extends BasicReference {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(end, start, referencedTimeseriesList, qualityScore, lastScoredAt);
+    result = prime * result + Objects.hash(end, start, referencedTimeseriesList, qualityScore, lastScoredAt, timeseriesAnnotations);
     result = prime * result + HasId.hashcodeHelper(timeseriesContainer);
     return result;
   }
@@ -92,6 +92,7 @@ public class TimeseriesReference extends BasicReference {
       Objects.equals(qualityScore, other.qualityScore) &&
       Objects.equals(lastScoredAt, other.lastScoredAt) &&
       Objects.equals(referencedTimeseriesList, other.referencedTimeseriesList) &&
+      Objects.equals(timeseriesAnnotations, other.timeseriesAnnotations) &&
       HasId.equalsHelper(timeseriesContainer, other.timeseriesContainer)
     );
   }
