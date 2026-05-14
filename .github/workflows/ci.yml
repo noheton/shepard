@@ -80,20 +80,20 @@ jobs:
         working-directory: cli
         run: mvn -B -DnoPlugins -DskipTests install
 
-      - name: Install unhide plugin
-        working-directory: plugins/unhide
-        run: mvn -B -DskipTests install
-
-      - name: Install kip plugin
-        working-directory: plugins/kip
-        run: mvn -B -DskipTests install
-
       - name: Install minter-local plugin
         working-directory: plugins/minter-local
         run: mvn -B -DskipTests install
 
       - name: Install minter-datacite plugin
         working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
         run: mvn -B -DskipTests install
 
       - name: Plugin unit tests (kip)
@@ -158,20 +158,20 @@ jobs:
         working-directory: cli
         run: mvn -B -DnoPlugins -DskipTests install
 
-      - name: Install unhide plugin
-        working-directory: plugins/unhide
-        run: mvn -B -DskipTests install
-
-      - name: Install kip plugin
-        working-directory: plugins/kip
-        run: mvn -B -DskipTests install
-
       - name: Install minter-local plugin
         working-directory: plugins/minter-local
         run: mvn -B -DskipTests install
 
       - name: Install minter-datacite plugin
         working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
         run: mvn -B -DskipTests install
 
       - name: SpotBugs + findsecbugs (fail on High-confidence findings)
@@ -215,20 +215,20 @@ jobs:
         working-directory: cli
         run: mvn -B -DnoPlugins -DskipTests install
 
-      - name: Install unhide plugin
-        working-directory: plugins/unhide
-        run: mvn -B -DskipTests install
-
-      - name: Install kip plugin
-        working-directory: plugins/kip
-        run: mvn -B -DskipTests install
-
       - name: Install minter-local plugin
         working-directory: plugins/minter-local
         run: mvn -B -DskipTests install
 
       - name: Install minter-datacite plugin
         working-directory: plugins/minter-datacite
+        run: mvn -B -DskipTests install
+
+      - name: Install unhide plugin
+        working-directory: plugins/unhide
+        run: mvn -B -DskipTests install
+
+      - name: Install kip plugin
+        working-directory: plugins/kip
         run: mvn -B -DskipTests install
 
       - name: Build Quarkus app (tests already passed in unit-tests job)
