@@ -12,6 +12,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -32,6 +35,11 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 /**
  * FS1b — S3-compatible {@link FileStorage} adapter. Implements the
@@ -42,10 +50,11 @@ import software.amazon.awssdk.core.ResponseInputStream;
  * compose profile is <b>Garage</b> per ADR-0024.
  *
  * <p><b>Locator format.</b> The opaque locator string returned by
- * {@link #put} is {@code "<bucket>/<containerOid>/<uuid>"} where
- * {@code uuid} is a fresh random key per upload. Storing the bucket
- * name in the locator keeps old rows self-describing even if the
- * operator later changes {@code shepard.files.s3.bucket}.
+ * {@link #put} is {@code "<containerMongoId>/<uuid>"} where
+ * {@code uuid} is a fresh random key per upload. The bucket is
+ * read from {@code shepard.files.s3.bucket} at runtime and is
+ * not stored in the locator (bucket is a deploy-time topology
+ * knob; changing it requires a FS1e migration sweep anyway).
  *
  * <p><b>Deploy-time config</b> (cluster-identity exception per
  * {@code CLAUDE.md} — switching the storage endpoint mid-deploy
@@ -94,6 +103,7 @@ public class S3FileStorage implements FileStorage {
   boolean pathStyleAccess;
 
   private volatile S3Client s3;
+  private volatile S3Presigner presigner;
   private volatile boolean enabled;
 
   @PostConstruct
@@ -107,26 +117,36 @@ public class S3FileStorage implements FileStorage {
       return;
     }
 
+    String resolvedRegion = (region == null || region.isBlank()) ? "us-east-1" : region.trim();
     S3ClientBuilder builder = S3Client.builder()
       .httpClientBuilder(UrlConnectionHttpClient.builder())
-      .region(Region.of(region == null || region.isBlank() ? "us-east-1" : region.trim()))
+      .region(Region.of(resolvedRegion))
+      .serviceConfiguration(S3Configuration.builder()
+        .pathStyleAccessEnabled(pathStyleAccess)
+        .build());
+
+    S3Presigner.Builder presignerBuilder = S3Presigner.builder()
+      .region(Region.of(resolvedRegion))
       .serviceConfiguration(S3Configuration.builder()
         .pathStyleAccessEnabled(pathStyleAccess)
         .build());
 
     if (endpoint != null && !endpoint.isBlank()) {
-      builder.endpointOverride(URI.create(endpoint.trim()));
+      URI endpointUri = URI.create(endpoint.trim());
+      builder.endpointOverride(endpointUri);
+      presignerBuilder.endpointOverride(endpointUri);
     }
 
     if (accessKeyId != null && !accessKeyId.isBlank() && secretAccessKey != null && !secretAccessKey.isBlank()) {
-      builder.credentialsProvider(
-        StaticCredentialsProvider.create(
-          AwsBasicCredentials.create(accessKeyId.trim(), secretAccessKey.trim())
-        )
+      StaticCredentialsProvider creds = StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(accessKeyId.trim(), secretAccessKey.trim())
       );
+      builder.credentialsProvider(creds);
+      presignerBuilder.credentialsProvider(creds);
     }
 
     this.s3 = builder.build();
+    this.presigner = presignerBuilder.build();
     ensureBucketExists();
     this.enabled = true;
 
@@ -171,8 +191,8 @@ public class S3FileStorage implements FileStorage {
   @Override
   public StorageLocator put(StoragePutRequest request) throws StorageException {
     requireEnabled();
-    String key = request.container() + "/" + UUID.randomUUID();
-    String locatorValue = bucket + "/" + key;
+    String uuid = UUID.randomUUID().toString();
+    String key = request.container() + "/" + uuid;
 
     PutObjectRequest.Builder reqBuilder = PutObjectRequest.builder()
       .bucket(bucket)
@@ -199,18 +219,18 @@ public class S3FileStorage implements FileStorage {
       throw new StorageException("S3 put failed for key '" + key + "': " + e.awsErrorDetails().errorMessage(), e);
     }
 
-    return new StorageLocator(ID, locatorValue);
+    return new StorageLocator(ID, key);
   }
 
   @Override
   public StorageGetResponse get(StorageLocator locator) throws StorageException {
     requireEnabled();
     requireS3Locator(locator);
-    LocatorParts parts = splitLocator(locator);
+    String key = locator.locator();
 
     GetObjectRequest request = GetObjectRequest.builder()
-      .bucket(parts.bucket())
-      .key(parts.key())
+      .bucket(bucket)
+      .key(key)
       .build();
 
     try {
@@ -218,7 +238,7 @@ public class S3FileStorage implements FileStorage {
       GetObjectResponse meta = response.response();
       return new StorageGetResponse(
         ID,
-        extractFileName(meta.contentDisposition(), parts.key()),
+        extractFileName(meta.contentDisposition(), key),
         meta.contentType(),
         meta.contentLength() > 0 ? meta.contentLength() : null,
         response
@@ -240,12 +260,12 @@ public class S3FileStorage implements FileStorage {
   public void delete(StorageLocator locator) throws StorageException {
     requireEnabled();
     requireS3Locator(locator);
-    LocatorParts parts = splitLocator(locator);
+    String key = locator.locator();
 
     try {
       s3.deleteObject(DeleteObjectRequest.builder()
-        .bucket(parts.bucket())
-        .key(parts.key())
+        .bucket(bucket)
+        .key(key)
         .build());
     } catch (NoSuchKeyException e) {
       // Idempotent contract: missing key is a no-op.
@@ -254,6 +274,68 @@ public class S3FileStorage implements FileStorage {
         "S3 delete failed for '" + locator.locator() + "': " + e.awsErrorDetails().errorMessage(),
         e
       );
+    }
+  }
+
+  /**
+   * FS1c — returns a presigned PUT URL so clients can upload directly
+   * to S3 without routing bytes through the shepard backend.
+   *
+   * <p>The assigned object key is {@code containerMongoId/uuid}; this
+   * is the locator value that will be stored once the client confirms
+   * the upload via the commit endpoint.
+   */
+  @Override
+  public Optional<PresignedPut> presignedUploadUrl(String containerMongoId, String fileName, Duration ttl)
+      throws StorageException {
+    requireEnabled();
+    String uuid = UUID.randomUUID().toString();
+    String key = containerMongoId + "/" + uuid;
+
+    PutObjectPresignRequest presignReq = PutObjectPresignRequest.builder()
+      .signatureDuration(ttl)
+      .putObjectRequest(r -> r
+        .bucket(bucket)
+        .key(key)
+        .contentDisposition("attachment; filename=\"" + fileName + "\""))
+      .build();
+
+    try {
+      PresignedPutObjectRequest presigned = presigner.presignPutObject(presignReq);
+      return Optional.of(new PresignedPut(
+        presigned.url().toURI(),
+        uuid,
+        Instant.now().plus(ttl)
+      ));
+    } catch (Exception e) {
+      throw new StorageException("S3 presign PUT failed for key '" + key + "': " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * FS1c — returns a presigned GET URL so clients can download
+   * directly from S3 without streaming bytes through the backend.
+   */
+  @Override
+  public Optional<URI> presignedDownloadUrl(StorageLocator locator, String fileName, Duration ttl)
+      throws StorageException {
+    requireEnabled();
+    requireS3Locator(locator);
+    String key = locator.locator();
+
+    GetObjectPresignRequest presignReq = GetObjectPresignRequest.builder()
+      .signatureDuration(ttl)
+      .getObjectRequest(r -> r
+        .bucket(bucket)
+        .key(key)
+        .responseContentDisposition("attachment; filename=\"" + (fileName != null ? fileName : key) + "\""))
+      .build();
+
+    try {
+      PresignedGetObjectRequest presigned = presigner.presignGetObject(presignReq);
+      return Optional.of(presigned.url().toURI());
+    } catch (Exception e) {
+      throw new StorageException("S3 presign GET failed for key '" + key + "': " + e.getMessage(), e);
     }
   }
 
@@ -274,17 +356,6 @@ public class S3FileStorage implements FileStorage {
     }
   }
 
-  static LocatorParts splitLocator(StorageLocator locator) throws StorageException {
-    String raw = locator.locator();
-    int firstSlash = raw.indexOf('/');
-    if (firstSlash <= 0 || firstSlash >= raw.length() - 1) {
-      throw new StorageException(
-        "Malformed S3 locator '" + raw + "' — expected '<bucket>/<key>'"
-      );
-    }
-    return new LocatorParts(raw.substring(0, firstSlash), raw.substring(firstSlash + 1));
-  }
-
   private static String extractFileName(String contentDisposition, String fallbackKey) {
     if (contentDisposition != null) {
       int idx = contentDisposition.indexOf("filename=");
@@ -301,6 +372,4 @@ public class S3FileStorage implements FileStorage {
       ? fallbackKey.substring(lastSlash + 1)
       : fallbackKey;
   }
-
-  record LocatorParts(String bucket, String key) {}
 }

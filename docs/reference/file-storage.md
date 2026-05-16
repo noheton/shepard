@@ -32,12 +32,12 @@ files), all-in-one Compose stacks, air-gapped installs, anyone
 who values "5-minute setup". The GridFS adapter is **not** a
 deprecation path — it stays first-class supported indefinitely.
 
-### `s3` (FS1b, planned)
+### `s3` (FS1b — shipped)
 
 S3-compatible adapter for any endpoint that speaks the S3 wire
 protocol — AWS S3, Cloudflare R2, Backblaze B2, Wasabi, Garage
 (per `aidocs/63` ADR-0024), SeaweedFS, Ceph RGW, MinIO. Plugin
-shape: `plugins/storage-s3/` produces a drop-in
+shape: `plugins/file-s3/` produces a drop-in
 `shepard-plugin-file-s3-<version>.jar`.
 
 **When to flip to it.** Multi-TB deployments, presigned-URL needs
@@ -45,8 +45,124 @@ shape: `plugins/storage-s3/` produces a drop-in
 cross-region replication, or anyone who already runs an
 S3-compatible service.
 
-Not shipped yet. Status tracked in `aidocs/16` FS1b row and
-`aidocs/44 §13a`.
+**Config keys** (all deploy-time only; set once in
+`application.properties`):
+
+| Key | Default | Notes |
+|---|---|---|
+| `shepard.files.s3.endpoint` | `""` (AWS S3) | Full URL — e.g. `http://garage:3900`. Omit for real AWS. |
+| `shepard.files.s3.region` | `us-east-1` | AWS region or Garage placement zone. |
+| `shepard.files.s3.access-key-id` | `""` | Access key ID. Falls back to AWS credential chain if blank. |
+| `shepard.files.s3.secret-access-key` | `""` | Secret access key. |
+| `shepard.files.s3.bucket` | `""` | Bucket name. Adapter is disabled when blank. |
+| `shepard.files.s3.path-style-access` | `true` | Required for Garage, MinIO, LocalStack. Set `false` for real AWS S3. |
+| `shepard.storage.provider` | `gridfs` | Set to `s3` to activate this adapter. |
+
+**Locator format.** Each S3 object is keyed as
+`<containerMongoId>/<uuid>`. The bucket name is read from
+`shepard.files.s3.bucket` at runtime and is not stored in the
+locator row.
+
+**Quick-start with Garage** (the recommended self-hosted endpoint):
+
+```bash
+# 1. Start the Garage sidecar (FS1d compose profile):
+docker compose --profile files-s3 up -d
+
+# 2. Initialize the cluster (one-time; from the compose comment):
+docker exec garage garage layout assign -z dc1 -c 1G <node-id>
+docker exec garage garage layout apply --version 1
+docker exec garage garage key create shepard-key
+# Note the access key + secret printed above.
+
+# 3. Set the credentials in application.properties:
+#    shepard.files.s3.endpoint=http://localhost:3900
+#    shepard.files.s3.access-key-id=<access-key>
+#    shepard.files.s3.secret-access-key=<secret>
+#    shepard.files.s3.bucket=shepard
+#    shepard.storage.provider=s3
+#    shepard.plugins.file-s3.enabled=true
+
+# 4. Restart shepard.
+```
+
+### Presigned URLs (FS1c — S3 only)
+
+When `shepard.storage.provider=s3`, clients can upload and
+download directly to/from S3 without routing bytes through the
+backend. Three new `/v2/` endpoints handle the presigned-URL flow:
+
+#### Upload flow
+
+```
+POST /v2/file-containers/{containerAppId}/upload-url
+Content-Type: application/json
+
+{"fileName": "sensor-data.csv", "contentType": "text/csv"}
+```
+
+Response:
+```json
+{
+  "uploadUrl": "https://storage.example.com/shepard/container123/uuid?X-Amz-...",
+  "oid": "550e8400-e29b-41d4-a716-446655440000",
+  "expiresAt": "2024-08-15T11:33:44Z"
+}
+```
+
+Then upload bytes directly to S3 (no auth headers needed — the
+signature is embedded in the URL):
+```bash
+curl -X PUT "<uploadUrl>" --data-binary @sensor-data.csv
+```
+
+Then commit (register the file in shepard):
+```
+POST /v2/file-containers/{containerAppId}/upload-url/commit
+Content-Type: application/json
+
+{"oid": "550e8400-...", "fileName": "sensor-data.csv", "fileSize": 204800}
+```
+
+Returns `201 Created` with the `ShepardFile` JSON.
+
+#### Download flow
+
+```
+GET /v2/file-containers/{containerAppId}/files/{oid}/download-url
+```
+
+Response:
+```json
+{
+  "downloadUrl": "https://storage.example.com/shepard/container123/uuid?X-Amz-...",
+  "expiresAt": "2024-08-15T11:23:44Z"
+}
+```
+
+Then download bytes directly:
+```bash
+curl -o sensor-data.csv "<downloadUrl>"
+```
+
+#### TTLs and auth
+
+Upload URLs expire in **15 minutes**; download URLs in **5
+minutes**. Both are single-use in the sense that after the TTL
+they cannot be used again — but multiple PUT requests against the
+same presigned PUT URL before expiry will succeed (S3 semantics;
+the last write wins). Auth requirements on the presigned-URL
+endpoints themselves match all other `/v2/` endpoints
+(authenticated + container Read for download-url, Write for
+upload-url and commit).
+
+#### GridFS fallback
+
+When `shepard.storage.provider=gridfs`, all three endpoints return
+`503 Service Unavailable` with a message directing the caller to
+the direct upload path (`POST /shepard/api/fileContainers/{id}/payload`).
+No code change needed — `GridFsFileStorage` inherits the SPI's
+`Optional.empty()` default and the service layer converts it to 503.
 
 ## Switching the active adapter
 
@@ -58,20 +174,19 @@ the FS1e migration sweep completes.
 
 ### Greenfield install (no existing files)
 
-1. Pick the adapter you want — `gridfs` (default) or `s3` (once
-   FS1b lands + you've installed the plugin).
+1. Pick the adapter you want — `gridfs` (default) or `s3` (install
+   `shepard-plugin-file-s3-<version>.jar` and configure
+   `shepard.files.s3.*`).
 2. Set `shepard.storage.provider=<id>` in `application.properties`
    (or env `SHEPARD_STORAGE_PROVIDER=<id>`).
 3. Start shepard. New uploads land on the chosen backend.
 
 ### Existing GridFS install moving to S3
 
-When FS1b ships, the recommended flow is:
-
-1. Install the S3 plugin under `/deployments/plugins/`.
-2. Configure the S3 endpoint + bucket + credentials per the
-   plugin's own admin runbook (per-feature `:S3Config` singleton,
-   admin REST + CLI parity per CLAUDE.md "admin-configurable").
+1. Copy `shepard-plugin-file-s3-<version>.jar` into
+   `/deployments/plugins/` and set `shepard.plugins.file-s3.enabled=true`.
+2. Configure the S3 endpoint + bucket + credentials
+   (`shepard.files.s3.*`).
 3. **Keep `shepard.storage.provider=gridfs`** — for now.
 4. When FS1e ships, run `shepard-admin files migrate gridfs s3`
    to copy existing payloads. Migration runs in background mode

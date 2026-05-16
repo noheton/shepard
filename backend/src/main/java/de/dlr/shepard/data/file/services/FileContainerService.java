@@ -20,7 +20,6 @@ import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StorageNotFoundException;
-import de.dlr.shepard.storage.StoragePutRequest;
 import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -29,7 +28,9 @@ import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ServiceUnavailableException;
 import java.io.InputStream;
+import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -173,10 +174,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     ShepardFile file = findEntityForRoutingOrNull(container, oid);
     String providerId = effectiveProviderId(file);
     FileStorage adapter = storageForRow(providerId);
-    StorageLocator locator = new StorageLocator(
-      providerId,
-      container.getMongoId() + GridFsFileStorage.LOCATOR_SEPARATOR + oid
-    );
+    StorageLocator locator = buildLocatorForRow(providerId, container.getMongoId(), oid);
     try {
       StorageGetResponse resp = adapter.get(locator);
       return new NamedInputStream(oid, resp.stream(), resp.fileName(), resp.sizeBytes());
@@ -245,18 +243,15 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       if (GridFsFileStorage.ID.equals(adapter.id())) {
         result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
       } else {
-        // Non-GridFS adapter — go through the SPI and pull the
-        // entity by oid post-write. FS1b will rework this branch.
-        StoragePutRequest req = new StoragePutRequest(
-          fileContainer.getMongoId(),
-          fileName,
-          null,
-          inputStream,
-          null
+        // Non-GridFS adapters require presigned upload URLs.
+        // Use POST /v2/file-containers/{containerAppId}/upload-url to
+        // obtain a presigned S3 URL, PUT bytes directly, then call
+        // POST .../upload-url/commit to register the file.
+        throw new ServiceUnavailableException(
+          "Direct upload is not supported for provider '" + adapter.id() +
+          "'. Use the presigned upload URL endpoint: " +
+          "POST /v2/file-containers/{containerAppId}/upload-url"
         );
-        StorageLocator locator = adapter.put(req);
-        String oid = locator.locator().substring(locator.locator().indexOf(GridFsFileStorage.LOCATOR_SEPARATOR) + 1);
-        result = fileService.getFile(fileContainer.getMongoId(), oid);
       }
       if (result != null) {
         result.setProviderId(adapter.id());
@@ -265,20 +260,6 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       // FileService throws JAX-RS NotFound for missing containers;
       // re-throw to preserve the upstream wire shape.
       throw nfe;
-    } catch (StorageNotFoundException snfe) {
-      Log.errorf(
-        "FileContainerService.createFile: storage 404 on container=%s — %s",
-        fileContainer.getMongoId(),
-        snfe.getMessage()
-      );
-      throw new NotFoundException(snfe.getMessage());
-    } catch (StorageException se) {
-      Log.errorf(
-        "FileContainerService.createFile: storage failure on container=%s — %s",
-        fileContainer.getMongoId(),
-        se.getMessage()
-      );
-      throw new ServiceUnavailableException("Storage provider '" + adapter.id() + "' failed: " + se.getMessage());
     }
 
     fileContainer.addFile(result);
@@ -305,10 +286,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     ShepardFile file = findEntityForRoutingOrNull(container, oid);
     String providerId = effectiveProviderId(file);
     FileStorage adapter = storageForRow(providerId);
-    StorageLocator locator = new StorageLocator(
-      providerId,
-      container.getMongoId() + GridFsFileStorage.LOCATOR_SEPARATOR + oid
-    );
+    StorageLocator locator = buildLocatorForRow(providerId, container.getMongoId(), oid);
     try {
       adapter.delete(locator);
     } catch (StorageNotFoundException snfe) {
@@ -335,6 +313,97 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     List<ShepardFile> newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
     container.setFiles(newFiles);
     fileContainerDAO.createOrUpdate(container);
+  }
+
+  /**
+   * FS1c — look up a FileContainer by its appId with a read-permission
+   * check. Used by the presigned-URL REST endpoints which address
+   * containers by appId rather than the legacy Neo4j long id.
+   *
+   * @throws InvalidPathException if no container with that appId exists
+   */
+  public FileContainer getContainerByAppId(String appId) {
+    FileContainer c = fileContainerDAO.findByAppId(appId)
+      .orElseThrow(() -> new InvalidPathException(
+        "FileContainer with appId '" + appId + "' not found"));
+    if (c.isDeleted()) {
+      throw new InvalidPathException("FileContainer '" + appId + "' is deleted");
+    }
+    assertIsAllowedToReadContainer(c.getId());
+    c.setCollectionList(c.getCollectionList().stream().filter(d -> !d.isDeleted()).toList());
+    return c;
+  }
+
+  /**
+   * FS1c — generate a presigned PUT URL so the caller can upload
+   * bytes directly to the storage backend.
+   *
+   * @throws ServiceUnavailableException if the active adapter does
+   *         not support presigned uploads
+   */
+  public FileStorage.PresignedPut presignedUploadUrl(long containerId, String fileName, Duration ttl)
+      throws StorageException {
+    FileContainer container = getContainer(containerId);
+    assertIsAllowedToEditContainer(containerId);
+    FileStorage adapter = fileStorageRegistry.requireActive();
+    return adapter.presignedUploadUrl(container.getMongoId(), fileName, ttl)
+      .orElseThrow(() -> new ServiceUnavailableException(
+        "Active storage provider '" + adapter.id() + "' does not support presigned upload URLs. " +
+        "Use the direct upload path instead."));
+  }
+
+  /**
+   * FS1c — register a file that was uploaded via presigned PUT.
+   * Creates the {@link ShepardFile} Neo4j entity and attaches it
+   * to the container. The caller is responsible for ensuring the
+   * object actually exists in the storage backend before calling
+   * this; a subsequent {@link #getFile} will surface a 404 if it
+   * doesn't.
+   */
+  public ShepardFile commitUpload(long containerId, String oid, String fileName, Long fileSize)
+      throws StorageException {
+    FileContainer container = getContainer(containerId);
+    assertIsAllowedToEditContainer(containerId);
+    FileStorage adapter = fileStorageRegistry.requireActive();
+
+    ShepardFile file = new ShepardFile(oid, dateHelper.getDate(), fileName, null);
+    file.setFileSize(fileSize);
+    file.setProviderId(adapter.id());
+
+    container.addFile(file);
+    fileContainerDAO.createOrUpdate(container);
+    return file;
+  }
+
+  /**
+   * FS1c — generate a presigned GET URL so the caller can download
+   * bytes directly from the storage backend.
+   *
+   * @throws ServiceUnavailableException if the adapter for this row
+   *         does not support presigned downloads
+   */
+  public URI presignedDownloadUrl(long containerId, String oid, Duration ttl) throws StorageException {
+    FileContainer container = getContainer(containerId);
+    ShepardFile file = findEntityForRoutingOrNull(container, oid);
+    String providerId = effectiveProviderId(file);
+    FileStorage adapter = storageForRow(providerId);
+    StorageLocator locator = buildLocatorForRow(providerId, container.getMongoId(), oid);
+    String fileName = file != null ? file.getFilename() : null;
+    return adapter.presignedDownloadUrl(locator, fileName, ttl)
+      .orElseThrow(() -> new ServiceUnavailableException(
+        "Storage provider '" + providerId + "' does not support presigned download URLs."));
+  }
+
+  /**
+   * Build the opaque locator value for a stored file row. GridFS
+   * uses the {@code ":"} separator; all other adapters use {@code "/"}
+   * to match their {@code containerMongoId/uuid} key format.
+   */
+  private static StorageLocator buildLocatorForRow(String providerId, String containerMongoId, String oid) {
+    if (GridFsFileStorage.ID.equals(providerId)) {
+      return new StorageLocator(providerId, containerMongoId + GridFsFileStorage.LOCATOR_SEPARATOR + oid);
+    }
+    return new StorageLocator(providerId, containerMongoId + "/" + oid);
   }
 
   /**

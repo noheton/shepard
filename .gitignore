@@ -114,3 +114,10 @@ caddy/data/
 # Backend signing keys + bootstrap token (generated at first start)
 backend/config/keys/
 .bootstrap-token
+
+# Local tool state (kilo editor, etc.)
+.kilo/
+
+# Python bytecode
+**/__pycache__/
+**/*.pyc

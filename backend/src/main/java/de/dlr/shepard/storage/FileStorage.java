@@ -1,5 +1,10 @@
 package de.dlr.shepard.storage;
 
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+
 /**
  * FS1a SPI seam — a {@code FileStorage} adapter persists file
  * payload bytes for shepard's file payload kind. Mirrors the
@@ -68,9 +73,9 @@ public interface FileStorage {
    * Store bytes; return an opaque locator the caller persists
    * alongside the payload metadata (filename, md5, size, …). The
    * locator format is provider-specific — GridFS uses
-   * {@code "<containerMongoId>:<fileOid>"}, S3 will use
-   * {@code "<bucket>/<key>"} — and is treated as opaque by the
-   * rest of shepard.
+   * {@code "<containerMongoId>:<fileOid>"}, S3 uses
+   * {@code "<containerMongoId>/<uuid>"} — and is treated as opaque
+   * by the rest of shepard.
    *
    * @throws StorageException with operator-readable message when
    *                          the storage tier rejects the upload
@@ -106,4 +111,52 @@ public interface FileStorage {
    * @throws StorageException for any other storage-tier failure.
    */
   void delete(StorageLocator locator) throws StorageException;
+
+  /**
+   * FS1c — optionally returns a presigned PUT URL so clients can
+   * upload directly to the storage backend without routing bytes
+   * through the shepard application tier.
+   *
+   * <p>Adapters that don't support presigned upload (e.g. GridFS)
+   * return {@code Optional.empty()}. The REST layer falls back to
+   * the direct-upload path in that case.
+   *
+   * @param containerMongoId the MongoDB ObjectId of the container
+   * @param fileName         original filename (stored as Content-Disposition)
+   * @param ttl              how long the URL should be valid
+   * @return a {@link PresignedPut} carrying the upload URL, the
+   *         assigned object id (UUID), and the expiry instant; or
+   *         {@link Optional#empty()} if not supported
+   */
+  default Optional<PresignedPut> presignedUploadUrl(String containerMongoId, String fileName, Duration ttl)
+      throws StorageException {
+    return Optional.empty();
+  }
+
+  /**
+   * FS1c — optionally returns a presigned GET URL so clients can
+   * download directly from the storage backend.
+   *
+   * <p>Adapters that don't support presigned download return
+   * {@code Optional.empty()}.
+   *
+   * @param locator  the storage locator returned by {@link #put}
+   * @param fileName original filename for Content-Disposition override
+   * @param ttl      how long the URL should be valid
+   * @return the presigned download URI, or {@link Optional#empty()}
+   */
+  default Optional<URI> presignedDownloadUrl(StorageLocator locator, String fileName, Duration ttl)
+      throws StorageException {
+    return Optional.empty();
+  }
+
+  /**
+   * FS1c — payload returned by {@link #presignedUploadUrl}.
+   *
+   * @param uploadUrl   presigned PUT URL the client sends bytes to
+   * @param assignedOid UUID assigned to this object (the oid that
+   *                    will be stored once the client commits)
+   * @param expiresAt   when the presigned URL expires
+   */
+  record PresignedPut(URI uploadUrl, String assignedOid, Instant expiresAt) {}
 }

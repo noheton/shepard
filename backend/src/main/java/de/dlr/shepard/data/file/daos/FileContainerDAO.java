@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RequestScoped
 public class FileContainerDAO extends GenericDAO<FileContainer> {
@@ -44,6 +45,13 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
 
   private boolean matchName(FileContainer container, String name) {
     return name == null || container.getName().equalsIgnoreCase(name);
+  }
+
+  public Optional<FileContainer> findByAppId(String appId) {
+    String query = "MATCH (c:FileContainer {appId: $appId}) " + CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? Optional.of(it.next()) : Optional.empty();
   }
 
   @Override

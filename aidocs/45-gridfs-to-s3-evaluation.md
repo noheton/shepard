@@ -264,11 +264,17 @@ endpoint shape stays unchanged.** The wire contract (POST /
 GET / DELETE) is identical regardless of backend. Two new
 **`/v2/`** endpoints added:
 
-- `POST /v2/files/{containerAppId}/upload-url` — returns a
-  presigned upload URL (only when storage = s3 or capable; 404 with
-  hint when GridFS).
-- `GET /v2/files/{appId}/download-url` — returns a presigned
-  download URL (same fallback).
+- `POST /v2/file-containers/{containerAppId}/upload-url` — returns a
+  presigned PUT URL + assigned oid (TTL 15 min). 503 with hint when GridFS.
+- `POST /v2/file-containers/{containerAppId}/upload-url/commit` — registers
+  `ShepardFile` in Neo4j after the client's S3 PUT completes. Returns 201.
+- `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` — returns
+  a presigned GET URL (TTL 5 min). 503 with hint when GridFS.
+
+Note: path was corrected from the original spec (`/v2/files/...`) to
+`/v2/file-containers/...` because `/v2/files` is owned by
+`FileReferenceV2Rest` (FR1b singleton reference, a different entity from
+the `FileContainer` payload kind).
 
 The legacy `/shepard/api/files/{...}/payload` paths keep proxying
 bytes regardless of backend — that's the upstream compatibility
@@ -358,7 +364,7 @@ up automatically when the operator configures it.
 |---|---|---|---|
 | **FS1a** | `FileStorage` interface + `GridFsFileStorage` extracted from `FileService` (pure refactor; behaviour-equivalent). Tests pin existing behaviour. **✓ shipped** — SPI seam lives at `de.dlr.shepard.storage.{FileStorage, FileStorageRegistry, StorageLocator, StoragePutRequest, StorageGetResponse, StorageException family, StorageNotInstalledException + Mapper}`; `GridFsFileStorage` is the in-core default adapter wrapping `FileService`; new `shepard.storage.provider=gridfs` deploy-time key (cluster-identity exception); V34 backfill stamps `providerId='gridfs'` on legacy `:ShepardFile` rows; `shepard-admin storage status` CLI verb shipped (read-only). The upstream `/shepard/api/...fileContainers/...` wire shape is byte-identical; only storage-tier failures get the new RFC 7807 envelopes (`storage.provider.not-installed` 503, `storage.payload.not-found` 404, `storage.provider.unavailable` 503). | M | None |
 | **FS1b** | `S3FileStorage` implementation using AWS SDK v2 + endpoint-override config (Garage by default per ADR-0024; any S3-compatible endpoint works — see §3a). **✓ shipped** (2026-05-16) — `plugins/file-s3/` Maven module; `S3FileStorage implements FileStorage` (id=`s3`); locator `<bucket>/<containerOid>/<uuid>`; path-style URLs default on; `FileS3PluginManifest` in plugin registry; config keys `shepard.files.s3.*`; `shepard.plugins.file-s3.enabled=false` default. 7 unit tests. Integration tests against Garage deferred (FS1b acceptance suite). | M | FS1a |
-| **FS1c** | Presigned-URL `/v2/` endpoints (`/files/{containerAppId}/upload-url`, `/files/{appId}/download-url`). Returns 404 when backend doesn't support presigned URLs. | S | FS1b |
+| **FS1c** | Presigned-URL `/v2/` endpoints at `/v2/file-containers/...`: `POST /{containerAppId}/upload-url` (→ presigned PUT URL + oid, 15-min TTL), `POST /{containerAppId}/upload-url/commit` (registers ShepardFile post-upload), `GET /{containerAppId}/files/{oid}/download-url` (→ presigned GET URL, 5-min TTL). Returns 503 for non-S3 adapters. FS1b locator fixup included: locator format `containerMongoId/uuid` (no bucket prefix). `FileStorage` SPI gains `presignedUploadUrl()` / `presignedDownloadUrl()` default methods + `PresignedPut` record. **Shipped 2026-05-16.** | S | FS1b |
 | **FS1d** | Object-store sidecar in `infrastructure/docker-compose.yml` under `files-s3` profile (off by default; mirrors `spatial`/`hdf` patterns). **Garage** image (`dxflrs/garage`) per ADR-0024. One-line operator switch. **✓ shipped** (2026-05-16) — `shepard-garage` service with `dxflrs/garage:v1.0.1`; port 3900; volume `./garage-data`; healthcheck on admin port 3903; operator init runbook in compose comment. | S | FS1b + `aidocs/22 §4.6a` profile-bound toggles |
 | **FS1e** | `shepard-admin files migrate` CLI command (big-bang and background-sweep modes), progress via P3 pattern. | M | FS1a + FS1b + `aidocs/22` |
 | **FS1f** | Frontend update — large-file uploads use the `/v2/upload-url` presigned path when available, fall back to backend-proxied. | M | FS1c + frontend changes |

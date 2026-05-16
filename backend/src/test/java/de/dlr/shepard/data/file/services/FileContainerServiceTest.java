@@ -3,7 +3,10 @@ package de.dlr.shepard.data.file.services;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,8 +23,15 @@ import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
+import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
+import jakarta.ws.rs.ServiceUnavailableException;
+import java.net.URI;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
@@ -550,5 +560,160 @@ public class FileContainerServiceTest {
     assertEquals("name", actual.getName());
     assertEquals(42L, actual.getSize());
     verify(fileService).getPayload("mongoId", "oid");
+  }
+
+  // ---------- FS1c: presigned-URL service methods ----------
+
+  @Test
+  public void getContainerByAppId_successful() {
+    FileContainer container = new FileContainer(5L);
+    container.setAppId("app-1");
+    when(dao.findByAppId("app-1")).thenReturn(Optional.of(container));
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(5L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    FileContainer actual = service.getContainerByAppId("app-1");
+    assertEquals(container, actual);
+  }
+
+  @Test
+  public void getContainerByAppId_notFound() {
+    when(dao.findByAppId("missing")).thenReturn(Optional.empty());
+    assertThrows(InvalidPathException.class, () -> service.getContainerByAppId("missing"));
+  }
+
+  @Test
+  public void getContainerByAppId_deleted() {
+    FileContainer container = new FileContainer(5L);
+    container.setDeleted(true);
+    when(dao.findByAppId("app-1")).thenReturn(Optional.of(container));
+    assertThrows(InvalidPathException.class, () -> service.getContainerByAppId("app-1"));
+  }
+
+  @Test
+  public void commitUpload_createsShepardFileWithCorrectFields() throws Exception {
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    Date now = new Date();
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(dateHelper.getDate()).thenReturn(now);
+
+    ShepardFile result = service.commitUpload(1L, "test-oid", "sensor.csv", 2048L);
+
+    assertEquals("test-oid", result.getOid());
+    assertEquals("sensor.csv", result.getFilename());
+    assertEquals(2048L, result.getFileSize());
+    assertEquals("gridfs", result.getProviderId());
+    verify(dao).createOrUpdate(any(FileContainer.class));
+  }
+
+  @Test
+  public void presignedUploadUrl_throwsServiceUnavailableWhenAdapterReturnsEmpty() throws Exception {
+    // GridFS (default adapter from @BeforeEach) returns Optional.empty() for
+    // presignedUploadUrl — service should surface ServiceUnavailableException.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    assertThrows(ServiceUnavailableException.class, () -> service.presignedUploadUrl(
+      1L, "file.csv", Duration.ofMinutes(15)
+    ));
+  }
+
+  @Test
+  public void presignedUploadUrl_returnsPutWhenAdapterProvides() throws Exception {
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+
+    URI uploadUrl = URI.create("https://storage.example.com/bucket/key?X-Amz=sig");
+    Instant expiry = Instant.now().plus(Duration.ofMinutes(15));
+    FileStorage.PresignedPut presignedPut = new FileStorage.PresignedPut(uploadUrl, "new-oid", expiry);
+
+    FileStorage mockAdapter = mock(FileStorage.class);
+    when(mockAdapter.id()).thenReturn("s3");
+    when(mockAdapter.presignedUploadUrl(eq("mongoId"), eq("file.csv"), any())).thenReturn(
+      Optional.of(presignedPut)
+    );
+    when(fileStorageRegistry.requireActive()).thenReturn(mockAdapter);
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    FileStorage.PresignedPut result = service.presignedUploadUrl(1L, "file.csv", Duration.ofMinutes(15));
+
+    assertEquals("new-oid", result.assignedOid());
+    assertEquals(uploadUrl, result.uploadUrl());
+  }
+
+  @Test
+  public void presignedDownloadUrl_throwsServiceUnavailableWhenAdapterReturnsEmpty() {
+    // GridFS (from @BeforeEach) returns Optional.empty() for presignedDownloadUrl.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    ShepardFile file = new ShepardFile("dl-oid", new Date(), "file.csv", "md5");
+    file.setProviderId("gridfs");
+    container.setFiles(List.of(file));
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    assertThrows(ServiceUnavailableException.class, () -> service.presignedDownloadUrl(
+      1L, "dl-oid", Duration.ofMinutes(5)
+    ));
+  }
+
+  @Test
+  public void presignedDownloadUrl_returnsUriWhenAdapterProvides() throws Exception {
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    ShepardFile file = new ShepardFile("dl-oid", new Date(), "file.csv", "md5");
+    file.setProviderId("s3");
+    container.setFiles(List.of(file));
+
+    URI downloadUrl = URI.create("https://storage.example.com/bucket/key?X-Amz=sig");
+
+    FileStorage mockAdapter = mock(FileStorage.class);
+    when(mockAdapter.id()).thenReturn("s3");
+    when(mockAdapter.isEnabled()).thenReturn(true);
+    when(mockAdapter.presignedDownloadUrl(any(), eq("file.csv"), any())).thenReturn(
+      Optional.of(downloadUrl)
+    );
+    when(fileStorageRegistry.list()).thenReturn(List.of(mockAdapter));
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername())).thenReturn(
+      true
+    );
+
+    URI result = service.presignedDownloadUrl(1L, "dl-oid", Duration.ofMinutes(5));
+    assertEquals(downloadUrl, result);
   }
 }
