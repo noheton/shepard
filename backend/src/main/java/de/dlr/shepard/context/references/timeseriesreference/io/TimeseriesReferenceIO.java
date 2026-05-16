@@ -52,6 +52,28 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
   @Schema(description = "Epoch millis of the last quality-score run. null = never scored. Read-only.")
   private Long lastScoredAt;
 
+  /**
+   * TM1 — how timestamps in the referenced timeseries relate to wall clock.
+   * "WALL_CLOCK": sample timestamps are already UTC nanoseconds (default).
+   * "EXPERIMENT_RELATIVE": sample timestamps are relative to t=0; convert via wallClockOffset.
+   * Null on pre-TM1a rows — treat as "WALL_CLOCK".
+   */
+  @Schema(description = "TM1: timestamp semantics. WALL_CLOCK (default) or EXPERIMENT_RELATIVE. null = legacy row, treat as WALL_CLOCK.")
+  private String timeReference;
+
+  /**
+   * TM1 — nanoseconds epoch (UTC) of the DAQ's t=0.
+   * Only meaningful when timeReference == "EXPERIMENT_RELATIVE".
+   */
+  @Schema(description = "TM1: UTC nanoseconds of experiment t=0. Only meaningful when timeReference=EXPERIMENT_RELATIVE.")
+  private Long wallClockOffset;
+
+  /**
+   * TM1 — free-text provenance tag for how wallClockOffset was determined.
+   */
+  @Schema(description = "TM1: provenance of wallClockOffset (e.g. manual, ffprobe, SA_sync, NTP_marker).")
+  private String wallClockOffsetSource;
+
   public TimeseriesReferenceIO(TimeseriesReference ref) {
     super(ref);
     this.start = ref.getStart();
@@ -60,5 +82,8 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
     this.timeseriesContainerId = ref.getTimeseriesContainer() != null ? ref.getTimeseriesContainer().getId() : -1;
     this.qualityScore = ref.getQualityScore();
     this.lastScoredAt = ref.getLastScoredAt();
+    this.timeReference = ref.getTimeReference();
+    this.wallClockOffset = ref.getWallClockOffset();
+    this.wallClockOffsetSource = ref.getWallClockOffsetSource();
   }
 }

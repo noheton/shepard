@@ -60,6 +60,35 @@ public class TimeseriesReferenceIOTest {
   }
 
   @Test
+  public void testConversion_timeReferenceFieldsMapped() {
+    var ref = new TimeseriesReference(1L);
+    ref.setShepardId(1L);
+    ref.setDataObject(new DataObject(2L));
+    ref.setReferencedTimeseriesList(List.of());
+    ref.setTimeReference("EXPERIMENT_RELATIVE");
+    ref.setWallClockOffset(1_000_000_000L);
+    ref.setWallClockOffsetSource("manual");
+
+    var io = new TimeseriesReferenceIO(ref);
+    assertEquals("EXPERIMENT_RELATIVE", io.getTimeReference());
+    assertEquals(1_000_000_000L, io.getWallClockOffset());
+    assertEquals("manual", io.getWallClockOffsetSource());
+  }
+
+  @Test
+  public void testConversion_timeReferenceFieldsNullWhenNotSet() {
+    var ref = new TimeseriesReference(1L);
+    ref.setShepardId(1L);
+    ref.setDataObject(new DataObject(2L));
+    ref.setReferencedTimeseriesList(List.of());
+
+    var io = new TimeseriesReferenceIO(ref);
+    assertEquals(null, io.getTimeReference());
+    assertEquals(null, io.getWallClockOffset());
+    assertEquals(null, io.getWallClockOffsetSource());
+  }
+
+  @Test
   public void testConversion_ContainerNull() {
     var date = new Date();
     var user = new User("bob");
