@@ -59,7 +59,7 @@ Status legend:
 | A4c | Permission cache warming on `StartupEvent` for top-N entities | 1684 | S | **done** | Follow-up from A4. Commit `a7167ff`. `PermissionsCacheWarmer` + `DefaultMostUsedEntityProvider`; config-gated (`shepard.permissions.cache.warm.enabled=false`); 3 tests passing. |
 | A4d | Enable Micrometer metrics on `permissions-service-cache` | — | S | **done** | Follow-up from A4. Commits `cf1e374` + `1a5ac81` (A4e). `quarkus.cache.caffeine."permissions-service-cache".metrics-enabled=true`; `PermissionsServiceCacheMetricsIT` Failsafe IT. |
 | P1 | Parallelize DB connection checks (CompletableFuture / virtual threads) | 1599–1644 | M | queued | Bundles with A1 |
-| P2 | Batch permission checks: `checkPermissionsBatch(List<Long>)` | 1672–1678 | S–M | queued | One Cypher query per request, not N |
+| P2 | Batch permission checks: `checkPermissionsBatch(List<Long>)` | 1672–1678 | S–M | **done** | `22f78b3`. `filterAllowedForUser` (single Cypher). No N+1 site found — stale input assumption. Primitive ships, call-site rewire is a noop. |
 | P2b | TimescaleDB continuous aggregates / materialized views | 1690–1698 | M | queued | Already partly tracked in `12-timescaledb-performance-analysis.md` |
 | P3 | Migration progress monitoring endpoint | 1720–1737 | S | done | Round 2, commit `7cc74b8`. Side-finding: the existing legacy `migration_tasks` table (V1.1.0) is unreferenced from Java; left untouched as lower-risk than consolidating. |
 | P3b | Wire the external `timescale-migration-preparation` image to write `migration_progress` rows (or call `MigrationRunner.migrateContainer` over JDBC) | — | M | queued | Follow-up from P3 — image source lives outside this repo |
@@ -82,7 +82,7 @@ Status legend:
 | L3 | ~~Templates system: YAML-defined templates~~ — **superseded by T1** (`aidocs/39`). | 98–137 | — | superseded | Reconciled with #630; see T1 row below. YAML lives on as T1f import/export. |
 | L4 | Search-as-you-type with tree/graph view of ontology | 96, 869 | M | queued | Frontend; intersects with `13-search-improvements.md` and `14-semantic-improvements.md` |
 | L5 | Semi-permanent API keys with expiry | 694 | S | done | Round 2, commit `30c687a`. API keys are hybrid Neo4j-row + JJWT-encoded; landed `validUntil` field, JWT `exp` claim, distinguishable 401 on expiry. |
-| L6 | Output control: pagination on more endpoints | 689–691 | S | queued | Aligns with `13-search-improvements.md` cursor pagination |
+| L6 | Output control: pagination on more endpoints | 689–691 | S | **done** | `c896fd9`. `aidocs/18`: 38 endpoints inventoried, 11 paginated (29%). `?page&size` convention extended; cursor for `/search/v2` deferred. |
 | L7 | (Semantically) annotate everything: extend semantic annotations to file/structured/spatial payloads | 692, lines 0+ in `14-semantic-improvements.md` | L | queued | Already designed in §14 |
 | L8 | Review permissions model — umbrella | 693 | M | **design done** | `aidocs/24-permission-system-review.md` is the deliverable. Concrete unpacking is **F1 + F2 + F3** plus the C3 / A0 / F4 / F5 fixes. F6 (OPA seam) and F7 (row-level security) deferred. |
 | A5 | HDF5/HSDS support — umbrella (epic E7) | 697–712 | L | **design done** | `aidocs/35-hdf5-hsds-implementation-design.md` picks **HSDS sidecar + shared-Keycloak token relay** out of three architectures. `h5pyd` parity is the deliverable. Sub-IDs A5a–A5e below. **Gated on L2c** (so HDF endpoints launch directly at `/v2/<appId>`). |
