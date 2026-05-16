@@ -48,6 +48,29 @@ public class TimeseriesReference extends BasicReference {
    */
   private Long lastScoredAt;
 
+  /**
+   * TM1 — how timestamps in the referenced timeseries relate to wall clock.
+   * "WALL_CLOCK" (default): stored sample timestamps are already UTC nanoseconds.
+   * "EXPERIMENT_RELATIVE": sample timestamps are relative to t=0 of the experiment;
+   * wall_clock_ns(sample) = wallClockOffset + sample_t_ns.
+   * Null on pre-TM1a rows — treat as "WALL_CLOCK".
+   */
+  private String timeReference;
+
+  /**
+   * TM1 — nanoseconds epoch (UTC) of the DAQ's t=0, i.e. the wall-clock time
+   * that corresponds to sample_t=0 in the stored data.
+   * Only meaningful when timeReference == "EXPERIMENT_RELATIVE".
+   * Mutable: can be corrected any time a better anchor is discovered.
+   */
+  private Long wallClockOffset;
+
+  /**
+   * TM1 — free-text provenance tag for how wallClockOffset was determined.
+   * Suggested values: "manual", "ffprobe", "SA_sync", "NTP_marker".
+   */
+  private String wallClockOffsetSource;
+
   @Relationship(type = Constants.HAS_PAYLOAD)
   private List<ReferencedTimeseriesNodeEntity> referencedTimeseriesList = new ArrayList<>();
 
@@ -75,7 +98,7 @@ public class TimeseriesReference extends BasicReference {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(end, start, referencedTimeseriesList, qualityScore, lastScoredAt, timeseriesAnnotations);
+    result = prime * result + Objects.hash(end, start, referencedTimeseriesList, qualityScore, lastScoredAt, timeseriesAnnotations, timeReference, wallClockOffset, wallClockOffsetSource);
     result = prime * result + HasId.hashcodeHelper(timeseriesContainer);
     return result;
   }
@@ -91,6 +114,9 @@ public class TimeseriesReference extends BasicReference {
       start == other.start &&
       Objects.equals(qualityScore, other.qualityScore) &&
       Objects.equals(lastScoredAt, other.lastScoredAt) &&
+      Objects.equals(timeReference, other.timeReference) &&
+      Objects.equals(wallClockOffset, other.wallClockOffset) &&
+      Objects.equals(wallClockOffsetSource, other.wallClockOffsetSource) &&
       Objects.equals(referencedTimeseriesList, other.referencedTimeseriesList) &&
       Objects.equals(timeseriesAnnotations, other.timeseriesAnnotations) &&
       HasId.equalsHelper(timeseriesContainer, other.timeseriesContainer)

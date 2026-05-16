@@ -405,6 +405,30 @@ public class TimeseriesReferenceService implements IReferenceService<TimeseriesR
     );
   }
 
+  /**
+   * TM1a — applies a merge-patch to the time-reference fields of a {@link TimeseriesReference}.
+   *
+   * <p>Only {@code timeReference}, {@code wallClockOffset}, and {@code wallClockOffsetSource} are
+   * mutable via this method. The patch is RFC 7396 semantics: non-null values in {@code patch}
+   * overwrite; absent/null values are left untouched.
+   *
+   * @param ref   the entity to update (must already be loaded)
+   * @param patch IO object carrying the desired changes (null fields are ignored)
+   * @return the persisted entity after update
+   */
+  public TimeseriesReference updateTimeReference(TimeseriesReference ref, TimeseriesReferenceIO patch) {
+    if (patch.getTimeReference() != null) {
+      ref.setTimeReference(patch.getTimeReference());
+    }
+    if (patch.getWallClockOffset() != null) {
+      ref.setWallClockOffset(patch.getWallClockOffset());
+    }
+    if (patch.getWallClockOffsetSource() != null) {
+      ref.setWallClockOffsetSource(patch.getWallClockOffsetSource());
+    }
+    return timeseriesReferenceDAO.createOrUpdate(ref);
+  }
+
   private boolean matchFilter(
     Timeseries timeseries,
     Set<String> device,

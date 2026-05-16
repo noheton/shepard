@@ -481,6 +481,14 @@ Three S-sized backlog items shipped in a single commit.
 | F4 | JWT `iat`-keyed permission cache | done | `isAccessTypeAllowedForUser` now 4-arg `(entityId, accessType, username, jwtIat)`. `JWTPrincipal` gains `iat` field; `JWTFilter` extracts `body.getIssuedAt()`. Services with `AuthenticationContext` use `currentIat()`; REST resources and cache warmer pass `0L`. `CompositeCacheKey` is now a 4-tuple. 4 new `PermissionsServiceIatCacheKeyTest` cases. |
 | F5 | Fail-closed Neo4j guard in `PermissionsService.isAllowed()` | done | `dbHealthRegistry.isCurrentlyDown(DatabaseKind.NEO4J)` guard at top of `isAllowed()` returns `false` without calling the DAO when Neo4j is DOWN. Null-safe for `@InjectMocks` test environments. 3 new `PermissionsServiceNeo4jGuardTest` cases. |
 
+### Round 6 — 2026-05-16 (TM1a time-reference model)
+
+One S-sized backlog item shipped.
+
+| ID | Agent description | Status | Notes |
+|---|---|---|---|
+| TM1a | **Time-reference model on `TimeseriesReference`** — three nullable fields (`timeReference`, `wallClockOffset`, `wallClockOffsetSource`) on the Neo4j entity and IO; `PATCH /v2/timeseries-references/{appId}` merge-patch endpoint; V37 backfill migration + V37_R rollback. 400 guard when `EXPERIMENT_RELATIVE` + no offset. Auth: Write on parent DataObject. | done | `TimeseriesReference` model + `hashCode`/`equals` updated; `TimeseriesReferenceIO` gains three new fields + constructor mapping; `TimeseriesReferenceService.updateTimeReference()`; `TimeseriesReferenceV2Rest`; `V37__Backfill_timeReference.cypher` + `V37_R__Rollback_Backfill_timeReference.cypher`; 10 new unit tests (`TimeseriesReferenceV2RestTest` × 8 + `TimeseriesReferenceIOTest` × 2). No `/shepard/api/...` surface touched. Note: merge-patch null semantics are treated as "leave unchanged" (consistent with `TimeseriesAnnotationRest.update` sibling) — explicit null removal is not supported in v1. |
+
 ## New designs landed in the 2026-05-12 batch (post-A0)
 
 Seven design docs landed (`aidocs/52`..`aidocs/58`), each with its own
