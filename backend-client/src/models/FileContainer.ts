@@ -21,61 +21,68 @@ import {
 } from './ContainerType';
 
 /**
- * 
+ *
  * @export
  * @interface FileContainer
  */
 export interface FileContainer {
     /**
-     * 
+     *
      * @type {number}
      * @memberof FileContainer
      */
     readonly id: number;
     /**
-     * 
+     * Application-level UUID v7 identifier. Present on containers created after L2a.
+     * Used as the path parameter for /v2/ endpoints (presigned upload/download, etc.).
+     * @type {string}
+     * @memberof FileContainer
+     */
+    readonly appId?: string | null;
+    /**
+     *
      * @type {Date}
      * @memberof FileContainer
      */
     readonly createdAt: Date;
     /**
-     * 
+     *
      * @type {string}
      * @memberof FileContainer
      */
     readonly createdBy: string;
     /**
-     * 
+     *
      * @type {Date}
      * @memberof FileContainer
      */
     readonly updatedAt: Date | null;
     /**
-     * 
+     *
      * @type {string}
      * @memberof FileContainer
      */
     readonly updatedBy: string | null;
     /**
-     * 
+     *
      * @type {string}
      * @memberof FileContainer
      */
     name: string;
     /**
-     * 
+     *
      * @type {ContainerType}
      * @memberof FileContainer
      */
     readonly type: ContainerType;
     /**
-     * 
+     *
      * @type {string}
      * @memberof FileContainer
      */
     readonly oid: string;
     /**
-     * 
+     *
      * @type {Array<number>}
      * @memberof FileContainer
      */
@@ -108,8 +115,9 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
         return json;
     }
     return {
-        
+
         'id': json['id'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
@@ -121,7 +129,7 @@ export function FileContainerFromJSONTyped(json: any, ignoreDiscriminator: boole
     };
 }
 
-export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'defaultCollectionIdList'> | null): any {
+export function FileContainerToJSON(value?: Omit<FileContainer, 'id'|'appId'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'|'type'|'oid'|'defaultCollectionIdList'> | null): any {
     if (value == null) {
         return value;
     }

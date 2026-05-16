@@ -89,11 +89,33 @@ docker exec garage garage key create shepard-key
 # 4. Restart shepard.
 ```
 
-### Presigned URLs (FS1c — S3 only)
+### Presigned URLs (FS1c/FS1f — S3 only)
 
 When `shepard.storage.provider=s3`, clients can upload and
 download directly to/from S3 without routing bytes through the
-backend. Three new `/v2/` endpoints handle the presigned-URL flow:
+backend. Three `/v2/` endpoints handle the presigned-URL flow.
+
+**The shepard web frontend uses presigned upload automatically (FS1f).**
+When S3 is active, `FileContainerAccessor.uploadFile()` tries the
+presigned path first. On a 503 response (GridFS active), it silently
+falls back to the legacy upload path — GridFS users see no change.
+For this to work in a browser, **CORS must be configured on the S3
+bucket** to allow `PUT` requests from the frontend origin:
+
+```bash
+# Garage — add to garage.toml:
+# [s3_api]
+# cors_allow_origins = ["https://shepard.example.dlr.de"]
+
+# MinIO:
+mc anonymous cors set <alias>/shepard --method PUT --origin https://shepard.example.dlr.de
+```
+
+Without CORS, the browser will block the presigned PUT and the user
+will see an upload error (no data is lost — the S3 PUT never completed
+before the browser blocked it).
+
+Three `/v2/` endpoints handle the presigned-URL flow:
 
 #### Upload flow
 

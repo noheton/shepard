@@ -9,6 +9,23 @@ import {
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 
+// Sentinel: backend returned 503 — no S3 adapter active; caller falls back to legacy upload.
+class PresignedUnavailable extends Error {
+  constructor() {
+    super("presigned-unavailable");
+  }
+}
+
+// Same derivation as usePublishEntity.ts / useV2ShepardApi.ts.
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
 export class FileContainerAccessor extends ContainerAccessor {
   api = useShepardApi(FileContainerApi);
   fileContainer = ref<FileContainer>();
@@ -82,15 +99,87 @@ export class FileContainerAccessor extends ContainerAccessor {
     }
   }
 
-  async uploadFile(file: File) {
+  async uploadFile(file: File): Promise<ShepardFile> {
+    const appId = this.fileContainer.value?.appId;
+    if (appId) {
+      try {
+        const result = await this.uploadFilePresigned(appId, file);
+        this.fetchFiles();
+        return result;
+      } catch (e) {
+        if (!(e instanceof PresignedUnavailable)) {
+          this.fetchFiles();
+          throw e;
+        }
+        // 503 — no S3 adapter active, fall through to legacy upload
+      }
+    }
     return this.api.value
       .createFile({ fileContainerId: this.id, file })
-      .then(shepardFile => {
-        return Promise.resolve(shepardFile);
-      })
-      .finally(() => {
-        this.fetchFiles();
-      });
+      .then(shepardFile => Promise.resolve(shepardFile))
+      .finally(() => this.fetchFiles());
+  }
+
+  // FS1f — three-step presigned upload: get URL → PUT to S3 → commit.
+  // Throws PresignedUnavailable if the backend returns 503 (GridFS active).
+  private async uploadFilePresigned(
+    containerAppId: string,
+    file: File,
+  ): Promise<ShepardFile> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    if (!accessToken) throw new Error("Not authenticated");
+
+    const base = v2BaseUrl();
+    const authJson = {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+
+    // Step 1 — obtain presigned PUT URL.
+    const urlResp = await fetch(
+      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url`,
+      {
+        method: "POST",
+        headers: authJson,
+        body: JSON.stringify({ fileName: file.name }),
+      },
+    );
+    if (urlResp.status === 503) throw new PresignedUnavailable();
+    if (!urlResp.ok)
+      throw new Error(`upload-url failed (HTTP ${urlResp.status})`);
+    const { uploadUrl, oid } = (await urlResp.json()) as {
+      uploadUrl: string;
+      oid: string;
+    };
+
+    // Step 2 — PUT bytes directly to S3 (no auth headers; signature in URL).
+    const putResp = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!putResp.ok)
+      throw new Error(`S3 PUT failed (HTTP ${putResp.status})`);
+
+    // Step 3 — register the file in shepard.
+    const commitResp = await fetch(
+      `${base}/v2/file-containers/${encodeURIComponent(containerAppId)}/upload-url/commit`,
+      {
+        method: "POST",
+        headers: authJson,
+        body: JSON.stringify({
+          oid,
+          fileName: file.name,
+          contentType: file.type || null,
+          fileSize: file.size,
+        }),
+      },
+    );
+    if (!commitResp.ok)
+      throw new Error(`commit failed (HTTP ${commitResp.status})`);
+    return commitResp.json() as Promise<ShepardFile>;
   }
 
   async deleteFile(file: ShepardFile) {
