@@ -169,34 +169,78 @@ The German-community standard is **RDMO** (Research Data Management Organiser). 
 
 ---
 
+### 2.8 inst.dlr — DLR instrument metadata registry
+
+**URL:** <https://helmholtz.software/software/instdlr>
+
+**What it is:** A DLR-internal PIDINST-compliant instrument metadata database. Designed to give researchers a persistent, machine-readable record of every scientific instrument and its configuration history. Implemented in Python (FastAPI + MongoDB); deployed as a container; Apache 2.0 licensed.
+
+**Key capabilities:**
+- Implements the **PIDINST schema** (the W3C community group's standard for persistent identifiers for instruments)
+- Machine-to-machine CRUD via REST API (JSON / CSV / Excel); API key + Helmholtz AAI auth
+- Schema validation: every instrument record is validated against the PIDINST schema before storage
+- Human-readable search for instrument records
+- Tracks **configuration changes** ("paper trail") so data can be tied to the exact instrument state at measurement time
+
+**Relation to shepard's EQ1 feature idea:**  
+Rather than building a standalone instrument entity from scratch, shepard should treat inst.dlr as the **source of truth** for instrument metadata and federate against it:
+
+- A shepard `Instrument` entity stores the inst.dlr PID (`pidinst:<id>`) and caches a snapshot of the PIDINST record
+- Provenance edge: every `DataObject` produced by a measurement gets `wasGeneratedBy: Instrument(pidinst:<id>)` in the Neo4j graph
+- The `shepard-plugin-instdlr` plugin syncs the local cache when inst.dlr records update
+- Booking / scheduling remains in shepard (inst.dlr has no booking concept); PIDINST metadata comes from inst.dlr
+
+**Feature ideas from inst.dlr:**
+- **PIDINST federation**: resolve `pidinst:` URIs to inst.dlr records and embed them as a linked payload on experiments
+- **Configuration-change provenance**: when an instrument's config changes in inst.dlr, auto-create a provenance edge in shepard's graph linking the old config → new config → measurements produced under each
+- **Instrument search / filter**: surface inst.dlr's human-readable search within shepard's "pick instrument" UI when creating a measurement
+
+---
+
+### 2.9 Helmholtz software ecosystem (helmholtz.software/projects)
+
+Other Helmholtz-stack projects worth tracking for integration:
+
+| Project | Relevance to shepard |
+|---|---|
+| **Base4NFDI** | Basic interoperable services for NFDI — potential common auth / PID / storage layer |
+| **DAPHNE4NFDI** | Photon & neutron science data; FAIR data standards; potential payload-kind overlap |
+| **Tango Controls** | SCADA / distributed control for scientific equipment; natural "instrument dropbox" signal source (IL1) |
+| **HIFIS** | Helmholtz federated IT services; identity / storage federation layer |
+
+---
+
 ## 3. Feature matrix — shepard vs. key competitors
 
-Rows = feature areas. `●` = present/strong, `◑` = partial/limited, `○` = absent.
+Rows = feature areas. `●` = present/strong, `◑` = partial/limited, `○` = absent.  
+**shepard 6.0** = planned state after Tier 1 + Tier 2 features from §4 land (see §4 for detail and aidoc IDs).
 
-| Feature area | shepard | RSpace | eLabFTW | Indigo ELN | TwinStash | OpenBIS |
-|---|---|---|---|---|---|---|
-| **Structured payload types** (file, time-series, spatial, HDF5, git, …) | ● | ◑ | ○ | ○ | ◑ | ◑ |
-| **Plugin / SPI extensibility** | ● | ○ | ○ | ◑ | ○ | ◑ |
-| **Semantic / ontology layer** | ● | ○ | ○ | ○ | ○ | ○ |
-| **Provenance / lineage graph** | ● | ◑ | ○ | ○ | ○ | ◑ |
-| **S3 / object-storage backend** | ● | ◑ | ○ | ○ | ○ | ◑ |
-| **REST + programmatic API** | ● | ● | ● | ◑ | ● | ● |
-| **Git integration** | ◑ | ○ | ○ | ○ | ○ | ◑ |
-| **RO-Crate export** | ◑ | ● | ○ | ○ | ○ | ○ |
-| **PID embedding** (ORCID, DOI, IGSN, …) | ◑ | ● | ○ | ○ | ○ | ◑ |
-| **ELN / experiment notebook UX** | ○ | ● | ● | ● | ◑ | ◑ |
-| **Sample / inventory management** | ○ | ● | ● | ◑ | ○ | ● |
-| **Equipment booking** | ○ | ○ | ● | ○ | ○ | ○ |
-| **Digital signing / timestamping** | ○ | ○ | ● | ◑ | ○ | ○ |
-| **Chemical structure search** | ○ | ○ | ○ | ● | ○ | ○ |
-| **Automated report generation** | ○ | ○ | ○ | ○ | ● | ○ |
-| **OCR / paper form ingestion** | ○ | ○ | ○ | ○ | ● | ○ |
-| **Instrument dropbox / auto-ingest** | ○ | ○ | ○ | ○ | ◑ | ● |
-| **`.eln` interoperability format** | ○ | ○ | ● | ○ | ○ | ○ |
-| **Mobile / offline-first** | ○ | ◑ | ○ | ○ | ○ | ○ |
-| **Multi-team instance** | ◑ | ● | ● | ◑ | ◑ | ● |
-| **Admin-configurable at runtime** | ● | ◑ | ◑ | ○ | ○ | ◑ |
-| **NFDI / Helmholtz integration** | ● | ○ | ○ | ○ | ◑ | ○ |
+| Feature area | shepard (now) | shepard 6.0 | RSpace | eLabFTW | Indigo ELN | TwinStash | OpenBIS |
+|---|---|---|---|---|---|---|---|
+| **Structured payload types** (file, time-series, spatial, HDF5, git, …) | ● | ● | ◑ | ○ | ○ | ◑ | ◑ |
+| **Plugin / SPI extensibility** | ● | ● | ○ | ○ | ◑ | ○ | ◑ |
+| **Semantic / ontology layer** | ● | ● | ○ | ○ | ○ | ○ | ○ |
+| **Provenance / lineage graph** | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
+| **S3 / object-storage backend** | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
+| **REST + programmatic API** | ● | ● | ● | ● | ◑ | ● | ● |
+| **Git integration** | ◑ | ● | ○ | ○ | ○ | ○ | ◑ |
+| **RO-Crate export** | ◑ | ● | ● | ○ | ○ | ○ | ○ |
+| **PID embedding** (ORCID, DOI, IGSN, …) | ◑ | ● | ● | ○ | ○ | ○ | ◑ |
+| **ELN / experiment notebook UX** | ○ | ◑ | ● | ● | ● | ◑ | ◑ |
+| **Sample / inventory management** | ○ | ◑ | ● | ● | ◑ | ○ | ● |
+| **Equipment booking** | ○ | ◑ | ○ | ● | ○ | ○ | ○ |
+| **Digital signing / timestamping** | ○ | ◑ | ○ | ● | ◑ | ○ | ○ |
+| **Chemical structure search** | ○ | ○ | ○ | ○ | ● | ○ | ○ |
+| **Automated report generation** | ○ | ◑ | ○ | ○ | ○ | ● | ○ |
+| **OCR / paper form ingestion** | ○ | ○ | ○ | ○ | ○ | ● | ○ |
+| **Instrument dropbox / auto-ingest** | ○ | ● | ○ | ○ | ○ | ◑ | ● |
+| **`.eln` interoperability format** | ○ | ● | ○ | ● | ○ | ○ | ○ |
+| **Mobile / offline-first** | ○ | ○ | ◑ | ○ | ○ | ○ | ○ |
+| **Multi-team instance** | ◑ | ◑ | ● | ● | ◑ | ◑ | ● |
+| **Admin-configurable at runtime** | ● | ● | ◑ | ◑ | ○ | ○ | ◑ |
+| **NFDI / Helmholtz integration** | ● | ● | ○ | ○ | ○ | ◑ | ○ |
+| **DMP / RDMO linkage** | ○ | ◑ | ○ | ○ | ○ | ○ | ○ |
+| **PIDINST / instrument registry** | ○ | ● | ○ | ○ | ○ | ○ | ○ |
 
 ---
 
@@ -215,8 +259,16 @@ The ELN Consortium `.eln` format (a ZIP with a JSON-LD manifest + attached files
 **4.3 Sample/Inventory entity  (new aidoc: SI1)**
 A `Sample` payload kind (or first-class entity adjacent to `DataObject`) with: IGSN ID, quantity (amount + unit), location (freezer/shelf hierarchy), hazard annotations, provenance chain, and a link to experiments that used/produced it. Enables labs that currently track samples in spreadsheets to move to shepard. Plugin-first candidate (`shepard-plugin-sample-inventory`).
 
-**4.4 Equipment / instrument entity + booking  (new aidoc: EQ1)**
-`Instrument` entity: name, model, calibration date, responsible, location. Booking: calendar-based reservation model. Provenance: every `DataObject` produced by an instrument gets a `wasGeneratedBy: Instrument(id)` edge automatically. Booking naturally integrates with experiment planning.
+**4.4 Equipment / instrument entity + booking + inst.dlr integration  (new aidoc: EQ1)**
+Rather than building a standalone instrument registry from scratch, shepard should **federate with inst.dlr** (`helmholtz.software/software/instdlr`) as the PIDINST-compliant source of truth for DLR instrument metadata. The recommended design:
+
+- **`shepard-plugin-instdlr`** (plugin): pulls instrument records from inst.dlr REST API by PIDINST PID; caches a local snapshot in a `PluginInstrument` Neo4j entity.
+- **Provenance edge**: every `DataObject` produced by a measurement gets `wasGeneratedBy: Instrument(pidinst:<id>)` automatically via the plugin — instrument lineage is PIDINST-native.
+- **Configuration-change tracking**: when inst.dlr records a calibration or config change, the plugin creates a provenance edge linking old config → new config → measurements produced under each.
+- **Booking** (stays in shepard, inst.dlr has no booking concept): calendar-based reservation against the local `PluginInstrument` entity; reservation is linked to the experiment planning entity (aidocs/50).
+- **Tango Controls signal**: Tango Controls (Helmholtz SCADA system) is a natural signal source for the instrument dropbox (IL1) — instruments emit measurement files via Tango; the dropbox plugin picks them up and stamps the inst.dlr PID from the booking record.
+
+For labs not running inst.dlr, the plugin degrades gracefully: instruments can be entered manually as local `PluginInstrument` records with no PIDINST PID, and the booking / provenance flows work identically.
 
 ### Tier 2 — Good fit, medium effort
 
@@ -256,7 +308,7 @@ shepard's structural advantages that no competitor matches simultaneously:
 5. **Admin-configurable at runtime** — feature toggles, ontology preseed, S3 config without restart
 6. **NFDI / Helmholtz-aware** — Unhide publish integration, HMC-KIP alignment (aidocs/66, 67)
 
-shepard's gaps to address (in priority order from §4): instrument dropbox → `.eln` interop → sample/inventory → equipment booking → timestamping.
+shepard's gaps to address (in priority order from §4): instrument dropbox → `.eln` interop → sample/inventory → equipment booking (via inst.dlr federation) → timestamping.
 
 ---
 
@@ -268,3 +320,5 @@ shepard's gaps to address (in priority order from §4): instrument dropbox → `
 - `aidocs/47-dev-experience-and-plugin-system.md` — plugin SPI reference
 - `aidocs/50-experiment-orchestration.md` — experiment entity design
 - `aidocs/67-unhide-publish-plugin.md` — publication integration
+- `https://helmholtz.software/software/instdlr` — inst.dlr PIDINST instrument registry (EQ1 integration target)
+- `https://helmholtz.software/projects` — Helmholtz software ecosystem overview
