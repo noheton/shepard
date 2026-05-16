@@ -201,6 +201,20 @@ shepard footprint take an MinIO dependency, or assume an external S3?
 **Prerequisite.** **P12** (recommended); **O2** (hard, since this only
 makes sense post-async).
 
+**Shipped (sync variant, FS1g — 2026-05-16).** A sync-first variant
+ships before O2 lands: `POST /v2/collections/{appId}/export-url`
+builds the ZIP in-memory (ExportBuilder already buffers the full
+archive into `ByteArrayOutputStream`, so `byte[]` at the call-site is
+honest) and calls `FileStorage.presignedExportUrl()` to upload to
+`exports/<uuid>.zip` in-bucket and return a 30-minute presigned GET
+URL. The JVM win from FS1g is **download bandwidth offload**, not
+heap — the full ZIP still materialises in the JVM before it leaves.
+Heap / latency offload requires O1 (streaming ZIP) + O2 (async job)
++ the full O3 shape. FS1g is the first step: it separates download
+delivery from the request thread. Async delivery (Phase 4 of the
+§6 rollout) resumes once `aidocs/32` lands the cross-cutting job
+shape.
+
 ### O4 — Parallel payload fetch per data object, bounded
 
 **Pitch.** Use `CompletableFuture` (or, post-Java 21, virtual threads)

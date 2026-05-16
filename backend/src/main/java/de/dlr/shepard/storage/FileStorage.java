@@ -151,6 +151,34 @@ public interface FileStorage {
   }
 
   /**
+   * FS1g — upload a transient export artifact (e.g. an RO-Crate ZIP)
+   * to the storage backend and return a presigned GET URL so the client
+   * can download it directly without routing bytes through the JVM.
+   *
+   * <p>The object is keyed as {@code exports/<key>} in the same bucket
+   * as regular file payloads. Adapters that don't support presigned
+   * export (e.g. GridFS) return {@code Optional.empty()}; the REST
+   * layer converts that to 503.
+   *
+   * <p>Cleanup: export objects accumulate unless the operator
+   * configures a bucket lifecycle rule on the {@code exports/} prefix
+   * (recommended: 24 h expiration). See
+   * {@code docs/reference/file-storage.md §Export URL lifecycle}.
+   *
+   * @param key      unique key for this export (e.g. a UUID); the
+   *                 adapter prefixes it with {@code "exports/"}
+   * @param zipBytes the full ZIP payload to upload
+   * @param fileName suggested download filename
+   * @param ttl      how long the presigned GET URL should be valid
+   * @return a presigned GET URI, or {@link Optional#empty()} if not
+   *         supported by this adapter
+   */
+  default Optional<URI> presignedExportUrl(String key, byte[] zipBytes, String fileName, Duration ttl)
+      throws StorageException {
+    return Optional.empty();
+  }
+
+  /**
    * FS1c — payload returned by {@link #presignedUploadUrl}.
    *
    * @param uploadUrl   presigned PUT URL the client sends bytes to

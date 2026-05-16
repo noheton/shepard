@@ -189,6 +189,88 @@ the direct upload path (`POST /shepard/api/fileContainers/{id}/payload`).
 No code change needed — `GridFsFileStorage` inherits the SPI's
 `Optional.empty()` default and the service layer converts it to 503.
 
+## Export URL (FS1g — S3 only)
+
+`POST /v2/collections/{appId}/export-url` builds a RO-Crate ZIP for
+the collection and returns a **presigned S3 GET URL** instead of
+streaming the ZIP through the backend. The client downloads directly
+from S3; the JVM is no longer in the gigabyte-streaming path.
+
+**Request body** (optional — same `ExportSelection` as the legacy
+export endpoint):
+
+```json
+{
+  "includePermissions": false,
+  "payloads": {}
+}
+```
+
+Omitting the body uses default export selection (all payload kinds,
+no redaction).
+
+**Response** (`200 OK`):
+
+```json
+{
+  "downloadUrl": "https://storage.example.com/shepard/exports/uuid.zip?X-Amz-...",
+  "fileName": "my-collection-2024-08-15-export.zip",
+  "expiresAt": "2024-08-15T12:05:44Z"
+}
+```
+
+The presigned URL expires in **30 minutes**. Auth requirements match
+all other `/v2/` collection endpoints — authenticated + Read
+permission on the collection.
+
+**GridFS / non-S3 fallback.** When the active storage adapter does
+not support presigned export (any adapter returning `Optional.empty()`
+from `FileStorage.presignedExportUrl()`), the endpoint returns
+`503 Service Unavailable`. Use the legacy streaming export
+(`GET /shepard/api/collections/{id}/export`) instead.
+
+### Lifecycle cleanup for the `exports/` prefix
+
+Export ZIPs accumulate in the same bucket as file payloads, under the
+`exports/` prefix. Configure a **lifecycle rule** on that prefix so
+objects expire automatically — 24 hours is a reasonable default.
+
+**Garage** (`garage.toml`):
+
+Garage does not yet support S3-style lifecycle rules natively
+(v1.0.x). Use a cron job or manual sweep:
+
+```bash
+# List and delete exports older than 1 day:
+garage s3 ls --bucket shepard --prefix exports/ \
+  | awk -v cutoff="$(date -d '1 day ago' +%Y-%m-%dT%H:%M:%S)" '$1 < cutoff {print $4}' \
+  | xargs -I{} garage s3 rm --bucket shepard --key {}
+```
+
+**AWS S3 / MinIO** (lifecycle rule via AWS CLI):
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "shepard-export-ttl",
+      "Status": "Enabled",
+      "Filter": {"Prefix": "exports/"},
+      "Expiration": {"Days": 1}
+    }
+  ]
+}
+```
+
+```bash
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket shepard \
+  --lifecycle-configuration file://lifecycle.json
+```
+
+Without a lifecycle rule, export objects persist indefinitely. The
+30-minute presigned URL TTL controls access, not object retention.
+
 ## Migrating between adapters (FS1e1)
 
 `shepard-admin files migrate <source> <target>` streams every

@@ -3,6 +3,7 @@ package de.dlr.shepard.context.semantic;
 import io.quarkus.logging.Log;
 import java.util.Collections;
 import java.util.Map;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.session.Session;
 
 /**

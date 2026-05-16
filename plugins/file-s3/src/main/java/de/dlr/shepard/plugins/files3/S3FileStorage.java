@@ -162,7 +162,7 @@ public class S3FileStorage implements FileStorage {
   private void ensureBucketExists() {
     try {
       s3.headBucket(r -> r.bucket(bucket));
-    } catch (NoSuchBucketException | S3Exception e) {
+    } catch (S3Exception e) {
       try {
         s3.createBucket(r -> r.bucket(bucket));
         Log.infof("S3FileStorage: created bucket '%s'", bucket);
@@ -311,6 +311,51 @@ public class S3FileStorage implements FileStorage {
       ));
     } catch (Exception e) {
       throw new StorageException("S3 presign PUT failed for key '" + key + "': " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * FS1g — uploads a transient export artifact (e.g. RO-Crate ZIP)
+   * under {@code exports/<key>} and returns a presigned GET URL.
+   * The object is stored in the same bucket as file payloads.
+   * Operators should configure a 24 h lifecycle rule on the
+   * {@code exports/} prefix so stale ZIPs are cleaned up
+   * automatically — see {@code docs/reference/file-storage.md}.
+   */
+  @Override
+  public Optional<URI> presignedExportUrl(String key, byte[] zipBytes, String fileName, Duration ttl)
+      throws StorageException {
+    requireEnabled();
+    String objectKey = "exports/" + key;
+
+    PutObjectRequest putReq = PutObjectRequest.builder()
+      .bucket(bucket)
+      .key(objectKey)
+      .contentType("application/zip")
+      .contentDisposition("attachment; filename=\"" + fileName + "\"")
+      .build();
+
+    try {
+      s3.putObject(putReq, RequestBody.fromBytes(zipBytes));
+    } catch (S3Exception e) {
+      throw new StorageException(
+        "S3 export put failed for key '" + objectKey + "': " + e.awsErrorDetails().errorMessage(), e
+      );
+    }
+
+    GetObjectPresignRequest presignReq = GetObjectPresignRequest.builder()
+      .signatureDuration(ttl)
+      .getObjectRequest(r -> r
+        .bucket(bucket)
+        .key(objectKey)
+        .responseContentDisposition("attachment; filename=\"" + fileName + "\""))
+      .build();
+
+    try {
+      PresignedGetObjectRequest presigned = presigner.presignGetObject(presignReq);
+      return Optional.of(presigned.url().toURI());
+    } catch (Exception e) {
+      throw new StorageException("S3 presign GET failed for export key '" + objectKey + "': " + e.getMessage(), e);
     }
   }
 
