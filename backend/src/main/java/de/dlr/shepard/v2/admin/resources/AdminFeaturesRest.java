@@ -54,7 +54,7 @@ public class AdminFeaturesRest {
   public Response list() {
     List<FeatureToggleIO> result = registry.list()
       .stream()
-      .map(e -> new FeatureToggleIO(e.getName(), e.isEnabled(), e.getDescription()))
+      .map(e -> new FeatureToggleIO(e.getName(), e.isEnabled(), e.getDescription(), e.getSource()))
       .toList();
     return Response.ok(result).build();
   }
@@ -79,7 +79,7 @@ public class AdminFeaturesRest {
   ) {
     return registry.get(name).map(entry -> {
       entry.setEnabled(body.getEnabled());
-      return Response.ok(new FeatureToggleIO(entry.getName(), entry.isEnabled(), entry.getDescription())).build();
+      return Response.ok(new FeatureToggleIO(entry.getName(), entry.isEnabled(), entry.getDescription(), entry.getSource())).build();
     }).orElseGet(() ->
       Response.status(Status.NOT_FOUND)
         .entity(new ApiError(Status.NOT_FOUND.getStatusCode(), "NotFound", "No feature toggle registered with name '" + name + "'"))

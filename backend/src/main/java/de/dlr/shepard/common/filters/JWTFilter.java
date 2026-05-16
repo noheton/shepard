@@ -265,7 +265,15 @@ public class JWTFilter implements ContainerRequestFilter {
     // Dual-source role resolution per aidocs/51 §3.3.
     Set<String> resolvedRoles = resolveDualSourceRoles(username, idpRoles);
 
-    return new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles);
+    // F4 — extract iat (issued-at) for the cache-key 4th dimension.
+    // body.getIssuedAt() returns null when the JWT omits the claim; fall back
+    // to 0L so the principal is still valid but shares the zero-iat cache slot
+    // with API-key principals (conservative: stale entry would be from a
+    // token with no iat, which we can't do better for anyway).
+    java.util.Date issuedAt = body.getIssuedAt();
+    long iat = issuedAt != null ? issuedAt.getTime() / 1000L : 0L;
+
+    return new JWTPrincipal(audience, issuedFor, username, keyId, resolvedRoles, iat);
   }
 
   /**

@@ -18,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+// DX7 — test the source field on GET /v2/admin/features responses
+
 class AdminFeaturesRestTest {
 
   @Mock
@@ -36,6 +38,12 @@ class AdminFeaturesRestTest {
     Supplier<Boolean> reader = () -> enabled;
     Consumer<Boolean> writer = v -> {};
     return new FeatureToggleRegistry.FeatureToggleEntry(name, name + " description", reader, writer);
+  }
+
+  private FeatureToggleRegistry.FeatureToggleEntry entryWithKey(String name, boolean enabled, String propertyKey) {
+    Supplier<Boolean> reader = () -> enabled;
+    Consumer<Boolean> writer = v -> {};
+    return new FeatureToggleRegistry.FeatureToggleEntry(name, name + " description", reader, writer, propertyKey);
   }
 
   private FeatureToggleRegistry.FeatureToggleEntry mutableEntry(String name, boolean initial) {
@@ -98,5 +106,49 @@ class AdminFeaturesRestTest {
     var r = resource.patch("nonexistent", body);
 
     assertEquals(404, r.getStatus());
+  }
+
+  // DX7 — source field tests
+
+  @Test
+  void listIncludesSourceFieldOnEachToggle() {
+    // entries without a property key → source == "default"
+    Mockito.when(registry.list()).thenReturn(List.of(
+      entry("versioning", true),
+      entry("spatial-data", false)
+    ));
+
+    var r = resource.list();
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<FeatureToggleIO> body = (List<FeatureToggleIO>) r.getEntity();
+    assertNotNull(body.get(0).getSource(), "source must not be null");
+    assertNotNull(body.get(1).getSource(), "source must not be null");
+  }
+
+  @Test
+  void sourceIsDefaultWhenNoPropertyKey() {
+    var e = entry("versioning", true); // no propertyKey → source = "default"
+    Mockito.when(registry.list()).thenReturn(List.of(e));
+
+    var r = resource.list();
+    @SuppressWarnings("unchecked")
+    List<FeatureToggleIO> body = (List<FeatureToggleIO>) r.getEntity();
+    assertEquals("default", body.get(0).getSource());
+  }
+
+  @Test
+  void sourceIsRuntimeAfterPatch() {
+    // After setEnabled() is called (PATCH path), entry.getSource() returns "runtime".
+    var entry = mutableEntry("versioning", true);
+    Mockito.when(registry.get("versioning")).thenReturn(Optional.of(entry));
+
+    var body = new PatchFeatureToggleIO();
+    body.setEnabled(false);
+    var r = resource.patch("versioning", body);
+
+    assertEquals(200, r.getStatus());
+    FeatureToggleIO io = (FeatureToggleIO) r.getEntity();
+    assertEquals("runtime", io.getSource());
   }
 }

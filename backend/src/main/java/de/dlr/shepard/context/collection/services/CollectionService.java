@@ -295,7 +295,8 @@ public class CollectionService {
       !permissionsService.isAccessTypeAllowedForUser(
         collectionId,
         AccessType.Read,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
@@ -312,7 +313,8 @@ public class CollectionService {
       !permissionsService.isAccessTypeAllowedForUser(
         collectionId,
         AccessType.Write,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
@@ -329,11 +331,18 @@ public class CollectionService {
       !permissionsService.isAccessTypeAllowedForUser(
         collectionId,
         AccessType.Manage,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
     }
+  }
+
+  /** F4 — current JWT iat for cache-key construction. */
+  private long currentIat() {
+    var principal = authenticationContext.getPrincipal();
+    return principal != null ? principal.getIat() : 0L;
   }
 
   private Collection cutDeleted(Collection collection) {

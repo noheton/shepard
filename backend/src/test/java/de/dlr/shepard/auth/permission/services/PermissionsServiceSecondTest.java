@@ -297,7 +297,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     when(userGroupService.getUserGroupOptional(35L)).thenReturn(Optional.of(writerGroup));
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
 
-    assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Write, "principal"));
+    assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Write, "principal", 0L));
   }
 
   @Test
@@ -317,7 +317,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     };
     when(userGroupService.getUserGroup(35L)).thenReturn(writerGroup);
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
-    assertFalse(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Write, "Heinz"));
+    assertFalse(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Write, "Heinz", 0L));
   }
 
   @Test
@@ -337,7 +337,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     };
     when(userGroupService.getUserGroupOptional(35L)).thenReturn(Optional.of(readerGroup));
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
-    assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Read, "principal"));
+    assertTrue(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Read, "principal", 0L));
   }
 
   @Test
@@ -357,7 +357,7 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     };
     when(userGroupService.getUserGroup(35L)).thenReturn(readerGroup);
     when(permissionsDAO.findByEntityNeo4jId(123)).thenReturn(perms);
-    assertFalse(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Read, "AKP"));
+    assertFalse(permissionsService.isAccessTypeAllowedForUser(123, AccessType.Read, "AKP", 0L));
   }
 
   @Test
@@ -488,7 +488,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Read,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertTrue(actual);
   }
@@ -509,7 +510,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Read,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertTrue(actual);
   }
@@ -530,7 +532,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Write,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertFalse(actual);
   }
@@ -551,7 +554,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Read,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertTrue(actual);
   }
@@ -572,7 +576,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Write,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertTrue(actual);
   }
@@ -592,7 +597,8 @@ public class PermissionsServiceSecondTest extends BaseTestCase {
     var actual = permissionsService.isAccessTypeAllowedForUser(
       collection.getShepardId(),
       AccessType.Read,
-      user.getUsername()
+      user.getUsername(),
+      0L
     );
     assertFalse(actual);
   }

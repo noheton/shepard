@@ -12,9 +12,11 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.model.Permissions;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserGroupService;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.healthz.DbHealthRegistry;
 import de.dlr.shepard.common.util.AccessType;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CaffeineCache;
@@ -46,12 +48,20 @@ public class PermissionsServiceFilterAllowedForUserTest extends BaseTestCase {
   @Mock
   private CaffeineCache caffeineCache;
 
+  @Mock
+  private DbHealthRegistry dbHealthRegistry;
+
+  @Mock
+  private AuthenticationContext authenticationContext;
+
   @InjectMocks
   private PermissionsService permissionsService;
 
   @BeforeEach
   public void wireCache() {
     when(cache.as(CaffeineCache.class)).thenReturn(caffeineCache);
+    // F4: default to no principal → iat = 0L
+    when(authenticationContext.getPrincipal()).thenReturn(null);
   }
 
   @Test
@@ -119,8 +129,8 @@ public class PermissionsServiceFilterAllowedForUserTest extends BaseTestCase {
 
     assertThat(result).containsExactlyInAnyOrder(10L, 30L);
     verify(permissionsDAO, times(1)).findByEntityNeo4jIds(anyCollection());
-    verify(caffeineCache).put(eqKey(30L, AccessType.Read, "alice"), any());
-    verify(caffeineCache).put(eqKey(40L, AccessType.Read, "alice"), any());
+    verify(caffeineCache).put(eqKey(30L, AccessType.Read, "alice", 0L), any());
+    verify(caffeineCache).put(eqKey(40L, AccessType.Read, "alice", 0L), any());
   }
 
   @Test
@@ -140,24 +150,26 @@ public class PermissionsServiceFilterAllowedForUserTest extends BaseTestCase {
   }
 
   private void primeCache(long entityId, AccessType accessType, String username, boolean allowed) {
-    when(caffeineCache.<Boolean>getIfPresent(eqKey(entityId, accessType, username))).thenReturn(
+    // F4: iat is 0L when no principal is set (default in wireCache)
+    when(caffeineCache.<Boolean>getIfPresent(eqKey(entityId, accessType, username, 0L))).thenReturn(
       CompletableFuture.completedFuture(allowed)
     );
   }
 
   private void primeCacheMiss(long entityId, AccessType accessType, String username) {
-    when(caffeineCache.<Boolean>getIfPresent(eqKey(entityId, accessType, username))).thenReturn(null);
+    when(caffeineCache.<Boolean>getIfPresent(eqKey(entityId, accessType, username, 0L))).thenReturn(null);
   }
 
-  private static CompositeCacheKey eqKey(long entityId, AccessType accessType, String username) {
+  private static CompositeCacheKey eqKey(long entityId, AccessType accessType, String username, long iat) {
     return argThat(arg -> {
       if (!(arg instanceof CompositeCacheKey ck)) return false;
       Object[] elements = ck.getKeyElements();
       return (
-        elements.length == 3 &&
+        elements.length == 4 &&
         Long.valueOf(entityId).equals(elements[0]) &&
         accessType.equals(elements[1]) &&
-        username.equals(elements[2])
+        username.equals(elements[2]) &&
+        Long.valueOf(iat).equals(elements[3])
       );
     });
   }

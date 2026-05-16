@@ -77,11 +77,7 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        collection.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObject, returned);
@@ -95,11 +91,7 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(dataObject.getShepardId(), versionUID)).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        collection.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId(), versionUID);
     assertEquals(dataObject, returned);
@@ -144,11 +136,7 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        collection.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObjectCut, returned);
@@ -168,11 +156,7 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        collection.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     DataObject returned = service.getDataObject(dataObject.getShepardId());
     assertEquals(dataObject, returned);
@@ -187,11 +171,7 @@ public class DataObjectServiceTest {
     when(dao.findByShepardId(dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        collection.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     assertThrows(InvalidPathException.class, () ->
       service.getDataObject(collection.getShepardId(), dataObject.getShepardId())
@@ -525,10 +505,10 @@ public class DataObjectServiceTest {
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername(), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername(), anyLong())
     ).thenReturn(true);
 
     predecessors.forEach(predecessor -> when(dao.createOrUpdate(predecessor)).thenReturn(predecessor));
@@ -602,10 +582,10 @@ public class DataObjectServiceTest {
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername(), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername(), anyLong())
     ).thenReturn(true);
 
     var actual = service.updateDataObject(collection.getShepardId(), old.getShepardId(), input);
@@ -636,10 +616,10 @@ public class DataObjectServiceTest {
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, defaultUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, defaultUser.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
 
     assertThrows(InvalidBodyException.class, () ->
@@ -661,18 +641,10 @@ public class DataObjectServiceTest {
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        dataObject.getShepardId(),
-        AccessType.Write,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(dataObject.getShepardId(), AccessType.Write, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(
-        dataObject.getShepardId(),
-        AccessType.Read,
-        defaultUser.getUsername()
-      )
+      permissionsService.isAccessTypeAllowedForUser(dataObject.getShepardId(), AccessType.Read, defaultUser.getUsername(), anyLong())
     ).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteDataObject(1005L, dataObject.getShepardId()));

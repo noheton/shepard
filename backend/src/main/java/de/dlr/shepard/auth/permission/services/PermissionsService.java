@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.permission.events.PermissionsChangedEvent;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
 import de.dlr.shepard.auth.permission.model.Permissions;
 import de.dlr.shepard.auth.permission.model.Roles;
+import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.entities.UserGroup;
 import de.dlr.shepard.auth.users.services.UserGroupService;
@@ -13,6 +14,8 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import de.dlr.shepard.common.filters.RequestPathHelper;
+import de.dlr.shepard.common.healthz.DatabaseKind;
+import de.dlr.shepard.common.healthz.DbHealthRegistry;
 import de.dlr.shepard.common.identifier.HasAppId;
 import de.dlr.shepard.common.neo4j.entities.BasicEntity;
 import de.dlr.shepard.common.util.AccessType;
@@ -57,6 +60,12 @@ public class PermissionsService {
 
   @Inject
   UserGroupService userGroupService;
+
+  @Inject
+  DbHealthRegistry dbHealthRegistry;
+
+  @Inject
+  AuthenticationContext authenticationContext;
 
   /**
    * A5b — CDI event fired post-commit on every permissions write
@@ -159,7 +168,7 @@ public class PermissionsService {
    */
   public Permissions getPermissionsOfEntity(long entityId) {
     User user = userService.getCurrentUser();
-    isAccessTypeAllowedForUser(entityId, AccessType.Manage, user.getUsername());
+    isAccessTypeAllowedForUser(entityId, AccessType.Manage, user.getUsername(), currentIat());
     return getPermissionsOfEntityOptional(entityId).orElseThrow(() ->
       new NotFoundException("Permissions with entity %s is null".formatted(entityId))
     );
@@ -176,15 +185,26 @@ public class PermissionsService {
   }
 
   /**
-   * Check whether a request is allowed or not
+   * Check whether a request is allowed or not.
+   *
+   * <p>F4 — the {@code jwtIat} parameter is the JWT {@code iat} (issued-at)
+   * claim in seconds-since-epoch. Including it as a 4th cache-key dimension
+   * ensures that a new token (new session after a role change, group-membership
+   * flip, or token rotation) always misses the cache and re-evaluates
+   * permissions from Neo4j, rather than serving a stale allow/deny decision
+   * from a previous session. Callers that have no JWT context (API-key
+   * requests, internal calls) pass {@code 0L}; those entries share a single
+   * cache slot per {@code (entityId, accessType, username)} as before.
    *
    * @param entityId   the entity that is to be accessed
    * @param accessType the access type (read, write, manage)
    * @param username   the user that wants access
+   * @param jwtIat     JWT {@code iat} claim (seconds-since-epoch); {@code 0L}
+   *                   when the request is not bearer-token authenticated
    * @return whether the access is allowed or not
    */
   @CacheResult(cacheName = "permissions-service-cache")
-  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username, long jwtIat) {
     Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
     return rolesGrantAccess(userRolesOnEntity, accessType);
   }
@@ -197,7 +217,7 @@ public class PermissionsService {
    * resolved against it in-memory. Cached results are read via
    * {@link CaffeineCache#getIfPresent(Object)} so {@link CacheResult @CacheResult}-managed
    * semantics are preserved; resolved values are written back so subsequent single-entry calls to
-   * {@link #isAccessTypeAllowedForUser(long, AccessType, String)} re-use the populated entries.
+   * {@link #isAccessTypeAllowedForUser(long, AccessType, String, long)} re-use the populated entries.
    */
   public Set<String> filterAllowedUsers(long entityId, AccessType accessType, Collection<String> usernames) {
     if (usernames == null || usernames.isEmpty()) return Collections.emptySet();
@@ -220,13 +240,17 @@ public class PermissionsService {
     if (uncached.isEmpty()) return allowed;
 
     Log.debugf("filterAllowedUsers: batch resolving %d uncached usernames for entity %d", uncached.size(), entityId);
+    long iat = currentIat();
     Optional<Permissions> perms = Optional.ofNullable(permissionsDAO.findByEntityNeo4jId(entityId));
     for (String username : uncached) {
       Roles roles = getRoles(perms, username);
       boolean isAllowed = rolesGrantAccess(roles, accessType);
       if (isAllowed) allowed.add(username);
       if (caffeine != null) {
-        caffeine.put(new CompositeCacheKey(entityId, accessType, username), CompletableFuture.completedFuture(isAllowed));
+        caffeine.put(
+          new CompositeCacheKey(entityId, accessType, username, iat),
+          CompletableFuture.completedFuture(isAllowed)
+        );
       }
     }
     return allowed;
@@ -237,7 +261,7 @@ public class PermissionsService {
    * allowed. Implemented as one batched Cypher round-trip for the uncached subset; cached results
    * are read from {@code permissions-service-cache} via {@link CaffeineCache#getIfPresent(Object)}
    * so {@link CacheResult @CacheResult}-managed semantics are preserved. Subsequent single-entry
-   * calls to {@link #isAccessTypeAllowedForUser(long, AccessType, String)} re-use the populated
+   * calls to {@link #isAccessTypeAllowedForUser(long, AccessType, String, long)} re-use the populated
    * entries.
    */
   public Set<Long> filterAllowedForUser(Collection<Long> entityIds, AccessType accessType, String username) {
@@ -261,6 +285,7 @@ public class PermissionsService {
     if (uncachedIds.isEmpty()) return allowed;
 
     Log.debugf("filterAllowedForUser: batch resolving %d uncached ids for %s", uncachedIds.size(), username);
+    long iat = currentIat();
     Map<Long, Permissions> permsById = permissionsDAO.findByEntityNeo4jIds(uncachedIds);
     for (Long id : uncachedIds) {
       Optional<Permissions> perms = Optional.ofNullable(permsById.get(id));
@@ -268,7 +293,10 @@ public class PermissionsService {
       boolean isAllowed = rolesGrantAccess(roles, accessType);
       if (isAllowed) allowed.add(id);
       if (caffeine != null) {
-        caffeine.put(new CompositeCacheKey(id, accessType, username), CompletableFuture.completedFuture(isAllowed));
+        caffeine.put(
+          new CompositeCacheKey(id, accessType, username, iat),
+          CompletableFuture.completedFuture(isAllowed)
+        );
       }
     }
     return allowed;
@@ -284,8 +312,22 @@ public class PermissionsService {
     }
   }
 
+  /**
+   * F4 — returns the JWT {@code iat} for the current request principal, or
+   * {@code 0L} when the request is API-key authenticated (no JWT {@code iat})
+   * or when no principal is set (internal call path).
+   */
+  private long currentIat() {
+    if (authenticationContext == null) return 0L;
+    var principal = authenticationContext.getPrincipal();
+    return principal != null ? principal.getIat() : 0L;
+  }
+
   private Boolean peekCached(CaffeineCache caffeine, long entityId, AccessType accessType, String username) {
-    CompletableFuture<Boolean> future = caffeine.getIfPresent(new CompositeCacheKey(entityId, accessType, username));
+    long iat = currentIat();
+    CompletableFuture<Boolean> future = caffeine.getIfPresent(
+      new CompositeCacheKey(entityId, accessType, username, iat)
+    );
     if (future == null || !future.isDone() || future.isCompletedExceptionally()) return null;
     return future.getNow(null);
   }
@@ -392,6 +434,21 @@ public class PermissionsService {
    * @param userName
    */
   public boolean isAllowed(ContainerRequestContext requestContext, AccessType accessType, String userName) {
+    // F5: fail-closed when Neo4j is degraded — we cannot evaluate permissions
+    // without the graph, so deny all non-public requests rather than risk a
+    // false-allow or an opaque 500. The DbHealthRegistry's isCurrentlyDown
+    // check is staleness-gated (max-staleness from ReadinessConfig) so a
+    // transient hiccup during a single request does not cascade; only a
+    // sustained outage (no successful ping within the staleness window) trips
+    // this gate. Admin endpoints protected by @RolesAllowed("instance-admin")
+    // are also covered — isAllowed is consulted by SubscriptionFilter, not
+    // the JAX-RS @RolesAllowed mechanism, so the gate is orthogonal to role
+    // checking.
+    if (dbHealthRegistry != null && dbHealthRegistry.isCurrentlyDown(DatabaseKind.NEO4J)) {
+      Log.warn("F5: Neo4j is currently DOWN — denying request fail-closed");
+      return false;
+    }
+
     // P4: strip the /shepard/api/ prefix so first-segment dispatch
     // ("collections", "temp", "users", …) keeps working byte-identically.
     List<PathSegment> pathSegments = RequestPathHelper.applicationSegments(requestContext);
@@ -429,7 +486,7 @@ public class PermissionsService {
     // entity paths
     if (StringUtils.isNumeric(idSegment)) {
       var entityId = Long.parseLong(idSegment);
-      return isAccessTypeAllowedForUser(entityId, accessType, userName);
+      return isAccessTypeAllowedForUser(entityId, accessType, userName, currentIat());
     }
 
     // usersearch and containersearch

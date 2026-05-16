@@ -187,7 +187,7 @@ public class CollectionTemplatesRest {
     Optional<Long> ogmId = collectionPropsDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) return Optional.empty();
     String caller = sc.getUserPrincipal().getName();
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), access, caller)) return Optional.empty();
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), access, caller, 0L)) return Optional.empty();
     return ogmId;
   }
 
