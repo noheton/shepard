@@ -48,7 +48,7 @@ kinds verified in source today (under
 | Timeseries | (under `data/timeseries`, see `TimeseriesRest`) | Channels in TimescaleDB |
 | Spatial-Data | `SpatialDataReferenceRest` | Geometries in PostGIS (optional) |
 | URI | `URIReferenceRest` | External URIs |
-| Lab-Journal | (under `context/labJournal`) | Rich-text lab entries |
+| Lab-Journal | (under `context/labJournal`) | CommonMark + GFM markdown entries; see [Lab journal reference](/reference/lab-journal/) |
 | Collection / DataObject | (cross-references) | Links between entities |
 
 ## Permissions

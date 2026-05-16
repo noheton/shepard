@@ -42,6 +42,24 @@ public class LabJournalEntryIO {
   @Schema(readOnly = true, nullable = true, required = true)
   private String updatedBy;
 
+  /**
+   * J1a — fixed constant indicating that all lab journal entries are interpreted
+   * as CommonMark + GFM markdown by the render endpoint
+   * ({@code GET /v2/lab-journal/{appId}/render}).
+   *
+   * <p>The format is implicit (always CommonMark from J1a onward); this field
+   * tells clients what they should expect from the render endpoint without
+   * requiring them to check a separate capability endpoint. The value is
+   * {@code "MARKDOWN"} for all entries, including pre-J1a plain-text entries
+   * (which CommonMark passes through unchanged as {@code <p>} elements).
+   *
+   * <p>This field is additive — existing clients that ignore unknown JSON fields
+   * are unaffected. It appears on both the {@code /shepard/api/labJournalEntries}
+   * compat surface and the new {@code /v2/} surface.
+   */
+  @Schema(readOnly = true, required = true, example = "MARKDOWN")
+  private final String contentFormat = "MARKDOWN";
+
   public LabJournalEntryIO() {}
 
   public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
