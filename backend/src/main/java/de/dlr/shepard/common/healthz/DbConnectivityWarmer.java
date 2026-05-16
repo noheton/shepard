@@ -7,11 +7,9 @@ import jakarta.enterprise.context.control.RequestContextController;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Fires an initial connectivity probe to every registered {@link DbPinger} in
@@ -24,11 +22,13 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * safe to probe all DBs concurrently without racing the migration sequence.
  *
  * <p><strong>Parallelism:</strong> each pinger runs in its own Java 21 virtual
- * thread so total startup wait is bounded by {@code max(per-db timeout)} rather
- * than {@code sum(per-db timeout)}.  The overall wall-clock ceiling is
- * {@code shepard.migrations.connection-wait-timeout} (shared with
- * {@code MigrationsRunner}) — reusing the same key avoids introducing a new
- * operator knob for what is the same intent.
+ * thread so total startup wait is bounded by {@code max(per-db latency)} rather
+ * than {@code sum(per-db latency)}.  Each individual probe is bounded by the
+ * DB driver's own socket/connect timeout (configured at the data-source level,
+ * e.g. {@code %prod.quarkus.datasource.jdbc.connect-timeout}).  This warmer
+ * does not impose an additional application-level deadline on top of the
+ * driver's own; doing so correctly would require interrupting virtual threads,
+ * which {@link CompletableFuture#orTimeout} cannot do.
  *
  * <p><strong>Fail-soft:</strong> a pinger that times out or throws only marks
  * its own {@link DbHealthState} DOWN — it does not abort startup.  The existing
@@ -44,17 +44,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class DbConnectivityWarmer {
 
-  static final String TIMEOUT_PROPERTY = "shepard.migrations.connection-wait-timeout";
-  static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(60);
-
   @Inject
   Instance<DbPinger> pingers;
 
   @Inject
   RequestContextController requestContextController;
-
-  @ConfigProperty(name = TIMEOUT_PROPERTY, defaultValue = "PT60S")
-  Duration timeout;
 
   /** Tracks the combined future so tests can await completion. */
   private volatile CompletableFuture<Void> warmingFuture = CompletableFuture.completedFuture(null);
@@ -76,9 +70,8 @@ public class DbConnectivityWarmer {
     }
 
     Log.infof(
-      "DbConnectivityWarmer: pre-warming %d DB connections in parallel (timeout=%s)",
-      required.size(),
-      timeout
+      "DbConnectivityWarmer: pre-warming %d DB connections in parallel",
+      required.size()
     );
 
     // Launch one virtual thread per DB — total wall-clock wait is max(latencies)
@@ -119,14 +112,12 @@ public class DbConnectivityWarmer {
     } catch (Exception e) {
       Log.debugf(e, "DbConnectivityWarmer: could not activate request context for %s", pinger.name());
     }
-    long deadline = System.currentTimeMillis() + timeout.toMillis();
     try {
-      long remaining = deadline - System.currentTimeMillis();
-      if (remaining <= 0) {
-        Log.warnf("DbConnectivityWarmer: timeout already elapsed before probing %s", pinger.name());
-        return;
-      }
       Log.debugf("DbConnectivityWarmer: probing %s", pinger.name());
+      // Per-probe timeout is enforced by the DB driver's own socket/connect
+      // timeout (e.g. quarkus.datasource.jdbc.connect-timeout).  Imposing an
+      // additional application-level deadline would require interrupting virtual
+      // threads, which CompletableFuture.orTimeout cannot do.
       boolean ok = pinger.ping();
       if (ok) {
         Log.infof("DbConnectivityWarmer: %s is UP", pinger.name());

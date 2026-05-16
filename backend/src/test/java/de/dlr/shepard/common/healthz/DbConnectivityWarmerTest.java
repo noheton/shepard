@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.control.RequestContextController;
 import jakarta.enterprise.inject.Instance;
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,13 +41,11 @@ public class DbConnectivityWarmerTest {
 
   private static DbConnectivityWarmer warmer(
     Instance<DbPinger> pingers,
-    RequestContextController ctrl,
-    Duration timeout
+    RequestContextController ctrl
   ) {
     DbConnectivityWarmer w = new DbConnectivityWarmer();
     w.pingers = pingers;
     w.requestContextController = ctrl;
-    w.timeout = timeout;
     return w;
   }
 
@@ -56,7 +53,7 @@ public class DbConnectivityWarmerTest {
 
   @Test
   public void noPingers_completesImmediately() throws Exception {
-    DbConnectivityWarmer w = warmer(instanceOf(), noOpController(), Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(), noOpController());
     w.onStart(new StartupEvent());
     w.warmingFuture().get(2, TimeUnit.SECONDS);
   }
@@ -73,7 +70,7 @@ public class DbConnectivityWarmerTest {
       return true;
     });
 
-    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController(), Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController());
     w.onStart(new StartupEvent());
     w.warmingFuture().get(5, TimeUnit.SECONDS);
 
@@ -87,7 +84,7 @@ public class DbConnectivityWarmerTest {
     when(p.name()).thenReturn("postgis");
     when(p.isRequired()).thenReturn(false);
 
-    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController(), Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController());
     w.onStart(new StartupEvent());
     w.warmingFuture().get(2, TimeUnit.SECONDS);
 
@@ -114,7 +111,7 @@ public class DbConnectivityWarmerTest {
       return true;
     });
 
-    DbConnectivityWarmer w = warmer(instanceOf(bad, good), noOpController(), Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(bad, good), noOpController());
     w.onStart(new StartupEvent());
     w.warmingFuture().get(5, TimeUnit.SECONDS);
 
@@ -135,7 +132,7 @@ public class DbConnectivityWarmerTest {
       return false;
     });
 
-    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController(), Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(p), noOpController());
     w.onStart(new StartupEvent());
     w.warmingFuture().get(5, TimeUnit.SECONDS);
 
@@ -176,7 +173,7 @@ public class DbConnectivityWarmerTest {
       ps[i] = p;
     }
 
-    DbConnectivityWarmer w = warmer(instanceOf(ps), noOpController(), Duration.ofSeconds(10));
+    DbConnectivityWarmer w = warmer(instanceOf(ps), noOpController());
     long t0 = System.currentTimeMillis();
     w.onStart(new StartupEvent());
     w.warmingFuture().get(10, TimeUnit.SECONDS);
@@ -211,7 +208,7 @@ public class DbConnectivityWarmerTest {
     RequestContextController ctrl = mock(RequestContextController.class);
     when(ctrl.activate()).thenReturn(true);
 
-    DbConnectivityWarmer w = warmer(instanceOf(p), ctrl, Duration.ofSeconds(5));
+    DbConnectivityWarmer w = warmer(instanceOf(p), ctrl);
     w.onStart(new StartupEvent());
     w.warmingFuture().get(5, TimeUnit.SECONDS);
 
