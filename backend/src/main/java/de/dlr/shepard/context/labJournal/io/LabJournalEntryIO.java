@@ -1,6 +1,7 @@
 package de.dlr.shepard.context.labJournal.io;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import jakarta.validation.constraints.NotNull;
@@ -57,6 +58,7 @@ public class LabJournalEntryIO {
    * are unaffected. It appears on both the {@code /shepard/api/labJournalEntries}
    * compat surface and the new {@code /v2/} surface.
    */
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   @Schema(readOnly = true, required = true, example = "MARKDOWN")
   private final String contentFormat = "MARKDOWN";
 
