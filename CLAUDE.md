@@ -307,3 +307,46 @@ Everything else: **admin-configurable at runtime**. The same
 durability test applies — if the design doc only ships
 deploy-time-only config and there's no exception reason, the
 review should send it back for the `:*Config` shape.
+
+## Always: plugins ship their own documentation
+
+Every `shepard-plugin-*` module is **self-documenting**. The plugin
+JAR ships three documentation artefacts, and they are linked from
+shepard's main docs site (per the `aidocs/49` two-track structure)
+in the same PR that ships the plugin's first non-trivial release:
+
+1. **`docs/reference/<plugin-id>.md`** — comprehensive reference page
+   covering every payload kind, endpoint, config key, Neo4j entity,
+   and admin CLI command the plugin introduces. This is the page a
+   power user or operator reads when something goes wrong at 2 AM.
+2. **`docs/help/<plugin-id>-quickstart.md`** — casual-user task page:
+   "How do I upload a CAD file?", "How do I publish to Databus?",
+   etc. Answers in two clicks; no installation knowledge assumed.
+3. **`docs/install/<plugin-id>.md`** — operator installation guide:
+   prerequisites, compose-profile changes, config keys, migration
+   steps, healthcheck endpoint, known pitfalls.
+
+The main docs index (`docs/index.md` or equivalent) must link each
+plugin's three pages under a **Plugins** section so a user who opens
+`/help` can discover and install any plugin without needing GitHub.
+
+**Minimum acceptance criteria** for a plugin PR:
+
+- All three pages exist and are linked from the main index.
+- The reference page documents every REST endpoint with a worked
+  request/response example.
+- The install page documents every `:*Config` field and its default.
+- Screenshots are not required for v1 (Playwright pipeline adds them
+  automatically on the next CI run that touches those pages).
+
+The exceptions (things that don't need all three pages):
+
+- Pure internal infrastructure plugins (no user-visible payload kind
+  or endpoint) — reference only.
+- Plugins gated behind a feature flag that is off by default — install
+  page is required; reference and quickstart can land in the same PR
+  as the flag-enable.
+
+Stale plugin docs are treated the same as stale `aidocs/42` vision
+sections — a PR that changes a plugin's surface without updating the
+plugin's docs pages fails review.
