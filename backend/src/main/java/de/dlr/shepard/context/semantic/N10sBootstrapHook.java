@@ -3,7 +3,6 @@ package de.dlr.shepard.context.semantic;
 import io.quarkus.logging.Log;
 import java.util.Collections;
 import java.util.Map;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -45,9 +44,6 @@ import org.neo4j.ogm.session.Session;
  */
 public class N10sBootstrapHook {
 
-  /** Config key — true (default) means try to run the bootstrap; false to fully disable. */
-  static final String ENABLED_PROPERTY = "shepard.semantic.internal.enabled";
-
   /** Config key — passed through verbatim to n10s {@code graphconfig.init({handleVocabUris})}. */
   static final String HANDLE_VOCAB_URIS_PROPERTY = "shepard.semantic.internal.handle-vocab-uris";
 
@@ -88,7 +84,6 @@ public class N10sBootstrapHook {
     "FOR (r:Resource) REQUIRE r.uri IS UNIQUE";
 
   private final Session session;
-  private final boolean enabled;
   private final String handleVocabUris;
   private final OntologySeedService seedService;
 
@@ -96,22 +91,19 @@ public class N10sBootstrapHook {
   public N10sBootstrapHook() {
     this(
       de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession(),
-      readBooleanConfig(ENABLED_PROPERTY, true),
       readStringConfig(HANDLE_VOCAB_URIS_PROPERTY, DEFAULT_HANDLE_VOCAB_URIS),
       new OntologySeedService()
     );
   }
 
   /**
-   * Test seam (pre-N1b) — accept a pre-built session + the two
-   * config values. The seed service is constructed in disabled mode
-   * so pre-N1b tests get the original semantics: bootstrap-only,
-   * no ontology import.
+   * Test seam (pre-N1b) — accept a pre-built session + handleVocabUris.
+   * The seed service is constructed in disabled mode so pre-N1b tests get
+   * the original semantics: bootstrap-only, no ontology import.
    */
-  public N10sBootstrapHook(Session session, boolean enabled, String handleVocabUris) {
+  public N10sBootstrapHook(Session session, String handleVocabUris) {
     this(
       session,
-      enabled,
       handleVocabUris,
       new OntologySeedService(
         session,
@@ -123,10 +115,9 @@ public class N10sBootstrapHook {
     );
   }
 
-  /** Test seam (N1b) — accept a pre-built session, config values, and a pre-built seed service. */
-  public N10sBootstrapHook(Session session, boolean enabled, String handleVocabUris, OntologySeedService seedService) {
+  /** Test seam (N1b) — accept a pre-built session, handleVocabUris, and a pre-built seed service. */
+  public N10sBootstrapHook(Session session, String handleVocabUris, OntologySeedService seedService) {
     this.session = session;
-    this.enabled = enabled;
     this.handleVocabUris = handleVocabUris == null || handleVocabUris.isBlank()
       ? DEFAULT_HANDLE_VOCAB_URIS
       : handleVocabUris.trim();
@@ -138,10 +129,6 @@ public class N10sBootstrapHook {
    * Never throws on n10s-related errors; logs and proceeds.
    */
   public void run() {
-    if (!enabled) {
-      Log.info("N10sBootstrapHook: disabled via shepard.semantic.internal.enabled=false; skipping.");
-      return;
-    }
     if (session == null) {
       Log.warn("N10sBootstrapHook: no OGM session available; skipping (INTERNAL repos disabled).");
       return;
@@ -210,14 +197,6 @@ public class N10sBootstrapHook {
     } catch (RuntimeException ex) {
       Log.warnf("N10sBootstrapHook: detection probe raised %s; treating n10s as absent.", ex.getClass().getSimpleName());
       return false;
-    }
-  }
-
-  private static boolean readBooleanConfig(String key, boolean fallback) {
-    try {
-      return ConfigProvider.getConfig().getOptionalValue(key, Boolean.class).orElse(fallback);
-    } catch (RuntimeException ex) {
-      return fallback;
     }
   }
 

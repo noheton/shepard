@@ -36,7 +36,7 @@ class N10sBootstrapHookTest {
     Result detect = singleRow(Map.of("available", Boolean.FALSE));
     when(session.query(eq(N10sBootstrapHook.DETECT_CYPHER), any())).thenReturn(detect);
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     hook.run();
 
     verify(session).query(eq(N10sBootstrapHook.DETECT_CYPHER), any());
@@ -55,7 +55,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.INIT_CYPHER), any())).thenReturn(initOk);
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenReturn(constraintOk);
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     hook.run();
 
     verify(session).query(eq(N10sBootstrapHook.INIT_CYPHER), eq(Map.of("handleVocabUris", "IGNORE")));
@@ -75,7 +75,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.INIT_CYPHER), any())).thenThrow(new RuntimeException("Graph config exists"));
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenReturn(constraintOk);
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     assertDoesNotThrow(hook::run);
 
     verify(session).query(eq(N10sBootstrapHook.INIT_CYPHER), any());
@@ -92,23 +92,14 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.INIT_CYPHER), any())).thenReturn(initOk);
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenThrow(new RuntimeException("forbidden"));
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     assertDoesNotThrow(hook::run);
-  }
-
-  /** Branch 3: disabled via config — nothing fires, even with a healthy session. */
-  @Test
-  void run_isShortCircuitedByDisabledConfig() {
-    Session session = mock(Session.class);
-    var hook = new N10sBootstrapHook(session, false, "IGNORE");
-    hook.run();
-    verify(session, never()).query(any(String.class), any());
   }
 
   /** Null session: warn + skip (no NPE). */
   @Test
   void run_handlesNullSession() {
-    var hook = new N10sBootstrapHook(null, true, "IGNORE");
+    var hook = new N10sBootstrapHook(null, "IGNORE");
     assertDoesNotThrow(hook::run);
   }
 
@@ -118,7 +109,7 @@ class N10sBootstrapHookTest {
     Session session = mock(Session.class);
     when(session.query(eq(N10sBootstrapHook.DETECT_CYPHER), any())).thenThrow(new RuntimeException("denied"));
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     hook.run();
 
     verify(session, never()).query(eq(N10sBootstrapHook.INIT_CYPHER), any());
@@ -131,7 +122,7 @@ class N10sBootstrapHookTest {
     Result empty = emptyResult();
     when(session.query(eq(N10sBootstrapHook.DETECT_CYPHER), any())).thenReturn(empty);
 
-    var hook = new N10sBootstrapHook(session, true, "IGNORE");
+    var hook = new N10sBootstrapHook(session, "IGNORE");
     hook.run();
 
     verify(session, never()).query(eq(N10sBootstrapHook.INIT_CYPHER), any());
@@ -148,7 +139,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.INIT_CYPHER), any())).thenReturn(initOk);
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenReturn(constraintOk);
 
-    var hook = new N10sBootstrapHook(session, true, "SHORTEN");
+    var hook = new N10sBootstrapHook(session, "SHORTEN");
     hook.run();
 
     verify(session, times(1)).query(eq(N10sBootstrapHook.INIT_CYPHER), eq(Map.of("handleVocabUris", "SHORTEN")));
@@ -165,7 +156,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.INIT_CYPHER), any())).thenReturn(initOk);
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenReturn(constraintOk);
 
-    var hook = new N10sBootstrapHook(session, true, "   ");
+    var hook = new N10sBootstrapHook(session, "   ");
     hook.run();
 
     verify(session).query(
@@ -186,7 +177,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.CONSTRAINT_CYPHER), any())).thenReturn(constraintOk);
 
     OntologySeedService seed = mock(OntologySeedService.class);
-    var hook = new N10sBootstrapHook(session, true, "IGNORE", seed);
+    var hook = new N10sBootstrapHook(session, "IGNORE", seed);
     hook.run();
 
     verify(seed, times(1)).seedIfNeeded();
@@ -205,7 +196,7 @@ class N10sBootstrapHookTest {
 
     OntologySeedService seed = mock(OntologySeedService.class);
     doThrow(new RuntimeException("seed exploded")).when(seed).seedIfNeeded();
-    var hook = new N10sBootstrapHook(session, true, "IGNORE", seed);
+    var hook = new N10sBootstrapHook(session, "IGNORE", seed);
 
     assertDoesNotThrow(hook::run);
     verify(seed, times(1)).seedIfNeeded();
@@ -219,7 +210,7 @@ class N10sBootstrapHookTest {
     when(session.query(eq(N10sBootstrapHook.DETECT_CYPHER), any())).thenReturn(detect);
 
     OntologySeedService seed = mock(OntologySeedService.class);
-    var hook = new N10sBootstrapHook(session, true, "IGNORE", seed);
+    var hook = new N10sBootstrapHook(session, "IGNORE", seed);
     hook.run();
 
     verify(seed, never()).seedIfNeeded();
