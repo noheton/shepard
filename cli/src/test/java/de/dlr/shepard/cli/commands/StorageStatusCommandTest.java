@@ -8,49 +8,48 @@ import de.dlr.shepard.cli.support.StubBackend;
 import org.junit.jupiter.api.Test;
 
 /**
- * FS1a — exercises {@code shepard-admin storage status}. Reads the
- * existing readiness probe and surfaces the MongoDB-side health
- * signal as the proxy for "is the default GridFS storage adapter
- * up?" Full provider-listing detail is FS1d territory.
+ * FS1e1 — exercises {@code shepard-admin storage status}. Reads
+ * {@code GET /v2/admin/storage} and surfaces the list of discovered
+ * adapters with their enabled/active state.
  */
 final class StorageStatusCommandTest {
 
-  private static final String READY_MONGO_UP =
+  private static final String GRIDFS_ACTIVE =
     """
     {
-      "status":"UP",
-      "checks":[
-        {"name":"neo4j","status":"UP"},
-        {"name":"MongoDB Health Check","status":"UP","data":{"latency-ms":4}}
+      "activeProviderId": "gridfs",
+      "adapters": [
+        {"id": "gridfs", "enabled": true, "active": true},
+        {"id": "s3", "enabled": false, "active": false}
       ]
     }
     """;
 
-  private static final String READY_MONGO_DOWN =
+  private static final String S3_ACTIVE =
     """
     {
-      "status":"DOWN",
-      "checks":[
-        {"name":"neo4j","status":"UP"},
-        {"name":"MongoDB Health Check","status":"DOWN","data":{"error":"connection refused"}}
+      "activeProviderId": "s3",
+      "adapters": [
+        {"id": "gridfs", "enabled": true, "active": false},
+        {"id": "s3", "enabled": true, "active": true}
       ]
     }
     """;
 
-  private static final String READY_NO_MONGO =
+  private static final String NO_ACTIVE =
     """
     {
-      "status":"UP",
-      "checks":[
-        {"name":"neo4j","status":"UP"}
+      "activeProviderId": null,
+      "adapters": [
+        {"id": "gridfs", "enabled": true, "active": false}
       ]
     }
     """;
 
   @Test
-  void mongoUpReturnsExitZero() throws Exception {
+  void activeProviderReturnsExitZero() throws Exception {
     try (StubBackend backend = StubBackend.start()) {
-      backend.route(StorageStatusCommand.READINESS_PATH, 200, READY_MONGO_UP);
+      backend.route(StorageStatusCommand.STORAGE_PATH, 200, GRIDFS_ACTIVE);
 
       Captured result = CliRunner.run(new StorageStatusCommand(), backend.baseUrl(), "test-key");
 
@@ -58,61 +57,54 @@ final class StorageStatusCommandTest {
       assertThat(result.stdout())
         .contains("STORAGE")
         .contains("active provider")
-        .contains("gridfs connection")
-        .contains("UP")
-        .contains("FS1d")
-        .contains("FS1b");
+        .contains("gridfs")
+        .contains("adapter: s3");
     }
   }
 
   @Test
-  void mongoDownReturnsExitOne() throws Exception {
+  void s3ActiveReturnsExitZero() throws Exception {
     try (StubBackend backend = StubBackend.start()) {
-      // Quarkus returns 503 when readiness is DOWN — the CLI's
-      // fallback parses the body anyway.
-      backend.route(StorageStatusCommand.READINESS_PATH, 503, READY_MONGO_DOWN);
+      backend.route(StorageStatusCommand.STORAGE_PATH, 200, S3_ACTIVE);
+
+      Captured result = CliRunner.run(new StorageStatusCommand(), backend.baseUrl(), "test-key");
+
+      assertThat(result.exit()).isEqualTo(0);
+      assertThat(result.stdout())
+        .contains("s3")
+        .contains("enabled, active");
+    }
+  }
+
+  @Test
+  void noActiveProviderReturnsExitOne() throws Exception {
+    try (StubBackend backend = StubBackend.start()) {
+      backend.route(StorageStatusCommand.STORAGE_PATH, 200, NO_ACTIVE);
 
       Captured result = CliRunner.run(new StorageStatusCommand(), backend.baseUrl(), "test-key");
 
       assertThat(result.exit()).isEqualTo(1);
-      assertThat(result.stdout()).contains("DOWN");
+      assertThat(result.stdout()).contains("none configured");
     }
   }
 
   @Test
-  void missingMongoCheckReportsUnknown() throws Exception {
-    // Defensive: if the readiness probe doesn't include a mongo
-    // entry (no GridFS-using deployment, future split, …), the
-    // command reports UNKNOWN rather than crash.
+  void jsonOutputIncludesActiveProviderId() throws Exception {
     try (StubBackend backend = StubBackend.start()) {
-      backend.route(StorageStatusCommand.READINESS_PATH, 200, READY_NO_MONGO);
-
-      Captured result = CliRunner.run(new StorageStatusCommand(), backend.baseUrl(), "test-key");
-
-      assertThat(result.exit()).isEqualTo(1);
-      assertThat(result.stdout()).contains("UNKNOWN");
-    }
-  }
-
-  @Test
-  void jsonOutputSurfacesGridfsConnection() throws Exception {
-    try (StubBackend backend = StubBackend.start()) {
-      backend.route(StorageStatusCommand.READINESS_PATH, 200, READY_MONGO_UP);
+      backend.route(StorageStatusCommand.STORAGE_PATH, 200, GRIDFS_ACTIVE);
 
       Captured result = CliRunner.run(
         new StorageStatusCommand(),
         backend.baseUrl(),
         "test-key",
-        "--output",
-        "json"
+        "--output", "json"
       );
 
       assertThat(result.exit()).isEqualTo(0);
       assertThat(result.stdout())
-        .contains("\"gridfsConnection\"")
-        .contains("\"UP\"")
-        .contains("\"gridfsConnectionUp\"")
-        .contains("activeProviderHint");
+        .contains("\"activeProviderId\"")
+        .contains("\"gridfs\"")
+        .contains("\"adapters\"");
     }
   }
 }

@@ -191,7 +191,9 @@ public class S3FileStorage implements FileStorage {
   @Override
   public StorageLocator put(StoragePutRequest request) throws StorageException {
     requireEnabled();
-    String uuid = UUID.randomUUID().toString();
+    String uuid = request.assignedObjectKey() != null && !request.assignedObjectKey().isBlank()
+      ? request.assignedObjectKey()
+      : UUID.randomUUID().toString();
     String key = request.container() + "/" + uuid;
 
     PutObjectRequest.Builder reqBuilder = PutObjectRequest.builder()

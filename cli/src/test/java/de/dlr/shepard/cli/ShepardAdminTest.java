@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.dlr.shepard.cli.commands.FeaturesCommand;
 import de.dlr.shepard.cli.commands.FeaturesListCommand;
+import de.dlr.shepard.cli.commands.FilesCommand;
+import de.dlr.shepard.cli.commands.FilesMigrateCommand;
+import de.dlr.shepard.cli.commands.FilesMigrateStatusCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.MigrationsStatusCommand;
@@ -28,7 +31,7 @@ final class ShepardAdminTest {
     CommandLine cmd = new CommandLine(new ShepardAdmin());
 
     assertThat(cmd.getSubcommands().keySet())
-      .contains("features", "health", "migrations", "semantic", "storage");
+      .contains("features", "files", "health", "migrations", "semantic", "storage");
   }
 
   @Test
@@ -145,6 +148,26 @@ final class ShepardAdminTest {
   @Test
   void storageAloneIsAccessible() {
     int exit = new CommandLine(new ShepardAdmin()).execute("storage");
+    assertThat(exit).isEqualTo(0);
+  }
+
+  @Test
+  void filesSubcommandHasMigrateAndMigrateStatusUnderIt() {
+    CommandLine cmd = new CommandLine(new ShepardAdmin());
+
+    CommandLine files = cmd.getSubcommands().get("files");
+    assertThat(files).isNotNull();
+    assertThat((Object) files.getCommand()).isInstanceOf(FilesCommand.class);
+    assertThat(files.getSubcommands().keySet()).contains("migrate", "migrate-status");
+    assertThat((Object) files.getSubcommands().get("migrate").getCommand())
+      .isInstanceOf(FilesMigrateCommand.class);
+    assertThat((Object) files.getSubcommands().get("migrate-status").getCommand())
+      .isInstanceOf(FilesMigrateStatusCommand.class);
+  }
+
+  @Test
+  void filesAloneIsAccessible() {
+    int exit = new CommandLine(new ShepardAdmin()).execute("files");
     assertThat(exit).isEqualTo(0);
   }
 }

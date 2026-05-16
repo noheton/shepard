@@ -37,18 +37,30 @@ import java.io.InputStream;
  *                     and is responsible for closing it after
  *                     reading; on exception, the caller must close
  *                     it. Never null.
- * @param sizeBytes    optional pre-known size of the payload. The
- *                     legacy GridFS path computes this after the
- *                     fact via {@code GridFSFile.getLength()} so this
- *                     can be {@code null}; FS1b's S3 adapter can use
- *                     it to pick multipart vs single-part. Nullable.
+ * @param sizeBytes          optional pre-known size of the payload. The
+ *                           legacy GridFS path computes this after the
+ *                           fact via {@code GridFSFile.getLength()} so this
+ *                           can be {@code null}; FS1b's S3 adapter can use
+ *                           it to pick multipart vs single-part. Nullable.
+ * @param assignedObjectKey  FS1e1 migration hint — when non-null, the S3
+ *                           adapter stores the object under
+ *                           {@code container/assignedObjectKey} instead of
+ *                           generating a fresh UUID. Used by
+ *                           {@code FileMigrationService} to preserve the
+ *                           original GridFS {@code oid} across a
+ *                           gridfs→s3 migration so existing API clients
+ *                           keep working (the locator key changes from
+ *                           {@code "gridfs"} to {@code "s3"} but the oid
+ *                           stays identical). Nullable — normal (non-
+ *                           migration) uploads leave this null.
  */
 public record StoragePutRequest(
   String container,
   String fileName,
   String contentType,
   InputStream bytes,
-  Long sizeBytes
+  Long sizeBytes,
+  String assignedObjectKey
 ) {
   public StoragePutRequest {
     if (container == null || container.isBlank()) {
@@ -72,6 +84,6 @@ public record StoragePutRequest(
    * "unknown, use sensible defaults".
    */
   public StoragePutRequest(String container, String fileName, InputStream bytes) {
-    this(container, fileName, null, bytes, null);
+    this(container, fileName, null, bytes, null, null);
   }
 }

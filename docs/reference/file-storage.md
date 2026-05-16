@@ -16,7 +16,10 @@ upgrade path.
 |---|---|---|---|
 | `shepard.storage.provider` | `gridfs` | deploy-time only | Switches the active storage adapter. Set to `none` to disable file payloads (resolver-only). |
 | `:ShepardFile.providerId` | `"gridfs"` | per-row Neo4j property | Internal bookkeeping. Stamped on every new upload + backfilled on legacy rows by V34. Not on the wire. |
-| `shepard-admin storage status` | — | CLI verb | Read-only operator visibility. Reports MongoDB health as the proxy for "GridFS up?". |
+| `shepard-admin storage status` | — | CLI verb | Read-only adapter listing. Reads `GET /v2/admin/storage`. Requires admin API key. |
+| `GET /v2/admin/storage` | — | REST (instance-admin) | Lists all discovered adapters with `id`, `enabled`, `active` flags. |
+| `shepard-admin files migrate <src> <tgt>` | — | CLI verb | Triggers big-bang migration in background (FS1e1). |
+| `GET /v2/admin/files/migrate/status` | — | REST (instance-admin) | Polls migration state (IDLE / RUNNING / DONE / FAILED). |
 
 ## What's in the box
 
@@ -164,13 +167,60 @@ the direct upload path (`POST /shepard/api/fileContainers/{id}/payload`).
 No code change needed — `GridFsFileStorage` inherits the SPI's
 `Optional.empty()` default and the service layer converts it to 503.
 
+## Migrating between adapters (FS1e1)
+
+`shepard-admin files migrate <source> <target>` streams every
+file from the source adapter to the target adapter in the
+background. OIDs are preserved — existing API clients keep
+working because only `providerId` changes in Neo4j.
+
+### Full GridFS → S3 migration walkthrough
+
+```bash
+# 1. Ensure both adapters are visible:
+shepard-admin storage status
+# Should show gridfs: enabled, s3: enabled
+
+# 2. Trigger migration (returns immediately):
+shepard-admin files migrate gridfs s3
+
+# 3. Poll until done:
+watch -n5 shepard-admin files migrate-status
+
+# 4. If filesFailed > 0, re-run to sweep residual:
+shepard-admin files migrate gridfs s3
+
+# 5. Once status: DONE, flip the active provider and restart:
+# In application.properties:
+#   shepard.storage.provider=s3
+# Then: docker compose restart shepard-backend
+```
+
+Migration can be scripted with exit codes:
+
+```bash
+# Wait until migration finishes (exit 0 = DONE/IDLE):
+until shepard-admin files migrate-status; do
+  sleep 10
+done
+```
+
+Exit codes: `0` = IDLE or DONE; `1` = RUNNING; `2` = FAILED.
+
+### Re-running after partial failure
+
+Re-running migration is safe — files already on the target have
+`providerId = <target>` and are excluded from the Cypher query.
+Only files still at the source (unexpected failures, transient
+network errors) are touched on a re-run.
+
 ## Switching the active adapter
 
 `shepard.storage.provider` is **deploy-time only** per the
 `CLAUDE.md` "cluster identity / topology" exception. Switching
 the storage backend re-points the bytes pipeline; runtime flips
 would orphan in-flight writes and break existing-row reads until
-the FS1e migration sweep completes.
+the migration sweep completes.
 
 ### Greenfield install (no existing files)
 
@@ -188,16 +238,12 @@ the FS1e migration sweep completes.
 2. Configure the S3 endpoint + bucket + credentials
    (`shepard.files.s3.*`).
 3. **Keep `shepard.storage.provider=gridfs`** — for now.
-4. When FS1e ships, run `shepard-admin files migrate gridfs s3`
-   to copy existing payloads. Migration runs in background mode
-   so the API stays available.
+4. Run `shepard-admin files migrate gridfs s3` to copy existing
+   payloads. Migration runs in the background so the API stays
+   available.
 5. After the sweep finishes, set `shepard.storage.provider=s3`
    and restart. Existing rows already point at the right adapter
    via their `:ShepardFile.providerId`.
-
-Until FS1e, the migration runway is a manual `mongodump` + `aws
-s3 cp` sequence + a Cypher `MATCH (f:ShepardFile) SET f.providerId
-= 's3'` stamp — workable but not the operator UX FS1e will land.
 
 ### Disabling file payloads
 
@@ -215,10 +261,10 @@ Useful for archival deployments that want to retain the Neo4j
 graph + the MongoDB bookkeeping documents but not let users add
 new files until an operator picks the next storage backend.
 
-## Health check
+## Adapter status
 
-`shepard-admin storage status` shows the MongoDB-side health
-signal as the proxy for "is the default GridFS adapter up?":
+`shepard-admin storage status` reads `GET /v2/admin/storage` and
+shows all discovered adapters with their enabled/active state:
 
 ```text
 $ shepard-admin storage status
@@ -226,29 +272,32 @@ STORAGE — file-payload adapter status
 
 FIELD              | VALUE
 -------------------+------------------------------------------------
-active provider    | (FS1d will expose this; check shepard.storage.provider)
-gridfs connection  | UP
-
-note: full provider listing + per-adapter detail lands in FS1d
-      (GET /v2/admin/storage); FS1b adds the S3 adapter under plugins/storage-s3/.
+active provider    | gridfs
+adapter: gridfs    | enabled, active
+adapter: s3        | disabled
 ```
 
-Exit code: 0 when MongoDB is `UP`; 1 when `DOWN`. Usable as a
-kubelet-style probe in a shell pipeline.
+Exit code: 0 when an active provider is configured; 1 when
+no provider is active. Requires an admin API key
+(`--api-key <key>` or `SHEPARD_API_KEY=<key>`).
 
-`--output=json` emits a machine-readable shape:
+`--output=json` emits:
 
 ```json
 {
-  "activeProviderHint": "see shepard.storage.provider in application.properties (FS1d will expose it)",
-  "gridfsConnection": "UP",
-  "gridfsConnectionUp": true
+  "activeProviderId": "gridfs",
+  "adapters": [
+    {"id": "gridfs", "enabled": true, "active": true},
+    {"id": "s3", "enabled": false, "active": false}
+  ]
 }
 ```
 
-FS1d (queued) will land `GET /v2/admin/storage` for the proper
-per-adapter listing; until then the CLI's `--output=json` is the
-stable surface to script against.
+The same payload is available directly via the REST API:
+
+```bash
+curl -H "X-API-KEY: <admin-key>" https://shepard.example.dlr.de/v2/admin/storage
+```
 
 ## Upgrade path
 

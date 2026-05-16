@@ -1,6 +1,7 @@
 package de.dlr.shepard.cli;
 
 import de.dlr.shepard.cli.commands.FeaturesCommand;
+import de.dlr.shepard.cli.commands.FilesCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
@@ -40,6 +41,7 @@ import picocli.CommandLine.Command;
   description = "Administration CLI for a running shepard instance.",
   subcommands = {
     FeaturesCommand.class,
+    FilesCommand.class,
     HealthCommand.class,
     MigrationsCommand.class,
     PluginsCommand.class,
