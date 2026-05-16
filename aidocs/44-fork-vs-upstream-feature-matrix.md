@@ -254,6 +254,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Unified `ShepardTestStack` testcontainer resource | none | TBD | 📐 (queued, DX1) | `aidocs/47 §4.1` |
 | `ShepardTestFixtures` shared typed builders (Collection / DataObject / User / Permissions / BasicReference) | none | shipped — `backend/src/test/java/de/dlr/shepard/testing/fixtures/ShepardTestFixtures.java`; pilot adopters `CollectionServiceTest` / `DataObjectServiceTest` / `BasicReferenceServiceTest` | **✓ ↑** (DX2) | `aidocs/16` DX2 |
 | BI integrations — Grafana data-source plugin + Superset SQLAlchemy recipe | none | TBD; "SQL win" via P10 (C5 cleared) | 📐 (queued, DX8) | `aidocs/47 §4.8` + `aidocs/29` |
+| External-service minimal-instance test infrastructure — real service containers (Fuseki/Databus, BaSyx AAS, Synapse/Matrix, Open3D sidecar) + WireMock fallbacks for non-self-hostable services (DataCite, ePIC, Unhide harvester); `ExternalServiceStack` Quarkus test-resource; `docker-compose.external-services.yml` for local dev | none | TBD | 📐 (queued, IX1a; IX1 prerequisite for all external-integration ITs) | `aidocs/16` IX1 |
 | Selective export ✓ (see §5 above) | GET-only | **✓** (R2 series shipped) | **✓ ↑** | §5 |
 | Streaming RO-Crate export for large Collections | possible OOM | TBD | 📐 (queued) | `aidocs/31` |
 | Long-running export pattern (job-id polling) | synchronous only | TBD | 📐 (queued) | `aidocs/32` |
