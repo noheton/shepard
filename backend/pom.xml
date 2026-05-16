@@ -814,6 +814,20 @@
           <artifactId>shepard-plugin-hdf5</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          PL1d — Git reference payload kind. Registers GitReference's
+          Neo4j-OGM entity package via GitPayloadKind (PayloadKind SPI),
+          fixes the latent OGM-gap where GitReference's package was
+          previously unregistered in NeoConnector. GitCredential entity
+          and service stay in backend (auth perimeter). Migrations V19,
+          V20, V26 stay in backend.
+          See aidocs/47 PL1d.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

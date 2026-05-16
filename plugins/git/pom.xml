@@ -1,41 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  SPI1a — shepard-plugin-spatial extracts the PostGIS spatial-data
-  payload kind (SpatialDataContainer, SpatialDataPoint, the
-  SpatialDataReference context reference, REST endpoints, JPA
-  repository) from the backend into a drop-in plugin JAR.
+  PL1d — shepard-plugin-git extracts the Git reference payload kind
+  from the backend into a drop-in plugin JAR.
 
   This module produces a real
-  `shepard-plugin-spatial-${revision}.jar` carrying:
+  `shepard-plugin-git-${revision}.jar` carrying:
 
-    * `de.dlr.shepard.plugins.spatial.SpatialPluginManifest` —
+    * `de.dlr.shepard.plugins.git.GitPluginManifest` —
       implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's `PluginRegistry` tracks SPI1a in
-      `GET /v2/admin/plugins` and exposes the per-plugin
-      `shepard.plugins.spatial.enabled` runtime toggle.
+      backend's `PluginRegistry` tracks PL1d in
+      `GET /v2/admin/plugins`.
     * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
       pointing at the manifest class.
-    * `de.dlr.shepard.plugins.spatial.SpatialPayloadKind` —
+    * `de.dlr.shepard.plugins.git.GitPayloadKind` —
       implements `de.dlr.shepard.spi.payload.PayloadKind` so the
       backend's `NeoConnector` discovers the Neo4j-OGM entity
-      packages (`SpatialDataContainer`, `SpatialDataReference`)
-      via `ServiceLoader` at startup.
+      packages (`GitReference`) via `ServiceLoader` at startup.
+      This fixes the latent OGM-gap where `GitReference`'s package
+      was previously unregistered in `NeoConnector`.
     * `META-INF/services/de.dlr.shepard.spi.payload.PayloadKind`
-      pointing at the `SpatialPayloadKind` class.
-    * The full spatial code tree (endpoints, services, DAOs,
-      JPA repositories, model, IO records) in package
-      `de.dlr.shepard.data.spatialdata.*` and
-      `de.dlr.shepard.context.references.spatialdata.*`.
-    * `db/spatial/migration/V1.0.0__setup_spatial_data_tables.sql`
+      pointing at the `GitPayloadKind` class.
+    * The full Git reference code tree (adapters, services, DAO,
+      IO records, REST endpoints, credential REST) in packages
+      `de.dlr.shepard.context.references.git.*`,
+      `de.dlr.shepard.v2.git.*`, and
+      `de.dlr.shepard.v2.users.resources.MeCredentialsRest` +
+      `de.dlr.shepard.v2.users.io.{Create,Patch,}GitCredentialIO`.
 
-  Build order (same two-pass dance as UH1a, ADR-0023):
+    `GitCredential` entity + DAO + Service stay in backend
+    (auth perimeter; already OGM-registered via the User package).
+    Cypher migrations V19/V20/V26 stay in backend.
+
+  Build order (same two-pass dance as other plugins):
 
     $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
-    $ cd plugins/spatial && mvn -DskipTests install
+    $ cd plugins/git && mvn -DskipTests install
     $ cd backend && mvn package           # plugin is on the classpath
 
   See `docs/reference/plugins.md` for the operator runbook
-  and `aidocs/63 ADR-0023` + `aidocs/47` for the design rationale.
+  and `aidocs/47` for the design rationale.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -43,21 +46,20 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-spatial</artifactId>
+  <artifactId>shepard-plugin-git</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — Spatial (PostGIS payload kind)</name>
+  <name>shepard plugin — Git references (payload kind)</name>
   <description>
-    PostGIS-backed spatial-data payload kind. Provides
-    `SpatialDataContainer` + `SpatialDataPoint` JPA entities,
-    `SpatialDataReference` Neo4j reference node, REST endpoints
-    (`/shepard/api/spatialdata/*`, `/shepard/api/context/references/spatialdata/*`),
-    and the `SpatialPayloadKind` ServiceLoader SPI so the backend's
-    NeoConnector registers the Neo4j-OGM entity packages.
-    Requires a PostGIS-enabled PostgreSQL datasource
-    (`quarkus.datasource."spatial".*` in application.properties).
-    See aidocs/47 SPI1a.
+    Git reference payload kind. Provides `GitReference` Neo4j context nodes,
+    REST endpoints (`/v2/data-objects/{id}/git-references/*`,
+    `/v2/me/git-credentials/*`), GitLab/GitHub/Gitea adapters, and the
+    per-user PAT-authenticated file-artifact fetch cache.
+    The `GitPayloadKind` ServiceLoader SPI registers `GitReference`'s
+    Neo4j-OGM entity package in `NeoConnector`, fixing a latent OGM-gap.
+    `GitCredential` entity and service remain in backend (auth perimeter).
+    See aidocs/47 PL1d.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -83,7 +85,6 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.version>3.27.2</quarkus.platform.version>
-    <hibernate.spatial.version>7.2.6.Final</hibernate.spatial.version>
     <junit.version>5.10.5</junit.version>
     <mockito.version>5.22.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
@@ -103,17 +104,12 @@
 
   <dependencies>
     <!--
-      backend as provided — the plugin needs the backend's core
-      types (User, Collection, ProblemJson, HasAppId, GenericDAO,
-      BasicContainer, BasicReference, the PluginManifest SPI,
-      the PayloadKind SPI) at compile time. `provided` means the
-      plugin JAR does NOT bundle backend.jar — at runtime the
-      backend image already carries its own classes.
-
-      Self-reference exclusion: the backend's `with-plugins` profile
-      adds this plugin to its compile classpath, so without the
-      exclusion Maven would try to resolve the still-uninstalled
-      artefact transitively when this plugin compiles.
+      backend as provided — the plugin needs the backend's core types
+      (User, GitCredential, GitCredentialService, GenericDAO,
+      BasicReference, PermissionsService, the PluginManifest SPI,
+      the PayloadKind SPI, AesGcmCipher, EntityIdResolver, etc.)
+      at compile time. `provided` means the plugin JAR does NOT bundle
+      backend.jar — at runtime the backend image carries its own classes.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -152,11 +148,7 @@
       </exclusions>
     </dependency>
 
-    <!--
-      Quarkus runtime types used in plugin source (REST, CDI,
-      logging, JPA, Hibernate). `provided` because the backend
-      image carries them.
-    -->
+    <!-- Quarkus runtime types used in plugin source. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
@@ -182,35 +174,21 @@
       <artifactId>quarkus-smallrye-openapi</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- @CacheResult in GitArtifactCache -->
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-orm</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-postgresql</artifactId>
+      <artifactId>quarkus-cache</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!--
-      hibernate-spatial — JTS geometry types used by SpatialDataPoint
-      and the native query repositories. Moves from the backend pom
-      into this plugin's provided deps (the backend image carries it
-      at runtime because it's present on the backend's compile-time
-      classpath via the `with-plugins` profile).
-    -->
+    <!-- Jackson — HTTP clients build JSON. -->
     <dependency>
-      <groupId>org.hibernate.orm</groupId>
-      <artifactId>hibernate-spatial</artifactId>
-      <version>${hibernate.spatial.version}</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
     </dependency>
 
-    <!--
-      Neo4j-OGM — SpatialDataReference is a @NodeEntity, the DAO
-      uses neo4j-ogm core types. Same provided-by-backend pattern.
-    -->
+    <!-- Neo4j-OGM — GitReference is a @NodeEntity. -->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
@@ -218,7 +196,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Lombok — same as backend for the IO records / entity. -->
+    <!-- Lombok — IO records / entity. -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -248,7 +226,7 @@
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-spatial-${revision}</finalName>
+    <finalName>shepard-plugin-git-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -265,11 +243,10 @@
         <configuration>
           <excludes>
             <!--
-              Requires a live PostGIS container — excluded from default
-              unit-test run. Same rationale as the backend surefire
-              exclusion this test carried before extraction.
+              GitArtifactCacheQuarkusTest requires a live Quarkus context
+              (@CacheResult wiring) and stays in the backend test tree.
             -->
-            <exclude>**/spatialdata/repositories/SpatialDataPointRepositoryTest.java</exclude>
+            <exclude>**/GitArtifactCacheQuarkusTest.java</exclude>
           </excludes>
         </configuration>
       </plugin>

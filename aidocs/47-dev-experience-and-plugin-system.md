@@ -11,7 +11,7 @@ they pull on the same lever:
    meaningful (and that, conversely, the plugin system needs to
    not regress).
 
-**Status.** PL1a + PL1b + PL1c shipped (2026-05-16).
+**Status.** PL1a + PL1b + PL1c + PL1d shipped (2026-05-16).
 **Snapshot date.** 2026-05-16.
 **Originating items.** User request: "improve dev experience; large
 ask design a plugin system to add data backends systematically;
@@ -414,7 +414,7 @@ Spans the **DX series** (dev-ex pain points) and **PL series**
 | **PL1b** ✓ | `shepard-plugin-spatial` — pilot migration of the `spatial` payload kind to a plugin. `SpatialPayloadKind` (ServiceLoader POJO) + `SpatialPluginManifest` (PluginManifest SPI). Behaviour-identical; profile-bound compose service unchanged. Shipped 2026-05-16. | M | PL1a |
 | **DX3** | `mvn shepard:scaffold-payload-kind` archetype. | M | PL1a |
 | **PL1c** ✓ | `shepard-plugin-hdf5` — extraction of HDF5/HSDS payload kind (A5a+A5b) to drop-in plugin JAR. `HdfPayloadKind` (ServiceLoader POJO) registers `de.dlr.shepard.data.hdf.entities`; fixes latent OGM-gap bug. `HdfPluginManifest` (PluginManifest SPI). `shepard.plugins.hdf5.enabled=false` default. 9 production files + 10 unit tests moved. Shipped 2026-05-16. | M | PL1a |
-| **PL1d** | G1 (Git) per `aidocs/38` lands as a plugin from day 1. | M | PL1a + DX3 + `aidocs/38` |
+| **PL1d** ✓ | `shepard-plugin-git` — extraction of G1 (Git reference) payload kind to drop-in plugin JAR. `GitPayloadKind` (ServiceLoader POJO) registers `de.dlr.shepard.context.references.git.entities`; fixes latent OGM-gap bug. `GitPluginManifest` (PluginManifest SPI). `shepard.plugins.git.enabled=true` default (mirrors pre-extraction posture). 20 production files + 9 unit tests moved. `GitCredential` entity/DAO/service + migrations V19/V20/V26 stay in backend (auth perimeter). Shipped 2026-05-16. | M | PL1a |
 | **DX2** | `ShepardTestFixtures` helper. | S | None |
 | **DX5** | `quarkus-neo4j-devservices` integration; OpenAPI hot-reload story. | M | None |
 | **DX4** | `make dev` single-command bootstrap. | S | DX1 + `aidocs/22` |

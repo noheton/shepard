@@ -148,6 +148,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-hdf5</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
