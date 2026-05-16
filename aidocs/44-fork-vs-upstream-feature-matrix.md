@@ -42,6 +42,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Graceful degradation when optional DBs (PostGIS) unavailable | endpoints hang | RFC-7807 503 + `Retry-After` when `@RequiresDatabase` not satisfied; 404 when toggle OFF | **✓ ↑** | A1c |
 | `MigrationsRunner.apply()` fail-fast on `MigrationsException` | swallow + log | propagates as `RuntimeException` aborting startup | **✓ ↑** | A1e (commit `0f2f512`) |
 | Automated DB recovery scheduler | none | `@Scheduled(every = "${shepard.health.recovery.interval}")` default `PT15S`; new `quarkus-scheduler` dep | **✓ ↑** | A1f |
+| Flyway startup retry ceiling (Mongo/JDBC audit) | unbounded default (Flyway `connect-retries-interval=120s`) | `quarkus.flyway.connect-retries=10` + `connect-retries-interval=PT5S`; ≈50s ceiling aligned with Neo4j gate | **✓ ↑** | A1d (commit `e1c3635`) / `aidocs/17` |
 | Migration progress monitoring endpoint | none | `GET /migrations/progress` (P3) | **✓ ↑** | P3 (commit `7cc74b8`) |
 
 ## 2. Configuration / feature toggles
