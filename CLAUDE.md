@@ -51,7 +51,7 @@ journal render, G1 git integration, T1 templates, anything else).
 Existing `/shepard/api/` paths get only bug fixes that preserve
 their wire shape.
 
-The L2 chain (`aidocs/25`) is the formalisation of this split: L2d
+The L2 chain (`aidocs/platform/25-neo4j-id-migration-design.md`) is the formalisation of this split: L2d
 introduces the `/v2/` shelf with `appId` as the native identifier;
 L2e eventually drops the upstream `/v1/` long-id paths after a
 deprecation window. Until L2d ships, treat any new endpoint as a
@@ -172,7 +172,7 @@ in the same PR.
 ## Always: keep user-facing docs in step with shipped features
 
 `docs/` (the user-facing docs, served both as the public Pages
-site and as the in-app `/help` route per `aidocs/49`) is
+site and as the in-app `/help` route per `aidocs/ops/49-in-app-user-docs.md`) is
 two-track:
 
 - **`docs/help/*.md`** — casual-task pages (front-door for
@@ -184,7 +184,7 @@ When a PR ships a user-visible feature, the matching
 **reference page** must land in the same PR (and a **task page**
 when the feature has a casual expression — uploading a new
 payload kind, exporting a new shape, etc.). The catalogue lives
-in `aidocs/49 §2.2`; reviewers reject feature PRs that don't
+in `aidocs/ops/49-in-app-user-docs.md §2.2`; reviewers reject feature PRs that don't
 touch the relevant `docs/reference/*.md`.
 
 This is the structural fix for screenshot/feature drift in the
@@ -198,7 +198,7 @@ user-visible behaviour.)
 
 ## Always: think plugin-first for new features
 
-The `aidocs/47 §2` PayloadKind / PayloadStorage SPI seam exists
+The `aidocs/platform/47-dev-experience-and-plugin-system.md §2` PayloadKind / PayloadStorage SPI seam exists
 **because** shepard's value grows from extension, not from a
 monolithic core. When adding a new feature, the default question
 is "should this be a plugin?" — **not** "should this be in-tree?"
@@ -229,7 +229,7 @@ The plugin-first heuristic, in order:
 
 When a design doc starts with "add a new `de.dlr.shepard.<feature>/`
 package", stop and ask whether `shepard-plugin-<feature>` is the
-right shape instead. The `aidocs/47` SPI keeps growing precisely
+right shape instead. The `aidocs/platform/47-dev-experience-and-plugin-system.md` SPI keeps growing precisely
 because every "just add it in-tree" call accreted cost over time.
 
 The exceptions (things that stay in-tree by necessity):
@@ -258,9 +258,9 @@ The pattern is established by:
 - **A3b** — `:FeatureToggleRegistry` + `GET/PATCH /v2/admin/features`
   with CLI parity.
 - **N1c2** — `:SemanticConfig` singleton + `/v2/admin/semantic/ontologies`
-  enable/disable/upload/remove + CLI parity (`aidocs/65`).
+  enable/disable/upload/remove + CLI parity (`aidocs/semantics/65-admin-configurable-ontology-preseed.md`).
 - **UH1a** — `:UnhideConfig` singleton + `/v2/admin/unhide/config`
-  PATCH + CLI parity (`aidocs/67 §5–6`).
+  PATCH + CLI parity (`aidocs/integrations/67-unhide-publish-plugin.md §5–6`).
 
 The shape:
 
@@ -312,7 +312,7 @@ review should send it back for the `:*Config` shape.
 
 Every `shepard-plugin-*` module is **self-documenting**. The plugin
 JAR ships three documentation artefacts, and they are linked from
-shepard's main docs site (per the `aidocs/49` two-track structure)
+shepard's main docs site (per the `aidocs/ops/49-in-app-user-docs.md` two-track structure)
 in the same PR that ships the plugin's first non-trivial release:
 
 1. **`docs/reference/<plugin-id>.md`** — comprehensive reference page
