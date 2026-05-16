@@ -213,34 +213,36 @@ Other Helmholtz-stack projects worth tracking for integration:
 ## 3. Feature matrix — shepard vs. key competitors
 
 Rows = feature areas. `●` = present/strong, `◑` = partial/limited, `○` = absent.  
+**upstream 5.2.0** = `gitlab.com/dlr-shepard/shepard` at the 5.2.0 release (the fork baseline).  
+**this fork (now)** = `noheton/shepard main` as of 2026-05-16.  
 **shepard 6.0** = planned state after Tier 1 + Tier 2 features from §4 land (see §4 for detail and aidoc IDs).
 
-| Feature area | shepard (now) | shepard 6.0 | RSpace | eLabFTW | Indigo ELN | TwinStash | OpenBIS |
-|---|---|---|---|---|---|---|---|
-| **Structured payload types** (file, time-series, spatial, HDF5, git, …) | ● | ● | ◑ | ○ | ○ | ◑ | ◑ |
-| **Plugin / SPI extensibility** | ● | ● | ○ | ○ | ◑ | ○ | ◑ |
-| **Semantic / ontology layer** | ● | ● | ○ | ○ | ○ | ○ | ○ |
-| **Provenance / lineage graph** | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
-| **S3 / object-storage backend** | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
-| **REST + programmatic API** | ● | ● | ● | ● | ◑ | ● | ● |
-| **Git integration** | ◑ | ● | ○ | ○ | ○ | ○ | ◑ |
-| **RO-Crate export** | ◑ | ● | ● | ○ | ○ | ○ | ○ |
-| **PID embedding** (ORCID, DOI, IGSN, …) | ◑ | ● | ● | ○ | ○ | ○ | ◑ |
-| **ELN / experiment notebook UX** | ○ | ◑ | ● | ● | ● | ◑ | ◑ |
-| **Sample / inventory management** | ○ | ◑ | ● | ● | ◑ | ○ | ● |
-| **Equipment booking** | ○ | ◑ | ○ | ● | ○ | ○ | ○ |
-| **Digital signing / timestamping** | ○ | ◑ | ○ | ● | ◑ | ○ | ○ |
-| **Chemical structure search** | ○ | ○ | ○ | ○ | ● | ○ | ○ |
-| **Automated report generation** | ○ | ◑ | ○ | ○ | ○ | ● | ○ |
-| **OCR / paper form ingestion** | ○ | ○ | ○ | ○ | ○ | ● | ○ |
-| **Instrument dropbox / auto-ingest** | ○ | ● | ○ | ○ | ○ | ◑ | ● |
-| **`.eln` interoperability format** | ○ | ● | ○ | ● | ○ | ○ | ○ |
-| **Mobile / offline-first** | ○ | ○ | ◑ | ○ | ○ | ○ | ○ |
-| **Multi-team instance** | ◑ | ◑ | ● | ● | ◑ | ◑ | ● |
-| **Admin-configurable at runtime** | ● | ● | ◑ | ◑ | ○ | ○ | ◑ |
-| **NFDI / Helmholtz integration** | ● | ● | ○ | ○ | ○ | ◑ | ○ |
-| **DMP / RDMO linkage** | ○ | ◑ | ○ | ○ | ○ | ○ | ○ |
-| **PIDINST / instrument registry** | ○ | ● | ○ | ○ | ○ | ○ | ○ |
+| Feature area | upstream 5.2.0 | this fork (now) | shepard 6.0 | RSpace | eLabFTW | Indigo ELN | TwinStash | OpenBIS |
+|---|---|---|---|---|---|---|---|---|
+| **Structured payload types** (file, time-series, spatial, HDF5, git, …) | ◑ (file + timeseries + spatial; no HDF5/git) | ● | ● | ◑ | ○ | ○ | ◑ | ◑ |
+| **Plugin / SPI extensibility** | ○ | ● | ● | ○ | ○ | ◑ | ○ | ◑ |
+| **Semantic / ontology layer** | ◑ (n10s present; no preseed, no admin UI) | ● | ● | ○ | ○ | ○ | ○ | ○ |
+| **Provenance / lineage graph** | ◑ (PROV-O capture, no batch permissions) | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
+| **S3 / object-storage backend** | ○ (GridFS only) | ● | ● | ◑ | ○ | ○ | ○ | ◑ |
+| **REST + programmatic API** | ● | ● | ● | ● | ● | ◑ | ● | ● |
+| **Git integration** | ○ | ◑ | ● | ○ | ○ | ○ | ○ | ◑ |
+| **RO-Crate export** | ◑ (synchronous, proxied) | ◑ (+ presigned S3 delivery FS1g) | ● | ● | ○ | ○ | ○ | ○ |
+| **PID embedding** (ORCID, DOI, IGSN, …) | ◑ | ◑ | ● | ● | ○ | ○ | ○ | ◑ |
+| **ELN / experiment notebook UX** | ○ | ○ | ◑ | ● | ● | ● | ◑ | ◑ |
+| **Sample / inventory management** | ○ | ○ | ◑ | ● | ● | ◑ | ○ | ● |
+| **Equipment booking** | ○ | ○ | ◑ | ○ | ● | ○ | ○ | ○ |
+| **Digital signing / timestamping** | ○ | ○ | ◑ | ○ | ● | ◑ | ○ | ○ |
+| **Chemical structure search** | ○ | ○ | ○ | ○ | ○ | ● | ○ | ○ |
+| **Automated report generation** | ○ | ○ | ◑ | ○ | ○ | ○ | ● | ○ |
+| **OCR / paper form ingestion** | ○ | ○ | ○ | ○ | ○ | ○ | ● | ○ |
+| **Instrument dropbox / auto-ingest** | ○ | ○ | ● | ○ | ○ | ○ | ◑ | ● |
+| **`.eln` interoperability format** | ○ | ○ | ● | ○ | ● | ○ | ○ | ○ |
+| **Mobile / offline-first** | ○ | ○ | ○ | ◑ | ○ | ○ | ○ | ○ |
+| **Multi-team instance** | ● | ◑ | ◑ | ● | ● | ◑ | ◑ | ● |
+| **Admin-configurable at runtime** | ○ (build-time toggles only) | ● | ● | ◑ | ◑ | ○ | ○ | ◑ |
+| **NFDI / Helmholtz integration** | ○ | ● | ● | ○ | ○ | ○ | ◑ | ○ |
+| **DMP / RDMO linkage** | ○ | ○ | ◑ | ○ | ○ | ○ | ○ | ○ |
+| **PIDINST / instrument registry** | ○ | ○ | ● | ○ | ○ | ○ | ○ | ○ |
 
 ---
 
