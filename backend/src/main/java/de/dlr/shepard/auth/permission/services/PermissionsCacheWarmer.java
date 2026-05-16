@@ -83,7 +83,8 @@ public class PermissionsCacheWarmer {
     try {
       for (var t : triples) {
         try {
-          permissionsService.isAccessTypeAllowedForUser(t.entityId(), t.accessType(), t.userSub());
+          // F4: cache warmer runs outside a real request (no JWT), so iat = 0L
+          permissionsService.isAccessTypeAllowedForUser(t.entityId(), t.accessType(), t.userSub(), 0L);
           loaded++;
         } catch (Exception e) {
           failed++;

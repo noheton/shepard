@@ -129,7 +129,7 @@ public class PublishRest {
     // already maps to "Writer or Manager" in PermissionsService#rolesGrantAccess
     // (case Write -> isWriter || isManager). Owner-on-entity counts as
     // manager and is therefore admitted.
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 

@@ -79,12 +79,19 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
     return permissionsService.updatePermissionsByNeo4jId(newPermissions, containerId);
   }
 
+  /** F4 — current JWT iat for cache-key construction. */
+  private long currentIat() {
+    var principal = authenticationContext.getPrincipal();
+    return principal != null ? principal.getIat() : 0L;
+  }
+
   public void assertIsAllowedToReadContainer(long containerId) {
     if (
       !permissionsService.isAccessTypeAllowedForUser(
         containerId,
         AccessType.Read,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException(
@@ -98,7 +105,8 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
       !permissionsService.isAccessTypeAllowedForUser(
         containerId,
         AccessType.Write,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException(
@@ -112,7 +120,8 @@ public abstract class AbstractContainerService<T extends BasicContainer, S exten
       !permissionsService.isAccessTypeAllowedForUser(
         containerId,
         AccessType.Manage,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException(

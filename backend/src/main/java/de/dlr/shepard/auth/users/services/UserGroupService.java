@@ -165,7 +165,8 @@ public class UserGroupService {
       !permissionsService.isAccessTypeAllowedForUser(
         groupId,
         AccessType.Read,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
@@ -182,7 +183,8 @@ public class UserGroupService {
       !permissionsService.isAccessTypeAllowedForUser(
         groupId,
         AccessType.Write,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
@@ -199,11 +201,18 @@ public class UserGroupService {
       !permissionsService.isAccessTypeAllowedForUser(
         groupId,
         AccessType.Manage,
-        authenticationContext.getCurrentUserName()
+        authenticationContext.getCurrentUserName(),
+        currentIat()
       )
     ) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
     }
+  }
+
+  /** F4 — current JWT iat for cache-key construction. */
+  private long currentIat() {
+    var principal = authenticationContext.getPrincipal();
+    return principal != null ? principal.getIat() : 0L;
   }
 
   private ArrayList<User> fetchUsers(String[] usernames) {

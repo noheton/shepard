@@ -448,7 +448,7 @@ public class ProvenanceRest {
         if (ogmId.isEmpty()) {
           return Response.status(Response.Status.NOT_FOUND).entity("No Collection with appId " + id).build();
         }
-        if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller)) {
+        if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), de.dlr.shepard.common.util.AccessType.Read, caller, 0L)) {
           return Response.status(Response.Status.FORBIDDEN).build();
         }
       }

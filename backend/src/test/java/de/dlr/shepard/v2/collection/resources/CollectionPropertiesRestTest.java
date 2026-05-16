@@ -72,7 +72,7 @@ class CollectionPropertiesRestTest {
   @Test
   void readReturns403WhenCallerLacksReadPermission() {
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
     Response r = resource.read(COLL_APP_ID, securityContext);
     assertEquals(403, r.getStatus());
     verify(propertiesDAO, never()).ensureFor(any());
@@ -83,7 +83,7 @@ class CollectionPropertiesRestTest {
     var entity = new CollectionProperties("props-app-id");
     entity.setWebdavVisible(false);
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(propertiesDAO.ensureFor(COLL_APP_ID)).thenReturn(entity);
 
     Response r = resource.read(COLL_APP_ID, securityContext);
@@ -98,7 +98,7 @@ class CollectionPropertiesRestTest {
   @Test
   void patchReturns403WhenCallerLacksManagePermission() {
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(false);
     var body = new PatchCollectionPropertiesIO(false, null, null);
     Response r = resource.patch(COLL_APP_ID, body, securityContext);
     assertEquals(403, r.getStatus());
@@ -112,7 +112,7 @@ class CollectionPropertiesRestTest {
     entity.setDefaultOntologyUri("old-uri");
     entity.setUiDefaultsJson("{\"old\":true}");
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(true);
     when(propertiesDAO.ensureFor(COLL_APP_ID)).thenReturn(entity);
     when(propertiesDAO.createOrUpdate(any(CollectionProperties.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -131,7 +131,7 @@ class CollectionPropertiesRestTest {
   void patchHandlesNullBody() {
     var entity = new CollectionProperties("props-app-id");
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER))).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
     when(propertiesDAO.ensureFor(COLL_APP_ID)).thenReturn(entity);
     when(propertiesDAO.createOrUpdate(any(CollectionProperties.class))).thenAnswer(inv -> inv.getArgument(0));
 

@@ -128,7 +128,7 @@ public class FileReferenceV2Rest {
     if (parentOgmId == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -359,7 +359,7 @@ public class FileReferenceV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     long doOgmId = ref.getDataObject().getId();
-    if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

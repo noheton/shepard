@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -75,13 +76,13 @@ class CollectionExportUrlRestTest {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
     Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(any(), any(), any());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(any(), any(), any(), anyLong());
   }
 
   @Test
   void returns403WhenCallerLacksReadPermission() {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
     Response r = resource.getExportUrl(COLL_APP_ID, securityContext, null);
     assertEquals(403, r.getStatus());
   }
@@ -89,7 +90,7 @@ class CollectionExportUrlRestTest {
   @Test
   void throws503WhenNoActiveStorageProvider() {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.empty());
 
     org.junit.jupiter.api.Assertions.assertThrows(
@@ -101,7 +102,7 @@ class CollectionExportUrlRestTest {
   @Test
   void throws503WhenAdapterDoesNotSupportPresignedExport() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
     when(fileStorage.id()).thenReturn("gridfs");
     when(exportService.exportCollectionByShepardId(eq(COLL_OGM_ID), any()))
@@ -118,7 +119,7 @@ class CollectionExportUrlRestTest {
   @Test
   void returns200WithPresignedUrlOnHappyPath() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
     when(fileStorage.id()).thenReturn("s3");
     when(exportService.exportCollectionByShepardId(eq(COLL_OGM_ID), any()))
@@ -139,7 +140,7 @@ class CollectionExportUrlRestTest {
   @Test
   void throws500WhenExportBuildFails() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
     when(exportService.exportCollectionByShepardId(eq(COLL_OGM_ID), any()))
       .thenThrow(new IOException("disk full"));
@@ -153,7 +154,7 @@ class CollectionExportUrlRestTest {
   @Test
   void throws500WhenStorageThrows() throws Exception {
     when(collectionPropertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
     when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
     when(fileStorage.id()).thenReturn("s3");
     when(exportService.exportCollectionByShepardId(eq(COLL_OGM_ID), any()))

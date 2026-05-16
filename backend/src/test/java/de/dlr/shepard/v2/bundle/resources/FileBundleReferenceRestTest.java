@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -87,7 +88,7 @@ class FileBundleReferenceRestTest {
     resource.objectMapper = new ObjectMapper();
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), any(AccessType.class), eq(CALLER))).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), any(AccessType.class), eq(CALLER), anyLong())).thenReturn(true);
   }
 
   private FileBundleReference existingBundle() {
@@ -140,7 +141,7 @@ class FileBundleReferenceRestTest {
   @Test
   void getBundle_returns403WhenNoReadPermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
     assertEquals(403, resource.getBundle(BUNDLE_APP_ID, securityContext).getStatus());
   }
 
@@ -173,7 +174,7 @@ class FileBundleReferenceRestTest {
   @Test
   void listGroups_returns403WhenNoReadPermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
     assertEquals(403, resource.listGroups(BUNDLE_APP_ID, securityContext).getStatus());
   }
 
@@ -221,7 +222,7 @@ class FileBundleReferenceRestTest {
   @Test
   void createGroup_returns403WhenNoWritePermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     var body = new CreateFileGroupIO();
     body.setName("p1");
     assertEquals(403, resource.createGroup(BUNDLE_APP_ID, body, securityContext).getStatus());
@@ -321,7 +322,7 @@ class FileBundleReferenceRestTest {
   @Test
   void patchGroup_returns403WhenNoWritePermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     assertEquals(403, resource.patchGroup(BUNDLE_APP_ID, GROUP_APP_ID, json("{}"), securityContext).getStatus());
   }
 
@@ -371,7 +372,7 @@ class FileBundleReferenceRestTest {
   @Test
   void deleteGroup_returns403WhenNoWritePermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     assertEquals(403, resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext).getStatus());
   }
 
@@ -402,7 +403,7 @@ class FileBundleReferenceRestTest {
   @Test
   void uploadFileIntoGroup_returns403WhenNoWritePermission() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     assertEquals(403, resource.uploadFileIntoGroup(BUNDLE_APP_ID, GROUP_APP_ID, null, securityContext).getStatus());
   }
 
@@ -437,7 +438,7 @@ class FileBundleReferenceRestTest {
   @Test
   void deleteGroup_neverCallsServiceWhenForbidden() {
     when(fileBundleReferenceDAO.findByAppId(BUNDLE_APP_ID)).thenReturn(existingBundle());
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     resource.deleteGroup(BUNDLE_APP_ID, GROUP_APP_ID, false, securityContext);
     verify(fileGroupService, never()).deleteGroup(any(), org.mockito.ArgumentMatchers.anyBoolean());
   }

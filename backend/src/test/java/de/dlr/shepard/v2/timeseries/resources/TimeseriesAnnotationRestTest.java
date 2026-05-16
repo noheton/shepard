@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.timeseries.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,8 +68,8 @@ class TimeseriesAnnotationRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(timeseriesReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(true);
   }
 
   // ── list ────────────────────────────────────────────────────────────────
@@ -99,7 +100,7 @@ class TimeseriesAnnotationRestTest {
 
   @Test
   void list_returns403WhenNoReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
     assertThat(resource.list(REF_APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
@@ -143,7 +144,7 @@ class TimeseriesAnnotationRestTest {
 
   @Test
   void create_returns403WhenNoWritePermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER)).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
     var body = new TimeseriesAnnotationIO();
     body.setStartNs(1_000_000L);
     body.setLabel("anomaly");

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -215,7 +216,7 @@ public class StructuredDataReferenceServiceTest {
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
@@ -283,7 +284,7 @@ public class StructuredDataReferenceServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
 
@@ -348,7 +349,7 @@ public class StructuredDataReferenceServiceTest {
     when(dateHelper.getDate()).thenReturn(date);
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     var ex = assertThrows(InvalidBodyException.class, () ->
@@ -415,7 +416,7 @@ public class StructuredDataReferenceServiceTest {
     when(structuredDataDAO.find(container.getId(), input.getStructuredDataOids()[0])).thenReturn(structuredData);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     var ex = assertThrows(InvalidBodyException.class, () ->
@@ -513,7 +514,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenReturn(payloadB);
@@ -547,7 +548,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(false);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
@@ -579,7 +580,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataB.getOid())).thenThrow(
@@ -611,7 +612,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(structuredDataService.getPayload("mongoId", "abc")).thenThrow(new NotFoundException());
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
@@ -645,7 +646,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
@@ -703,7 +704,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(structuredDataService.getPayload(container.getMongoId(), structuredDataA.getOid())).thenReturn(payloadA);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
@@ -754,7 +755,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(true);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
 
@@ -780,7 +781,7 @@ public class StructuredDataReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername())
+      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
     ).thenReturn(false);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
     when(structuredDataContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);

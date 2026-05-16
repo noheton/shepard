@@ -360,7 +360,7 @@ public class FileBundleReferenceRest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     long dataObjectOgmId = bundle.getDataObject().getId();
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

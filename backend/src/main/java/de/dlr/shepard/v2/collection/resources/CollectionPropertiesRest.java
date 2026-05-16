@@ -71,7 +71,7 @@ public class CollectionPropertiesRest {
 
     Optional<Long> ogmId = propertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Read, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -103,7 +103,7 @@ public class CollectionPropertiesRest {
 
     Optional<Long> ogmId = propertiesDAO.findCollectionIdByAppId(collectionAppId);
     if (ogmId.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Manage, caller)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId.get(), AccessType.Manage, caller, 0L)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
