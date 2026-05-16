@@ -376,7 +376,231 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 
 ---
 
-### §5 See also
+---
+
+### §5 External tool integration notes
+
+#### SA1 — Spatial Analyzer (New River Kinematics)
+
+**What SA is:** Spatial Analyzer (https://www.kinematics.com/) is the standard
+metrological software in precision manufacturing and aerospace. It integrates laser
+trackers (FARO, Leica API), theodolites, photogrammetry, structured-light scanners, and
+arm-based CMMs into a single coordinate frame. SA measurement results are the
+**highest-accuracy ground truth** for part geometry in a production environment —
+typically 10–50× more accurate than ICP alignment of raw scanned point clouds.
+
+**Integration opportunities:**
+
+1. **Export-based ingest (no SDK required):** SA exports measured points, nominal-vs-actual
+   comparisons, and fitted features as CSV, ASCII point files, IGES, or STEP. These map
+   directly to `PointCloudReference` (measured points) and `CadReference` (fitted geometry).
+   The ingest can be automated via the IL1 instrument-dropbox plugin watching SA's export
+   folder.
+
+2. **Coordinate frame anchor (`SA_GROUND_TRUTH` tag):** A `PointCloudReference` or
+   `CadReference` produced by SA gets tagged `coordinateFrame: "SA_GROUND_TRUTH"`. All
+   other `[:ALIGNED_TO]` edges on sibling references use this as the authoritative frame.
+   This models the SA workflow correctly: SA is not one input among many — it is the
+   reference frame that calibrates all other sensors.
+
+3. **Target-constrained alignment:** SA places retro-reflector targets at precisely measured
+   positions. These targets appear in photogrammetry images, C-scans, and structured-light
+   scans as identifiable features. When SA exports target positions, shepard stores them as
+   `GeometryAnnotation` entries with `role: "REFERENCE_TARGET"` on the `CadReference`. The
+   PC1b ICP alignment becomes target-constrained when these annotations are present — the
+   result is far more robust than free ICP.
+
+4. **SA SDK / scripting:** SA has a COM-based SDK (Windows, `NrkSdk.dll`) with Python
+   bindings (`SA-Python`). A thin `shepard-plugin-spatial-analyzer` sidecar could:
+   - Watch for SA session saves
+   - Extract the nominal model, measured point groups, and fit residuals
+   - Create `CadReference` + `PointCloudReference` + `[:ALIGNED_TO {:method:"SA_TRACKER",
+     :rmse: x}]` + deviation map (PC1c) automatically
+   This is the highest-value integration: zero manual export step, automatic provenance.
+
+5. **Viewer role:** SA's native viewer is non-web, non-collaborative. The Three.js viewer
+   in `shepard-plugin-cad` becomes the shared viewer for SA-derived geometry, with all
+   shepard data (C-scan, thermocouple timeseries, DIC strain fields) overlaid on the SA
+   coordinate frame.
+
+**Recommended phasing:** SA export ingest (item 1) is a day's work post-PC1a. SDK
+integration (item 4) is a week's effort and high-value for ZLP dimensional inspection.
+
+#### RDK1 — RoboDK integration
+
+**What RoboDK is:** RoboDK (https://robodk.com/) is a robot simulation and offline
+programming platform used widely in manufacturing research. It imports robot models,
+supports multi-robot cells, generates robot programs (KUKA, Fanuc, ABB, UR, etc.), and
+exports to URDF for ROS/simulation. ZLP uses it to plan AFP layup paths, welding robot
+trajectories, and automated assembly sequences before physically running them.
+
+**Integration opportunities:**
+
+1. **URDF export chain:** RoboDK can export robot cells as URDF. This URDF becomes a
+   `CadReference` (URDF bundle, CAD1a) in shepard. The JOINT_ANGLE data binding (SB1d)
+   then animates the URDF using the actual recorded trajectory timeseries. The combination
+   gives a digitally-animated robot cell with real measurement data — the digital twin UX.
+
+2. **Program provenance:** RoboDK generates robot programs from simulation. A
+   `shepard-plugin-robodk` sidecar reads the RoboDK project file (`.rdk`, which is an
+   SQLite database) and creates:
+   - A `StructuredDataReference` for the planned joint-angle trajectory (nominal path)
+   - A `CadReference` for the simulated robot cell geometry
+   - A `[:PRODUCED_BY]` edge from the robot program DataObject to the RoboDK project
+   The SB2e nominal-vs-actual overlay (planned trajectory in blue, sTC-recorded in red)
+   then gives immediate feedback on path deviation.
+
+3. **SA → RoboDK → shepard calibration chain:** The canonical workflow for ZLP AFP/welding:
+   - SA measures the robot's TCP (Tool Centre Point) against the part's reference frame
+   - SA result (TCP offset + orientation) is fed into RoboDK to calibrate the robot model
+   - RoboDK regenerates the program with the calibrated model
+   - shepard stores the chain: `SA_measurement -> [:CALIBRATED] -> RoboDK_program -> [:PRODUCED_BY] -> robot_run`
+   This provenance chain is the "why does the layup look like this" answer.
+
+4. **RoboDK Python API:** RoboDK has a well-documented Python API (`robodk` package). The
+   `shepard-plugin-robodk` sidecar wraps this API to read the current station's robot
+   configuration, joint angles, and TCP pose, creating shepard entities automatically.
+
+5. **URDF as simulation export:** The scene graph export API (`aidocs/78 §7`) already
+   plans a `GET /v2/cad-references/{appId}/export.sdf` endpoint for Gazebo/ROS 2. RoboDK
+   can ingest URDF to verify that the exported simulation model matches the production robot
+   cell. This closes the loop: real robot → SA calibration → RoboDK verification → shepard
+   digital twin.
+
+**Recommended phasing:** URDF export chain (item 1) works immediately once CAD1a (URDF
+bundles) ships — no RoboDK plugin needed. Python API integration (item 4, RDK1) is a
+medium sprint; value is highest for ZLP AFP teams already using RoboDK daily.
+
+---
+
+---
+
+### §7 Managed ingest pipelines (IL1)
+
+**The upgrade over a static instrument dropbox:**
+
+The IL1 instrument dropbox (aidocs/70 §4.1) was originally conceived as an
+operator-configured file-system watcher. The broader design — sketched here pending a
+dedicated IL1 design doc — is a **hosted, user-definable ingest pipeline system**:
+
+- **User-definable:** researchers (not just operators) can create and configure ingest
+  pipelines through the shepard UI or API. A pipeline defines: what to watch (source:
+  filesystem path, S3 prefix, SA export folder, RoboDK project file, Tango Controls
+  signal), what parser to run (format-specific `FormatParser` SPI implementation), and
+  where the result goes (target Collection, payload template, metadata defaults).
+- **Admin-managed:** instance-admins see all pipelines, enable/disable them, view their
+  run history and error log, and configure the parser plugins that are available.
+- **Hosted:** pipeline execution runs inside shepard (or a lightweight sidecar that shares
+  the DB and S3 config), not as a separate standalone install. The pipeline state is stored
+  as `:IngestPipeline` Neo4j entities following the `:*Config` admin pattern from CLAUDE.md.
+
+**Neo4j model (provisional):**
+
+```cypher
+(:IngestPipeline {
+  appId:          String
+  name:           String
+  enabled:        boolean
+  sourceKind:     String   -- "FILESYSTEM" | "S3_PREFIX" | "TANGO" | "SA_EXPORT" | "ROBODK"
+  sourcePath:     String
+  parserPlugin:   String   -- "csv-timeseries" | "hdf5" | "ultrasonic-omni" | "sa-native" | …
+  targetCollectionAppId: String
+  templateAppId:  String   -- optional — applies a :ShepardTemplate on ingest
+  lastRunAt:      ZonedDateTime
+  lastRunStatus:  String   -- "OK" | "PARTIAL" | "ERROR"
+  lastError:      String
+})
+```
+
+**Admin REST surface:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v2/admin/ingest-pipelines` | List all pipelines with status |
+| `POST` | `/v2/admin/ingest-pipelines` | Create a new pipeline |
+| `GET` | `/v2/admin/ingest-pipelines/{appId}` | Get pipeline details + run history |
+| `PATCH` | `/v2/admin/ingest-pipelines/{appId}` | Update pipeline config (RFC 7396) |
+| `POST` | `/v2/admin/ingest-pipelines/{appId}/run` | Trigger a manual run |
+| `DELETE` | `/v2/admin/ingest-pipelines/{appId}` | Remove pipeline (does not delete ingested data) |
+
+**Researcher-facing surface:**
+
+Researchers who own the target Collection can create pipelines against it via:
+`POST /v2/collections/{appId}/ingest-pipelines` — this creates a pipeline scoped to
+their collection. Admins can promote it to instance-wide or restrict it. This keeps the
+researcher UX simple (no need to go through the admin panel for their own lab instruments).
+
+**Parser plugin SPI:**
+
+```java
+public interface FormatParser {
+  /** Returns the plugin id: e.g. "csv-timeseries", "hdf5", "ultrasonic-omni" */
+  String pluginId();
+  /** Returns a list of MIME types and file extensions this parser handles */
+  List<String> supportedTypes();
+  /**
+   * Parse the given input stream and create the appropriate Reference(s) in the
+   * target DataObject. Returns the appIds of the created References.
+   */
+  List<String> parse(InputStream in, IngestContext ctx) throws ParseException;
+}
+```
+
+`IngestContext` carries: the target `DataObject` appId, the `Collection` appId, the
+pipeline template config, the shepard client session, and a progress reporter that feeds
+the pipeline's run log in Neo4j.
+
+**Two-SPI design (trigger + parser):**
+
+```
+IngestTrigger (watches for new data)
+  └─ FileSystemTrigger        watches a local path
+  └─ S3PrefixTrigger          polls an S3 prefix for new objects
+  └─ SpatialAnalyzerTrigger   watches an SA session for new exports
+  └─ RoboDKTrigger            watches a .rdk project file for changes
+  └─ TangoControlsTrigger     subscribes to a Tango Controls device event
+
+        ↓ new file/event
+
+FormatParser (converts raw data to shepard Entities)
+  └─ CsvTimeseriesParser      CSV → TimeseriesReference
+  └─ Hdf5Parser               HDF5 → HDF5Reference (aidocs/A5)
+  └─ UltrasonicOmniParser     OmniScan .opd → UltrasonicScanReference
+  └─ PointCloudParser         PLY/E57/LAS → PointCloudReference
+  └─ SaNativeParser           SA .rit/.sa → PointCloudReference + GeometryAnnotations
+  └─ RoboDKParser             .rdk SQLite → CadReference (URDF) + StructuredDataReference
+```
+
+The pipeline runtime calls `trigger.watch()` in a background thread; on each event it
+resolves the `FormatParser` by `parserPlugin` id and calls `parser.parse()`.
+
+**Relationship to upstream "data parsers":** The upstream feature request "Data parsers
+as plugins / data importer tooling" maps exactly to the `FormatParser` SPI half of this
+design. Our addition is the `IngestTrigger` SPI (the automated watch half) and the
+`:IngestPipeline` admin entity (the hosted, user-definable management layer). Together
+these are a superset of what upstream called "data importers."
+
+**Recommended first concrete parser — IL1b: `UltrasonicOmniParser`:**
+
+The ultrasonic inspection use case (SB2g) is the ideal first `FormatParser` implementation:
+1. Single-vendor format (Olympus OmniScan `.opd`, HDF5-based) — a well-scoped parsing problem.
+2. ZLP inspects every CFRP part by C-scan — highest-volume ingest path.
+3. `UltrasonicScanReference` Neo4j model is already designed (SB2g above) — clear output contract.
+4. Data spec (A-scan + position + metadata) is forthcoming from the user — the parser can be
+   written promptly once the spec is delivered.
+
+IL1b = FileSystem trigger watching the OmniScan export folder + `UltrasonicOmniParser` creating
+`UltrasonicScanReference` entities → full end-to-end: scan → shepard → C-scan viewer overlay,
+no manual upload step.
+
+**Phasing:** IL1a = `:IngestPipeline` entity + admin REST (no parsers yet, manual trigger only).
+IL1b = `UltrasonicOmniParser` + FileSystem trigger (priority first parser; gated on data spec).
+IL1c = CsvTimeseries parser (general lab DAQ). IL1d–IL1n = HDF5, SA-native, RoboDK parsers
+shipped incrementally.
+
+---
+
+### §6 See also
 
 - `aidocs/78` — 3D Geometry & FEM Annotator (`CadReference`, `GeometryAnnotation`,
   format matrix, scene graph export)
