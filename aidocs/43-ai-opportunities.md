@@ -429,7 +429,109 @@ no asking a colleague how the data is shaped.** That's what
 - **Autonomous ingestion.** No "the AI decided to add this dataset
   for you" flows. Human in the loop, always.
 
-## 6. Phasing — AI series (call it AI1)
+## 6. Naming — the AI agent is called Lumen
+
+The shepard AI assistant is named **Lumen**. The name appears in the UI
+chat header, in audit logs (`agent: "lumen"`), and in the tool-call
+attribution (`aiGenerated: true, model: "...", agent: "lumen"`). Every
+AI1 slice that ships a user-facing element uses "Lumen" in copy.
+
+## 7. Semantic layer integration (post-N1 series)
+
+This section was added after N1a–N1c shipped. Those rounds landed:
+- **n10s** as the default Neo4j RDF plugin (always-on from N1a)
+- **10 pre-seeded ontologies**: PROV-O, Dublin Core, schema.org, FOAF,
+  QUDT, OM-2, W3C Time, GeoSPARQL, OBO Relations, metadata4ing/m4i
+- **Admin-runtime bundle management** (`POST /v2/admin/semantic/ontologies`)
+  so custom ontologies can be uploaded without a redeploy (N1c2)
+- **SPARQL proxy** at `/v2/semantic/{repoAppId}/sparql` (N1f, queued)
+
+Lumen's semantic integration has two components:
+
+### 7.1 SPARQL as a Lumen tool (AI1q)
+
+The snap-dashboard tool catalogue (§5.8 / AI1e) gains a new entry:
+
+```
+query_knowledge_graph(sparql: string, limit?: int) → { columns, rows }
+```
+
+Executes a read-only SPARQL SELECT against the n10s-managed graph
+(via N1f's proxy endpoint — gated on N1f). The LLM can reason across
+semantic annotations using real ontology terms rather than raw string
+matching:
+
+```sparql
+# "Which AFP runs had a delamination finding?"
+SELECT ?runId ?phase WHERE {
+  ?ann a shpe:DefectAnnotation ;
+       shpe:hasDefectType shpe:Delamination ;
+       shpe:inPhase ?phase ;
+       shpe:annotates ?run .
+  ?run shpe:hasExperimentId ?runId .
+}
+```
+
+**Safety contract**: Lumen only emits SPARQL SELECT (no UPDATE/INSERT/
+DELETE). The proxy enforces this at the HTTP level (N1f design).
+Every SPARQL call is logged to `:Activity` with `tool: "query_knowledge_graph"`.
+
+### 7.2 The shepard experiment ontology (AI1r / `shepard-experiment.ttl`)
+
+Rather than hard-coding domain terms as plain strings in attributes,
+shepard ships a compact OWL-Lite + SKOS vocabulary covering the
+manufacturing experiment domain. This is **not** a replacement for the
+general ontologies — it's a thin domain layer on top of them.
+
+**Namespace**: `https://w3id.org/shepard/experiment/` (`shpe:`)
+
+**Extends**: PROV-O (phases as `prov:Activity` subclasses), metadata4ing
+(steps as `m4i:ProcessingStep` subclasses), QUDT (units reused directly).
+
+**Concept schemes**:
+
+| Scheme | Members |
+|---|---|
+| `shpe:ExperimentPhase` | `Preparation`, `Conditioning`, `TestRun`, `Cooldown`, `PostProcessing`, `Analysis` |
+| `shpe:MeasurementRole` | `Reference`, `Actual`, `Deviation`, `Characterization`, `Calibration` |
+| `shpe:QualityFlag` | `Pass`, `Warning`, `Fail`, `Suspect`, `Pending` |
+| `shpe:DefectType` | `Delamination`, `Crack`, `Porosity`, `Disbond`, `ImpactDamage`, `FiberMisalignment`, `VoidContent`, `ForeignObject` |
+| `shpe:InspectionMethod` | `UltrasonicC_Scan`, `UltrasonicA_Scan`, `Thermography`, `DIC`, `XRay`, `EddyCurrentTesting`, `VisualInspection` |
+| `shpe:ManufacturingProcess` | `AFP`, `ATL`, `HandLayup`, `Welding`, `Machining`, `Curing`, `Bonding`, `Painting`, `HeatTreatment` |
+| `shpe:SensorRole` | `PrimarySensor`, `ReferenceSensor`, `RedundantSensor`, `CalibrationTarget` |
+
+**Object properties** (OWL):
+
+```turtle
+shpe:hasPhase       rdfs:domain prov:Activity ; rdfs:range shpe:ExperimentPhase .
+shpe:hasRole        rdfs:domain m4i:ProcessingStep ; rdfs:range shpe:MeasurementRole .
+shpe:hasQualityFlag rdfs:range shpe:QualityFlag .
+shpe:hasDefectType  rdfs:range shpe:DefectType .
+shpe:usesMethod     rdfs:domain m4i:ProcessingStep ; rdfs:range shpe:InspectionMethod .
+shpe:usesProcess    rdfs:domain m4i:ProcessingStep ; rdfs:range shpe:ManufacturingProcess .
+shpe:hasSensorRole  rdfs:range shpe:SensorRole .
+```
+
+**How it arrives in the graph**: registered via the N1c2 admin upload
+mechanism (same path as any operator-uploaded ontology). It ships as a
+bundled default that operators can disable but which is on by default for
+ZLP/manufacturing deployments. The bundle id is `shepard-experiment`.
+
+**Why this unlocks Lumen**: the annotation picker (N1e, when shipped) will
+suggest terms from this vocabulary by default. The SPARQL tool (AI1q) can
+now express domain queries structurally rather than relying on free-text
+matching. "Find all DataObjects where the AFP phase produced a delamination"
+becomes a clean SPARQL SELECT over `shpe:AFP` + `shpe:Delamination` — not
+a keyword search.
+
+**Relationship to N1d**: N1d's `lumen-phases.ttl` + `lumen-severity.ttl`
+were the sketch of this idea. N1d is now superseded by AI1r — the
+miniature experiment ontology is the full version of what N1d was
+reaching for, uploaded via N1c2 rather than hard-coded in seed scripts.
+N1d can be closed and its IRI-replacement task (updating placeholder IRIs
+in `seed.py` with real PROV-O / QUDT terms) folded into AI1b and AI1r.
+
+## 8. Phasing — AI series (call it AI1)
 
 | ID | Slice | Shape | Size | Gate |
 |---|---|---|---|---|
@@ -449,9 +551,14 @@ no asking a colleague how the data is shaped.** That's what
 | **AI1n** | (deferred) Outlier detection in attribute vectors (§3.4). | ML | S | parked |
 | **AI1o** | (deferred) Search-rank learning (§3.6) — gated on having scale. | ML | L | parked |
 | **AI1p** | Per-provider OpenAPI nuances (Azure deployment URL paths, Anthropic-style `messages` endpoint adapter, etc.). Ships incrementally as users hit them. | Infra | S each | AI1a |
+| **AI1q** | `query_knowledge_graph` SPARQL tool for Lumen's snap-dashboard catalogue — extends AI1e's tool set with a read-only SPARQL SELECT against the n10s graph (via N1f proxy); LLM can reason over semantic annotations using real ontology terms (`shpe:`, `m4i:`, `prov:`, `qudt:`) rather than string matching; every call logged to `:Activity`. Unlocks structural cross-source queries: "Find all AFP runs with a Delamination defect annotation in the TestRun phase." | LLM | S | AI1e (snap dashboards) + N1f (SPARQL proxy) |
+| **AI1r** | **shepard experiment ontology** (`shepard-experiment.ttl`) — compact OWL-Lite + SKOS vocabulary: 7 concept schemes (`ExperimentPhase`, `MeasurementRole`, `QualityFlag`, `DefectType`, `InspectionMethod`, `ManufacturingProcess`, `SensorRole`) + 8 object properties; extends PROV-O + metadata4ing + QUDT. Registered via N1c2 admin bundle mechanism (bundle id `shepard-experiment`; on by default for ZLP/manufacturing installs). Provides the vocabulary for N1e annotation picker + AI1q SPARQL queries + SB1 data-binding labels. **Supersedes N1d** (lumen-phases.ttl + lumen-severity.ttl sketches were the prototype of this idea; N1d's IRI-replacement task folds into AI1b + AI1r). | Ontology | S | N1c2 (admin bundle upload, shipped) |
 
-Recommended order: **AI1a → AI1b → AI1c → AI1d → AI1e → AI1g →
-AI1f → AI1h → AI1i**. AI1a is the gate for everything; AI1b is the
+Recommended order: **AI1a → AI1b+AI1r → AI1c → AI1d → AI1e → AI1q →
+AI1g → AI1f → AI1h → AI1i**. AI1a is the gate; AI1r (experiment
+ontology) ships with AI1b because it has zero backend dependencies (it's
+just a `.ttl` file uploaded via the N1c2 REST endpoint); AI1q extends the
+snap-dashboard tool catalogue once AI1e exists. AI1b is the
 fastest demonstrable win (we already have the algorithm in the
 showcase); AI1d unlocks similarity which improves search before any
 LLM exists. AI1e is the LLM gate.

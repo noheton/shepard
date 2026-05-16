@@ -190,6 +190,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Natural-language search | none | TBD | 📐 (queued, AI1f) | `aidocs/43 §5.1` |
 | Lab journal authoring assist | none | TBD | 📐 (queued, AI1g) | `aidocs/43 §5.2` |
 | Semantic-annotation suggestion | none | TBD | 📐 (queued, AI1h) | `aidocs/43 §5.4` |
+| **Lumen experiment ontology** (`shepard-experiment.ttl`) — OWL-Lite + SKOS vocabulary: 7 concept schemes covering experiment phases, measurement roles, quality flags, defect types, inspection methods, manufacturing processes, sensor roles; extends PROV-O + metadata4ing + QUDT; registered via N1c2 admin bundle; vocabulary for annotation picker (N1e) + Lumen SPARQL tool (AI1q) + SB1 data-binding labels; supersedes N1d | n/a | design done | 📐 (queued, AI1r; ungated — just a .ttl upload) | `aidocs/43 §7.2` |
+| **Lumen `query_knowledge_graph` SPARQL tool** — extends snap-dashboard tool catalogue with read-only SPARQL SELECT against n10s graph; enforced at proxy (N1f); every call logged to `:Activity`; unlocks structural cross-source reasoning over `shpe:` + `m4i:` + `prov:` terms | n/a | design done | 📐 (queued, AI1q; gated on AI1e + N1f) | `aidocs/43 §7.1` |
 | Auto-summarisation of run outcomes | none | TBD | 📐 (queued, AI1i) | `aidocs/43 §5.3` |
 | RO-Crate description generation | none | TBD | 📐 (queued, AI1j) | `aidocs/43 §5.5` |
 | Conversational lineage (chat over the lineage graph) | none | TBD | 📐 (queued, AI1k) | `aidocs/43 §5.6` |
