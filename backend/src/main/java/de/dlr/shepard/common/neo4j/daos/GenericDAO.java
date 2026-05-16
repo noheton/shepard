@@ -123,6 +123,13 @@ public abstract class GenericDAO<T> {
    * @return the saved entity
    */
   public T createOrUpdate(T entity) {
+    // V2a: capture isCreate before the appId is minted. A brand-new entity has
+    // appId == null on entry; the mint below sets it, so this flag is
+    // unambiguous. We use it later to guard the revision reset so that
+    // multi-phase creation patterns (e.g. CollectionService: save-1 with
+    // shepardId==null, assign shepardId, save-2) leave revision=1 rather than 2.
+    boolean isCreate = (entity instanceof HasAppId ha && ha.getAppId() == null);
+
     if (entity instanceof HasAppId hasAppId && hasAppId.getAppId() == null) {
       hasAppId.setAppId(AppIdGenerator.next());
     }
@@ -131,7 +138,8 @@ public abstract class GenericDAO<T> {
     // save + shepardId assignment); a brand-new entity has shepardId == null on
     // its first createOrUpdate call and keeps revision = 1. Subsequent saves
     // (including the second phase of the two-step creation pattern in the
-    // service layer) increment from there.
+    // service layer) also have shepardId != null, but we reset revision to 1
+    // below whenever isCreate is true — so creation always ends at revision=1.
     if (entity instanceof VersionableEntity) {
       VersionableEntity ve = (VersionableEntity) entity;
       if (ve.getShepardId() != null) {
@@ -139,6 +147,12 @@ public abstract class GenericDAO<T> {
       }
     }
     session.save(entity, DEPTH_ENTITY);
+    // V2a: if this was a create (isCreate was true at entry), reset revision
+    // to 1 so that multi-phase creation in the service layer doesn't leave
+    // the entity at revision=2.
+    if (isCreate && entity instanceof VersionableEntity) {
+      ((VersionableEntity) entity).setRevision(1L);
+    }
     return entity;
   }
 
