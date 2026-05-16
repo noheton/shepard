@@ -828,6 +828,20 @@
           <artifactId>shepard-plugin-git</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          FS1b — S3-compatible file storage adapter. Provides
+          S3FileStorage implementing the FS1a FileStorage SPI via
+          AWS SDK v2. Talks the generic S3 wire protocol; any
+          S3-compatible endpoint works (Garage, AWS S3, MinIO, etc.).
+          Activate by setting shepard.storage.provider=s3 +
+          shepard.files.s3.* properties.
+          See aidocs/45 FS1b.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

@@ -108,6 +108,10 @@ jobs:
         working-directory: plugins/git
         run: mvn -B -DskipTests install
 
+      - name: Install file-s3 plugin
+        working-directory: plugins/file-s3
+        run: mvn -B -DskipTests install
+
       - name: Plugin unit tests (kip)
         working-directory: plugins/kip
         run: mvn -B test
@@ -130,6 +134,10 @@ jobs:
 
       - name: Plugin unit tests (git)
         working-directory: plugins/git
+        run: mvn -B test
+
+      - name: Plugin unit tests (file-s3)
+        working-directory: plugins/file-s3
         run: mvn -B test
 
       - name: Backend unit tests + JaCoCo coverage gate
@@ -210,6 +218,10 @@ jobs:
         working-directory: plugins/git
         run: mvn -B -DskipTests install
 
+      - name: Install file-s3 plugin
+        working-directory: plugins/file-s3
+        run: mvn -B -DskipTests install
+
       - name: SpotBugs + findsecbugs (fail on High-confidence findings)
         working-directory: backend
         run: |
@@ -279,6 +291,10 @@ jobs:
         working-directory: plugins/git
         run: mvn -B -DskipTests install
 
+      - name: Install file-s3 plugin
+        working-directory: plugins/file-s3
+        run: mvn -B -DskipTests install
+
       - name: Build Quarkus app (tests already passed in unit-tests job)
         working-directory: backend
         run: mvn -B -DskipTests package
@@ -297,6 +313,7 @@ jobs:
           cp plugins/spatial/target/shepard-plugin-spatial-*.jar backend/plugins-stage/
           cp plugins/hdf5/target/shepard-plugin-hdf5-*.jar backend/plugins-stage/
           cp plugins/git/target/shepard-plugin-git-*.jar backend/plugins-stage/
+          cp plugins/file-s3/target/shepard-plugin-file-s3-*.jar backend/plugins-stage/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
