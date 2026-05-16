@@ -19,8 +19,8 @@ public class VersionableEntityTest extends BaseTestCase {
       .withPrefabValues(User.class, new User("bob"), new User("claus"))
       .withPrefabValues(Version.class, new Version("Version1"), new Version("Version2"))
       .withPrefabValues(SemanticAnnotation.class, new SemanticAnnotation(1L), new SemanticAnnotation(2L))
-      // appId is L2a-additive; not part of equals (legacy id remains canonical).
-      .withIgnoredFields("appId")
+      // appId and revision are server-managed metadata; not part of identity equals.
+      .withIgnoredFields("appId", "revision")
       .verify();
   }
 
@@ -32,5 +32,23 @@ public class VersionableEntityTest extends BaseTestCase {
     entity.addAnnotation(annotation2);
     entity.addAnnotation(annotation3);
     assertEquals(List.of(annotation2, annotation3), entity.getAnnotations());
+  }
+
+  @Test
+  public void newEntityHasRevisionOne() {
+    // V2a: every fresh VersionableEntity starts at revision=1.
+    var entity = new Collection();
+    assertEquals(1L, entity.getRevision(), "New entity must start at revision 1");
+  }
+
+  @Test
+  public void revisionIncrementTest() {
+    // V2a: simulate the DAO write-side increment on an entity that already has an id.
+    var entity = new Collection(42L);
+    assertEquals(1L, entity.getRevision(), "Before any update the revision must be 1");
+    entity.setRevision(entity.getRevision() + 1);
+    assertEquals(2L, entity.getRevision(), "After one increment the revision must be 2");
+    entity.setRevision(entity.getRevision() + 1);
+    assertEquals(3L, entity.getRevision(), "After two increments the revision must be 3");
   }
 }

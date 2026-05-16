@@ -150,7 +150,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Per-user git credentials (host + username + AES-GCM encrypted PAT); `/v2/me/git-credentials` CRUD | none | ✓ backend (G1-cred) / ✓ UI (PR #1071) | 🚧 (G1-cred #1069) | — |
 | Templates feature (Templates Collection of DataObject blueprints; per-Collection allow-list) | none | TBD; replaces / supersedes upstream-aspirational L3 | 📐 (queued, T1) | `aidocs/39` |
 | Process design + runtime in shepard core (`ProcessDefinition` + browser-hosted stepper) | SPW desktop only | TBD | 📐 (queued, PR1) | `aidocs/40 §2` |
-| Snapshots (point-in-time, immutable, reproducible reads) | `Version` is a marker only | TBD; logical snapshots backed by entity revisions | 📐 (queued, V2) | `aidocs/41` |
+| Snapshots (point-in-time, immutable, reproducible reads) | `Version` is a marker only | V2a shipped: `revision: long` counter on every `VersionableEntity` (backfilled by V36; surfaced read-only on all entity IOs); V2b–V2f queued | **✓ V2a** / 📐 V2b–V2f | `aidocs/41` |
 
 ## 10. User profile + settings
 

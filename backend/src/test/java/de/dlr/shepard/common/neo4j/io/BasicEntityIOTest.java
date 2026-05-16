@@ -82,6 +82,33 @@ public class BasicEntityIOTest {
     assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
     assertEquals(obj.getUpdatedBy().getUsername(), converted.getUpdatedBy());
     assertEquals(obj.getName(), converted.getName());
+    // V2a: revision should be propagated to the IO representation.
+    assertEquals(1L, converted.getRevision(), "Default revision must be 1 on a new entity");
+  }
+
+  @Test
+  public void testConversionVersionable_revisionIncrement() {
+    // V2a: verify that a manually-incremented revision is reflected in the IO.
+    var obj = new BasicReference(1L);
+    obj.setShepardId(2L);
+    obj.setName("R");
+    obj.setRevision(3L);
+
+    var converted = new EntityIO(obj);
+    assertEquals(3L, converted.getRevision(), "IO must reflect the entity's current revision");
+  }
+
+  @Test
+  public void testCopyConstructor_propagatesRevision() {
+    // V2a: copy constructor must carry the revision value forward.
+    var obj = new BasicReference(1L);
+    obj.setShepardId(2L);
+    obj.setName("S");
+    obj.setRevision(5L);
+
+    var first = new EntityIO(obj);
+    var copy = new BasicEntityIO(first) {};
+    assertEquals(5L, copy.getRevision(), "Copy constructor must propagate revision");
   }
 
   @Test

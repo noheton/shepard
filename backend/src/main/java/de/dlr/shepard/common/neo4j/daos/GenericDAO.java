@@ -3,6 +3,7 @@ package de.dlr.shepard.common.neo4j.daos;
 import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.identifier.HasAppId;
+import de.dlr.shepard.context.version.entities.VersionableEntity;
 import de.dlr.shepard.common.neo4j.NeoConnector;
 import de.dlr.shepard.common.search.query.Neo4jQuery;
 import de.dlr.shepard.common.util.Constants;
@@ -124,6 +125,18 @@ public abstract class GenericDAO<T> {
   public T createOrUpdate(T entity) {
     if (entity instanceof HasAppId hasAppId && hasAppId.getAppId() == null) {
       hasAppId.setAppId(AppIdGenerator.next());
+    }
+    // V2a: increment the revision counter on every update. The discriminator is
+    // shepardId (non-null once the entity is fully initialised after its first
+    // save + shepardId assignment); a brand-new entity has shepardId == null on
+    // its first createOrUpdate call and keeps revision = 1. Subsequent saves
+    // (including the second phase of the two-step creation pattern in the
+    // service layer) increment from there.
+    if (entity instanceof VersionableEntity) {
+      VersionableEntity ve = (VersionableEntity) entity;
+      if (ve.getShepardId() != null) {
+        ve.setRevision(ve.getRevision() + 1);
+      }
     }
     session.save(entity, DEPTH_ENTITY);
     return entity;
