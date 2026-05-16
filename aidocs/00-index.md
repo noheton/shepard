@@ -18,6 +18,7 @@ related docs cluster topically.
 - [Chapter E. Search, semantics, knowledge graph, lineage](#chapter-e--search-semantics-knowledge-graph-lineage) — `13`, `14`, `30`
 - [Chapter F. Identity, auth, permissions, identifiers](#chapter-f--identity-auth-permissions-identifiers) — `24`, `25`
 - [Chapter G. Demand, frontend & operator tooling](#chapter-g--demand-frontend--operator-tooling) — `21`, `22`, `33`
+- [Chapter H. Strategy, landscape & stakeholders](#chapter-h--strategy-landscape--stakeholders) — `70`, `71`, `72`, `73`, `74`, `75`
 - [Sub-pages: migration / operator notes](#sub-pages-migration--operator-notes)
 - [Cross-chapter interlocks](#cross-chapter-interlocks) — items that thread through several chapters
 - [Snapshot date and provenance](#snapshot-date-and-provenance)
@@ -212,6 +213,24 @@ Vuetify 3, not Angular** — verified against `frontend/package.json`.
 | 60 | [`60-shepard-edge.md`](60-shepard-edge.md) | **shepard Edge** — field-deployable offline-first shepard. Three form-factors (Edge-Micro RPi-class / Edge-Workstation laptop-NUC / Edge-Truck instrumented-vehicle). Single-user-by-default; bootstrap-token + local instance-admin path (no IdP). **Sync model = push-from-Edge over HTTP/2** to `POST /v2/edge/sync` on central (idempotent on `(originInstance, activityAppId)`); RO-Crate bundle export is the always-available USB fallback. Conflicts surface via `:CONFLICTED_WITH` edges; central remains canonical in v1. Provenance trail (`aidocs/55`) survives the sync with `originInstance` stamp. EDGE1a–EDGE1k phasing. | Design done |
 | 61 | [`61-shepard-mount-as-network-drive.md`](61-shepard-mount-as-network-drive.md) | **shepard mount as a network drive** — read-only WebDAV (RFC 4918, Apache Milton) at `/v2/webdav/...` mapping the Collection→DataObject→Reference graph onto a filesystem (`_README.md` / `_metadata.json` / `lab-journal.md` / `provenance.json` synthetic files; FileBundle / FileGroup → directory; TimeseriesReference → CSV-default; Video → HLS). One-shot "webdav password" via `POST /v2/me/mount-credentials` for the Finder/Explorer mount UX. Per-Collection `webdavVisible` opt-out via `:CollectionProperties`. Default-off (`shepard.webdav.enabled=false`) for first release. MNT1a–MNT1i phasing; write support (MNT1i) deferred to v2. | Design done |
 | 63 | [`63-architecture-decision-log.md`](63-architecture-decision-log.md) | **Fork-side ADR log.** Thin, scannable trail of "why we did it this way" for decisions specific to this fork (upstream's `architecture/src/09_architecture_decisions/` bundle remains authoritative for the original surface). Each entry is a short field card (Date / Status / Context / Decision / Consequences / Alternatives). First entry: ADR-0019 (N1b pre-seed common ontologies default-on). | Live |
+
+---
+
+## Chapter H — Strategy, landscape & stakeholders
+
+Competitive positioning, RDA alignment, fork-adoption analysis, publication-path plugins,
+and stakeholder briefs for DLR and DLR-BT (the proposed pilot institute). These are
+outward-facing or strategy-facing documents; they complement but don't gate any
+implementation sprint.
+
+| # | File | Topic | Status |
+|---|---|---|---|
+| 70 | [`70-competitor-landscape-and-feature-ideas.md`](70-competitor-landscape-and-feature-ideas.md) | **Competitor landscape + RDA alignment + RDM best practices.** §1–6 landscape (TwinStash, RSpace, eLabFTW, Indigo ELN, OpenBIS, Renku, DMP tools, inst.dlr, Helmholtz ecosystem) with feature matrix and prioritised ideas. **§7 RDA outputs** — foundational (FAIR/FDO/KIP/RO-Crate/PIDINST) and 2025–2026 outputs mapped to shepard. **§8 RDM best practices** — ten practices distilled from the RDA body of work, each with a shepard implementation pointer. | Live |
+| 71 | [`71-fork-adoption-as-upstream.md`](71-fork-adoption-as-upstream.md) | **Fork adoption feasibility** — three adoption shapes (A reference / B plugin-layer merge / C full adoption); verification gates; development-velocity metrics (AI-assisted sprint: ~40 deliverables in 2–3 weeks at ~€625 API cost); cost-benefit analysis; risk register; recommended roadmap. §9 introduces the InvenioRDM submission plugin as an open question (now answered in aidocs/72). | Research |
+| 72 | [`72-invenio-publishing-plugin.md`](72-invenio-publishing-plugin.md) | **InvenioRDM publishing plugin (`shepard-plugin-invenio`)**. Full design: plugin shape, `:InvenioConfig` admin entity, researcher-facing REST surface, 10-step background submission workflow, metadata mapping table (shepard → InvenioRDM), DOI coordination with KIP (no duplication), notification system design (SSE + email + webhook receiver), `:InvenioSubmission` Neo4j model, INV1a–INV1g phasing. Also designs the N10 notification system that becomes a near-term dependency. | Design |
+| 73 | [`73-dlr-stakeholder.md`](73-dlr-stakeholder.md) | **DLR-wide stakeholder brief.** Audience: program managers, infrastructure committee. Problem framing (DLR data silos), what shepard is, DLR-specific fit (Unhide, KIP, metadata4ing, PIDINST, Helmholtz AAI), institute-fit matrix (aeronautics/space/energy/transport), three deployment topologies (central/per-institute/hybrid), cost-benefit snapshot, adoption shapes A/B/C, concrete ask. | Stakeholder |
+| 74 | [`74-dlr-bt-stakeholder.md`](74-dlr-bt-stakeholder.md) | **DLR-BT (Stuttgart) specific brief.** Audience: BT institute leadership and researchers. Maps five BT research campaigns (CITE crash tests, CMC characterisation, CALLISTO, hydrogen propulsion, AFP/MFFD) to named shepard features. Publication pipeline (Unhide → KIP → InvenioRDM). RDA compliance alignment table. Concrete pilot proposal (3 months, one campaign, one VM, one champion). | Stakeholder |
+| 75 | [`75-dfg-eresearch-funding.md`](75-dfg-eresearch-funding.md) | **DFG e-Research-Technologien — eligibility check and application sketch.** Program overview (LIS family, Phase 1–3 model, open-license requirement). Eligibility analysis: DLR as Bundeseinrichtung cannot be sole applicant — recommended path is university as Hauptantragsteller + DLR-BT as co-PI. shepard maps cleanly to Phase 2 (prototype→operational service). Draft work programme (3 years, ~€226k), partner roles, rough costs. **Nachhaltigkeitsargumentation**: AI-assisted maintenance (€5k/year ≈ 30–50 developer-weeks), plugin SPI, Apache 2.0 license, NFDI4Ing/Helmholtz KG community anchors, pilot metric (researcher-hours saved). Next steps: verify DLR eligibility with DFG LIS office; identify university partner; run BT pilot first. | Concept sketch |
 
 ---
 

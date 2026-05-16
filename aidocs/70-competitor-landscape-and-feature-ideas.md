@@ -322,5 +322,76 @@ shepard's gaps to address (in priority order from §4): instrument dropbox → `
 - `aidocs/47-dev-experience-and-plugin-system.md` — plugin SPI reference
 - `aidocs/50-experiment-orchestration.md` — experiment entity design
 - `aidocs/67-unhide-publish-plugin.md` — publication integration
+- `aidocs/72-invenio-publishing-plugin.md` — InvenioRDM submission plugin (new)
 - `https://helmholtz.software/software/instdlr` — inst.dlr PIDINST instrument registry (EQ1 integration target)
 - `https://helmholtz.software/projects` — Helmholtz software ecosystem overview
+
+---
+
+## 7. RDA outputs and their implications for shepard
+
+The Research Data Alliance (RDA) is the primary community body producing
+interoperability standards, best-practice recommendations, and reference
+implementations for research data management. Its outputs are the external
+benchmark against which a FAIR-claims RDM platform should be measured.
+
+### 7.1 Foundational outputs (pre-2024) — where shepard already aligns
+
+| RDA output | Type | Year | Shepard alignment |
+|---|---|---|---|
+| **FAIR Data Principles** (Wilkinson et al.) | Community endorsement | 2016 | FAIR is the design goal: PID-per-entity, machine-readable metadata, RO-Crate export, Unhide discoverability. shepard is a FAIR workbench, not a post-hoc FAIR-wrapper. |
+| **FAIR Digital Object (FDO) Framework** | WG recommendation | 2022 | KIP PID (aidocs/66) gives every Collection and DataObject a resolvable PID pointing to a structured KIP record — the FDO "handle + typed record" pattern. |
+| **PID Kernel Information Profile (KIP) WG** | WG recommendation | 2022 | Directly implemented: KIP1a–KIP1h shipped. The KIP record shape (digital-object type, landing page, rights-holder, version) is what shepard's `.well-known/kip/` resolver returns. |
+| **Research Object Crate (RO-Crate)** | WG output | 2020–ongoing | First-class export format. FS1g delivers presigned download. RO-Crate manifest cites authors (ORCID), instruments (PIDINST), and derivation chain. |
+| **Data Citation Principles** (FORCE11 / RDA joint) | WG recommendation | 2014 | Every published Collection gets a PID + version stamp + landing page — the minimum citation record. DOI via DataCite (KIP1d) and ePIC (KIP1c) ship as plugin options. |
+| **Active and Machine-Actionable DMPs (maDMP)** | WG output | 2019–2021 | Links to §4.8 RDMO integration: a Collection references an RDMO plan ID; DMP-declared retention and storage constraints surface as metadata. |
+| **PIDINST — Persistent Identifiers for Instruments** | WG recommendation | 2021 | inst.dlr is the DLR implementation. EQ1 (aidocs/70 §4.4) federates shepard against inst.dlr so instrument PIDs appear natively in provenance edges. |
+| **Data Repository Interoperability** | WG output | 2019 | Schema.org + JSON-LD as the interchange metadata format — exactly what the Unhide feed (UH1a) produces. |
+
+### 7.2 Recent outputs (2024–2026) — new alignment evidence
+
+| RDA output | Type | Date | Shepard implication |
+|---|---|---|---|
+| **Bridging the Data Discovery Gap** | IG output | March 2026 | User-centric discovery of datasets is the problem Unhide + KIP publishing solve. The RDA output validates this as a persistent community gap worth addressing at the infrastructure layer. |
+| **Analysis of crosswalks from research data schemas to Schema.org** | IG output | March 2026 | Validates shepard's choice of schema.org JSON-LD as the Unhide feed format. The crosswalk analysis shows schema.org is the lowest-friction interoperability target for heterogeneous repositories. |
+| **Data Discovery Paradigms: User Requirements and Recommendations** | IG output | March 2026 | Confirms that discoverability requires both structured metadata *and* a harvesting layer — exactly the Unhide feed + Helmholtz KG architecture. |
+| **Scientific Knowledge Graphs Interoperability Framework** | WG recommendation | December 2025 | Shepard's Neo4j semantic graph + neosemantics (N1a) + metadata4ing pre-seed is a conformant implementation of this framework: typed entities, ontology IRIs, SPARQL-accessible via n10s. |
+| **TRUST Principles for Digital Repositories** | IG output | December 2025 | TRUST = Transparency, Responsibility, User focus, Sustainability, Technology. Shepard satisfies: PROV-O audit trail (T); per-entity ACL + admin role (R); casual-user UX north star (U); Apache 2.0 + open stack (S); Quarkus + standard DB stack (T). |
+| **PRO4RS WG Recommendations** | WG recommendation | February 2026 | Open science policies for research software. Relevant to the fork-adoption proposal (aidocs/71): shepard is Apache 2.0, CI-gated, and AI-assisted-maintainable — it satisfies the post-project sustainability requirements PRO4RS mandates. |
+| **Managing drone data through the data life cycle** | WG recommendation | March 2026 | DLR-specific relevance: RPAS/UAV data management across the research lifecycle. The recommended patterns (FAIR data, standardised workflows, provenance) are what shepard's instrument dropbox (IL1) + timeseries + provenance graph delivers for UAV campaigns. |
+
+### 7.3 Gaps to close
+
+Two RDA areas where shepard is not yet fully aligned:
+
+1. **Community review / quality assurance workflow.** RDA's Data Discovery and Repository
+   Interoperability WGs highlight that community-curated repositories (with moderation
+   queues and quality scores) outperform self-deposit. shepard has no review workflow
+   today. The InvenioRDM plugin (aidocs/72) partially addresses this by submitting to
+   a repository that *does* have community moderation.
+
+2. **Cross-repository federation.** The RDA Federated Identity and Geographies of Trust
+   (November 2025) outputs show federated data access (data visitation without data
+   movement) as a growing community need. Shepard's current federation model is limited
+   to the Unhide feed. A per-query federated search across multiple shepard instances
+   is the long-horizon gap (aidocs/16 X3, parked).
+
+---
+
+## 8. RDM best practices — distilled from RDA body of work
+
+These practices are the external community standard; they frame every feature priority
+decision. Each maps to a shepard design location.
+
+| Best practice | Rationale | Shepard implementation |
+|---|---|---|
+| **FAIR from the point of creation** | Retrofitting FAIR at publication time is expensive and lossy. The workbench must produce FAIR artefacts natively. | Every entity gets a PID at creation; PROV-O captured at write time; semantic annotations at any time; RO-Crate is the export. |
+| **Machine-actionable metadata** | Human-readable metadata does not scale across institutions. Schema.org + JSON-LD is the community standard. | Unhide feed is schema.org JSON-LD; KIP record is JSON-LD; metadata4ing for engineering-domain provenance. |
+| **PIDs early, not just at publication** | A dataset that exists for two years before getting a DOI has already been cited informally, leading to broken references. | `POST /v2/collections/{appId}/publish` mints a KIP PID at any time; DataCite DOI at publication; ePIC as alternative. |
+| **Provenance as a first-class record** | The chain from instrument → analysis → publication must be machine-readable, not reconstructed from emails. | PROV-O `:Activity` graph; `wasGeneratedBy` instrument edges; `derivedFrom` DataObject predecessors; OpenLineage shape via aidocs/30. |
+| **Interoperable packaging (RO-Crate)** | A single agreed packaging format eliminates bespoke converters at handoff time. | RO-Crate is the primary export; `.eln` import/export (§4.2) as secondary ELN interop. |
+| **Repository trustworthiness (TRUST)** | Researchers need to know their data is safe, auditable, and recoverable. | S3 object storage (durability); PROV-O audit; per-entity ACL; admin role; backup/restore in operator docs. |
+| **Active DMPs linked to living data** | Static PDF data management plans become useless after the project starts. Machine-actionable maDMPs that link to actual datasets are the community standard. | RDMO plan ID linkage (§4.8; aidocs/70 Tier 2). |
+| **Domain-specific metadata schemas** | Generic metadata (title, creator, date) is necessary but not sufficient. Engineering data needs `m4i:Method`, `m4i:Tool`, QUDT units. | metadata4ing pre-seeded (ONT1b, shipped); QUDT, PROV-O, GeoSPARQL, RO baked in. Admin can add domain TTLs at runtime (N1c2). |
+| **Instrument provenance (PIDINST)** | Data produced by an instrument is only reproducible if the instrument's configuration at measurement time is recorded. | EQ1 (inst.dlr federation, aidocs/70 §4.4); `wasGeneratedBy: Instrument(pidinst:<id>)` provenance edge. |
+| **Seamless workbench-to-repository pipeline** | The biggest cause of FAIR data loss is the gap between the working environment and the repository. If the handoff is manual, researchers skip it. | InvenioRDM plugin (aidocs/72); Unhide plugin (aidocs/67); KIP publish button (KIP1e, shipped) — all reachable from the shepard web UI. |
