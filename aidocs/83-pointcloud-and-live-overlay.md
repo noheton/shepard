@@ -97,6 +97,88 @@ is coloured by deviation without the researcher having to manually create a bind
 Colour map defaults: `"RdBu"` centred at 0, ±3σ clamped, ±tolerance shown as
 dashed isoline. The researcher can adjust in the binding's PATCH endpoint.
 
+#### PC1e — Surface-annotation matching (measurement attribution)
+
+**The core inspection workflow:** After ICP alignment (PC1b), every measured point in the
+T-Scan cloud has a nominal CAD surface position. The next question is *which annotated
+surface region* does that point belong to? A ply overlap zone, a spar cap, a fastener-hole
+boundary? Without this attribution, the deviation map is a single undifferentiated heat
+map — the engineer cannot say "the overlap zone is within tolerance but the leading edge
+is not."
+
+Surface-annotation matching makes deviation inspection feature-aware:
+
+```
+POST /v2/pointcloud-references/{pcAppId}/surface-match
+{
+  "cadRefAppId":       "abc123",
+  "annotationAppIds":  ["ann-001", "ann-002"],  // optional; omit → all annotations
+  "maxDistanceMm":     2.0                       // ignore points further than this from any face
+}
+```
+
+**Backend computation:**
+
+1. Load the aligned point cloud (applying the `[:ALIGNED_TO]` matrix).
+2. Load the CAD mesh face list with face-index → annotation mapping
+   (from `GeometryAnnotation.faceIndices` in aidocs/78 §6).
+3. For each point, compute the nearest CAD face using an Open3D BVH or trimesh
+   `proximity.closest_point`. Assign the point to the annotation that owns that face.
+   Points with `dist > maxDistanceMm` are unattributed (noise or fixture).
+4. Per annotation, compute: `n`, `mean`, `stddev`, `min`, `max` signed deviation
+   (positive = outside nominal, negative = inside).
+5. Store as a `:SurfaceMatchResult` node linked from the `PointCloudReference`:
+
+```cypher
+(:PointCloudReference)-[:HAS_SURFACE_MATCH]->(:SurfaceMatchResult {
+  appId:           String
+  cadRefAppId:     String
+  computedAt:      ZonedDateTime
+  totalPoints:     long
+  attributedPoints: long
+  maxDistanceMm:   double
+})
+  -[:MATCH_STATS]->(:AnnotationMatchStats {
+  annotationAppId: String
+  nPoints:         long
+  meanMm:          double
+  stddevMm:        double
+  minMm:           double
+  maxMm:           double
+  inTolerancePct:  double   -- % of points within ±tolerance
+  toleranceMm:     double   -- from annotation's toleranceMm field, or from request override
+})
+```
+
+**REST surface:**
+
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/v2/pointcloud-references/{appId}/surface-match` | Run surface match; async job |
+| `GET` | `/v2/pointcloud-references/{appId}/surface-match/{resultAppId}` | Get match result + per-annotation stats |
+| `GET` | `/v2/pointcloud-references/{appId}/surface-match/{resultAppId}/points/{annotationAppId}` | Stream matched points for one annotation (binary LAS) |
+
+**Viewer integration:** The match result automatically creates a HEATMAP `DataBinding` per
+annotation with `minValue`/`maxValue` set to ±3σ and the annotation's `toleranceMm` shown
+as a dashed isoline. Clicking an annotation in the 3D view opens a stats panel: pass/fail
+badge, histogram of deviations, and the matched point subset rendered in the scene at
+higher opacity than unmatched points.
+
+**T-Scan specifics:** T-Scan produces very dense clouds (1–5 M pts for a mid-size CFRP
+panel). The BVH lookup scales to this density on the Python sidecar without loading the
+full cloud into memory — Open3D processes it in streaming chunks of 100k points. The
+matched point subset per annotation (typically 5k–50k pts) is small enough to stream to
+the browser directly.
+
+**Tolerance annotation field:** `GeometryAnnotation` (aidocs/78 §6) gains an optional
+`toleranceMm: double` field. This is the drawing tolerance for that feature (e.g., ±0.5 mm
+for a leading edge, ±1.0 mm for a skin surface). PC1e uses it to compute `inTolerancePct`
+and to set the HEATMAP isoline automatically. An annotation without `toleranceMm` defaults
+to ±σ for the isoline.
+
+**Gating:** PC1e requires PC1b (alignment, `[:ALIGNED_TO]` edge) and CAD1b
+(face-index annotation encoding from aidocs/78 §6.2).
+
 #### PC1d — Live point cloud streaming (scanner-connected mode)
 
 When a scanner exposes a streaming API (GOM ATOS via its REST SDK, or a Velodyne UDP
@@ -354,6 +436,8 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 | FEM frame animation | DEFORMATION (framed) | Structured (multi-frame) | — | Clarified — SB2f |
 | Ultrasonic C-scan projection | UT_CSCAN | UltrasonicScanReference | ✓ (live) | New — SB2g; spec pending |
 | Interactive A-scan panel | (UT_CSCAN sidebar) | UltrasonicScanReference | — | New — SB2g sidebar |
+| Surface-annotation matching (per-feature stats) | (PC1e result) | PC + CAD + annotations | — | New — PC1e |
+| 6D pose triad (position + orientation frame) | POSE_6D | Timeseries (7-ch: xyz+quat) | ✓ | New — SB2h; SA 6D tracking |
 | Multi-channel timeline | (SB2d infrastructure) | Any mix | — | Frontend + timeline endpoint |
 
 ---
@@ -365,6 +449,7 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 | PC1a | `PointCloudReference` payload kind; PLY/E57 ingest; Potree tile serving | CAD1a (FS1a, plugin scaffolding) | High — enables dimensional inspection workflow |
 | PC1b | CAD–Cloud ICP alignment; `[:ALIGNED_TO]` edge; Open3D sidecar | CAD1b (annotation model) + PC1a | High |
 | PC1c | Deviation map auto-HEATMAP binding | PC1b + SB1b (HEATMAP mode) | Medium |
+| PC1e | Surface-annotation matching; per-annotation deviation stats; matched-point subsets; tolerance pass/fail; `toleranceMm` annotation field | PC1b + CAD1b (face-index encoding) | High — feature-aware inspection, T-Scan primary use case |
 | PC1d | Live point cloud streaming (sTC + SSE tiles) | PC1a + SB1e (SSE live) | Low — needs scanner API adapter |
 | SB2a | Camera frustum glyph + PiP video overlay | JOINT_ANGLE (SB1d) + VID1a | Medium |
 | SB2b | AE event cloud glyph | SB1c (GLYPH) + PC1a (scene graph) | Medium — high value for ZLP NDT |
@@ -373,6 +458,7 @@ ZLP Augsburg (C-scan is the primary NDT technique for CFRP parts).
 | SB2e | Nominal vs actual trajectory | JOINT_ANGLE (SB1d) | High — ZLP AFP robot use case |
 | SB2f | FEM frame animation (multi-frame DEFORMATION) | DEFORMATION (SB1e) | Medium |
 | SB2g | Ultrasonic C-scan overlay + interactive A-scan panel | SB1b (HEATMAP) + PC1b (alignment) | High — ZLP NDT primary technique; spec pending |
+| SB2h | `POSE_6D` display mode — animated SE(3) triad from 8-channel timeseries; `showTrace` tube; JOINT_ANGLE+POSE_6D combo for calibration comparison | SB1d (JOINT_ANGLE renderer) + PC1a | High — SA robot TCP tracking, robot calibration |
 
 ---
 
@@ -423,8 +509,50 @@ typically 10–50× more accurate than ICP alignment of raw scanned point clouds
    shepard data (C-scan, thermocouple timeseries, DIC strain fields) overlaid on the SA
    coordinate frame.
 
-**Recommended phasing:** SA export ingest (item 1) is a day's work post-PC1a. SDK
-integration (item 4) is a week's effort and high-value for ZLP dimensional inspection.
+6. **SA 6D pose tracking (robot TCP measurement):** SA with a 6DOF probe or `T-Scan 5`
+   measures the full rigid-body pose (SE(3): position + orientation) of a target — typically
+   a robot TCP, a fixture, or a tool. This produces a timeseries of `(t, x, y, z, qx, qy, qz, qw)`
+   in the SA coordinate frame.
+
+   shepard storage: a `TimeseriesReference` with 8 channels (`t`, `x`, `y`, `z`, `qx`, `qy`, `qz`, `qw`)
+   tagged `sourceKind: "SA_6D_TRACKING"`. The `SpatialAnalyzerTrigger` (IL1) ingest pipeline
+   creates this automatically on SA session export.
+
+   **SB2h — `POSE_6D` display mode:** A new `DataBinding` display mode that renders an animated
+   coordinate frame triad (three unit vectors: X=red, Y=green, Z=blue) at the measured position,
+   tracking along the timeseries. The `GeometryAnnotation` anchor locates the nominal TCP position
+   on the URDF end-effector link; the `POSE_6D` binding shows the measured SA pose at each timestep.
+
+   ```cypher
+   (:DataBinding {
+     displayMode:    "POSE_6D",
+     xChannel:       "x",
+     yChannel:       "y",
+     zChannel:       "z",
+     qxChannel:      "qx",
+     qyChannel:      "qy",
+     qzChannel:      "qz",
+     qwChannel:      "qw",
+     triadScale:     double,   -- visual size of the triad arrows (mm)
+     showTrace:      boolean   -- render the path of the origin as a tube
+   })
+   ```
+
+   Client-side: `THREE.ArrowHelper` × 3 per timestep, updated by the time scrubber.
+   `showTrace: true` renders the full TCP path as a `THREE.TubeGeometry` — gives an
+   immediate visual of how closely the robot followed its programmed path.
+
+   **Comparison with JOINT_ANGLE:** `JOINT_ANGLE` (SB1d) drives URDF joints from timeseries
+   channels — it animates the robot's kinematic chain using the robot's *own* encoder data.
+   `POSE_6D` overlays the *externally measured* TCP pose from SA. Running both simultaneously
+   (SB2d multi-channel timeline) gives the full robot calibration picture: joint angles
+   predict the TCP position; SA measures where the TCP actually was; the gap is the calibration
+   error.
+
+**Recommended phasing:** SA export ingest (item 1) is a day's work post-PC1a. 6D tracking
+ingest + SB2h POSE_6D mode (item 6) is a week post-PC1a + SB1d (JOINT_ANGLE renderer already
+provides the 3D scene infrastructure). SDK integration (item 4) is a week's effort and
+high-value for ZLP dimensional inspection.
 
 #### RDK1 — RoboDK integration
 
