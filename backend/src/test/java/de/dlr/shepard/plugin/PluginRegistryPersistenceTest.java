@@ -61,8 +61,8 @@ class PluginRegistryPersistenceTest {
   void seedOverridesFromDao_emptyTableLeavesCacheEmpty() {
     registry.seedOverridesFromDao();
     registry.entries.put("unhide", makeEntry("unhide"));
-    // No row → no override → fall-through to deploy-time default (true).
-    assertThat(registry.isEnabled("unhide")).isTrue();
+    // No row → no override → fall-through to deploy-time default (false, opt-in posture).
+    assertThat(registry.isEnabled("unhide")).isFalse();
   }
 
   @Test
@@ -82,42 +82,43 @@ class PluginRegistryPersistenceTest {
     registry.seedOverridesFromDao(); // does not throw
 
     registry.entries.put("unhide", makeEntry("unhide"));
-    // No override seeded → fall-through to deploy-time default.
-    assertThat(registry.isEnabled("unhide")).isTrue();
+    // No override seeded → fall-through to deploy-time default (false, opt-in posture).
+    assertThat(registry.isEnabled("unhide")).isFalse();
   }
 
   // ─── write-through ──────────────────────────────────────────────────────
 
   @Test
-  void setEnabled_disableAwayFromDefaultPersistsRow() {
+  void setEnabled_enableAwayFromDefaultPersistsRow() {
+    // Default is false (opt-in); enabling creates an override row.
     registry.entries.put("unhide", makeEntry("unhide"));
-    registry.setEnabled("unhide", false, "admin-1");
+    registry.setEnabled("unhide", true, "admin-1");
 
-    // Row exists in the DAO with enabled=false.
+    // Row exists in the DAO with enabled=true.
     Optional<PluginRuntimeOverride> persisted = fakeDao.findByPluginId("unhide");
     assertThat(persisted).isPresent();
-    assertThat(persisted.get().isEnabled()).isFalse();
+    assertThat(persisted.get().isEnabled()).isTrue();
     assertThat(persisted.get().getUpdatedBy()).isEqualTo("admin-1");
     assertThat(persisted.get().getUpdatedAt()).isNotNull();
 
     // In-memory cache mirrors the persisted state.
-    assertThat(registry.isEnabled("unhide")).isFalse();
+    assertThat(registry.isEnabled("unhide")).isTrue();
   }
 
   @Test
   void setEnabled_resetToDeployDefaultDeletesRow() {
-    // First disable (persists a row), then re-enable (deploy-time
-    // default is true → row deleted).
+    // First enable (persists a row, since default is false), then disable
+    // back to the deploy-time default (false → row deleted).
     registry.entries.put("unhide", makeEntry("unhide"));
-    registry.setEnabled("unhide", false, "admin-1");
+    registry.setEnabled("unhide", true, "admin-1");
     assertThat(fakeDao.rows).hasSize(1);
 
-    registry.setEnabled("unhide", true, "admin-2");
-    // Sparse-table invariant: re-enabling to match the deploy-time
-    // default deletes the row.
+    registry.setEnabled("unhide", false, "admin-2");
+    // Sparse-table invariant: disabling back to the deploy-time
+    // default (false) deletes the row.
     assertThat(fakeDao.rows).isEmpty();
     // isEnabled falls back to the deploy-time default.
-    assertThat(registry.isEnabled("unhide")).isTrue();
+    assertThat(registry.isEnabled("unhide")).isFalse();
   }
 
   @Test
@@ -134,7 +135,8 @@ class PluginRegistryPersistenceTest {
   @Test
   void setEnabled_nullActorSubFallsBackToAnonymous() {
     registry.entries.put("unhide", makeEntry("unhide"));
-    registry.setEnabled("unhide", false, null);
+    // Enable is "away from default" (false) → persists a row.
+    registry.setEnabled("unhide", true, null);
 
     PluginRuntimeOverride persisted = fakeDao.findByPluginId("unhide").orElseThrow();
     assertThat(persisted.getUpdatedBy()).isEqualTo("anonymous");
@@ -144,22 +146,23 @@ class PluginRegistryPersistenceTest {
   void setEnabled_writeFailureKeepsInMemoryCacheCurrent() {
     registry.entries.put("unhide", makeEntry("unhide"));
     fakeDao.failOnWrite = true;
-    registry.setEnabled("unhide", false, "admin-1");
+    // Enable is "away from default" (false) → tries to upsert → DAO throws.
     // The persistence layer is broken, but the in-memory override is
     // still in effect so the current JVM behaves correctly until the
     // next restart (which would then fall back to the deploy-time
     // default — operator can re-PATCH after the DB recovers).
-    assertThat(registry.isEnabled("unhide")).isFalse();
+    registry.setEnabled("unhide", true, "admin-1");
+    assertThat(registry.isEnabled("unhide")).isTrue();
   }
 
   // ─── restart simulation ──────────────────────────────────────────────────
 
   @Test
-  void disableSurvivesSimulatedRestart() {
-    // PM1e core promise: an admin who disables a plugin once expects
-    // it to stay disabled across a restart.
+  void enableSurvivesSimulatedRestart() {
+    // PM1e core promise: an admin who enables a plugin once expects
+    // it to stay enabled across a restart.
     registry.entries.put("unhide", makeEntry("unhide"));
-    registry.setEnabled("unhide", false, "admin-1");
+    registry.setEnabled("unhide", true, "admin-1");
 
     // Simulate restart: fresh registry instance, same DAO state.
     PluginRegistry restarted = new PluginRegistry();
@@ -172,13 +175,14 @@ class PluginRegistryPersistenceTest {
     restarted.seedOverridesFromDao();
     restarted.entries.put("unhide", makeEntry("unhide"));
 
-    assertThat(restarted.isEnabled("unhide")).isFalse();
+    assertThat(restarted.isEnabled("unhide")).isTrue();
   }
 
   @Test
   void twoArgSetEnabledDelegatesToThreeArg() {
     registry.entries.put("unhide", makeEntry("unhide"));
-    registry.setEnabled("unhide", false);
+    // Enable is "away from default" (false) → persists a row.
+    registry.setEnabled("unhide", true);
     // Persisted with the "anonymous" sentinel since no actor passed.
     assertThat(fakeDao.findByPluginId("unhide")).isPresent();
     assertThat(fakeDao.findByPluginId("unhide").get().getUpdatedBy()).isEqualTo("anonymous");

@@ -41,7 +41,7 @@ public final class DataciteMinterPluginManifest implements PluginManifest {
    * Semver range of the shepard core this plugin is known compatible
    * with. KIP1d depends on the KIP1a Minter SPI shipped from 5.2.0+.
    */
-  private static final String SHEPARD_COMPATIBILITY = ">=5.2.0,<6";
+  private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
 
   /** Display name surfaced in admin REST + CLI. */
   private static final String TITLE = "DataCite DOI Minter";

@@ -64,7 +64,8 @@ services:
 
   neo4j:
     # For instructions on how to update Neo4j from version 4.4 to 5.24, please read the migration guide at: https://gitlab.com/dlr-shepard/shepard/-/merge_requests/315#goal_net-description
-    image: neo4j:5.24
+    # Upgraded to 5.26: the n10s Labs registry only lists ≥ 5.26; store migration is automatic within 5.x.
+    image: neo4j:5.26
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PW}
       NEO4J_server_memory_heap_initial__size: 2G

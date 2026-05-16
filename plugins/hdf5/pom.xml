@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PL1c — shepard-plugin-hdf5 extracts the HDF5/HSDS payload kind
+  from the backend into a drop-in plugin JAR.
+
+  This module produces a real
+  `shepard-plugin-hdf5-${revision}.jar` carrying:
+
+    * `de.dlr.shepard.plugins.hdf5.HdfPluginManifest` —
+      implements `de.dlr.shepard.plugin.PluginManifest` so the
+      backend's `PluginRegistry` tracks PL1c in
+      `GET /v2/admin/plugins` and exposes the per-plugin
+      `shepard.plugins.hdf5.enabled` runtime toggle.
+    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
+      pointing at the manifest class.
+    * `de.dlr.shepard.plugins.hdf5.HdfPayloadKind` —
+      implements `de.dlr.shepard.spi.payload.PayloadKind` so the
+      backend's `NeoConnector` discovers the Neo4j-OGM entity
+      packages (`HdfContainer`) via `ServiceLoader` at startup.
+      This also fixes the latent OGM gap: `HdfContainer` was
+      previously not registered, so Neo4j-OGM would fail to
+      hydrate it on first load.
+    * `META-INF/services/de.dlr.shepard.spi.payload.PayloadKind`
+      pointing at the `HdfPayloadKind` class.
+    * The full HDF5/HSDS code tree (endpoints, services, DAO,
+      IO records, HSDS HTTP client, permission bridge) in packages
+      `de.dlr.shepard.data.hdf.*` and
+      `de.dlr.shepard.v2.hdf.*` and
+      `de.dlr.shepard.v2.admin.hdf.*`.
+
+  Build order (same two-pass dance as other plugins):
+
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/hdf5 && mvn -DskipTests install
+    $ cd backend && mvn package           # plugin is on the classpath
+
+  See `docs/reference/plugins.md` for the operator runbook
+  and `aidocs/47` for the design rationale.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-hdf5</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — HDF5/HSDS (payload kind)</name>
+  <description>
+    HDF5/HSDS-backed payload kind. Provides `HdfContainer` Neo4j node,
+    REST endpoints (`/v2/hdf-containers/*`, `/v2/admin/hdf/*`),
+    the HSDS HTTP client, and the HdfPermissionBridge permission-sync hook.
+    The `HdfPayloadKind` ServiceLoader SPI registers `HdfContainer`'s
+    Neo4j-OGM entity package in `NeoConnector`, fixing a latent OGM-gap
+    bug where the package was previously unregistered.
+    Requires a running HSDS sidecar configured via `shepard.hdf.hsds.*`
+    in application.properties.
+    See aidocs/47 PL1c.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>6.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      backend as provided — the plugin needs the backend's core
+      types (User, Collection, ProblemJson, HasAppId, GenericDAO,
+      BasicContainer, the PluginManifest SPI, the PayloadKind SPI,
+      PermissionsService, UserService, AbstractContainerService,
+      HdfFeatureToggle) at compile time. `provided` means the
+      plugin JAR does NOT bundle backend.jar — at runtime the
+      backend image already carries its own classes.
+
+      Self-reference exclusion: the backend's `with-plugins` profile
+      adds this plugin to its compile classpath, so without the
+      exclusion Maven would try to resolve the still-uninstalled
+      artefact transitively when this plugin compiles.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatial</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!--
+      Quarkus runtime types used in plugin source (CDI, REST,
+      logging, OpenAPI). `provided` because the backend image
+      carries them.
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!--
+      Neo4j-OGM — HdfContainer is a @NodeEntity, the DAO uses
+      neo4j-ogm core types. Same provided-by-backend pattern.
+    -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>5.0.3</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Jackson — HsdsClient builds JSON with ObjectMapper. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- MicroProfile Config — @ConfigProperty in HsdsClient. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-context-propagation</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — same as backend for the IO records / entity. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.44</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-hdf5-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

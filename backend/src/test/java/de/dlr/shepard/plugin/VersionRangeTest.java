@@ -171,4 +171,20 @@ class VersionRangeTest {
     assertThat(r.accepts("1.5.1")).isFalse(); // = clause excludes other 1.5+
     assertThat(r.accepts("1.0")).isFalse();
   }
+
+  @Test
+  void snapshotInclusiveLowerBound_acceptsSnapshotAndRelease() {
+    // V6 plugin compat shape: >=6.0.0-SNAPSHOT,<7 accepts both the
+    // dev SNAPSHOT build and any 6.x release, but not 7.0.0+.
+    VersionRange r = VersionRange.parse(">=6.0.0-SNAPSHOT,<7");
+    assertThat(r.accepts("6.0.0-SNAPSHOT")).isTrue(); // dev build
+    assertThat(r.accepts("6.0.0")).isTrue();           // release
+    assertThat(r.accepts("6.1.0")).isTrue();
+    assertThat(r.accepts("6.9.99")).isTrue();
+    assertThat(r.accepts("5.9.0")).isFalse();
+    assertThat(r.accepts("7.0.0")).isFalse();
+    // 7.0.0-SNAPSHOT < 7.0.0 in semver §11, so it does pass <7.
+    // This is intentional: next-major dev builds won't break plugin loading.
+    assertThat(r.accepts("7.0.0-SNAPSHOT")).isTrue();
+  }
 }

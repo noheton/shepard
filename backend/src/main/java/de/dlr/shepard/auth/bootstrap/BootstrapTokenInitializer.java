@@ -96,10 +96,11 @@ public class BootstrapTokenInitializer {
     var session = NeoConnector.getInstance().getNeo4jSession();
     if (session == null) return false;
     var result = session.query(
-      "OPTIONAL MATCH (:User)-[:HAS_ROLE]->(:Role {name: 'instance-admin'}) " +
-      "WITH count(*) AS edgeCount " +
+      "OPTIONAL MATCH (:User)-[:HAS_ROLE]->(role:Role {name: 'instance-admin'}) " +
+      "WITH count(role) AS edgeCount " +
       "OPTIONAL MATCH (k:ApiKey) WHERE 'instance-admin' IN coalesce(k.roles, []) " +
-      "RETURN edgeCount + count(k) AS total",
+      "WITH edgeCount, count(k) AS apiKeyCount " +
+      "RETURN edgeCount + apiKeyCount AS total",
       Map.of()
     );
     var it = result.queryResults().iterator();

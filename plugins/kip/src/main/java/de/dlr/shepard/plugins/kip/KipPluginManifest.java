@@ -59,7 +59,7 @@ public final class KipPluginManifest implements PluginManifest {
    * 5.2.0+ (the {@code PublicationDAO}, the {@code :Publication}
    * entity, the {@code PublishableKindRegistry}).
    */
-  private static final String SHEPARD_COMPATIBILITY = ">=5.2.0,<6";
+  private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
 
   @Override
   public String id() {

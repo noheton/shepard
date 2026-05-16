@@ -53,7 +53,7 @@ public final class UnhidePluginManifest implements PluginManifest {
    * with. UH1a depends on core types shipped from 5.2.0+ (the V12
    * appId migration, the {@code HasAppId} marker, {@code GenericDAO}).
    */
-  private static final String SHEPARD_COMPATIBILITY = ">=5.2.0,<6";
+  private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
 
   /** PM1c — display name surfaced in admin REST + CLI. */
   private static final String TITLE = "Helmholtz Unhide Publish";

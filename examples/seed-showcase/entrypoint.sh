@@ -23,8 +23,8 @@ until curl -sf "${KC}/realms/${REALM}/.well-known/openid-configuration" > /dev/n
 done
 log "Keycloak ready."
 
-log "Waiting for backend readiness at ${BACKEND_ROOT}/q/health/ready ..."
-until curl -sf "${BACKEND_ROOT}/q/health/ready" > /dev/null 2>&1; do
+log "Waiting for backend readiness at ${BACKEND_ROOT}/shepard/api/healthz/ready ..."
+until curl -sf "${BACKEND_ROOT}/shepard/api/healthz/ready" > /dev/null 2>&1; do
   sleep 5
 done
 log "Backend ready."
@@ -42,15 +42,30 @@ KC_RESPONSE=$(curl -sf -X POST \
 ACCESS_TOKEN=$(python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" <<< "${KC_RESPONSE}")
 log "Access token obtained."
 
+# Decode the JWT sub (Keycloak subject UUID) — this is Shepard's internal username.
+# Shepard's UserFilter stores users by userinfo.sub (last colon-delimited segment).
+ADMIN_SUB=$(python3 -c "
+import sys, json, base64
+t = sys.argv[1].split('.')
+pad = lambda s: s + '=' * (-len(s) % 4)
+print(json.loads(base64.urlsafe_b64decode(pad(t[1])))['sub'])
+" "${ACCESS_TOKEN}")
+log "Keycloak sub for '${ADMIN_USER}': ${ADMIN_SUB}"
+
 # ---- bootstrap instance-admin if first start ------------------------------
 
 if [ -f "${BOOTSTRAP_TOKEN_PATH}" ]; then
-  log "Bootstrap token found — granting instance-admin to ${ADMIN_USER} ..."
+  # Trigger user-node creation in Shepard: the JWT UserFilter creates/updates
+  # the Neo4j :User node on the first authenticated request.
+  log "Ensuring user '${ADMIN_USER}' (sub=${ADMIN_SUB}) exists in Shepard (first OIDC touch) ..."
+  curl -s -o /dev/null "${BACKEND}/users/${ADMIN_SUB}" -H "Authorization: Bearer ${ACCESS_TOKEN}" || true
+
+  log "Bootstrap token found — granting instance-admin to '${ADMIN_SUB}' ..."
   BOOTSTRAP_TOKEN=$(cat "${BOOTSTRAP_TOKEN_PATH}")
   HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     "${BACKEND_ROOT}/v2/admin/bootstrap" \
     -H "Content-Type: application/json" \
-    -d "{\"token\":\"${BOOTSTRAP_TOKEN}\",\"username\":\"${ADMIN_USER}\"}")
+    -d "{\"token\":\"${BOOTSTRAP_TOKEN}\",\"username\":\"${ADMIN_SUB}\"}")
   if [ "${HTTP_STATUS}" = "201" ]; then
     log "Bootstrap succeeded — ${ADMIN_USER} is now instance-admin."
   else
@@ -62,9 +77,9 @@ fi
 
 # ---- create seed API key ---------------------------------------------------
 
-log "Creating seed API key for ${ADMIN_USER} ..."
+log "Creating seed API key for ${ADMIN_USER} (sub=${ADMIN_SUB}) ..."
 API_KEY_RESPONSE=$(curl -sf -X POST \
-  "${BACKEND}/apikeys/${ADMIN_USER}" \
+  "${BACKEND}/users/${ADMIN_SUB}/apikeys" \
   -H "Authorization: Bearer ${ACCESS_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"name":"demo-seeder-key"}')
@@ -74,7 +89,9 @@ log "API key created."
 # ---- install Python dependencies -------------------------------------------
 
 log "Installing Python dependencies ..."
-pip install --quiet --no-cache-dir numpy shepard-client
+pip install --quiet --no-cache-dir numpy \
+  --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple \
+  shepard-client
 
 # ---- run seed ---------------------------------------------------------------
 

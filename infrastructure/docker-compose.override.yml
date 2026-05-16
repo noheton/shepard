@@ -16,7 +16,7 @@
 
 services:
   backend:
-    image: ${SHEPARD_BACKEND_IMAGE:-ghcr.io/noheton/shepard-backend:latest}
+    image: ${SHEPARD_BACKEND_IMAGE:-shepard-backend-patched:local}
     ports:
       - "8080:8080"
     environment:
@@ -25,10 +25,33 @@ services:
       OIDC_AUTHORITY: "http://192.168.1.49:8082/realms/shepard-demo"
       # Write the one-shot bootstrap token to a volume shared with the seeder.
       SHEPARD_BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
+      # Quarkus 3.27 treats empty-string @ConfigProperty defaults as required
+      # (the build step registers null defaultValue in ConfigValidationMetadata
+      # and SmallRye Config rejects empty-string values for required properties).
+      # These features are disabled on the demo instance; the values are
+      # intentional no-op placeholders so the backend starts cleanly.
+      SHEPARD_MINTERS_DATACITE_REPOSITORY_ID: "demo"
+      SHEPARD_MINTERS_DATACITE_HANDLE_PREFIX: "demo"
+      SHEPARD_MINTERS_DATACITE_PUBLISHER: "Demo Instance"
+      SHEPARD_MINTERS_DATACITE_LANDING_PAGE_BASE: "http://localhost"
+      SHEPARD_HDF_HSDS_USERNAME: "admin"
+      SHEPARD_HDF_HSDS_PASSWORD: "admin"
+      SHEPARD_UNHIDE_CONTACT_EMAIL: "admin@localhost"
+      SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PATH: "none"
+      SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PASSWORD: "none"
+      SHEPARD_PLUGINS_SIGNING_TRUST_ANCHORS: "none"
+      # V1.7.0 (int_to_bigint) was applied manually to the DB but never
+      # recorded in flyway_schema_history — set out-of-order so Flyway
+      # applies it and registers it. Safe to keep permanently; subsequent
+      # starts just see it as already-applied.
+      QUARKUS_FLYWAY_OUT_OF_ORDER: "true"
+      # C3: backfill orphan-permission edges for nodes created before the
+      # has_permissions constraint was enforced. Set to the instance-admin sub.
+      SHEPARD_PERMISSIONS_DEFAULT_OWNER: "a1c6b74a-d04d-4ee7-a509-20bd6a90cbf6"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/q/health/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/shepard/api/healthz/ready"]
       interval: 10s
       timeout: 5s
       retries: 18
@@ -79,7 +102,7 @@ services:
         condition: service_healthy
     environment:
       BACKEND_URL: "http://backend:8080/shepard/api"
-      KC_URL: "http://keycloak:8082"
+      KC_URL: "http://192.168.1.49:8082"
       KC_REALM: "shepard-demo"
       KC_CLIENT_ID: "frontend-dev"
       KC_ADMIN_USER: "admin"
@@ -87,8 +110,8 @@ services:
       BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap:ro
-      - ../examples/seed-showcase:/seed:ro
-    command: /seed/entrypoint.sh
+      - ../examples/seed-showcase:/seed
+    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && /seed/entrypoint.sh"
     networks:
       - shepard
     restart: "no"

@@ -11,7 +11,6 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
-import de.dlr.shepard.context.references.spatialdata.entities.SpatialDataReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
@@ -19,12 +18,15 @@ import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
-import de.dlr.shepard.data.spatialdata.model.SpatialDataContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.spi.payload.PayloadKind;
 import io.quarkus.logging.Log;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.ServiceLoader;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.neo4j.ogm.config.Configuration;
 import org.neo4j.ogm.exception.ConnectionException;
@@ -80,8 +82,7 @@ public class NeoConnector implements IConnector {
       .orElse(MigrationsRunner.DEFAULT_CONNECTION_WAIT_TIMEOUT);
     MigrationsRunner.awaitConnectivity(
       () -> {
-        sessionFactory = new SessionFactory(
-          configuration,
+        List<String> packages = new ArrayList<>(List.of(
           AnnotatableTimeseries.class.getPackageName(),
           ApiKey.class.getPackageName(),
           BootstrapState.class.getPackageName(),
@@ -93,8 +94,6 @@ public class NeoConnector implements IConnector {
           Permissions.class.getPackageName(),
           Role.class.getPackageName(),
           SemanticAnnotation.class.getPackageName(),
-          SpatialDataContainer.class.getPackageName(),
-          SpatialDataReference.class.getPackageName(),
           StructuredData.class.getPackageName(),
           StructuredDataReference.class.getPackageName(),
           Subscription.class.getPackageName(),
@@ -103,7 +102,13 @@ public class NeoConnector implements IConnector {
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
           Version.class.getPackageName()
-        );
+        ));
+        for (PayloadKind kind : ServiceLoader.load(PayloadKind.class)) {
+          Log.infof("NeoConnector: registering entity packages from PayloadKind '%s': %s",
+            kind.name(), kind.entityPackages());
+          packages.addAll(kind.entityPackages());
+        }
+        sessionFactory = new SessionFactory(configuration, packages.toArray(String[]::new));
       },
       timeout,
       Thread::sleep,

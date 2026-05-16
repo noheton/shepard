@@ -54,9 +54,10 @@ public class N10sBootstrapHook {
   /** Default {@code handleVocabUris}; per aidocs/48 §3.2 we want "IGNORE" (no prefix-shortening on read). */
   static final String DEFAULT_HANDLE_VOCAB_URIS = "IGNORE";
 
-  /** Cypher that detects whether n10s procedures are registered. */
+  // dbms.procedures() was removed in Neo4j 5.26; SHOW PROCEDURES is the
+  // supported alternative in the 5.x series.
   static final String DETECT_CYPHER =
-    "CALL dbms.procedures() YIELD name WHERE name STARTS WITH 'n10s.' " +
+    "SHOW PROCEDURES YIELD name WHERE name STARTS WITH 'n10s.' " +
     "RETURN count(name) > 0 AS available";
 
   /**

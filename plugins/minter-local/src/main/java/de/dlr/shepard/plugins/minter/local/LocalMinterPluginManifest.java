@@ -51,7 +51,7 @@ public final class LocalMinterPluginManifest implements PluginManifest {
    * 5.2.0+ (the {@code Minter} SPI, {@code MintRequest} record
    * carrying {@code versionNumber}).
    */
-  private static final String SHEPARD_COMPATIBILITY = ">=5.2.0,<6";
+  private static final String SHEPARD_COMPATIBILITY = ">=6.0.0-SNAPSHOT,<7";
 
   /** PM1c — display name surfaced in admin REST + CLI. */
   private static final String TITLE = "Local PID Minter";

@@ -54,10 +54,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * </ol>
  *
  * <p>Per-plugin {@code shepard.plugins.<id>.enabled} (default
- * {@code true}) gates whether {@link PluginManifest#onRegister} is
- * invoked. Disabled plugins still appear in {@link #list()} — operators
- * see them in {@code GET /v2/admin/plugins} so they can flip the
- * toggle at runtime.
+ * {@code false} — opt-in posture) gates whether
+ * {@link PluginManifest#onRegister} is invoked. Disabled plugins still
+ * appear in {@link #list()} — operators see them in
+ * {@code GET /v2/admin/plugins} so they can flip the toggle at runtime.
  *
  * <p>Fail-soft per plugin: any exception from {@code onRegister} is
  * caught, the plugin transitions to {@link PluginState#FAILED}, and
@@ -955,7 +955,7 @@ public class PluginRegistry {
    * Whether the named plugin is currently enabled. Reads the runtime
    * override if any; otherwise falls through to
    * {@code shepard.plugins.<id>.enabled} from MicroProfile config
-   * (defaulting to {@code true} if neither is set).
+   * (defaulting to {@code false} if neither is set — opt-in posture).
    */
   public boolean isEnabled(String id) {
     Boolean override = runtimeOverrides.get(id);
@@ -965,7 +965,7 @@ public class PluginRegistry {
     String key = String.format(CONFIG_PLUGIN_ENABLED_TPL, id);
     return ConfigProvider.getConfig()
       .getOptionalValue(key, Boolean.class)
-      .orElse(Boolean.TRUE);
+      .orElse(Boolean.FALSE);
   }
 
   /**
@@ -1076,13 +1076,14 @@ public class PluginRegistry {
   /**
    * Read the deploy-time default for a plugin's enabled flag —
    * the {@code shepard.plugins.<id>.enabled} key, defaulting to
-   * {@code true} when absent (the PM1a posture).
+   * {@code false} when absent (opt-in posture — every classpath plugin
+   * must be explicitly enabled by the operator).
    */
   private boolean readDeployTimeDefault(String id) {
     String key = String.format(CONFIG_PLUGIN_ENABLED_TPL, id);
     return ConfigProvider.getConfig()
       .getOptionalValue(key, Boolean.class)
-      .orElse(Boolean.TRUE);
+      .orElse(Boolean.FALSE);
   }
 
   // -----------------------------------------------------------------

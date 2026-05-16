@@ -548,7 +548,7 @@ def upload_run_timeseries(
                         device=created.device,
                         location=created.location,
                         symbolicName=created.symbolic_name,
-                        field=created.field,
+                        field=chan,
                     ),
                     points=extra,
                 ),
@@ -902,14 +902,19 @@ def main(argv: list[str] | None = None) -> int:
     fc = ensure_file_container(apis, "lumen-inspired-artifacts")
     sc = ensure_structured_container(apis, "lumen-inspired-runlogs")
 
-    repo = ensure_semantic_repo(apis)
+    try:
+        repo = ensure_semantic_repo(apis)
+    except Exception as e:
+        print(f"warn: semantic repository unavailable ({e}); phase-boundary annotations will be skipped.", file=sys.stderr)
+        repo = None
 
     for n in range(1, N_RUNS + 1):
         run_do = runs[n]
         tsr = upload_run_timeseries(apis, coll, run_do, tsc, args.data_dir, n)
         upload_run_files(apis, coll, run_do, fc, args.data_dir, n)
         upload_run_structured(apis, coll, run_do, sc, args.data_dir, n)
-        annotate_phase_boundaries(apis, coll, run_do, tsr, repo, is_anomaly_run=(n == ANOMALY_RUN))
+        if repo is not None:
+            annotate_phase_boundaries(apis, coll, run_do, tsr, repo, is_anomaly_run=(n == ANOMALY_RUN))
 
     # Lab journals
     ensure_lab_journal(apis, runs[ANOMALY_RUN], JOURNAL_TR4, "tr4-debrief")

@@ -2,7 +2,7 @@ package de.dlr.shepard.context.semantic;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.quarkus.logging.Log;
+import org.jboss.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +60,8 @@ import org.neo4j.ogm.session.Session;
  */
 public class OntologySeedService {
 
+  private static final Logger LOG = Logger.getLogger(OntologySeedService.class);
+
   /** Config key — master toggle. Default ON; flip to false for a bare-n10s install. */
   public static final String ENABLED_PROPERTY = "shepard.semantic.internal.preseed-ontologies.enabled";
 
@@ -97,9 +99,10 @@ public class OntologySeedService {
   /** Cypher for the cumulative {@code :Resource} count emitted per-ontology + at end. */
   static final String RESOURCE_COUNT_CYPHER = "MATCH (r:Resource) RETURN count(r) AS total";
 
-  /** Probe to detect n10s presence (same shape as N10sBootstrapHook's). */
+  // dbms.procedures() was removed in Neo4j 5.26; SHOW PROCEDURES is the
+  // supported alternative in the 5.x series.
   static final String DETECT_CYPHER =
-    "CALL dbms.procedures() YIELD name WHERE name STARTS WITH 'n10s.' " +
+    "SHOW PROCEDURES YIELD name WHERE name STARTS WITH 'n10s.' " +
     "RETURN count(name) > 0 AS available";
 
   private final Session session;
@@ -227,7 +230,7 @@ public class OntologySeedService {
     boolean masterEnabled = enabled && runtime.preseedEnabled();
 
     if (session == null) {
-      Log.warn("OntologySeedService: no OGM session available; skipping pre-seed.");
+      LOG.warn("OntologySeedService: no OGM session available; skipping pre-seed.");
       return;
     }
 
@@ -238,7 +241,7 @@ public class OntologySeedService {
     try {
       entries = loadAllEntries();
     } catch (RuntimeException ex) {
-      Log.warnf(
+      LOG.warnf(
         "OntologySeedService: failed to load manifest %s (%s: %s); skipping pre-seed entirely.",
         MANIFEST_RESOURCE,
         ex.getClass().getSimpleName(),
@@ -248,7 +251,7 @@ public class OntologySeedService {
     }
 
     if (entries.isEmpty()) {
-      Log.info("OntologySeedService: manifest has zero entries; nothing to seed.");
+      LOG.info("OntologySeedService: manifest has zero entries; nothing to seed.");
       return;
     }
 
@@ -257,7 +260,7 @@ public class OntologySeedService {
     // required=true, the entire pass is a no-op. We don't even
     // touch n10s — matches the pre-N1c2 "I want a bare n10s" exit.
     if (!masterEnabled && !hasRequiredEntry(entries)) {
-      Log.infof(
+      LOG.infof(
         "OntologySeedService: master toggle off (deploy=%b runtime=%b) and no required bundles; skipping pre-seed.",
         enabled,
         runtime.preseedEnabled()
@@ -266,7 +269,7 @@ public class OntologySeedService {
     }
 
     if (!detectN10s()) {
-      Log.warn(
+      LOG.warn(
         "OntologySeedService: neosemantics (n10s) procedures not registered. " +
         "Skipping ontology pre-seed; INTERNAL repositories will resolve only against whatever the operator imports manually."
       );
@@ -277,7 +280,7 @@ public class OntologySeedService {
       // Master-off — required bundles still seed; everything else
       // is skipped without complaint. This is the
       // "I want a bare n10s" path that still has PROV-O for audit.
-      Log.infof(
+      LOG.infof(
         "OntologySeedService: master toggle off (deploy=%b runtime=%b); seeding required bundles only.",
         enabled,
         runtime.preseedEnabled()
@@ -291,12 +294,12 @@ public class OntologySeedService {
     for (OntologyEntry entry : entries) {
       SeedDecision decision = shouldSeed(entry, masterEnabled, runtime);
       if (decision == SeedDecision.SKIP_DISABLED) {
-        Log.infof("OntologySeedService: bundle '%s' admin-disabled; skipping.", entry.id);
+        LOG.infof("OntologySeedService: bundle '%s' admin-disabled; skipping.", entry.id);
         skipped++;
         continue;
       }
       if (decision == SeedDecision.SKIP_MASTER_OFF) {
-        Log.infof(
+        LOG.infof(
           "OntologySeedService: bundle '%s' skipped (master toggle off, not required).",
           entry.id
         );
@@ -307,7 +310,7 @@ public class OntologySeedService {
         seedOne(entry);
         seeded++;
       } catch (RuntimeException ex) {
-        Log.warnf(
+        LOG.warnf(
           "OntologySeedService: bundle '%s' failed (%s: %s); continuing with next.",
           entry.id,
           ex.getClass().getSimpleName(),
@@ -319,7 +322,7 @@ public class OntologySeedService {
 
     long afterTotal = readResourceCount();
     long delta = afterTotal - beforeTotal;
-    Log.infof(
+    LOG.infof(
       "OntologySeedService: pre-seed complete — seeded=%d skipped=%d failed=%d; :Resource count %d -> %d (+%d new).",
       seeded,
       skipped,
@@ -398,7 +401,7 @@ public class OntologySeedService {
         // bundle whose id collides with a built-in. If the data
         // ended up here anyway (manual DB tinkering, for example),
         // we log + drop the user entry rather than double-seed.
-        Log.warnf(
+        LOG.warnf(
           "OntologySeedService: user bundle '%s' shadows a built-in id; skipping the user entry.",
           u.id
         );
@@ -425,7 +428,7 @@ public class OntologySeedService {
       );
     }
     if (bytes.length != entry.sizeBytes) {
-      Log.warnf(
+      LOG.warnf(
         "OntologySeedService: bundle '%s' size differs (manifest=%d, actual=%d); SHA matched so proceeding.",
         entry.id,
         entry.sizeBytes,
@@ -437,7 +440,7 @@ public class OntologySeedService {
     Object status = result.get("status");
     Object loaded = result.get("loaded");
     long loadedCount = toLong(loaded);
-    Log.infof(
+    LOG.infof(
       "OntologySeedService: bundle '%s' imported — status=%s triplesLoaded=%s (cumulative :Resource=%d)",
       entry.id,
       status,
@@ -450,7 +453,7 @@ public class OntologySeedService {
       // returns "OK" with triplesLoaded == 0 — that's the idempotent
       // case, NOT an error. Anything else (KO / partial / failed) is
       // logged but not raised; the next ontology still gets a shot.
-      Log.warnf(
+      LOG.warnf(
         "OntologySeedService: bundle '%s' returned non-OK status '%s' (loaded=%d). Continuing.",
         entry.id,
         status,
@@ -478,7 +481,7 @@ public class OntologySeedService {
       if (!it.hasNext()) return 0;
       return toLong(it.next().get("total"));
     } catch (RuntimeException ex) {
-      Log.warnf("OntologySeedService: :Resource count probe failed (%s).", ex.getClass().getSimpleName());
+      LOG.warnf("OntologySeedService: :Resource count probe failed (%s).", ex.getClass().getSimpleName());
       return 0;
     }
   }
@@ -557,7 +560,7 @@ public class OntologySeedService {
       if (!it.hasNext()) return false;
       return Boolean.TRUE.equals(it.next().get("available"));
     } catch (RuntimeException ex) {
-      Log.warnf("OntologySeedService: detection probe raised %s; treating n10s as absent.", ex.getClass().getSimpleName());
+      LOG.warnf("OntologySeedService: detection probe raised %s; treating n10s as absent.", ex.getClass().getSimpleName());
       return false;
     }
   }

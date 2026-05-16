@@ -80,18 +80,24 @@ class PluginRegistryTest {
       tempDir.resolve("test-plugin.jar"),
       "de.dlr.shepard.plugin.PluginRegistryTestSupport$RecordingManifest$test_plugin"
     );
-    registry.discover();
+    // Opt-in posture: classpath plugins are disabled by default; must explicitly enable.
+    System.setProperty("shepard.plugins.test-plugin.enabled", "true");
+    try {
+      registry.discover();
 
-    List<PluginEntry> plugins = registry.list();
-    assertThat(plugins).hasSize(1);
-    PluginEntry entry = plugins.get(0);
-    assertThat(entry.id()).isEqualTo("test-plugin");
-    assertThat(entry.version()).isEqualTo("0.0.1-test");
-    assertThat(entry.shepardCompatibility()).isEqualTo(">=5.2.0,<6");
-    assertThat(entry.state()).isEqualTo(PluginState.ENABLED);
-    assertThat(entry.jarPath()).isNotNull();
-    // onRegister was invoked: the recording counter ticked.
-    assertThat(PluginRegistryTestSupport.OnRegisterCalls.get()).isEqualTo(1);
+      List<PluginEntry> plugins = registry.list();
+      assertThat(plugins).hasSize(1);
+      PluginEntry entry = plugins.get(0);
+      assertThat(entry.id()).isEqualTo("test-plugin");
+      assertThat(entry.version()).isEqualTo("0.0.1-test");
+      assertThat(entry.shepardCompatibility()).isEqualTo(">=5.2.0,<6");
+      assertThat(entry.state()).isEqualTo(PluginState.ENABLED);
+      assertThat(entry.jarPath()).isNotNull();
+      // onRegister was invoked: the recording counter ticked.
+      assertThat(PluginRegistryTestSupport.OnRegisterCalls.get()).isEqualTo(1);
+    } finally {
+      System.clearProperty("shepard.plugins.test-plugin.enabled");
+    }
   }
 
   @Test
@@ -123,16 +129,23 @@ class PluginRegistryTest {
       tempDir.resolve("recording-plugin.jar"),
       "de.dlr.shepard.plugin.PluginRegistryTestSupport$RecordingManifest$recording"
     );
-    registry.discover();
+    System.setProperty("shepard.plugins.throwing.enabled", "true");
+    System.setProperty("shepard.plugins.recording.enabled", "true");
+    try {
+      registry.discover();
 
-    // Both entries present; throwing is FAILED, recording is ENABLED.
-    Optional<PluginEntry> throwing = registry.get("throwing");
-    Optional<PluginEntry> recording = registry.get("recording");
-    assertThat(throwing).isPresent();
-    assertThat(throwing.get().state()).isEqualTo(PluginState.FAILED);
-    assertThat(throwing.get().failureMessage()).contains("kaboom");
-    assertThat(recording).isPresent();
-    assertThat(recording.get().state()).isEqualTo(PluginState.ENABLED);
+      // Both entries present; throwing is FAILED, recording is ENABLED.
+      Optional<PluginEntry> throwing = registry.get("throwing");
+      Optional<PluginEntry> recording = registry.get("recording");
+      assertThat(throwing).isPresent();
+      assertThat(throwing.get().state()).isEqualTo(PluginState.FAILED);
+      assertThat(throwing.get().failureMessage()).contains("kaboom");
+      assertThat(recording).isPresent();
+      assertThat(recording.get().state()).isEqualTo(PluginState.ENABLED);
+    } finally {
+      System.clearProperty("shepard.plugins.throwing.enabled");
+      System.clearProperty("shepard.plugins.recording.enabled");
+    }
   }
 
   @Test
@@ -145,17 +158,22 @@ class PluginRegistryTest {
       tempDir.resolve("second.jar"),
       "de.dlr.shepard.plugin.PluginRegistryTestSupport$RecordingManifest$dup"
     );
-    registry.discover();
+    System.setProperty("shepard.plugins.dup.enabled", "true");
+    try {
+      registry.discover();
 
-    Optional<PluginEntry> first = registry.get("dup");
-    assertThat(first).isPresent();
-    assertThat(first.get().state()).isEqualTo(PluginState.ENABLED);
-    // The second occurrence lands under a synthetic #duplicate key:
-    long failedCount = registry.list().stream()
-      .filter(e -> e.state() == PluginState.FAILED)
-      .filter(e -> e.failureMessage() != null && e.failureMessage().contains("duplicate"))
-      .count();
-    assertThat(failedCount).isEqualTo(1);
+      Optional<PluginEntry> first = registry.get("dup");
+      assertThat(first).isPresent();
+      assertThat(first.get().state()).isEqualTo(PluginState.ENABLED);
+      // The second occurrence lands under a synthetic #duplicate key:
+      long failedCount = registry.list().stream()
+        .filter(e -> e.state() == PluginState.FAILED)
+        .filter(e -> e.failureMessage() != null && e.failureMessage().contains("duplicate"))
+        .count();
+      assertThat(failedCount).isEqualTo(1);
+    } finally {
+      System.clearProperty("shepard.plugins.dup.enabled");
+    }
   }
 
   @Test
@@ -173,11 +191,12 @@ class PluginRegistryTest {
     );
     registry.discover();
 
-    assertThat(registry.isEnabled("flip")).isTrue();
-    registry.setEnabled("flip", false);
+    // Opt-in default: no config key → disabled.
     assertThat(registry.isEnabled("flip")).isFalse();
     registry.setEnabled("flip", true);
     assertThat(registry.isEnabled("flip")).isTrue();
+    registry.setEnabled("flip", false);
+    assertThat(registry.isEnabled("flip")).isFalse();
   }
 
   @Test
@@ -200,10 +219,15 @@ class PluginRegistryTest {
       tempDir.resolve("shutdown-plugin.jar"),
       "de.dlr.shepard.plugin.PluginRegistryTestSupport$RecordingManifest$shutdownp"
     );
-    registry.discover();
-    PluginRegistryTestSupport.OnUnregisterCalls.reset();
-    registry.onShutdown(null);
-    assertThat(PluginRegistryTestSupport.OnUnregisterCalls.get()).isEqualTo(1);
+    System.setProperty("shepard.plugins.shutdownp.enabled", "true");
+    try {
+      registry.discover();
+      PluginRegistryTestSupport.OnUnregisterCalls.reset();
+      registry.onShutdown(null);
+      assertThat(PluginRegistryTestSupport.OnUnregisterCalls.get()).isEqualTo(1);
+    } finally {
+      System.clearProperty("shepard.plugins.shutdownp.enabled");
+    }
   }
 
   /**

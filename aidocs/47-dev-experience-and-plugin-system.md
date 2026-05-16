@@ -11,8 +11,8 @@ they pull on the same lever:
    meaningful (and that, conversely, the plugin system needs to
    not regress).
 
-**Status.** Concept design.
-**Snapshot date.** 2026-05-08.
+**Status.** PL1a + PL1b + PL1c shipped (2026-05-16).
+**Snapshot date.** 2026-05-16.
 **Originating items.** User request: "improve dev experience; large
 ask design a plugin system to add data backends systematically;
 migrate current feature flags as plugins." Couples to:
@@ -286,7 +286,7 @@ Today's storage-bound feature toggles map to plugins:
 
 | Today's toggle | Plugin shape after migration |
 |---|---|
-| `shepard.spatial-data.enabled` (A3c) | `shepard-plugin-spatial-postgis` — plugin with `name() = "spatial"`, PostGIS as backend. The compose `spatial` profile remains for the PostGIS sidecar; the Java code lives in the plugin module. |
+| `shepard.spatial-data.enabled` (A3c) | `shepard-plugin-spatial` — plugin with `name() = "spatial"`, PostGIS as backend (shipped 2026-05-16). The compose `spatial` profile remains for the PostGIS sidecar; the Java code lives in the plugin module. |
 | (forthcoming) `shepard.hdf.enabled` per `aidocs/35` | `shepard-plugin-hdf-hsds` — plugin with HSDS sidecar; ships the auth-bridge from `aidocs/35 §5`. |
 | (forthcoming) `shepard.files.storage` per `aidocs/45` | **Two file plugins co-existing as first-class supported backends** — `shepard-plugin-file-gridfs` (default) + `shepard-plugin-file-s3` — selected via `shepard.payload.file.backend` runtime config. Per user direction (2026-05-12): GridFS is **not deprecated** — both plugins are supported indefinitely; the operator picks per-install based on workload size + presigned-URL needs (see `aidocs/45 §3.2`). The `PayloadKind` registry permits one-active-per-name; the two file plugins share the kind name `"file"` but differ in backend. |
 | `quarkus.versioning.feature.enabled` (existing) | **Stays a non-plugin toggle.** Versioning is entity-graph behaviour, not a payload backend. Out of scope for this SPI. |
@@ -410,10 +410,10 @@ Spans the **DX series** (dev-ex pain points) and **PL series**
 | ID | Slice | Size | Gate |
 |---|---|---|---|
 | **DX1** | Unified `ShepardTestStack` test-resource (Postgres + Mongo + Neo4j + Influx + mock OIDC). | M | None. Unblocks `*QuarkusTest` reliability. |
-| **PL1a** | `PayloadKind` + `PayloadStorage` SPI interfaces in `backend/.../spi/payload/` + `PayloadKindRegistry`. **No** existing kind refactored yet. | M | None |
-| **PL1b** | `shepard-plugin-spatial-postgis` — pilot migration of the `spatial` feature toggle to a plugin. Behaviour-identical; profile-bound compose service unchanged. | M | PL1a |
+| **PL1a** ✓ | `PayloadKind` SPI interface in `backend/.../spi/payload/PayloadKind.java`. `NeoConnector` uses `ServiceLoader` to discover entity packages from PayloadKind impls. Shipped 2026-05-16. | M | None |
+| **PL1b** ✓ | `shepard-plugin-spatial` — pilot migration of the `spatial` payload kind to a plugin. `SpatialPayloadKind` (ServiceLoader POJO) + `SpatialPluginManifest` (PluginManifest SPI). Behaviour-identical; profile-bound compose service unchanged. Shipped 2026-05-16. | M | PL1a |
 | **DX3** | `mvn shepard:scaffold-payload-kind` archetype. | M | PL1a |
-| **PL1c** | A5a (HDF5/HSDS) lands as a plugin from day 1, not as core. | M | PL1a + DX3 + `aidocs/35` |
+| **PL1c** ✓ | `shepard-plugin-hdf5` — extraction of HDF5/HSDS payload kind (A5a+A5b) to drop-in plugin JAR. `HdfPayloadKind` (ServiceLoader POJO) registers `de.dlr.shepard.data.hdf.entities`; fixes latent OGM-gap bug. `HdfPluginManifest` (PluginManifest SPI). `shepard.plugins.hdf5.enabled=false` default. 9 production files + 10 unit tests moved. Shipped 2026-05-16. | M | PL1a |
 | **PL1d** | G1 (Git) per `aidocs/38` lands as a plugin from day 1. | M | PL1a + DX3 + `aidocs/38` |
 | **DX2** | `ShepardTestFixtures` helper. | S | None |
 | **DX5** | `quarkus-neo4j-devservices` integration; OpenAPI hot-reload story. | M | None |
