@@ -37,6 +37,28 @@ public class SemanticRepositoryDAO extends GenericDAO<SemanticRepository> {
     return result;
   }
 
+  /**
+   * N1f — look up a {@link SemanticRepository} by its stable
+   * application-level identifier ({@code appId}, UUID v7 minted at
+   * creation by {@code GenericDAO#createOrUpdate}).
+   *
+   * <p>Returns {@code null} when no non-deleted repository with the given
+   * {@code appId} exists (mirrors the pattern in
+   * {@code TimeseriesReferenceDAO#findByAppId}).
+   *
+   * @param appId the UUID v7 identifier to look up
+   * @return the matching repository or {@code null}
+   */
+  public SemanticRepository findByAppId(String appId) {
+    String query =
+      "MATCH " +
+      CypherQueryHelper.getObjectPart("r", "SemanticRepository", false) +
+      " WHERE r.appId = $appId " +
+      CypherQueryHelper.getReturnPart("r");
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
   private boolean matchName(SemanticRepository rep, String name) {
     return name == null || rep.getName().equalsIgnoreCase(name);
   }
