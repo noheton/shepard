@@ -113,6 +113,8 @@ Design notes, analysis docs, and strategy docs for this fork of
 | [`57-openapi-client-generator-evaluation.md`](ops/57-openapi-client-generator-evaluation.md) | OpenAPI client generator evaluation (P17) |
 | [`58-ui-and-graph-ergonomics.md`](ops/58-ui-and-graph-ergonomics.md) | UI/UX and graph ergonomics improvements |
 | [`59-performance-testing-and-tuning.md`](ops/59-performance-testing-and-tuning.md) | Performance testing + tuning design (P10–P20 slice) |
+| [`85-ui-overhaul-design.md`](ops/85-ui-overhaul-design.md) | UI overhaul — critique, opportunities, prioritised roadmap (QW/UI series) |
+| [`86-ui-changelog.md`](ops/86-ui-changelog.md) | Living UI change log — per-PR record of user-visible frontend changes |
 
 ---
 
