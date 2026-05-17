@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.template.io;
 
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -38,7 +39,7 @@ public class ShepardTemplateIO {
   @Schema(required = false, nullable = true, description = "Author-supplied tags for picker filtering.")
   private List<String> tags;
 
-  @Schema(required = false, nullable = true, description = "Username that minted (or copy-on-write-edited) the row.")
+  @Schema(required = false, nullable = true, description = "Display name of the user who minted (or copy-on-write-edited) the row (UUID-shaped Keycloak subjects are redacted).")
   private String createdBy;
 
   @Schema(required = false, nullable = true, description = "Millis since epoch when the row was created.")
@@ -59,7 +60,7 @@ public class ShepardTemplateIO {
       t.getBody(),
       t.getDescription(),
       t.getTags(),
-      t.getCreatedBy(),
+      DisplayNameResolver.redactUsername(t.getCreatedBy()),
       t.getCreatedAt(),
       t.getUpdatedAt(),
       t.isRetired()

@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.provenance.io;
 
+import de.dlr.shepard.auth.users.services.DisplayNameResolver;
 import de.dlr.shepard.provenance.entities.Activity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,7 +30,7 @@ public class ActivityIO {
   @Schema(required = false, nullable = true, description = "appId of the target entity, when known.")
   private String targetAppId;
 
-  @Schema(required = true, description = "Acting Agent's username.")
+  @Schema(required = true, description = "Acting Agent's display name (UUID-shaped Keycloak subjects are redacted to their first 8 chars).")
   private String agentUsername;
 
   @Schema(required = true, description = "Short human-readable summary, ≤ 256 chars.")
@@ -63,7 +64,7 @@ public class ActivityIO {
       a.getActionKind(),
       a.getTargetKind(),
       a.getTargetAppId(),
-      a.getAgentUsername(),
+      DisplayNameResolver.redactUsername(a.getAgentUsername()),
       a.getSummary(),
       a.getStartedAtMillis(),
       a.getEndedAtMillis(),
