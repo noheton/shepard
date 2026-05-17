@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 /**
  * P10a/P10b — permission-logic unit tests for {@link SqlTimeseriesRest}.
@@ -58,9 +60,11 @@ class SqlTimeseriesPermissionTest {
     rest.permissionsService = permissionsService;
     rest.compiler = compiler;
     rest.executor = executor;
-    // wire default config values (not injected by CDI in unit tests)
-    rest.maxRowsConfig = 1_000_000;
-    rest.maxDurationConfig = "PT60S";
+    // P10c: wire a stub configService (not injected by CDI in unit tests)
+    SqlTimeseriesConfigService configService = Mockito.mock(SqlTimeseriesConfigService.class);
+    Mockito.when(configService.effectiveMaxRows()).thenReturn(1_000_000L);
+    Mockito.when(configService.effectiveMaxDurationIso()).thenReturn("PT60S");
+    rest.configService = configService;
 
     Principal alice = () -> "alice";
     when(securityContext.getUserPrincipal()).thenReturn(alice);

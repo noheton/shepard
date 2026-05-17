@@ -25,9 +25,9 @@ materialising it in the backend.
 
 | Config key | Default | Effect |
 |---|---|---|
-| `shepard.timeseries.sql.enabled` | `true` | Disables the endpoint (returns 404) when `false`. |
-| `shepard.timeseries.sql.max-rows` | `1000000` | Hard row cap. When hit, the stream closes and the `x-shepard-truncated: true` HTTP trailer is emitted. |
-| `shepard.timeseries.sql.max-duration` | `PT60S` | PostgreSQL `statement_timeout` in ISO-8601 duration. A query that exceeds this returns HTTP 504. |
+| `shepard.timeseries.sql.enabled` | `true` | Disables the endpoint (returns 404) when `false`. Set to `false` to opt out. |
+| `shepard.timeseries.sql.max-rows` | `1000000` | Deploy-time seed for the hard row cap. Overridable at runtime via the admin config endpoint (P10c). |
+| `shepard.timeseries.sql.max-duration` | `PT60S` | Deploy-time seed for the query duration cap. Overridable at runtime via the admin config endpoint (P10c). |
 
 ### Content types
 
@@ -160,6 +160,71 @@ written directly to the HTTP response socket in 10 000-row fetch
 batches. If the client closes the connection mid-stream,
 `Statement.cancel()` is called immediately to release the database
 cursor.
+
+---
+
+## Admin config — `GET/PATCH /v2/admin/sql-timeseries/config`
+
+Added in **P10c**. Instance-admin gated (`instance-admin` role). Lets operators
+tune the `max-rows` and `max-duration` caps at runtime without a restart.
+The runtime value wins over the `application.properties` deploy-time default;
+setting a field to `null` via PATCH reverts it to the deploy-time default.
+
+### GET current config
+
+```
+GET /v2/admin/sql-timeseries/config
+Authorization: Bearer <instance-admin token>
+```
+
+Response `200 OK`:
+
+```json
+{
+  "maxRows": 1000000,
+  "maxDuration": "PT60S"
+}
+```
+
+Fields are always resolved — if the singleton has never been patched, the
+deploy-time defaults from `application.properties` are returned.
+
+### PATCH to tune caps
+
+RFC 7396 merge-patch semantics: absent = leave alone, `null` = revert to
+deploy-time default, value = replace.
+
+```
+PATCH /v2/admin/sql-timeseries/config
+Authorization: Bearer <instance-admin token>
+Content-Type: application/json
+
+{"maxRows": 500000, "maxDuration": "PT2M"}
+```
+
+Response `200 OK` — the updated config in the same shape as GET.
+
+**Validation:**
+- `maxRows` must be `> 0` when non-null. Invalid value → `400` with
+  `application/problem+json` body (`type: /problems/sql-timeseries.config.invalid-max-rows`).
+- `maxDuration` must be a valid ISO-8601 duration (e.g. `"PT60S"`, `"PT2M30S"`, `"PT1H"`)
+  when non-null. Invalid value → `400` with `type: /problems/sql-timeseries.config.invalid-max-duration`.
+
+**Revert to defaults:**
+
+```json
+{"maxRows": null, "maxDuration": null}
+```
+
+Clears both fields; effective values revert to `application.properties` defaults
+(`max-rows=1000000`, `max-duration=PT60S`).
+
+### Config fields
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `maxRows` | `long` | `1000000` | Hard row cap. When hit, stream closes and `x-shepard-truncated: true` trailer is emitted. |
+| `maxDuration` | ISO-8601 string | `PT60S` | PostgreSQL `statement_timeout`. On timeout the endpoint returns HTTP 504. |
 
 ---
 

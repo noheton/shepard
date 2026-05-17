@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
@@ -195,14 +196,22 @@ class SqlTimeseriesFormatTest {
 
   // --- REST layer integration tests (stubbed executor) ---
 
+  /** Build a stub {@link SqlTimeseriesConfigService} with the given effective values. */
+  private static SqlTimeseriesConfigService stubConfig(long maxRows, String maxDuration) {
+    SqlTimeseriesConfigService svc = Mockito.mock(SqlTimeseriesConfigService.class);
+    Mockito.when(svc.effectiveMaxRows()).thenReturn(maxRows);
+    Mockito.when(svc.effectiveMaxDurationIso()).thenReturn(maxDuration);
+    return svc;
+  }
+
   private SqlTimeseriesRest buildRest(String acceptHeader,
       WriteResult executorResult) throws IOException {
     SqlTimeseriesRest rest = new SqlTimeseriesRest();
     rest.permissionsService = new AllowAllPermissionsService();
     rest.compiler = new FixedResultCompiler();
     rest.executor = new StubExecutor(executorResult);
-    rest.maxRowsConfig = 1_000_000;
-    rest.maxDurationConfig = "PT60S";
+    // P10c: wire stub configService instead of deprecated direct-field injection
+    rest.configService = stubConfig(1_000_000, "PT60S");
     return rest;
   }
 
@@ -254,8 +263,8 @@ class SqlTimeseriesFormatTest {
     rest.compiler = new FixedResultCompiler();
     // StubExecutor returns truncated=true
     rest.executor = new StubExecutor(new WriteResult(2, true));
-    rest.maxRowsConfig = 2;
-    rest.maxDurationConfig = "PT60S";
+    // P10c: wire stub configService
+    rest.configService = stubConfig(2, "PT60S");
 
     SecurityContext sc = mockSc("alice");
     Response response = rest.executeQuery(minimalSpec(), "application/json", null, sc);
@@ -277,8 +286,8 @@ class SqlTimeseriesFormatTest {
     rest.permissionsService = new AllowAllPermissionsService();
     rest.compiler = new FixedResultCompiler();
     rest.executor = new StubExecutor(new WriteResult(5, true)); // truncated=true
-    rest.maxRowsConfig = 5;
-    rest.maxDurationConfig = "PT60S";
+    // P10c: wire stub configService
+    rest.configService = stubConfig(5, "PT60S");
 
     HttpServerResponse mockResp = Mockito.mock(HttpServerResponse.class);
     SecurityContext sc = mockSc("alice");
@@ -304,8 +313,8 @@ class SqlTimeseriesFormatTest {
     rest.permissionsService = new AllowAllPermissionsService();
     rest.compiler = new FixedResultCompiler();
     rest.executor = new StubExecutor(new WriteResult(3, false)); // truncated=false
-    rest.maxRowsConfig = 1_000_000;
-    rest.maxDurationConfig = "PT60S";
+    // P10c: wire stub configService
+    rest.configService = stubConfig(1_000_000, "PT60S");
 
     HttpServerResponse mockResp = Mockito.mock(HttpServerResponse.class);
     SecurityContext sc = mockSc("alice");

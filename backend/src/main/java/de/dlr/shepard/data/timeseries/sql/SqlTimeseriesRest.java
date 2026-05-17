@@ -3,6 +3,7 @@ package de.dlr.shepard.data.timeseries.sql;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.configuration.feature.toggles.SqlTimeseriesFeatureToggle;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -22,7 +23,6 @@ import jakarta.ws.rs.core.StreamingOutput;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * P10a/P10b — {@code POST /v2/sql/timeseries}: JSON DSL bulk read endpoint for timeseries data.
@@ -53,7 +53,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * {@link HttpServerResponse#putTrailer} when the row cap fires. The {@code Trailer} announcement
  * header is included in the initial response headers so HTTP/1.1 proxies forward it correctly.
  *
- * <p>Gated on {@code shepard.timeseries.sql.enabled=false}; returns 404 when disabled.
+ * <p>Gated on {@code shepard.timeseries.sql.enabled} (default {@code true} since P10c);
+ * returns 404 when disabled.
  *
  * <p>See {@code aidocs/platform/29-p10-implementation-design.md §5–§6} for format and streaming
  * specs, and {@code §11} for the P10a/P10b/P10c rollout plan.
@@ -80,11 +81,14 @@ public class SqlTimeseriesRest {
   @Inject
   PermissionsService permissionsService;
 
-  @ConfigProperty(name = "shepard.timeseries.sql.max-rows", defaultValue = "1000000")
-  int maxRowsConfig;
-
-  @ConfigProperty(name = "shepard.timeseries.sql.max-duration", defaultValue = "PT60S")
-  String maxDurationConfig;
+  /**
+   * P10c: runtime-mutable config singleton. Effective max-rows and max-duration
+   * are read from this service (which falls back to deploy-time defaults when the
+   * singleton fields are null). The deploy-time {@code @ConfigProperty} keys are
+   * still honoured — they seed the singleton on first start.
+   */
+  @Inject
+  SqlTimeseriesConfigService configService;
 
   /**
    * Execute a timeseries SQL DSL query and return matching rows in the negotiated format.
@@ -145,11 +149,13 @@ public class SqlTimeseriesRest {
               .formatted(allowed.size(), MAX_CONTAINERS));
     }
 
-    // Parse duration cap (ISO-8601 string from config or test override)
-    long maxDurationMs = parseDurationMs(maxDurationConfig);
+    // P10c: read effective caps from the runtime-mutable config singleton.
+    // Falls back to deploy-time defaults (application.properties) when the
+    // singleton fields are null or not yet seeded.
+    long maxDurationMs = parseDurationMs(configService.effectiveMaxDurationIso());
     int maxRows = spec.limit() != null
-        ? Math.min(spec.limit(), maxRowsConfig)
-        : maxRowsConfig;
+        ? (int) Math.min(spec.limit(), configService.effectiveMaxRows())
+        : (int) configService.effectiveMaxRows();
 
     // Empty allowed set — fast path: no DB round-trip needed
     if (allowed.isEmpty()) {
