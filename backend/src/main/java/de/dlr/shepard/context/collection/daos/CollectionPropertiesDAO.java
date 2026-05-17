@@ -44,7 +44,7 @@ public class CollectionPropertiesDAO extends GenericDAO<CollectionProperties> {
     String cypher =
       "MATCH (c:Collection {appId: $cAppId}) " +
       "MERGE (c)-[:HAS_PROPERTIES]->(p:CollectionProperties) " +
-      "ON CREATE SET p.appId = randomUUID(), p.webdavVisible = true " +
+      "ON CREATE SET p.appId = randomUUID(), p.webdavVisible = true, p.publishToHelmholtzKG = true " +
       "RETURN p";
     var iter = findByQuery(cypher, Map.of("cAppId", collectionAppId));
     var it = iter.iterator();

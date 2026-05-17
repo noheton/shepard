@@ -99,7 +99,7 @@ class CollectionPropertiesRestTest {
   void patchReturns403WhenCallerLacksManagePermission() {
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(false);
-    var body = new PatchCollectionPropertiesIO(false, null, null);
+    var body = new PatchCollectionPropertiesIO(false, null, null, null);
     Response r = resource.patch(COLL_APP_ID, body, securityContext);
     assertEquals(403, r.getStatus());
     verify(propertiesDAO, never()).createOrUpdate(any());
@@ -116,8 +116,8 @@ class CollectionPropertiesRestTest {
     when(propertiesDAO.ensureFor(COLL_APP_ID)).thenReturn(entity);
     when(propertiesDAO.createOrUpdate(any(CollectionProperties.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    // Only flip webdavVisible; the other two stay.
-    var body = new PatchCollectionPropertiesIO(false, null, null);
+    // Only flip webdavVisible; the other fields stay.
+    var body = new PatchCollectionPropertiesIO(false, null, null, null);
     Response r = resource.patch(COLL_APP_ID, body, securityContext);
 
     assertEquals(200, r.getStatus());
@@ -125,6 +125,24 @@ class CollectionPropertiesRestTest {
     assertEquals(false, io.isWebdavVisible());
     assertEquals("old-uri", io.getDefaultOntologyUri());
     assertEquals("{\"old\":true}", io.getUiDefaultsJson());
+  }
+
+  @Test
+  void patchUpdatesPublishToHelmholtzKG() {
+    var entity = new CollectionProperties("props-app-id");
+    entity.setPublishToHelmholtzKG(true);
+    when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(true);
+    when(propertiesDAO.ensureFor(COLL_APP_ID)).thenReturn(entity);
+    when(propertiesDAO.createOrUpdate(any(CollectionProperties.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    // Opt the Collection out of the feed.
+    var body = new PatchCollectionPropertiesIO(null, null, null, false);
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    var io = (CollectionPropertiesIO) r.getEntity();
+    assertEquals(false, io.isPublishToHelmholtzKG());
   }
 
   @Test

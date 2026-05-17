@@ -2,6 +2,7 @@ package de.dlr.shepard.plugins.unhide.services;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
+import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
@@ -31,11 +32,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * metadata4ing JSON-LD frame with optional m4i provenance
  * fragments and KIP citation, return the cursor-paged page."
  *
- * <p>Phase 1 (UH1a) scope: Collections only; no publish-toggle
- * filter yet (the per-Collection {@code publishToHelmholtzKG} is
- * the UH1d milestone). For now every non-deleted Collection visible
- * to the caller appears in the feed; the master toggle on
- * {@code :UnhideConfig.enabled} is the only gate.
+ * <p>UH1d extension: per-Collection opt-out toggle. Collections
+ * whose {@link de.dlr.shepard.context.collection.entities.CollectionProperties}
+ * node has {@code publishToHelmholtzKG = false} are excluded from
+ * the feed. Collections with no properties node (legacy rows, not
+ * yet backfilled) are treated as {@code publishToHelmholtzKG = true}
+ * (the safe default — opt-out, not opt-in).
  *
  * <p>UH1b extension: each entry's body grows a
  * {@code m4i:hasProcessingStep} array of the most-recent N
@@ -80,6 +82,9 @@ public class UnhideFeedService {
   CollectionDAO collectionDAO;
 
   @Inject
+  CollectionPropertiesDAO collectionPropertiesDAO;
+
+  @Inject
   ActivityDAO activityDAO;
 
   @Inject
@@ -115,6 +120,14 @@ public class UnhideFeedService {
 
     List<Collection> all = new ArrayList<>(collectionDAO.findAll());
     all.removeIf(c -> c == null || c.isDeleted());
+    // UH1d — per-Collection opt-out: exclude Collections whose
+    // publishToHelmholtzKG flag is explicitly false. Collections
+    // with no properties node (Optional.empty()) keep the default
+    // "include" behaviour (opt-out model, not opt-in).
+    all.removeIf(c -> {
+      var props = collectionPropertiesDAO.findByCollectionAppId(c.getAppId());
+      return props.isPresent() && !props.get().isPublishToHelmholtzKG();
+    });
     // Stable sort: oldest createdAt first so pagination is consistent
     // call-to-call. Falls back to appId for collections with the same
     // timestamp.

@@ -29,7 +29,15 @@ public class CollectionPropertiesIO {
   @Schema(required = false, nullable = true, description = "Free-form UI defaults JSON (opaque to the backend).")
   private String uiDefaultsJson;
 
+  @Schema(
+    required = true,
+    description = "When false, this Collection is excluded from the Helmholtz Unhide feed (/v2/unhide/feed.jsonld). " +
+    "Default true (opt-out rather than opt-in). UH1d."
+  )
+  private boolean publishToHelmholtzKG;
+
   public static CollectionPropertiesIO from(CollectionProperties p) {
-    return new CollectionPropertiesIO(p.getAppId(), p.isWebdavVisible(), p.getDefaultOntologyUri(), p.getUiDefaultsJson());
+    var io = new CollectionPropertiesIO(p.getAppId(), p.isWebdavVisible(), p.getDefaultOntologyUri(), p.getUiDefaultsJson(), p.isPublishToHelmholtzKG());
+    return io;
   }
 }

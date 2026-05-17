@@ -18,8 +18,8 @@ This is the first plugin of the fork's
 
 ## What gets published
 
-For every non-deleted Collection on this shepard instance, the
-feed emits a single JSON-LD entry shaped as
+For every non-deleted Collection that has **not** opted out of the
+feed, the plugin emits a single JSON-LD entry shaped as
 `schema:Dataset` + `m4i:Dataset` (NFDI4Ing's `metadata4ing`
 extension of W3C PROV-O). Each entry carries:
 
@@ -38,7 +38,40 @@ extension of W3C PROV-O). Each entry carries:
 | `m4i:hasIdentifier` *(UH1c)* | The same PID as `schema:identifier.value`, m4i-flavoured for NFDI4Ing consumers that prefer the m4i namespace. |
 
 `license` is currently omitted (the data model doesn't carry a
-per-Collection licence yet; UH1d wires it through `:CollectionProperties`).
+per-Collection licence yet).
+
+## Per-Collection opt-out (UH1d)
+
+By default **every** non-deleted Collection appears in the feed.
+To exclude a specific Collection, open its detail page, expand the
+**Publishing** section, and toggle **Publish to Helmholtz Knowledge
+Graph** off.
+
+Under the hood this flips the `publishToHelmholtzKG` boolean on the
+Collection's `:CollectionProperties` node (the same settings sidebar
+that controls WebDAV visibility). The flag defaults to `true`;
+setting it to `false` suppresses that Collection from future feed
+pages without affecting any other Collection or the master toggle.
+
+You can also patch this field directly via REST:
+
+```bash
+# Opt a Collection out of the feed.
+curl -X PATCH \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"publishToHelmholtzKG": false}' \
+  https://shepard.example.dlr.de/v2/collections/<appId>/properties
+```
+
+The `PATCH /v2/collections/{appId}/properties` endpoint requires
+**Manage** permission on the Collection. The response is the full
+`CollectionProperties` object reflecting the updated state.
+
+The master toggle (`enabled` on `:UnhideConfig`) is an independent
+gate — a Collection with `publishToHelmholtzKG=true` is still
+excluded if the instance-wide feed is disabled via
+`shepard-admin unhide disable`.
 
 ## Provenance fragments (UH1b)
 

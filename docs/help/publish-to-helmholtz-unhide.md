@@ -158,19 +158,30 @@ shepard-admin unhide revoke-harvest-key   # clears the key entirely — feed ina
 
 ## What gets published
 
-Every non-deleted Collection on your instance becomes a single
-JSON-LD entry shaped as `schema:Dataset` + `m4i:Dataset` (NFDI4Ing
-metadata4ing, the engineering-research extension of W3C PROV-O).
-Each entry carries the Collection's name, description, creation /
-update timestamps, plus the creator (as a `schema:Person`, with an
-ORCID `@id` if the creator User has one on file).
+Every non-deleted Collection that has **not** been opted out appears
+in the feed as a `schema:Dataset` + `m4i:Dataset` JSON-LD entry
+(NFDI4Ing metadata4ing, the engineering-research extension of W3C
+PROV-O). Each entry carries the Collection's name, description,
+creation / update timestamps, plus the creator (as a `schema:Person`,
+with an ORCID `@id` if the creator User has one on file).
 
-Phase 1 publishes **every** non-deleted Collection on the instance.
-A per-Collection opt-in toggle ([`publishToHelmholtzKG`](/reference/unhide-publish/))
-is queued for a future release (UH1d); until then, the master
-toggle is the only gate. If specific Collections shouldn't appear
-in the feed, hold off on flipping `enabled=true` until UH1d lands,
-or set `feedPublic=false` + don't share the harvest key publicly.
+### Opting a Collection out of the feed
+
+To exclude a specific Collection without disabling the feed
+instance-wide:
+
+1. Open the Collection's detail page.
+2. Expand the **Publishing** section at the bottom of the page.
+3. Toggle **Publish to Helmholtz Knowledge Graph** off.
+
+The change takes effect on the next harvest cycle — no restart
+required. To re-include the Collection, toggle it back on.
+
+The master toggle (`shepard-admin unhide enable/disable`) and the
+per-Collection toggle are independent gates: a Collection with the
+toggle **off** is excluded even when the instance-wide feed is
+enabled; a Collection with the toggle **on** is still excluded if
+the instance-wide feed is disabled.
 
 ## See also
 

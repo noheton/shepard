@@ -14,7 +14,9 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
+import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.entities.CollectionProperties;
 import de.dlr.shepard.plugins.unhide.entities.UnhideConfig;
 import de.dlr.shepard.plugins.unhide.io.FeedEntryIO;
 import de.dlr.shepard.plugins.unhide.io.FeedIO;
@@ -27,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class UnhideFeedServiceTest {
 
   private CollectionDAO collectionDAO;
+  private CollectionPropertiesDAO collectionPropertiesDAO;
   private ActivityDAO activityDAO;
   private PublicationDAO publicationDAO;
   private UnhideFeedService service;
@@ -40,10 +44,12 @@ class UnhideFeedServiceTest {
   @BeforeEach
   void setUp() {
     collectionDAO = mock(CollectionDAO.class);
+    collectionPropertiesDAO = mock(CollectionPropertiesDAO.class);
     activityDAO = mock(ActivityDAO.class);
     publicationDAO = mock(PublicationDAO.class);
     service = new UnhideFeedService();
     service.collectionDAO = collectionDAO;
+    service.collectionPropertiesDAO = collectionPropertiesDAO;
     service.activityDAO = activityDAO;
     service.publicationDAO = publicationDAO;
     // The renderer is pure / @ApplicationScoped — use the real
@@ -58,6 +64,9 @@ class UnhideFeedServiceTest {
     when(activityDAO.list(any(), any(), anyString(), any(), any(), anyInt()))
       .thenReturn(List.of());
     when(publicationDAO.findByEntityAppId(anyString())).thenReturn(List.of());
+    // UH1d default: no CollectionProperties node → treat as publishToHelmholtzKG=true.
+    when(collectionPropertiesDAO.findByCollectionAppId(anyString()))
+      .thenReturn(Optional.empty());
   }
 
   // ─── pagination ──────────────────────────────────────────────────────────
@@ -157,6 +166,83 @@ class UnhideFeedServiceTest {
 
     assertEquals(1, feed.graph().size());
     assertTrue(feed.graph().get(0).id().endsWith("01HFLIVE"));
+  }
+
+  // ─── UH1d — per-Collection publishToHelmholtzKG toggle ───────────────────
+
+  @Test
+  void buildFeed_excludesCollection_whenPublishToHelmholtzKGIsFalse() {
+    Collection included = newCollection("COL-IN",  "Included",  "d", "alice", null);
+    Collection excluded = newCollection("COL-OUT", "Excluded", "d", "alice", null);
+    when(collectionDAO.findAll()).thenReturn(List.of(included, excluded));
+
+    // Set the opt-out flag on COL-OUT.
+    var propsOut = new CollectionProperties("props-out");
+    propsOut.setPublishToHelmholtzKG(false);
+    when(collectionPropertiesDAO.findByCollectionAppId("COL-OUT"))
+      .thenReturn(Optional.of(propsOut));
+
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
+
+    assertEquals(1, feed.graph().size(),
+      "COL-OUT with publishToHelmholtzKG=false must be excluded from the feed");
+    assertTrue(feed.graph().get(0).id().endsWith("COL-IN"),
+      "only the opted-in Collection should appear");
+  }
+
+  @Test
+  void buildFeed_includesCollection_whenPropertiesNodeAbsent() {
+    // Legacy Collection — no properties node at all.
+    Collection c = newCollection("COL-LEGACY", "Legacy", "d", "alice", null);
+    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    // collectionPropertiesDAO returns Optional.empty() by default (setUp stub).
+
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
+
+    assertEquals(1, feed.graph().size(),
+      "Collection with no properties node must default to included (publishToHelmholtzKG=true)");
+  }
+
+  @Test
+  void buildFeed_includesCollection_whenPublishToHelmholtzKGIsTrue() {
+    Collection c = newCollection("COL-EXPLICIT-TRUE", "Explicit true", "d", "alice", null);
+    when(collectionDAO.findAll()).thenReturn(List.of(c));
+    var props = new CollectionProperties("props-true");
+    props.setPublishToHelmholtzKG(true);
+    when(collectionPropertiesDAO.findByCollectionAppId("COL-EXPLICIT-TRUE"))
+      .thenReturn(Optional.of(props));
+
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
+
+    assertEquals(1, feed.graph().size(),
+      "Collection with publishToHelmholtzKG=true must appear in the feed");
+  }
+
+  @Test
+  void buildFeed_paginationTotals_reflectFilteredCount() {
+    // Two Collections: one in, one out. totalEntries should count only included ones.
+    Collection included = newCollection("COL-IN2",  "In2",  "d", "alice", null);
+    Collection excluded = newCollection("COL-OUT2", "Out2", "d", "alice", null);
+    when(collectionDAO.findAll()).thenReturn(List.of(included, excluded));
+
+    var propsOut = new CollectionProperties("props-out2");
+    propsOut.setPublishToHelmholtzKG(false);
+    when(collectionPropertiesDAO.findByCollectionAppId("COL-OUT2"))
+      .thenReturn(Optional.of(propsOut));
+
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    FeedIO feed = service.buildFeed(cfg, "https://e", 0, 100);
+
+    assertEquals(1, feed.meta().get("totalEntries"),
+      "totalEntries must count only feed-eligible Collections");
+    assertEquals(1, feed.meta().get("totalPages"));
   }
 
   @Test

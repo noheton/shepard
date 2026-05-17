@@ -52,6 +52,20 @@ public class CollectionProperties implements HasId, HasAppId {
   private boolean webdavVisible = true;
 
   /**
+   * When {@code false}, this Collection is excluded from the
+   * Helmholtz Unhide feed ({@code /v2/unhide/feed.jsonld}). Default
+   * {@code true} — opt-out, not opt-in, so existing Collections
+   * continue to appear in the feed without an explicit owner action.
+   *
+   * <p>No Neo4j migration is needed: the property is additive and
+   * schema-less; existing nodes with no {@code publishToHelmholtzKG}
+   * property are treated as {@code true} by the feed filter in
+   * {@code UnhideFeedService} (UH1d).
+   */
+  @Property("publishToHelmholtzKG")
+  private boolean publishToHelmholtzKG = true;
+
+  /**
    * Optional Collection-default ontology IRI (PROV-O / QUDT / …) per
    * {@code aidocs/48}. {@code null} means the instance-level default.
    */

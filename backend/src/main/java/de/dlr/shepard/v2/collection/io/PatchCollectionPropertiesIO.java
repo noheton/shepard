@@ -29,4 +29,12 @@ public class PatchCollectionPropertiesIO {
     description = "If set, replaces the free-form UI defaults JSON blob (opaque to the backend)."
   )
   private String uiDefaultsJson;
+
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "If set, flips whether this Collection appears in the Helmholtz Unhide feed. " +
+    "null = leave unchanged; false = opt out of the feed; true = opt back in (the default)."
+  )
+  private Boolean publishToHelmholtzKG;
 }

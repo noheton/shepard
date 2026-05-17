@@ -112,6 +112,7 @@ public class CollectionPropertiesRest {
       if (body.getWebdavVisible() != null) props.setWebdavVisible(body.getWebdavVisible());
       if (body.getDefaultOntologyUri() != null) props.setDefaultOntologyUri(body.getDefaultOntologyUri());
       if (body.getUiDefaultsJson() != null) props.setUiDefaultsJson(body.getUiDefaultsJson());
+      if (body.getPublishToHelmholtzKG() != null) props.setPublishToHelmholtzKG(body.getPublishToHelmholtzKG());
     }
     CollectionProperties saved = propertiesDAO.createOrUpdate(props);
     return Response.ok(CollectionPropertiesIO.from(saved)).build();
