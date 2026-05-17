@@ -116,8 +116,94 @@ as a top-level field (populated since the L2a backfill). Entries created before
 L2a may have `appId = null` — they won't resolve via the `/v2/` render endpoint
 until they are updated (any write via PUT or PATCH stamps a fresh `appId`).
 
+## Edit history (J1d)
+
+Every time a journal entry's content changes, shepard snapshots the **previous**
+content as a `LabJournalEntryRevision` node before overwriting it. Revisions are
+append-only — they cannot be edited or deleted via the API.
+
+### History endpoint
+
+```
+GET /v2/lab-journal/{entryAppId}/history
+```
+
+Returns the complete edit history for a `LabJournalEntry` in reverse-chronological
+order (newest revision first, by `revisionNumber`).
+
+#### Path parameters
+
+| Parameter | Type | Description |
+|---|---|---|
+| `entryAppId` | `string` | Application-level identifier (UUID v7) of the `LabJournalEntry`. |
+
+#### Response body
+
+`200 OK` — `application/json` array of revision objects, newest first:
+
+```json
+[
+  {
+    "appId": "01957000-0000-7000-8000-000000000022",
+    "content": "# Session 2\n\nUpdated hypothesis: ...",
+    "revisedAt": "2026-05-17T14:30:00.000Z",
+    "revisedBy": "alice",
+    "revisionNumber": 2
+  },
+  {
+    "appId": "01957000-0000-7000-8000-000000000011",
+    "content": "# Session 1\n\nInitial observation: ...",
+    "revisedAt": "2026-05-17T09:00:00.000Z",
+    "revisedBy": "alice",
+    "revisionNumber": 1
+  }
+]
+```
+
+An empty array (`[]`) means the entry has never been edited since creation — only
+the current content exists.
+
+#### Field reference
+
+| Field | Type | Description |
+|---|---|---|
+| `appId` | `string` | UUID v7 identifying this revision node. |
+| `content` | `string` | The entry's markdown content **before** the edit that created this revision. |
+| `revisedAt` | `string` (ISO 8601) | When the revision was snapshotted (i.e., when the edit that replaced this content was saved). |
+| `revisedBy` | `string` | Display name of the user who made the edit that displaced this content. Null if the user record is unavailable. |
+| `revisionNumber` | `integer` | 1-based sequence counter; the lowest number is the oldest snapshot. |
+
+#### Example request
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+     https://shepard.example.dlr.de/v2/lab-journal/<entryAppId>/history
+```
+
+#### Response codes
+
+| Code | Meaning |
+|---|---|
+| 200 | History returned (may be an empty array). |
+| 401 | Authentication required. |
+| 403 | Caller lacks Read permission on the parent DataObject. |
+| 404 | No `LabJournalEntry` with that `appId`, or the entry is deleted. |
+
+#### Permission model
+
+Read permission on the **parent `DataObject`** is required — the same gate as
+the render endpoint and the existing `/shepard/api/labJournalEntries/{id}` endpoint.
+
+#### What is captured vs. skipped
+
+A revision is created only when the new content **differs** from the current
+content. Re-saving an entry with identical content produces no revision. Entries
+with a `null` content field that receive their first content also produce no
+revision (the entry goes directly from `null` to the new value without a snapshot).
+
 ## Related
 
 - `aidocs/37-lab-journal-and-jupyter-design.md` — design doc for the J1 series.
-- J1b (queued) — inline `.ipynb` static render.
+- J1b (shipped) — inline `.ipynb` static render (`GET /v2/lab-journal/{appId}/notebook`).
 - J1c (queued) — "Open in Jupyter" deep link.
+- J1d (shipped) — append-only edit history (`GET /v2/lab-journal/{entryAppId}/history`).
