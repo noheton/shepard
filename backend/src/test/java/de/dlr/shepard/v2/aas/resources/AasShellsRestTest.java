@@ -2,7 +2,9 @@ package de.dlr.shepard.v2.aas.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.aas.services.AasShellMappingService;
@@ -11,6 +13,8 @@ import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.v2.aas.io.AasShellIO;
 import de.dlr.shepard.v2.aas.io.AasShellIO.AssetInformationIO;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,5 +120,92 @@ class AasShellsRestTest {
 
     var r = resource.listShells(null, 100);
     assertEquals(200, r.getStatus());
+  }
+
+  // --- resolveAppId (AAS1b Commit 1) ---
+
+  @Test
+  void resolveAppIdPassesThroughRawAppId() {
+    assertEquals("col-aaa-111", AasShellsRest.resolveAppId("col-aaa-111"));
+  }
+
+  @Test
+  void resolveAppIdDecodesBase64UrlIri() {
+    String iri = "urn:shepard:collection:col-aaa-111";
+    String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(iri.getBytes(StandardCharsets.UTF_8));
+    assertEquals("col-aaa-111", AasShellsRest.resolveAppId(encoded));
+  }
+
+  @Test
+  void resolveAppIdDecodesBase64UrlIriWithPadding() {
+    String iri = "urn:shepard:collection:col-aaa-111";
+    String encoded = Base64.getUrlEncoder().encodeToString(iri.getBytes(StandardCharsets.UTF_8));
+    assertEquals("col-aaa-111", AasShellsRest.resolveAppId(encoded));
+  }
+
+  @Test
+  void resolveAppIdFallsBackForInvalidBase64() {
+    // "col-aaa-111" is valid base64url but decodes to bytes that do not start with the collection prefix
+    String raw = "col-aaa-111";
+    // Result must be the raw value (no exception, no prefix match)
+    assertEquals(raw, AasShellsRest.resolveAppId(raw));
+  }
+
+  @Test
+  void resolveAppIdFallsBackForBase64ThatDecodesToNonCollectionIri() {
+    // base64url-encode a non-collection IRI
+    String otherIri = "urn:other:prefix:abc";
+    String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(otherIri.getBytes(StandardCharsets.UTF_8));
+    // decodes fine but prefix doesn't match → return raw encoded string as appId
+    assertEquals(encoded, AasShellsRest.resolveAppId(encoded));
+  }
+
+  // --- GET /v2/aas/shells/{aasId} (AAS1b Commit 1) ---
+
+  @Test
+  void getShellReturns200ForRawAppId() {
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    AasShellIO shell = makeShell("col-aaa-111");
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(mappingService.toShell(c)).thenReturn(shell);
+
+    var r = resource.getShell("col-aaa-111");
+
+    assertEquals(200, r.getStatus());
+    assertEquals(shell, r.getEntity());
+  }
+
+  @Test
+  void getShellReturns200ForBase64UrlEncodedIri() {
+    String iri = "urn:shepard:collection:col-aaa-111";
+    String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(iri.getBytes(StandardCharsets.UTF_8));
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    AasShellIO shell = makeShell("col-aaa-111");
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(mappingService.toShell(c)).thenReturn(shell);
+
+    var r = resource.getShell(encoded);
+
+    assertEquals(200, r.getStatus());
+    assertEquals(shell, r.getEntity());
+  }
+
+  @Test
+  void getShellReturns404WhenNotFound() {
+    when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
+
+    var r = resource.getShell("no-such-id");
+
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void getShellPassesUsernameToDAO() {
+    when(authenticationContext.getCurrentUserName()).thenReturn("bob");
+    when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
+
+    resource.getShell("col-aaa-111");
+
+    verify(collectionDAO).findByAppId(eq("col-aaa-111"), eq("bob"));
   }
 }

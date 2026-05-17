@@ -124,6 +124,21 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     return result;
   }
 
+  /**
+   * Returns the Collection with the given {@code appId} that is readable by {@code username},
+   * or {@code null} when no such Collection exists or the caller lacks read permission
+   * (404-on-no-read discipline: DAO returns null for both cases).
+   */
+  public Collection findByAppId(String appId, String username) {
+    String query =
+      "MATCH (c:Collection {deleted: FALSE}) WHERE c.appId = $appId AND " +
+      CypherQueryHelper.getReadableByQuery("c", username) +
+      " WITH c " +
+      CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("appId", appId)).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
   /** Returns the total number of non-deleted Collections (permission-agnostic). */
   public long countAll() {
     var result = session.query(

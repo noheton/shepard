@@ -16,7 +16,7 @@ import java.util.List;
 @ApplicationScoped
 public class AasShellMappingService {
 
-  static final String COLLECTION_URN_PREFIX = "urn:shepard:collection:";
+  public static final String COLLECTION_URN_PREFIX = "urn:shepard:collection:";
   static final String ASSET_URN_PREFIX = "urn:shepard:asset:";
   static final String ASSET_KIND_INSTANCE = "Instance";
 

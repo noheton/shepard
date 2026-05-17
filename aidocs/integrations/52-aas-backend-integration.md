@@ -449,7 +449,7 @@ CLI command bulk-imports from `admin-shell-io/submodel-templates`.
 
 | AAS field | Maps to shepard |
 |---|---|
-| `Submodel.id` (global IRI — IRDI / URN / `https://`) | shepard `appId` (post-L2d, `aidocs/25`); adapter accepts both URL-encoded `Submodel.id` and bare `appId` |
+| `Submodel.id` (global IRI — IRDI / URN / `https://`) | shepard `appId` (post-L2d, `aidocs/25`); adapter accepts both base64url-encoded `Submodel.id` per IDTA-01002-3-2 §4.3 and bare `appId` |
 | `Submodel.idShort` (human-friendly short, not globally unique) | DataObject `name` |
 | `Submodel.administration.version` / `.revision` | `Version` marker today; V2 snapshot appId post-`aidocs/41` |
 
