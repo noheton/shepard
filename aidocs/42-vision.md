@@ -335,6 +335,10 @@ The four things on the near horizon, in priority order:
    /v2/users/me/preferences` persists per-user UI preferences
    (`theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`,
    `defaultLandingPage`) as an open-world string map on the User node.
+   **U1c2 shipped** — role-in-context chip in the collection sidebar
+   header: a small colour-coded chip (Owner / Editor / Reader) shows the
+   caller's effective role in the current collection; an amber "Admin"
+   chip appears alongside for instance-admin users.
 
 Mid-horizon:
 
