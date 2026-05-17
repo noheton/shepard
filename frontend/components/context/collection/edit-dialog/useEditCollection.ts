@@ -15,6 +15,7 @@ export function useEditCollection(
     name: collection.name,
     attributes: collection.attributes ?? {},
     description: collection.description ?? "",
+    status: collection.status ?? null,
   });
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
 

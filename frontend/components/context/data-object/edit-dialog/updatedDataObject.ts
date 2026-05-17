@@ -5,4 +5,5 @@ export type UpdatedDataObject = UpdateDataObjectRequest["dataObject"] & {
   parentId: number | null;
   attributes: { [key: string]: string };
   predecessorIds: number[];
+  status?: string | null;
 };

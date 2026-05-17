@@ -87,6 +87,7 @@ public class DataObjectService {
     DataObject toCreate = new DataObject();
     toCreate.setAttributes(dataObject.getAttributes());
     toCreate.setDescription(dataObject.getDescription());
+    toCreate.setStatus(dataObject.getStatus());
     toCreate.setName(dataObject.getName());
     toCreate.setCollection(collection);
     toCreate.setParent(parent);
@@ -296,6 +297,7 @@ public class DataObjectService {
     old.setName(dataObject.getName());
     old.setDescription(dataObject.getDescription());
     old.setAttributes(dataObject.getAttributes());
+    old.setStatus(dataObject.getStatus());
     old.setParent(newParent);
     old.setPredecessors(newPredecessors);
     old.setUpdatedAt(dateHelper.getDate());

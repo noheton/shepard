@@ -62,13 +62,19 @@ export interface DataObject {
      */
     name: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof DataObject
      */
     description?: string | null;
     /**
-     * 
+     * Lifecycle status (cosmetic). One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED or any custom value.
+     * @type {string}
+     * @memberof DataObject
+     */
+    status?: string | null;
+    /**
+     *
      * @type {{ [key: string]: string; }}
      * @memberof DataObject
      */
@@ -154,6 +160,7 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'status': json['status'] == null ? undefined : json['status'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'collectionId': json['collectionId'],
         'referenceIds': json['referenceIds'],
@@ -173,6 +180,7 @@ export function DataObjectToJSON(value?: Omit<DataObject, 'id'|'createdAt'|'crea
         
         'name': value['name'],
         'description': value['description'],
+        'status': value['status'],
         'attributes': value['attributes'],
         'predecessorIds': value['predecessorIds'],
         'parentId': value['parentId'],

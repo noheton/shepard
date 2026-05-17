@@ -56,13 +56,19 @@ export interface AbstractDataObject {
      */
     name: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof AbstractDataObject
      */
     description?: string | null;
     /**
-     * 
+     * Lifecycle status (cosmetic). One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED or any custom value.
+     * @type {string}
+     * @memberof AbstractDataObject
+     */
+    status?: string | null;
+    /**
+     *
      * @type {{ [key: string]: string; }}
      * @memberof AbstractDataObject
      */
@@ -99,6 +105,7 @@ export function AbstractDataObjectFromJSONTyped(json: any, ignoreDiscriminator: 
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'status': json['status'] == null ? undefined : json['status'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
     };
 }
@@ -111,6 +118,7 @@ export function AbstractDataObjectToJSON(value?: Omit<AbstractDataObject, 'id'|'
         
         'name': value['name'],
         'description': value['description'],
+        'status': value['status'],
         'attributes': value['attributes'],
     };
 }

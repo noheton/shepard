@@ -68,6 +68,7 @@ public class CollectionService {
     toCreate.setCreatedBy(user);
     toCreate.setCreatedAt(date);
     toCreate.setDescription(collection.getDescription());
+    toCreate.setStatus(collection.getStatus());
     toCreate.setName(collection.getName());
 
     if (collection.getDefaultFileContainerId() != null) {
@@ -203,6 +204,7 @@ public class CollectionService {
     old.setUpdatedAt(dateHelper.getDate());
     old.setAttributes(collection.getAttributes());
     old.setDescription(collection.getDescription());
+    old.setStatus(collection.getStatus());
     old.setName(collection.getName());
 
     if (collection.getDefaultFileContainerId() != null) {

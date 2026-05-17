@@ -20,6 +20,7 @@ export function useEditDataObject(
         attributes: newDo.attributes ?? {},
         description: newDo.description,
         predecessorIds: newDo.predecessorIds ?? [],
+        status: newDo.status ?? null,
       };
     }
   });

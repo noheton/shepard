@@ -39,6 +39,18 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
             />
           </v-col>
         </v-row>
+        <v-row class="pt-4">
+          <v-col>
+            <v-select
+              v-model="updatedCollection.status"
+              label="Status"
+              :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
+              clearable
+              hint="Optional lifecycle status. Leave blank to clear."
+              persistent-hint
+            />
+          </v-col>
+        </v-row>
       </v-form>
     </template>
   </FormDialog>

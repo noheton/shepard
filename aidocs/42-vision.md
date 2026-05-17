@@ -118,6 +118,13 @@ Plus payload kinds (the things References point at):
 
 These work the same way across every primitive:
 
+- **Lifecycle status** *(ST1a shipped)*. Every Collection and
+  DataObject carries an optional free-form `status` string.
+  Suggested values DRAFT / IN_REVIEW / READY / PUBLISHED /
+  ARCHIVED; any custom string is accepted. Shown as a coloured
+  chip next to the entity name; editable via the description
+  edit dialog. The field is omitted from JSON when null so
+  upstream API clients are unaffected.
 - **Permissions.** Every entity has owner / readers / writers /
   managers. PUBLIC is one toggle away. Group-based permissions
   designed (`aidocs/24` F2) but not yet shipped.

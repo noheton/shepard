@@ -16,6 +16,8 @@ public abstract class AbstractDataObject extends VersionableEntity {
 
   private String description;
 
+  private String status;
+
   @ToString.Exclude
   @Properties(delimiter = "||")
   private Map<String, String> attributes;

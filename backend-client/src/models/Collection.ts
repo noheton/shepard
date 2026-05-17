@@ -56,13 +56,19 @@ export interface Collection {
      */
     name: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof Collection
      */
     description?: string | null;
     /**
-     * 
+     * Lifecycle status (cosmetic). One of DRAFT, IN_REVIEW, READY, PUBLISHED, ARCHIVED or any custom value.
+     * @type {string}
+     * @memberof Collection
+     */
+    status?: string | null;
+    /**
+     *
      * @type {{ [key: string]: string; }}
      * @memberof Collection
      */
@@ -119,6 +125,7 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'updatedBy': json['updatedBy'],
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'status': json['status'] == null ? undefined : json['status'],
         'attributes': json['attributes'] == null ? undefined : json['attributes'],
         'dataObjectIds': json['dataObjectIds'],
         'incomingIds': json['incomingIds'],
@@ -134,6 +141,7 @@ export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'crea
         
         'name': value['name'],
         'description': value['description'],
+        'status': value['status'],
         'attributes': value['attributes'],
         'defaultFileContainerId': value['defaultFileContainerId'],
     };

@@ -14,6 +14,7 @@ interface TitleAndMetadataDisplayProps {
     updatedAt: Date | null;
     updatedBy: string | null;
     type?: string;
+    status?: string | null;
     container?: {
       title: string;
       id: number;
@@ -31,8 +32,9 @@ defineProps<TitleAndMetadataDisplayProps>();
 <template>
   <v-container fluid class="pt-0 pl-0 pr-0">
     <v-row no-gutters>
-      <v-col cols="12" class="ml-n1 pb-6">
+      <v-col cols="12" class="ml-n1 pb-6 d-flex align-center ga-3">
         <h1 class="text-h1">{{ entity.name }}</h1>
+        <StatusChip v-if="entity.status" :status="entity.status" />
       </v-col>
     </v-row>
     <v-row no-gutters class="justify-start flex-nowrap">
