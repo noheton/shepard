@@ -7,6 +7,7 @@ import {
 import type { ContextMenuItem } from "~/components/common/ContextMenu.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
+import { useMyRoleIn } from "~/composables/context/useMyRoleIn";
 
 interface CollectionSidebarHeaderProps {
   isFocused: boolean;
@@ -17,6 +18,17 @@ interface CollectionSidebarHeaderProps {
 }
 
 const props = defineProps<CollectionSidebarHeaderProps>();
+
+// U1c2 — derive collectionAppId defensively: the generated Collection model
+// does not yet declare appId but the wire shape carries it (same pattern as
+// pages/collections/[collectionId]/index.vue).
+const collectionAppId = computed<string | null>(() => {
+  if (!props.collection) return null;
+  const raw = (props.collection as unknown as { appId?: string | null }).appId;
+  return raw ?? null;
+});
+
+const { roleIn, roleLabel } = useMyRoleIn(collectionAppId);
 const showContextMenuButton = ref<boolean>(false);
 const showEditDialog = ref(false);
 const showDeleteDialog = ref(false);
@@ -153,6 +165,15 @@ const exportCollection = () => {
       </template>
     </v-card-item>
   </v-card>
+
+  <!-- U1c2: Role-in-context chips — rendered below the collection name card
+       when the user has a role in this collection or is an instance admin. -->
+  <div v-if="collectionAppId" class="ml-7 mt-1">
+    <CollectionRoleChip
+      :role-label="roleLabel"
+      :is-instance-admin="roleIn?.isInstanceAdmin ?? false"
+    />
+  </div>
 </template>
 
 <style lang="scss" scoped>
