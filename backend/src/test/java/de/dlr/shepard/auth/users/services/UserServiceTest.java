@@ -1,6 +1,9 @@
 package de.dlr.shepard.auth.users.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -9,13 +12,16 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
+import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.subscription.entities.Subscription;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.component.QuarkusComponentTest;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 @QuarkusComponentTest
 public class UserServiceTest {
@@ -134,5 +140,101 @@ public class UserServiceTest {
 
     var actual = service.createOrUpdateUser(user);
     assertEquals(old, actual);
+  }
+
+  // ── U1d: getPreferences ──────────────────────────────────────────────────
+
+  @Test
+  public void getPreferences_nullJson_returnsEmptyMap() {
+    var user = new User("alice");
+    user.setPreferencesJson(null);
+    when(dao.find("alice")).thenReturn(user);
+
+    var prefs = service.getPreferences("alice");
+    assertTrue(prefs.isEmpty());
+  }
+
+  @Test
+  public void getPreferences_blankJson_returnsEmptyMap() {
+    var user = new User("alice");
+    user.setPreferencesJson("   ");
+    when(dao.find("alice")).thenReturn(user);
+
+    var prefs = service.getPreferences("alice");
+    assertTrue(prefs.isEmpty());
+  }
+
+  @Test
+  public void getPreferences_validJson_returnsMap() {
+    var user = new User("alice");
+    user.setPreferencesJson("{\"theme\":\"dark\",\"language\":\"de\"}");
+    when(dao.find("alice")).thenReturn(user);
+
+    var prefs = service.getPreferences("alice");
+    assertEquals(2, prefs.size());
+    assertEquals("dark", prefs.get("theme"));
+    assertEquals("de", prefs.get("language"));
+  }
+
+  @Test
+  public void getPreferences_malformedJson_throwsInvalidRequestException() {
+    var user = new User("alice");
+    user.setPreferencesJson("{not-valid-json");
+    when(dao.find("alice")).thenReturn(user);
+
+    assertThrows(InvalidRequestException.class, () -> service.getPreferences("alice"));
+  }
+
+  // ── U1d: patchPreferences ────────────────────────────────────────────────
+
+  @Test
+  public void patchPreferences_setsNewKey_persistsJson() {
+    var user = new User("alice");
+    user.setPreferencesJson(null);
+    when(dao.find("alice")).thenReturn(user);
+    when(dao.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var result = service.patchPreferences("alice", Map.of("theme", "dark"));
+    assertEquals("dark", result.get("theme"));
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(dao).createOrUpdate(captor.capture());
+    assertTrue(captor.getValue().getPreferencesJson().contains("\"theme\""));
+    assertTrue(captor.getValue().getPreferencesJson().contains("\"dark\""));
+  }
+
+  @Test
+  public void patchPreferences_mergeRemoveAndAdd() {
+    var user = new User("alice");
+    user.setPreferencesJson("{\"theme\":\"dark\",\"language\":\"de\"}");
+    when(dao.find("alice")).thenReturn(user);
+    when(dao.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    // patch: remove "language" (null), add "timeZone"
+    var patch = new java.util.HashMap<String, String>();
+    patch.put("language", null);
+    patch.put("timeZone", "UTC");
+    var result = service.patchPreferences("alice", patch);
+
+    assertEquals("dark", result.get("theme"));
+    assertEquals("UTC", result.get("timeZone"));
+    assertTrue(!result.containsKey("language"), "language key should be removed");
+    assertEquals(2, result.size());
+  }
+
+  @Test
+  public void patchPreferences_allKeysRemoved_setsJsonToNull() {
+    var user = new User("alice");
+    user.setPreferencesJson("{\"theme\":\"dark\"}");
+    when(dao.find("alice")).thenReturn(user);
+    when(dao.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    var patch = new java.util.HashMap<String, String>();
+    patch.put("theme", null);
+    service.patchPreferences("alice", patch);
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(dao).createOrUpdate(captor.capture());
+    assertNull(captor.getValue().getPreferencesJson(), "preferencesJson must be null when map is empty");
   }
 }
