@@ -734,6 +734,282 @@ def annotate_phase_boundaries(
             _log("SKIP", f"{run_do.name}/anomaly", "SemanticAnnotation", str(exc)[:60])
 
 
+# ---- publications DataObject (best-effort) ---------------------------------
+
+LUMEN_PUBLICATIONS = [
+    {
+        "title": "Hot-Fire Testing and System Analysis of the LUMEN Liquid Upper Stage Demonstrator Engine",
+        "authors": "Dresia, K. et al.",
+        "year": 2025,
+        "url": "https://elib.dlr.de/219029/",
+        "venue": "Space Propulsion 2024, Glasgow",
+    },
+    {
+        "title": "LUMEN: Versatile Test Bed for Rocket Engine Components: Hot-Fire Test Results",
+        "authors": "Traudt, T. et al.",
+        "year": 2024,
+        "url": "https://elib.dlr.de/213229/",
+        "venue": "Space Propulsion 2024",
+    },
+    {
+        "title": "Virtual Sensing for Fault Detection within the LUMEN Fuel Turbopump Test Campaign",
+        "authors": "Kurudzija, E. et al.",
+        "year": 2024,
+        "url": "https://elib.dlr.de/214022/",
+        "venue": "Space Propulsion 2024",
+    },
+    {
+        "title": "LUMEN: Putting into Operation a Flexible Test Bed",
+        "authors": "Traudt, T. et al.",
+        "year": 2025,
+        "url": "https://elib.dlr.de/218874/",
+        "venue": "AIAA SciTech 2025",
+    },
+    {
+        "title": "LUMEN: Results of the Acceptance Tests",
+        "authors": "Traudt, T. et al.",
+        "year": 2024,
+        "url": "https://elib.dlr.de/213230/",
+        "venue": "Space Propulsion 2024",
+    },
+    {
+        "title": "Combustion Stability Analysis of the LUMEN Demonstrator Engine",
+        "authors": "Oschwald, M. et al.",
+        "year": 2024,
+        "url": "https://elib.dlr.de/213231/",
+        "venue": "Space Propulsion 2024",
+    },
+    {
+        "title": "Model-Based Closed-Loop Throttling of the LUMEN Demonstrator Engine",
+        "authors": "Dresia, K. et al.",
+        "year": 2024,
+        "url": "https://elib.dlr.de/213228/",
+        "venue": "Space Propulsion 2024",
+    },
+]
+
+
+def best_effort_publications(apis: Apis, coll: Collection, sc: StructuredDataContainer) -> None:
+    """Create a 'Publications' DataObject containing real DLR elib.dlr.de references.
+
+    The publications point to actual LUMEN research papers — demonstrating how
+    shepard can link a dataset to its associated literature. Uses a best-effort
+    pattern: failures are logged but don't abort the seed."""
+    name = "Publications"
+    existing = _find_child_data_object(apis, coll.id, name, parent_id=None)
+    if existing is not None:
+        _log("SKIP", name, "DataObject", existing.id)
+        pub_do = existing
+    else:
+        do = DataObject(
+            name=name,
+            description=(
+                "Real DLR/LUMEN publications from elib.dlr.de. "
+                "This DataObject demonstrates linking a dataset to its associated literature. "
+                "**Publications are real; all measurement data in this showcase is synthetic.**"
+            ),
+            attributes={"kind": "literature", "source": "elib.dlr.de"},
+        )
+        pub_do = apis.data_object.create_data_object(coll.id, do)
+        _log("OK", name, "DataObject", pub_do.id)
+
+    # Structured data: one JSON record per publication.
+    ref_name = "lumen-elib-publications"
+    existing_refs = apis.structured_reference.get_all_structured_data_references(coll.id, pub_do.id) or []
+    for r in existing_refs:
+        if r.name == ref_name:
+            _log("SKIP", ref_name, "StructuredDataReference", r.id)
+            return
+    try:
+        payload_json = json.dumps({"publications": LUMEN_PUBLICATIONS}, indent=2, ensure_ascii=False)
+        payload = StructuredDataPayload(
+            structuredData=StructuredData(name="lumen-publications.json"),
+            payload=payload_json,
+        )
+        sd = apis.structured_container.create_structured_data(sc.id, payload)
+        sr = StructuredDataReference(
+            name=ref_name,
+            dataObjectId=pub_do.id,
+            structuredDataContainerId=sc.id,
+            structuredDataOids=[sd.oid],
+        )
+        apis.structured_reference.create_structured_data_reference(coll.id, pub_do.id, sr)
+        _log("OK", ref_name, "StructuredDataReference (publications)", sd.oid)
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", ref_name, f"publications structured data: {str(exc)[:80]}")
+
+    # Lab journal: markdown table linking to each paper with a clickable URL.
+    marker = "publications-index"
+    sentinel = f"[showcase:{marker}]"
+    entries = apis.journal.get_lab_journals_by_collection(data_object_id=pub_do.id) or []
+    for e in entries:
+        if sentinel in (e.journal_content or ""):
+            _log("SKIP", f"{name}/{marker}", "LabJournalEntry", e.id)
+            return
+    rows = "\n".join(
+        f"| [{p['title']}]({p['url']}) | {p['authors']} | {p['year']} | {p['venue']} |"
+        for p in LUMEN_PUBLICATIONS
+    )
+    journal_body = (
+        "## LUMEN Publications on DLR eLIB\n\n"
+        "These are **real** publications from the DLR electronic library "
+        "(elib.dlr.de). The measurement data in this showcase is synthetic "
+        "but inspired by the parameters described in these papers.\n\n"
+        "| Title | Authors | Year | Venue |\n"
+        "|---|---|---|---|\n"
+        + rows
+        + f"\n\n{sentinel}"
+    )
+    try:
+        entry = LabJournalEntry(dataObjectId=pub_do.id, journalContent=journal_body)
+        e = apis.journal.create_lab_journal(pub_do.id, entry)
+        _log("OK", f"{name}/publications-index", "LabJournalEntry", e.id)
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", f"{name}/publications-index", f"LabJournalEntry: {str(exc)[:80]}")
+
+
+# ---- turbine run template (best-effort; v2 endpoint) -----------------------
+
+HOTFIRE_TEMPLATE_BODY = json.dumps({
+    "templateKind": "DATAOBJECT_RECIPE",
+    "name": "Rocket Engine Hot-Fire Test Run",
+    "description": (
+        "Standard data structure for a liquid-propellant rocket engine hot-fire test run. "
+        "Creates a DataObject with mandatory test metadata, a timeseries reference slot for DAQ data, "
+        "a file slot for the test report, and a structured-data slot for the run log."
+    ),
+    "attributes": [
+        {"name": "test_id",        "type": "STRING",  "required": True,  "hint": "Unique test identifier, e.g. TR-001"},
+        {"name": "campaign",       "type": "STRING",  "required": True,  "hint": "Campaign name, e.g. Q3-2024"},
+        {"name": "test_engineer",  "type": "STRING",  "required": True,  "hint": "Lead test engineer (full name)"},
+        {"name": "test_date",      "type": "STRING",  "required": True,  "hint": "ISO 8601 date, e.g. 2024-07-15"},
+        {"name": "facility",       "type": "ENUM",    "required": True,  "allowed": ["P3-Lampoldshausen", "P4.1-Lampoldshausen", "P8-Lampoldshausen", "Other"]},
+        {"name": "propellant_lox", "type": "BOOL",    "required": True,  "hint": "True if LOX was used as oxidiser"},
+        {"name": "propellant_fuel","type": "ENUM",    "required": True,  "allowed": ["LH2", "LCH4", "Ethanol", "Other"]},
+        {"name": "target_thrust_kn","type": "STRING", "required": False, "hint": "Nominal target thrust in kN"},
+        {"name": "burn_duration_s", "type": "STRING", "required": False, "hint": "Planned burn duration in seconds"},
+        {"name": "is_fired",       "type": "BOOL",    "required": True,  "hint": "False for hold / inspection days"},
+        {"name": "outcome",        "type": "ENUM",    "required": False, "allowed": ["nominal", "anomaly", "abort", "hold"]},
+        {"name": "notes_brief",    "type": "STRING",  "required": False, "hint": "One-sentence summary for the run list"},
+    ],
+    "fileSlots": [
+        {
+            "name": "test_report",
+            "allowedMimeTypes": ["text/markdown", "application/pdf", "text/plain"],
+            "required": True,
+            "hint": "Post-test report (Markdown or PDF)",
+        },
+        {
+            "name": "cad_snapshot",
+            "allowedMimeTypes": ["application/octet-stream", "model/step", "model/iges"],
+            "required": False,
+            "hint": "CAD model snapshot at test configuration",
+        },
+    ],
+    "references": [
+        {
+            "kind": "TimeseriesReference",
+            "name": "daq_sensors",
+            "hint": "Timeseries DAQ channels for this run (link to existing TimeseriesContainer)",
+            "required": False,
+        },
+        {
+            "kind": "StructuredDataReference",
+            "name": "run_log",
+            "hint": "Machine-readable run log JSON (link to StructuredDataContainer)",
+            "required": False,
+        },
+    ],
+})
+
+
+def best_effort_template(apis: Apis) -> None:
+    """Seed a 'Rocket Engine Hot-Fire Test Run' ShepardTemplate via the v2 API.
+
+    Requires instance-admin; skips gracefully on 401/403 or if the
+    /v2/templates endpoint is not yet deployed."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", "hotfire template", "ShepardTemplate (urllib unavailable)")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    # v2 endpoint lives at the backend root, not the /shepard/api prefix.
+    # Derive the v2 base: strip /shepard/api suffix if present.
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    list_url = f"{v2_base}/v2/templates?kind=DATAOBJECT_RECIPE"
+    create_url = f"{v2_base}/v2/templates"
+    headers = {
+        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    template_name = "Rocket Engine Hot-Fire Test Run"
+
+    # Check if already present.
+    try:
+        req = urllib.request.Request(list_url, headers=headers, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            existing = json.loads(resp.read().decode("utf-8"))
+            if isinstance(existing, list):
+                for t in existing:
+                    if isinstance(t, dict) and t.get("name") == template_name:
+                        _log("SKIP", template_name, "ShepardTemplate", t.get("appId", ""))
+                        return
+            elif isinstance(existing, dict):
+                for t in existing.get("content", existing.get("results", [])):
+                    if isinstance(t, dict) and t.get("name") == template_name:
+                        _log("SKIP", template_name, "ShepardTemplate", t.get("appId", ""))
+                        return
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            _log("SKIP", template_name, f"ShepardTemplate (not admin: HTTP {e.code})")
+            return
+        if e.code in (404, 501):
+            _log("SKIP", template_name, "ShepardTemplate (endpoint not deployed)")
+            return
+        _log("SKIP", template_name, f"ShepardTemplate list error HTTP {e.code}")
+        return
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", template_name, f"ShepardTemplate list error: {str(exc)[:60]}")
+        return
+
+    # Create the template.
+    body = json.dumps({
+        "name": template_name,
+        "kind": "DATAOBJECT_RECIPE",
+        "body": HOTFIRE_TEMPLATE_BODY,
+        "description": (
+            "Standard data structure for a liquid-propellant rocket engine hot-fire test run. "
+            "Attributes cover test ID, campaign, engineer, date, facility, propellant, "
+            "thrust target, and outcome. File slots for test report and CAD snapshot. "
+            "Timeseries and structured-data reference slots for DAQ and run-log binding."
+        ),
+        "tags": ["rocket-engine", "hot-fire", "liquid-propellant", "LUMEN", "test-campaign"],
+    }).encode("utf-8")
+    try:
+        req = urllib.request.Request(create_url, data=body, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            created = json.loads(resp.read().decode("utf-8"))
+            _log("OK", template_name, "ShepardTemplate", created.get("appId", resp.status))
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            _log("SKIP", template_name, f"ShepardTemplate create (not admin: HTTP {e.code})")
+        elif e.code in (409,):
+            _log("SKIP", template_name, "ShepardTemplate (already exists)")
+        else:
+            _log("SKIP", template_name, f"ShepardTemplate create HTTP {e.code}")
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", template_name, f"ShepardTemplate create error: {str(exc)[:60]}")
+
+
 # ---- collection versions (best-effort; feature-toggled) -------------------
 
 
@@ -920,6 +1196,10 @@ def main(argv: list[str] | None = None) -> int:
     ensure_lab_journal(apis, runs[ANOMALY_RUN], JOURNAL_TR4, "tr4-debrief")
     ensure_lab_journal(apis, investigation, JOURNAL_INVESTIGATION, "tr4-finding")
     ensure_lab_journal(apis, runs[6], JOURNAL_TR6, "tr6-retest")
+
+    # Publications DataObject + turbine template (best-effort).
+    best_effort_publications(apis, coll, sc)
+    best_effort_template(apis)
 
     # Versions + api keys (best-effort).
     best_effort_versions(apis, coll)
