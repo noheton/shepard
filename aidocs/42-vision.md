@@ -68,7 +68,7 @@ shepard organises everything into five primitives:
 | **DataObject** | A logical thing inside a Collection, freely nestable, with attributes | "TR-004 — fired run with anomaly" |
 | **Reference** | A pointer from a DataObject to a payload of one of five kinds | "`tr-004-sensors`" — TimeseriesReference |
 | **Annotation** | A semantic tag from an ontology attached to anything | `phase = ramp_up`, `severity = HIGH` |
-| **Lab journal entry** | A free-text (post-J1a: markdown) note attached to anything | "Vibration spike on fuel-turbopump observed at t=8s..." |
+| **Lab journal entry** | A CommonMark + GFM markdown note attached to anything. **J1a shipped**: `GET /v2/lab-journal/{appId}/render` returns sanitised HTML. Plain-text entries render unchanged as `<p>` elements. | "Vibration spike on fuel-turbopump observed at t=8s..." |
 
 Plus payload kinds (the things References point at):
 
@@ -326,18 +326,24 @@ Mid-horizon:
   exports, lineage diff.
 - **Git artifact tracking** (`aidocs/38`, G1 series). Commit-SHA
   provenance in RO-Crate exports.
-- **Lab journal + Jupyter** (`aidocs/37`, J1 series). Inline
-  notebook render, "Open in Jupyter" deep link.
+- **Lab journal + Jupyter** (`aidocs/37`, J1 series). **J1a shipped** —
+  `GET /v2/lab-journal/{appId}/render` delivers sanitised CommonMark + GFM
+  HTML from any journal entry's content. Queued next: inline `.ipynb`
+  static render (J1b), "Open in Jupyter" deep link (J1c).
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
 - **Other AI features** (`aidocs/43`). **TA1a shipped** — timeseries
-  annotations (interval + point) with `aiGenerated` flag ready for
-  the scriptable anomaly-detection hook (TA1c). Queued: automatic
-  anomaly detection (`POST /v2/timeseries-references/{appId}/detect-anomalies`,
-  TA1c); semantic-annotation suggestion; lab-journal authoring
-  assist; auto-summarisation; natural-language search. All AI
-  inference BYOK / admin-fallback gated.
+  annotations (interval + point) with `aiGenerated` flag. **AI1b
+  shipped** — rolling-median MAD anomaly detector at
+  `POST /v2/timeseries-references/{refAppId}/detect-anomalies`:
+  pure Java, no ML library, LLM-independent; configurable rolling
+  window (default 51) and Z-score threshold k (default 6.0);
+  optional `createAnnotations=true` persists one `TimeseriesAnnotation`
+  per contiguous anomaly run. Queued: semantic-annotation
+  suggestion; lab-journal authoring assist; auto-summarisation;
+  natural-language search. All AI inference BYOK / admin-fallback
+  gated.
 - **S3-compatible file storage** (`aidocs/45`, FS series). The
   **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
   + the in-core GridFS default adapter, with `shepard.storage.provider`
@@ -401,10 +407,13 @@ Mid-horizon:
   Collections panel + top-active-Collections leaderboard at
   `/admin/dashboard`. Gated on A0's instance-admin role.
 - **Video as a first-class payload** (`aidocs/53`, VID1 series).
-  Dedicated PayloadStorage plugin; segments + HLS manifest on
-  object store; navigation by video-time and wall-clock; live
-  ingest via a sibling `shepard-video-collector` or a MediaMTX
-  sidecar.
+  **VID1a shipped**: `VideoStreamReference` entity with multipart
+  upload (`POST /v2/data-objects/{appId}/video-stream-references`),
+  ffprobe metadata extraction (`durationSeconds`, `width`, `height`,
+  `frameRate`, `videoCodec`, `audioCodec`), and `wallClockTimestamp`
+  as the TM1 temporal anchor. Still ahead: HLS segmentation, live
+  ingest via `shepard-video-collector` / MediaMTX sidecar,
+  video-time + wall-clock navigation, frame extraction (VID1d).
 - **`FileReference` → `FileBundleReference` + `FileGroup` rename**
   (`aidocs/53`, FR1 series — **FR1a + FR1b shipped**. FR1a: V21
   migration adds the second label + default group; `/v2/bundles/{appId}`
