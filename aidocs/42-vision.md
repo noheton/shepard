@@ -324,7 +324,11 @@ The four things on the near horizon, in priority order:
 4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
    **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
    edit dialog in-flight. RO-Crate exports now cite authors when the
-   field is set. `displayName` override (U1b) in review.
+   field is set. **U1b shipped** — `displayName` override + `effectiveDisplayName`
+   derivation; audit-trail render switch. **U1d shipped** — `GET/PATCH
+   /v2/users/me/preferences` persists per-user UI preferences
+   (`theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`,
+   `defaultLandingPage`) as an open-world string map on the User node.
 
 Mid-horizon:
 

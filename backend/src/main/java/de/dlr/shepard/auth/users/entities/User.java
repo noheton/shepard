@@ -55,6 +55,18 @@ public class User implements HasId, HasAppId {
    */
   private String displayName;
 
+  /**
+   * Per-user UI preferences stored as a JSON object — per
+   * {@code aidocs/16 U1d}. Nullable; when null the
+   * {@code GET /v2/users/me/preferences} endpoint returns an empty map.
+   * Keys are open-world strings (theme, language, timeZone, dateFormat,
+   * defaultPageSize, defaultLandingPage, …); values are always strings.
+   * Serialized by {@code UserService.patchPreferences} using Jackson's
+   * {@code ObjectMapper}.
+   */
+  @Property("preferencesJson")
+  private String preferencesJson;
+
   @ToString.Exclude
   @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
@@ -98,7 +110,7 @@ public class User implements HasId, HasAppId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(displayName, email, firstName, lastName, orcid, username);
+    result = prime * result + Objects.hash(displayName, email, firstName, lastName, orcid, preferencesJson, username);
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
     result = prime * result + HasId.hashcodeHelper(gitCredentials);
@@ -119,6 +131,7 @@ public class User implements HasId, HasAppId {
       Objects.equals(firstName, other.firstName) &&
       Objects.equals(lastName, other.lastName) &&
       Objects.equals(orcid, other.orcid) &&
+      Objects.equals(preferencesJson, other.preferencesJson) &&
       Objects.equals(username, other.username)
     );
   }

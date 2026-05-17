@@ -1,5 +1,8 @@
 package de.dlr.shepard.auth.users.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
@@ -9,10 +12,15 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @RequestScoped
 public class UserService {
+
+  private static final ObjectMapper PREFS_MAPPER = new ObjectMapper();
+  private static final TypeReference<Map<String, String>> PREFS_TYPE = new TypeReference<>() {};
 
   @Inject
   UserDAO userDAO;
@@ -96,6 +104,70 @@ public class UserService {
   public void assertCurrentUserEquals(String username) {
     if (!authenticationContext.getCurrentUserName().equals(username)) {
       throw new InvalidAuthException("The requested action is forbidden by the permission policies");
+    }
+  }
+
+  /**
+   * Returns the current user's UI preferences as a map.
+   * When no preferences have been set (null {@code preferencesJson}),
+   * returns an empty map. Per {@code aidocs/16 U1d}.
+   *
+   * @param username the user whose preferences to load
+   * @return the preference map (never null; empty if none set)
+   * @throws InvalidPathException if the user does not exist
+   * @throws InvalidRequestException if stored JSON is malformed
+   */
+  public Map<String, String> getPreferences(String username) {
+    User user = getUser(username);
+    return parsePreferences(username, user.getPreferencesJson());
+  }
+
+  /**
+   * Applies an RFC 7396 merge-patch to the current user's preferences.
+   * Keys with non-null values are set; keys with null values are removed;
+   * keys absent from the patch are preserved. Persists the merged map and
+   * returns it. Per {@code aidocs/16 U1d}.
+   *
+   * @param username the user whose preferences to update
+   * @param patch    the merge-patch to apply (null entry removes the key)
+   * @return the resulting preference map after the patch is applied
+   * @throws InvalidPathException if the user does not exist
+   * @throws InvalidRequestException if the resulting map cannot be serialised
+   */
+  public Map<String, String> patchPreferences(String username, Map<String, String> patch) {
+    User user = getUser(username);
+    Map<String, String> current = parsePreferences(username, user.getPreferencesJson());
+
+    for (Map.Entry<String, String> entry : patch.entrySet()) {
+      if (entry.getValue() == null) {
+        current.remove(entry.getKey());
+      } else {
+        current.put(entry.getKey(), entry.getValue());
+      }
+    }
+
+    if (current.isEmpty()) {
+      user.setPreferencesJson(null);
+    } else {
+      try {
+        user.setPreferencesJson(PREFS_MAPPER.writeValueAsString(current));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialise preferences map: " + e.getMessage());
+      }
+    }
+    userDAO.createOrUpdate(user);
+    return current;
+  }
+
+  private Map<String, String> parsePreferences(String username, String json) {
+    if (json == null || json.isBlank()) {
+      return new HashMap<>();
+    }
+    try {
+      return new HashMap<>(PREFS_MAPPER.readValue(json, PREFS_TYPE));
+    } catch (JsonProcessingException e) {
+      Log.warnf("Malformed preferencesJson for user %s: %s", username, e.getMessage());
+      throw new InvalidRequestException("Stored preferences JSON is malformed for user: " + username);
     }
   }
 }
