@@ -115,6 +115,24 @@ const urlSuggestions = computed(() =>
 
     <v-alert v-if="saveError" type="error" closable>{{ saveError }}</v-alert>
 
+    <v-alert
+      v-if="!credentialsLoading && credentials.length === 0"
+      type="info"
+      variant="tonal"
+      density="compact"
+    >
+      No git credentials configured — autocomplete won't work and private repos will be inaccessible.
+      <template #append>
+        <v-btn
+          :to="'/user#git-credentials'"
+          variant="text"
+          size="small"
+        >
+          Go to profile
+        </v-btn>
+      </template>
+    </v-alert>
+
     <centered-loading-spinner v-if="isLoading" />
 
     <v-table v-else-if="gitReferences.length > 0" class="table">

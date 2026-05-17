@@ -29,6 +29,8 @@ by the CI Playwright run (see `aidocs/ops/85 §5`).
 
 | Date | ID | Area | Change | Screenshot |
 |---|---|---|---|---|
+| 2026-05-17 | QW4 | DataObject detail — Git References pane | `v-alert` (info, tonal) shown when user has no git credentials; includes "Go to profile" link to `/user#git-credentials` | — |
+| 2026-05-17 | QW5 | DataObject / Collection detail — Publish button | `v-tooltip` on hover explains persistent identifier (DOI/PID); `prepend-icon` changed to `mdi-information-outline` | — |
 | 2026-05-17 | QW1 | Header bar | "Advanced Search" nav button replaced with a 300px type-ahead `v-autocomplete`; debounced 250ms, queries collections by name, navigates to `/collections/{id}` on selection; "Advanced search →" footer link preserved in dropdown | — |
 | 2026-05-17 | QW2 | Collection sidebar | Text filter at top of sidebar; client-side filtering of data objects by name | — |
 | 2026-05-17 | QW3 | User profile (`/user`) | JupyterHub section added to ProfilePane: `v-text-field` bound to `useJupyterPreference`, Save button; persists `editor.preferredJupyter` preference via `PATCH /v2/users/me/preferences` | — |
@@ -52,8 +54,6 @@ Items in the design doc (`aidocs/ops/85`) that are not yet shipped:
 
 | ID | Summary | Gate |
 |---|---|---|
-| QW4 | Git credentials shortcut in GitReferencesPane | unblocked |
-| QW5 | Publish deep-link tooltip | unblocked |
 | UI1a | Snapshots UI (create / list / delete / diff) | V2b–V2e shipped |
 | UI2a | Templates browser + instantiation | T1a–T1f shipped |
 | UI3a | Video reference inline viewer | VID1a shipped |

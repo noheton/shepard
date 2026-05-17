@@ -88,19 +88,27 @@ function copyPid() {
 
 <template>
   <div>
-    <v-btn
-      :disabled="!props.entityAppId || isPublishing"
-      :loading="isPublishing"
-      :aria-label="ariaLabel"
-      rounded="lg"
-      class="mx-2"
-      variant="flat"
-      color="primary"
-      prepend-icon="mdi-share-variant-outline"
-      @click="openModal"
+    <v-tooltip
+      text="Publish this item to get a persistent identifier (DOI/PID) for citation."
+      location="bottom"
     >
-      Publish
-    </v-btn>
+      <template #activator="{ props: tooltipProps }">
+        <v-btn
+          v-bind="tooltipProps"
+          :disabled="!props.entityAppId || isPublishing"
+          :loading="isPublishing"
+          :aria-label="ariaLabel"
+          rounded="lg"
+          class="mx-2"
+          variant="flat"
+          color="primary"
+          prepend-icon="mdi-information-outline"
+          @click="openModal"
+        >
+          Publish
+        </v-btn>
+      </template>
+    </v-tooltip>
 
     <PublishModal
       v-if="showDialog"
