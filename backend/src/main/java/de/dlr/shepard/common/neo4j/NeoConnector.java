@@ -9,6 +9,7 @@ import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.IConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
+import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
@@ -91,6 +92,7 @@ public class NeoConnector implements IConnector {
           FileContainer.class.getPackageName(),
           FileBundleReference.class.getPackageName(),
           LabJournalEntry.class.getPackageName(),
+          Snapshot.class.getPackageName(),
           Permissions.class.getPackageName(),
           Role.class.getPackageName(),
           SemanticAnnotation.class.getPackageName(),
