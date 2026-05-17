@@ -109,9 +109,10 @@ public class VideoStreamReferenceV2Rest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
-    summary = "Upload a video file — creates a new VideoStreamReference (VID1a).",
-    description = "Multipart body with a required 'file' part. Optional 'name' query parameter. " +
-                  "ffprobe metadata is extracted automatically after upload."
+    summary = "Upload a video file and create a VideoStreamReference.",
+    description = "Multipart body. The 'file' part carries the video bytes. " +
+    "The optional 'name' query parameter sets the Reference name (defaults to the uploaded filename). " +
+    "ffprobe metadata is extracted server-side (best-effort; upload succeeds even if ffprobe is absent)."
   )
   @APIResponse(
     responseCode = "201",

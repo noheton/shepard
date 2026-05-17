@@ -94,10 +94,13 @@ public class VideoStreamReferenceService {
    *
    * <p>Steps:
    * <ol>
-   *   <li>Resolve and validate the parent DataObject.</li>
-   *   <li>Store the bytes via the active {@link FileStorage} adapter.</li>
-   *   <li>Run ffprobe on the stored bytes (probe never blocks the upload).</li>
-   *   <li>Persist the entity to Neo4j.</li>
+   *   <li>Resolve the parent DataObject by its {@code appId}.</li>
+   *   <li>Run {@link VideoProbeService#probe(InputStream)} on the temp file
+   *       supplied by the multipart layer — best-effort; never fails the upload.</li>
+   *   <li>Create a new MongoDB collection (one per Reference; GridFS-backed).</li>
+   *   <li>Store the bytes via {@link FileService#createFile}.</li>
+   *   <li>Persist the {@link VideoStreamReference} node in Neo4j.</li>
+   *   <li>Backfill {@code fileSizeBytes} from GridFS after the write.</li>
    * </ol>
    *
    * @param dataObjectAppId  parent DataObject's appId
