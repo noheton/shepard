@@ -10,7 +10,11 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.aas.services.AasShellMappingService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.v2.aas.io.AasReferenceIO;
+import de.dlr.shepard.v2.aas.io.AasReferenceIO.AasKeyIO;
 import de.dlr.shepard.v2.aas.io.AasShellIO;
 import de.dlr.shepard.v2.aas.io.AasShellIO.AssetInformationIO;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +32,9 @@ class AasShellsRestTest {
   CollectionDAO collectionDAO;
 
   @Mock
+  DataObjectDAO dataObjectDAO;
+
+  @Mock
   AasShellMappingService mappingService;
 
   @Mock
@@ -40,9 +47,11 @@ class AasShellsRestTest {
     MockitoAnnotations.openMocks(this);
     resource = new AasShellsRest();
     resource.collectionDAO = collectionDAO;
+    resource.dataObjectDAO = dataObjectDAO;
     resource.mappingService = mappingService;
     resource.authenticationContext = authenticationContext;
     when(authenticationContext.getCurrentUserName()).thenReturn("alice");
+    when(dataObjectDAO.findTopLevelByCollectionAppId(any())).thenReturn(List.of());
   }
 
   private Collection makeCollection(String appId, String name) {
@@ -167,7 +176,7 @@ class AasShellsRestTest {
     Collection c = makeCollection("col-aaa-111", "Alpha");
     AasShellIO shell = makeShell("col-aaa-111");
     when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
-    when(mappingService.toShell(c)).thenReturn(shell);
+    when(mappingService.toShell(eq(c), eq(List.of()))).thenReturn(shell);
 
     var r = resource.getShell("col-aaa-111");
 
@@ -182,7 +191,7 @@ class AasShellsRestTest {
     Collection c = makeCollection("col-aaa-111", "Alpha");
     AasShellIO shell = makeShell("col-aaa-111");
     when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
-    when(mappingService.toShell(c)).thenReturn(shell);
+    when(mappingService.toShell(eq(c), eq(List.of()))).thenReturn(shell);
 
     var r = resource.getShell(encoded);
 
@@ -207,5 +216,83 @@ class AasShellsRestTest {
     resource.getShell("col-aaa-111");
 
     verify(collectionDAO).findByAppId(eq("col-aaa-111"), eq("bob"));
+  }
+
+  @Test
+  void getShellPopulatesSubmodelsFromDataObjects() {
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    DataObject d = org.mockito.Mockito.mock(DataObject.class);
+    org.mockito.Mockito.when(d.getAppId()).thenReturn("do-111");
+    AasReferenceIO ref = new AasReferenceIO("ExternalReference",
+        List.of(new AasKeyIO("Submodel", "urn:shepard:dataobject:do-111")));
+    AasShellIO shellWithSubmodels = new AasShellIO(
+        "urn:shepard:collection:col-aaa-111", "Alpha",
+        new AssetInformationIO("Instance", "urn:shepard:asset:col-aaa-111"),
+        null, List.of(ref));
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(List.of(d));
+    when(mappingService.toShell(eq(c), eq(List.of(d)))).thenReturn(shellWithSubmodels);
+
+    var r = resource.getShell("col-aaa-111");
+
+    assertEquals(200, r.getStatus());
+    AasShellIO body = (AasShellIO) r.getEntity();
+    assertEquals(1, body.getSubmodels().size());
+    assertEquals("urn:shepard:dataobject:do-111", body.getSubmodels().get(0).keys().get(0).value());
+  }
+
+  // --- GET /v2/aas/shells/{aasId}/submodels (AAS1b Commit 2) ---
+
+  @Test
+  void listSubmodelsReturns404WhenShellNotFound() {
+    when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
+
+    var r = resource.listSubmodels("no-such-id");
+
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void listSubmodelsReturnsEmptyListForCollectionWithNoDataObjects() {
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(List.of());
+    when(mappingService.toSubmodelRefs(List.of())).thenReturn(List.of());
+
+    var r = resource.listSubmodels("col-aaa-111");
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<AasReferenceIO> body = (List<AasReferenceIO>) r.getEntity();
+    assertEquals(0, body.size());
+  }
+
+  @Test
+  void listSubmodelsReturnsMappedReferences() {
+    Collection c = makeCollection("col-aaa-111", "Alpha");
+    DataObject d = org.mockito.Mockito.mock(DataObject.class);
+    AasReferenceIO ref = new AasReferenceIO("ExternalReference",
+        List.of(new AasKeyIO("Submodel", "urn:shepard:dataobject:do-111")));
+    when(collectionDAO.findByAppId(eq("col-aaa-111"), any())).thenReturn(c);
+    when(dataObjectDAO.findTopLevelByCollectionAppId(eq("col-aaa-111"))).thenReturn(List.of(d));
+    when(mappingService.toSubmodelRefs(List.of(d))).thenReturn(List.of(ref));
+
+    var r = resource.listSubmodels("col-aaa-111");
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<AasReferenceIO> body = (List<AasReferenceIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("ExternalReference", body.get(0).type());
+  }
+
+  @Test
+  void listSubmodelsPassesUsernameToDAO() {
+    when(authenticationContext.getCurrentUserName()).thenReturn("carol");
+    when(collectionDAO.findByAppId(any(), any())).thenReturn(null);
+
+    resource.listSubmodels("col-aaa-111");
+
+    verify(collectionDAO).findByAppId(eq("col-aaa-111"), eq("carol"));
   }
 }

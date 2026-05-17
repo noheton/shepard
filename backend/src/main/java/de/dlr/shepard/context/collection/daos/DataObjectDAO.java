@@ -112,6 +112,30 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * Returns all non-deleted, top-level DataObjects for the Collection identified by
+   * {@code collectionAppId}. Top-level means the DataObject has no parent DataObject
+   * (i.e. is a direct child of the Collection, not nested inside another DataObject).
+   *
+   * <p>Used by the AAS1b submodels endpoint ({@code GET /v2/aas/shells/{aasId}/submodels})
+   * to project top-level DataObjects as IDTA AAS v3 Submodel references.
+   *
+   * @param collectionAppId the {@code appId} of the parent Collection
+   * @return list of top-level DataObjects; empty when the Collection has none
+   */
+  public List<DataObject> findTopLevelByCollectionAppId(String collectionAppId) {
+    List<DataObject> result = new ArrayList<>();
+    findByQuery(
+      "MATCH (c:Collection {appId: $collectionAppId, deleted: FALSE})" +
+      "-[:has_dataobject]->(d:DataObject {deleted: FALSE})" +
+      " WHERE NOT EXISTS((d)<-[:has_child]-(:DataObject {deleted: FALSE}))" +
+      " WITH d " +
+      CypherQueryHelper.getReturnPart("d"),
+      Map.of("collectionAppId", collectionAppId)
+    ).forEach(result::add);
+    return result;
+  }
+
+  /**
    * Deletes the has_successor relation between the predecessor and the successor dataobjects in neo4j
    */
   public void deleteHasSuccessorRelation(long predecessorShepardId, long successorShepardId) {

@@ -3,9 +3,14 @@ package de.dlr.shepard.aas.services;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.v2.aas.io.AasReferenceIO;
 import de.dlr.shepard.v2.aas.io.AasShellIO;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,9 +70,45 @@ class AasShellMappingServiceTest {
   }
 
   @Test
-  void submodelsAlwaysEmpty() {
+  void submodelsEmptyWhenNoDataObjects() {
     Collection c = buildCollection("x", "Name", null);
     assertTrue(service.toShell(c).getSubmodels().isEmpty());
+  }
+
+  @Test
+  void toShellWithDataObjectsPopulatesSubmodels() {
+    Collection c = buildCollection("col-aaa", "Alpha", null);
+    DataObject d1 = mock(DataObject.class);
+    DataObject d2 = mock(DataObject.class);
+    when(d1.getAppId()).thenReturn("do-111");
+    when(d2.getAppId()).thenReturn("do-222");
+
+    AasShellIO shell = service.toShell(c, List.of(d1, d2));
+
+    assertEquals(2, shell.getSubmodels().size());
+    AasReferenceIO ref1 = shell.getSubmodels().get(0);
+    assertEquals("ExternalReference", ref1.type());
+    assertEquals(1, ref1.keys().size());
+    assertEquals("Submodel", ref1.keys().get(0).type());
+    assertEquals("urn:shepard:dataobject:do-111", ref1.keys().get(0).value());
+  }
+
+  @Test
+  void toSubmodelRefsBuildsCorrectShape() {
+    DataObject d = mock(DataObject.class);
+    when(d.getAppId()).thenReturn("do-abc");
+
+    List<AasReferenceIO> refs = service.toSubmodelRefs(List.of(d));
+
+    assertEquals(1, refs.size());
+    assertEquals("ExternalReference", refs.get(0).type());
+    assertEquals("Submodel", refs.get(0).keys().get(0).type());
+    assertEquals("urn:shepard:dataobject:do-abc", refs.get(0).keys().get(0).value());
+  }
+
+  @Test
+  void toSubmodelRefsEmptyForNoDataObjects() {
+    assertTrue(service.toSubmodelRefs(List.of()).isEmpty());
   }
 
   @ParameterizedTest

@@ -7,13 +7,20 @@ import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * Wire shape for one IDTA AAS v3 AssetAdministrationShell (AAS1a).
+ * Wire shape for one IDTA AAS v3 AssetAdministrationShell (AAS1a/AAS1b).
  *
  * <p>Minimal compliant shape: {@code id}, {@code idShort}, {@code assetInformation},
- * optional {@code description} langStringSet, and an empty {@code submodels} list
- * (AAS1b will populate submodels from DataObject payloads).
+ * optional {@code description} langStringSet, and a {@code submodels} list of
+ * {@link AasReferenceIO} objects.
  *
- * <p>See {@code aidocs/52 §4a} for the AAS1a scope definition.
+ * <p>AAS1a returns an empty {@code submodels} list. AAS1b populates it from
+ * top-level DataObject payloads on single-Shell GET and the submodels endpoint.
+ *
+ * <p>Note: {@code submodels} type changed from {@code List<String>} to
+ * {@code List<AasReferenceIO>} in AAS1b Commit 2 — breaking on the {@code /v2/}
+ * surface (permitted per CLAUDE.md API-version policy; was always empty in AAS1a).
+ *
+ * <p>See {@code aidocs/integrations/52-aas-backend-integration.md §4a} for the scope definition.
  */
 @Data
 @NoArgsConstructor
@@ -41,9 +48,10 @@ public class AasShellIO {
   private List<LangStringIO> description;
 
   @Schema(required = true,
-      description = "Submodel references. Empty in AAS1a; populated by AAS1b when DataObject " +
-          "payloads are mapped to Submodels.")
-  private List<String> submodels;
+      description = "Submodel references (IDTA AAS v3 Reference objects). Empty in AAS1a; " +
+          "populated by AAS1b from top-level DataObjects on single-Shell GET. " +
+          "Type changed from List<String> to List<AasReference> in AAS1b Commit 2.")
+  private List<AasReferenceIO> submodels;
 
   /** IDTA AAS v3 AssetInformation — minimal form for AAS1a. */
   @Data

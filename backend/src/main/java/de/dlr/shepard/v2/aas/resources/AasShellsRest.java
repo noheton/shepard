@@ -4,7 +4,10 @@ import de.dlr.shepard.aas.services.AasShellMappingService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.v2.aas.io.AasReferenceIO;
 import de.dlr.shepard.v2.aas.io.AasShellIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -45,6 +48,9 @@ public class AasShellsRest {
 
   @Inject
   CollectionDAO collectionDAO;
+
+  @Inject
+  DataObjectDAO dataObjectDAO;
 
   @Inject
   AasShellMappingService mappingService;
@@ -113,7 +119,40 @@ public class AasShellsRest {
     if (collection == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    return Response.ok(mappingService.toShell(collection)).build();
+    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
+    return Response.ok(mappingService.toShell(collection, dataObjects)).build();
+  }
+
+  @GET
+  @Path("/{aasId}/submodels")
+  @Operation(
+      summary = "List Submodel references for a Shell (AAS1b).",
+      description = "Returns one IDTA AAS v3 Reference per top-level DataObject of the Collection " +
+          "identified by `{aasId}` (base64url-encoded Shell IRI or bare appId). " +
+          "Each Reference has `type=ExternalReference` and a single Submodel key with value " +
+          "`urn:shepard:dataobject:{appId}`. Returns 404 when the Shell does not exist or " +
+          "the caller lacks read access (404-on-no-read discipline). " +
+          "See `aidocs/integrations/52-aas-backend-integration.md §4b`.")
+  @APIResponse(
+      responseCode = "200",
+      description = "Submodel references for the requested Shell. Empty when the Collection " +
+          "has no top-level DataObjects.",
+      content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = AasReferenceIO.class)))
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "404", description = "Shell not found or caller lacks read access.")
+  public Response listSubmodels(
+      @Parameter(description = "Base64url-encoded Shell IRI per IDTA-01002-3-2 §4.3, " +
+          "or bare Collection appId.")
+      @PathParam("aasId") String aasId) {
+
+    String username = authenticationContext.getCurrentUserName();
+    String appId = resolveAppId(aasId);
+    Collection collection = collectionDAO.findByAppId(appId, username);
+    if (collection == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    List<DataObject> dataObjects = dataObjectDAO.findTopLevelByCollectionAppId(appId);
+    return Response.ok(mappingService.toSubmodelRefs(dataObjects)).build();
   }
 
   /**
