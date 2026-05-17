@@ -4,6 +4,7 @@ import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.storage.FileStorage;
+import de.dlr.shepard.storage.PresignTtlValidator;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.v2.filecontainer.io.PresignedDownloadUrlIO;
 import de.dlr.shepard.v2.filecontainer.io.PresignedUploadRequestIO;
@@ -23,7 +24,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
-import java.time.Duration;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -61,11 +61,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "File containers — presigned URLs (FS1c)")
 public class FileContainerPresignedUrlRest {
 
-  static final Duration UPLOAD_TTL = Duration.ofMinutes(15);
-  static final Duration DOWNLOAD_TTL = Duration.ofMinutes(5);
-
   @Inject
   FileContainerService fileContainerService;
+
+  @Inject
+  PresignTtlValidator ttlValidator;
 
   // ─── upload-url ───────────────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ public class FileContainerPresignedUrlRest {
     FileContainer container = fileContainerService.getContainerByAppId(containerAppId);
     FileStorage.PresignedPut result;
     try {
-      result = fileContainerService.presignedUploadUrl(container.getId(), request.getFileName(), UPLOAD_TTL);
+      result = fileContainerService.presignedUploadUrl(container.getId(), request.getFileName(), ttlValidator.effectiveUploadTtl());
     } catch (StorageException se) {
       Log.errorf("presignedUploadUrl failed for container %s: %s", containerAppId, se.getMessage());
       throw new InternalServerErrorException("Storage error: " + se.getMessage());
@@ -187,14 +187,14 @@ public class FileContainerPresignedUrlRest {
     FileContainer container = fileContainerService.getContainerByAppId(containerAppId);
     URI downloadUrl;
     try {
-      downloadUrl = fileContainerService.presignedDownloadUrl(container.getId(), oid, DOWNLOAD_TTL);
+      downloadUrl = fileContainerService.presignedDownloadUrl(container.getId(), oid, ttlValidator.effectiveDownloadTtl());
     } catch (StorageException se) {
       Log.errorf("presignedDownloadUrl failed for container %s oid %s: %s", containerAppId, oid, se.getMessage());
       throw new InternalServerErrorException("Storage error: " + se.getMessage());
     }
     return Response.ok(new PresignedDownloadUrlIO(
       downloadUrl.toString(),
-      java.time.Instant.now().plus(DOWNLOAD_TTL)
+      java.time.Instant.now().plus(ttlValidator.effectiveDownloadTtl())
     )).build();
   }
 }

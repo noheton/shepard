@@ -7,6 +7,7 @@ import de.dlr.shepard.context.export.ExportSelection;
 import de.dlr.shepard.context.export.ExportService;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.PresignTtlValidator;
 import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.v2.collection.io.ExportUrlIO;
 import io.quarkus.logging.Log;
@@ -25,7 +26,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,8 +64,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Collections — presigned export URL (FS1g)")
 public class CollectionExportUrlRest {
 
-  static final Duration EXPORT_DOWNLOAD_TTL = Duration.ofMinutes(30);
-
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
 
@@ -77,6 +75,9 @@ public class CollectionExportUrlRest {
 
   @Inject
   FileStorageRegistry fileStorageRegistry;
+
+  @Inject
+  PresignTtlValidator ttlValidator;
 
   @POST
   @Path("/{appId}/export-url")
@@ -146,7 +147,7 @@ public class CollectionExportUrlRest {
 
     Optional<URI> presigned;
     try {
-      presigned = storage.presignedExportUrl(exportKey, zipBytes, fileName, EXPORT_DOWNLOAD_TTL);
+      presigned = storage.presignedExportUrl(exportKey, zipBytes, fileName, ttlValidator.effectiveExportTtl());
     } catch (StorageException e) {
       Log.errorf("presignedExportUrl failed for collection %s: %s", collectionAppId, e.getMessage());
       throw new InternalServerErrorException("Storage error: " + e.getMessage());
@@ -159,7 +160,7 @@ public class CollectionExportUrlRest {
       );
     }
 
-    Instant expiresAt = Instant.now().plus(EXPORT_DOWNLOAD_TTL);
+    Instant expiresAt = Instant.now().plus(ttlValidator.effectiveExportTtl());
     return Response.ok(new ExportUrlIO(presigned.get().toString(), fileName, expiresAt)).build();
   }
 
