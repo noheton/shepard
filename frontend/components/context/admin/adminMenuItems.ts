@@ -6,6 +6,7 @@ export enum AdminFragments {
   TEMPLATES = "templates",
   SEMANTIC_REPOSITORIES = "semantic-repositories",
   USER_GROUPS = "user-groups",
+  INSTANCE_ROR = "instance-ror",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -33,5 +34,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "User Groups",
     fragment: AdminFragments.USER_GROUPS,
     icon: "mdi-account-multiple-outline",
+  },
+  {
+    name: "Research Organization",
+    fragment: AdminFragments.INSTANCE_ROR,
+    icon: "mdi-office-building",
   },
 ];

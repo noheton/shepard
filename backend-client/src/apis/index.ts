@@ -3,6 +3,7 @@
 export * from './AdminFeaturesApi';
 export * from './AdminMetricsApi';
 export * from './ShepardTemplateApi';
+export * from './CollectionTemplateApi';
 export * from './CollectionSnapshotApi';
 export * from './SnapshotApi';
 export * from './ApikeyApi';

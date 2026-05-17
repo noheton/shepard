@@ -5,6 +5,7 @@ import {
 } from "~/components/context/admin/adminMenuItems";
 import SemanticRepositoryPane from "~/components/context/configuration/SemanticRepositoryPane.vue";
 import UserGroupsPane from "~/components/context/configuration/UserGroupsPane.vue";
+import InstanceRorPane from "~/components/context/admin/InstanceRorPane.vue";
 
 useHead({
   title: "Admin | shepard",
@@ -42,6 +43,9 @@ const { routeFragment } = useRouteFragment();
     />
     <UserGroupsPane
       v-if="routeFragment === AdminFragments.USER_GROUPS"
+    />
+    <InstanceRorPane
+      v-if="routeFragment === AdminFragments.INSTANCE_ROR"
     />
   </PaneLayout>
 </template>

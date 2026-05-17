@@ -365,8 +365,12 @@ The four things on the near horizon, in priority order:
    the `/admin` page — tabular list with kind/tag/retired filters,
    create/edit dialogs with JSON body editor, retire with confirmation.
    The demo seed now seeds a "Rocket Engine Hot-Fire Test Run" template
-   automatically. Next: instantiate-from-template in the collection
-   creation dialog (CC3), process design + runtime (PR1).
+   automatically. **T1e2 shipped**: template picker is now the **default
+   step** when creating a DataObject or Collection — the blank form is
+   the secondary "Start from blank" path. DataObject creation calls the
+   T1e server-side instantiation endpoint; Collection creation pre-fills
+   the form and records the `:USES_TEMPLATE` edge. Next: process design +
+   runtime (PR1).
 4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
    **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
    edit dialog in-flight. RO-Crate exports now cite authors when the

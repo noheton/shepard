@@ -4,6 +4,7 @@ import { useShepardApi } from "~/composables/common/api/useShepardApi";
 
 const props = defineProps<{
   collectionId: number;
+  collectionAppId?: string;
   dataObjectId: number;
   parentId?: number;
   itemName: string;
@@ -78,6 +79,7 @@ async function deleteItem() {
     v-if="showCreateDialog"
     v-model:show-dialog="showCreateDialog"
     :collection-id="collectionId"
+    :collection-app-id="collectionAppId"
     :parent-id="dataObjectId"
     @data-object-created="emit('data-object-created')"
   />

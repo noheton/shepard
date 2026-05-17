@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { CollectionApi, PermissionType } from "@dlr-shepard/backend-client";
+import {
+  CollectionApi,
+  CollectionTemplateApi,
+  PermissionType,
+  ShepardTemplateApi,
+  type ShepardTemplateIO,
+} from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { CollectionToCreate } from "./collectionToCreate";
 
 const showDialog = defineModel<boolean>("showDialog", {
@@ -10,6 +17,37 @@ const showDialog = defineModel<boolean>("showDialog", {
 const emit = defineEmits<{
   (e: "collection-created", value: number): void;
 }>();
+
+// ── Template picker ──────────────────────────────────────────────────────────
+
+type Mode = "picker" | "form";
+const mode = ref<Mode>("form");
+const collectionTemplates = ref<ShepardTemplateIO[]>([]);
+const isLoadingTemplates = ref(true);
+const selectedTemplate = ref<ShepardTemplateIO | null>(null);
+
+useV2ShepardApi(ShepardTemplateApi)
+  .value.getTemplates({ kind: "COLLECTION_RECIPE" })
+  .then(templates => {
+    collectionTemplates.value = templates.filter(t => !t.retired);
+    if (collectionTemplates.value.length > 0) mode.value = "picker";
+  })
+  .catch(() => {
+    /* stay in form mode */
+  })
+  .finally(() => {
+    isLoadingTemplates.value = false;
+  });
+
+function onTemplateSelected(template: ShepardTemplateIO) {
+  selectedTemplate.value = template;
+  if (template.description) {
+    collectionToCreate.value.description = template.description;
+  }
+  mode.value = "form";
+}
+
+// ── Blank / template-prefilled form ─────────────────────────────────────────
 
 const collectionToCreate = ref<CollectionToCreate>({
   name: "",
@@ -26,18 +64,15 @@ async function saveChanges() {
   if (isValid.value === false) return;
   const collectionApi = useShepardApi(CollectionApi);
 
-  const collectionId = await collectionApi.value
-    .createCollection({
-      collection: collectionToCreate.value,
-    })
-    .then(response => {
-      return response.id;
-    })
+  const created = await collectionApi.value
+    .createCollection({ collection: collectionToCreate.value })
     .catch(error => {
       handleError(error, "updateCollection");
       return undefined;
     });
-  if (!collectionId) return;
+  if (!created) return;
+
+  const collectionId = created.id;
 
   const currentPermissions = await collectionApi.value
     .getCollectionPermissions({ collectionId })
@@ -45,36 +80,54 @@ async function saveChanges() {
       handleError(error, "getPermissions");
       return undefined;
     });
-
   if (!currentPermissions) return;
 
   const permissionsUpdateSuccess = await collectionApi.value
     .editCollectionPermissions({
-      collectionId: collectionId,
-      permissions: {
-        ...currentPermissions,
-        permissionType: permissionType.value,
-      },
+      collectionId,
+      permissions: { ...currentPermissions, permissionType: permissionType.value },
     })
-    .then(_ => {
-      return true;
-    })
+    .then(() => true)
     .catch(error => {
       handleError(error, "updatePermissions");
       return false;
     });
   if (!permissionsUpdateSuccess) return;
 
-  emitSuccess(
-    `Successfully created collection "${collectionToCreate.value.name}"`,
-  );
+  if (selectedTemplate.value) {
+    const collectionAppId = (created as unknown as { appId?: string | null }).appId;
+    if (collectionAppId) {
+      await useV2ShepardApi(CollectionTemplateApi)
+        .value.recordTemplateUsage({
+          collectionAppId,
+          templateAppId: selectedTemplate.value.appId,
+        })
+        .catch(() => {
+          /* non-critical — don't block navigation */
+        });
+    }
+  }
+
+  emitSuccess(`Successfully created collection "${collectionToCreate.value.name}"`);
   emit("collection-created", collectionId);
   showDialog.value = false;
 }
 </script>
 
 <template>
-  <v-form ref="form" v-model="isValid">
+  <!-- Template picker: shown when COLLECTION_RECIPE templates exist -->
+  <TemplatePickerDialog
+    v-if="mode === 'picker'"
+    v-model:show-dialog="showDialog"
+    title="Create Collection"
+    :templates="collectionTemplates"
+    :loading="isLoadingTemplates"
+    @select="onTemplateSelected"
+    @start-blank="mode = 'form'"
+  />
+
+  <!-- Form: shown after template pick (pre-filled) or "Start from blank" -->
+  <v-form v-else-if="mode === 'form'" ref="form" v-model="isValid">
     <StepperDialog
       v-model:show-dialog="showDialog"
       title="Create Collection"

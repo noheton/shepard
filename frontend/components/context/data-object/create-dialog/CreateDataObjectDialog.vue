@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { DataObjectApi } from "@dlr-shepard/backend-client";
+import {
+  CollectionTemplateApi,
+  DataObjectApi,
+  type ShepardTemplateIO,
+} from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
 
 interface CreateDataObjectDialogProps {
   collectionId: number;
+  collectionAppId?: string;
   parentId?: number;
 }
 const props = defineProps<CreateDataObjectDialogProps>();
@@ -15,6 +21,55 @@ const showDialog = defineModel<boolean>("showDialog", {
 const emit = defineEmits(["data-object-created"]);
 
 const router = useRouter();
+
+// ── Template picker ──────────────────────────────────────────────────────────
+
+type Mode = "picker" | "form";
+const mode = ref<Mode>("form");
+const allowedTemplates = ref<ShepardTemplateIO[]>([]);
+const isLoadingTemplates = ref(false);
+const isInstantiating = ref(false);
+
+if (props.collectionAppId) {
+  isLoadingTemplates.value = true;
+  mode.value = "picker";
+  useV2ShepardApi(CollectionTemplateApi)
+    .value.listAllowedTemplates({ collectionAppId: props.collectionAppId })
+    .then(templates => {
+      allowedTemplates.value = templates;
+      if (templates.length === 0) mode.value = "form";
+    })
+    .catch(() => {
+      mode.value = "form";
+    })
+    .finally(() => {
+      isLoadingTemplates.value = false;
+    });
+}
+
+async function onTemplateSelected(template: ShepardTemplateIO) {
+  if (!props.collectionAppId) return;
+  isInstantiating.value = true;
+  try {
+    const created = await useV2ShepardApi(CollectionTemplateApi)
+      .value.instantiateDataObject({
+        collectionAppId: props.collectionAppId,
+        templateAppId: template.appId,
+      });
+    emitSuccess(`Created "${created.name}" from template "${template.name}"`);
+    emit("data-object-created");
+    router.push(
+      collectionsPath + props.collectionId + dataObjectsPathFragment + created.id,
+    );
+    showDialog.value = false;
+  } catch (error) {
+    handleError(error, "instantiateDataObject");
+  } finally {
+    isInstantiating.value = false;
+  }
+}
+
+// ── Blank form ───────────────────────────────────────────────────────────────
 
 const dataObjectToCreate = ref<DataObjectToCreate>({
   description: "",
@@ -39,15 +94,12 @@ async function createDataObject() {
       dataObject: {
         ...dataObjectToSave,
         predecessorIds: uniqueNumbersOf(
-          // clean up possible remaining placeholder entries
           dataObjectToSave.predecessorIds?.filter(entry => entry != -1) ?? [],
         ),
       },
     })
     .then(response => {
-      emitSuccess(
-        `Successfully created data object "${dataObjectToSave.name}"`,
-      );
+      emitSuccess(`Successfully created data object "${dataObjectToSave.name}"`);
       emit("data-object-created");
       router.push(
         collectionsPath +
@@ -64,7 +116,20 @@ async function createDataObject() {
 </script>
 
 <template>
-  <v-form v-if="!!dataObjectToCreate" ref="form" v-model="isValid">
+  <!-- Template picker: default when allowed templates exist -->
+  <TemplatePickerDialog
+    v-if="mode === 'picker'"
+    v-model:show-dialog="showDialog"
+    title="Create Data Object"
+    :templates="allowedTemplates"
+    :loading="isLoadingTemplates"
+    :is-instantiating="isInstantiating"
+    @select="onTemplateSelected"
+    @start-blank="mode = 'form'"
+  />
+
+  <!-- Blank form: fallback or after "Start from blank" -->
+  <v-form v-else-if="mode === 'form'" ref="form" v-model="isValid">
     <StepperDialog
       v-model:show-dialog="showDialog"
       title="Create Data Object"

@@ -265,6 +265,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
             <CollectionSidebarItemContextMenu
               v-if="isAllowedToEditCollection"
               :collection-id="routeParams.collectionId"
+              :collection-app-id="(collection as unknown as { appId?: string | null })?.appId ?? undefined"
               :data-object-id="item.id"
               :parent-id="item.parentId"
               :item-name="item.title"
@@ -327,6 +328,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
     :collection-id="routeParams.collectionId"
+    :collection-app-id="(collection as unknown as { appId?: string | null })?.appId ?? undefined"
     @data-object-created="refreshItems"
   />
 
