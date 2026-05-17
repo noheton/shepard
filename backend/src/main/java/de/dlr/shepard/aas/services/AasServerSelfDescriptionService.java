@@ -46,9 +46,8 @@ public class AasServerSelfDescriptionService {
 
   public AasServerSelfDescriptionIO describe() {
     Map<String, String> endpoints = new LinkedHashMap<>();
-    // AAS1a will fill these in when Shell / Submodel repository surfaces ship.
-    // Today: only the well-known endpoint itself exists, but advertising it
-    // back is redundant (the client already knows it — they just fetched it).
+    // AAS1a: Shell repository listing endpoint.
+    endpoints.put("shells", "/v2/aas/shells");
 
     List<String> supportedTemplates = templateDAO
       .list(AAS_SUBMODEL_TEMPLATE_KIND, false)
