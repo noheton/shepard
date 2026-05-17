@@ -124,6 +124,17 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     return result;
   }
 
+  /** Returns the total number of non-deleted Collections (permission-agnostic). */
+  public long countAll() {
+    var result = session.query(
+      Long.class,
+      "MATCH (c:Collection) WHERE (c.deleted IS NULL OR c.deleted = false) RETURN COUNT(c)",
+      Map.of()
+    );
+    var iter = result.iterator();
+    return iter.hasNext() ? iter.next() : 0L;
+  }
+
   private boolean matchName(Collection col, String name) {
     return name == null || col.getName().equalsIgnoreCase(name);
   }

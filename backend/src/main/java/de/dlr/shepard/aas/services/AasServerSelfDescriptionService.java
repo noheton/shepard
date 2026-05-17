@@ -1,5 +1,6 @@
 package de.dlr.shepard.aas.services;
 
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.v2.aas.io.AasServerSelfDescriptionIO;
 import jakarta.enterprise.context.RequestScoped;
@@ -19,13 +20,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  *   <li>{@code enabled} from {@code shepard.aas.enabled}</li>
  *   <li>{@code aasApiProfile} from {@code shepard.aas.api-profile}
  *       (default {@code Submodel-Repository-Read-3.1})</li>
- *   <li>{@code endpoints} — currently always empty; populated by
- *       AAS1a when the Shell- / Submodel-repository surface lands</li>
+ *   <li>{@code endpoints} — {@code /v2/aas/shells} (AAS1a)</li>
  *   <li>{@code supportedSubmodelTemplates} — names of non-retired
  *       {@code ShepardTemplate} rows with
  *       {@code templateKind=AAS_SUBMODEL_TEMPLATE}</li>
- *   <li>{@code shellCount} — always 0 until AAS1a ships an
- *       {@code :AssetAdministrationShell} entity</li>
+ *   <li>{@code shellCount} — total non-deleted Collection count
+ *       (permission-agnostic; one Shell per Collection per AAS1a)</li>
  *   <li>{@code registryRegistrations} — empty until AAS1-reg lands</li>
  * </ul>
  */
@@ -34,6 +34,9 @@ public class AasServerSelfDescriptionService {
 
   static final String AAS_SUBMODEL_TEMPLATE_KIND = "AAS_SUBMODEL_TEMPLATE";
   static final String DEFAULT_API_PROFILE = "Submodel-Repository-Read-3.1";
+
+  @Inject
+  CollectionDAO collectionDAO;
 
   @Inject
   ShepardTemplateDAO templateDAO;
@@ -62,8 +65,7 @@ public class AasServerSelfDescriptionService {
       apiProfile,
       endpoints,
       supportedTemplates,
-      // shellCount: 0 until AAS1a ships :AssetAdministrationShell.
-      0L,
+      collectionDAO.countAll(),
       // AAS1-reg fills this in once the outbox is wired.
       List.of()
     );

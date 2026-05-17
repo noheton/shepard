@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import java.util.List;
@@ -17,6 +18,9 @@ import org.mockito.MockitoAnnotations;
 class AasServerSelfDescriptionServiceTest {
 
   @Mock
+  CollectionDAO collectionDAO;
+
+  @Mock
   ShepardTemplateDAO templateDAO;
 
   AasServerSelfDescriptionService service;
@@ -25,9 +29,11 @@ class AasServerSelfDescriptionServiceTest {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     service = new AasServerSelfDescriptionService();
+    service.collectionDAO = collectionDAO;
     service.templateDAO = templateDAO;
     service.enabled = false;
     service.apiProfile = AasServerSelfDescriptionService.DEFAULT_API_PROFILE;
+    when(collectionDAO.countAll()).thenReturn(0L);
   }
 
   @Test
@@ -37,7 +43,7 @@ class AasServerSelfDescriptionServiceTest {
     assertFalse(io.isEnabled());
     assertEquals("Submodel-Repository-Read-3.1", io.getAasApiProfile());
     assertEquals(0L, io.getShellCount());
-    assertTrue(io.getEndpoints().isEmpty());
+    assertFalse(io.getEndpoints().isEmpty());
     assertTrue(io.getSupportedSubmodelTemplates().isEmpty());
     assertTrue(io.getRegistryRegistrations().isEmpty());
   }
@@ -57,9 +63,31 @@ class AasServerSelfDescriptionServiceTest {
   }
 
   @Test
+  void shellCountReflectsCollectionCount() {
+    when(collectionDAO.countAll()).thenReturn(42L);
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    assertEquals(42L, service.describe().getShellCount());
+  }
+
+  @Test
+  void shellCountZeroWhenNoCollections() {
+    when(collectionDAO.countAll()).thenReturn(0L);
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    assertEquals(0L, service.describe().getShellCount());
+  }
+
+  @Test
+  void shellsEndpointAdvertised() {
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    var endpoints = service.describe().getEndpoints();
+    assertTrue(endpoints.containsKey("shells"), "shells endpoint must be advertised");
+    assertEquals("/v2/aas/shells", endpoints.get("shells"));
+  }
+
+  @Test
   void supportedTemplatesSourcedFromAasSubmodelTemplates() {
     // Service must filter by templateKind=AAS_SUBMODEL_TEMPLATE — other
-    // kinds (COLLECTION_RECIPE etc.) leak through this endpoint would be
+    // kinds (COLLECTION_RECIPE etc.) leaking through this endpoint would be
     // a categorical bug (they're not AAS submodels).
     when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false))
       .thenReturn(
@@ -91,16 +119,9 @@ class AasServerSelfDescriptionServiceTest {
   @Test
   void retiredTemplatesExcluded() {
     // The DAO call passes includeRetired=false; retired rows must not
-    // appear in the supported list (capability advertising = current
-    // state only).
+    // appear in the supported list (capability advertising = current state only).
     service.describe();
     org.mockito.Mockito.verify(templateDAO).list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false);
-  }
-
-  @Test
-  void shellCountIsZeroUntilAas1aShips() {
-    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
-    assertEquals(0L, service.describe().getShellCount());
   }
 
   @Test
