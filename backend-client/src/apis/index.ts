@@ -2,6 +2,9 @@
 /* eslint-disable */
 export * from './AdminFeaturesApi';
 export * from './AdminMetricsApi';
+export * from './ShepardTemplateApi';
+export * from './CollectionSnapshotApi';
+export * from './SnapshotApi';
 export * from './ApikeyApi';
 export * from './GitCredentialsApi';
 export * from './GitReferenceApi';

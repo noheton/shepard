@@ -3,6 +3,7 @@ import type { MenuEntry } from "~/components/common/pane-menu/menuListTypes";
 export enum AdminFragments {
   FEATURE_TOGGLES = "feature-toggles",
   INSTANCE_HEALTH = "instance-health",
+  TEMPLATES = "templates",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -15,5 +16,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Instance Health",
     fragment: AdminFragments.INSTANCE_HEALTH,
     icon: "mdi-heart-pulse",
+  },
+  {
+    name: "Templates",
+    fragment: AdminFragments.TEMPLATES,
+    icon: "mdi-file-document-multiple-outline",
   },
 ];
