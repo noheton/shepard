@@ -1,12 +1,13 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b (+ ONT1a + ONT1b additions) — manifest of common ontologies",
+    "N1b (+ ONT1a + ONT1b + AI1r additions) — manifest of common ontologies",
     "pre-seeded into the internal neosemantics (n10s) semantic",
-    "repository on shepard startup. Currently ten bundles (eight from",
+    "repository on shepard startup. Currently eleven bundles (eight from",
     "N1b plus the OBO Relation Ontology added by ONT1a, see",
     "aidocs/58 §6, plus the NFDI4Ing metadata4ing ontology added by",
-    "ONT1b — engineering-research extension of PROV-O). Each",
+    "ONT1b, plus the shepard-experiment domain ontology added by AI1r).",
+    "Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
     "import a file whose hash drifted from this manifest. To refresh a",
@@ -193,6 +194,22 @@
       "retrievedAt": "2026-05-13",
       "sha256": "9c00942c02309ef47e7e444f288ecc3d02a747aac0c31cf409a87d8f7ae35979",
       "sizeBytes": 2746,
+      "required": false
+    },
+    {
+      "id": "shepard-experiment",
+      "name": "Shepard Experiment Ontology",
+      "file": "shepard-experiment.ttl",
+      "iriPrefix": "https://shepard.dlr.de/ontologies/experiment#",
+      "format": "Turtle",
+      "canonicalUrl": "https://shepard.dlr.de/ontologies/experiment",
+      "sourceRationale": "Shepard-authored domain ontology (AI1r). Seven SKOS ConceptSchemes covering experiment life-cycle phases (with prov:Activity subclassing for PROV1-series provenance stamping), measurement roles, quality flags, defect types, inspection methods, manufacturing processes, and sensor roles. Designed for annotation of shepard DataObjects and References in engineering and materials-research contexts. The stub is self-contained and authoritative — no canonical upstream URL; operators extend via `shepard-admin semantic ontologies upload` (N1c2).",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "1.0.0",
+      "retrievedAt": "2026-05-17",
+      "sha256": "5c6c77ba6e2f7d668bb735f60276ef2b0c77cf920809152a3c65d6b139cc3517",
+      "sizeBytes": 18841,
       "required": false
     }
   ]

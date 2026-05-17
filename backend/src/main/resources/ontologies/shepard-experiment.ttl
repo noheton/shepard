@@ -1,0 +1,362 @@
+# Canonical source: https://shepard.dlr.de/ontologies/experiment (shepard-authored ontology)
+# Ontology IRI:    https://shepard.dlr.de/ontologies/experiment#
+# IRI prefix:      https://shepard.dlr.de/ontologies/experiment#  (prefix shex)
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# shepard-experiment — domain-level OWL-Lite + SKOS ontology for
+# experimental data management in engineering and materials research.
+# Ships as the eleventh bundle in the OntologySeedService pre-seed
+# manifest (AI1r). Seven SKOS ConceptSchemes cover the life-cycle of
+# a physical experiment: phase, measurement role, quality flag, defect
+# type, inspection method, manufacturing process, and sensor role.
+#
+# The ExperimentPhase ConceptScheme is simultaneously an OWL class
+# with rdfs:subClassOf prov:Activity so individual phases can be
+# materialised as PROV activities (stamped with prov:startedAtTime /
+# prov:endedAtTime) in the provenance trail — composing cleanly with
+# the PROV1-series audit model and the metadata4ing ONT1b preseed.
+#
+# This is a shepherded stub authored by the shepard project. Operators
+# who need additional concept coverage can either upload a richer
+# bundle via `shepard-admin semantic ontologies upload` (N1c2) or
+# extend the file and regenerate the manifest SHA-256.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix shex:    <https://shepard.dlr.de/ontologies/experiment#> .
+
+# ── Ontology declaration ──────────────────────────────────────────────────────
+
+<https://shepard.dlr.de/ontologies/experiment>
+    a owl:Ontology ;
+    dcterms:title   "Shepard Experiment Ontology"@en ;
+    dcterms:creator "shepard project (DLR / noheton fork)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "1.0.0" ;
+    rdfs:label      "shepard-experiment"@en ;
+    rdfs:comment    "OWL-Lite + SKOS ontology for engineering experiment data management: phase life-cycle, measurement roles, quality flags, defect types, inspection methods, manufacturing processes, and sensor roles. Designed for annotation of shepard DataObjects and References in physical testing and manufacturing research contexts."@en .
+
+# ── 1. ExperimentPhase ────────────────────────────────────────────────────────
+# OWL class *and* SKOS ConceptScheme — instances of individual phases can be
+# dual-typed as prov:Activity entries in the PROV1 audit trail.
+
+shex:ExperimentPhase
+    a owl:Class , skos:ConceptScheme ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label  "Experiment Phase"@en ;
+    rdfs:comment "The ordered stages through which a physical experiment passes, from preparation to post-run analysis. Subclass of prov:Activity so individual phase instances can carry prov:startedAtTime / prov:endedAtTime provenance stamps."@en ;
+    skos:prefLabel "Experiment Phase"@en .
+
+shex:Preparation
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Preparation"@en ;
+    skos:definition "Setup and readiness activities performed before the main test run begins, including specimen handling, rig assembly, and pre-conditioning checks."@en .
+
+shex:Conditioning
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Conditioning"@en ;
+    skos:definition "Controlled exposure of the specimen to environmental or mechanical loads prior to the test run, such as thermal cycling or humidity soaking."@en .
+
+shex:TestRun
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Test Run"@en ;
+    skos:definition "The primary measurement interval during which the specimen is subjected to the intended loading and sensor data is actively recorded."@en .
+
+shex:Cooldown
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Cooldown"@en ;
+    skos:definition "The post-load period during which the specimen and rig return to ambient conditions before inspection or disassembly."@en .
+
+shex:PostProcessing
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Post-Processing"@en ;
+    skos:definition "Computational or mechanical operations performed on raw sensor data or specimens after the test run, such as filtering, cropping, or sectioning."@en .
+
+shex:Analysis
+    a skos:Concept ;
+    skos:inScheme  shex:ExperimentPhase ;
+    skos:prefLabel "Analysis"@en ;
+    skos:definition "Interpretation and evaluation of post-processed data to extract material parameters, damage indices, or performance metrics."@en .
+
+# ── 2. MeasurementRole ───────────────────────────────────────────────────────
+
+shex:MeasurementRole
+    a skos:ConceptScheme ;
+    rdfs:label   "Measurement Role"@en ;
+    rdfs:comment "Functional role assigned to a measurement channel or dataset within an experiment, indicating how the data relates to the primary quantity of interest."@en ;
+    skos:prefLabel "Measurement Role"@en .
+
+shex:ReferenceMeasurement
+    a skos:Concept ;
+    skos:inScheme  shex:MeasurementRole ;
+    skos:prefLabel "Reference Measurement"@en ;
+    skos:definition "A measurement taken from a known or nominal specimen used as a baseline against which actual measurements are compared."@en .
+
+shex:ActualMeasurement
+    a skos:Concept ;
+    skos:inScheme  shex:MeasurementRole ;
+    skos:prefLabel "Actual Measurement"@en ;
+    skos:definition "The primary measurement of the quantity of interest on the test specimen under load."@en .
+
+shex:DeviationMeasurement
+    a skos:Concept ;
+    skos:inScheme  shex:MeasurementRole ;
+    skos:prefLabel "Deviation Measurement"@en ;
+    skos:definition "A derived measurement expressing the difference or percentage deviation between actual and reference values."@en .
+
+shex:CharacterizationMeasurement
+    a skos:Concept ;
+    skos:inScheme  shex:MeasurementRole ;
+    skos:prefLabel "Characterization Measurement"@en ;
+    skos:definition "A measurement taken to determine intrinsic material or geometric properties of the specimen, independent of the main load case."@en .
+
+shex:CalibrationMeasurement
+    a skos:Concept ;
+    skos:inScheme  shex:MeasurementRole ;
+    skos:prefLabel "Calibration Measurement"@en ;
+    skos:definition "A measurement taken against a traceable standard to verify or correct the sensor chain's accuracy before or after the test run."@en ;
+    qudt:hasQuantityKind qudt:QuantityKind .
+
+# ── 3. QualityFlag ───────────────────────────────────────────────────────────
+
+shex:QualityFlag
+    a skos:ConceptScheme ;
+    rdfs:label   "Quality Flag"@en ;
+    rdfs:comment "Assessment of the usability and reliability of a measurement channel, dataset, or derived result within an experiment."@en ;
+    skos:prefLabel "Quality Flag"@en .
+
+shex:QualityPass
+    a skos:Concept ;
+    skos:inScheme  shex:QualityFlag ;
+    skos:prefLabel "Quality Pass"@en ;
+    skos:definition "The measurement or dataset meets all acceptance criteria and is considered fully reliable for analysis and reporting."@en .
+
+shex:QualityWarning
+    a skos:Concept ;
+    skos:inScheme  shex:QualityFlag ;
+    skos:prefLabel "Quality Warning"@en ;
+    skos:definition "The measurement or dataset shows minor anomalies or borderline behaviour; it may be used with caution and should be flagged in any downstream report."@en .
+
+shex:QualityFail
+    a skos:Concept ;
+    skos:inScheme  shex:QualityFlag ;
+    skos:prefLabel "Quality Fail"@en ;
+    skos:definition "The measurement or dataset has failed acceptance criteria and must not be used for primary analysis without explicit re-assessment."@en .
+
+shex:QualitySuspect
+    a skos:Concept ;
+    skos:inScheme  shex:QualityFlag ;
+    skos:prefLabel "Quality Suspect"@en ;
+    skos:definition "The measurement or dataset contains patterns that may indicate sensor drift, crosstalk, or contamination, pending further investigation."@en .
+
+shex:QualityPending
+    a skos:Concept ;
+    skos:inScheme  shex:QualityFlag ;
+    skos:prefLabel "Quality Pending"@en ;
+    skos:definition "Quality assessment has not yet been performed for this measurement or dataset; the status is to be updated before the data is released for analysis."@en .
+
+# ── 4. DefectType ────────────────────────────────────────────────────────────
+
+shex:DefectType
+    a skos:ConceptScheme ;
+    rdfs:label   "Defect Type"@en ;
+    rdfs:comment "Classification of structural or material defects identified during inspection of a test specimen or manufactured part."@en ;
+    skos:prefLabel "Defect Type"@en .
+
+shex:Delamination
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Delamination"@en ;
+    skos:definition "Separation or debonding between adjacent plies or laminate layers in a composite material, typically detected by ultrasonic C-scan or thermography."@en .
+
+shex:Crack
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Crack"@en ;
+    skos:definition "A planar discontinuity in the material matrix or fibres propagating under mechanical or thermal load."@en .
+
+shex:Porosity
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Porosity"@en ;
+    skos:definition "Presence of entrapped voids or gas pockets within the cured matrix of a composite or welded part, reducing effective load-carrying area."@en .
+
+shex:Disbond
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Disbond"@en ;
+    skos:definition "Loss of adhesion between two bonded surfaces, such as a skin-to-stringer or patch interface, without fibre fracture."@en .
+
+shex:ImpactDamage
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Impact Damage"@en ;
+    skos:definition "Localised structural damage caused by an impact event, potentially comprising delamination, matrix cracking, and fibre breakage in a zone around the impact site."@en .
+
+shex:FiberMisalignment
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Fiber Misalignment"@en ;
+    skos:definition "Deviation of reinforcement fibres from the intended layup direction, reducing in-plane stiffness and strength of the laminate."@en .
+
+shex:VoidContent
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Void Content"@en ;
+    skos:definition "The volumetric fraction of unfilled voids in a consolidated composite, typically quantified as a percentage by acid digestion or X-ray micro-CT."@en .
+
+shex:ForeignObject
+    a skos:Concept ;
+    skos:inScheme  shex:DefectType ;
+    skos:prefLabel "Foreign Object"@en ;
+    skos:definition "An unintended inclusion of extraneous material (e.g. peel-ply fragments, tool debris, backing film) embedded within the laminate during layup or cure."@en .
+
+# ── 5. InspectionMethod ──────────────────────────────────────────────────────
+
+shex:InspectionMethod
+    a skos:ConceptScheme ;
+    rdfs:label   "Inspection Method"@en ;
+    rdfs:comment "Non-destructive or semi-destructive technique used to detect, locate, and characterise defects in a specimen or manufactured part."@en ;
+    skos:prefLabel "Inspection Method"@en .
+
+shex:UltrasonicCScan
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "Ultrasonic C-Scan"@en ;
+    skos:definition "Full-field ultrasonic through-transmission or pulse-echo scan producing a planar amplitude or time-of-flight map used to image delamination extent and porosity distribution."@en .
+
+shex:UltrasonicAScan
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "Ultrasonic A-Scan"@en ;
+    skos:definition "Single-point time-domain ultrasonic waveform showing amplitude versus depth, used for precise depth sizing of individual reflectors."@en .
+
+shex:Thermography
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "Thermography"@en ;
+    skos:definition "Active or passive infrared thermal imaging technique that detects subsurface defects by observing differential heat diffusion across the specimen surface."@en .
+
+shex:DIC
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "DIC (Digital Image Correlation)"@en ;
+    skos:definition "Full-field optical technique that tracks speckle pattern displacement across the specimen surface to derive in-plane strain fields during loading."@en .
+
+shex:XRayInspection
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "X-Ray Inspection"@en ;
+    skos:definition "Radiographic imaging using penetrating X-radiation to reveal internal voids, foreign inclusions, and density variations within opaque materials."@en .
+
+shex:EddyCurrentTesting
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "Eddy Current Testing"@en ;
+    skos:definition "Electromagnetic induction-based inspection technique sensitive to surface and near-surface cracks and conductivity variations in electrically conductive materials."@en .
+
+shex:VisualInspection
+    a skos:Concept ;
+    skos:inScheme  shex:InspectionMethod ;
+    skos:prefLabel "Visual Inspection"@en ;
+    skos:definition "Direct or aided visual examination of a specimen surface for visible defects, discolouration, surface damage, or manufacturing anomalies."@en .
+
+# ── 6. ManufacturingProcess ──────────────────────────────────────────────────
+
+shex:ManufacturingProcess
+    a skos:ConceptScheme ;
+    rdfs:label   "Manufacturing Process"@en ;
+    rdfs:comment "The fabrication or joining process by which a specimen or structural component was produced, relevant for tracing process-induced variability in test results."@en ;
+    skos:prefLabel "Manufacturing Process"@en .
+
+shex:AFP
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "AFP (Automated Fiber Placement)"@en ;
+    skos:definition "Robotic layup process that places narrow pre-preg tows on a mandrel following a programmed fibre path, enabling complex curvature and variable stiffness laminates."@en .
+
+shex:ATL
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "ATL (Automated Tape Laying)"@en ;
+    skos:definition "Robotic layup process that places broad pre-preg tape on flat or mildly contoured tooling at high deposition rates, typically for large structural panels."@en .
+
+shex:HandLayup
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Hand Layup"@en ;
+    skos:definition "Manual placement of dry or pre-impregnated reinforcement plies on a mould, typically followed by wet resin infusion or autoclave cure."@en .
+
+shex:Welding
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Welding"@en ;
+    skos:definition "Fusion or friction-based joining of metallic or thermoplastic components by localised heat or mechanical energy application."@en .
+
+shex:Machining
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Machining"@en ;
+    skos:definition "Subtractive material removal process (milling, turning, drilling) used to bring a component to final geometry and surface finish."@en .
+
+shex:Curing
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Curing"@en ;
+    skos:definition "Thermally or chemically driven crosslinking of a polymer matrix that consolidates a composite laminate into its final solid state."@en .
+
+shex:Bonding
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Bonding"@en ;
+    skos:definition "Structural adhesive joining of two or more substrates, transferring loads across the bond-line without mechanical fasteners."@en .
+
+shex:HeatTreatment
+    a skos:Concept ;
+    skos:inScheme  shex:ManufacturingProcess ;
+    skos:prefLabel "Heat Treatment"@en ;
+    skos:definition "Controlled thermal cycle applied to a metallic component to modify its microstructure and mechanical properties, such as annealing, quenching, or ageing."@en .
+
+# ── 7. SensorRole ────────────────────────────────────────────────────────────
+
+shex:SensorRole
+    a skos:ConceptScheme ;
+    rdfs:label   "Sensor Role"@en ;
+    rdfs:comment "Functional role of a sensor within the measurement chain of an experiment, defining its relationship to primary, redundant, and calibration channels."@en ;
+    skos:prefLabel "Sensor Role"@en .
+
+shex:PrimarySensor
+    a skos:Concept ;
+    skos:inScheme  shex:SensorRole ;
+    skos:prefLabel "Primary Sensor"@en ;
+    skos:definition "The designated main sensor whose readings define the authoritative value of the measured quantity in the data record."@en .
+
+shex:ReferenceSensor
+    a skos:Concept ;
+    skos:inScheme  shex:SensorRole ;
+    skos:prefLabel "Reference Sensor"@en ;
+    skos:definition "A sensor installed to provide a known baseline or independently measured reference quantity against which primary sensor readings are validated."@en .
+
+shex:RedundantSensor
+    a skos:Concept ;
+    skos:inScheme  shex:SensorRole ;
+    skos:prefLabel "Redundant Sensor"@en ;
+    skos:definition "A sensor measuring the same quantity as the primary sensor, installed for fault detection and data quality assurance rather than as the primary data source."@en .
+
+shex:CalibrationTarget
+    a skos:Concept ;
+    skos:inScheme  shex:SensorRole ;
+    skos:prefLabel "Calibration Target"@en ;
+    skos:definition "A sensor or artefact providing a traceable reference value used to calibrate or verify the measurement chain before, during, or after the test."@en ;
+    qudt:hasQuantityKind qudt:QuantityKind .
