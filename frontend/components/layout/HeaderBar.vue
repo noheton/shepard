@@ -12,7 +12,6 @@
       >
         Configuration
       </v-btn>
-      <v-btn class="nav-item" to="/search">Advanced Search</v-btn>
       <v-btn
         v-if="isInstanceAdmin"
         class="nav-item"
@@ -21,6 +20,42 @@
         Admin
       </v-btn>
     </v-app-bar-title>
+
+    <!-- Global type-ahead search bar (QW1) -->
+    <v-autocomplete
+      v-model="selectedItem"
+      :items="searchItems"
+      :loading="isLoading"
+      :search="searchInput"
+      :hide-no-data="hideNoData"
+      no-filter
+      density="compact"
+      variant="outlined"
+      hide-details
+      placeholder="Search shepard…"
+      prepend-inner-icon="mdi-magnify"
+      no-data-text="No results"
+      return-object
+      clearable
+      class="header-search"
+      @update:search="onSearchUpdate"
+      @update:model-value="onItemSelected"
+    >
+      <template #append-item>
+        <v-divider class="mt-1 mb-1" />
+        <v-list-item
+          density="compact"
+          :to="{ path: '/search' }"
+          @click="clearSearch"
+        >
+          <template #prepend>
+            <v-icon size="small" class="mr-1">mdi-magnify-plus-outline</v-icon>
+          </template>
+          <v-list-item-title class="text-caption">Advanced search →</v-list-item-title>
+        </v-list-item>
+      </template>
+    </v-autocomplete>
+
     <template #append>
       <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item">
         About
@@ -45,10 +80,17 @@
 </template>
 
 <script lang="ts" setup>
+import { useTimeoutFn } from "@vueuse/core";
 import { useTheme } from "vuetify";
+import {
+  useCollectionSearch,
+  type MyCollectionSearchResult,
+} from "~/composables/context/useCollectionSearch";
 
 const { status, signOut, signIn, data } = useAuth();
 const { public: publicConfig } = useRuntimeConfig();
+const router = useRouter();
+
 const apiDocsUrl = computed(() => {
   const base = (publicConfig.backendApiUrl as string) || "";
   return base ? `${base.replace(/\/$/, "")}/q/swagger-ui` : "/shepard/api/q/swagger-ui";
@@ -77,6 +119,63 @@ const toggleTheme = () => {
   theme.global.name.value = theme.global.current.value.dark ? "light" : "dark";
   localStorage.setItem("colorScheme", theme.global.name.value);
 };
+
+// ── Search bar state (QW1) ────────────────────────────────────────────────────
+
+interface SearchItem {
+  title: string;
+  value: MyCollectionSearchResult;
+}
+
+const searchInput = ref<string>("");
+const selectedItem = ref<SearchItem | null>(null);
+const hideNoData = ref<boolean>(true);
+
+const { collectionSearchResults, startSearch, isLoading, resetResultList } =
+  useCollectionSearch(searchInput, () => {
+    hideNoData.value = false;
+  });
+
+const searchItems = computed<SearchItem[]>(() =>
+  collectionSearchResults.value.map(r => ({
+    title: r.collectionName,
+    value: r,
+  })),
+);
+
+// Debounce: reuse the same useTimeoutFn pattern as CollectionAutocomplete.vue
+const { isPending, start: scheduleSearch } = useTimeoutFn(() => {
+  const trimmed = searchInput.value.trim();
+  if (trimmed === "") {
+    hideNoData.value = true;
+    resetResultList();
+    return;
+  }
+  // Reset before each new search so stale results don't accumulate
+  resetResultList();
+  startSearch();
+}, 250);
+
+function onSearchUpdate(val: string) {
+  searchInput.value = val ?? "";
+  if (!isPending.value) {
+    scheduleSearch();
+  }
+}
+
+function onItemSelected(item: SearchItem | null) {
+  if (!item) return;
+  const id = item.value.collectionId;
+  clearSearch();
+  router.push(`/collections/${id}`);
+}
+
+function clearSearch() {
+  searchInput.value = "";
+  selectedItem.value = null;
+  hideNoData.value = true;
+  resetResultList();
+}
 </script>
 
 <style lang="scss" scoped>
@@ -104,5 +203,12 @@ const toggleTheme = () => {
   font-style: normal;
   line-height: 26px;
   text-transform: none;
+}
+
+.header-search {
+  max-width: 300px;
+  min-width: 180px;
+  align-self: center;
+  margin: 0 8px;
 }
 </style>
