@@ -126,14 +126,16 @@ These work the same way across every primitive:
   of TR-004" relationship is a graph edge, traversable in both
   directions.
 - **Versioning + snapshots.** `Version` is a user-visible label.
-  **Snapshots** *(V2b shipped)* are machine-faithful, immutable,
+  **Snapshots** *(V2b + V2c shipped)* are machine-faithful, immutable,
   point-in-time records of an entire Collection subtree — one
   `SnapshotEntry` per `VersionableEntity` pinning its `revision`
   counter at capture time. Create via
   `POST /v2/collections/{appId}/snapshots`; inspect the manifest via
-  `GET /v2/snapshots/{appId}/manifest`. Reads via snapshot (V2c)
-  and byte-reproducible RO-Crate export against a snapshot (V2d)
-  are the follow-on payoffs — queued.
+  `GET /v2/snapshots/{appId}/manifest`; query which DataObjects existed
+  at snapshot time via
+  `GET /v2/collections/{appId}/snapshots/{snapshotAppId}/data-objects`
+  *(V2c)*. Byte-reproducible RO-Crate export against a snapshot (V2d)
+  and snapshot diff (V2e) are queued.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).

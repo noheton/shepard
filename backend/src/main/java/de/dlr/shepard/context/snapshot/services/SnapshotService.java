@@ -134,6 +134,27 @@ public class SnapshotService {
   }
 
   /**
+   * V2c — returns the list of {@code appId} strings for all {@code :DataObject}
+   * nodes that were captured in the given snapshot.
+   *
+   * <p>The method first collects all {@code entityAppId} values from the
+   * snapshot's {@link SnapshotEntry} set, then filters them to only those
+   * that resolve to non-deleted {@code :DataObject} nodes. Results are ordered
+   * by {@code appId} ascending (deterministic, matching the manifest ordering).
+   *
+   * <p>Collections, References, and soft-deleted entities are excluded from
+   * the returned list.
+   *
+   * @param snapshot the snapshot whose entries should be filtered.
+   * @return ordered list of DataObject {@code appId} strings; empty when the
+   *         snapshot contains no DataObjects.
+   */
+  public List<String> listDataObjectAppIds(Snapshot snapshot) {
+    java.util.Set<String> allEntryAppIds = snapshotDAO.getEntryAppIds(snapshot.getId());
+    return snapshotDAO.filterDataObjectAppIds(allEntryAppIds);
+  }
+
+  /**
    * Soft-deletes the {@link Snapshot} identified by {@code snapshotAppId}.
    * The associated {@link SnapshotEntry} rows are also soft-deleted.
    *
