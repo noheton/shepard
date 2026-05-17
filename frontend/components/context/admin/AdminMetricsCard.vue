@@ -12,7 +12,7 @@ async function load() {
   try {
     metrics.value = await useV2ShepardApi(AdminMetricsApi).value.getMetricsSummary();
   } catch (error: unknown) {
-    const status = (error as { status?: number })?.status;
+    const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 403 || status === 401) {
       forbidden.value = true;
     } else {

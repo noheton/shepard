@@ -60,7 +60,7 @@ Items in the design doc (`aidocs/ops/85`) that are not yet shipped:
 | UI4a | PayloadVersion history panel | PV1a in-flight |
 | UI5a | Drag-and-drop tree reparenting | design in aidocs/58 §2 |
 | UI7 | Graph view | design needed |
-| UI8 (was UI6a) | Inline attach-to-data-object from container | design needed |
+| UI8 | Inline attach-to-data-object from container | design needed |
 | UI9 | Snapshot diff viewer | V2e shipped |
 | UI10 | @-mention in lab journal | design in aidocs/58 §4 |
 | UI11 | Unified publish/Unhide status panel | UH1 + KIP1 shipped |
