@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.aas.daos.AasRegistrationDAO;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.template.daos.ShepardTemplateDAO;
 import de.dlr.shepard.template.entities.ShepardTemplate;
+import de.dlr.shepard.v2.aas.io.AasServerSelfDescriptionIO.RegistryRegistration;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -23,6 +26,9 @@ class AasServerSelfDescriptionServiceTest {
   @Mock
   ShepardTemplateDAO templateDAO;
 
+  @Mock
+  AasRegistrationDAO registrationDAO;
+
   AasServerSelfDescriptionService service;
 
   @BeforeEach
@@ -31,9 +37,12 @@ class AasServerSelfDescriptionServiceTest {
     service = new AasServerSelfDescriptionService();
     service.collectionDAO = collectionDAO;
     service.templateDAO = templateDAO;
+    service.registrationDAO = registrationDAO;
     service.enabled = false;
     service.apiProfile = AasServerSelfDescriptionService.DEFAULT_API_PROFILE;
+    service.registryUrl = Optional.empty();
     when(collectionDAO.countAll()).thenReturn(0L);
+    when(registrationDAO.distinctSyncedRegistryUrls()).thenReturn(List.of());
   }
 
   @Test
@@ -120,14 +129,74 @@ class AasServerSelfDescriptionServiceTest {
   void retiredTemplatesExcluded() {
     // The DAO call passes includeRetired=false; retired rows must not
     // appear in the supported list (capability advertising = current state only).
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
     service.describe();
     org.mockito.Mockito.verify(templateDAO).list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false);
   }
 
+  // --- AAS1-reg: registryRegistrations ---
+
   @Test
-  void registryRegistrationsEmptyUntilAas1RegShips() {
+  void registryRegistrationsEmptyWhenNoConfigAndNoOutbox() {
+    // No registry URL configured, no synced rows in outbox → empty list.
     when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
-    assertNotNull(service.describe().getRegistryRegistrations());
+    service.registryUrl = Optional.empty();
     assertTrue(service.describe().getRegistryRegistrations().isEmpty());
+  }
+
+  @Test
+  void registryRegistrationsShowsConfiguredUrlWhenOutboxEmpty() {
+    // Registry URL configured but outbox still empty (e.g. first boot before
+    // sync completes) → advertise the configured URL so discovery works.
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    service.registryUrl = Optional.of("https://registry.example.org");
+    var registrations = service.describe().getRegistryRegistrations();
+    assertEquals(1, registrations.size());
+    assertEquals("https://registry.example.org", registrations.get(0).getUrl());
+    assertEquals("idta-registry", registrations.get(0).getKind());
+  }
+
+  @Test
+  void registryRegistrationsPrefersSyncedOutboxOverConfig() {
+    // When the outbox has synced rows, report those (not the config URL)
+    // so the well-known reflects actual state, not just intent.
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    when(registrationDAO.distinctSyncedRegistryUrls())
+      .thenReturn(List.of("https://registry.dlr.de"));
+    service.registryUrl = Optional.of("https://registry.example.org");
+    var registrations = service.describe().getRegistryRegistrations();
+    assertEquals(1, registrations.size());
+    assertEquals("https://registry.dlr.de", registrations.get(0).getUrl());
+  }
+
+  @Test
+  void registryRegistrationsMultipleSyncedRegistries() {
+    when(templateDAO.list(AasServerSelfDescriptionService.AAS_SUBMODEL_TEMPLATE_KIND, false)).thenReturn(List.of());
+    when(registrationDAO.distinctSyncedRegistryUrls())
+      .thenReturn(List.of("https://reg-a.example.org", "https://reg-b.example.org"));
+    var registrations = service.describe().getRegistryRegistrations();
+    assertEquals(2, registrations.size());
+    assertEquals("idta-registry", registrations.get(0).getKind());
+    assertEquals("idta-registry", registrations.get(1).getKind());
+  }
+
+  @Test
+  void buildRegistrationsBlankUrlTreatedAsEmpty() {
+    // Blank string from config (e.g. operator sets key but leaves value empty)
+    // must not produce a registration entry — that would advertise an unusable URL.
+    service.registryUrl = Optional.of("   ");
+    var registrations = service.buildRegistrations();
+    assertTrue(registrations.isEmpty());
+  }
+
+  @Test
+  void buildRegistrationsReturnsList() {
+    // buildRegistrations() is package-private and tested directly to
+    // keep the well-known describe() tests focused on integration.
+    when(registrationDAO.distinctSyncedRegistryUrls())
+      .thenReturn(List.of("https://reg.example.org"));
+    List<RegistryRegistration> result = service.buildRegistrations();
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
   }
 }
