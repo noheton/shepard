@@ -209,6 +209,18 @@ watch(
   },
   { deep: true },
 );
+
+// CC1c: pre-fill the container name with "<Collection name> — file store" when
+// the user toggles "Create new file container" on. Only fills when the field is
+// still blank so the user can type their own name without it being overwritten.
+watch(isCreatingNewFileContainer, (creating: boolean) => {
+  if (creating && !newFileContainerName.value) {
+    const collectionName = collectionAccessor.collection.value?.name ?? "";
+    if (collectionName) {
+      newFileContainerName.value = `${collectionName} — file store`;
+    }
+  }
+});
 </script>
 
 <template>
@@ -219,6 +231,19 @@ watch(
       </template>
       <template #text>
         <div class="d-flex flex-column ga-4">
+          <!-- CC1c: first-time explanation of the Collection / Container duality -->
+          <v-alert
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-2"
+            icon="mdi-information-outline"
+          >
+            Files you add here are stored in a secure container linked to this
+            dataset. You can link the same data to multiple experiments without
+            copying it.
+          </v-alert>
+
           <v-file-upload
             v-model:model-value="files"
             :accept="accept"

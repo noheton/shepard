@@ -223,15 +223,15 @@ For non-technical stakeholders:
 
 ## 7. Phased Implementation Plan
 
-| ID | Task | Size | Gate |
-|---|---|---|---|
-| CC1a | Containers section in collection sidebar (shows referenced containers only) | S | UI decision done (aidocs/85 §7) |
-| CC1b | "Referenced by" section on Container detail page | XS | none |
-| CC1c | Default-filecontainer rename + first-time tooltip | XS | none |
-| CC1d | "Link to existing container" one-click option in DataObject add flow | S | none |
-| CC1e | Container list "linked from" breadcrumb column | S | none |
-| CC2 | N10 notification: subscribe to Container, notify when new data arrives | M | N10 channel design |
-| CC3 | `/templates` route with customized collection-creation forms (mandatory fields, collector config) | M | UI2a templates browser |
+| ID | Task | Size | Status | Gate |
+|---|---|---|---|---|
+| CC1a | Containers section in collection sidebar — collapsible `v-expansion-panels` section with "Browse containers" button linking to `/containers` | S | **shipped** (2026-05-17) | UI decision done (aidocs/85 §7). Note: simplified from "show referenced containers" to a "Browse containers" link since no list-by-collection containers API exists yet. |
+| CC1b | "Referenced by" expansion panel on each container detail page (File / Timeseries / Structured Data) | XS | **shipped** (2026-05-17) | Placeholder body pending `GET /v2/{kind}-containers/{id}/references` endpoint. |
+| CC1c | Default file-container name pre-filled as `"<CollectionName> — file store"` + first-time info banner in the upload dialog | XS | **shipped** (2026-05-17) | Implemented in `DataObjectFileUploadDialog.vue` (not in backend). |
+| CC1d | "Link to existing container" one-click option in DataObject add flow | S | queued | none |
+| CC1e | Container list "linked from" breadcrumb column | S | queued | none |
+| CC2 | N10 notification: subscribe to Container, notify when new data arrives | M | queued | N10 channel design |
+| CC3 | `/templates` route with customized collection-creation forms (mandatory fields, collector config) | M | queued | UI2a templates browser |
 
 ---
 

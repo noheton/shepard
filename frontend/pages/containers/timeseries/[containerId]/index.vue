@@ -100,6 +100,15 @@ watch(containerAccessor.container, () => {
         :is-allowed-to-edit-data="containerAccessor.isAllowedToEditData.value"
         :measurements="containerAccessor.measurements.value"
       />
+      <!-- CC1b: Referenced by — placeholder until a list-by-container API is available -->
+      <ExpansionPanels class="mt-4">
+        <ExpansionPanelItem title="Referenced by">
+          <!-- TODO(CC1b): replace with real DataObject list once GET /v2/timeseries-containers/{id}/references exists -->
+          <div class="pa-4 text-medium-emphasis text-body-2">
+            No linked datasets found.
+          </div>
+        </ExpansionPanelItem>
+      </ExpansionPanels>
     </v-container>
   </div>
 </template>

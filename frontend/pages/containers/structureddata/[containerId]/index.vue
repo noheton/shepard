@@ -160,6 +160,15 @@ watch(containerAccessor.container, () => {
           (structuredData: StructuredData) => onDownload(structuredData)
         "
       />
+      <!-- CC1b: Referenced by — placeholder until a list-by-container API is available -->
+      <ExpansionPanels class="mt-4">
+        <ExpansionPanelItem title="Referenced by">
+          <!-- TODO(CC1b): replace with real DataObject list once GET /v2/structured-data-containers/{id}/references exists -->
+          <div class="pa-4 text-medium-emphasis text-body-2">
+            No linked datasets found.
+          </div>
+        </ExpansionPanelItem>
+      </ExpansionPanels>
     </v-container>
     <ConfirmDeleteDialog
       v-if="

@@ -611,6 +611,14 @@ the existing `aidocs/43` AI1 umbrella.
 | UH1d | Per-Collection "Publish to Helmholtz KG" toggle in UI + admin `/admin` page tile for instance-wide toggles (mirrors A3b1 layout) | user request, `aidocs/67 §9` | S-M | queued | Wires CP1a `publishToHelmholtzKG` field + admin tile. |
 | UH1e | `GET /v2/unhide/feed.jsonld?validate=true` returns a SHACL validation report — diagnostic for operators | user request, `aidocs/67 §9` | S | queued | Off the critical path; diagnostic-only. |
 
+### CC1 — 2026-05-17 (Collection / Container duality UX)
+
+| ID | Slice | Status | Notes |
+|---|---|---|---|
+| CC1a | Collapsible "Containers" section at the bottom of the collection sidebar with a "Browse containers" button linking to `/containers` | **shipped** | `frontend/components/context/sidebar/CollectionSidebar.vue`. Uses Vuetify `v-expansion-panels` / `v-expansion-panel` at the bottom of the sidebar flex column, after the treeview. No new API calls — the sidebar links to the top-level `/containers` page (no "list containers for collection" endpoint exists yet). See `aidocs/ops/87-collection-container-duality.md §4.1`. |
+| CC1b | "Referenced by" expansion panel on each container detail page (File, Timeseries, Structured Data) | **shipped** | `frontend/pages/containers/files/[containerId]/index.vue`, `…/timeseries/…`, `…/structureddata/…`. Placeholder body ("No linked datasets found.") + TODO comment to replace with real DataObject list once a `GET /v2/{kind}-containers/{id}/references` endpoint is added. See `aidocs/ops/87-collection-container-duality.md §4.5`. |
+| CC1c | Default file-container name pre-filled as `"<Collection name> — file store"` + first-time info banner in the upload dialog | **shipped** | `frontend/components/context/data-object/upload-data/DataObjectFileUploadDialog.vue`. Watch on `isCreatingNewFileContainer` fills `newFileContainerName` when toggled on (only fills if blank, preserving user edits). `v-alert` (info, tonal) always shown explaining container / experiment separation. See `aidocs/ops/87-collection-container-duality.md §4.2 + §4.4`. |
+
 ### P1 — 2026-05-16 (parallel DB connectivity)
 
 | ID | Slice | Status | Notes |

@@ -29,6 +29,9 @@ by the CI Playwright run (see `aidocs/ops/85 §5`).
 
 | Date | ID | Area | Change | Screenshot |
 |---|---|---|---|---|
+| 2026-05-17 | CC1a | Collection sidebar | Collapsible "Containers" section added at the bottom of the sidebar with a "Browse containers" button linking to `/containers` | — |
+| 2026-05-17 | CC1b | Container detail pages (File / Timeseries / Structured Data) | "Referenced by" expansion panel added at the bottom of each container detail page; placeholder body pending a list-by-container API endpoint | — |
+| 2026-05-17 | CC1c | Upload files dialog | Info banner explains the Collection/Container relationship on every upload; default file-container name pre-filled as `"<Collection name> — file store"` when "Create new file container" is toggled on | — |
 | 2026-05-17 | UI3a | DataObject detail page | "Video References" expansion panel added: native `<video>` player per `VideoStreamReference` against `/v2/.../video-stream-references/{appId}/download`; ffprobe metadata chips (duration, resolution, video codec, audio codec, fps, file size, estimated bitrate); per-reference download button | — |
 | 2026-05-17 | UI2a | Admin page (`/admin`) | Templates pane added: `v-data-table` listing all templates with kind/tag/retired filters; "New template" button + create/edit dialog (POST / PATCH copy-on-write versioning); retire action with confirmation; kind chip + status chip per row | — |
 | 2026-05-17 | QW4 | DataObject detail — Git References pane | `v-alert` (info, tonal) shown when user has no git credentials; includes "Go to profile" link to `/user#git-credentials` | — |

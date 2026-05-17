@@ -298,6 +298,27 @@ const createDataObjectDialogOpened = ref<boolean>(false);
         </div>
       </div>
     </div>
+
+    <!-- CC1a: Containers section — collapsible, links to /containers -->
+    <v-divider opacity="100" class="text-low-emphasis" thickness="1px" />
+    <v-expansion-panels variant="accordion" flat>
+      <v-expansion-panel>
+        <v-expansion-panel-title class="px-6 py-2 text-overline text-textbody1">
+          Containers
+        </v-expansion-panel-title>
+        <v-expansion-panel-text class="px-3 pb-3">
+          <v-btn
+            :to="containersPath"
+            color="primary"
+            density="compact"
+            variant="text"
+            prepend-icon="mdi-database-outline"
+          >
+            Browse containers
+          </v-btn>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
   </div>
   <CreateDataObjectDialog
     v-if="createDataObjectDialogOpened"
@@ -305,6 +326,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
     :collection-id="routeParams.collectionId"
     @data-object-created="refreshItems"
   />
+
 </template>
 
 <style lang="scss" scoped>
