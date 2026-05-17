@@ -235,6 +235,42 @@ public class PublishService {
   }
 
   /**
+   * KIP1f — retire the most-recent {@code :Publication} for the entity
+   * at {@code (kind, entityAppId)}.
+   *
+   * <p>Sets {@code digitalObjectMutability = 'retired'} on the row;
+   * the row itself is never deleted (KIP records are append-only per
+   * the HMC spec). Idempotent — calling retire twice is safe.
+   *
+   * @param kind        the publishable kind (resolved from the URL segment)
+   * @param entityAppId the entity's appId
+   * @return {@code true} when a Publication was found and retired (or
+   *         was already retired); {@code false} when the entity has no
+   *         Publications attached (caller should return 404)
+   * @throws NotFoundException when the entity doesn't exist or has a
+   *         different kind than {@code kind} claims
+   */
+  public boolean retire(PublishableKind kind, String entityAppId) {
+    if (kind == null) throw new IllegalArgumentException("kind must not be null");
+    if (entityAppId == null || entityAppId.isBlank()) {
+      throw new IllegalArgumentException("entityAppId must not be null/blank");
+    }
+    // Verify the entity exists + carries the expected label; throws
+    // NotFoundException if missing.
+    verifyEntityKind(kind, entityAppId);
+
+    boolean updated = publicationDAO.retireMostRecent(entityAppId);
+    if (updated) {
+      Log.infof(
+        "PublishService: retired most-recent Publication for entityAppId=%s (kind=%s)",
+        entityAppId,
+        kind.urlSegment()
+      );
+    }
+    return updated;
+  }
+
+  /**
    * Indirection so tests can wire a mocked Session in without
    * spinning the static NeoConnector singleton.
    */

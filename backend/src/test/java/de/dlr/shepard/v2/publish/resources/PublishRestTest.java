@@ -10,6 +10,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
@@ -236,5 +238,87 @@ class PublishRestTest {
     assertEquals(200, r.getStatus());
     PublicationIO io = (PublicationIO) r.getEntity();
     assertEquals("collections", io.entityKind());
+  }
+
+  // ---------- KIP1f: DELETE /v2/{kind}/{appId}/publish ----------
+
+  @Test
+  void retireHappyPathReturns204() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(true);
+
+    Response r = rest.retire("data-objects", "01HF-A", securityContext);
+    assertEquals(204, r.getStatus());
+  }
+
+  @Test
+  void retireMissingAuthReturns401() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    Response r = rest.retire("data-objects", "01HF-A", securityContext);
+    assertEquals(401, r.getStatus());
+    verify(publishService, never()).retire(any(), anyString());
+  }
+
+  @Test
+  void retireUnsupportedKindReturns404WithProblemJson() {
+    Response r = rest.retire("file-references", "01HF-A", securityContext);
+    assertEquals(404, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    assertTrue(r.getEntity().toString().contains("publish.kind.unsupported"));
+  }
+
+  @Test
+  void retireMissingEntityReturns404() {
+    when(entityIdResolver.resolveLong("01HF-MISSING")).thenThrow(new NotFoundException("nope"));
+    Response r = rest.retire("data-objects", "01HF-MISSING", securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void retirePermissionDeniedReturns403() {
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString())).thenReturn(false);
+    Response r = rest.retire("data-objects", "01HF-A", securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void retireWhenNoPublicationReturns404WithProblemJson() {
+    // Entity exists + caller has Write, but entity has no :Publication.
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(false);
+
+    Response r = rest.retire("data-objects", "01HF-A", securityContext);
+    assertEquals(404, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    assertTrue(r.getEntity().toString().contains("publish.publication.not-found"));
+  }
+
+  @Test
+  void retireWrongKindReturns404WithProblemJson() {
+    // Service throws NotFoundException (entity exists but not under this kind).
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(publishService.retire(any(), anyString()))
+      .thenThrow(new NotFoundException("No DataObject entity with appId 01HF-A"));
+
+    Response r = rest.retire("data-objects", "01HF-A", securityContext);
+    assertEquals(404, r.getStatus());
+    assertEquals("application/problem+json", r.getMediaType().toString());
+    assertTrue(r.getEntity().toString().contains("publish.entity.wrong-kind"));
+  }
+
+  @Test
+  void retireDoubleRetireIsIdempotent() {
+    // Second retire call on an already-retired row still returns 204
+    // (the service / DAO are idempotent).
+    when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
+    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(true);
+
+    assertEquals(204, rest.retire("data-objects", "01HF-A", securityContext).getStatus());
+    assertEquals(204, rest.retire("data-objects", "01HF-A", securityContext).getStatus());
   }
 }

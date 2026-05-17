@@ -199,7 +199,7 @@ These work the same way across every primitive:
   SPARQL store or an RO-Crate manifest. 2-year retention default.
   Instance-admin dashboard (PROV1e) queued behind A0's admin shell.
 - **HMC Kernel Information Profile publication** (`aidocs/66`,
-  KIP1a + KIP1e + KIP1g + KIP1h shipped). A one-click **Publish
+  KIP1a + KIP1e + KIP1f + KIP1g + KIP1h shipped). A one-click **Publish
   button** sits at the top of every Collection and DataObject
   pane in the web UI (KIP1e): a researcher with Writer / Manager
   permission clicks it, picks an SPDX licence, confirms, and the
@@ -232,7 +232,13 @@ These work the same way across every primitive:
   keeps working against existing rows) set
   `shepard.publish.minter=none`. Publication records are
   append-only by KIP convention — every Publication tracks its
-  `versionNumber`, the most recent is "current."
+  `versionNumber`, the most recent is "current." **Retirement
+  (KIP1f)**: a researcher with Writer / Manager permission can call
+  `DELETE /v2/{kind}/{appId}/publish` to mark the most-recent
+  Publication as `digitalObjectMutability: "retired"` — the row is
+  preserved (PIDs are permanent) but the mutability marker signals
+  that the object is no longer the operator's active intent.
+  Idempotent — a second DELETE returns 204.
 - **Publish to the Helmholtz Knowledge Graph (Unhide)** (`aidocs/67`,
   UH1a + UH1b + UH1c shipped). A first-class shepard plugin
   (`shepard-plugin-unhide`) exposes

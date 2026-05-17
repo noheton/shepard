@@ -35,16 +35,17 @@ adding a new kind doesn't change the URL shape.
 
 ```
 DataObject  ─(:HAS_PUBLICATION)─►  Publication
-                                   ┌─────────────────┐
-                                   │ appId           │
-                                   │ pid (@Index)    │
-                                   │ mintedAt        │
-                                   │ minterId        │
-                                   │ publishedBy     │
-                                   │ entityKind      │
-                                   │ entityAppId     │
-                                   │ versionNumber   │
-                                   └─────────────────┘
+                                   ┌──────────────────────────┐
+                                   │ appId                    │
+                                   │ pid (@Index)             │
+                                   │ mintedAt                 │
+                                   │ minterId                 │
+                                   │ publishedBy              │
+                                   │ entityKind               │
+                                   │ entityAppId              │
+                                   │ versionNumber            │
+                                   │ digitalObjectMutability  │
+                                   └──────────────────────────┘
 ```
 
 `:Publication` rows are **append-only** by KIP convention. The
@@ -53,6 +54,11 @@ a force re-mint attaches a fresh row alongside, never replacing
 the old one. KIP1h's versioned-PIDs Phase 1 stamps the row's
 1-based `versionNumber` so the resolver can emit
 `digitalObjectVersion: "v<n>"` without a fan-out query.
+
+KIP1f adds `digitalObjectMutability` — `null` on active Publications,
+`"retired"` after a `DELETE /v2/{kind}/{appId}/publish` call. The row
+is never deleted; "retired" is a soft-state flag that signals the
+operator's intent without breaking the PID resolver or the audit trail.
 
 ## Publishing from the UI
 
@@ -134,9 +140,53 @@ Response body (`application/json`):
   "publishedBy": "<username>",
   "entityKind": "data-objects",
   "entityAppId": "01HF...",
-  "versionNumber": 1
+  "versionNumber": 1,
+  "digitalObjectMutability": null
 }
 ```
+
+`digitalObjectMutability` is `null` (absent from JSON via `@JsonInclude(NON_NULL)`)
+on active Publications, and `"retired"` after a
+`DELETE /v2/{kind}/{appId}/publish` retire call (KIP1f).
+
+```json
+{
+  "appId": "01HF6N3R-pub-row",
+  "pid": "shepard:dlr.de/shepard-prod:data-objects:01HF...:v1",
+  ...
+  "versionNumber": 1,
+  "digitalObjectMutability": "retired"
+}
+```
+
+### Retire a publication
+
+```
+DELETE /v2/{kind}/{appId}/publish
+```
+
+- **Auth.** Bearer JWT or `X-API-KEY`. Caller must hold **Writer**
+  or **Manager** on the entity (same gate as `POST .../publish`).
+- **Semantics.** Sets `digitalObjectMutability = 'retired'` on the
+  most-recent `:Publication` row attached to the entity. The row is
+  **never deleted** — KIP records are append-only per the HMC spec.
+  "Retired" is a shepard-extension value signalling "no longer the
+  operator's intent" without implying the bit-stream has changed. The
+  PID resolver (`GET /v2/.well-known/kip/{pid-suffix}`) continues to
+  return the KIP record regardless of the mutability state.
+- **Idempotent.** Retiring an already-retired Publication returns 204.
+- **404.** Returned when the entity has no Publication attached (i.e.
+  it was never published). Publish first, then retire.
+
+Response: **204 No Content** on success.
+
+Error responses (`application/problem+json`):
+
+| `type` | Status | When |
+|---|---|---|
+| `publish.kind.unsupported` | 404 | URL segment not in `PublishableKindRegistry`. |
+| `publish.entity.wrong-kind` | 404 | Entity exists but is a different label than the URL segment claims. |
+| `publish.publication.not-found` | 404 | Entity has no Publication attached — publish first. |
 
 ### Resolve a PID (public)
 
@@ -269,6 +319,7 @@ All non-200 responses ship `application/problem+json` per RFC 7807.
 |---|---|---|
 | `publish.kind.unsupported` | 404 | URL segment isn't in the `PublishableKindRegistry`. |
 | `publish.entity.wrong-kind` | 404 | The appId exists but is a different label than the URL segment claims. |
+| `publish.publication.not-found` | 404 | Entity has no Publication attached (KIP1f retire). Publish the entity first. |
 | `publish.minter.not-installed` | 503 | No active minter (KIP1h). The `detail` field guides the operator to install `plugins/minter-local/` (or another minter plugin) and set `shepard.publish.minter=<id>`. |
 | `publish.minter.failed` | 500 | Active Minter threw `MinterException`. `detail` carries the operator-readable message. |
 | `kip.pid.not-found` | 404 | No `:Publication` at this shepard has the requested PID. |
@@ -376,7 +427,7 @@ picks the `@Path` resources + `@ApplicationScoped` beans. See
   [minter-datacite reference](/reference/minter-datacite/) for the
   full operator runbook).
 - **KIP1e (Vue Publish button)** — UI surface + licence picker, **shipped** (see [Publishing from the UI](#publishing-from-the-ui) above).
-- **KIP1f (unpublish / retire)** — open question on retire-vs-tombstone semantics; KIP records are append-only by the HMC spec so a hard delete is the wrong shape.
+- **KIP1f (retire)** — **shipped**. `DELETE /v2/{kind}/{appId}/publish` sets `digitalObjectMutability='retired'` on the most-recent Publication row. See [Retire a publication](#retire-a-publication) above.
 - **KIP1g (resolver as plugin)** — **shipped** (see [Plugin shape](#plugin-shape) above).
 - **KIP1h (`LocalMinter` plugin + optional minter + versioned PIDs Phase 1)** — **shipped** (see [Versioned PIDs (Phase 1)](#versioned-pids-phase-1) and [The optional-minter posture](#the-optional-minter-posture) above).
 - **ENT1 (versioning Phase 2 — `:EntityVersion` graph)** — queued; introduces first-class version nodes with `previousVersion` / `nextVersion` edges and `m4i:isNewVersionOf` semantics in the KIP record.

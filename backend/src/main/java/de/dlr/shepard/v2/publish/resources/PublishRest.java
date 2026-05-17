@@ -11,6 +11,7 @@ import de.dlr.shepard.publish.services.PublishService;
 import de.dlr.shepard.v2.publish.io.PublicationIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -167,6 +168,80 @@ public class PublishRest {
 
     String resolverUrl = absoluteUrl(uriInfo, "/v2/.well-known/kip/" + outcome.publication().getPid());
     return Response.ok(PublicationIO.from(outcome.publication(), resolverUrl)).build();
+  }
+
+  @DELETE
+  @Operation(
+    summary = "Retire a publication — mark the entity's most-recent :Publication as retired.",
+    description = "Sets `digitalObjectMutability = 'retired'` on the most-recent `:Publication` row attached to " +
+    "the entity. The row is never deleted — KIP records are append-only per the HMC spec. " +
+    "Idempotent: retiring an already-retired Publication returns 204. " +
+    "Returns 404 when the entity has no Publication at all."
+  )
+  @APIResponse(responseCode = "204", description = "Publication retired (or was already retired).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write/Manage permission on the entity.")
+  @APIResponse(
+    responseCode = "404",
+    description = "Unsupported `{kind}` segment; or no entity with `{appId}` of that kind; or entity has no Publication."
+  )
+  public Response retire(
+    @Parameter(description = "Entity-kind URL segment (e.g. 'data-objects', 'collections').", required = true)
+    @PathParam("kind") String kind,
+    @Parameter(description = "AppId of the entity whose most-recent Publication to retire.", required = true)
+    @PathParam("appId") String appId,
+    @Context SecurityContext securityContext
+  ) {
+    String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+
+    var kindOpt = kindRegistry.bySegment(kind);
+    if (kindOpt.isEmpty()) {
+      return problem(
+        Response.Status.NOT_FOUND,
+        "https://shepard.dlr.de/problems/publish.kind.unsupported",
+        "Unsupported publishable kind",
+        "No publishable kind matches URL segment '" +
+        kind +
+        "'. Supported: " +
+        String.join(", ", kindRegistry.supportedSegments()) +
+        "."
+      );
+    }
+    PublishableKind k = kindOpt.get();
+
+    long ogmId;
+    try {
+      ogmId = entityIdResolver.resolveLong(appId);
+    } catch (NotFoundException nfe) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Write, caller, 0L)) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+
+    boolean retired;
+    try {
+      retired = publishService.retire(k, appId);
+    } catch (NotFoundException nfe) {
+      return problem(
+        Response.Status.NOT_FOUND,
+        "https://shepard.dlr.de/problems/publish.entity.wrong-kind",
+        "Entity is not of the requested kind",
+        nfe.getMessage()
+      );
+    }
+
+    if (!retired) {
+      return problem(
+        Response.Status.NOT_FOUND,
+        "https://shepard.dlr.de/problems/publish.publication.not-found",
+        "No Publication for this entity",
+        "Entity with appId '" + appId + "' has no Publication attached — publish first."
+      );
+    }
+
+    return Response.noContent().build();
   }
 
   /**

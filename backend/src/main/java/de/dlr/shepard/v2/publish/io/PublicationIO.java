@@ -14,10 +14,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>Designed in {@code aidocs/66 §4.1}. KIP1h additively grew the
  * record with {@link #versionNumber} — the Phase-1 version number
- * the {@code PublishService} computed before minting. Clients that
- * don't parse the field ignore it per the additive-wire-shape
- * convention. The {@link #from(Publication, String)} factory
- * defaults the field to {@code 1} on pre-KIP1h rows where the
+ * the {@code PublishService} computed before minting. KIP1f
+ * additively grew the record with {@link #digitalObjectMutability}
+ * — {@code null} on active Publications, {@code "retired"} after a
+ * {@code DELETE /v2/{kind}/{appId}/publish} retire call. Clients
+ * that don't parse these fields ignore them per the
+ * additive-wire-shape convention.
+ *
+ * <p>The {@link #from(Publication, String)} factory defaults
+ * {@code versionNumber} to {@code 1} on pre-KIP1h rows where the
  * property is null (V31 backfill sets the persisted value to 1; the
  * Optional in the JSON response normalises the missing-property case
  * for any rows that slipped through).
@@ -45,7 +50,12 @@ public record PublicationIO(
     required = true,
     description = "KIP1h Phase-1 version number. 1-based ordinal of this Publication among the entity's :Publication rows."
   )
-  Integer versionNumber
+  Integer versionNumber,
+  @Schema(
+    description = "KIP1f mutability marker. null on active Publications; 'retired' after DELETE /v2/{kind}/{appId}/publish. " +
+    "Read-only — the client cannot set this field; use the DELETE endpoint to retire."
+  )
+  String digitalObjectMutability
 ) {
   /**
    * Project a {@link Publication} onto the wire shape, computing the
@@ -72,7 +82,8 @@ public record PublicationIO(
       p.getPublishedBy(),
       p.getEntityKind(),
       p.getEntityAppId(),
-      version
+      version,
+      p.getDigitalObjectMutability()
     );
   }
 }

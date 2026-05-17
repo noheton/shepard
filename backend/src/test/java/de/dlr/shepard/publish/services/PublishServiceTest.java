@@ -288,4 +288,54 @@ class PublishServiceTest {
     when(publicationDAO.findByEntityAppId("01HF-X")).thenReturn(List.of());
     assertFalse(service.currentFor("01HF-X").isPresent());
   }
+
+  // ---------- KIP1f: retire ----------
+
+  /** Stub verifyEntityKind to succeed (entity exists, right label). */
+  private void primeEntityExistsForRetire() {
+    Result kindResult = mock(Result.class);
+    when(kindResult.iterator()).thenReturn(List.<Map<String, Object>>of(Map.of("appId", "01HF-A")).iterator());
+    when(session.query(anyString(), any(Map.class))).thenReturn(kindResult);
+  }
+
+  @Test
+  void retireReturnsTrueWhenPublicationRetired() {
+    primeEntityExistsForRetire();
+    when(publicationDAO.retireMostRecent("01HF-A")).thenReturn(true);
+
+    assertTrue(service.retire(PublishableKind.DATA_OBJECTS, "01HF-A"));
+    verify(publicationDAO).retireMostRecent("01HF-A");
+  }
+
+  @Test
+  void retireReturnsFalseWhenNoPublicationExists() {
+    // Entity exists but has no :Publication rows — caller should return 404.
+    primeEntityExistsForRetire();
+    when(publicationDAO.retireMostRecent("01HF-A")).thenReturn(false);
+
+    assertFalse(service.retire(PublishableKind.DATA_OBJECTS, "01HF-A"));
+  }
+
+  @Test
+  void retireThrowsNotFoundWhenEntityMissing() {
+    // verifyEntityKind sees an empty result → entity doesn't exist or
+    // is the wrong label → NotFoundException (REST maps to 404).
+    Result kindResult = mock(Result.class);
+    when(kindResult.iterator()).thenReturn(java.util.Collections.<Map<String, Object>>emptyList().iterator());
+    when(session.query(anyString(), any(Map.class))).thenReturn(kindResult);
+
+    assertThrows(NotFoundException.class, () -> service.retire(PublishableKind.DATA_OBJECTS, "01HF-MISSING"));
+    verify(publicationDAO, never()).retireMostRecent(anyString());
+  }
+
+  @Test
+  void retireRejectsNullKind() {
+    assertThrows(IllegalArgumentException.class, () -> service.retire(null, "01HF-A"));
+  }
+
+  @Test
+  void retireRejectsBlankEntityAppId() {
+    assertThrows(IllegalArgumentException.class, () -> service.retire(PublishableKind.DATA_OBJECTS, ""));
+    assertThrows(IllegalArgumentException.class, () -> service.retire(PublishableKind.DATA_OBJECTS, null));
+  }
 }
