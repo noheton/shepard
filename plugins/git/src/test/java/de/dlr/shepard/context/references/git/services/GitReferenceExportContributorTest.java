@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.users.services.GitCredentialService;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.export.ExportBuilder;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
@@ -51,7 +52,7 @@ class GitReferenceExportContributorTest {
   GitReferenceExportContributor contributor;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws java.io.IOException {
     MockitoAnnotations.openMocks(this);
     contributor = new GitReferenceExportContributor();
     contributor.gitCredentialService = gitCredentialService;
@@ -166,9 +167,13 @@ class GitReferenceExportContributorTest {
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
+  /** Creates a GitReference with a synthetic parent DataObject so BasicReferenceIO doesn't NPE. */
   private GitReference makeGr(GitReferenceMode mode, String ref, String path) {
     GitReference gr = new GitReference(REPO_URL, ref, path);
     gr.setMode(mode);
+    DataObject parent = new DataObject();
+    parent.setShepardId(1L);
+    gr.setDataObject(parent);
     return gr;
   }
 }
