@@ -26,7 +26,7 @@
         About
       </v-btn>
       <v-btn
-        href="/shepard/api/q/swagger-ui"
+        :href="apiDocsUrl"
         target="_blank"
         class="nav-item"
       >
@@ -48,6 +48,11 @@
 import { useTheme } from "vuetify";
 
 const { status, signOut, signIn, data } = useAuth();
+const { public: publicConfig } = useRuntimeConfig();
+const apiDocsUrl = computed(() => {
+  const base = (publicConfig.backendApiUrl as string) || "";
+  return base ? `${base.replace(/\/$/, "")}/q/swagger-ui` : "/shepard/api/q/swagger-ui";
+});
 const theme = useTheme();
 
 const isSignedIn = computed(

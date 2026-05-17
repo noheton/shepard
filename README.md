@@ -40,6 +40,30 @@ Tour: overview & use cases (`/`) · architecture (`/architecture`) · Python qui
 
 Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on push to `main`. The canonical authoritative documentation is the GitLab wiki linked further down in this README; the GitHub Pages site is a structured overview for the GitHub mirror.
 
+## Live demo instance
+
+A fully-seeded demo is running at **<https://shepard.nuclide.systems>**. 
+
+The instance is pre-loaded with the LUMEN-inspired hot-fire test campaign
+(`examples/seed-showcase/seed.py`) — 15 synthetic engine test runs with 25
+timeseries channels each, file references, lab journal entries, semantic
+annotations, and git references. Explore it without setting up anything:
+
+| Username | Password | Role |
+|---|---|---|
+| `alice` | `alice-demo` | Researcher (Collection Owner for the LUMEN campaign) |
+| `bob` | `bob-demo` | Researcher (Analyst — read/write on the campaign) |
+| `admin` | `admin-demo` | Instance Administrator (full access + admin page) |
+
+API access: every account also has a pre-minted API key shown on the
+`/user#apikeys` profile page after sign-in. The backend API is at
+<https://shepard-api.nuclide.systems/shepard/api> and the interactive
+Swagger UI at <https://shepard-api.nuclide.systems/shepard/api/q/swagger-ui>.
+
+> The demo data is **synthetic** — it is loosely inspired by the DLR LUMEN
+> demonstrator at Lampoldshausen but contains no real measurement data.
+> See `examples/seed-showcase/seed.py` for the generation logic.
+
 ## Quick test / evaluation setup
 
 There is a Docker Compose configuration in `infrastructure-local` which you can use to quickly try out shepard.

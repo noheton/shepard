@@ -115,6 +115,7 @@ Design notes, analysis docs, and strategy docs for this fork of
 | [`59-performance-testing-and-tuning.md`](ops/59-performance-testing-and-tuning.md) | Performance testing + tuning design (P10–P20 slice) |
 | [`85-ui-overhaul-design.md`](ops/85-ui-overhaul-design.md) | UI overhaul — critique, opportunities, prioritised roadmap (QW/UI series) |
 | [`86-ui-changelog.md`](ops/86-ui-changelog.md) | Living UI change log — per-PR record of user-visible frontend changes |
+| [`87-collection-container-duality.md`](ops/87-collection-container-duality.md) | Collection/Container duality — design rationale, UX improvements, marketing argument |
 
 ---
 

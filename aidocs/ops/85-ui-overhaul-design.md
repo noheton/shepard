@@ -181,12 +181,18 @@ Phase 3 (larger UX rethinks):
 
 ---
 
-## 7. Open Questions
+## 7. Open Questions — Resolved
 
-1. **Collection/container duality** (aidocs/58 §5): should containers be surfaced inside the
-   collection sidebar as a second tree or remain a separate top-level nav destination? Decision
-   needed before UI8 can be designed.
-2. **Global command palette scope**: collections only, or also data objects + containers?
-3. **Template instantiation UX**: wizard inside CreateCollectionDialog or separate /templates route?
-4. **Snapshot UI home**: should it live in the collection sidebar or as a separate tab on the
-   collection detail page?
+1. **Collection/container duality** — surfaced inside the collection sidebar as a second tree
+   (not a separate top-level nav). The duality design enables "views" on data from different
+   perspectives; a separate `/containers` top-level nav breaks the conceptual model for
+   non-IT users. Full design rationale in `aidocs/ops/87-collection-container-duality.md`.
+2. **Global command palette scope** — shepard-wide: collections, data objects, and containers.
+3. **Template instantiation UX** — migrate to a separate `/templates` route. The current
+   CreateCollectionDialog wizard becomes "use basic template" (one option among many).
+   Customized collection creation forms with mandatory fields (e.g. cost-center number) become
+   template-defined. This makes the system more flexible and is easier to maintain in future.
+4. **Snapshot UI home** — collection detail page tab, visible to owners and managers only.
+5. **Drag-and-drop ordering (UI5a)** — sort order must be stored server-side so all users see
+   the same ordering. "Resort" is a Manage-level permission on the Collection. This is a
+   design constraint for UI5a implementation.
