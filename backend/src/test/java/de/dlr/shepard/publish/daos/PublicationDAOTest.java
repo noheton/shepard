@@ -210,4 +210,69 @@ class PublicationDAOTest extends BaseTestCase {
     when(session.query(any(String.class), anyMap())).thenReturn(r1);
     assertEquals(7, dao.findLatestVersionNumber("01HF-INT"));
   }
+
+  // ---------- KIP1f: retireMostRecent ----------
+
+  @Test
+  void retireMostRecentReturnsFalseForBlankEntityAppId() {
+    // Blank / null short-circuits before session is hit.
+    assertFalse(dao.retireMostRecent(null));
+    assertFalse(dao.retireMostRecent(""));
+    assertFalse(dao.retireMostRecent("   "));
+    verify(session, never()).query(any(String.class), anyMap());
+  }
+
+  @Test
+  void retireMostRecentReturnsTrueWhenPublicationExists() {
+    // Query returns count = 1 → row found, SET executed → true.
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 1L)).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertTrue(dao.retireMostRecent("01HF-A"));
+  }
+
+  @Test
+  void retireMostRecentReturnsFalseWhenNoPublicationExists() {
+    // Query returns count = 0 → no row matched → false (REST maps to 404).
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 0L)).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertFalse(dao.retireMostRecent("01HF-NO-PUB"));
+  }
+
+  @Test
+  void retireMostRecentReturnsFalseOnEmptyQueryResult() {
+    // Defensive: empty iterator (impossible in practice with RETURN count(p),
+    // but pin the defensive path).
+    Result r = mock(Result.class);
+    when(r.iterator()).thenReturn(Collections.<Map<String, Object>>emptyList().iterator());
+    when(session.query(any(String.class), anyMap())).thenReturn(r);
+
+    assertFalse(dao.retireMostRecent("01HF-A"));
+  }
+
+  @Test
+  void retireMostRecentIdempotent() {
+    // Calling retire twice on an already-retired row returns true both
+    // times — the Cypher SET is idempotent (same value → same effect).
+    Result r1 = mock(Result.class);
+    when(r1.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 1L)).iterator()
+    );
+    Result r2 = mock(Result.class);
+    when(r2.iterator()).thenReturn(
+      List.<Map<String, Object>>of(Map.<String, Object>of("n", 1L)).iterator()
+    );
+    when(session.query(any(String.class), anyMap())).thenReturn(r1).thenReturn(r2);
+
+    assertTrue(dao.retireMostRecent("01HF-A"));
+    assertTrue(dao.retireMostRecent("01HF-A"));
+    verify(session, times(2)).query(any(String.class), anyMap());
+  }
 }

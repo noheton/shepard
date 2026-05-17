@@ -110,6 +110,41 @@ public class PublicationDAO extends GenericDAO<Publication> {
   }
 
   /**
+   * KIP1f — set {@code digitalObjectMutability = 'retired'} on the
+   * most-recent {@code :Publication} row for the given entity (by
+   * {@code mintedAt DESC LIMIT 1}).
+   *
+   * <p>The row is never deleted — KIP records are append-only per the
+   * HMC spec. The flag is a soft-state marker that signals "this
+   * Publication is no longer the operator's intent" without destroying
+   * the audit trail or breaking the PID resolver.
+   *
+   * <p>Idempotent: calling retire on an already-retired Publication
+   * is a no-op ({@code SET} on the same property writes the same
+   * value; Neo4j does not raise an error).
+   *
+   * @param entityAppId appId of the published entity
+   * @return {@code true} when a row was found and updated (or was
+   *         already retired); {@code false} when no {@code :Publication}
+   *         exists for this entity (caller should return 404)
+   */
+  public boolean retireMostRecent(String entityAppId) {
+    if (entityAppId == null || entityAppId.isBlank()) return false;
+    if (session == null) return false;
+    String query =
+      "MATCH (p:Publication) WHERE p.entityAppId = $entityAppId " +
+      "WITH p ORDER BY p.mintedAt DESC LIMIT 1 " +
+      "SET p.digitalObjectMutability = 'retired' " +
+      "RETURN count(p) AS n";
+    var result = session.query(query, Map.of("entityAppId", entityAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return false;
+    Object raw = iter.next().get("n");
+    if (raw instanceof Number n) return n.longValue() > 0;
+    return false;
+  }
+
+  /**
    * Persist the Publication and attach the
    * {@code (entity)-[:HAS_PUBLICATION]->(publication)} edge.
    *

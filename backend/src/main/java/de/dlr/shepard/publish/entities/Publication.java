@@ -134,6 +134,24 @@ public class Publication implements HasId, HasAppId {
   @Property("entityAppId")
   private String entityAppId;
 
+  /**
+   * KIP1f mutability marker — {@code null} on active Publications,
+   * {@code "retired"} after {@code DELETE /v2/{kind}/{appId}/publish}.
+   *
+   * <p>KIP records are append-only per the HMC spec, so the
+   * {@code :Publication} row is never deleted. Retire is a soft-state
+   * flag that callers can use to stop treating the PID as "current"
+   * without destroying the audit trail or breaking the PID resolver.
+   *
+   * <p>"retired" is a shepard extension to the standard
+   * {@code digitalObjectMutability} vocabulary (which defines
+   * {@code mutable} / {@code fixed} / {@code immutable}) — it
+   * conveys "this publication is no longer the operator's intent"
+   * without implying the underlying bit-stream has changed.
+   */
+  @Property("digitalObjectMutability")
+  private String digitalObjectMutability;
+
   /** For testing purposes only. */
   public Publication(long id) {
     this.id = id;

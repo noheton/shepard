@@ -92,4 +92,36 @@ class PublicationIOTest {
     PublicationIO io = PublicationIO.from(p, "https://x");
     assertEquals(Integer.valueOf(3), io.versionNumber());
   }
+
+  // ---------- KIP1f: digitalObjectMutability ----------
+
+  @Test
+  void fromActivePublicationHasNullMutability() {
+    // Active Publications (never retired) surface null — field is absent
+    // in JSON output per @JsonInclude(NON_NULL).
+    Publication p = new Publication();
+    p.setAppId("pub-active");
+    p.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
+    p.setMintedAt(1_747_000_000_000L);
+    p.setMinterId("local");
+    p.setVersionNumber(1);
+    p.setDigitalObjectMutability(null);
+    PublicationIO io = PublicationIO.from(p, "https://x");
+    assertNull(io.digitalObjectMutability());
+  }
+
+  @Test
+  void fromRetiredPublicationSurfacesMutabilityRetired() {
+    // After DELETE /v2/{kind}/{appId}/publish the DAO stamps 'retired';
+    // the wire shape surfaces it verbatim.
+    Publication p = new Publication();
+    p.setAppId("pub-retired");
+    p.setPid("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
+    p.setMintedAt(1_747_000_000_000L);
+    p.setMinterId("local");
+    p.setVersionNumber(1);
+    p.setDigitalObjectMutability("retired");
+    PublicationIO io = PublicationIO.from(p, "https://x");
+    assertEquals("retired", io.digitalObjectMutability());
+  }
 }
