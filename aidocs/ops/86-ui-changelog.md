@@ -29,6 +29,7 @@ by the CI Playwright run (see `aidocs/ops/85 §5`).
 
 | Date | ID | Area | Change | Screenshot |
 |---|---|---|---|---|
+| 2026-05-17 | QW2 | Collection sidebar | Text filter at top of sidebar; client-side filtering of data objects by name | — |
 | 2026-05-17 | J1c | DataObject detail page | Added "Jupyter Notebooks" expansion panel — lists all `.ipynb` file references with download link and "Open in JupyterHub" button; first-time URL setup via inline cog | — |
 | 2026-05-17 | U1c2 | Collection sidebar header | Owner / Editor / Reader role chip + amber Admin chip now displayed below the collection name for the current user | — |
 | 2026-05-17 | J1c / U1d | User preferences | `editor.preferredJupyter` preference key introduced; stored via `PATCH /v2/users/me/preferences`; accessible through the Notebooks panel cog | — |
@@ -48,7 +49,6 @@ Items in the design doc (`aidocs/ops/85`) that are not yet shipped:
 | ID | Summary | Gate |
 |---|---|---|
 | QW1 | Global search bar in HeaderBar | unblocked |
-| QW2 | Sidebar data object filter | unblocked |
 | QW3 | JupyterHub URL in user profile pane | unblocked |
 | QW4 | Git credentials shortcut in GitReferencesPane | unblocked |
 | QW5 | Publish deep-link tooltip | unblocked |

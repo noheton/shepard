@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useTreeviewItems } from "./useTreeviewItems";
+import type { TreeviewItem } from "./treeviewItem";
 
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
@@ -17,6 +18,115 @@ const {
   refreshItems,
   collapseItem,
 } = useTreeviewItems(routeParams);
+
+// QW2: client-side text filter for data objects in the sidebar.
+//
+// Filtering applies to already-loaded nodes only. Children that have not been
+// expanded/loaded will not appear in search results, because the treeview uses
+// lazy-loading (children are fetched on first expand). This is intentional —
+// no new server requests are issued while typing.
+//
+// Demo behaviour (LUMEN hotfire campaign):
+//   - Filter "TR-00" matches TR-001 through TR-009 and their parent "Test Runs"
+//   - Filter "TR-005" matches only TR-005, with "Test Runs" still visible as its
+//     ancestor. This requires the "Test Runs" group to already be expanded so
+//     that its children are loaded in memory.
+const filterText = ref<string>("");
+
+// Clear filter whenever the user navigates to a different collection.
+watch(
+  () => routeParams.value.collectionId,
+  () => {
+    filterText.value = "";
+  },
+);
+
+/**
+ * Recursively filters the treeview items tree.
+ * A node is included if:
+ *   (a) its title contains the needle (case-insensitive), OR
+ *   (b) at least one of its (loaded) descendants matches.
+ * When included due to (b) only, the node's children are replaced by the
+ * filtered children list so only matching subtrees are shown.
+ */
+function filterItems(
+  items: TreeviewItem[],
+  needle: string,
+): TreeviewItem[] {
+  const lower = needle.toLowerCase();
+  const result: TreeviewItem[] = [];
+  for (const item of items) {
+    const selfMatch = item.title.toLowerCase().includes(lower);
+    const filteredChildren =
+      item.children && item.children.length > 0
+        ? filterItems(item.children, needle)
+        : [];
+    if (selfMatch || filteredChildren.length > 0) {
+      result.push({
+        ...item,
+        // When there are matching descendants, surface only those; otherwise
+        // preserve the original children array (which may be empty / undefined).
+        children:
+          filteredChildren.length > 0 ? filteredChildren : item.children,
+      });
+    }
+  }
+  return result;
+}
+
+/** The items actually passed to v-treeview (filtered when a needle is set). */
+const filteredItems = computed<TreeviewItem[]>(() => {
+  if (!treeviewItems.value) return [];
+  const needle = filterText.value.trim();
+  if (!needle) return treeviewItems.value;
+  return filterItems(treeviewItems.value, needle);
+});
+
+/**
+ * Collect IDs of all ancestors of matched nodes so the treeview can auto-open
+ * them while the filter is active. Returns a Set of node IDs that should be
+ * open in addition to whatever the user has already opened.
+ */
+function collectAncestorIds(
+  items: TreeviewItem[],
+  needle: string,
+): Set<number> {
+  const lower = needle.toLowerCase();
+  const ids = new Set<number>();
+
+  function walk(node: TreeviewItem): boolean {
+    const selfMatch = node.title.toLowerCase().includes(lower);
+    let childMatch = false;
+    if (node.children) {
+      for (const child of node.children) {
+        if (walk(child)) childMatch = true;
+      }
+    }
+    if (childMatch) {
+      ids.add(node.id);
+    }
+    return selfMatch || childMatch;
+  }
+
+  for (const root of items) {
+    walk(root);
+  }
+  return ids;
+}
+
+/**
+ * The set of opened IDs to pass to v-treeview.
+ * While filtering, we augment the user's opened set with ancestors of matches
+ * so matched children are immediately visible without a manual expand.
+ */
+const effectiveOpenedItems = computed<number[]>(() => {
+  const needle = filterText.value.trim();
+  if (!needle || !treeviewItems.value) return openedTreeviewItems.value;
+  const ancestors = collectAncestorIds(treeviewItems.value, needle);
+  if (ancestors.size === 0) return openedTreeviewItems.value;
+  const merged = new Set<number>([...openedTreeviewItems.value, ...ancestors]);
+  return Array.from(merged);
+});
 
 async function onOpenClicked(expandGroup: {
   id: unknown;
@@ -94,14 +204,27 @@ const createDataObjectDialogOpened = ref<boolean>(false);
       />
     </div>
 
+    <!-- QW2: filter input — visible only when tree has items -->
+    <div v-if="!loading && treeviewItems && treeviewItems.length > 0" class="px-3 pb-2">
+      <v-text-field
+        v-model="filterText"
+        placeholder="Filter…"
+        density="compact"
+        variant="outlined"
+        clearable
+        prepend-inner-icon="mdi-magnify"
+        hide-details
+      />
+    </div>
+
     <div class="treeview-container">
       <div
         style="display: flex; flex-direction: column; align-items: flex-start"
       >
         <v-treeview
           v-if="!loading && !!treeviewItems && treeviewItems.length > 0"
-          v-model:opened="openedTreeviewItems"
-          :items="treeviewItems"
+          :opened="effectiveOpenedItems"
+          :items="filteredItems"
           class="treeview"
           item-value="id"
           activatable
@@ -112,6 +235,7 @@ const createDataObjectDialogOpened = ref<boolean>(false);
           mandatory
           collapse-icon="mdi-chevron-down"
           expand-icon="mdi-chevron-right"
+          @update:opened="(val: number[]) => openedTreeviewItems = val"
           @update:activated="onActivated"
           @click:open="onOpenClicked"
         >
