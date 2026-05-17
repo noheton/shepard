@@ -334,12 +334,16 @@ Mid-horizon:
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.
 - **Other AI features** (`aidocs/43`). **TA1a shipped** — timeseries
-  annotations (interval + point) with `aiGenerated` flag ready for
-  the scriptable anomaly-detection hook (TA1c). Queued: automatic
-  anomaly detection (`POST /v2/timeseries-references/{appId}/detect-anomalies`,
-  TA1c); semantic-annotation suggestion; lab-journal authoring
-  assist; auto-summarisation; natural-language search. All AI
-  inference BYOK / admin-fallback gated.
+  annotations (interval + point) with `aiGenerated` flag. **AI1b
+  shipped** — rolling-median MAD anomaly detector at
+  `POST /v2/timeseries-references/{refAppId}/detect-anomalies`:
+  pure Java, no ML library, LLM-independent; configurable rolling
+  window (default 51) and Z-score threshold k (default 6.0);
+  optional `createAnnotations=true` persists one `TimeseriesAnnotation`
+  per contiguous anomaly run. Queued: semantic-annotation
+  suggestion; lab-journal authoring assist; auto-summarisation;
+  natural-language search. All AI inference BYOK / admin-fallback
+  gated.
 - **S3-compatible file storage** (`aidocs/45`, FS series). The
   **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
   + the in-core GridFS default adapter, with `shepard.storage.provider`
