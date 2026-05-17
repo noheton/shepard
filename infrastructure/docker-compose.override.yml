@@ -58,7 +58,7 @@ services:
       start_period: 90s
 
   frontend:
-    image: ${SHEPARD_FRONTEND_IMAGE:-ghcr.io/noheton/shepard-frontend:latest}
+    image: ${SHEPARD_FRONTEND_IMAGE:-shepard-frontend:local}
     environment:
       # Browser-facing Keycloak URL for the OIDC flow.
       NUXT_OIDC_ISSUER: "http://192.168.1.49:8082/realms/shepard-demo/"
