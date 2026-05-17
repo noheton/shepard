@@ -193,6 +193,39 @@ public class ShepardTemplateDAO extends GenericDAO<ShepardTemplate> {
     return created instanceof Boolean b ? b : false;
   }
 
+  /**
+   * Record a {@code :CREATED_FROM_TEMPLATE} relationship from a
+   * {@link de.dlr.shepard.context.collection.entities.DataObject} to a
+   * {@link ShepardTemplate}. The edge carries three provenance properties:
+   * {@code templateAppId}, {@code templateVersion}, and {@code appliedAt}
+   * (millis since epoch).
+   *
+   * <p>The DataObject is matched by its indexed {@code shepardId} property.
+   * The relationship is {@code MERGE}-ed (idempotent on the pair of nodes) so
+   * that calling this method twice for the same DataObject + Template is safe
+   * — the second call is a no-op.
+   *
+   * @param dataObjectShepardId
+   *          the {@code shepardId} of the newly-created DataObject
+   * @param template
+   *          the source template (supplies {@code appId} and {@code version})
+   */
+  public void recordCreatedFrom(long dataObjectShepardId, ShepardTemplate template) {
+    session.query(
+      "MATCH (d:DataObject {shepardId: $doId}), (t:ShepardTemplate {appId: $tAppId}) " +
+      "MERGE (d)-[:CREATED_FROM_TEMPLATE]->(t) " +
+      "ON CREATE SET d._createdFromTemplateAppId    = $tAppId, " +
+      "              d._createdFromTemplateVersion   = $tVer,  " +
+      "              d._createdFromTemplateAppliedAt = $now",
+      Map.of(
+        "doId", dataObjectShepardId,
+        "tAppId", template.getAppId(),
+        "tVer", template.getVersion() == null ? 1 : template.getVersion(),
+        "now", System.currentTimeMillis()
+      )
+    );
+  }
+
   @Override
   public Class<ShepardTemplate> getEntityType() {
     return ShepardTemplate.class;
