@@ -165,7 +165,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 |---|---|---|---|---|
 | ORCID iD on user profile (#29) | none | `PATCH /v2/users/me` (orcid); ISO 7064 mod 11-2 checked; UI edit dialog in ProfilePane | **✓ ↑** | U1a (#1062) + U1-profile-ui |
 | `displayName` override + `effectiveDisplayName` derivation + audit-trail render switch (#694) | username only | `displayName` field + `DisplayNameResolver` fallback chain (U1b #1064); render switch across all IO classes + RO-Crate export (U1b2) | **✓ ↑** | `aidocs/36` |
-| `/me` route (split from Configuration) | mixed Configuration page | TBD | 📐 (queued, U1c) | `aidocs/36 §5` |
+| `/me` route (split from Configuration) | mixed Configuration page | New `pages/me/index.vue` absorbs Profile/API Keys/Subscriptions/Git Credentials; `/user` → `/me` redirect; Semantic Repos + User Groups merged into `/admin`; Configuration nav removed; `/configuration` → `/admin` redirect; `useSettingDescriptor` skeleton | **✓ shipped (U1c)** | `aidocs/36 §5` |
 | Role-in-context chip in collection sidebar (Owner / Editor / Reader + Instance Admin) | none | `GET /v2/me/role-in/{collectionAppId}` → `{ read, write, manage, isInstanceAdmin }`; `CollectionRoleChip.vue` + `useMyRoleIn` composable; watches reactive appId, refetches on navigation | **✓ shipped (U1c2)** | `aidocs/51 §9.4` |
 | Preferences (`theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`, `defaultLandingPage`) via open-world `Map<String,String>` on `User.preferencesJson` + `GET/PATCH /v2/users/me/preferences` | none | `GET/PATCH /v2/users/me/preferences` (RFC 7396 merge-patch; null removes key; open-world string keys; 401 when unauth) | **✓ shipped (U1d)** | `aidocs/36 §3.2 / §7` |
 | Avatar (shepard-uploaded → IdP `picture` → Gravatar tier) | none | TBD | 📐 (queued, U1e) | `aidocs/36 §3.1` |
@@ -295,7 +295,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `GET /users/me`, `PATCH /users/me`, `PUT /users/me/avatar`, `GET /users/{appId}`, `GET /users/{appId}/avatar` | U1a-U1e | `aidocs/36` |
 | `GET /v2/templates/{...}/processes/...` (process runtime; subset of PR1) | | `aidocs/40 §2` |
 | `POST /v2/timeseries/{appId}/detect-anomalies`, `GET /v2/data-objects/{appId}/similar`, `POST /v2/search/natural`, `POST /v2/lab-journal/assist`, `POST /v2/semantic-annotations/suggest`, `POST /v2/collections/{appId}/export?aiAssist=true`, the snap-dashboards tool-use catalogue | AI1a-AI1l | `aidocs/43` |
-| `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1a-f | `aidocs/46` |
+| `GET /v2/file-containers/{containerAppId}/files/{originalName}/versions` — `:PayloadVersion` node, SHA-256 recording on upload, versionNumber counter | PV1a — ✓ shipped (2026-05-17) | `aidocs/46` |
+| `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1b-f — queued | `aidocs/46` |
 | `POST /v2/file-containers/{containerAppId}/upload-url`, `POST /v2/file-containers/{containerAppId}/upload-url/commit`, `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` | FS1c — ✓ shipped | `aidocs/45 §7` |
 | `GET /v2/artifacts/{type}/{id}/url` | FS1g | `aidocs/45` |
 | `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped | — |

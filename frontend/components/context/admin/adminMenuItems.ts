@@ -4,6 +4,8 @@ export enum AdminFragments {
   FEATURE_TOGGLES = "feature-toggles",
   INSTANCE_HEALTH = "instance-health",
   TEMPLATES = "templates",
+  SEMANTIC_REPOSITORIES = "semantic-repositories",
+  USER_GROUPS = "user-groups",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -21,5 +23,15 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Templates",
     fragment: AdminFragments.TEMPLATES,
     icon: "mdi-file-document-multiple-outline",
+  },
+  {
+    name: "Semantic Repositories",
+    fragment: AdminFragments.SEMANTIC_REPOSITORIES,
+    icon: "mdi-library-outline",
+  },
+  {
+    name: "User Groups",
+    fragment: AdminFragments.USER_GROUPS,
+    icon: "mdi-account-multiple-outline",
   },
 ];

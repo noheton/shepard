@@ -7,12 +7,6 @@
       <v-btn class="nav-item" to="/collections">Collections</v-btn>
       <v-btn class="nav-item" to="/containers">Containers</v-btn>
       <v-btn
-        class="nav-item"
-        :to="{ path: '/configuration', hash: '#semanticrepositories' }"
-      >
-        Configuration
-      </v-btn>
-      <v-btn
         v-if="isInstanceAdmin"
         class="nav-item"
         :to="{ path: '/admin', hash: '#feature-toggles' }"
@@ -69,7 +63,7 @@
       </v-btn>
       <v-btn
         icon="mdi-account-outline"
-        :to="{ path: '/user', hash: '#profile' }"
+        :to="{ path: '/me', hash: '#profile' }"
       />
       <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
       <v-btn :prepend-icon="authIcon" @click="handleAuth()">

@@ -3,6 +3,8 @@ import {
   AdminFragments,
   AdminMenuEntries,
 } from "~/components/context/admin/adminMenuItems";
+import SemanticRepositoryPane from "~/components/context/configuration/SemanticRepositoryPane.vue";
+import UserGroupsPane from "~/components/context/configuration/UserGroupsPane.vue";
 
 useHead({
   title: "Admin | shepard",
@@ -14,10 +16,10 @@ const isInstanceAdmin = computed(() =>
   hasInstanceAdminRole(data.value?.accessToken),
 );
 
-// Redirect non-admins to /user
+// Redirect non-admins to /me
 watchEffect(() => {
   if (data.value !== undefined && !isInstanceAdmin.value) {
-    navigateTo("/user");
+    navigateTo("/me");
   }
 });
 
@@ -34,6 +36,12 @@ const { routeFragment } = useRouteFragment();
     />
     <AdminTemplatesPane
       v-if="routeFragment === AdminFragments.TEMPLATES"
+    />
+    <SemanticRepositoryPane
+      v-if="routeFragment === AdminFragments.SEMANTIC_REPOSITORIES"
+    />
+    <UserGroupsPane
+      v-if="routeFragment === AdminFragments.USER_GROUPS"
     />
   </PaneLayout>
 </template>
