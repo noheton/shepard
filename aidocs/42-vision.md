@@ -403,10 +403,13 @@ Mid-horizon:
   Collections panel + top-active-Collections leaderboard at
   `/admin/dashboard`. Gated on A0's instance-admin role.
 - **Video as a first-class payload** (`aidocs/53`, VID1 series).
-  Dedicated PayloadStorage plugin; segments + HLS manifest on
-  object store; navigation by video-time and wall-clock; live
-  ingest via a sibling `shepard-video-collector` or a MediaMTX
-  sidecar.
+  **VID1a shipped**: `VideoStreamReference` entity with multipart
+  upload (`POST /v2/data-objects/{appId}/video-stream-references`),
+  ffprobe metadata extraction (`durationSeconds`, `width`, `height`,
+  `frameRate`, `videoCodec`, `audioCodec`), and `wallClockTimestamp`
+  as the TM1 temporal anchor. Still ahead: HLS segmentation, live
+  ingest via `shepard-video-collector` / MediaMTX sidecar,
+  video-time + wall-clock navigation, frame extraction (VID1d).
 - **`FileReference` → `FileBundleReference` + `FileGroup` rename**
   (`aidocs/53`, FR1 series — **FR1a + FR1b shipped**. FR1a: V21
   migration adds the second label + default group; `/v2/bundles/{appId}`
