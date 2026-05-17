@@ -2,16 +2,22 @@ package de.dlr.shepard.v2.git.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.services.GitCredentialService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.git.adapters.GitAdapter;
+import de.dlr.shepard.context.references.git.adapters.GitAdapterException;
+import de.dlr.shepard.context.references.git.adapters.GitAdapterRegistry;
+import de.dlr.shepard.context.references.git.adapters.ParsedRepoUrl;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
 import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import de.dlr.shepard.context.references.git.io.GitReferenceIO;
 import de.dlr.shepard.context.references.git.services.GitReferenceService;
+import java.util.Optional;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -68,6 +74,12 @@ public class GitReferenceRest {
 
   @Inject
   GitReferenceService gitReferenceService;
+
+  @Inject
+  GitCredentialService gitCredentialService;
+
+  @Inject
+  GitAdapterRegistry gitAdapterRegistry;
 
   @GET
   @Operation(summary = "List GitReferences hanging off a DataObject.")
@@ -135,6 +147,15 @@ public class GitReferenceRest {
       }
     }
     gr.setMode(mode);
+    // PINNED_SNAPSHOT: resolve ref → SHA immediately so the snapshot is immutable from creation.
+    if (mode == GitReferenceMode.PINNED_SNAPSHOT) {
+      if (body.getRef() == null || body.getRef().isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("PINNED_SNAPSHOT mode requires a non-blank `ref` to resolve to a SHA").build();
+      }
+      Response snapErr = applyPinnedSnapshot(gr, body.getRef(), securityContext.getUserPrincipal().getName());
+      if (snapErr != null) return snapErr;
+    }
     gr.setDataObject(parent);
     GitReference saved = gitReferenceDAO.createOrUpdate(gr);
     return Response.status(Response.Status.CREATED).entity(new GitReferenceIO(saved)).build();
@@ -269,6 +290,21 @@ public class GitReferenceRest {
           .build();
       }
     }
+    // Cross-field invariant: PINNED_SNAPSHOT — resolve to SHA if not already pinned.
+    // sha is server-managed; reject explicit client-side writes.
+    if (body.has("sha")) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("`sha` is server-managed for PINNED_SNAPSHOT and cannot be set directly").build();
+    }
+    if (gr.getMode() == GitReferenceMode.PINNED_SNAPSHOT && gr.getSha() == null) {
+      String ref = gr.getRef();
+      if (ref == null || ref.isBlank()) {
+        return Response.status(Response.Status.BAD_REQUEST)
+          .entity("PINNED_SNAPSHOT mode requires a non-blank `ref` to resolve to a SHA").build();
+      }
+      Response snapErr = applyPinnedSnapshot(gr, ref, securityContext.getUserPrincipal().getName());
+      if (snapErr != null) return snapErr;
+    }
 
     GitReference saved = gitReferenceDAO.createOrUpdate(gr);
     return Response.ok(new GitReferenceIO(saved)).build();
@@ -323,6 +359,49 @@ public class GitReferenceRest {
         .build();
     }
     return Response.ok(out).build();
+  }
+
+  /**
+   * Resolves {@code ref} to a commit SHA via the registered {@link GitAdapter} and the caller's
+   * stored PAT, then freezes it on {@code gr}. Returns {@code null} on success; returns a
+   * short-circuit {@link Response} (400 / 502) on any validation or adapter failure.
+   *
+   * <p>Called at both POST (create) and PATCH time so the SHA is always immutable from the
+   * moment the PINNED_SNAPSHOT is first persisted.
+   */
+  private Response applyPinnedSnapshot(GitReference gr, String ref, String callerUsername) {
+    ParsedRepoUrl parsed;
+    try {
+      parsed = ParsedRepoUrl.parse(gr.getRepoUrl());
+    } catch (GitAdapterException e) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("Invalid repoUrl: " + e.getMessage()).build();
+    }
+    Optional<GitAdapter> adapterOpt = gitAdapterRegistry.findByHost(parsed.host());
+    if (adapterOpt.isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity("PINNED_SNAPSHOT: no git adapter registered for host " + parsed.host()).build();
+    }
+    Optional<String> patOpt = gitCredentialService.findPatForHost(callerUsername, parsed.host());
+    if (patOpt.isEmpty()) {
+      return Response.status(Response.Status.BAD_REQUEST)
+        .entity(
+          "PINNED_SNAPSHOT: no git credential found for host " + parsed.host() +
+          " — add one via /v2/me/git-credentials"
+        )
+        .build();
+    }
+    String sha;
+    try {
+      sha = adapterOpt.get().resolveRef(gr.getRepoUrl(), ref, patOpt.get());
+    } catch (GitAdapterException e) {
+      return Response.status(502)
+        .entity("PINNED_SNAPSHOT: unable to resolve ref to SHA: " + e.getMessage()).build();
+    }
+    gr.setSha(sha);
+    gr.setResolvedSha(sha);
+    gr.setResolvedAtMillis(System.currentTimeMillis());
+    return null; // success
   }
 
   /**

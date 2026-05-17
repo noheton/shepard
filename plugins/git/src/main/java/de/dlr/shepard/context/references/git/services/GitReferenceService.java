@@ -69,6 +69,68 @@ public class GitReferenceService {
   }
 
   /**
+   * Resolves the {@code ref} field of a {@link GitReference} to a commit SHA
+   * and stamps the result onto the entity's {@code sha}, {@code resolvedSha},
+   * and {@code resolvedAtMillis} fields. This implements the PINNED_SNAPSHOT
+   * behaviour from {@code aidocs/38 §2 mode (c)}.
+   *
+   * <p>The method does <em>not</em> persist the entity — the caller (REST layer)
+   * is responsible for saving via the DAO after calling this.
+   *
+   * @param gr       the GitReference to pin (mutated in place).
+   * @param username the caller's username — used to look up their stored PAT.
+   * @return the resolved SHA.
+   * @throws GitAdapterException with a human-readable message when:
+   *         <ul>
+   *           <li>the repo URL cannot be parsed ({@code status=400});</li>
+   *           <li>no adapter is registered for the host ({@code status=400});</li>
+   *           <li>no PAT is stored for the host ({@code status=400});</li>
+   *           <li>the adapter fails to resolve the ref ({@code status=502}).</li>
+   *         </ul>
+   */
+  public String pinSnapshot(GitReference gr, String username) {
+    if (gr.getRef() == null || gr.getRef().isBlank()) {
+      throw new GitAdapterException(400, "PINNED_SNAPSHOT requires a non-blank `ref` to resolve");
+    }
+
+    ParsedRepoUrl parsed;
+    try {
+      parsed = ParsedRepoUrl.parse(gr.getRepoUrl());
+    } catch (GitAdapterException e) {
+      throw new GitAdapterException(400, "Cannot parse repoUrl: " + e.getMessage(), e);
+    }
+
+    Optional<GitAdapter> adapterOpt = gitAdapterRegistry.findByHost(parsed.host());
+    if (adapterOpt.isEmpty()) {
+      throw new GitAdapterException(
+        400,
+        "PINNED_SNAPSHOT requires a git adapter for this host — no adapter is registered for '"
+          + parsed.host() + "'"
+      );
+    }
+
+    Optional<String> patOpt = gitCredentialService.findPatForHost(username, parsed.host());
+    if (patOpt.isEmpty()) {
+      throw new GitAdapterException(
+        400,
+        "PINNED_SNAPSHOT requires a stored git PAT for this host — add one via /v2/me/git-credentials"
+      );
+    }
+
+    String sha;
+    try {
+      sha = adapterOpt.get().resolveRef(gr.getRepoUrl(), gr.getRef(), patOpt.get());
+    } catch (GitAdapterException e) {
+      throw new GitAdapterException(502, "Unable to resolve ref to SHA: " + e.getMessage(), e);
+    }
+
+    gr.setSha(sha);
+    gr.setResolvedSha(sha);
+    gr.setResolvedAtMillis(System.currentTimeMillis());
+    return sha;
+  }
+
+  /**
    * Builds the preview payload for a tracked-artifact reference.
    *
    * @param ref       the (already-loaded, already-permission-checked) reference.

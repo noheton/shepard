@@ -2,7 +2,9 @@ package de.dlr.shepard.context.references.git.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -186,5 +188,77 @@ class GitReferenceServiceTest {
     var out = svc.previewArtifact(gr, "alice");
     assertFalse(out.isAvailable());
     assertEquals("invalid-repo-url", out.getReason());
+  }
+
+  // ── pinSnapshot ────────────────────────────────────────────────────────────
+
+  @Test
+  void pinSnapshot_blankRef_throws400() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", null, "x");
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    GitReferenceService svc = new GitReferenceService(mock(GitCredentialService.class), mock(GitAdapterRegistry.class), realCache(), 1_048_576L);
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.pinSnapshot(gr, "alice"));
+    assertEquals(400, ex.getStatus());
+  }
+
+  @Test
+  void pinSnapshot_noAdapter_throws400() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", "x");
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost("gitlab.com")).thenReturn(Optional.empty());
+    GitReferenceService svc = new GitReferenceService(mock(GitCredentialService.class), registry, realCache(), 1_048_576L);
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.pinSnapshot(gr, "alice"));
+    assertEquals(400, ex.getStatus());
+  }
+
+  @Test
+  void pinSnapshot_noPat_throws400() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", "x");
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    GitAdapter adapter = mock(GitAdapter.class);
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost("gitlab.com")).thenReturn(Optional.of(adapter));
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost("alice", "gitlab.com")).thenReturn(Optional.empty());
+    GitReferenceService svc = new GitReferenceService(creds, registry, realCache(), 1_048_576L);
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.pinSnapshot(gr, "alice"));
+    assertEquals(400, ex.getStatus());
+  }
+
+  @Test
+  void pinSnapshot_adapterFails_throws502() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", "x");
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), eq("main"), eq("PAT"))).thenThrow(new GitAdapterException(404, "not found"));
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost("gitlab.com")).thenReturn(Optional.of(adapter));
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost("alice", "gitlab.com")).thenReturn(Optional.of("PAT"));
+    GitReferenceService svc = new GitReferenceService(creds, registry, realCache(), 1_048_576L);
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.pinSnapshot(gr, "alice"));
+    assertEquals(502, ex.getStatus());
+  }
+
+  @Test
+  void pinSnapshot_success_freezesShaOnEntity() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", "x");
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), eq("main"), eq("PAT"))).thenReturn("deadbeef123");
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost("gitlab.com")).thenReturn(Optional.of(adapter));
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost("alice", "gitlab.com")).thenReturn(Optional.of("PAT"));
+    GitReferenceService svc = new GitReferenceService(creds, registry, realCache(), 1_048_576L);
+
+    String sha = svc.pinSnapshot(gr, "alice");
+
+    assertEquals("deadbeef123", sha);
+    assertEquals("deadbeef123", gr.getSha());
+    assertEquals("deadbeef123", gr.getResolvedSha());
+    assertNotNull(gr.getResolvedAtMillis());
+    assertTrue(gr.getResolvedAtMillis() > 0);
   }
 }

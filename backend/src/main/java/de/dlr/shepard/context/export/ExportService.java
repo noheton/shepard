@@ -20,6 +20,8 @@ import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import de.dlr.shepard.context.references.basicreference.services.BasicReferenceService;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.file.io.FileReferenceIO;
@@ -46,9 +48,12 @@ import java.io.InputStream;
 import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.stream.StreamSupport;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @RequestScoped
@@ -89,6 +94,16 @@ public class ExportService {
 
   @Inject
   SubscriptionService subscriptionService;
+
+  /**
+   * Plugin-supplied export contributors (G1c SPI). Each contributor claims
+   * one or more reference types; the first match (by {@link ExportContributor#priority()})
+   * handles the reference. Types not claimed by any contributor fall through to the
+   * built-in {@code switch} in {@link #fetchAndWriteDataObject}.
+   */
+  @Inject
+  @Any
+  Instance<ExportContributor> exportContributors;
 
   /**
    * Exports collection by shepard Id
@@ -200,38 +215,47 @@ public class ExportService {
       if (selection != null && selection.excludesId(idAsString)) continue;
       writeEntityMetadata(builder, reference, selection, false);
       ExportSelection.PerPayloadSelection perPayload = selection == null ? null : selection.perPayloadFor(idAsString);
-      switch (reference.getType()) {
-        case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
-          collectionId,
-          dataObjectId,
-          builder,
-          reference.getShepardId(),
-          authenticationContext.getCurrentUserName(),
-          perPayload,
-          selection != null && selection.isStrictPerPayload()
-        );
-        case "FileReference" -> fetchAndWriteFileReference(
-          collectionId,
-          dataObjectId,
-          builder,
-          reference.getShepardId(),
-          perPayload,
-          selection != null && selection.isStrictPerPayload()
-        );
-        case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
-          collectionId,
-          dataObjectId,
-          builder,
-          reference.getShepardId()
-        );
-        case "URIReference" -> fetchAndWriteUriReference(
-          collectionId,
-          dataObjectId,
-          builder,
-          reference.getShepardId(),
-          authenticationContext.getCurrentUserName()
-        );
-        default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
+      // Check plugin-supplied contributors first (G1c ExportContributor SPI).
+      Optional<ExportContributor> contributor = StreamSupport
+        .stream(exportContributors.spliterator(), false)
+        .filter(c -> c.handles(reference.getType()))
+        .min(Comparator.comparingInt(ExportContributor::priority));
+      if (contributor.isPresent()) {
+        contributor.get().contribute(builder, reference, authenticationContext.getCurrentUserName());
+      } else {
+        switch (reference.getType()) {
+          case "TimeseriesReference" -> fetchAndWriteTimeseriesReference(
+            collectionId,
+            dataObjectId,
+            builder,
+            reference.getShepardId(),
+            authenticationContext.getCurrentUserName(),
+            perPayload,
+            selection != null && selection.isStrictPerPayload()
+          );
+          case "FileReference" -> fetchAndWriteFileReference(
+            collectionId,
+            dataObjectId,
+            builder,
+            reference.getShepardId(),
+            perPayload,
+            selection != null && selection.isStrictPerPayload()
+          );
+          case "StructuredDataReference" -> fetchAndWriteStructuredDataReference(
+            collectionId,
+            dataObjectId,
+            builder,
+            reference.getShepardId()
+          );
+          case "URIReference" -> fetchAndWriteUriReference(
+            collectionId,
+            dataObjectId,
+            builder,
+            reference.getShepardId(),
+            authenticationContext.getCurrentUserName()
+          );
+          default -> fetchAndWriteBasicReference(collectionId, dataObjectId, builder, reference.getShepardId());
+        }
       }
     }
     if (selection == null || selection.includeLabJournal()) {

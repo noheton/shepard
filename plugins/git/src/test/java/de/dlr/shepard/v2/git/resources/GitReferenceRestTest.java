@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,10 +14,13 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.auth.users.services.GitCredentialService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.git.adapters.GitAdapter;
+import de.dlr.shepard.context.references.git.adapters.GitAdapterRegistry;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
@@ -27,6 +31,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -56,6 +61,15 @@ class GitReferenceRestTest {
   GitReferenceService gitReferenceService;
 
   @Mock
+  GitCredentialService gitCredentialService;
+
+  @Mock
+  GitAdapterRegistry gitAdapterRegistry;
+
+  @Mock
+  GitAdapter gitAdapter;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -72,6 +86,8 @@ class GitReferenceRestTest {
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
     resource.gitReferenceService = gitReferenceService;
+    resource.gitCredentialService = gitCredentialService;
+    resource.gitAdapterRegistry = gitAdapterRegistry;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
@@ -587,5 +603,72 @@ class GitReferenceRestTest {
     gr.setDataObject(other);
     when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
     assertEquals(404, resource.preview(DO_APP_ID, GR_APP_ID, securityContext).getStatus());
+  }
+
+  // ── G1c: PINNED_SNAPSHOT on create ─────────────────────────────────────────
+
+  @Test
+  void create_pinnedSnapshotNoRef_returns400() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    // ref is absent — must be rejected
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void create_pinnedSnapshotNoCredential_returns400() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(gitAdapterRegistry.findByHost("gitlab.com")).thenReturn(Optional.of(gitAdapter));
+    when(gitCredentialService.findPatForHost(eq(CALLER), anyString())).thenReturn(Optional.empty());
+
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setRef("main");
+    body.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  void create_pinnedSnapshotSuccess_setsShAndPersists() {
+    var parent = new DataObject();
+    when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parent);
+    when(gitAdapterRegistry.findByHost("gitlab.com")).thenReturn(Optional.of(gitAdapter));
+    when(gitCredentialService.findPatForHost(eq(CALLER), anyString())).thenReturn(Optional.of("my-pat"));
+    when(gitAdapter.resolveRef(anyString(), eq("main"), eq("my-pat"))).thenReturn("deadbeef");
+    when(gitReferenceDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var body = new GitReferenceIO();
+    body.setRepoUrl("https://gitlab.com/g/r");
+    body.setRef("main");
+    body.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+
+    var r = resource.create(DO_APP_ID, body, securityContext);
+    assertEquals(201, r.getStatus());
+    ArgumentCaptor<GitReference> cap = ArgumentCaptor.forClass(GitReference.class);
+    verify(gitReferenceDAO).createOrUpdate(cap.capture());
+    assertEquals("deadbeef", cap.getValue().getSha());
+    assertEquals("deadbeef", cap.getValue().getResolvedSha());
+  }
+
+  @Test
+  void patch_pinnedSnapshotShaField_returns400() {
+    GitReference gr = existingGr();
+    gr.setMode(GitReferenceMode.PINNED_SNAPSHOT);
+    gr.setSha("existing-sha");
+    when(gitReferenceDAO.findByAppId(GR_APP_ID)).thenReturn(gr);
+
+    var r = resource.patch(DO_APP_ID, GR_APP_ID, json("{\"sha\":\"client-sha\"}"), securityContext);
+    assertEquals(400, r.getStatus());
+    verify(gitReferenceDAO, never()).createOrUpdate(any());
   }
 }

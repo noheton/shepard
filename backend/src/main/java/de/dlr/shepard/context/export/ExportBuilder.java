@@ -19,6 +19,7 @@ import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
 import de.dlr.shepard.context.version.io.VersionIO;
 import edu.kit.datamanager.ro_crate.RoCrate.RoCrateBuilder;
+import edu.kit.datamanager.ro_crate.entities.contextual.ContextualEntity;
 import edu.kit.datamanager.ro_crate.entities.contextual.PersonEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity;
 import edu.kit.datamanager.ro_crate.entities.data.FileEntity.FileEntityBuilder;
@@ -206,6 +207,47 @@ public class ExportBuilder {
    */
   public ExportBuilder addSelectionWarning(String warning) {
     if (warning != null && !warning.isBlank()) selectionWarnings.add(warning);
+    return this;
+  }
+
+  /**
+   * Adds a {@code schema:SoftwareSourceCode} contextual entity to the RO-Crate.
+   * Called by {@link ExportContributor} implementations (e.g.
+   * {@code GitReferenceExportContributor}) to emit a structured code-citation
+   * record alongside the reference's JSON sidecar.
+   *
+   * <p>Property mapping (schema.org):
+   * <ul>
+   *   <li>{@code @id} — an immutable permalink (SHA-blob URL when sha+path are available;
+   *       otherwise the repoUrl, or a {@code urn:shepard:git-reference:} fallback).</li>
+   *   <li>{@code url} + {@code codeRepository} — the repository URL.</li>
+   *   <li>{@code targetProduct} — path within the repository (omitted when null).</li>
+   *   <li>{@code version} — the commit SHA (omitted when null).</li>
+   *   <li>{@code gitsha} — same SHA again as a custom property for unambiguous machine reads.</li>
+   *   <li>{@code gitRef} — the branch / tag name (omitted when null).</li>
+   * </ul>
+   *
+   * @param id      the {@code @id} for the contextual entity
+   * @param repoUrl the repository URL
+   * @param path    path inside the repository (nullable)
+   * @param sha     resolved commit SHA (nullable)
+   * @param ref     branch / tag name (nullable)
+   */
+  public ExportBuilder addSoftwareSourceCode(String id, String repoUrl, String path, String sha, String ref) {
+    var builder = new ContextualEntity.ContextualEntityBuilder()
+      .setId(id)
+      .addType("SoftwareSourceCode");
+    if (repoUrl != null) {
+      builder.addProperty("url", repoUrl);
+      builder.addProperty("codeRepository", repoUrl);
+    }
+    if (path != null) builder.addProperty("targetProduct", path);
+    if (sha != null) {
+      builder.addProperty("version", sha);
+      builder.addProperty("gitsha", sha);
+    }
+    if (ref != null) builder.addProperty("gitRef", ref);
+    roCrateBuilder.addContextualEntity(builder.build());
     return this;
   }
 

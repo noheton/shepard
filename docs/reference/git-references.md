@@ -15,7 +15,7 @@ configuration, or specification that produced your data.
 |---|---|
 | **`LOOSE_LINK`** (G1a) | Just `repoUrl` + `ref` + `path`. shepard renders a clickable link in the DataObject pane; no contact with the git host. |
 | **`TRACKED_ARTIFACT`** (G1b) | shepard fetches the file's content + SHA via the host's REST API, using your stored PAT. Inline preview in the DataObject pane; PT5M cache per `(you, repoUrl, ref, path)`. |
-| **`PINNED_SNAPSHOT`** (G1c — queued) | Same as TRACKED_ARTIFACT plus the resolved commit SHA is frozen onto the reference; RO-Crate exports include a `SoftwareSourceCode` entity. |
+| **`PINNED_SNAPSHOT`** (G1c) | At create/PATCH time shepard resolves `ref` → commit SHA via the host adapter and the caller's PAT, then freezes the result. The `sha` field is server-managed (client writes rejected 400). RO-Crate exports include a `schema:SoftwareSourceCode` contextual entity with a commit-SHA permalink as `@id`. |
 
 ## Endpoints
 
@@ -61,6 +61,62 @@ RFC 7807 `git.adapter.unsupported-host` 501 on `…/preview`.
 - GitHub: `repo` (private) or `public_repo` for classic PATs;
   `Contents: Read` for fine-grained PATs.
 - Gitea / Forgejo: `read:repository`.
+
+## PINNED_SNAPSHOT mode
+
+`PINNED_SNAPSHOT` provides an immutable code-citation record — the
+commit SHA is resolved once at creation time and never changes.
+
+**Create a pinned snapshot:**
+
+```http
+POST /v2/data-objects/{dataObjectAppId}/git-references
+Content-Type: application/json
+
+{
+  "mode": "PINNED_SNAPSHOT",
+  "repoUrl": "https://gitlab.dlr.de/group/repo",
+  "ref": "v1.2.3",
+  "path": "analysis/main.py"
+}
+```
+
+shepard resolves `v1.2.3` to a commit SHA via the registered host
+adapter and the caller's stored PAT, then returns:
+
+```json
+{
+  "appId": "...",
+  "mode": "PINNED_SNAPSHOT",
+  "repoUrl": "https://gitlab.dlr.de/group/repo",
+  "ref": "v1.2.3",
+  "path": "analysis/main.py",
+  "sha": "abc123def456...",
+  "resolvedSha": "abc123def456...",
+  "resolvedAtMillis": 1716000000000
+}
+```
+
+**Requirements:**
+- The caller must have a git credential stored at `/v2/me/git-credentials`
+  for the matching host (`gitlab.dlr.de` in this example).
+- A registered adapter must support the host (GitLab / GitHub / Gitea).
+
+**Error responses:**
+- `400` — missing `ref`, no adapter for host, or no credential for host.
+- `502` — adapter contacted the host but SHA resolution failed (e.g.
+  branch not found).
+
+**RO-Crate export:** every DataObject containing a `GitReference`
+(any mode) now produces a `schema:SoftwareSourceCode` contextual entity
+in `ro-crate-metadata.json`. For PINNED_SNAPSHOT the entity's `@id` is
+an immutable SHA-blob permalink; for other modes the best available
+identifier (ref-based URL, or bare `repoUrl`) is used.
+
+**Mutability:** the `sha` field is server-managed. Sending `sha` in a
+PATCH body is rejected with `400`. To re-pin to a newer commit, PATCH
+the reference's `mode` to `LOOSE_LINK` first, then create a new
+PINNED_SNAPSHOT entry.
 
 ## See also
 
