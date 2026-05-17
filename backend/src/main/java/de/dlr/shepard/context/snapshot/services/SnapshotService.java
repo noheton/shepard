@@ -134,6 +134,17 @@ public class SnapshotService {
   }
 
   /**
+   * Returns a map of {@code entityAppId → revision} for all entries of the
+   * given snapshot. Used by V2e diff computation.
+   *
+   * @param snapshotNeo4jId the OGM-managed Long id of the snapshot.
+   * @return map of entityAppId to revision; empty when the snapshot has no entries.
+   */
+  public Map<String, Long> getEntryRevisionMap(long snapshotNeo4jId) {
+    return snapshotDAO.getEntryRevisionMap(snapshotNeo4jId);
+  }
+
+  /**
    * Soft-deletes the {@link Snapshot} identified by {@code snapshotAppId}.
    * The associated {@link SnapshotEntry} rows are also soft-deleted.
    *

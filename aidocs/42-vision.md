@@ -131,9 +131,11 @@ These work the same way across every primitive:
   `SnapshotEntry` per `VersionableEntity` pinning its `revision`
   counter at capture time. Create via
   `POST /v2/collections/{appId}/snapshots`; inspect the manifest via
-  `GET /v2/snapshots/{appId}/manifest`. Reads via snapshot (V2c)
-  and byte-reproducible RO-Crate export against a snapshot (V2d)
-  are the follow-on payoffs — queued.
+  `GET /v2/snapshots/{appId}/manifest`. **Diff two snapshots** *(V2e
+  shipped)* via `GET /v2/snapshots/{a}/diff/{b}` to see which entities
+  were added, removed, or changed revision between them. Reads via
+  snapshot (V2c) and byte-reproducible RO-Crate export against a
+  snapshot (V2d) are the follow-on payoffs — queued.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).
