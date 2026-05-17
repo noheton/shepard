@@ -3,6 +3,7 @@ package de.dlr.shepard.cli;
 import de.dlr.shepard.cli.commands.FeaturesCommand;
 import de.dlr.shepard.cli.commands.FilesCommand;
 import de.dlr.shepard.cli.commands.HealthCommand;
+import de.dlr.shepard.cli.commands.InstanceCommand;
 import de.dlr.shepard.cli.commands.MigrationsCommand;
 import de.dlr.shepard.cli.commands.PluginsCommand;
 import de.dlr.shepard.cli.commands.SemanticCommand;
@@ -43,6 +44,7 @@ import picocli.CommandLine.Command;
     FeaturesCommand.class,
     FilesCommand.class,
     HealthCommand.class,
+    InstanceCommand.class,
     MigrationsCommand.class,
     PluginsCommand.class,
     SemanticCommand.class,
