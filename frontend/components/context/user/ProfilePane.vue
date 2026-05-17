@@ -2,10 +2,12 @@
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { usePatchMe } from "~/composables/context/usePatchMe";
 import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
 const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
+const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
 
 const editDialog = ref(false);
 const editOrcid = ref<string>("");
@@ -129,6 +131,24 @@ async function saveJupyterUrl() {
           </v-btn>
         </template>
       </v-text-field>
+    </div>
+
+    <!-- Advanced mode toggle -->
+    <div v-if="user && !isLoading" class="d-flex flex-column ga-2">
+      <h5 class="text-h5">Display settings</h5>
+      <v-switch
+        :model-value="advancedMode"
+        label="Advanced mode"
+        :loading="isAdvancedSaving"
+        :disabled="isAdvancedSaving"
+        color="primary"
+        density="comfortable"
+        hide-details
+        @update:model-value="val => setAdvancedMode(Boolean(val))"
+      />
+      <p class="text-body-2 text-medium-emphasis">
+        Shows advanced features like container management and low-level data views. Off by default for a simpler experience.
+      </p>
     </div>
 
     <!-- Edit dialog -->
