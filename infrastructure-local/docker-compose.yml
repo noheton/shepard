@@ -197,9 +197,53 @@ services:
     profiles:
       - tryout
 
+  # FS1i — Garage S3-compatible object-storage sidecar for local development.
+  # Start with: docker compose --profile files-s3 up -d
+  # One-time cluster init (see docs/reference/file-storage.md for full runbook):
+  #   docker exec shepard-garage /garage layout assign -z dc1 -c 1G <node-id>
+  #   docker exec shepard-garage /garage layout apply --version 1
+  #   docker exec shepard-garage /garage bucket create shepard
+  #   docker exec shepard-garage /garage key create shepard-backend
+  #   docker exec shepard-garage /garage bucket allow --read --write shepard --key shepard-backend
+  # Then in application.properties (or env vars):
+  #   shepard.files.s3.endpoint=http://localhost:3900
+  #   shepard.files.s3.access-key-id=<key>
+  #   shepard.files.s3.secret-access-key=<secret>
+  #   shepard.files.s3.bucket=shepard
+  #   shepard.storage.provider=s3
+  #   shepard.plugins.file-s3.enabled=true
+  shepard-garage:
+    image: dxflrs/garage:v1.0.1
+    container_name: shepard-garage
+    command: /garage server
+    environment:
+      GARAGE_METADATA_DIR: /var/lib/garage/meta
+      GARAGE_DATA_DIR: /var/lib/garage/data
+      GARAGE_REPLICATION_FACTOR: "1"
+      GARAGE_RPC_BIND_ADDR: "0.0.0.0:3901"
+      GARAGE_API_S3_BIND_ADDR: "0.0.0.0:3900"
+      GARAGE_ADMIN_BIND_ADDR: "0.0.0.0:3903"
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-a8f3d2c1b4e5a6f7d8e9c0b1a2f3d4e5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d}
+    ports:
+      - "3900:3900"
+    volumes:
+      - garage-data:/var/lib/garage
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:3903/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles:
+      - files-s3
+
 volumes:
   keycloak:
   grafana:
+  garage-data:
 
 networks:
   shepard:
