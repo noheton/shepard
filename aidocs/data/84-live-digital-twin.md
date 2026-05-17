@@ -441,3 +441,18 @@ prompts the researcher to snapshot manually).
 - `aidocs/83` — `JOINT_ANGLE`, `POSE_6D`, point cloud, surface-annotation matching
 - `aidocs/53` — Video plugin; `CAMERA_FRUSTUM + PiP` (SB2a) continues to use VID1 for camera feeds
 - `aidocs/50` — Experiment orchestration; the `Coordinator` service is the natural source of `events[]` in StatePackets
+
+### §10 Prior art / UI inspiration
+
+**ROSbag viewers** are the closest existing design reference for the digital twin UI:
+
+- **[Foxglove Studio](https://foxglove.dev)** — open-source multi-panel layout, synchronized seek bar across all panels, camera/image panels, 2D/3D plot panels, topic browser, message inspector. Panel layout is drag-and-drop and persisted as a JSON layout file. The "subscribe to topic, render at rate" mental model maps directly to the DT1 `StatePacket` stream + panel system.
+- **[PlotJuggler](https://github.com/facontidavide/PlotJuggler)** — time-synchronized multi-channel time-series plotting; the "drag a topic onto a plot" UX is a strong inspiration for the DT1c panel → `DataBinding` wiring flow.
+- **[ROSboard](https://github.com/dheera/rosboard)** — web-based, zero-install ROS topic viewer; demonstrates that a WebSocket + React approach can handle sensor rates (IMU at 100 Hz, camera at 30 Hz) without dropped frames on a typical laptop browser tab.
+
+Key UX patterns to adopt from these tools:
+- **Global seek bar** with live/historical toggle — clicking past data enters scrub mode; clicking "live" re-subscribes.
+- **Panel chooser palette** — "Add panel → Plot / Camera / 3D / State table / Log" matching the DT1 panel types.
+- **Topic / channel sidebar** — lists all active `DataBinding` channels with live value preview; drag onto a panel to add a trace.
+- **Playback speed controls** (0.25×, 0.5×, 1×, 2×, 4×) for historical scrub mode.
+- **Layout persistence** — save the current panel arrangement as a named `DashboardReference` (AI1e shape) so the researcher reopens the same view next session.
