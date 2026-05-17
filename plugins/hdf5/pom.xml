@@ -135,6 +135,10 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-minter-datacite</artifactId>
         </exclusion>
         <exclusion>

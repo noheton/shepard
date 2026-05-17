@@ -1,46 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  UH1a — first shepard-plugin-* module ever, flipped to drop-in JAR
-  shape by PM1a phase 3 (ADR-0023).
+  KIP1c — ePIC handle service minter plugin.
+
+  Implements the in-tree `de.dlr.shepard.publish.minter.Minter` SPI
+  (KIP1a) by issuing PUT calls against the ePIC Handle Service REST
+  API (B2HANDLE-compatible, JSON body) using HTTP Basic auth derived
+  from the stored credential.
 
   This module produces a real
-  `shepard-plugin-unhide-${revision}.jar` carrying:
+  `shepard-plugin-minter-epic-${revision}.jar` carrying:
 
-    * `de.dlr.shepard.plugins.unhide.UnhidePluginManifest` —
-      implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's `PluginRegistry` tracks UH1a in
-      `GET /v2/admin/plugins` and exposes the per-plugin
-      `shepard.plugins.unhide.enabled` runtime toggle.
-    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
-      pointing at the manifest class — the standard
-      `ServiceLoader` SPI contract.
-    * The full UH1a code tree (services, REST resources, DAOs,
-      IO records, the `:UnhideConfig` entity) in package
-      `de.dlr.shepard.plugins.unhide.*`.
+    * `de.dlr.shepard.plugins.minter.epic.EpicMinter` — the
+      in-tree Minter SPI implementation. Activated when the deploy-
+      time `shepard.publish.minter=epic` key picks it.
+    * `de.dlr.shepard.plugins.minter.epic.EpicMinterPluginManifest`
+      — implements the PluginManifest SPI so PluginRegistry tracks
+      KIP1c in `GET /v2/admin/plugins`.
+    * `:EpicMinterConfig` runtime singleton + admin REST surface
+      (`/v2/admin/minters/epic/...`) + matching CLI subcommand
+      group (`shepard-admin minters epic ...`) per the
+      "Always: surface operator knobs in the admin config" rule.
+    * `META-INF/services/` declarations for both the backend
+      PluginManifest SPI and the CLI AdminCliCommandProvider SPI.
 
-  Build order (PM1a phase 3): the backend is `<dependency>`-ing
-  this plugin in its own pom. Both modules participate in a
-  two-pass build:
+  Build order matches UH1a / KIP1g (PM1a phase 3 + PM1d):
 
-    $ cd plugins/unhide && mvn -B install -DskipTests
+    $ cd backend && mvn -B -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd cli && mvn -B -DnoPlugins -DskipTests install
+    $ cd plugins/minter-epic && mvn -B install
     $ cd backend && mvn -B package
 
-  The `provided` scope on the backend dep is the trick that keeps
-  the build acyclic: when the plugin compiles, it resolves
-  whichever `backend.jar` is in the local Maven repo (installed
-  beforehand by CI or developer); when the backend compiles, it
-  pulls the freshly-installed plugin JAR back onto its classpath
-  so Quarkus's build-time CDI scanner picks the plugin's
-  `@ApplicationScoped` beans and `@Path` resources.
-
-  Operator workflow (vendor-supplied drop-in install):
-    $ cd backend && mvn install -DskipTests
-    $ cd plugins/unhide && mvn package
-    $ cp plugins/unhide/target/shepard-plugin-unhide-*.jar \\
-         /path/to/shepard/backend/plugins/
-
-  See `docs/reference/plugins.md` for the full operator runbook
-  and `aidocs/63 ADR-0023` for the design rationale.
+  See `docs/reference/minter-epic.md` for the operator runbook
+  and `aidocs/16 KIP1c` for the design rationale.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -48,17 +39,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-unhide</artifactId>
+  <artifactId>shepard-plugin-minter-epic</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — Unhide (Helmholtz KG publish)</name>
+  <name>shepard plugin — ePIC handle service minter</name>
   <description>
-    Helmholtz Knowledge Graph (HKG / Unhide) publish-feed plugin.
-    Exposes `/v2/unhide/feed.jsonld` (schema.org + metadata4ing
-    JSON-LD) plus the `/v2/admin/unhide/...` admin surface for
-    runtime configuration + harvest-key minting. See
-    aidocs/67-unhide-publish-plugin.md.
+    Mints ePIC handles via the B2HANDLE-compatible REST API for
+    shepard publish flows. Implements the in-tree Minter SPI;
+    activated by `shepard.publish.minter=epic`. See
+    `aidocs/16` KIP1c.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -104,18 +94,9 @@
 
   <dependencies>
     <!--
-      backend as provided — the plugin needs the backend's core
-      types (User, Collection, ProblemJson, HasAppId, GenericDAO,
-      CollectionDAO, Constants, the PluginManifest SPI) at compile
-      time. `provided` means the plugin JAR does NOT bundle
-      backend.jar — at runtime the backend image already carries
-      its own classes, and the plugin's URLClassLoader parent is
-      the backend's loader (per `PluginRegistry`).
-
-      The build order documented in the module-level comment above
-      keeps this acyclic: backend installs first, plugin resolves
-      against the installed backend, then backend rebuilds with
-      the freshly-installed plugin on its classpath.
+      backend as provided — same pattern as UH1a. Self-exclusion on
+      every sibling shepard-plugin-* artefact to break the build-time
+      circular ref introduced by the backend's `with-plugins` profile.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -123,17 +104,6 @@
       <version>${revision}</version>
       <scope>provided</scope>
       <exclusions>
-        <!--
-          Defence against the build-time circular reference: the
-          backend's pom carries a default-active `with-plugins`
-          profile that pulls every `de.dlr.shepard.plugins:*` JAR
-          back onto its dependency list. When this plugin module
-          compiles against `backend`, Maven would otherwise resolve
-          those transitive references and fail with "Could not find
-          artifact ... shepard-plugin-*". The exclusions keep the
-          plugin's compile classpath self-consistent. Add a new
-          line per shipped plugin (KIP1g added shepard-plugin-kip).
-        -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-unhide</artifactId>
@@ -144,15 +114,15 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-minter-local</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-minter-epic</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-minter-datacite</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
@@ -173,10 +143,6 @@
       </exclusions>
     </dependency>
 
-    <!--
-      Quarkus runtime types used in plugin source (REST, CDI,
-      logging). `provided` because the backend image carries them.
-    -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
@@ -203,10 +169,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!--
-      Neo4j-OGM — UnhideConfig is a @NodeEntity, the DAO uses
-      neo4j-ogm core types. Same provided-by-backend pattern.
-    -->
+    <!-- Neo4j-OGM — :EpicMinterConfig is a @NodeEntity. -->
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
@@ -214,7 +177,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Lombok — same as backend for the IO records / entity. -->
+    <!-- Lombok — entity getter/setter shape. -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -223,20 +186,9 @@
     </dependency>
 
     <!--
-      PM1d — CLI side: the plugin contributes a Picocli subcommand
-      group (`shepard-admin unhide …`) to the `shepard-admin` CLI
-      via the `AdminCliCommandProvider` SPI shipped in
-      `de.dlr.shepard.cli.plugin`. The CLI itself is `provided` so
-      its classes are not bundled into the plugin JAR — the
-      drop-in JAR shape from ADR-0023 expects the CLI's own
-      `shepard-admin.jar` to carry them. Picocli too is `provided`
-      since the shaded CLI JAR already bundles it.
-
-      Same `provided`-with-self-exclusion shape as the backend
-      dependency below — when the CLI's `with-plugins` profile is
-      active it `<dependency>`-pulls this plugin back onto its
-      classpath, so we exclude that self-reference here to keep
-      the build acyclic.
+      PM1d — CLI side: ship a Picocli subcommand group
+      (`shepard-admin minters epic …`) via the
+      AdminCliCommandProvider SPI.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -246,7 +198,7 @@
       <exclusions>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-unhide</artifactId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -277,11 +229,8 @@
       <scope>test</scope>
     </dependency>
     <!--
-      PM1d — pull the CLI's test fixtures (`StubBackend`,
-      `CliRunner`) so the relocated `UnhideCommandsTest` can hit a
-      localhost stub backend without re-implementing the harness.
-      The CLI publishes a `tests` classifier JAR via the
-      maven-jar-plugin `test-jar` execution.
+      PM1d — pull the CLI's test fixtures (StubBackend / CliRunner)
+      so EpicCommandsTest can target a stub backend.
     -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
@@ -292,22 +241,14 @@
       <exclusions>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-unhide</artifactId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
-    <!--
-      The existing `plugins/unhide/src/test/java/**` tests
-      reference backend mock classes (User, Collection, etc.) and
-      DAO mocks. They need backend on the test classpath. The
-      `provided` declaration above flows in to `test`, so the
-      tests resolve fine — Maven's "provided scope is also visible
-      to test" rule does the work.
-    -->
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-unhide-${revision}</finalName>
+    <finalName>shepard-plugin-minter-epic-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

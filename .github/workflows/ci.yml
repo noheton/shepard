@@ -88,6 +88,10 @@ jobs:
         working-directory: plugins/minter-datacite
         run: mvn -B -DskipTests install
 
+      - name: Install minter-epic plugin
+        working-directory: plugins/minter-epic
+        run: mvn -B -DskipTests install
+
       - name: Install unhide plugin
         working-directory: plugins/unhide
         run: mvn -B -DskipTests install
@@ -122,6 +126,10 @@ jobs:
 
       - name: Plugin unit tests (minter-datacite)
         working-directory: plugins/minter-datacite
+        run: mvn -B test
+
+      - name: Plugin unit tests (minter-epic)
+        working-directory: plugins/minter-epic
         run: mvn -B test
 
       - name: Plugin unit tests (spatial)
@@ -198,6 +206,10 @@ jobs:
         working-directory: plugins/minter-datacite
         run: mvn -B -DskipTests install
 
+      - name: Install minter-epic plugin
+        working-directory: plugins/minter-epic
+        run: mvn -B -DskipTests install
+
       - name: Install unhide plugin
         working-directory: plugins/unhide
         run: mvn -B -DskipTests install
@@ -271,6 +283,10 @@ jobs:
         working-directory: plugins/minter-datacite
         run: mvn -B -DskipTests install
 
+      - name: Install minter-epic plugin
+        working-directory: plugins/minter-epic
+        run: mvn -B -DskipTests install
+
       - name: Install unhide plugin
         working-directory: plugins/unhide
         run: mvn -B -DskipTests install
@@ -310,6 +326,7 @@ jobs:
           cp plugins/kip/target/shepard-plugin-kip-*.jar backend/plugins-stage/
           cp plugins/minter-local/target/shepard-plugin-minter-local-*.jar backend/plugins-stage/
           cp plugins/minter-datacite/target/shepard-plugin-minter-datacite-*.jar backend/plugins-stage/
+          cp plugins/minter-epic/target/shepard-plugin-minter-epic-*.jar backend/plugins-stage/
           cp plugins/spatial/target/shepard-plugin-spatial-*.jar backend/plugins-stage/
           cp plugins/hdf5/target/shepard-plugin-hdf5-*.jar backend/plugins-stage/
           cp plugins/git/target/shepard-plugin-git-*.jar backend/plugins-stage/

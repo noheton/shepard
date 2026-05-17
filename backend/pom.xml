@@ -842,6 +842,23 @@
           <version>${revision}</version>
         </dependency>
         <!--
+          KIP1c — ePIC handle service minter plugin. Same shape as
+          minter-datacite (sibling under `plugins/minter-epic/`). The
+          plugin's `EpicMinter` `@ApplicationScoped` bean +
+          `EpicAdminRest` `@Path` resource are picked up by
+          Quarkus's build-time CDI scanner when this JAR is on the
+          backend's compile-time classpath via the index-dependency
+          block in `application.properties`. Activated when an
+          operator sets `shepard.publish.minter=epic` after
+          configuring credentials and prefix via the admin REST / CLI.
+          See aidocs/16 KIP1c.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
           SPI1a — PostGIS spatial-data payload kind extracted from the
           backend into a drop-in plugin per the plugin-first heuristic
           #1 ("New payload kinds → plugin from day one", CLAUDE.md)
