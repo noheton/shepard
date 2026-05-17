@@ -1,14 +1,21 @@
 <template>
   <v-app-bar class="border-b-sm bg-canvas">
+    <!-- Mobile: hamburger menu icon -->
+    <v-app-bar-nav-icon
+      class="d-md-none"
+      @click="mobileDrawerOpen = !mobileDrawerOpen"
+    />
+
     <v-app-bar-title>
       <v-btn to="/" style="border-bottom: unset">
         <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />
       </v-btn>
-      <v-btn class="nav-item" to="/collections">Collections</v-btn>
-      <v-btn class="nav-item" to="/containers">Containers</v-btn>
+      <!-- Desktop: inline nav links -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
       <v-btn
         v-if="isInstanceAdmin"
-        class="nav-item"
+        class="nav-item d-none d-md-inline-flex"
         :to="{ path: '/admin', hash: '#feature-toggles' }"
       >
         Admin
@@ -51,13 +58,17 @@
     </v-autocomplete>
 
     <template #append>
-      <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item">
+      <!-- Desktop-only extra nav links -->
+      <v-btn to="/help" class="nav-item d-none d-md-inline-flex" prepend-icon="mdi-help-circle-outline">
+        Help
+      </v-btn>
+      <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item d-none d-md-inline-flex">
         About
       </v-btn>
       <v-btn
         :href="apiDocsUrl"
         target="_blank"
-        class="nav-item"
+        class="nav-item d-none d-md-inline-flex"
       >
         API Docs
       </v-btn>
@@ -65,12 +76,59 @@
         icon="mdi-account-outline"
         :to="{ path: '/me', hash: '#profile' }"
       />
-      <v-btn icon="mdi-theme-light-dark" @click="toggleTheme" />
-      <v-btn :prepend-icon="authIcon" @click="handleAuth()">
+      <v-btn class="d-none d-md-inline-flex" icon="mdi-theme-light-dark" @click="toggleTheme" />
+      <v-btn :prepend-icon="authIcon" class="d-none d-md-inline-flex" @click="handleAuth()">
         {{ isSignedIn ? "Sign Out" : "Sign In" }}
       </v-btn>
+      <!-- Mobile: sign out/in icon only -->
+      <v-btn class="d-md-none" :icon="authIcon" @click="handleAuth()" />
     </template>
   </v-app-bar>
+
+  <!-- Mobile navigation drawer -->
+  <v-navigation-drawer
+    v-model="mobileDrawerOpen"
+    class="d-md-none"
+    location="left"
+    temporary
+  >
+    <v-list nav>
+      <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
+      <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
+      <v-list-item
+        v-if="isInstanceAdmin"
+        title="Admin"
+        :to="{ path: '/admin', hash: '#feature-toggles' }"
+        prepend-icon="mdi-cog-outline"
+        @click="mobileDrawerOpen = false"
+      />
+      <v-divider class="my-2" />
+      <v-list-item
+        to="/help"
+        title="Help"
+        prepend-icon="mdi-help-circle-outline"
+        @click="mobileDrawerOpen = false"
+      />
+      <v-list-item
+        :to="{ path: '/about', hash: '#version' }"
+        title="About"
+        prepend-icon="mdi-information-outline"
+        @click="mobileDrawerOpen = false"
+      />
+      <v-list-item
+        :href="apiDocsUrl"
+        target="_blank"
+        title="API Docs"
+        prepend-icon="mdi-api"
+      />
+      <v-divider class="my-2" />
+      <v-list-item
+        :prepend-icon="'mdi-theme-light-dark'"
+        title="Toggle theme"
+        @click="toggleTheme"
+      />
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
@@ -84,6 +142,9 @@ import {
 const { status, signOut, signIn, data } = useAuth();
 const { public: publicConfig } = useRuntimeConfig();
 const router = useRouter();
+
+// Mobile navigation drawer state
+const mobileDrawerOpen = ref(false);
 
 const apiDocsUrl = computed(() => {
   const base = (publicConfig.backendApiUrl as string) || "";
@@ -201,8 +262,15 @@ function clearSearch() {
 
 .header-search {
   max-width: 300px;
-  min-width: 180px;
+  min-width: 120px;
   align-self: center;
   margin: 0 8px;
+}
+
+@media (max-width: 599px) {
+  .header-search {
+    min-width: 80px;
+    max-width: 160px;
+  }
 }
 </style>

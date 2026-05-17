@@ -6,6 +6,9 @@
 .cache
 dist
 
+# D1a — docs copy (generated at build time from ../../docs/ via nuxt.config.ts hooks)
+public/docs/
+
 # Node dependencies
 node_modules
 
