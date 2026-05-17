@@ -9,6 +9,7 @@ import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StoragePutRequest;
 import de.dlr.shepard.storage.gridfs.GridFsFileStorage;
 import io.quarkus.logging.Log;
+import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -88,6 +90,15 @@ public class FileMigrationService {
   @Inject
   FileStorageRegistry registry;
 
+  @ConfigProperty(name = "shepard.migration.auto-sweep.enabled", defaultValue = "false")
+  boolean autoSweepEnabled;
+
+  @ConfigProperty(name = "shepard.migration.auto-sweep.source", defaultValue = "")
+  String autoSweepSource;
+
+  @ConfigProperty(name = "shepard.migration.auto-sweep.target", defaultValue = "")
+  String autoSweepTarget;
+
   private final AtomicReference<FileMigrationState> stateRef =
     new AtomicReference<>(FileMigrationState.idle());
 
@@ -135,6 +146,48 @@ public class FileMigrationService {
     Log.infof("FileMigrationService: migration queued (source=%s, target=%s)", sourceId, targetId);
     executor.submit(() -> runMigration(sourceId, targetId));
     return initial;
+  }
+
+  /**
+   * FS1e2 — idle-background draining mode.
+   *
+   * <p>Runs every {@code shepard.migration.auto-sweep.interval}
+   * (default {@code PT5M}). If {@code shepard.migration.auto-sweep.enabled}
+   * is {@code false} (the default) the method returns immediately so
+   * deployments without object-store migration incur zero overhead.
+   *
+   * <p>Idempotent: {@link #triggerMigration} already guards against a
+   * second concurrent run; this method just fires the trigger.
+   *
+   * <p>Progress notes via P3 (SSE streaming) are deferred — gated on
+   * the P3 pattern landing. Today's {@link #getState()} REST poll is
+   * the progress path.
+   */
+  @Scheduled(every = "{shepard.migration.auto-sweep.interval}")
+  public void autoSweep() {
+    if (!autoSweepEnabled) {
+      Log.debug("FS1e2 auto-sweep skipped — shepard.migration.auto-sweep.enabled=false");
+      return;
+    }
+    if (autoSweepSource == null || autoSweepSource.isBlank()) {
+      Log.warn("FS1e2 auto-sweep: shepard.migration.auto-sweep.source is not configured — skipping");
+      return;
+    }
+    if (autoSweepTarget == null || autoSweepTarget.isBlank()) {
+      Log.warn("FS1e2 auto-sweep: shepard.migration.auto-sweep.target is not configured — skipping");
+      return;
+    }
+    if (stateRef.get().status() == FileMigrationStatus.RUNNING) {
+      Log.debug("FS1e2 auto-sweep: migration already running — skipping this tick");
+      return;
+    }
+    Log.infof("FS1e2 auto-sweep: triggering migration sweep (source=%s, target=%s)",
+      autoSweepSource, autoSweepTarget);
+    try {
+      triggerMigration(autoSweepSource, autoSweepTarget);
+    } catch (IllegalArgumentException e) {
+      Log.warnf("FS1e2 auto-sweep: invalid configuration — %s", e.getMessage());
+    }
   }
 
   private void runMigration(String sourceId, String targetId) {
