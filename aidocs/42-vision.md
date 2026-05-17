@@ -125,10 +125,15 @@ These work the same way across every primitive:
   more predecessors. The "TR-006 was the bearing-replaced re-test
   of TR-004" relationship is a graph edge, traversable in both
   directions.
-- **Versioning + snapshots.** Today: `Version` is a marker.
-  *(Coming with V2; design done in `aidocs/41`)*: snapshots make
-  point-in-time, immutable, reproducible reads first-class — your
-  RO-Crate export against a snapshot is byte-reproducible.
+- **Versioning + snapshots.** `Version` is a user-visible label.
+  **Snapshots** *(V2b shipped)* are machine-faithful, immutable,
+  point-in-time records of an entire Collection subtree — one
+  `SnapshotEntry` per `VersionableEntity` pinning its `revision`
+  counter at capture time. Create via
+  `POST /v2/collections/{appId}/snapshots`; inspect the manifest via
+  `GET /v2/snapshots/{appId}/manifest`. Reads via snapshot (V2c)
+  and byte-reproducible RO-Crate export against a snapshot (V2d)
+  are the follow-on payoffs — queued.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).
