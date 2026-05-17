@@ -262,6 +262,52 @@ You can change a repository's `type` later by creating a new one
 and migrating annotations — annotation IRIs themselves never
 change, so the swap is a config flip, not a data migration.
 
+## Term autocomplete (N1e)
+
+`GET /v2/semantic/terms/search?q=…&limit=20` searches the terms
+loaded into the INTERNAL n10s repository and returns up to `limit`
+(max 50) matching suggestions.
+
+```
+GET /v2/semantic/terms/search?q=Activity&limit=10
+Authorization: Bearer <token>
+
+200 OK
+[
+  {
+    "uri": "http://www.w3.org/ns/prov#Activity",
+    "label": "Activity",
+    "description": "An activity is something that occurs over a period of time and acts upon or with entities."
+  },
+  {
+    "uri": "https://schema.org/Action",
+    "label": "Action",
+    "description": null
+  }
+]
+```
+
+The search matches against `rdfs:label`, `skos:prefLabel`,
+`skos:altLabel`, and the URI itself (case-insensitive). The query
+must be at least 2 characters.
+
+**Performance.** When the `resource_labels` fulltext index exists
+(created by `V44__Add_fulltext_index_Resource_labels.cypher` on
+startup), the endpoint uses Neo4j fulltext search (relevance-ranked,
+fast on large ontologies). On fresh databases before the index is
+built, the endpoint falls back to a CONTAINS scan automatically.
+
+**Graceful degradation.** If no ontology data is loaded (n10s not
+configured, or `shepard.semantic.internal.preseed-ontologies.enabled=false`),
+the endpoint returns `200` with an empty array — it never errors.
+
+**Auth.** Any authenticated shepard user. No per-entity permission
+check — matching the SPARQL proxy posture.
+
+The annotation picker in the UI (`AddAnnotationDialog.vue`) uses
+this endpoint automatically. Users who know the exact IRI can still
+type it directly into the field without selecting from suggestions.
+
 ## See also
 
 - [Design: internal semantic repository via neosemantics](https://github.com/noheton/shepard/blob/main/aidocs/48-internal-semantic-repository-via-neosemantics.md)

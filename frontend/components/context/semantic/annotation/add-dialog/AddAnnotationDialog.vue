@@ -5,8 +5,11 @@ import type {
   SemanticRepository,
 } from "@dlr-shepard/backend-client";
 import type { AutoCompleteItem } from "~/components/common/AutocompleteInput.vue";
-import NameInput from "~/components/context/input-components/NameInput.vue";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
+import {
+  useTermSearch,
+  type TermSuggestion,
+} from "~/composables/context/useTermSearch";
 
 interface AddAnnotationDialogProps {
   annotated: Annotated;
@@ -24,12 +27,21 @@ const emit = defineEmits<{
 }>();
 
 const { repositories } = useFetchSemanticRepositories();
+const { search } = useTermSearch();
+
+// IRI fields — store the URI string (may be typed freely or selected from suggestions)
 const propertyIri = ref<string>("");
 const propertyRepository = ref<SemanticRepository | null>(null);
 const valueIri = ref<string>("");
 const valueRepository = ref<SemanticRepository | null>(null);
 const isValid = ref(false);
 const processing = ref(false);
+
+// Autocomplete state — suggestions + loading flags
+const propertySuggestions = ref<TermSuggestion[]>([]);
+const propertyLoading = ref(false);
+const valueSuggestions = ref<TermSuggestion[]>([]);
+const valueLoading = ref(false);
 
 watch(
   repositories,
@@ -59,6 +71,70 @@ const mapToAutocompleteItem = (
   title: `${repository.name} (ID ${repository.id})`,
   value: repository,
 });
+
+// ─── Term search debounce helpers ──────────────────────────────────────────
+
+let propertyDebounce: ReturnType<typeof setTimeout> | null = null;
+let valueDebounce: ReturnType<typeof setTimeout> | null = null;
+
+function onPropertySearch(query: string) {
+  // Keep the IRI field in sync with whatever the user is typing
+  // so the submit-button validity watcher sees changes on each keystroke.
+  // onPropertyUpdate() will override this when the user selects a suggestion.
+  propertyIri.value = query ?? "";
+
+  if (propertyDebounce) clearTimeout(propertyDebounce);
+  if (!query || query.trim().length < 2) {
+    propertySuggestions.value = [];
+    return;
+  }
+  propertyLoading.value = true;
+  propertyDebounce = setTimeout(async () => {
+    propertySuggestions.value = await search(query);
+    propertyLoading.value = false;
+  }, 300);
+}
+
+function onValueSearch(query: string) {
+  // Keep the IRI field in sync on each keystroke (same rationale as above).
+  valueIri.value = query ?? "";
+
+  if (valueDebounce) clearTimeout(valueDebounce);
+  if (!query || query.trim().length < 2) {
+    valueSuggestions.value = [];
+    return;
+  }
+  valueLoading.value = true;
+  valueDebounce = setTimeout(async () => {
+    valueSuggestions.value = await search(query);
+    valueLoading.value = false;
+  }, 300);
+}
+
+// When a suggestion is selected from the combobox, update the IRI field
+// with the URI. v-combobox sets the model to either the typed string or
+// the selected item object — handle both shapes.
+function onPropertyUpdate(val: string | TermSuggestion | null) {
+  if (!val) {
+    propertyIri.value = "";
+  } else if (typeof val === "string") {
+    propertyIri.value = val;
+  } else {
+    propertyIri.value = val.uri;
+  }
+}
+
+function onValueUpdate(val: string | TermSuggestion | null) {
+  if (!val) {
+    valueIri.value = "";
+  } else if (typeof val === "string") {
+    valueIri.value = val;
+  } else {
+    valueIri.value = val.uri;
+  }
+}
+
+// ─── Submit ────────────────────────────────────────────────────────────────
 
 const onSubmit = async () => {
   processing.value = true;
@@ -116,18 +192,33 @@ const showValueRepoNameTooltip = ref(true);
               open-on-hover
             >
               <template #activator="{ props: semanticProps }">
-                <NameInput
-                  v-model:name="propertyIri"
+                <v-combobox
+                  :items="propertySuggestions"
+                  :loading="propertyLoading"
                   autofocus
+                  density="compact"
+                  item-title="label"
+                  item-value="uri"
                   label="IRI"
+                  no-data-text="Type at least 2 characters to search ontology terms"
+                  no-filter
+                  variant="outlined"
                   v-bind="semanticProps"
                   @blur="showPropertyIRITooltip = true"
                   @focus="showPropertyIRITooltip = false"
-                />
+                  @update:model-value="onPropertyUpdate"
+                  @update:search="onPropertySearch"
+                >
+                  <template #item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps">
+                      <template #subtitle>{{ item.raw.uri }}</template>
+                    </v-list-item>
+                  </template>
+                </v-combobox>
               </template>
               <div>
-                Please paste term IRI. Refer to your ontology server to get the
-                link.
+                Type to search loaded ontology terms, or paste a term IRI
+                directly.
               </div>
             </v-tooltip>
           </v-col>
@@ -181,17 +272,32 @@ const showValueRepoNameTooltip = ref(true);
               open-on-hover
             >
               <template #activator="{ props: semanticProps }">
-                <NameInput
-                  v-model:name="valueIri"
+                <v-combobox
+                  :items="valueSuggestions"
+                  :loading="valueLoading"
+                  density="compact"
+                  item-title="label"
+                  item-value="uri"
                   label="IRI"
+                  no-data-text="Type at least 2 characters to search ontology terms"
+                  no-filter
+                  variant="outlined"
                   v-bind="semanticProps"
                   @blur="showValueIRITooltip = true"
                   @focus="showValueIRITooltip = false"
-                />
+                  @update:model-value="onValueUpdate"
+                  @update:search="onValueSearch"
+                >
+                  <template #item="{ props: itemProps, item }">
+                    <v-list-item v-bind="itemProps">
+                      <template #subtitle>{{ item.raw.uri }}</template>
+                    </v-list-item>
+                  </template>
+                </v-combobox>
               </template>
               <div>
-                Please paste term IRI. Refer to your ontology server to get the
-                link.
+                Type to search loaded ontology terms, or paste a term IRI
+                directly.
               </div>
             </v-tooltip>
           </v-col>

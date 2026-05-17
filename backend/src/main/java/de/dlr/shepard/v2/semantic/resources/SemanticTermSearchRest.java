@@ -1,0 +1,254 @@
+package de.dlr.shepard.v2.semantic.resources;
+
+import de.dlr.shepard.common.exceptions.ProblemJson;
+import de.dlr.shepard.v2.semantic.io.TermSuggestionIO;
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.SecurityContext;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.neo4j.ogm.session.Session;
+
+/**
+ * N1e — semantic term autocomplete endpoint.
+ *
+ * <p>{@code GET /v2/semantic/terms/search?q=…&limit=20} searches the
+ * {@code :Resource} nodes imported by n10s (neosemantics) and returns
+ * matching term suggestions for the annotation-picker autocomplete.
+ *
+ * <p><b>Query strategy.</b> When the Neo4j fulltext index
+ * {@code resource_labels} exists (created by {@code V44__Add_fulltext_index_Resource_labels.cypher}),
+ * the endpoint uses {@code db.index.fulltext.queryNodes} for faster lookups.
+ * If the index is absent (fresh database, migration not yet applied, or
+ * n10s data not loaded) it falls back to a {@code CONTAINS}-based Cypher
+ * scan, which is safe but slower on large ontologies. If the {@code :Resource}
+ * label has no nodes at all (n10s not configured / no ontologies seeded),
+ * both strategies return an empty list — never an error.
+ *
+ * <p><b>Auth.</b> Any authenticated shepard user may call this endpoint.
+ * Term search against the INTERNAL n10s repository is a read-only catalogue
+ * operation with no per-entity permission check — matching the posture of
+ * {@link SemanticSparqlRest} (which also gates on authentication but not
+ * per-entity permission). A missing or anonymous caller receives a 401.
+ *
+ * <p><b>Limit cap.</b> The caller-supplied {@code limit} is capped at 50
+ * regardless of what is sent.
+ *
+ * @see de.dlr.shepard.context.semantic.InternalSemanticConnector
+ * @see TermSuggestionIO
+ */
+@Path("/v2/semantic/terms/search")
+@RequestScoped
+@Tag(name = "Semantic term search (v2, N1e)")
+public class SemanticTermSearchRest {
+
+  /** Maximum number of results the endpoint ever returns, regardless of caller-supplied limit. */
+  static final int MAX_LIMIT = 50;
+
+  /** Minimum query length — queries shorter than this return an empty list immediately. */
+  static final int MIN_QUERY_LENGTH = 2;
+
+  // ─── RFC 7807 problem type tokens ─────────────────────────────────────────
+
+  static final String PROBLEM_TYPE_AUTH = "urn:shepard:error:auth";
+  static final String PROBLEM_TYPE_BAD_REQUEST = "urn:shepard:error:bad-request";
+
+  // ─── Cypher queries ───────────────────────────────────────────────────────
+
+  /**
+   * Fulltext-index-backed query for n10s {@code :Resource} nodes.
+   *
+   * <p>Expects the {@code resource_labels} fulltext index to exist
+   * (created by {@code V44__Add_fulltext_index_Resource_labels.cypher}).
+   * Uses {@code $q + "*"} for prefix matching. Returns at most {@code $limit}
+   * results ordered by score (Neo4j native relevance).
+   */
+  static final String FULLTEXT_CYPHER =
+    "CALL db.index.fulltext.queryNodes('resource_labels', $q + '*') " +
+    "YIELD node AS r " +
+    "WHERE r.uri IS NOT NULL " +
+    "RETURN r.uri AS uri, " +
+    "       coalesce(r.`rdfs__label`, r.`skos__prefLabel`, r.`skos__altLabel`, r.uri) AS label, " +
+    "       r.`rdfs__comment` AS description " +
+    "LIMIT $limit";
+
+  /**
+   * CONTAINS-based fallback used when the fulltext index is absent.
+   *
+   * <p>Scans all {@code :Resource} nodes with a case-insensitive
+   * {@code CONTAINS} check across three label properties and the URI.
+   * Slower on large ontologies but always safe.
+   */
+  static final String CONTAINS_CYPHER =
+    "MATCH (r:Resource) " +
+    "WHERE r.uri IS NOT NULL " +
+    "  AND (" +
+    "    toLower(coalesce(r.`rdfs__label`, '')) CONTAINS toLower($q) " +
+    "    OR toLower(coalesce(r.`skos__prefLabel`, '')) CONTAINS toLower($q) " +
+    "    OR toLower(coalesce(r.`skos__altLabel`, '')) CONTAINS toLower($q) " +
+    "    OR toLower(r.uri) CONTAINS toLower($q) " +
+    "  ) " +
+    "RETURN r.uri AS uri, " +
+    "       coalesce(r.`rdfs__label`, r.`skos__prefLabel`, r.`skos__altLabel`, r.uri) AS label, " +
+    "       r.`rdfs__comment` AS description " +
+    "LIMIT $limit";
+
+  // ─── endpoint ─────────────────────────────────────────────────────────────
+
+  /**
+   * {@code GET /v2/semantic/terms/search?q=…&limit=20}
+   *
+   * <p>Returns up to {@code limit} (capped at 50) {@link TermSuggestionIO}
+   * objects whose {@code rdfs:label}, {@code skos:prefLabel},
+   * {@code skos:altLabel}, or URI contains the query string.
+   *
+   * <p>Returns 200 with an empty array when no {@code :Resource} nodes
+   * exist (n10s not loaded / ontologies not seeded).
+   *
+   * <p>Returns 400 when {@code q} is absent or blank (or shorter than 2 chars).
+   *
+   * <p>Returns 401 when the caller is not authenticated.
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Operation(
+    summary = "Search ontology terms loaded into the INTERNAL semantic repository.",
+    description = "Searches :Resource nodes (n10s RDF data) by rdfs:label / skos:prefLabel / skos:altLabel / URI. " +
+    "Returns a ranked list of TermSuggestion objects for use in the annotation-picker autocomplete. " +
+    "Authentication required (401). Minimum query length 2 characters. Limit capped at 50. " +
+    "Returns an empty array when no ontology data is loaded — never an error."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Matching term suggestions (may be empty when no data is loaded).",
+    content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TermSuggestionIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Query parameter missing or shorter than 2 characters.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response search(
+    @QueryParam("q") String q,
+    @QueryParam("limit") @DefaultValue("20") int limit,
+    @Context SecurityContext sc
+  ) {
+    // 1 — auth gate (same pattern as SemanticSparqlRest)
+    String caller = sc != null && sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) {
+      return problem(Status.UNAUTHORIZED, PROBLEM_TYPE_AUTH, "Authentication required.", "Term search requires an authenticated user.");
+    }
+
+    // 2 — validate query
+    if (q == null || q.isBlank() || q.trim().length() < MIN_QUERY_LENGTH) {
+      return problem(
+        Status.BAD_REQUEST,
+        PROBLEM_TYPE_BAD_REQUEST,
+        "Query parameter 'q' is required and must be at least 2 characters.",
+        "Received: " + (q == null ? "<null>" : "'" + q + "'")
+      );
+    }
+
+    // 3 — cap limit
+    int effectiveLimit = Math.min(Math.max(limit, 1), MAX_LIMIT);
+
+    // 4 — query
+    List<TermSuggestionIO> results = runSearch(q.trim(), effectiveLimit);
+    return Response.ok(results).build();
+  }
+
+  // ─── query logic ──────────────────────────────────────────────────────────
+
+  /**
+   * Run the term search against the OGM session, trying the fulltext index
+   * first and falling back to the CONTAINS scan if the index is unavailable.
+   * Returns an empty list on any failure — never propagates an exception to
+   * the caller.
+   *
+   * <p>Package-private for test injection via subclass (same seam as
+   * {@link SemanticSparqlRest#executeInternal}).
+   */
+  List<TermSuggestionIO> runSearch(String q, int limit) {
+    Session session = getSession();
+    if (session == null) {
+      Log.warn("SemanticTermSearchRest: no OGM session available, returning empty list.");
+      return Collections.emptyList();
+    }
+
+    // Try fulltext index first; fall back to CONTAINS scan if the index is absent.
+    try {
+      return executeQuery(session, FULLTEXT_CYPHER, q, limit);
+    } catch (RuntimeException fulltextEx) {
+      Log.debugf(
+        "SemanticTermSearchRest: fulltext index unavailable (%s), falling back to CONTAINS scan.",
+        fulltextEx.getClass().getSimpleName()
+      );
+      try {
+        return executeQuery(session, CONTAINS_CYPHER, q, limit);
+      } catch (RuntimeException containsEx) {
+        Log.warnf(
+          "SemanticTermSearchRest: CONTAINS fallback also failed (%s); returning empty list.",
+          containsEx.getClass().getSimpleName()
+        );
+        return Collections.emptyList();
+      }
+    }
+  }
+
+  /**
+   * Execute a Cypher query and map each row to a {@link TermSuggestionIO}.
+   * Rows with a null or blank {@code uri} are silently skipped.
+   */
+  private static List<TermSuggestionIO> executeQuery(Session session, String cypher, String q, int limit) {
+    var result = session.query(cypher, Map.of("q", q, "limit", (long) limit));
+    List<TermSuggestionIO> out = new ArrayList<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      Object uriRaw = row.get("uri");
+      if (uriRaw == null) continue;
+      String uri = uriRaw.toString();
+      if (uri.isBlank()) continue;
+      Object labelRaw = row.get("label");
+      String label = labelRaw != null ? labelRaw.toString() : uri;
+      Object descRaw = row.get("description");
+      String description = descRaw != null ? descRaw.toString() : null;
+      out.add(new TermSuggestionIO(uri, label, description));
+    }
+    return out;
+  }
+
+  // ─── seam ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Returns the OGM session from the singleton {@link de.dlr.shepard.common.neo4j.NeoConnector}.
+   * Package-private and overridable for test injection (same pattern as
+   * {@link de.dlr.shepard.context.semantic.InternalSemanticConnector}).
+   */
+  Session getSession() {
+    try {
+      return de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession();
+    } catch (RuntimeException ex) {
+      Log.warnf("SemanticTermSearchRest: failed to obtain OGM session (%s).", ex.getClass().getSimpleName());
+      return null;
+    }
+  }
+
+  // ─── helpers ──────────────────────────────────────────────────────────────
+
+  static Response problem(Status status, String type, String title, String detail) {
+    ProblemJson body = new ProblemJson(type, title, status.getStatusCode(), detail, null);
+    return Response.status(status).type(MediaType.APPLICATION_JSON).entity(body).build();
+  }
+}
