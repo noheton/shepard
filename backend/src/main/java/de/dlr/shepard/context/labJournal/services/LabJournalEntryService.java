@@ -9,7 +9,9 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.services.CollectionService;
 import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.daos.LabJournalEntryDAO;
+import de.dlr.shepard.context.labJournal.daos.LabJournalEntryRevisionDAO;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
+import de.dlr.shepard.context.labJournal.entities.LabJournalEntryRevision;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -23,6 +25,9 @@ public class LabJournalEntryService {
 
   @Inject
   LabJournalEntryDAO labJournalEntryDAO;
+
+  @Inject
+  LabJournalEntryRevisionDAO labJournalEntryRevisionDAO;
 
   @Inject
   DataObjectService dataObjectService;
@@ -75,6 +80,23 @@ public class LabJournalEntryService {
 
     LabJournalEntry labJournalEntry = labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
     if (null == labJournalEntry) return null;
+
+    // J1d — capture the old content as an append-only revision BEFORE
+    // overwriting it. Skip creating a revision when the content is unchanged
+    // (no-op update) to avoid polluting the history with empty diffs.
+    String oldContent = labJournalEntry.getContent();
+    if (oldContent != null && !oldContent.equals(content)) {
+      User user = userService.getCurrentUser();
+      int nextRevisionNumber = labJournalEntryRevisionDAO.findByEntry(labJournalEntryId).size() + 1;
+      LabJournalEntryRevision revision = new LabJournalEntryRevision();
+      revision.setContent(oldContent);
+      revision.setRevisionNumber(nextRevisionNumber);
+      revision.setCreatedAt(dateHelper.getDate());
+      revision.setCreatedBy(user);
+      revision.setLabJournalEntry(labJournalEntry);
+      labJournalEntryRevisionDAO.createOrUpdate(revision);
+    }
+
     User user = userService.getCurrentUser();
     labJournalEntry.setContent(content);
     labJournalEntry.setUpdatedAt(dateHelper.getDate());

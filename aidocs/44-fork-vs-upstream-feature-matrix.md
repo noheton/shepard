@@ -177,7 +177,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Markdown body interpretation (CommonMark + GFM) | plain text | `GET /v2/lab-journal/{appId}/render` — CommonMark 0.24.0 + GFM tables/strikethrough/task-lists; `sanitizeUrls=true`; `contentFormat: "MARKDOWN"` on IO | ✓ shipped (J1a) | `aidocs/37` |
 | Inline `.ipynb` static render — backend: `GET /v2/lab-journal/{dataObjectAppId}/notebooks` listing `.ipynb` file refs (singleton + bundle, case-insensitive, `referenceKind` discriminator) | none | `NotebookRest` + `NotebookReferenceIO`; `EntityIdResolver` + permission gate; 14 unit tests | ✓ shipped (J1b backend) | `aidocs/37` |
 | "Open in Jupyter" deep link via `editor.preferredJupyter` | none | TBD | 📐 (queued, J1c) | `aidocs/37` |
-| Edit history (append-only revisions) | write-once | TBD | 📐 (queued, J1d) | `aidocs/37` |
+| Edit history (append-only revisions) | write-once | `LabJournalEntryRevision` node + `has_lab_journal_revision` edge; `LabJournalEntryRevisionDAO.findByEntry()`; snapshot created in `updateLabJournalEntry` before content is overwritten; `GET /v2/lab-journal/{entryAppId}/history` returns `[{appId, content, revisedAt, revisedBy, revisionNumber}]` ordered newest first; 13 unit tests | ✓ shipped (J1d) | `aidocs/37` |
 | Display perf for large lab-journal lists (#507) | flat scroll | TBD; gated on L6 pagination | 📐 (queued) | `aidocs/37` / #507 |
 
 ## 12. AI features
