@@ -21,9 +21,11 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
+import de.dlr.shepard.data.file.services.FileService.FileCreateResult;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
 import de.dlr.shepard.storage.StorageException;
@@ -67,6 +69,9 @@ public class FileContainerServiceTest {
 
   @InjectMock
   FileStorageRegistry fileStorageRegistry;
+
+  @InjectMock
+  PayloadVersionDAO payloadVersionDAO;
 
   @Inject
   FileContainerService service;
@@ -244,7 +249,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFile("mongoId", "filename", null)).thenReturn(file);
+    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
       true
@@ -276,7 +281,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
+    when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
       true
@@ -308,7 +313,7 @@ public class FileContainerServiceTest {
     updated.addFile(file);
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFile("mongoId", fileName, null)).thenReturn(file);
+    when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
       true
@@ -354,7 +359,7 @@ public class FileContainerServiceTest {
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
       true
     );
-    when(fileService.createFile("mongoId", "filename", null)).thenThrow(InternalServerErrorException.class);
+    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenThrow(InternalServerErrorException.class);
     //TODO: this unit test does not really test anything, we need to implement partial mocking on the FileService to simulate the MongoError
 
     assertThrows(InternalServerErrorException.class, () -> service.createFile(1L, "filename", null));
@@ -492,7 +497,7 @@ public class FileContainerServiceTest {
     ShepardFile created = new ShepardFile("oid", new Date(), "name", "md5");
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
-    when(fileService.createFile("mongoId", "filename", null)).thenReturn(created);
+    when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(created, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
     when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
       true
@@ -716,5 +721,89 @@ public class FileContainerServiceTest {
 
     URI result = service.presignedDownloadUrl(1L, "dl-oid", Duration.ofMinutes(5));
     assertEquals(downloadUrl, result);
+  }
+
+  // ---------- PV1a: per-payload byte versioning recording ----------
+
+  @Test
+  public void createFile_recordsPayloadVersionWhenContainerHasAppId() {
+    // PV1a: when a container has an appId, a PayloadVersion node is minted.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    container.setAppId("container-app-1");
+    ShepardFile file = new ShepardFile("file-oid", new Date(), "sensor.csv", "md5");
+    file.setFileSize(1024L);
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.createFileWithSha256("mongoId", "sensor.csv", null))
+      .thenReturn(new FileCreateResult(file, "E3B0C44298FC1C149AFBF4C8996FB924"));
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(payloadVersionDAO.findMaxVersionNumber("container-app-1", "sensor.csv")).thenReturn(0L);
+    when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+
+    ShepardFile result = service.createFile(1L, "sensor.csv", null);
+
+    assertEquals("file-oid", result.getOid());
+    // Verify a PayloadVersion was persisted with versionNumber=1
+    var captor = org.mockito.ArgumentCaptor.forClass(de.dlr.shepard.data.file.entities.PayloadVersion.class);
+    verify(payloadVersionDAO).createOrUpdate(captor.capture());
+    var pv = captor.getValue();
+    assertEquals("container-app-1", pv.getContainerAppId());
+    assertEquals("sensor.csv", pv.getOriginalName());
+    assertEquals(1L, pv.getVersionNumber());
+    assertEquals("E3B0C44298FC1C149AFBF4C8996FB924", pv.getSha256());
+    assertEquals("file-oid", pv.getFileOid());
+    assertEquals("Anna", pv.getUploadedBy());
+  }
+
+  @Test
+  public void createFile_recordsVersionTwoOnReUpload() {
+    // PV1a: a second upload of the same file name increments the version number.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    container.setAppId("container-app-2");
+    ShepardFile file = new ShepardFile("file-oid2", new Date(), "data.bin", "md5");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.createFileWithSha256("mongoId", "data.bin", null))
+      .thenReturn(new FileCreateResult(file, "DEADBEEF"));
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    // Existing max = 1 (a first upload already happened)
+    when(payloadVersionDAO.findMaxVersionNumber("container-app-2", "data.bin")).thenReturn(1L);
+    when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+
+    service.createFile(1L, "data.bin", null);
+
+    var captor = org.mockito.ArgumentCaptor.forClass(de.dlr.shepard.data.file.entities.PayloadVersion.class);
+    verify(payloadVersionDAO).createOrUpdate(captor.capture());
+    assertEquals(2L, captor.getValue().getVersionNumber());
+  }
+
+  @Test
+  public void createFile_skipsVersionRecordingWhenContainerHasNoAppId() {
+    // PV1a: containers without an appId (pre-L2a rows) silently skip recording.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+    // appId intentionally not set
+    ShepardFile file = new ShepardFile("oid", new Date(), "file.csv", "md5");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.createFileWithSha256("mongoId", "file.csv", null))
+      .thenReturn(new FileCreateResult(file, "SHA256"));
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+
+    service.createFile(1L, "file.csv", null);
+
+    // payloadVersionDAO.createOrUpdate should NOT have been called
+    org.mockito.Mockito.verify(payloadVersionDAO, org.mockito.Mockito.never()).createOrUpdate(any());
   }
 }

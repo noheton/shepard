@@ -248,6 +248,78 @@ public class FileServiceTest {
   }
 
   @Test
+  public void createFileWithSha256_returnsSha256OfEmptyStream() throws NoSuchAlgorithmException {
+    // SHA-256 of the empty byte sequence is the well-known constant:
+    // E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+    final String sha256OfEmpty = "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855";
+    ObjectId oid = new ObjectId();
+    ObjectId moid = new ObjectId();
+    String fileName = "empty.bin";
+    InputStream emptyStream = InputStream.nullInputStream();
+    String mongoid = "mongoid";
+
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(mongoDatabase.getCollection(mongoid)).thenReturn(collection);
+    when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
+    when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
+    GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+    when(gridBucket.find(com.mongodb.client.model.Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+    when(filesCollectionReturn.first()).thenReturn(null); // size not critical for this test
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", moid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    FileService.FileCreateResult result = fileService.createFileWithSha256(mongoid, fileName, emptyStream);
+    assertEquals(sha256OfEmpty, result.sha256());
+  }
+
+  @Test
+  public void createFileWithSha256_returnsSha256AlongsideShepardFile() throws NoSuchAlgorithmException {
+    ObjectId oid = new ObjectId();
+    ObjectId moid = new ObjectId();
+    String fileName = "data.bin";
+    InputStream emptyStream = InputStream.nullInputStream();
+    String mongoid = "mongoid";
+    Long fileSize = 0L;
+
+    when(dateHelper.getDate()).thenReturn(new Date());
+    when(mongoDatabase.getCollection(mongoid)).thenReturn(collection);
+    when(gridBucket.withChunkSizeBytes(1024 * 1024)).thenReturn(gridBucket);
+    when(gridBucket.uploadFromStream(eq(fileName), any(DigestInputStream.class))).thenReturn(oid);
+    GridFSFindIterable filesCollectionReturn = mock(GridFSFindIterable.class);
+    GridFSFile gridFsFile = mock(GridFSFile.class);
+    when(gridBucket.find(com.mongodb.client.model.Filters.eq("_id", oid))).thenReturn(filesCollectionReturn);
+    when(filesCollectionReturn.first()).thenReturn(gridFsFile);
+    when(gridFsFile.getLength()).thenReturn(fileSize);
+    doAnswer(
+      new Answer<Void>() {
+        @Override
+        public Void answer(InvocationOnMock invocation) throws Throwable {
+          ((Document) invocation.getArguments()[0]).append("_id", moid);
+          return null;
+        }
+      }
+    )
+      .when(collection)
+      .insertOne(any(Document.class));
+
+    FileService.FileCreateResult result = fileService.createFileWithSha256(mongoid, fileName, emptyStream);
+    org.junit.jupiter.api.Assertions.assertNotNull(result.file());
+    assertEquals(fileName, result.file().getName());
+    assertEquals(fileSize, result.file().getFileSize());
+    org.junit.jupiter.api.Assertions.assertNotNull(result.sha256());
+    assertEquals(64, result.sha256().length()); // SHA-256 hex is always 64 chars
+  }
+
+  @Test
   public void createNonExistingMongoidFileTest() {
     String fileName = "fileName";
     InputStream inputStream = mock(InputStream.class);
