@@ -1,6 +1,6 @@
 # Shepard Fork — Roadmap
 
-**Last updated:** 2026-05-16  
+**Last updated:** 2026-05-17  
 **Fork baseline:** upstream `gitlab.com/dlr-shepard/shepard 5.2.0`  
 **Live backlog:** [`16-dispatcher-backlog.md`](16-dispatcher-backlog.md)  
 **Feature matrix:** [`44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md)
@@ -11,7 +11,7 @@ a picture a PI or a new contributor can read in five minutes.
 
 ---
 
-## Shipped (main, as of 2026-05)
+## Shipped (main, as of 2026-05-17)
 
 ### Infrastructure & security
 - Bounded DB startup with exponential backoff (A1 series); per-DB health checks; graceful degradation (A1c)
@@ -49,8 +49,38 @@ a picture a PI or a new contributor can read in five minutes.
 ### User profile & provenance
 - ORCID field + mod-11-2 validator; `PATCH /v2/users/me` (U1a)
 - `displayName` override + `effectiveDisplayName` derivation; cryptic-username shortening (U1b)
+- Per-user preferences (`GET/PATCH /v2/users/me/preferences`) — theme, language, JupyterHub URL, etc. (U1d)
+- Role-in-context chip in collection sidebar header (U1c2)
 - Provenance capture (PROV1 series): `:Activity` on all mutations; provenance architecture (PROV1a+)
 - Unhide publish plugin shipped as the first real `shepard-plugin-*` module (UH1a)
+
+### Payload versioning (PV1a, partial)
+- `PayloadVersion` Neo4j entity + DAO; SHA-256 capture on file upload; `V41` uniqueness constraint
+
+### Snapshots (V2a–V2e + UI1a)
+- `revision` field on all versionable entities (V2a)
+- `Snapshot` + `SnapshotEntry` model; `POST/GET /v2/collections/{appId}/snapshots` (V2b)
+- Snapshot-pinned DataObject list (V2c); snapshot diff (V2e)
+- **Snapshots UI** (UI1a): create/list/delete/diff panel on collection detail page (owner/manager only)
+
+### Templates (T1a–T1f + UI2a)
+- `:ShepardTemplate` Neo4j entity; admin CRUD at `/v2/templates`; JSON DSL body; copy-on-write versioning
+- Server-side DataObject instantiation; YAML import/export (T1e, T1f)
+- **Templates admin browser** (UI2a): `v-data-table` + create/edit/retire dialogs in `/admin` page
+
+### UI overhaul (QW1–QW6, UI1a, UI2a, UI3a, UI8)
+- Global search bar in header (QW1); sidebar data-object filter (QW2)
+- JupyterHub URL in user profile (QW3); admin health dashboard (QW6)
+- Git credentials shortcut in GitReferencesPane (QW4); publish tooltip (QW5)
+- **RO-Crate download button** on collection pages (UI8)
+- **Video inline viewer** (UI3a): `VideoStreamReferencesPane` with native `<video>` + ffprobe metadata chips
+- LUMEN demo: 7 real elib.dlr.de publications + "Rocket Engine Hot-Fire Test Run" template seeded
+
+### Demo & documentation
+- Live demo at `https://shepard.nuclide.systems` with LUMEN-inspired showcase (alice/bob/admin)
+- GitHub Pages site at `https://noheton.github.io/shepard/` with deploy guides and user docs
+- cspell config for domain-specific vocabulary; README demo credentials
+- Collection/Container duality design doc (aidocs/ops/87)
 
 ### Plugin system
 - `PluginManifest` SPI + `PluginRegistry`; drop-in `/deployments/plugins/` JAR directory (PM1a)
@@ -74,7 +104,7 @@ a picture a PI or a new contributor can read in five minutes.
 | AI1r | Shepard experiment ontology (`shepard-experiment.ttl`) — 7 SKOS concept schemes (ExperimentPhase, MeasurementRole, QualityFlag, DefectType, InspectionMethod, ManufacturingProcess, SensorRole); uploaded via N1c2 | S | none |
 | A2 | Decompose monolithic `TimeseriesRest` / `FileRest` / `CollectionRest` into JAX-RS sub-resources | L | DX1 ✓ |
 | N1f | `/v2/semantic/{repoAppId}/sparql` SPARQL proxy (read-only, shepard auth) | M | none |
-| VID1a | Video upload: MP4/MOV/AVI/MKV/WebM; ffprobe wall-clock extraction; `VideoStreamReference` entity | S | none |
+| ~~VID1a~~ | ~~Video upload: MP4/MOV/AVI/MKV/WebM; ffprobe wall-clock extraction; `VideoStreamReference` entity~~ — **shipped** (2026-05-17), UI3a inline viewer also shipped | S | ✓ |
 | L4 | Search-as-you-type + ontology tree/graph view | M | none |
 | L7 | Semantic annotations on file / structured / spatial payloads (not just DataObject) | L | none |
 | P4b | OpenAPI client tree-shaking / code-splitting | S | none |
@@ -126,13 +156,13 @@ a picture a PI or a new contributor can read in five minutes.
 
 ---
 
-## Blocking points (as of 2026-05-16)
+## Blocking points (as of 2026-05-17)
 
 The following items are the most critical gates. Clearing one typically unblocks
 a cascade of mid-term work:
 
-1. **VID1a** — needed before VID2, TM1's full spatial+temporal sync story, and SB2 overlay modes
+1. ~~**VID1a**~~ — **shipped** (2026-05-17); VID2, TM1 spatial+temporal, SB2 now unblocked
 2. **AI1a** (AI plumbing) — needed before AI1d/e/f/g/h (the entire LLM feature set)
-3. **T1a** — needed before templates, processes, experiment coordinator
+3. ~~**T1a**~~ — **T1a–T1f shipped** (2026-05-17); templates + processes, experiment coordinator unblocked
 4. **N1f** (SPARQL proxy) — needed before AI1q (Lumen SPARQL tool)
 5. **F1/F2** (auth annotation + groups) — needed before advanced sharing and OPA seam
