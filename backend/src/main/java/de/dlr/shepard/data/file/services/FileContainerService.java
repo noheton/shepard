@@ -11,9 +11,12 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.file.entities.FileContainer;
+import de.dlr.shepard.data.file.entities.PayloadVersion;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
+import de.dlr.shepard.data.file.services.FileService.FileCreateResult;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
 import de.dlr.shepard.storage.StorageException;
@@ -31,6 +34,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -54,6 +58,9 @@ public class FileContainerService extends AbstractContainerService<FileContainer
 
   @Inject
   FileStorageRegistry fileStorageRegistry;
+
+  @Inject
+  PayloadVersionDAO payloadVersionDAO;
 
   /**
    * Creates a FileContainer and stores it in Neo4J
@@ -230,6 +237,7 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     // requireActive()) → StorageNotInstalledExceptionMapper → RFC 7807.
     FileStorage adapter = fileStorageRegistry.requireActive();
     ShepardFile result;
+    String sha256 = null;
     try {
       // GridFs invariant: the adapter persists the ShepardFile
       // inside fileService.createFile() as part of the GridFS
@@ -240,8 +248,14 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       // returns the entity directly — the S3 adapter has its own
       // bookkeeping shape and won't share FileService's persistence
       // semantics.
+      //
+      // PV1a: use createFileWithSha256 on the GridFS path so the
+      // SHA-256 digest is available for version recording without
+      // a second pass over the bytes.
       if (GridFsFileStorage.ID.equals(adapter.id())) {
-        result = fileService.createFile(fileContainer.getMongoId(), fileName, inputStream);
+        FileCreateResult fcr = fileService.createFileWithSha256(fileContainer.getMongoId(), fileName, inputStream);
+        result = fcr.file();
+        sha256 = fcr.sha256();
       } else {
         // Non-GridFS adapters require presigned upload URLs.
         // Use POST /v2/file-containers/{containerAppId}/upload-url to
@@ -264,7 +278,75 @@ public class FileContainerService extends AbstractContainerService<FileContainer
 
     fileContainer.addFile(result);
     fileContainerDAO.createOrUpdate(fileContainer);
+
+    // PV1a: record a PayloadVersion node for this upload.
+    // The version is append-only and never mutated; the counter is
+    // scoped to (containerAppId, originalName).
+    recordPayloadVersion(fileContainer, fileName, result, sha256);
+
     return result;
+  }
+
+  /**
+   * PV1a — mint and persist a {@link PayloadVersion} node for a successful
+   * file upload.
+   *
+   * <p>The version number is computed as {@code max(existing) + 1}, with
+   * {@code 1} for the first upload. The operation is best-effort: a failure
+   * here logs a warning but does not roll back the upload because the
+   * {@link ShepardFile} is already persisted and the container graph is
+   * already updated.
+   *
+   * @param container     the owning FileContainer (for its appId and Neo4j id).
+   * @param uploadedName  the normalised file name used for this upload.
+   * @param file          the just-persisted ShepardFile (provides oid + size).
+   * @param sha256        upper-case SHA-256 hex digest, or {@code null} for
+   *                      non-GridFS paths.
+   */
+  private void recordPayloadVersion(
+    FileContainer container,
+    String uploadedName,
+    ShepardFile file,
+    String sha256
+  ) {
+    if (container.getAppId() == null) {
+      // Container was not yet assigned an appId (pre-L2a row or test fixture).
+      // Silently skip version recording to avoid a broken node with a null FK.
+      Log.warnf(
+        "PV1a: container id=%d has no appId — skipping PayloadVersion recording for file '%s'",
+        container.getId(),
+        uploadedName
+      );
+      return;
+    }
+    try {
+      User caller = userService.getCurrentUser();
+      String callerName = (caller != null) ? caller.getUsername() : "unknown";
+      String containerAppId = container.getAppId();
+
+      long nextVersion = payloadVersionDAO.findMaxVersionNumber(containerAppId, uploadedName) + 1;
+
+      PayloadVersion pv = new PayloadVersion();
+      pv.setContainerAppId(containerAppId);
+      pv.setOriginalName(uploadedName);
+      pv.setFileOid(file != null ? file.getOid() : null);
+      pv.setSha256(sha256);
+      pv.setSizeBytes(file != null ? file.getFileSize() : null);
+      pv.setVersionNumber(nextVersion);
+      pv.setUploadedBy(callerName);
+      pv.setUploadedAt(Instant.now().toString());
+      payloadVersionDAO.createOrUpdate(pv);
+      Log.infof(
+        "PV1a: recorded PayloadVersion v%d for container=%s file='%s' sha256=%s",
+        nextVersion, containerAppId, uploadedName, sha256 != null ? sha256.substring(0, 8) + "…" : "null"
+      );
+    } catch (Exception e) {
+      // Version recording is best-effort; do not fail the upload.
+      Log.warnf(
+        "PV1a: failed to record PayloadVersion for container=%s file='%s': %s",
+        container.getAppId(), uploadedName, e.getMessage()
+      );
+    }
   }
 
   /**

@@ -52,6 +52,72 @@ public class FileService {
   }
 
   /**
+   * PV1a — result record returned by {@link #createFileWithSha256}. Carries
+   * the persisted {@link ShepardFile} alongside the SHA-256 hex digest of the
+   * uploaded bytes.
+   *
+   * @param file   the persisted ShepardFile (non-null).
+   * @param sha256 SHA-256 upper-case hex digest of the uploaded bytes (non-null).
+   */
+  public record FileCreateResult(ShepardFile file, String sha256) {}
+
+  /**
+   * Creates a new file in file container and returns the SHA-256 digest of
+   * the payload alongside the persisted {@link ShepardFile}.
+   *
+   * <p>Two {@link DigestInputStream}s are chained: the inner one computes
+   * SHA-256, the outer one computes MD5 (stored in the bookkeeping document
+   * for backward-compat). Bytes flow through both digests in a single pass
+   * as GridFS reads the stream.
+   *
+   * @param mongoId     the MongoDB collection ID of the file container.
+   * @param fileName    the file name to store.
+   * @param inputStream the payload bytes.
+   * @return a {@link FileCreateResult} with the saved file and its SHA-256.
+   * @throws jakarta.ws.rs.NotFoundException            if the container is not found.
+   * @throws jakarta.ws.rs.InternalServerErrorException if a digest algorithm is unavailable.
+   */
+  public FileCreateResult createFileWithSha256(String mongoId, String fileName, InputStream inputStream) {
+    MongoCollection<Document> collection;
+    try {
+      collection = mongoDatabase.getCollection(mongoId);
+    } catch (IllegalArgumentException e) {
+      String errorMsg = "Could not find container with mongoId: %s".formatted(mongoId);
+      Log.error(errorMsg);
+      throw new jakarta.ws.rs.NotFoundException(errorMsg);
+    }
+
+    MessageDigest md5Md;
+    MessageDigest sha256Md;
+    try {
+      md5Md = MessageDigest.getInstance("MD5");
+      sha256Md = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException e) {
+      String errorMsg = "No Such Algorithm while uploading file";
+      Log.error(errorMsg);
+      throw new InternalServerErrorException(errorMsg);
+    }
+
+    // Chain: bytes → sha256DigestInputStream → md5DigestInputStream → GridFS bucket
+    DigestInputStream sha256Dis = new DigestInputStream(inputStream, sha256Md);
+    DigestInputStream md5Dis = new DigestInputStream(sha256Dis, md5Md);
+
+    var bucket = createBucket();
+    ObjectId fileId = bucket.withChunkSizeBytes(CHUNK_SIZE_BYTES).uploadFromStream(fileName, md5Dis);
+    String fileMongoId = fileId.toHexString();
+    var gridFsFile = bucket.find(eq(ID_ATTR, fileId)).first();
+    Long fileSize = gridFsFile != null ? gridFsFile.getLength() : null;
+    var file = new ShepardFile(dateHelper.getDate(), fileName, DatatypeConverter.printHexBinary(md5Md.digest()));
+    file.setFileSize(fileSize);
+    var doc = toDocument(file).append(FILEID_ATTR, fileMongoId);
+    collection.insertOne(doc);
+    file.setOid(doc.getObjectId(ID_ATTR).toHexString());
+
+    String sha256Hex = DatatypeConverter.printHexBinary(sha256Md.digest());
+    return new FileCreateResult(file, sha256Hex);
+  }
+
+  /**
    * Creates a new file in file container
    *
    * @param mongoId

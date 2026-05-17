@@ -12,6 +12,7 @@
  */
 
 import type { SnapshotDiffIO, SnapshotIO } from "@dlr-shepard/backend-client";
+import { useSnapshots } from "~/composables/context/useSnapshots";
 
 const props = defineProps<{
   collectionAppId: string;
@@ -109,7 +110,8 @@ function formatDate(isoOrNull?: string | null): string {
   return new Date(isoOrNull).toLocaleString();
 }
 
-function snapshotLabel(s: SnapshotIO): string {
+function snapshotLabel(s: SnapshotIO | null): string {
+  if (!s) return "";
   return s.name + (s.snapshotCapturedAt ? ` (${formatDate(s.snapshotCapturedAt)})` : "");
 }
 
