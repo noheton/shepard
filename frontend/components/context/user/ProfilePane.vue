@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { usePatchMe } from "~/composables/context/usePatchMe";
+import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
 
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
+const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 
 const editDialog = ref(false);
 const editOrcid = ref<string>("");
 const editDisplayName = ref<string>("");
+
+const jupyterUrlInput = ref<string>("");
+
+watch(
+  preferredJupyterUrl,
+  (url) => {
+    jupyterUrlInput.value = url;
+  },
+  { immediate: true },
+);
 
 function openEdit() {
   editOrcid.value = user.value?.orcid ?? "";
@@ -27,6 +39,10 @@ async function saveEdit() {
     user.value = updated;
     editDialog.value = false;
   }
+}
+
+async function saveJupyterUrl() {
+  await saveJupyter(jupyterUrlInput.value.trim());
 }
 </script>
 
@@ -84,6 +100,36 @@ async function saveEdit() {
         </tr>
       </tbody>
     </v-table>
+
+    <!-- JupyterHub URL section -->
+    <div v-if="user && !isLoading" class="d-flex flex-column ga-2">
+      <h5 class="text-h5">JupyterHub</h5>
+      <v-text-field
+        v-model="jupyterUrlInput"
+        label="JupyterHub base URL"
+        placeholder="https://myhub.example.com"
+        hint="Set your JupyterHub base URL to enable 'Open in JupyterHub' buttons. Stored in your user preferences."
+        persistent-hint
+        variant="outlined"
+        density="comfortable"
+        clearable
+        :loading="isJupyterSaving"
+        :disabled="isJupyterSaving"
+      >
+        <template #append>
+          <v-btn
+            color="primary"
+            variant="flat"
+            density="comfortable"
+            :loading="isJupyterSaving"
+            :disabled="isJupyterSaving"
+            @click="saveJupyterUrl"
+          >
+            Save
+          </v-btn>
+        </template>
+      </v-text-field>
+    </div>
 
     <!-- Edit dialog -->
     <v-dialog v-model="editDialog" max-width="480">

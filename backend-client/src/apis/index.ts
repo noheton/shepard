@@ -1,6 +1,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AdminFeaturesApi';
+export * from './AdminMetricsApi';
 export * from './ApikeyApi';
 export * from './GitCredentialsApi';
 export * from './GitReferenceApi';
