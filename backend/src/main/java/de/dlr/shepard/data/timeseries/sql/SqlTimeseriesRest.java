@@ -73,7 +73,15 @@ public class SqlTimeseriesRest {
     if (!SqlTimeseriesFeatureToggle.isActive()) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
+    return executeQuery(spec, securityContext);
+  }
 
+  /**
+   * Core query logic — package-private so unit tests can call it directly without
+   * bootstrapping MicroProfile Config (which {@link SqlTimeseriesFeatureToggle#isActive()}
+   * requires). The toggle gate lives only in {@link #query}.
+   */
+  Response executeQuery(SqlQuerySpec spec, SecurityContext securityContext) {
     String username = securityContext.getUserPrincipal() != null
         ? securityContext.getUserPrincipal().getName()
         : null;

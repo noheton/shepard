@@ -105,7 +105,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | Per-payload metadata-field redaction (closed enum of 6 fields) | none | shipped | **✓ ↑** | R2c (commit `f993e8b`) |
 | Export emits permissions / versions / annotations / subscriptions documents | none | shipped (3 of 4 kinds via R2d, +subscriptions via R2d2) | **✓ ↑** | R2d / R2d2 |
 | `application/merge-patch+json` PATCH semantics (P21x) | mixed shapes | shipped consistent across new endpoints | **✓ ↑** | P21x |
-| `POST /sql/timeseries` curated SQL-over-HTTP for bulk reads | none | P10a shipped (JSON-only, feature-flagged); P10b (CSV/NDJSON) + P10c (default-on) queued | **P10a ✓** (P10b-c queued) | `aidocs/29` |
+| `POST /sql/timeseries` curated SQL-over-HTTP for bulk reads | none | P10a shipped (JSON-only, feature-flagged, all 14 tests pass); P10b (CSV/NDJSON) + P10c (default-on) queued | **P10a ✓** (P10b-c queued) | `aidocs/29` |
 
 ## 6. Search
 
