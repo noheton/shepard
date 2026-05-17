@@ -329,6 +329,22 @@ class SqlTimeseriesFormatTest {
     assertEquals(0L, SqlTimeseriesRest.parseDurationMs("not-a-duration"));
   }
 
+  // --- QueryTimeoutExceptionMapper unit tests ---
+
+  @Test
+  void queryTimeoutExceptionMapper_returns504WithJsonBody() {
+    QueryTimeoutExceptionMapper mapper = new QueryTimeoutExceptionMapper();
+    SqlQueryExecutor.QueryTimeoutException ex =
+        new SqlQueryExecutor.QueryTimeoutException("Query exceeded max duration", null);
+
+    jakarta.ws.rs.core.Response response = mapper.toResponse(ex);
+
+    assertEquals(504, response.getStatus());
+    assertEquals("application/json", response.getMediaType().toString());
+    assertTrue(response.getEntity().toString().contains("query exceeded max duration"),
+        "504 body must contain the error message");
+  }
+
   // --- Result-set stubs ---
 
   /**
