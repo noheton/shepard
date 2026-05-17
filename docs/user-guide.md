@@ -49,6 +49,7 @@ kinds verified in source today (under
 | Spatial-Data | `SpatialDataReferenceRest` | Geometries in PostGIS (optional) |
 | URI | `URIReferenceRest` | External URIs |
 | Lab-Journal | (under `context/labJournal`) | CommonMark + GFM markdown entries; see [Lab journal reference](/reference/lab-journal/) |
+| Video | `VideoStreamReferenceV2Rest` | MP4/WebM video files + ffprobe metadata, backed by MongoDB GridFS; see [Video stream references](/reference/video-stream-references/) |
 | Collection / DataObject | (cross-references) | Links between entities |
 
 ## Permissions
