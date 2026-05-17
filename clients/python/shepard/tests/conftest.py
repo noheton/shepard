@@ -74,6 +74,9 @@ class FakeCollectionApi:
     def create_collection(self, collection=None):
         return collection
 
+    def export_collection(self, collection_id: int = 0) -> bytes:
+        return b"FAKE-RO-CRATE-CONTENT"
+
 
 def _make_fake_api_class(name: str) -> type:
     """Return a minimal stub for any ``*Api`` class."""

@@ -224,3 +224,52 @@ def test_init_exports_error_hierarchy() -> None:
 def test_init_models_is_module_or_none() -> None:
     import types
     assert shepard.models is None or isinstance(shepard.models, types.ModuleType)
+
+
+# ---------------------------------------------------------------------------
+# Workflow helpers
+# ---------------------------------------------------------------------------
+
+def test_ro_crate_writes_bytes_to_file(tmp_path) -> None:
+    """ro_crate() calls collections.export_collection and writes bytes to disk."""
+    sh = Client(host="https://example.com", apikey="k")
+    dest = tmp_path / "export.zip"
+    result = sh.ro_crate(collection_id=42, path=dest)
+    assert result == dest.resolve()
+    assert dest.read_bytes() == b"FAKE-RO-CRATE-CONTENT"
+
+
+def test_ro_crate_creates_parent_dirs(tmp_path) -> None:
+    sh = Client(host="https://example.com", apikey="k")
+    dest = tmp_path / "nested" / "dir" / "export.zip"
+    sh.ro_crate(collection_id=1, path=dest)
+    assert dest.exists()
+
+
+def test_ro_crate_maps_api_exception(tmp_path) -> None:
+    from tests.conftest import FakeApiException  # noqa: PLC0415
+
+    sh = Client(host="https://example.com", apikey="k")
+    api_instance = object.__getattribute__(sh.collections, "_api")
+
+    def _raise_403(**kwargs):
+        raise FakeApiException(403, "forbidden")
+
+    api_instance.export_collection = _raise_403
+
+    from shepard.errors import ShepardForbidden  # noqa: PLC0415
+    dest = tmp_path / "export.zip"
+    with pytest.raises(ShepardForbidden):
+        sh.ro_crate(collection_id=1, path=dest)
+
+
+def test_to_pandas_raises_not_implemented() -> None:
+    sh = Client(host="https://example.com", apikey="k")
+    with pytest.raises(NotImplementedError, match="P10"):
+        sh.to_pandas(timeseries_id=1, container_id=10)
+
+
+def test_to_excel_raises_not_implemented(tmp_path) -> None:
+    sh = Client(host="https://example.com", apikey="k")
+    with pytest.raises(NotImplementedError, match="P10"):
+        sh.to_excel(timeseries_id=1, path=tmp_path / "out.xlsx", container_id=10)

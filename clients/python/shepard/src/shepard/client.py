@@ -15,16 +15,14 @@ All domain attributes (``sh.collections``, ``sh.timeseries``, …) are created
 lazily on first access so importing ``shepard`` is cheap even when only one
 domain is used.
 
-Workflow helpers (``to_pandas``, ``to_excel``, ``ro_crate``) are on the
-``Client`` class directly because they span multiple generated APIs.  The
-pandas/openpyxl helpers require ``pip install 'shepard[pandas]'`` /
-``pip install 'shepard[excel]'`` — they raise ``ImportError`` at call-site
-(not at import time) when the extras are missing.
+Workflow helpers (``ro_crate``, ``to_pandas``, ``to_excel``) are on the
+``Client`` class directly because they span multiple generated APIs.
+``to_pandas`` and ``to_excel`` are stubs pending P10 SQL timeseries wiring;
+``ro_crate`` is fully operational and delegates to ``CollectionApi``.
 """
 
 from __future__ import annotations
 
-import shutil
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -143,9 +141,9 @@ class Client:
     def ro_crate(self, collection_id: int, path: str | Path) -> Path:
         """Download a collection's RO-Crate export to disk.
 
-        Streams the response body (``ro-crate-metadata.json`` archive) to
-        *path* using urllib3's ``preload_content=False`` to avoid buffering
-        the entire archive in memory.
+        Delegates to ``CollectionApi.export_collection()`` so authentication
+        headers (API key, bearer token) are applied by the generated client's
+        normal request pipeline rather than being assembled manually.
 
         Args:
             collection_id: Numeric ID of the collection to export.
@@ -157,23 +155,12 @@ class Client:
         dest = Path(path)
         dest.parent.mkdir(parents=True, exist_ok=True)
 
-        # Use the generated CollectionApi's export method which returns
-        # a file-like or bytes response.  We call _api_client directly
-        # to get a streaming urllib3 response.
-        url = f"/collections/{collection_id}/export"
-        try:
-            response = self._api_client.rest_client.GET(
-                self._api_client.configuration.host.rstrip("/") + url,
-                headers=self._api_client.default_headers,
-                preload_content=False,
-            )
-            with dest.open("wb") as fh:
-                shutil.copyfileobj(response, fh)
-            response.release_conn()
-        except Exception as exc:
-            if hasattr(exc, "status"):
-                raise_for_status(exc)
-            raise
+        # Call through the generated CollectionApi so auth headers are
+        # applied by update_params_for_auth() — bypassing the rest_client
+        # directly would skip the auth step and return 401.
+        result: bytes = self.collections.export_collection(collection_id=collection_id)
+        with dest.open("wb") as fh:
+            fh.write(result if isinstance(result, (bytes, bytearray)) else result)
         return dest.resolve()
 
     def to_pandas(
@@ -188,87 +175,33 @@ class Client:
     ) -> "pd.DataFrame":
         """Load timeseries data into a pandas DataFrame.
 
-        Requires ``pip install 'shepard[pandas]'``.
+        .. note::
 
-        This is the pre-P10 implementation: it paginates
-        ``GET /timeseriesContainers/{cid}/timeseries/{tid}/payload`` and
-        concatenates pages into a single DataFrame.  Once P10 ships, the
-        implementation will switch to a single streaming SQL call without
-        changing this signature.
+            **Not yet implemented — pending P10 SQL timeseries backend.**
 
-        Args:
-            timeseries_id: Numeric ID of the timeseries.
-            container_id: ID of the parent TimeseriesContainer.  Required by
-                the backend endpoint if not already implicit in the path.
-            start: Optional start timestamp (datetime or ISO-8601 string).
-            end: Optional end timestamp (datetime or ISO-8601 string).
-            fields: Optional list of field names to include.
-            chunksize: If set, process data in chunks of this many rows to
-                bound peak memory usage.
+            This method will be wired once ``POST /v2/sql/timeseries`` ships
+            (see ``aidocs/ops/27-convenience-clients-design.md`` §10 Phase 4 and
+            the P10 design).  Until then, read timeseries data points via the
+            generated ``TimeseriesContainerApi`` directly:
 
-        Returns:
-            A ``pandas.DataFrame`` with one row per data point.
-        """
-        try:
-            import pandas as pd  # noqa: PLC0415
-        except ImportError as exc:
-            raise ImportError(
-                "to_pandas requires pandas.  "
-                "Install with: pip install 'shepard[pandas]'"
-            ) from exc
+            .. code-block:: python
 
-        if container_id is None:
-            raise ValueError(
-                "container_id is required for to_pandas (pre-P10 shape). "
-                "Pass the TimeseriesContainer's numeric ID."
-            )
-
-        proxy = self.timeseries  # type: _DomainProxy
-        api = object.__getattribute__(proxy, "_api")
-
-        kwargs: dict[str, object] = {}
-        if start is not None:
-            kwargs["start"] = start
-        if end is not None:
-            kwargs["end"] = end
-        if fields is not None:
-            kwargs["fields"] = fields
-
-        chunks: list["pd.DataFrame"] = []
-        page = 0
-        page_size = chunksize or 1000
-
-        while True:
-            try:
-                data = api.get_all_data_points(
+                api = sh.timeseries  # _DomainProxy → TimeseriesContainerApi
+                data = api.get_all_timeseries_data_points(
                     timeseries_container_id=container_id,
                     timeseries_id=timeseries_id,
-                    page=page,
-                    size=page_size,
-                    **kwargs,
                 )
-            except Exception as exc:
-                if hasattr(exc, "status"):
-                    raise_for_status(exc)
-                raise
 
-            if not data:
-                break
-
-            # The generated client returns pydantic models; convert to dicts.
-            rows = [
-                item.model_dump() if hasattr(item, "model_dump") else vars(item)
-                for item in data
-            ]
-            chunks.append(pd.DataFrame(rows))
-
-            if len(data) < page_size:
-                break
-            page += 1
-
-        if not chunks:
-            return pd.DataFrame()
-        return pd.concat(chunks, ignore_index=True)
+        Raises:
+            NotImplementedError: Always, until P10 ships.
+        """
+        raise NotImplementedError(
+            "to_pandas is pending P10 SQL timeseries wiring "
+            "(aidocs/ops/27-convenience-clients-design.md §10 Phase 4).  "
+            "Once POST /v2/sql/timeseries ships this method will work "
+            "without a signature change.  Until then, call "
+            "sh.timeseries.<get_all_...>() directly via the generated API."
+        )
 
     def to_excel(
         self,
@@ -282,39 +215,20 @@ class Client:
     ) -> Path:
         """Export timeseries data to an Excel file.
 
-        Requires ``pip install 'shepard[excel]'``.
+        .. note::
 
-        Args:
-            timeseries_id: Numeric ID of the timeseries.
-            path: Destination ``.xlsx`` file path.
-            container_id: ID of the parent TimeseriesContainer.
-            start: Optional start timestamp.
-            end: Optional end timestamp.
-            fields: Optional list of field names.
+            **Not yet implemented — pending P10 SQL timeseries backend.**
 
-        Returns:
-            Resolved ``Path`` of the written file.
+            Delegates to :meth:`to_pandas`; blocked on the same P10 wiring.
+
+        Raises:
+            NotImplementedError: Always, until P10 ships.
         """
-        try:
-            import pandas as pd  # noqa: PLC0415, F401
-            import openpyxl  # noqa: PLC0415, F401
-        except ImportError as exc:
-            raise ImportError(
-                "to_excel requires pandas + openpyxl.  "
-                "Install with: pip install 'shepard[excel]'"
-            ) from exc
-
-        df = self.to_pandas(
-            timeseries_id,
-            container_id=container_id,
-            start=start,
-            end=end,
-            fields=fields,
+        raise NotImplementedError(
+            "to_excel is pending P10 SQL timeseries wiring "
+            "(aidocs/ops/27-convenience-clients-design.md §10 Phase 4).  "
+            "See to_pandas docstring for the interim workaround."
         )
-        dest = Path(path)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        df.to_excel(str(dest), index=False, engine="openpyxl")
-        return dest.resolve()
 
 
 # ---------------------------------------------------------------------------
