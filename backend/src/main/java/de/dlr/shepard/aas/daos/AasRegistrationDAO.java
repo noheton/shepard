@@ -3,6 +3,7 @@ package de.dlr.shepard.aas.daos;
 import de.dlr.shepard.aas.entities.AasRegistration;
 import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import jakarta.enterprise.context.RequestScoped;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
@@ -53,6 +54,55 @@ public class AasRegistrationDAO extends GenericDAO<AasRegistration> {
     var result = session.query(
       String.class,
       "MATCH (r:AasRegistration) WHERE r.status = 'SYNCED' RETURN DISTINCT r.registryUrl",
+      Map.of()
+    );
+    return StreamSupport.stream(result.spliterator(), false).toList();
+  }
+
+  /**
+   * Find the outbox row for a specific (shell, registry) pair.
+   * Returns {@code null} when no row exists yet (not yet enqueued).
+   *
+   * <p>Used by {@code AasRegistryOutboxService.syncAll()} to decide
+   * whether to create a new PENDING row or skip an already-tracked shell.
+   */
+  public AasRegistration findByShellAndRegistry(String shellAppId, String registryUrl) {
+    var iter = findByQuery(
+      "MATCH (r:AasRegistration) WHERE r.shellAppId = $shellAppId AND r.registryUrl = $registryUrl RETURN r",
+      Map.of("shellAppId", shellAppId, "registryUrl", registryUrl)
+    ).iterator();
+    return iter.hasNext() ? iter.next() : null;
+  }
+
+  /**
+   * Return all PENDING or FAILED rows targeting the given registry URL.
+   *
+   * <p>Used by {@code AasRegistryOutboxService} to determine which shells
+   * need a (re-)registration attempt.
+   */
+  public List<AasRegistration> listPendingOrFailed(String registryUrl) {
+    List<AasRegistration> result = new ArrayList<>();
+    findByQuery(
+      "MATCH (r:AasRegistration) WHERE r.registryUrl = $registryUrl"
+        + " AND r.status IN ['PENDING', 'FAILED'] RETURN r",
+      Map.of("registryUrl", registryUrl)
+    ).forEach(result::add);
+    return result;
+  }
+
+  /**
+   * Return the {@code appId}s of all non-deleted {@code :Collection} nodes.
+   *
+   * <p>Used by {@code AasRegistryOutboxService.syncAll()} to seed the
+   * outbox on startup — one PENDING row per (collection, registry) pair
+   * if no row exists yet.
+   */
+  public List<String> listNonDeletedCollectionAppIds() {
+    var result = session.query(
+      String.class,
+      "MATCH (c:Collection)"
+        + " WHERE (c.deleted IS NULL OR c.deleted = false)"
+        + " AND c.appId IS NOT NULL RETURN c.appId",
       Map.of()
     );
     return StreamSupport.stream(result.spliterator(), false).toList();
