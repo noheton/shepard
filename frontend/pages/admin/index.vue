@@ -32,5 +32,8 @@ const { routeFragment } = useRouteFragment();
     <AdminMetricsCard
       v-if="routeFragment === AdminFragments.INSTANCE_HEALTH"
     />
+    <AdminTemplatesPane
+      v-if="routeFragment === AdminFragments.TEMPLATES"
+    />
   </PaneLayout>
 </template>

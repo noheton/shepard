@@ -177,6 +177,14 @@ watch(collection, () => {
                     />
                   </div>
                 </ExpansionPanelItem>
+                <ExpansionPanelItem
+                  v-if="isAllowedToEditCollection && collectionAppId"
+                  title="Snapshots"
+                >
+                  <div class="pt-4">
+                    <SnapshotsPane :collection-app-id="collectionAppId" />
+                  </div>
+                </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>
           </v-container>
