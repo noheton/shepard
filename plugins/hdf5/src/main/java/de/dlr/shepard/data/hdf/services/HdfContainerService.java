@@ -12,6 +12,7 @@ import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
 import de.dlr.shepard.data.hdf.hsds.HsdsClient;
+import de.dlr.shepard.data.hdf.hsds.HsdsClient.ExportResponse;
 import de.dlr.shepard.data.hdf.io.HdfContainerIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -182,6 +183,34 @@ public class HdfContainerService extends AbstractContainerService<HdfContainer, 
       throw new InvalidPathException("ID ERROR - HDF Container with appId %s is null or deleted".formatted(appId));
     }
     deleteContainer(container.getId());
+  }
+
+  /**
+   * A5d — download the raw HDF5 bytes for the given container from HSDS.
+   *
+   * <p>Delegates to {@link HsdsClient#exportFile} with the optional
+   * {@code Range} header passed through verbatim.  The container is
+   * supplied pre-fetched (permission-checked by the caller via
+   * {@link #getContainerByAppId}) to avoid a redundant lookup.
+   * Returns the streaming {@link ExportResponse} — caller is
+   * responsible for closing the body.
+   *
+   * @param container   the pre-fetched, permission-checked container.
+   * @param rangeHeader Optional {@code Range} header from the client
+   *                    (e.g. {@code bytes=0-1023}). May be {@code null}.
+   * @return streaming HSDS export response.
+   * @throws HsdsClient.HsdsException if the HSDS sidecar returns an error.
+   */
+  public ExportResponse downloadFile(HdfContainer container, String rangeHeader) {
+    HsdsClient hsds = requireHsdsAvailable();
+    String domain = container.getHsdsDomain();
+    if (domain == null || domain.isBlank()) {
+      throw new HsdsClient.HsdsException(
+        "HdfContainer appId=" + container.getAppId() + " has no hsdsDomain — cannot export file"
+      );
+    }
+    Log.infof("HDF exportFile requested for appId=%s domain=%s", container.getAppId(), domain);
+    return hsds.exportFile(domain, rangeHeader);
   }
 
   /**

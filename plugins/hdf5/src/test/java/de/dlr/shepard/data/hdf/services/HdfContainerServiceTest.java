@@ -2,10 +2,12 @@ package de.dlr.shepard.data.hdf.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -24,7 +26,9 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.hdf.daos.HdfContainerDAO;
 import de.dlr.shepard.data.hdf.entities.HdfContainer;
 import de.dlr.shepard.data.hdf.hsds.HsdsClient;
+import de.dlr.shepard.data.hdf.hsds.HsdsClient.ExportResponse;
 import de.dlr.shepard.data.hdf.io.HdfContainerIO;
+import java.io.InputStream;
 import jakarta.enterprise.inject.Instance;
 import java.util.Date;
 import java.util.Map;
@@ -219,5 +223,56 @@ class HdfContainerServiceTest {
   @Test
   void requireHsdsAvailableReturnsClientWhenWired() {
     assertEquals(hsdsClient, service.requireHsdsAvailable());
+  }
+
+  // ─── A5d: downloadFile ─────────────────────────────────────────────────
+
+  @Test
+  void downloadFileDelegatesExportCallThroughToHsds() {
+    var c = new HdfContainer(55L);
+    c.setAppId("app-55");
+    c.setHsdsDomain("/shepard/app-55/");
+    var fakeExport = new ExportResponse(200, InputStream.nullInputStream(), 9L, null, "bytes");
+    when(hsdsClient.exportFile(eq("/shepard/app-55/"), eq(null))).thenReturn(fakeExport);
+
+    var result = service.downloadFile(c, null);
+
+    assertSame(fakeExport, result);
+    verify(hsdsClient).exportFile("/shepard/app-55/", null);
+  }
+
+  @Test
+  void downloadFilePassesRangeHeaderToHsds() {
+    var c = new HdfContainer(56L);
+    c.setAppId("app-56");
+    c.setHsdsDomain("/shepard/app-56/");
+    var fakeExport = new ExportResponse(206, InputStream.nullInputStream(), 4L, "bytes 0-3/9", "bytes");
+    when(hsdsClient.exportFile(eq("/shepard/app-56/"), eq("bytes=0-3"))).thenReturn(fakeExport);
+
+    var result = service.downloadFile(c, "bytes=0-3");
+
+    assertSame(fakeExport, result);
+    verify(hsdsClient).exportFile("/shepard/app-56/", "bytes=0-3");
+  }
+
+  @Test
+  void downloadFileThrowsWhenContainerHasNoHsdsDomain() {
+    var c = new HdfContainer(57L);
+    c.setAppId("app-57");
+    c.setHsdsDomain(null);
+
+    assertThrows(HsdsClient.HsdsException.class, () -> service.downloadFile(c, null));
+    verify(hsdsClient, never()).exportFile(any(), any());
+  }
+
+  @Test
+  void downloadFileThrowsWhenFeatureOff() {
+    when(hsdsInstance.isUnsatisfied()).thenReturn(true);
+    var c = new HdfContainer(58L);
+    c.setAppId("app-58");
+    c.setHsdsDomain("/shepard/app-58/");
+
+    var ex = assertThrows(IllegalStateException.class, () -> service.downloadFile(c, null));
+    assertTrue(ex.getMessage().contains("shepard.hdf.enabled=false"));
   }
 }

@@ -9,6 +9,7 @@ import io.quarkus.logging.Log;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -175,6 +176,113 @@ public class HsdsClient {
   /** Configured base endpoint. Exposed for diagnostics. */
   public String getEndpoint() {
     return endpoint;
+  }
+
+  // ─── A5d: file export ───────────────────────────────────────────────────
+
+  /**
+   * Streaming result of an HSDS file-export call.
+   *
+   * <p>Implements {@link AutoCloseable} so callers can use
+   * try-with-resources; {@link #close()} delegates to the body stream.
+   *
+   * @param status        HTTP status from HSDS (200 or 206).
+   * @param body          Streaming body — caller must close (or use try-with-resources).
+   * @param contentLength {@code Content-Length} header value, or -1 if absent.
+   * @param contentRange  {@code Content-Range} header value, or {@code null}.
+   * @param acceptRanges  {@code Accept-Ranges} header value, or {@code null}.
+   */
+  public record ExportResponse(
+    int status,
+    InputStream body,
+    long contentLength,
+    String contentRange,
+    String acceptRanges
+  ) implements AutoCloseable {
+    @Override
+    public void close() throws IOException {
+      if (body != null) {
+        body.close();
+      }
+    }
+  }
+
+  /**
+   * A5d — retrieve the raw HDF5 bytes from HSDS for the given domain.
+   *
+   * <p>Calls {@code GET /?domain=<domain>} with
+   * {@code Accept: application/x-hdf5}.  HSDS returns either a 200
+   * with the full file or a 206 Partial Content when a {@code Range}
+   * request is honoured.
+   *
+   * <p>The response body is <em>streaming</em>: the caller is
+   * responsible for closing the returned {@link ExportResponse#body()}.
+   *
+   * @param domain      HSDS-style domain path, e.g. {@code /shepard/<appId>/}.
+   * @param rangeHeader Optional {@code Range} header value (e.g.
+   *                    {@code bytes=0-1023}). Passed through to HSDS
+   *                    verbatim when non-null and non-blank.
+   * @return the streaming HSDS response.
+   * @throws HsdsException on transport error, 4xx/5xx, or auth failure.
+   */
+  public ExportResponse exportFile(String domain, String rangeHeader) {
+    String safe = requireValidDomain(domain);
+    URI uri;
+    try {
+      uri = new URI(stripTrailingSlash(endpoint) + "/?domain=" + safe);
+    } catch (URISyntaxException e) {
+      throw new HsdsException(
+        "Invalid HSDS endpoint configuration: " + endpoint + " — fix shepard.hdf.hsds.endpoint",
+        e
+      );
+    }
+    String basic =
+      "Basic " +
+      Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
+
+    HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
+      .timeout(timeout)
+      .header("Authorization", basic)
+      .header("Accept", "application/x-hdf5")
+      .GET();
+
+    if (rangeHeader != null && !rangeHeader.isBlank()) {
+      builder.header("Range", rangeHeader);
+    }
+
+    HttpResponse<InputStream> response;
+    try {
+      response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
+    } catch (IOException e) {
+      throw new HsdsException("HSDS exportFile failed for domain=" + safe + ": " + e.getMessage(), e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new HsdsException("HSDS exportFile interrupted for domain=" + safe, e);
+    }
+
+    int status = response.statusCode();
+    if (!(status == 200 || status == 206)) {
+      // Drain and close the body so the connection is returned cleanly.
+      try {
+        response.body().close();
+      } catch (IOException ignored) {
+        // best-effort
+      }
+      if (status == 401 || status == 403) {
+        throw new HsdsException(
+          "HSDS exportFile denied for domain=" + safe +
+          " (HTTP " + status + "). Verify shepard.hdf.hsds.username / .password match the " +
+          "HSDS admin credentials configured in the hdf compose profile."
+        );
+      }
+      throw new HsdsException("HSDS exportFile failed for domain=" + safe + " (HTTP " + status + ")");
+    }
+
+    long contentLength = response.headers().firstValueAsLong("Content-Length").orElse(-1L);
+    String contentRange = response.headers().firstValue("Content-Range").orElse(null);
+    String acceptRanges = response.headers().firstValue("Accept-Ranges").orElse(null);
+    Log.debugf("HSDS exportFile ok for domain=%s status=%d contentLength=%d", safe, status, contentLength);
+    return new ExportResponse(status, response.body(), contentLength, contentRange, acceptRanges);
   }
 
   // ─── A5b: ACL operations ────────────────────────────────────────────────

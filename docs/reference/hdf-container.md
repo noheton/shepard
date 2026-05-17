@@ -81,6 +81,7 @@ Upstream shepard 5.2.0 has no HDF support; nothing lands on
 | `GET` | `/v2/hdf-containers/{appId}` | Read one container. Permission-checked: caller needs READ on the container. | 200 / 401 / 403 / 404 |
 | `POST` | `/v2/hdf-containers` | Create a new container. Provisions the HSDS domain via the sidecar; rolls back the HSDS side if the Neo4j commit fails. | 201 / 400 / 401 / 503 |
 | `DELETE` | `/v2/hdf-containers/{appId}` | Soft-delete the container + drop the HSDS domain. Owner-only. | 204 / 401 / 403 / 404 / 503 |
+| `GET` | `/v2/hdf-containers/{appId}/file` | Download the raw HDF5 file from HSDS (A5d offline fallback — see below). | 200 / 206 / 401 / 403 / 404 / 503 |
 
 `POST /v2/hdf-containers` request body:
 
@@ -106,6 +107,46 @@ Response (201):
   "attributes": { "project": "rocket-x", "instrument": "thrust-bench" }
 }
 ```
+
+### `GET /v2/hdf-containers/{appId}/file` — offline HDF5 download
+
+**A5d.** Returns the raw HDF5 byte stream from the HSDS sidecar so
+researchers can open the file locally with `h5py.File(local_path)`
+without needing an HSDS client:
+
+```bash
+curl -H "X-API-KEY: <your-api-key>" \
+  https://shepard.example.dlr.de/v2/hdf-containers/<appId>/file \
+  -o container.h5
+
+python3 -c "import h5py; f=h5py.File('container.h5'); print(list(f.keys()))"
+```
+
+**Range requests** are supported and passed through to HSDS verbatim.
+When HSDS honours the `Range`, the response status is `206 Partial
+Content` with a `Content-Range` header:
+
+```bash
+curl -H "X-API-KEY: <key>" -H "Range: bytes=0-1023" \
+  .../v2/hdf-containers/<appId>/file -o header_chunk.bin
+```
+
+Response headers:
+
+| Header | Value |
+|---|---|
+| `Content-Type` | `application/x-hdf5` |
+| `Content-Disposition` | `attachment; filename="<name>.h5"; filename*=UTF-8''<percent-encoded>` |
+| `Accept-Ranges` | `bytes` (or value forwarded from HSDS) |
+| `Content-Range` | present on 206 responses only |
+| `Content-Length` | present when HSDS supplies it |
+
+Auth: caller needs **READ** permission on the container (same gate as
+the `GET /v2/hdf-containers/{appId}` metadata endpoint).
+
+503 is returned when the HSDS sidecar is unreachable or returns an
+unexpected error code. 404 is returned when the feature toggle is off
+(`shepard.hdf.enabled=false`) or the container doesn't exist.
 
 ## Permission model
 
@@ -160,10 +201,10 @@ The full E7 vision is rolling out across A5a – A5e:
 
 | Phase | Status | What it adds |
 |---|---|---|
-| **A5a (this slice)** | shipped | HSDS sidecar + `HdfContainer` create/read/delete + V25 migration. HTTP Basic auth (admin-managed). |
-| A5b | queued | Permission bridge — shepard permission changes flow to HSDS ACLs via a `PermissionsService` post-commit hook. |
+| **A5a** | shipped | HSDS sidecar + `HdfContainer` create/read/delete + V25 migration. HTTP Basic auth (admin-managed). |
+| **A5b** | shipped | Permission bridge — shepard permission changes flow to HSDS ACLs via a `PermissionsService` post-commit hook. |
 | A5c | queued | `HdfReference` per-DataObject anchor at a specific dataset path; annotation hookup via E6 (`AnnotatableHdfDataset`). |
-| A5d | queued | Download-original-file fallback — `GET /v2/hdf-containers/{appId}/file` returns the byte-identical HDF5 via HSDS bulk-export. Unblocks the offline `h5py.File(local)` path. |
+| **A5d** | shipped | Download-original-file fallback — `GET /v2/hdf-containers/{appId}/file` returns the byte-identical HDF5 via HSDS bulk-export. Unblocks the offline `h5py.File(local)` path. |
 | A5e | queued | Auth bridge — shepard API keys mint short-lived JWTs signed by a shared Keycloak realm. Three-line `clients/python` helper that returns an `h5pyd.File`. |
 
 ## See also
