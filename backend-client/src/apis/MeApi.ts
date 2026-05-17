@@ -65,4 +65,64 @@ export class MeApi extends runtime.BaseAPI {
     const response = await this.patchMeRaw(requestParameters, initOverrides);
     return await response.value();
   }
+
+  /**
+   * Return the caller's preferences map.
+   * Corresponds to GET /v2/users/me/preferences (U1d).
+   */
+  async getPreferences(): Promise<Record<string, string>> {
+    const headerParameters: runtime.HTTPHeaders = {};
+
+    if (this.configuration?.apiKey) {
+      headerParameters['X-API-KEY'] = await this.configuration.apiKey('X-API-KEY');
+    }
+
+    if (this.configuration?.accessToken) {
+      const token = this.configuration.accessToken;
+      const tokenString = await token('bearer', []);
+      if (tokenString) {
+        headerParameters['Authorization'] = `Bearer ${tokenString}`;
+      }
+    }
+
+    const response = await this.request({
+      path: `/v2/users/me/preferences`,
+      method: 'GET',
+      headers: headerParameters,
+    });
+
+    return response.json();
+  }
+
+  /**
+   * Merge-patch the caller's preferences map.
+   * Null values remove the key; absent keys are preserved.
+   * Corresponds to PATCH /v2/users/me/preferences (U1d).
+   */
+  async patchPreferences(body: Record<string, string | null>): Promise<Record<string, string>> {
+    const headerParameters: runtime.HTTPHeaders = {
+      'Content-Type': 'application/merge-patch+json',
+    };
+
+    if (this.configuration?.apiKey) {
+      headerParameters['X-API-KEY'] = await this.configuration.apiKey('X-API-KEY');
+    }
+
+    if (this.configuration?.accessToken) {
+      const token = this.configuration.accessToken;
+      const tokenString = await token('bearer', []);
+      if (tokenString) {
+        headerParameters['Authorization'] = `Bearer ${tokenString}`;
+      }
+    }
+
+    const response = await this.request({
+      path: `/v2/users/me/preferences`,
+      method: 'PATCH',
+      headers: headerParameters,
+      body: JSON.stringify(body),
+    });
+
+    return response.json();
+  }
 }

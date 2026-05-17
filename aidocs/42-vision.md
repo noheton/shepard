@@ -345,10 +345,13 @@ Mid-horizon:
 - **Lab journal + Jupyter** (`aidocs/37`, J1 series). **J1a shipped** —
   `GET /v2/lab-journal/{appId}/render` delivers sanitised CommonMark + GFM
   HTML. **J1b shipped** — `GET /v2/lab-journal/{dataObjectAppId}/notebooks`
-  lists `.ipynb` file refs for inline render. **J1d shipped** — append-only
+  lists `.ipynb` file refs for inline render. **J1c shipped** — "Open in
+  JupyterHub" deep link: the DataObject page shows a "Jupyter Notebooks" panel
+  listing all `.ipynb` files with download links and an "Open in JupyterHub"
+  button that opens the researcher's preferred JupyterHub URL (stored in user
+  preferences as `editor.preferredJupyter`). **J1d shipped** — append-only
   edit history: `GET /v2/lab-journal/{entryAppId}/history` returns all prior
-  versions of a note so researchers can recover earlier drafts. Queued next:
-  "Open in Jupyter" deep link (J1c).
+  versions of a note so researchers can recover earlier drafts.
 - **Unified search + pagination** (`aidocs/13`, P-series).
 - **Provenance / lineage** (`aidocs/30`). OpenLineage-shape events
   across the pipeline.

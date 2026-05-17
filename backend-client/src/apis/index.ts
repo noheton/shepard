@@ -26,6 +26,8 @@ export * from './TimeseriesMigrationApi';
 export * from './TimeseriesReferenceApi';
 export * from './UriReferenceApi';
 export * from './MeApi';
+export * from './MeRoleInApi';
+export * from './NotebookApi';
 export * from './ProvenanceApi';
 export * from './UserApi';
 export * from './UserGroupApi';
