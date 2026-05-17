@@ -3,7 +3,9 @@ package de.dlr.shepard.data.structureddata.services;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -17,6 +19,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
+import de.dlr.shepard.data.file.entities.PayloadVersion;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
@@ -30,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 @QuarkusComponentTest
 public class StructuredDataContainerServiceTest {
@@ -339,5 +343,95 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
 
     assertThrows(InvalidPathException.class, () -> service.deleteStructuredData(1L, "oid"));
+  }
+
+  // ---------- PV1b: per-structured-data versioning recording ----------
+
+  @Test
+  public void createStructuredDataTest_recordsPayloadVersionWhenContainerHasAppId() {
+    // PV1b: when a container has an appId, a PayloadVersion node is minted.
+    var user = new User("bob");
+    var date = new Date();
+    var container = new StructuredDataContainer(1L);
+    container.setMongoId("mongoId");
+    container.setAppId("container-app-sd-1");
+    var structuredData = new StructuredData("sd-oid", date, "readings");
+    var payload = new StructuredDataPayload(structuredData, "{\"v\":42}");
+
+    var updated = new StructuredDataContainer(1L);
+    updated.setMongoId("mongoId");
+    updated.setAppId("container-app-sd-1");
+    updated.addStructuredData(structuredData);
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(payloadVersionDAO.findMaxVersionNumber("container-app-sd-1", "readings")).thenReturn(0L);
+    when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    var result = service.createStructuredData(1L, payload);
+
+    assertEquals(structuredData, result);
+    var captor = ArgumentCaptor.forClass(PayloadVersion.class);
+    verify(payloadVersionDAO).createOrUpdate(captor.capture());
+    var pv = captor.getValue();
+    assertEquals("container-app-sd-1", pv.getContainerAppId());
+    assertEquals("readings", pv.getOriginalName());
+    assertEquals(1L, pv.getVersionNumber());
+    assertEquals("sd-oid", pv.getFileOid());
+    assertEquals("bob", pv.getUploadedBy());
+  }
+
+  @Test
+  public void createStructuredDataTest_skipsVersionRecordingWhenContainerHasNoAppId() {
+    // PV1b: containers without an appId (pre-L2a rows) silently skip recording.
+    var user = new User("bob");
+    var date = new Date();
+    var container = new StructuredDataContainer(1L);
+    container.setMongoId("mongoId");
+    // appId intentionally not set
+    var structuredData = new StructuredData("sd-oid", date, "readings");
+    var payload = new StructuredDataPayload(structuredData, "{\"v\":1}");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+
+    service.createStructuredData(1L, payload);
+
+    // payloadVersionDAO.createOrUpdate should NOT have been called (no appId → early return)
+    verify(payloadVersionDAO, never()).createOrUpdate(any());
+  }
+
+  @Test
+  public void createStructuredDataTest_versionDaoFailureDoesNotPropagateUpload() {
+    // PV1b: a DAO failure during version recording is best-effort — the
+    // StructuredData result is still returned to the caller.
+    var user = new User("bob");
+    var date = new Date();
+    var container = new StructuredDataContainer(1L);
+    container.setMongoId("mongoId");
+    container.setAppId("container-app-sd-2");
+    var structuredData = new StructuredData("sd-oid2", date, "telemetry");
+    var payload = new StructuredDataPayload(structuredData, "{\"x\":7}");
+
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
+    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(payloadVersionDAO.findMaxVersionNumber("container-app-sd-2", "telemetry"))
+      .thenThrow(new RuntimeException("Neo4j unavailable"));
+
+    // The upload must succeed even though version recording fails.
+    var result = assertDoesNotThrow(() -> service.createStructuredData(1L, payload));
+    assertEquals(structuredData, result);
   }
 }
