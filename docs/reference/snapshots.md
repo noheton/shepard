@@ -125,52 +125,42 @@ DELETE /v2/snapshots/{snapshotAppId}
 
 ---
 
-### Diff two snapshots
+### List DataObjects captured in a snapshot (V2c)
 
 ```
-GET /v2/snapshots/{aAppId}/diff/{bAppId}
+GET /v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects
 ```
 
-**Permission:** Authenticated caller required (401 when not authenticated). In v1 no per-collection permission gate is applied — snapshots are metadata-only reads.
+**Permission:** Read on the Collection.
+
+Returns the list of DataObject `appId` strings that were captured in the snapshot, filtered from the full `SnapshotEntry` set to only those `entityAppId` values that resolve to a live (non-deleted) `:DataObject` node. Collections, References, and soft-deleted entities are excluded.
 
 **Path parameters:**
-- `aAppId` — the base snapshot (the older one, A).
-- `bAppId` — the head snapshot (the newer one, B).
-
-**Error responses:**
-- 400 — when `aAppId` equals `bAppId` (self-diff is not useful).
-- 401 — unauthenticated.
-- 404 — when either snapshot is not found or is soft-deleted.
+- `collectionAppId` — the `appId` of the root Collection.
+- `snapshotAppId` — the `appId` of the snapshot.
 
 **Response (200 OK):**
 ```json
 {
-  "snapshotAAppId": "01900000-0000-7000-8000-000000000020",
-  "snapshotBAppId": "01900000-0000-7000-8000-000000000021",
-  "snapshotACapturedAtMs": 1700000000000,
-  "snapshotBCapturedAtMs": 1700001000000,
-  "added": [
-    "01900000-0000-7000-8000-000000000050"
-  ],
-  "removed": [
-    "01900000-0000-7000-8000-000000000031"
-  ],
-  "changed": [
-    {
-      "entityAppId": "01900000-0000-7000-8000-000000000040",
-      "revisionA": 1,
-      "revisionB": 3
-    }
-  ],
-  "unchangedCount": 38
+  "snapshotAppId": "01900000-0000-7000-8000-000000000020",
+  "collectionAppId": "01900000-0000-7000-8000-000000000010",
+  "snapshotName": "v1.0 — campaign close",
+  "snapshotCapturedAt": "2026-05-17T14:00:00Z",
+  "totalEntries": 42,
+  "dataObjectAppIds": [
+    "01900000-0000-7000-8000-000000000030",
+    "01900000-0000-7000-8000-000000000040"
+  ]
 }
 ```
 
-Fields:
-- `added` — `entityAppId` values present in B but not in A (created between snapshots). Sorted by `entityAppId` ascending.
-- `removed` — `entityAppId` values present in A but not in B (deleted or out of scope in B). Sorted by `entityAppId` ascending.
-- `changed` — entities present in both with a different `revision` value. Each entry carries `entityAppId`, `revisionA` (from A), and `revisionB` (from B). Sorted by `entityAppId` ascending.
-- `unchangedCount` — count of entities with identical revisions in both snapshots (not listed to avoid large payloads).
+`totalEntries` is the full entry count (includes Collections, References, etc.); `dataObjectAppIds.length` may be less than `totalEntries`.
+
+**Error responses:**
+- 401 — unauthenticated.
+- 403 — caller lacks Read permission on the Collection.
+- 404 — no Collection or Snapshot with that `appId`.
+- 409 — the snapshot does not belong to the specified Collection (ownership mismatch).
 
 ---
 
@@ -206,8 +196,8 @@ nodes and endpoints; no change to the upstream `/shepard/api/...` surface.
 
 ## Planned follow-on slices
 
-| Slice | Description |
-|---|---|
-| V2c | Snapshot-pinned read path (`?snapshot=snapshotAppId` query param on Collection reads). |
-| V2d | RO-Crate export against a snapshot — reproducible by construction. |
-| V2f | (Deferred) "Branch from snapshot" — fork off a snapshot into a writable child Collection. |
+| Slice | Status | Description |
+|---|---|---|
+| V2c | **shipped** | `GET /v2/collections/{collectionAppId}/snapshots/{snapshotAppId}/data-objects` — DataObject list at snapshot time (documented above). |
+| V2d | queued | RO-Crate export against a snapshot — reproducible by construction. |
+| V2e | queued | Snapshot diff (`GET /v2/snapshots/{a}/diff/{b}` — entities added/removed/changed). |

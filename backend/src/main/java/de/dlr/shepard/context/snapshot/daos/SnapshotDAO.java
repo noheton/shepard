@@ -5,8 +5,11 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
 import jakarta.enterprise.context.RequestScoped;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -87,27 +90,6 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
   }
 
   /**
-   * Returns a map of {@code entityAppId → revision} for all non-deleted entries
-   * of the given snapshot.
-   *
-   * <p>Used by the V2e diff endpoint to compare two snapshots without loading
-   * the full {@link SnapshotEntry} object graph.
-   *
-   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the {@link Snapshot}.
-   * @return mutable map of entityAppId to revision; empty when the snapshot has
-   *         no entries.
-   */
-  public Map<String, Long> getEntryRevisionMap(long snapshotNeo4jId) {
-    return findEntriesBySnapshot(snapshotNeo4jId).stream()
-      .collect(
-        Collectors.toMap(
-          SnapshotEntry::getEntityAppId,
-          SnapshotEntry::getRevision
-        )
-      );
-  }
-
-  /**
    * Walks the Collection subtree identified by {@code collectionAppId} up to
    * 15 relationship hops and returns a list of {@code {entityAppId, revision}}
    * maps for every distinct {@code :VersionableEntity} node with a non-null
@@ -130,6 +112,58 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
       rows.add(row);
     }
     return rows;
+  }
+
+  /**
+   * Returns all entity {@code appId} strings captured in the snapshot as a
+   * {@link Set}.
+   *
+   * <p>Convenience wrapper over {@link #findEntriesBySnapshot(long)} that
+   * extracts the {@code entityAppId} scalar from each entry.
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the parent
+   *                        {@code Snapshot}.
+   * @return set of {@code entityAppId} strings; empty when no entries exist.
+   */
+  public Set<String> getEntryAppIds(long snapshotNeo4jId) {
+    return findEntriesBySnapshot(snapshotNeo4jId)
+      .stream()
+      .map(SnapshotEntry::getEntityAppId)
+      .collect(Collectors.toSet());
+  }
+
+  /**
+   * Filters the provided set of {@code appId} strings to only those that
+   * exist as non-deleted {@code :DataObject} nodes in the graph.
+   *
+   * <p>Results are ordered by {@code appId} ascending for deterministic
+   * output (mirrors the manifest endpoint ordering).
+   *
+   * @param appIds the candidate set of entity {@code appId} strings to check.
+   * @return ordered list of {@code appId} strings that resolve to a live
+   *         {@code :DataObject} node; empty when {@code appIds} is empty or
+   *         none of the candidates are DataObjects.
+   */
+  public List<String> filterDataObjectAppIds(Collection<String> appIds) {
+    if (appIds.isEmpty()) return List.of();
+    String query =
+      "MATCH (d:DataObject) " +
+      "WHERE d.appId IN $appIds " +
+      "AND (d.deleted IS NULL OR d.deleted = false) " +
+      "RETURN d.appId AS appId " +
+      "ORDER BY d.appId";
+    org.neo4j.ogm.model.Result result = session.query(
+      query,
+      Map.of("appIds", new ArrayList<>(appIds))
+    );
+    List<String> out = new ArrayList<>();
+    for (Map<String, Object> row : result) {
+      Object val = row.get("appId");
+      if (val != null) {
+        out.add(val.toString());
+      }
+    }
+    return out;
   }
 
   /**

@@ -17,6 +17,7 @@ import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -129,6 +130,43 @@ class SnapshotServiceTest {
     List<Snapshot> result = service.listByCollection(COLL_APP_ID);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getAppId()).isEqualTo(SNAP_APP_ID);
+  }
+
+  // ── listDataObjectAppIds (V2c) ────────────────────────────────────────────
+
+  @Test
+  void listDataObjectAppIds_delegatesGetEntryAppIdsAndFilter() {
+    Snapshot snap = new Snapshot();
+    snap.setId(20L);
+    snap.setAppId(SNAP_APP_ID);
+
+    String doAppId1 = "01900000-0000-7000-8000-000000000030";
+    String doAppId2 = "01900000-0000-7000-8000-000000000040";
+    String collAppId = "01900000-0000-7000-8000-000000000050"; // a Collection in the snapshot, excluded
+
+    Set<String> allEntries = Set.of(doAppId1, doAppId2, collAppId);
+    when(snapshotDAO.getEntryAppIds(20L)).thenReturn(allEntries);
+    when(snapshotDAO.filterDataObjectAppIds(allEntries)).thenReturn(List.of(doAppId1, doAppId2));
+
+    List<String> result = service.listDataObjectAppIds(snap);
+
+    assertThat(result).containsExactly(doAppId1, doAppId2);
+    verify(snapshotDAO).getEntryAppIds(20L);
+    verify(snapshotDAO).filterDataObjectAppIds(allEntries);
+  }
+
+  @Test
+  void listDataObjectAppIds_returnsEmptyList_whenSnapshotHasNoEntries() {
+    Snapshot snap = new Snapshot();
+    snap.setId(20L);
+    snap.setAppId(SNAP_APP_ID);
+
+    when(snapshotDAO.getEntryAppIds(20L)).thenReturn(Set.of());
+    when(snapshotDAO.filterDataObjectAppIds(Set.of())).thenReturn(List.of());
+
+    List<String> result = service.listDataObjectAppIds(snap);
+
+    assertThat(result).isEmpty();
   }
 
   // ── deleteSnapshot ────────────────────────────────────────────────────────
