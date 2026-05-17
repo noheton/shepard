@@ -454,12 +454,16 @@ Mid-horizon:
   / DataCite minters (KIP1c/d), DBpedia rich-reference (REF1a),
   video (VID1a), AAS submodels (AAS1) all queue behind it
   following the same drop-in JAR pattern per ADR-0023.
-- **In-app user docs** (`aidocs/49`, D1 series). The Nuxt UI grows
-  a `/help` route serving the same `docs/*.md` content as the
-  Pages site, with screenshots auto-captured by Playwright against
-  a locally-booted compose stack. Casual users get task-shaped help
-  (upload-data / share-collection / export-rocrate / process-step)
-  without leaving the app.
+- **In-app user docs** (`aidocs/49`, D1 series). **D1a shipped** —
+  the Nuxt UI has a `/help` route (`frontend/pages/help.vue`) that
+  renders `docs/*.md` client-side (marked + highlight.js; Jekyll
+  frontmatter and Liquid pre-processed away) with a two-column
+  sidebar layout and mobile drawer. A "Help" link with
+  `mdi-help-circle-outline` appears in the top nav. Docs are served
+  at the same origin from `public/docs/` (copied at build time via
+  Nuxt hooks — no CDN, offline-friendly). Still ahead: Playwright
+  screenshot pipeline (D1b), additional task-shaped pages (D1c),
+  version stamping (D1d).
 - **Experiment orchestration** (`aidocs/50`, EXP1 series). A new
   `shepard-experiment-coordinator` service drives manufacturing-
   style experiments end-to-end (PLC / SPS / KUKA robot / OPC/UA /
