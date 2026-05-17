@@ -3,7 +3,7 @@
 **Status.** **Live.** Kept current as features land. The doc you'd
 hand a researcher who asks "what is shepard, and should I use it?"
 
-**Snapshot date.** 2026-05-08.
+**Snapshot date.** 2026-05-17.
 **Audience.** Researchers, group leads, principal investigators.
 Not operators (they have `docs/admin.md`), not developers (they have
 the rest of `aidocs/`).
@@ -126,7 +126,7 @@ These work the same way across every primitive:
   of TR-004" relationship is a graph edge, traversable in both
   directions.
 - **Versioning + snapshots.** `Version` is a user-visible label.
-  **Snapshots** *(V2b + V2c shipped)* are machine-faithful, immutable,
+  **Snapshots** *(V2b + V2c + V2e shipped, UI1a shipped)* are machine-faithful, immutable,
   point-in-time records of an entire Collection subtree — one
   `SnapshotEntry` per `VersionableEntity` pinning its `revision`
   counter at capture time. Create via
@@ -136,8 +136,10 @@ These work the same way across every primitive:
   `GET /v2/collections/{appId}/snapshots/{snapshotAppId}/data-objects`
   *(V2c)*. **Diff two snapshots** *(V2e shipped)* via
   `GET /v2/snapshots/{a}/diff/{b}` to see which entities were added,
-  removed, or changed revision between them. Byte-reproducible RO-Crate
-  export against a snapshot (V2d) is the next follow-on — queued.
+  removed, or changed revision between them. The **Snapshots panel**
+  (UI1a shipped) on the collection page exposes all of the above with a
+  colour-coded diff viewer (added/removed/changed chips). Byte-reproducible
+  RO-Crate export against a snapshot (V2d) is the next follow-on — queued.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).
@@ -279,10 +281,16 @@ Five typical entry points:
 
 1. **The web UI.** Browse, search, edit. Add lab-journal entries.
    Configure your profile (post-U1c). Spin up a process run
-   (post-PR1b). The **API Docs** link in the nav bar (or the button
-   on the landing page) opens the live Swagger UI at
-   `/shepard/api/q/swagger-ui` — useful for trying endpoints
-   interactively without leaving the browser.
+   (post-PR1b). The **API Docs** link in the nav bar opens the
+   live Swagger UI — useful for trying endpoints interactively
+   without leaving the browser. New in 2026-05-17: **global search bar**
+   (type-ahead collection search in the header), **sidebar data-object
+   filter** (type to narrow within a collection), **Snapshots panel** on
+   the collection page (create/list/delete/diff point-in-time snapshots),
+   **Templates admin page** (browse, create, edit, retire ShepardTemplates),
+   **RO-Crate download button** on collection pages, **admin health
+   dashboard** (heap, uptime, HTTP metrics), and **JupyterHub URL in
+   user profile**.
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/seed-showcase/notebooks/` are the canonical
@@ -328,9 +336,17 @@ The four things on the near horizon, in priority order:
    shepard ships zero models, only the plumbing.
 2. **HDF5 / HSDS as a payload kind** (`aidocs/35`, A5 series).
    `h5pyd` parity for existing analysis code; gated on L2c.
-3. **Templates + processes** (`aidocs/39` + `aidocs/40 §2`, T1 +
-   PR1 series). Standardise how DataObjects get created; bring
-   process design + runtime into shepard core.
+3. **Templates + processes** (`aidocs/54` + `aidocs/40 §2`, T1 +
+   PR1 series). **T1a–T1f shipped**: `:ShepardTemplate` Neo4j entity;
+   admin CRUD at `GET/POST/PATCH/DELETE /v2/templates`; JSON DSL body;
+   copy-on-write versioning; server-side DataObject instantiation
+   (`POST /v2/collections/{appId}/data-objects/from-template/{templateId}`);
+   YAML import/export. **UI2a shipped**: admin Templates browser in
+   the `/admin` page — tabular list with kind/tag/retired filters,
+   create/edit dialogs with JSON body editor, retire with confirmation.
+   The demo seed now seeds a "Rocket Engine Hot-Fire Test Run" template
+   automatically. Next: instantiate-from-template in the collection
+   creation dialog (CC3), process design + runtime (PR1).
 4. **User profile + ORCID** (`aidocs/36`, U1 series). ~~Closes #29~~
    **U1a shipped** — ORCID field live with ISO 7064 checksum; ProfilePane
    edit dialog in-flight. RO-Crate exports now cite authors when the
