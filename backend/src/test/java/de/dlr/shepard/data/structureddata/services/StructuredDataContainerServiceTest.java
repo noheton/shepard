@@ -16,6 +16,7 @@ import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
@@ -56,6 +57,9 @@ public class StructuredDataContainerServiceTest {
 
   @InjectMock
   StructuredDataService structuredDataService;
+
+  @InjectMock
+  PayloadVersionDAO payloadVersionDAO;
 
   @Test
   public void getStructuredDataContainerTest_successful() {

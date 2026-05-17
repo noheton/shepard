@@ -10,6 +10,8 @@ import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.AbstractContainerService;
+import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
+import de.dlr.shepard.data.file.entities.PayloadVersion;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
@@ -18,6 +20,9 @@ import de.dlr.shepard.data.structureddata.io.StructuredDataContainerIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.List;
 
 @RequestScoped
@@ -38,6 +43,9 @@ public class StructuredDataContainerService
 
   @Inject
   DateHelper dateHelper;
+
+  @Inject
+  PayloadVersionDAO payloadVersionDAO;
 
   /**
    * Creates a StructuredDataContainer and stores it in Neo4J
@@ -133,7 +141,100 @@ public class StructuredDataContainerService
 
     structuredDataContainer.addStructuredData(result);
     structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
+
+    // PV1b: record a PayloadVersion node for this structured-data upload.
+    // Best-effort: failure here does not roll back the already-persisted document.
+    recordPayloadVersion(structuredDataContainer, payload, result);
+
     return result;
+  }
+
+  /**
+   * PV1b — mint and persist a {@link PayloadVersion} node for a successful
+   * structured-data upload.
+   *
+   * <p>The {@code originalName} is the structured-data entry's name
+   * ({@link StructuredData#getName()}); when the name is null (anonymous
+   * document) the Mongo oid is used as fallback so the version node is
+   * never blank. The version number is scoped to
+   * {@code (containerAppId, originalName)} — matching the PV1a shape —
+   * so repeated uploads of the same named entry build a version list.
+   *
+   * <p>The operation is best-effort: a failure logs a warning but does not
+   * roll back the upload because the document is already persisted in Mongo
+   * and the container graph is already updated.
+   *
+   * @param container the owning StructuredDataContainer (for its appId).
+   * @param payload   the uploaded payload (for SHA-256 and sizeBytes computation).
+   * @param result    the just-persisted StructuredData (for its oid).
+   */
+  private void recordPayloadVersion(
+    StructuredDataContainer container,
+    StructuredDataPayload payload,
+    StructuredData result
+  ) {
+    if (container.getAppId() == null) {
+      Log.warnf(
+        "PV1b: container id=%d has no appId — skipping PayloadVersion recording for structured data '%s'",
+        container.getId(),
+        result != null ? result.getOid() : "null"
+      );
+      return;
+    }
+    try {
+      User caller = userService.getCurrentUser();
+      String callerName = (caller != null) ? caller.getUsername() : "unknown";
+      String containerAppId = container.getAppId();
+
+      // Determine the originalName: use the StructuredData name when present,
+      // fall back to the Mongo oid so the scope key is never null.
+      String entryName = (result != null && result.getName() != null && !result.getName().isBlank())
+        ? result.getName()
+        : (result != null ? result.getOid() : "unknown");
+
+      // Compute SHA-256 and sizeBytes from the JSON payload bytes.
+      String sha256 = null;
+      Long sizeBytes = null;
+      if (payload != null && payload.getPayload() != null) {
+        byte[] payloadBytes = payload.getPayload().getBytes(StandardCharsets.UTF_8);
+        sizeBytes = (long) payloadBytes.length;
+        try {
+          MessageDigest md = MessageDigest.getInstance("SHA-256");
+          byte[] digest = md.digest(payloadBytes);
+          StringBuilder sb = new StringBuilder(64);
+          for (byte b : digest) {
+            sb.append(String.format("%02X", b));
+          }
+          sha256 = sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+          // SHA-256 is always available in Java SE; log and continue without hash.
+          Log.warnf("PV1b: SHA-256 not available: %s", e.getMessage());
+        }
+      }
+
+      long nextVersion = payloadVersionDAO.findMaxVersionNumber(containerAppId, entryName) + 1;
+
+      PayloadVersion pv = new PayloadVersion();
+      pv.setContainerAppId(containerAppId);
+      pv.setOriginalName(entryName);
+      pv.setFileOid(result != null ? result.getOid() : null);
+      pv.setSha256(sha256);
+      pv.setSizeBytes(sizeBytes);
+      pv.setVersionNumber(nextVersion);
+      pv.setUploadedBy(callerName);
+      pv.setUploadedAt(Instant.now().toString());
+      payloadVersionDAO.createOrUpdate(pv);
+      Log.infof(
+        "PV1b: recorded PayloadVersion v%d for container=%s name='%s' sha256=%s",
+        nextVersion, containerAppId, entryName, sha256 != null ? sha256.substring(0, 8) + "…" : "null"
+      );
+    } catch (Exception e) {
+      // Version recording is best-effort; do not fail the upload.
+      Log.warnf(
+        "PV1b: failed to record PayloadVersion for container=%s: %s",
+        container.getAppId(), e.getMessage()
+      );
+    }
   }
 
   /**

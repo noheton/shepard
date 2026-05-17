@@ -298,7 +298,8 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `GET /v2/templates/{...}/processes/...` (process runtime; subset of PR1) | | `aidocs/40 §2` |
 | `POST /v2/timeseries/{appId}/detect-anomalies`, `GET /v2/data-objects/{appId}/similar`, `POST /v2/search/natural`, `POST /v2/lab-journal/assist`, `POST /v2/semantic-annotations/suggest`, `POST /v2/collections/{appId}/export?aiAssist=true`, the snap-dashboards tool-use catalogue | AI1a-AI1l | `aidocs/43` |
 | `GET /v2/file-containers/{containerAppId}/files/{originalName}/versions` — `:PayloadVersion` node, SHA-256 recording on upload, versionNumber counter | PV1a — ✓ shipped (2026-05-17) | `aidocs/46` |
-| `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1b-f — queued | `aidocs/46` |
+| `GET /v2/structured-data-containers/{containerAppId}/files/{originalName}/versions` — same `:PayloadVersion` shape for StructuredDataContainer uploads; SHA-256 computed from JSON bytes | PV1b — ✓ shipped (2026-05-17) | `aidocs/46` |
+| `POST /v2/timeseries/{appId}/reingest`, `GET /v2/file-references/{appId}/versions{,/N}`, `POST /v2/file-references/{appId}/payload`, `DELETE /v2/file-references/{appId}/versions/N`, `GET /v2/collections/{appId}?snapshot=` (extension) | PV1c-f — queued | `aidocs/46` |
 | `POST /v2/file-containers/{containerAppId}/upload-url`, `POST /v2/file-containers/{containerAppId}/upload-url/commit`, `GET /v2/file-containers/{containerAppId}/files/{oid}/download-url` | FS1c — ✓ shipped | `aidocs/45 §7` |
 | `GET /v2/artifacts/{type}/{id}/url` | FS1g | `aidocs/45` |
 | `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped | — |
