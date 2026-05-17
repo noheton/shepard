@@ -174,7 +174,7 @@ Status legend:
 | PV1g | Per-Collection retention policy (`Collection.payloadRetentionPolicy`) + `shepard-admin payloads gc` CLI. | — | M | gated on PV1a + `aidocs/22` | |
 | PV1h | (deferred) Per-version permissions — today's perms inherit from reference. | — | L | parked | |
 | PL1 | Storage-backend plugin SPI — umbrella | user request, `aidocs/47` | L | **design done** | `aidocs/47 §2`. New `PayloadKind` + `PayloadStorage` SPI; existing kinds migrate gradually; new kinds (HDF5, Git, future) ship as plugins from day 1. Sub-IDs PL1a-PL1g below. |
-| PL1a | `PayloadKind` + `PayloadStorage` SPI interfaces in `backend/.../spi/payload/` + `PayloadKindRegistry`. **No** existing kind refactored yet. | — | M | queued | Pure introduction; behaviour-preserving. |
+| PL1a | `PayloadKind` + `PayloadStorage` SPI interfaces in `backend/.../spi/payload/` + `PayloadKindRegistry`. **No** existing kind refactored yet. | — | M | **done** | done — ServiceLoader-based `PayloadKind` SPI (`name()` + `entityPackages()`) shipped 2026-05-16 as SPI1a; three plugins implement it (spatial, hdf5, git). The richer CDI-based `PayloadStorage` + `PayloadKindRegistry` shape from aidocs/47 §2.2 is a future slice (PL1a2, unscheduled). |
 | PL1b | Pilot migration: `shepard-plugin-spatial-postgis`. Behaviour-identical with today's spatial feature toggle. | — | M | gated on PL1a | Smallest existing surface; A3c feature toggle already in place. |
 | PL1c | A5a (HDF5/HSDS, `aidocs/35`) ships as a plugin from day 1. | — | M | gated on PL1a + DX3 + `aidocs/35` | First net-new plugin. |
 | PL1d | G1a (Git, `aidocs/38`) ships as a plugin from day 1. | — | M | gated on PL1a + DX3 + `aidocs/38` | Second net-new plugin. |
