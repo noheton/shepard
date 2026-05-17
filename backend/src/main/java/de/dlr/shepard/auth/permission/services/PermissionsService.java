@@ -98,10 +98,14 @@ public class PermissionsService {
     // F3 — audit the initial grant
     String appId = entity instanceof de.dlr.shepard.common.identifier.HasAppId h ? h.getAppId() : null;
     if (appId != null && permissionAuditLogService != null) {
-      String kind = entityKindName(entity);
-      String actor = authenticationContext != null ? authenticationContext.getCurrentUserName() : null;
-      String detail = permissionsSnapshot(new PermissionsIO(persisted));
-      permissionAuditLogService.log(appId, kind, actor, "GRANT", detail);
+      try {
+        String kind = entityKindName(entity);
+        String actor = authenticationContext != null ? authenticationContext.getCurrentUserName() : null;
+        String detail = permissionsSnapshot(new PermissionsIO(persisted));
+        permissionAuditLogService.log(appId, kind, actor, "GRANT", detail);
+      } catch (RuntimeException e) {
+        Log.warnf(e, "F3: audit GRANT failed for appId=%s; ignoring — write path not affected", appId);
+      }
     }
     return persisted;
   }

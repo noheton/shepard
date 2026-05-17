@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.admin.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -81,9 +82,11 @@ class PermissionAuditLogRestTest {
   }
 
   @Test
-  void nonAdmin_gets403() {
-    Response r = resource.permissionAuditLog(nonAdminCtx, null, null, null, null, 0, 50);
-    assertEquals(403, r.getStatus());
+  void nonAdmin_isRejected() {
+    assertThrows(
+      de.dlr.shepard.common.exceptions.InvalidAuthException.class,
+      () -> resource.permissionAuditLog(nonAdminCtx, null, null, null, null, 0, 50)
+    );
   }
 
   // ─── happy path ────────────────────────────────────────────────────────────
