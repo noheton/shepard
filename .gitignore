@@ -84,9 +84,21 @@ cypress/screenshots/
 # NPM
 node_modules
 
-# Ignore generated client
+# Ignore generated client outputs (openapi-generator overwrites these)
 clients/typescript
-clients/python
+# clients/python is the generated output; exclude subdirs explicitly so the
+# hand-written wrapper (clients/python/shepard/) can be tracked.
+clients/python/shepard_client/
+clients/python/shepard_client_local/
+clients/python/*.cfg
+clients/python/*.egg-info
+clients/python/setup.py
+clients/python/requirements.txt
+clients/python/git_push.sh
+clients/python/README.md
+clients/python/.openapi-generator*
+clients/python/docs/
+clients/python/test/
 
 # docToolChain
 build/

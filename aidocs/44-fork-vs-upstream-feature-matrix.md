@@ -368,6 +368,7 @@ namespace; core enforces the shape.
 | `shepard-process-wizard` (desktop JavaFX) | upstream-only | unchanged compat (frozen API); future absorption into shepard core via PR1 designed | `aidocs/40 §2` |
 | `shepard-timeseries-collector` (Java OPC/UA + MQTT + KUKA RSI) | upstream-only | 10 prioritised improvements documented; some need shepard-side dependencies (P14 ✓ shipped, A1b ✓ shipped, L2c queued) | `aidocs/40 §3` |
 | Generated clients (`python` / `typescript` / `java`) | upstream OpenAPI | unchanged for `/shepard/api/`; `/v2/` will need a parallel client crank when L2d lands | `aidocs/40 §4` |
+| **`shepard` Python convenience client** (P16 Phase 1) — `clients/python/shepard/`; collapses the 14-line prelude to 3 lines; `Client` + 13 domain proxy attributes (`collections`, `timeseries`, `files`, …) forwarding all generated `*Api` methods; `ShepardError` hierarchy (400/401/403/404/409/422/5xx); `iter_pages` + `.iter()`/`.list()` pagination wrappers; `to_pandas` / `to_excel` / `ro_crate` workflow helpers (pandas/openpyxl optional extras); 65 unit tests; no live server required | none | **✓ ↑ (Phase 1 shipped)** — Phase 3 (TypeScript) + Phase 4 (P10 retarget) queued | `aidocs/ops/27` / `aidocs/16` P16 |
 | `shepard-frontend` | upstream-only | `aidocs/33` analysis covers UX improvements; W11–W2 design ranked | `aidocs/33` |
 | `shepard-dataship` (publication pipeline) | upstream-only | parked under `aidocs/16` X1 | `aidocs/16` X1 |
 
