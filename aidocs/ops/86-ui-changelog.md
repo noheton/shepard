@@ -29,6 +29,7 @@ by the CI Playwright run (see `aidocs/ops/85 §5`).
 
 | Date | ID | Area | Change | Screenshot |
 |---|---|---|---|---|
+| 2026-05-17 | UI3a | DataObject detail page | "Video References" expansion panel added: native `<video>` player per `VideoStreamReference` against `/v2/.../video-stream-references/{appId}/download`; ffprobe metadata chips (duration, resolution, video codec, audio codec, fps, file size, estimated bitrate); per-reference download button | — |
 | 2026-05-17 | UI2a | Admin page (`/admin`) | Templates pane added: `v-data-table` listing all templates with kind/tag/retired filters; "New template" button + create/edit dialog (POST / PATCH copy-on-write versioning); retire action with confirmation; kind chip + status chip per row | — |
 | 2026-05-17 | QW4 | DataObject detail — Git References pane | `v-alert` (info, tonal) shown when user has no git credentials; includes "Go to profile" link to `/user#git-credentials` | — |
 | 2026-05-17 | QW5 | DataObject / Collection detail — Publish button | `v-tooltip` on hover explains persistent identifier (DOI/PID); `prepend-icon` changed to `mdi-information-outline` | — |
@@ -56,7 +57,6 @@ Items in the design doc (`aidocs/ops/85`) that are not yet shipped:
 
 | ID | Summary | Gate |
 |---|---|---|
-| UI3a | Video reference inline viewer | VID1a shipped |
 | UI4a | PayloadVersion history panel | PV1a in-flight |
 | UI5a | Drag-and-drop tree reparenting | design in aidocs/58 §2 |
 | UI7 | Graph view | design needed |

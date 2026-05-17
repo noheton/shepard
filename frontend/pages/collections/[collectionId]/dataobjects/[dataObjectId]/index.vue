@@ -3,6 +3,7 @@ import EditDataObjectDescriptionDialog from "~/components/context/data-object/ed
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import DataObjectNotebooksPane from "~/components/context/lab-journal/DataObjectNotebooksPane.vue";
 import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
+import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
@@ -222,6 +223,12 @@ watch(dataObject, () => {
                   title="Git References"
                 >
                   <GitReferencesPane :data-object-app-id="dataObject.appId" />
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
+                  v-if="dataObject.appId"
+                  title="Video References"
+                >
+                  <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>
