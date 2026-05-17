@@ -125,6 +125,55 @@ DELETE /v2/snapshots/{snapshotAppId}
 
 ---
 
+### Diff two snapshots
+
+```
+GET /v2/snapshots/{aAppId}/diff/{bAppId}
+```
+
+**Permission:** Authenticated caller required (401 when not authenticated). In v1 no per-collection permission gate is applied — snapshots are metadata-only reads.
+
+**Path parameters:**
+- `aAppId` — the base snapshot (the older one, A).
+- `bAppId` — the head snapshot (the newer one, B).
+
+**Error responses:**
+- 400 — when `aAppId` equals `bAppId` (self-diff is not useful).
+- 401 — unauthenticated.
+- 404 — when either snapshot is not found or is soft-deleted.
+
+**Response (200 OK):**
+```json
+{
+  "snapshotAAppId": "01900000-0000-7000-8000-000000000020",
+  "snapshotBAppId": "01900000-0000-7000-8000-000000000021",
+  "snapshotACapturedAtMs": 1700000000000,
+  "snapshotBCapturedAtMs": 1700001000000,
+  "added": [
+    "01900000-0000-7000-8000-000000000050"
+  ],
+  "removed": [
+    "01900000-0000-7000-8000-000000000031"
+  ],
+  "changed": [
+    {
+      "entityAppId": "01900000-0000-7000-8000-000000000040",
+      "revisionA": 1,
+      "revisionB": 3
+    }
+  ],
+  "unchangedCount": 38
+}
+```
+
+Fields:
+- `added` — `entityAppId` values present in B but not in A (created between snapshots). Sorted by `entityAppId` ascending.
+- `removed` — `entityAppId` values present in A but not in B (deleted or out of scope in B). Sorted by `entityAppId` ascending.
+- `changed` — entities present in both with a different `revision` value. Each entry carries `entityAppId`, `revisionA` (from A), and `revisionB` (from B). Sorted by `entityAppId` ascending.
+- `unchangedCount` — count of entities with identical revisions in both snapshots (not listed to avoid large payloads).
+
+---
+
 ## Data model
 
 ```
@@ -161,4 +210,4 @@ nodes and endpoints; no change to the upstream `/shepard/api/...` surface.
 |---|---|
 | V2c | Snapshot-pinned read path (`?snapshot=snapshotAppId` query param on Collection reads). |
 | V2d | RO-Crate export against a snapshot — reproducible by construction. |
-| V2e | Snapshot diff (`GET /v2/snapshots/{a}/diff/{b}` — entities added/removed/changed). |
+| V2f | (Deferred) "Branch from snapshot" — fork off a snapshot into a writable child Collection. |

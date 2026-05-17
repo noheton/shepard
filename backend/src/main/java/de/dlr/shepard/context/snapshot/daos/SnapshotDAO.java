@@ -7,6 +7,7 @@ import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -83,6 +84,27 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
         false
       )
       .toList();
+  }
+
+  /**
+   * Returns a map of {@code entityAppId → revision} for all non-deleted entries
+   * of the given snapshot.
+   *
+   * <p>Used by the V2e diff endpoint to compare two snapshots without loading
+   * the full {@link SnapshotEntry} object graph.
+   *
+   * @param snapshotNeo4jId the OGM-managed {@code Long} id of the {@link Snapshot}.
+   * @return mutable map of entityAppId to revision; empty when the snapshot has
+   *         no entries.
+   */
+  public Map<String, Long> getEntryRevisionMap(long snapshotNeo4jId) {
+    return findEntriesBySnapshot(snapshotNeo4jId).stream()
+      .collect(
+        Collectors.toMap(
+          SnapshotEntry::getEntityAppId,
+          SnapshotEntry::getRevision
+        )
+      );
   }
 
   /**
