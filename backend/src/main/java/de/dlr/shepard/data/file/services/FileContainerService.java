@@ -9,6 +9,7 @@ import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.file.daos.FileContainerDAO;
 import de.dlr.shepard.data.file.daos.PayloadVersionDAO;
@@ -455,6 +456,23 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     container.addFile(file);
     fileContainerDAO.createOrUpdate(container);
     return file;
+  }
+
+  /**
+   * CC1b — return the list of non-deleted DataObjects that reference this
+   * FileContainer via any file reference type.  Read-permission on the
+   * container is checked via {@link #getContainer(long)}.
+   *
+   * @param containerId numeric OGM id of the FileContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsById(long containerId) {
+    FileContainer container = getContainer(containerId);
+    String appId = container.getAppId();
+    if (appId == null) {
+      return java.util.Collections.emptyList();
+    }
+    return fileContainerDAO.findLinkedDataObjectsByContainerAppId(appId);
   }
 
   /**

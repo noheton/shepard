@@ -4,6 +4,7 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
@@ -52,6 +53,33 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
     var iter = findByQuery(query, Map.of("appId", appId));
     var it = iter.iterator();
     return it.hasNext() ? Optional.of(it.next()) : Optional.empty();
+  }
+
+  /**
+   * CC1b — find all DataObjects that reference this FileContainer via any
+   * reference type (SingletonFileReference or FileReference/FileBundleReference).
+   *
+   * <p>The relationship path is:
+   * {@code DataObject -[:has_reference]->()-[:has_payload]-> FileContainer}
+   *
+   * <p>The reference node label is intentionally unlabelled (plain {@code ()})
+   * to match both {@code SingletonFileReference} and {@code FileReference}
+   * labels in a single pass.
+   *
+   * @param containerAppId the appId of the FileContainer
+   * @return distinct non-deleted DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByContainerAppId(String containerAppId) {
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    var result = new ArrayList<DataObject>();
+    for (var dataObject : session.query(DataObject.class, query, Map.of("containerAppId", containerAppId))) {
+      result.add(dataObject);
+    }
+    return result;
   }
 
   @Override

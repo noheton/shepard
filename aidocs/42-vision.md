@@ -149,6 +149,17 @@ These work the same way across every primitive:
   RO-Crate export** *(V2d shipped)*: include `"snapshotAppId"` in the
   `/v2/` export body to produce a ZIP containing only the DataObjects
   captured in that snapshot — reproducible by construction.
+- **Payload versioning** *(PV1a shipped)*. Every file upload to a
+  FileContainer now automatically records a `:PayloadVersion` node
+  capturing the SHA-256 digest, file size, uploader, and upload
+  timestamp, keyed by `(containerAppId, originalName)` with a
+  monotonically-increasing `versionNumber`. The full upload history for
+  a file is queryable via
+  `GET /v2/file-containers/{containerAppId}/files/{originalName}/versions`.
+  A researcher uploading a revised calibration CSV gets a numbered
+  version trail with cryptographic integrity hashes — no manual
+  bookkeeping required. PV1b–PV1g (StructuredData, Spatial, Timeseries,
+  RO-Crate integration, retention GC) are follow-on slices.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).

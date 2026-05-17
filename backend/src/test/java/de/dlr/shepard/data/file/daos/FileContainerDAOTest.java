@@ -1,11 +1,13 @@
 package de.dlr.shepard.data.file.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import java.util.HashMap;
@@ -242,5 +244,50 @@ public class FileContainerDAOTest extends BaseTestCase {
     var actual = dao.findAllFileContainers(params, "bob");
     verify(session).query(FileContainer.class, query, paramsMap);
     assertEquals(List.of(col1), actual);
+  }
+
+  // ─── CC1b: findLinkedDataObjectsByContainerAppId ──────────────────────────
+
+  @Test
+  public void findLinkedDataObjects_returnsEmptyListWhenNoneLinked() {
+    String containerAppId = "01900000-0000-7000-8000-000000000001";
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    Map<String, Object> params = Map.of("containerAppId", containerAppId);
+
+    when(session.query(DataObject.class, query, params)).thenReturn(List.of());
+
+    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+
+    verify(session).query(DataObject.class, query, params);
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  public void findLinkedDataObjects_returnsTwoDataObjects() {
+    String containerAppId = "01900000-0000-7000-8000-000000000002";
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    Map<String, Object> params = Map.of("containerAppId", containerAppId);
+
+    DataObject do1 = new DataObject();
+    do1.setName("Dataset A");
+    DataObject do2 = new DataObject();
+    do2.setName("Dataset B");
+
+    when(session.query(DataObject.class, query, params)).thenReturn(List.of(do1, do2));
+
+    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+
+    verify(session).query(DataObject.class, query, params);
+    assertEquals(2, result.size());
+    assertEquals("Dataset A", result.get(0).getName());
+    assertEquals("Dataset B", result.get(1).getName());
   }
 }

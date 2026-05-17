@@ -5,12 +5,15 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { StructuredDataContainerAccessor } from "~/composables/container/StructuredDataAccessor";
+import { useStructuredDataContainerLinkedDataObjects } from "~/composables/containers/useStructuredDataContainerLinkedDataObjects";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.STRUCTUREDDATA;
 
 const containerAccessor = new StructuredDataContainerAccessor(containerId);
+const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
+  useStructuredDataContainerLinkedDataObjects(containerId);
 
 onContainerUpdated(() => {
   fetchData();
@@ -160,12 +163,28 @@ watch(containerAccessor.container, () => {
           (structuredData: StructuredData) => onDownload(structuredData)
         "
       />
-      <!-- CC1b: Referenced by — placeholder until a list-by-container API is available -->
+      <!-- CC1b: Referenced by — wired to GET /v2/structured-data-containers/{id}/linked-data-objects -->
       <ExpansionPanels class="mt-4">
         <ExpansionPanelItem title="Referenced by">
-          <!-- TODO(CC1b): replace with real DataObject list once GET /v2/structured-data-containers/{id}/references exists -->
-          <div class="pa-4 text-medium-emphasis text-body-2">
+          <div v-if="linkedDataObjectsLoading" class="pa-4">
+            <v-progress-circular indeterminate size="20" />
+          </div>
+          <div
+            v-else-if="!linkedDataObjects || linkedDataObjects.length === 0"
+            class="pa-4 text-medium-emphasis text-body-2"
+          >
             No linked datasets found.
+          </div>
+          <div v-else class="pa-2">
+            <v-list density="compact">
+              <v-list-item
+                v-for="obj in linkedDataObjects"
+                :key="obj.id"
+                :to="`/collections/${obj.collectionId}/dataObjects/${obj.id}`"
+                prepend-icon="mdi-database-outline"
+                :title="obj.name"
+              />
+            </v-list>
           </div>
         </ExpansionPanelItem>
       </ExpansionPanels>

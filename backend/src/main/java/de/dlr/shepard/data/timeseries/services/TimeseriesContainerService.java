@@ -8,6 +8,7 @@ import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.io.TimeseriesContainerIO;
@@ -100,6 +101,39 @@ public class TimeseriesContainerService extends AbstractContainerService<Timeser
     var created = timeseriesContainerDAO.createOrUpdate(toCreate);
     permissionsService.createPermissions(created, user, PermissionType.Private);
     return created;
+  }
+
+  /**
+   * CC1b — look up a TimeseriesContainer by its appId with a read-permission
+   * check. Used by the linked-data-objects REST endpoint.
+   *
+   * @throws InvalidPathException if no container with that appId exists
+   */
+  public TimeseriesContainer getContainerByAppId(String appId) {
+    TimeseriesContainer c = timeseriesContainerDAO.findByAppId(appId)
+      .orElseThrow(() -> new InvalidPathException(
+        "TimeseriesContainer with appId '" + appId + "' not found"));
+    if (c.isDeleted()) {
+      throw new InvalidPathException("TimeseriesContainer '" + appId + "' is deleted");
+    }
+    assertIsAllowedToReadContainer(c.getId());
+    return c;
+  }
+
+  /**
+   * CC1b — return the list of non-deleted DataObjects that reference this
+   * TimeseriesContainer via a TimeseriesReference.
+   *
+   * @param containerId numeric OGM id of the TimeseriesContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsById(long containerId) {
+    TimeseriesContainer container = getContainer(containerId);
+    String appId = container.getAppId();
+    if (appId == null) {
+      return java.util.Collections.emptyList();
+    }
+    return timeseriesContainerDAO.findLinkedDataObjectsByContainerAppId(appId);
   }
 
   /**

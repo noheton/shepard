@@ -8,6 +8,7 @@ import de.dlr.shepard.common.exceptions.InvalidRequestException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.PermissionType;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.AbstractContainerService;
 import de.dlr.shepard.data.structureddata.daos.StructuredDataContainerDAO;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
@@ -169,5 +170,38 @@ public class StructuredDataContainerService
       .toList();
     structuredDataContainer.setStructuredDatas(newStructuredDatas);
     structuredDataContainerDAO.createOrUpdate(structuredDataContainer);
+  }
+
+  /**
+   * CC1b — look up a StructuredDataContainer by its appId with a read-permission
+   * check. Used by the linked-data-objects REST endpoint.
+   *
+   * @throws InvalidPathException if no container with that appId exists
+   */
+  public StructuredDataContainer getContainerByAppId(String appId) {
+    StructuredDataContainer c = structuredDataContainerDAO.findByAppId(appId)
+      .orElseThrow(() -> new InvalidPathException(
+        "StructuredDataContainer with appId '" + appId + "' not found"));
+    if (c.isDeleted()) {
+      throw new InvalidPathException("StructuredDataContainer '" + appId + "' is deleted");
+    }
+    assertIsAllowedToReadContainer(c.getId());
+    return c;
+  }
+
+  /**
+   * CC1b — return the list of non-deleted DataObjects that reference this
+   * StructuredDataContainer via a StructuredDataReference.
+   *
+   * @param containerId numeric OGM id of the StructuredDataContainer
+   * @return distinct DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsById(long containerId) {
+    StructuredDataContainer container = getContainer(containerId);
+    String appId = container.getAppId();
+    if (appId == null) {
+      return java.util.Collections.emptyList();
+    }
+    return structuredDataContainerDAO.findLinkedDataObjectsByContainerAppId(appId);
   }
 }

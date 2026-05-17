@@ -1,11 +1,13 @@
 package de.dlr.shepard.data.timeseries;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.ContainerAttributes;
 import de.dlr.shepard.data.timeseries.daos.TimeseriesContainerDAO;
 import de.dlr.shepard.data.timeseries.model.TimeseriesContainer;
@@ -243,5 +245,50 @@ public class TimeseriesContainerDAOTest extends BaseTestCase {
     var actual = dao.findAllTimeseriesContainers(params, "bob");
     verify(session).query(TimeseriesContainer.class, query, paramsMap);
     assertEquals(List.of(col1), actual);
+  }
+
+  // ─── CC1b: findLinkedDataObjectsByContainerAppId ──────────────────────────
+
+  @Test
+  public void findLinkedDataObjects_returnsEmptyListWhenNoneLinked() {
+    String containerAppId = "01900000-0000-7000-8000-000000000001";
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:TimeseriesContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    Map<String, Object> params = Map.of("containerAppId", containerAppId);
+
+    when(session.query(DataObject.class, query, params)).thenReturn(List.of());
+
+    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+
+    verify(session).query(DataObject.class, query, params);
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  public void findLinkedDataObjects_returnsTwoDataObjects() {
+    String containerAppId = "01900000-0000-7000-8000-000000000002";
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:TimeseriesContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    Map<String, Object> params = Map.of("containerAppId", containerAppId);
+
+    DataObject do1 = new DataObject();
+    do1.setName("Experiment A");
+    DataObject do2 = new DataObject();
+    do2.setName("Experiment B");
+
+    when(session.query(DataObject.class, query, params)).thenReturn(List.of(do1, do2));
+
+    List<DataObject> result = dao.findLinkedDataObjectsByContainerAppId(containerAppId);
+
+    verify(session).query(DataObject.class, query, params);
+    assertEquals(2, result.size());
+    assertEquals("Experiment A", result.get(0).getName());
+    assertEquals("Experiment B", result.get(1).getName());
   }
 }

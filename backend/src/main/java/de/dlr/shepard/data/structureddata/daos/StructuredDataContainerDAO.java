@@ -4,12 +4,14 @@ import de.dlr.shepard.common.neo4j.daos.GenericDAO;
 import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.CypherQueryHelper.Neighborhood;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RequestScoped
 public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContainer> {
@@ -45,6 +47,36 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
 
   private boolean matchName(StructuredDataContainer container, String name) {
     return name == null || container.getName().equalsIgnoreCase(name);
+  }
+
+  public Optional<StructuredDataContainer> findByAppId(String appId) {
+    String query = "MATCH (c:StructuredDataContainer {appId: $appId}) " + CypherQueryHelper.getReturnPart("c");
+    var iter = findByQuery(query, Map.of("appId", appId));
+    var it = iter.iterator();
+    return it.hasNext() ? Optional.of(it.next()) : Optional.empty();
+  }
+
+  /**
+   * CC1b — find all DataObjects that reference this StructuredDataContainer via a
+   * StructuredDataReference.
+   *
+   * <p>The relationship path is:
+   * {@code DataObject -[:has_reference]->()-[:has_payload]-> StructuredDataContainer}
+   *
+   * @param containerAppId the appId of the StructuredDataContainer
+   * @return distinct non-deleted DataObjects linked to this container
+   */
+  public List<DataObject> findLinkedDataObjectsByContainerAppId(String containerAppId) {
+    String query =
+      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:StructuredDataContainer) " +
+      "WHERE c.appId = $containerAppId " +
+      "  AND (do.deleted IS NULL OR do.deleted = false) " +
+      "RETURN DISTINCT do";
+    var result = new ArrayList<DataObject>();
+    for (var dataObject : session.query(DataObject.class, query, Map.of("containerAppId", containerAppId))) {
+      result.add(dataObject);
+    }
+    return result;
   }
 
   @Override
