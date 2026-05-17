@@ -61,6 +61,7 @@ const isCreatingNewFileContainer = ref<boolean>(false);
 
 const uploading = ref<boolean>(false);
 const successCount = ref<number>(0);
+const { mobile } = useDisplay();
 const isUploadButtonDisabled = computed(() => {
   return (
     files.value === undefined ||
@@ -224,7 +225,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" :max-width="900" persistent>
+  <v-dialog v-model="showDialog" :max-width="900" persistent :fullscreen="mobile">
     <v-card :loading="uploading" color="canvas">
       <template #title>
         <div class="mb-8 text-h4 text-wrap">Upload Files</div>

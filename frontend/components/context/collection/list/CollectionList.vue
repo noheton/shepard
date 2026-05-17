@@ -80,6 +80,7 @@ function onPageChange(page: number) {
 </script>
 
 <template>
+  <div style="overflow-x: auto">
   <DataTable
     :sort-by="queryParams.sortBy ? [queryParams.sortBy] : []"
     :header-props="{
@@ -118,6 +119,7 @@ function onPageChange(page: number) {
       />
     </template>
   </DataTable>
+  </div>
 </template>
 
 <style scoped lang="scss">

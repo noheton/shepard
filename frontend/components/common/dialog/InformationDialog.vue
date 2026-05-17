@@ -14,10 +14,11 @@ const showDialog = defineModel<boolean>("showDialog", {
   required: true,
   default: false,
 });
+const { mobile } = useDisplay();
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent :max-width="maxWidth">
+  <v-dialog v-model="showDialog" persistent :max-width="maxWidth" :fullscreen="mobile">
     <v-card :loading="loading" color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">

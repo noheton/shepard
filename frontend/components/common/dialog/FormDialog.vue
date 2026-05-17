@@ -14,6 +14,7 @@ const showDialog = defineModel<boolean>("showDialog", {
   default: false,
 });
 const emit = defineEmits(["submit"]);
+const { mobile } = useDisplay();
 
 function handleSubmit() {
   if (props.closeOnSubmit) {
@@ -24,7 +25,7 @@ function handleSubmit() {
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent :max-width="maxWidth ?? 600">
+  <v-dialog v-model="showDialog" persistent :max-width="maxWidth ?? 600" :fullscreen="mobile">
     <v-card :loading="loading" color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">

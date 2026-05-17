@@ -19,11 +19,11 @@ const showCreateDialog = ref(false);
             <h1 class="text-h1 text-textbody1 pr-4">Collections</h1>
           </div>
         </v-col>
-        <v-col cols="auto" class="pb-4">
+        <v-col cols="12" sm="auto" class="pb-4">
           <CollectionSearchField :search-result-hint="searchResultHint" />
         </v-col>
         <v-spacer />
-        <v-col cols="auto" class="pb-4" justify-self="end">
+        <v-col cols="12" sm="auto" class="pb-4">
           <v-btn
             class="bg-primary text-canvas"
             variant="flat"

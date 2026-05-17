@@ -14,10 +14,11 @@ const showDialog = defineModel<boolean>("showDialog", {
 const emit = defineEmits(["submit"]);
 
 const currentStep = ref<number>(1);
+const { mobile } = useDisplay();
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent max-width="600">
+  <v-dialog v-model="showDialog" persistent max-width="600" :fullscreen="mobile">
     <v-card color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">

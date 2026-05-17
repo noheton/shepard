@@ -71,8 +71,8 @@ const itemsPerPage = 10;
 
 <template>
   <EmptyListIcon v-if="tableItems.length === 0" label="No data yet" />
+  <div v-else style="overflow-x: auto">
   <DataTable
-    v-else
     :headers="headers"
     :items-for-pagination="tableItems"
     :items-per-page="itemsPerPage"
@@ -114,6 +114,7 @@ const itemsPerPage = 10;
       </ActionContainer>
     </template>
   </DataTable>
+  </div>
 
   <AddAnnotationDialog
     v-if="showAddAnnotationDialog"

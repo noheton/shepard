@@ -19,6 +19,7 @@ const showDialog = defineModel<boolean>("showDialog", {
 
 const files = ref<File | File[] | undefined>(undefined);
 const uploading = ref<boolean>(false);
+const { mobile } = useDisplay();
 const successCount = ref<number>(0);
 const errorCount = ref<number>(0);
 const isUploadButtonDisabled = computed(() => {
@@ -64,7 +65,7 @@ const uploadFiles = async () => {
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent :max-width="maxWidth">
+  <v-dialog v-model="showDialog" persistent :max-width="maxWidth" :fullscreen="mobile">
     <v-card color="canvas" :loading="uploading">
       <template #title>
         <div class="pb-4 d-flex justify-space-between align-baseline">

@@ -17,10 +17,12 @@ const emit = defineEmits<{
   (e: "select", template: ShepardTemplateIO): void;
   (e: "start-blank"): void;
 }>();
+
+const { mobile } = useDisplay();
 </script>
 
 <template>
-  <v-dialog v-model="showDialog" persistent max-width="600">
+  <v-dialog v-model="showDialog" persistent max-width="600" :fullscreen="mobile">
     <v-card color="canvas">
       <template #title>
         <div class="d-flex justify-space-between align-baseline">

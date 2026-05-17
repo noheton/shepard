@@ -104,7 +104,8 @@ const headers = [
 
 <template>
   <EmptyListIcon v-if="tableItems.length === 0" label="No relationships yet" />
-  <DataTable v-else :headers="headers" :items="tableItems">
+  <div v-else style="overflow-x: auto">
+  <DataTable :headers="headers" :items="tableItems">
     <template
       #[`item.relationship`]="{
         value,
@@ -173,6 +174,7 @@ const headers = [
       <div class="bottom-border" />
     </template>
   </DataTable>
+  </div>
 
   <AddAnnotationDialog
     v-if="showAddAnnotationDialog"

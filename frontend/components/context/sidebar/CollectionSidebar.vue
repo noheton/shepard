@@ -162,11 +162,13 @@ function onDeleted(deletedItemId: number) {
 }
 
 const createDataObjectDialogOpened = ref<boolean>(false);
+
+const { mobile } = useDisplay();
 </script>
 
 <template>
   <div
-    style="position: fixed; width: 100%; max-width: inherit"
+    :style="mobile ? 'position: relative; width: 100%; height: 100%' : 'position: fixed; width: 100%; max-width: inherit'"
     class="bg-treeview elevation-4 sidebar-container"
   >
     <CollectionSidebarHeader
@@ -347,6 +349,12 @@ const createDataObjectDialogOpened = ref<boolean>(false);
   --sidebar-height: calc(100vh - 64px);
   height: var(--sidebar-height);
   max-height: var(--sidebar-height);
+
+  // When mounted inside a v-navigation-drawer (mobile), use full available height
+  .v-navigation-drawer & {
+    height: 100%;
+    max-height: 100%;
+  }
 }
 
 .treeview-container {
