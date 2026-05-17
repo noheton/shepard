@@ -198,20 +198,28 @@ services:
       - tryout
 
   # FS1i — Garage S3-compatible object-storage sidecar for local development.
-  # Start with: docker compose --profile files-s3 up -d
-  # One-time cluster init (see docs/reference/file-storage.md for full runbook):
-  #   docker exec shepard-garage /garage layout assign -z dc1 -c 1G <node-id>
+  # Off by default; start with: docker compose --profile files-s3 up -d
+  #
+  # Garage is a lightweight (~10 MB Rust binary, EUPL-1.2 licensed) geo-distributed
+  # S3-compatible object store — the ADR-0024 reference for the quick-start stack.
+  # Any S3-compatible endpoint works; replace with AWS S3, Cloudflare R2, MinIO, etc.
+  # by pointing shepard.files.s3.* at your own endpoint.
+  #
+  # One-time cluster init after first `docker compose --profile files-s3 up -d`:
+  #   NODE=$(docker exec shepard-garage /garage status | grep -oE '[0-9a-f]{16}' | head -1)
+  #   docker exec shepard-garage /garage layout assign -z dc1 -c 1G $NODE
   #   docker exec shepard-garage /garage layout apply --version 1
   #   docker exec shepard-garage /garage bucket create shepard
   #   docker exec shepard-garage /garage key create shepard-backend
   #   docker exec shepard-garage /garage bucket allow --read --write shepard --key shepard-backend
-  # Then in application.properties (or env vars):
+  # Then set in application.properties (or export as env vars before `mvn quarkus:dev`):
   #   shepard.files.s3.endpoint=http://localhost:3900
-  #   shepard.files.s3.access-key-id=<key>
-  #   shepard.files.s3.secret-access-key=<secret>
+  #   shepard.files.s3.access-key-id=<key printed by `garage key info shepard-backend`>
+  #   shepard.files.s3.secret-access-key=<secret printed by `garage key info shepard-backend`>
   #   shepard.files.s3.bucket=shepard
   #   shepard.storage.provider=s3
   #   shepard.plugins.file-s3.enabled=true
+  # See docs/reference/file-storage.md for the full operator runbook.
   shepard-garage:
     image: dxflrs/garage:v1.0.1
     container_name: shepard-garage
