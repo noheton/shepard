@@ -9,6 +9,49 @@ const { patchMe, isSaving } = usePatchMe();
 const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
 
+// U1e: Avatar upload/delete
+const avatarKey = ref(0); // bump to force img reload after upload
+const avatarError = ref(false);
+const isAvatarUploading = ref(false);
+const avatarFileInput = ref<HTMLInputElement | null>(null);
+
+function avatarUrl(appId: string) {
+  return `/v2/users/${appId}/avatar?v=${avatarKey.value}`;
+}
+
+function onAvatarError() {
+  avatarError.value = true;
+}
+
+function triggerAvatarUpload() {
+  avatarFileInput.value?.click();
+}
+
+async function onAvatarFileSelected(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  isAvatarUploading.value = true;
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const resp = await fetch("/v2/users/me/avatar", { method: "PUT", body: form });
+    if (resp.ok) {
+      avatarError.value = false;
+      avatarKey.value++;
+    }
+  } finally {
+    isAvatarUploading.value = false;
+    input.value = "";
+  }
+}
+
+async function deleteAvatar() {
+  await fetch("/v2/users/me/avatar", { method: "DELETE" });
+  avatarError.value = true;
+  avatarKey.value++;
+}
+
 const editDialog = ref(false);
 const editOrcid = ref<string>("");
 const editDisplayName = ref<string>("");
@@ -61,6 +104,52 @@ async function saveJupyterUrl() {
       >
         Edit
       </v-btn>
+    </div>
+
+    <!-- U1e: avatar -->
+    <div v-if="user && !isLoading" class="d-flex align-center ga-4">
+      <div class="avatar-wrapper">
+        <v-avatar size="80" color="primary">
+          <v-img
+            v-if="!avatarError && user.appId"
+            :src="avatarUrl(user.appId)"
+            cover
+            @error="onAvatarError"
+          />
+          <span v-else class="text-h5 font-weight-medium">
+            {{ (user.effectiveDisplayName ?? user.username ?? "?").charAt(0).toUpperCase() }}
+          </span>
+        </v-avatar>
+      </div>
+      <div class="d-flex flex-column ga-1">
+        <input
+          ref="avatarFileInput"
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          class="d-none"
+          @change="onAvatarFileSelected"
+        />
+        <v-btn
+          size="small"
+          variant="tonal"
+          prepend-icon="mdi-camera"
+          :loading="isAvatarUploading"
+          :disabled="isAvatarUploading"
+          @click="triggerAvatarUpload"
+        >
+          Upload avatar
+        </v-btn>
+        <v-btn
+          v-if="!avatarError && user.appId"
+          size="small"
+          variant="text"
+          color="error"
+          prepend-icon="mdi-delete-outline"
+          @click="deleteAvatar"
+        >
+          Remove
+        </v-btn>
+      </div>
     </div>
 
     <centered-loading-spinner v-if="isLoading" />
