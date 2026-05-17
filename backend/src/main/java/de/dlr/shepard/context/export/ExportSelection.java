@@ -18,9 +18,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  */
 @Schema(name = "ExportSelection", description = "Optional filter for what payloads and metadata bundle into the RO-Crate export.")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata) {
+public record ExportSelection(
+  @Schema(nullable = true, description = "When set, only DataObjects captured in this snapshot are included in the export. Reproducible by construction.")
+  String snapshotAppId,
+  @Valid Payloads payloads,
+  @Valid Metadata metadata
+) {
   public ExportSelection {
     // record canonical constructor; nulls allowed and treated as "use defaults"
+  }
+
+  /** Backwards-compatible 2-arg constructor used by existing callers and tests. */
+  public ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata) {
+    this(null, payloads, metadata);
   }
 
   /**
@@ -185,7 +195,7 @@ public record ExportSelection(@Valid Payloads payloads, @Valid Metadata metadata
   // -------- helpers --------------------------------------------------------
 
   public boolean isEmpty() {
-    return payloads == null && metadata == null;
+    return snapshotAppId == null && payloads == null && metadata == null;
   }
 
   public boolean includesKind(PayloadKind kind) {

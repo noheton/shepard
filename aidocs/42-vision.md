@@ -138,8 +138,10 @@ These work the same way across every primitive:
   `GET /v2/snapshots/{a}/diff/{b}` to see which entities were added,
   removed, or changed revision between them. The **Snapshots panel**
   (UI1a shipped) on the collection page exposes all of the above with a
-  colour-coded diff viewer (added/removed/changed chips). Byte-reproducible
-  RO-Crate export against a snapshot (V2d) is the next follow-on — queued.
+  colour-coded diff viewer (added/removed/changed chips). **Snapshot-pinned
+  RO-Crate export** *(V2d shipped)*: include `"snapshotAppId"` in the
+  `/v2/` export body to produce a ZIP containing only the DataObjects
+  captured in that snapshot — reproducible by construction.
 - **Search.** Across all entities and attributes; semantic-annotation
   search lights up additionally for ontology terms. Improvements
   in flight (`aidocs/13`).

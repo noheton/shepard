@@ -34,6 +34,8 @@ import de.dlr.shepard.context.references.timeseriesreference.services.Timeseries
 import de.dlr.shepard.context.references.uri.io.URIReferenceIO;
 import de.dlr.shepard.context.references.uri.services.URIReferenceService;
 import de.dlr.shepard.context.semantic.io.SemanticAnnotationIO;
+import de.dlr.shepard.context.snapshot.entities.Snapshot;
+import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import de.dlr.shepard.context.version.io.VersionIO;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.data.file.entities.ShepardFile;
@@ -95,6 +97,9 @@ public class ExportService {
   @Inject
   SubscriptionService subscriptionService;
 
+  @Inject
+  SnapshotService snapshotService;
+
   /**
    * Plugin-supplied export contributors (G1c SPI). Each contributor claims
    * one or more reference types; the first match (by {@link ExportContributor#priority()})
@@ -130,10 +135,31 @@ public class ExportService {
 
     var exportBuilder = new ExportBuilder(collection, selection);
     writeEntityMetadata(exportBuilder, collection, selection, true);
+
+    Set<String> snapshotAppIds = resolveSnapshotFilter(selection);
+
     for (var dataObject : collection.getDataObjects()) {
+      if (snapshotAppIds != null && !snapshotAppIds.contains(dataObject.getAppId())) {
+        continue;
+      }
       fetchAndWriteDataObject(collectionId, exportBuilder, dataObject.getShepardId(), selection);
     }
     return exportBuilder.build();
+  }
+
+  /**
+   * Resolves the snapshot filter from the given selection.
+   *
+   * @param selection the export selection (may be null or have a null snapshotAppId)
+   * @return {@code null} when no snapshot filter applies (include all DataObjects);
+   *         an empty set when the snapshotAppId is unknown (export nothing — conservative);
+   *         a non-empty set of DataObject appIds captured in the snapshot.
+   */
+  private Set<String> resolveSnapshotFilter(ExportSelection selection) {
+    if (selection == null || selection.snapshotAppId() == null) return null;
+    Snapshot snapshot = snapshotService.findByAppId(selection.snapshotAppId());
+    if (snapshot == null) return Set.of(); // unknown snapshot → export nothing
+    return Set.copyOf(snapshotService.listDataObjectAppIds(snapshot));
   }
 
   /**
