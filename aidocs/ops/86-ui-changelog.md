@@ -31,6 +31,9 @@ by the CI Playwright run (see `aidocs/ops/85 §5`).
 |---|---|---|---|---|
 | 2026-05-17 | QW1 | Header bar | "Advanced Search" nav button replaced with a 300px type-ahead `v-autocomplete`; debounced 250ms, queries collections by name, navigates to `/collections/{id}` on selection; "Advanced search →" footer link preserved in dropdown | — |
 | 2026-05-17 | QW2 | Collection sidebar | Text filter at top of sidebar; client-side filtering of data objects by name | — |
+| 2026-05-17 | QW3 | User profile (`/user`) | JupyterHub section added to ProfilePane: `v-text-field` bound to `useJupyterPreference`, Save button; persists `editor.preferredJupyter` preference via `PATCH /v2/users/me/preferences` | — |
+| 2026-05-17 | QW6 | Admin page (`/admin`) | "Instance Health" pane added: heap bar, uptime chip, HTTP request totals + mean latency chips, permissions cache hit ratio; reads `GET /v2/admin/metrics-summary`; silently hidden for non-admins | — |
+| 2026-05-17 | UI8 | Collection detail page | "Download as RO-Crate" button (`mdi-package-down`, tonal, secondary) triggers authenticated blob download via `GET /shepard/api/collections/{id}/export` | — |
 | 2026-05-17 | J1c | DataObject detail page | Added "Jupyter Notebooks" expansion panel — lists all `.ipynb` file references with download link and "Open in JupyterHub" button; first-time URL setup via inline cog | — |
 | 2026-05-17 | U1c2 | Collection sidebar header | Owner / Editor / Reader role chip + amber Admin chip now displayed below the collection name for the current user | — |
 | 2026-05-17 | J1c / U1d | User preferences | `editor.preferredJupyter` preference key introduced; stored via `PATCH /v2/users/me/preferences`; accessible through the Notebooks panel cog | — |
@@ -49,18 +52,15 @@ Items in the design doc (`aidocs/ops/85`) that are not yet shipped:
 
 | ID | Summary | Gate |
 |---|---|---|
-| QW3 | JupyterHub URL in user profile pane | unblocked |
 | QW4 | Git credentials shortcut in GitReferencesPane | unblocked |
 | QW5 | Publish deep-link tooltip | unblocked |
-| QW6 | Admin metrics card | unblocked |
 | UI1a | Snapshots UI (create / list / delete / diff) | V2b–V2e shipped |
 | UI2a | Templates browser + instantiation | T1a–T1f shipped |
 | UI3a | Video reference inline viewer | VID1a shipped |
 | UI4a | PayloadVersion history panel | PV1a in-flight |
 | UI5a | Drag-and-drop tree reparenting | design in aidocs/58 §2 |
-| UI6a | RO-Crate export download button | G1c shipped |
 | UI7 | Graph view | design needed |
-| UI8 | Inline attach-to-data-object from container | design needed |
+| UI8 (was UI6a) | Inline attach-to-data-object from container | design needed |
 | UI9 | Snapshot diff viewer | V2e shipped |
 | UI10 | @-mention in lab journal | design in aidocs/58 §4 |
 | UI11 | Unified publish/Unhide status panel | UH1 + KIP1 shipped |

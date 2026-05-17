@@ -1,5 +1,7 @@
 <script lang="ts" setup>
+import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
@@ -18,6 +20,29 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 
 const showAttributeEditDialog = ref(false);
 const showDescriptionEditDialog = ref(false);
+const isExporting = ref(false);
+
+async function downloadRoCrate() {
+  if (isExporting.value) return;
+  isExporting.value = true;
+  try {
+    const blob = await useShepardApi(CollectionApi).value.exportCollection({
+      collectionId,
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${collection.value?.name ?? collectionId}-export.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    handleError(e, "downloading RO-Crate export");
+  } finally {
+    isExporting.value = false;
+  }
+}
 
 // PROV1d: the activity sparkline dashboard is keyed by Collection appId
 // (the L2 native identifier; backend `/v2/provenance/stats` rejects the
@@ -64,11 +89,20 @@ watch(collection, () => {
               />
             </v-row>
             <v-row
-              v-if="collectionAppId && isAllowedToEditCollection"
               no-gutters
-              class="justify-end pb-2"
+              class="justify-end pb-2 ga-2"
             >
+              <v-btn
+                prepend-icon="mdi-package-down"
+                variant="tonal"
+                color="secondary"
+                :loading="isExporting"
+                @click="downloadRoCrate"
+              >
+                Download as RO-Crate
+              </v-btn>
               <PublishButton
+                v-if="collectionAppId && isAllowedToEditCollection"
                 entity-kind="collections"
                 :entity-app-id="collectionAppId"
                 :entity-name="collection.name"

@@ -29,5 +29,8 @@ const { routeFragment } = useRouteFragment();
     <FeatureTogglesPane
       v-if="routeFragment === AdminFragments.FEATURE_TOGGLES"
     />
+    <AdminMetricsCard
+      v-if="routeFragment === AdminFragments.INSTANCE_HEALTH"
+    />
   </PaneLayout>
 </template>
