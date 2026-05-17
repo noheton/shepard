@@ -7,7 +7,9 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.GrantInstanceAdminIO;
 import de.dlr.shepard.v2.admin.io.InstanceAdminGrantIO;
 import de.dlr.shepard.v2.admin.io.PermissionAuditEntryIO;
+import de.dlr.shepard.v2.admin.io.PermissionAuditLogEntryIO;
 import de.dlr.shepard.v2.admin.services.InstanceAdminService;
+import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
@@ -16,16 +18,20 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.SecurityContext;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -57,6 +63,9 @@ public class InstanceAdminRest {
 
   @Inject
   PermissionAuditService permissionAuditService;
+
+  @Inject
+  PermissionAuditLogQueryService permissionAuditLogQueryService;
 
   @Inject
   AuthenticationContext authenticationContext;
@@ -154,5 +163,67 @@ public class InstanceAdminRest {
     requireInstanceAdmin(securityContext);
     List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans();
     return Response.ok(orphans).build();
+  }
+
+  /**
+   * F3 — permission audit log query endpoint.
+   *
+   * <p>Reads the {@code permission_audit_log} Postgres table. Results sorted
+   * {@code occurred_at DESC}, paged via {@code page}/{@code size}.
+   *
+   * @param entityAppId filter by entity appId (optional)
+   * @param actor       filter by actor_username (optional)
+   * @param from        ISO-8601 lower bound for occurred_at (inclusive, optional)
+   * @param to          ISO-8601 upper bound for occurred_at (exclusive, optional)
+   * @param page        zero-based page index (default 0)
+   * @param size        page size (default 50, max 500)
+   */
+  @GET
+  @Path("/permission-audit/log")
+  @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
+  @Tag(name = "Admin")
+  @Operation(
+    description = "F3: Query the Postgres permission audit log. Returns GRANT/REVOKE/UPDATE events " +
+                  "sorted by occurred_at DESC. Supports optional filters: entityAppId, actor, " +
+                  "from/to (ISO-8601), and pagination via page/size."
+  )
+  @APIResponse(
+    description = "ok",
+    responseCode = "200",
+    content = @Content(
+      schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditLogEntryIO.class)
+    )
+  )
+  @APIResponse(description = "forbidden", responseCode = "403")
+  @APIResponse(description = "bad request (invalid ISO-8601 date)", responseCode = "400")
+  public Response permissionAuditLog(
+    @Context SecurityContext securityContext,
+    @QueryParam("entityAppId") String entityAppId,
+    @QueryParam("actor") String actor,
+    @QueryParam("from") String from,
+    @QueryParam("to") String to,
+    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("size") @DefaultValue("50") int size
+  ) {
+    requireInstanceAdmin(securityContext);
+
+    Instant fromInstant = null;
+    Instant toInstant = null;
+    try {
+      if (from != null && !from.isBlank()) fromInstant = Instant.parse(from);
+      if (to != null && !to.isBlank()) toInstant = Instant.parse(to);
+    } catch (DateTimeParseException e) {
+      return Response.status(Status.BAD_REQUEST)
+        .entity(new de.dlr.shepard.common.exceptions.ApiError(
+          Status.BAD_REQUEST.getStatusCode(), "BadRequest",
+          "Invalid ISO-8601 date in 'from' or 'to' parameter: " + e.getMessage()
+        ))
+        .build();
+    }
+
+    List<PermissionAuditLogEntryIO> rows = permissionAuditLogQueryService.query(
+      entityAppId, actor, fromInstant, toInstant, page, size
+    );
+    return Response.ok(rows).build();
   }
 }

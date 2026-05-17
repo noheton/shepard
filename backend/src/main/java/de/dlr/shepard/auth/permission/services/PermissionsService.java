@@ -1,5 +1,7 @@
 package de.dlr.shepard.auth.permission.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.events.PermissionsChangedEvent;
 import de.dlr.shepard.auth.permission.io.PermissionsIO;
@@ -77,6 +79,13 @@ public class PermissionsService {
   @Inject
   Event<PermissionsChangedEvent> permissionsChangedEvent;
 
+  /** F3 — audit log for every permissions grant/revoke/update. Never blocks the write path. */
+  @Inject
+  PermissionAuditLogService permissionAuditLogService;
+
+  /** Reusable Jackson mapper for detail_json serialisation. */
+  private static final ObjectMapper AUDIT_MAPPER = new ObjectMapper();
+
   /**
    * @param entity         the entity the permissions belong to
    * @param user           the user creating the permissions
@@ -86,6 +95,14 @@ public class PermissionsService {
   public Permissions createPermissions(BasicEntity entity, User user, PermissionType permissionType) {
     Permissions persisted = permissionsDAO.createOrUpdate(new Permissions(entity, user, PermissionType.Private));
     firePermissionsChanged(entity, PermissionsChangedEvent.Kind.CREATED);
+    // F3 — audit the initial grant
+    String appId = entity instanceof de.dlr.shepard.common.identifier.HasAppId h ? h.getAppId() : null;
+    if (appId != null && permissionAuditLogService != null) {
+      String kind = entityKindName(entity);
+      String actor = authenticationContext != null ? authenticationContext.getCurrentUserName() : null;
+      String detail = permissionsSnapshot(new PermissionsIO(persisted));
+      permissionAuditLogService.log(appId, kind, actor, "GRANT", detail);
+    }
     return persisted;
   }
 
@@ -137,6 +154,35 @@ public class PermissionsService {
     String n = entity.getClass().getSimpleName();
     int sep = n.indexOf("$");
     return sep > 0 ? n.substring(0, sep) : n;
+  }
+
+  /**
+   * F3 — serialise a {@link PermissionsIO} snapshot to a compact JSON string for {@code detail_json}.
+   * Returns {@code null} (not a failure) when serialisation fails so the audit call can still proceed.
+   */
+  private static String permissionsSnapshot(PermissionsIO io) {
+    if (io == null) return null;
+    try {
+      return AUDIT_MAPPER.writeValueAsString(io);
+    } catch (JsonProcessingException e) {
+      Log.warnf(e, "F3: could not serialise PermissionsIO for audit detail_json; using null");
+      return null;
+    }
+  }
+
+  /**
+   * F3 — serialise before/after snapshots into the {@code detail_json} column format.
+   */
+  private static String updateDetailJson(PermissionsIO before, PermissionsIO after) {
+    try {
+      var node = AUDIT_MAPPER.createObjectNode();
+      if (before != null) node.set("before", AUDIT_MAPPER.valueToTree(before));
+      if (after != null) node.set("after", AUDIT_MAPPER.valueToTree(after));
+      return AUDIT_MAPPER.writeValueAsString(node);
+    } catch (JsonProcessingException e) {
+      Log.warnf(e, "F3: could not serialise before/after for audit detail_json; using null");
+      return null;
+    }
   }
 
   /**
@@ -388,6 +434,9 @@ public class PermissionsService {
       oldPermissions.setOwner(newPermissions.getOwner());
     }
 
+    // F3 — snapshot before mutating
+    PermissionsIO beforeSnapshot = new PermissionsIO(oldPermissions);
+
     oldPermissions.setReader(newPermissions.getReader());
     oldPermissions.setWriter(newPermissions.getWriter());
     oldPermissions.setReaderGroups(newPermissions.getReaderGroups());
@@ -398,6 +447,16 @@ public class PermissionsService {
     removeEntityFromCache(id);
     // A5b — fire post-commit. Best-effort: see firePermissionsChangedByEntityId.
     firePermissionsChangedByEntityId(id, PermissionsChangedEvent.Kind.UPDATED);
+    // F3 — audit the update with before/after detail
+    if (permissionAuditLogService != null) {
+      String appId = resolveAppIdByEntityId(id);
+      if (appId != null) {
+        String kind = resolveKindByEntityId(id);
+        String actor = authenticationContext != null ? authenticationContext.getCurrentUserName() : null;
+        String detail = updateDetailJson(beforeSnapshot, new PermissionsIO(res));
+        permissionAuditLogService.log(appId, kind, actor, "UPDATE", detail);
+      }
+    }
     return res;
   }
 
@@ -422,6 +481,12 @@ public class PermissionsService {
       } catch (RuntimeException e) {
         Log.warnf(e, "PermissionsChangedEvent (DELETED) observer failed for entityId=%s; ignoring", entityId);
       }
+    }
+    // F3 — audit the revoke
+    if (ok && appId != null && permissionAuditLogService != null) {
+      String actor = authenticationContext != null ? authenticationContext.getCurrentUserName() : null;
+      String detail = permissionsSnapshot(permissions != null ? new PermissionsIO(permissions) : null);
+      permissionAuditLogService.log(appId, kindName, actor, "REVOKE", detail);
     }
     return ok;
   }
@@ -598,6 +663,37 @@ public class PermissionsService {
       user.ifPresent((User u) -> result.add(u));
     }
     return result;
+  }
+
+  /**
+   * F3 — resolves the {@code appId} for a given Neo4j entity id by looking up
+   * its Permissions node. Returns {@code null} if the entity has no appId or
+   * no Permissions node (best-effort; used only for audit logging).
+   */
+  private String resolveAppIdByEntityId(long entityId) {
+    try {
+      Permissions perms = permissionsDAO.findByEntityNeo4jId(entityId);
+      if (perms == null || perms.getEntities() == null || perms.getEntities().isEmpty()) return null;
+      BasicEntity ent = perms.getEntities().get(0);
+      return ent instanceof HasAppId h ? h.getAppId() : null;
+    } catch (RuntimeException e) {
+      Log.warnf(e, "F3: resolveAppIdByEntityId(%d) failed; skipping audit appId", entityId);
+      return null;
+    }
+  }
+
+  /**
+   * F3 — resolves the entity kind name for a given Neo4j entity id (best-effort).
+   */
+  private String resolveKindByEntityId(long entityId) {
+    try {
+      Permissions perms = permissionsDAO.findByEntityNeo4jId(entityId);
+      if (perms == null || perms.getEntities() == null || perms.getEntities().isEmpty()) return "Unknown";
+      BasicEntity ent = perms.getEntities().get(0);
+      return ent != null ? entityKindName(ent) : "Unknown";
+    } catch (RuntimeException e) {
+      return "Unknown";
+    }
   }
 
   private List<UserGroup> fetchUserGroups(long[] userGroupIds) {
