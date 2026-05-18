@@ -67,7 +67,17 @@ public class DataObjectRest {
 
   @GET
   @Tag(name = Constants.DATA_OBJECT)
-  @Operation(description = "Get all dataObjects")
+  @Operation(
+    summary = "List DataObjects under a Collection.",
+    description =
+      "Returns a page of DataObjects belonging to the Collection identified by " +
+      "'collectionId'. Filtering: 'name' (substring match), 'parentId' / 'predecessorId' " +
+      "/ 'successorId' (long ids; constrain to traversal subsets), 'orderBy' + 'orderDesc'. " +
+      "Pagination: omit 'page' / 'size' to get the full result; supply both to paginate. " +
+      "Optional 'versionUID' returns DOs at a specific Version snapshot. " +
+      "Every DataObject in the response carries both 'id' (legacy long) and 'appId' " +
+      "(UUID v7); prefer GET /v2/collections/{appId}/data-objects on this fork."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -123,7 +133,15 @@ public class DataObjectRest {
   @GET
   @Path("/{" + Constants.DATA_OBJECT_ID + "}")
   @Tag(name = Constants.DATA_OBJECT)
-  @Operation(description = "Get dataObject")
+  @Operation(
+    summary = "Get a DataObject by its legacy long id.",
+    description =
+      "Returns the DataObject identified by 'dataObjectId' within 'collectionId'. " +
+      "Response includes the DO's references (timeseries / file / structured-data / " +
+      "URI / git / collection-references). Optional 'versionUID' returns the DO at a " +
+      "specific Version snapshot. Requires Read permission on the parent Collection. " +
+      "Prefer GET /v2/collections/{appId}/data-objects/{appId} on this fork."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -153,7 +171,16 @@ public class DataObjectRest {
   @POST
   @Subscribable
   @Tag(name = Constants.DATA_OBJECT)
-  @Operation(description = "Create a new dataObject")
+  @Operation(
+    summary = "Create a DataObject inside a Collection.",
+    description =
+      "Creates a DataObject in the Collection identified by 'collectionId'. " +
+      "Body fields: 'name' (required), 'description', 'attributes' (key/value map), " +
+      "'status' (DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED). The server mints 'id' " +
+      "and 'appId' and returns the full entity in 201. Requires Write permission on " +
+      "the parent Collection. " +
+      "Example body: {\"name\": \"TR-001\", \"attributes\": {\"campaign\": \"Q3\"}}."
+  )
   @APIResponse(
     description = "created",
     responseCode = "201",

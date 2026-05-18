@@ -133,6 +133,38 @@ const itemsPerPage = 10;
     :items-for-pagination="tableItems"
     :items-per-page="itemsPerPage"
   >
+    <!--
+      User feedback 2026-05-18: the eye-icon on hover was the only path
+      to drill in. Title + Type are now clickable links — the eye-icon
+      lives on as a tertiary action that mirrors the navigation, useful
+      for keyboard / accessible users who don't trigger row-hover.
+    -->
+    <template #[`item.type`]="{ item }: { item: DataTableElement }">
+      <a
+        v-if="item.actions.showDetails.enabled"
+        href="#"
+        class="reference-link d-inline-flex align-center"
+        @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId)"
+      >
+        <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
+        {{ item.type }}
+      </a>
+      <span v-else class="d-inline-flex align-center">
+        <v-icon :icon="kindIcons[item.type]" size="small" class="me-1" />
+        {{ item.type }}
+      </span>
+    </template>
+    <template #[`item.name`]="{ item }: { item: DataTableElement }">
+      <a
+        v-if="item.actions.showDetails.enabled"
+        href="#"
+        class="reference-link"
+        @click.prevent="showDetails(item.actions.showDetails.pathFragment, item.actions.elementId)"
+      >
+        {{ item.name }}
+      </a>
+      <span v-else>{{ item.name }}</span>
+    </template>
     <template #[`item.meta`]="{ value }: { value: DataTableElement['meta'] }">
       <DataObjectDataMetaCell :meta="value" />
       <SemanticAnnotationList
@@ -184,3 +216,14 @@ const itemsPerPage = 10;
     "
   />
 </template>
+
+<style scoped>
+.reference-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  cursor: pointer;
+}
+.reference-link:hover {
+  text-decoration: underline;
+}
+</style>

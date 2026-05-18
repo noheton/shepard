@@ -74,9 +74,20 @@ public class CollectionRest {
 
   @GET
   @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Get all collections")
+  @Operation(
+    summary = "List Collections the caller may read.",
+    description =
+      "Returns a page of Collections the authenticated user has Read permission on. " +
+      "Filtering: 'name' query param matches by name substring (case-insensitive). " +
+      "Pagination: omit 'page' / 'size' to get the full result set; supply both to paginate. " +
+      "Sorting: 'orderBy' (one of the DataObjectAttributes enum — typically 'createdAt' / 'name') " +
+      "with 'orderDesc=true' for descending order. Default sort: insertion order. " +
+      "Every Collection in the response carries both 'id' (legacy long) and 'appId' " +
+      "(UUID v7, canonical) — clients new to this fork should prefer 'appId' and the " +
+      "matching /v2/collections endpoint."
+  )
   @APIResponse(
-    description = "ok",
+    description = "Page of Collections (may be empty).",
     responseCode = "200",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
@@ -111,7 +122,15 @@ public class CollectionRest {
   @GET
   @Path("/{" + Constants.COLLECTION_ID + "}")
   @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Get collection")
+  @Operation(
+    summary = "Get a Collection by its legacy long id.",
+    description =
+      "Returns the Collection identified by 'collectionId' (Neo4j-OGM long primary key). " +
+      "Response includes the Collection's DataObjects (as long-id array) and incoming " +
+      "references. Optional 'versionUID' query param returns the Collection at a specific " +
+      "Version snapshot (used by the audit-trail UI). Requires Read permission. " +
+      "Prefer GET /v2/collections/{appId} on this fork — same payload, app-level UUID id."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -319,7 +338,16 @@ public class CollectionRest {
 
   @POST
   @Tag(name = Constants.COLLECTION)
-  @Operation(description = "Create a new collection")
+  @Operation(
+    summary = "Create a new Collection.",
+    description =
+      "Creates a Collection with the request body's 'name' (required), 'description', " +
+      "'attributes' (key/value map), 'status' (optional, one of DRAFT/IN_REVIEW/READY/" +
+      "PUBLISHED/ARCHIVED), and 'defaultFileContainerId' (optional). The server mints " +
+      "both 'id' (legacy long) and 'appId' (UUID v7) and returns the full entity in the " +
+      "201 response. The caller becomes the owner with Manage permission. " +
+      "Example minimal body: {\"name\": \"My experiment\"}."
+  )
   @APIResponse(
     description = "created",
     responseCode = "201",

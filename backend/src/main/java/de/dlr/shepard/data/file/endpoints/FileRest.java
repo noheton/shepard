@@ -64,7 +64,14 @@ public class FileRest {
 
   @GET
   @Tag(name = Constants.FILE_CONTAINER)
-  @Operation(description = "Get all file containers")
+  @Operation(
+    summary = "List FileContainers the caller may read.",
+    description =
+      "Returns a page of FileContainers visible to the authenticated user. " +
+      "FileContainers are top-level entities (not nested under a Collection); " +
+      "DataObjects reference them via FileReference. Filtering: 'name' substring " +
+      "match. Pagination: 'page' / 'size'. Sorting: 'orderBy' + 'orderDesc'."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -162,7 +169,13 @@ public class FileRest {
   @GET
   @Path("/{" + Constants.FILE_CONTAINER_ID + "}/payload")
   @Tag(name = Constants.FILE_CONTAINER)
-  @Operation(description = "Get files")
+  @Operation(
+    summary = "List files in a FileContainer's payload.",
+    description =
+      "Returns the in-container file index (oids, filenames, sizes, MIME types). " +
+      "Does NOT stream file bytes — use GET .../payload/{oid} for the bytes. " +
+      "Requires Read permission on the container."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
