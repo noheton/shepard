@@ -27,11 +27,20 @@ import {
  */
 export interface TimeseriesReference {
     /**
-     * 
+     *
      * @type {number}
      * @memberof TimeseriesReference
      */
     readonly id: number;
+    /**
+     * Application-level UUID v7 identifier. Carried by every entity since L2a/L2b
+     * but originally omitted from the generated client; restored here so v2
+     * surfaces (anomaly detection, semantic annotations, etc.) can address
+     * references by their stable appId.
+     * @type {string}
+     * @memberof TimeseriesReference
+     */
+    readonly appId?: string;
     /**
      * 
      * @type {Date}
@@ -126,8 +135,9 @@ export function TimeseriesReferenceFromJSONTyped(json: any, ignoreDiscriminator:
         return json;
     }
     return {
-        
+
         'id': json['id'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),

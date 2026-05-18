@@ -20,11 +20,18 @@ import { mapValues } from '../runtime';
  */
 export interface StructuredDataReference {
     /**
-     * 
+     *
      * @type {number}
      * @memberof StructuredDataReference
      */
     readonly id: number;
+    /**
+     * Application-level UUID v7 identifier. See TimeseriesReference for the
+     * full reason this is included on the patched client.
+     * @type {string}
+     * @memberof StructuredDataReference
+     */
+    readonly appId?: string;
     /**
      * 
      * @type {Date}
@@ -105,8 +112,9 @@ export function StructuredDataReferenceFromJSONTyped(json: any, ignoreDiscrimina
         return json;
     }
     return {
-        
+
         'id': json['id'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'createdAt': (new Date(json['createdAt'])),
         'createdBy': json['createdBy'],
         'updatedAt': (json['updatedAt'] == null ? null : new Date(json['updatedAt'])),
