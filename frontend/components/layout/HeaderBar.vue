@@ -254,7 +254,6 @@ function clearSearch() {
   font-weight: 400;
   font-style: normal;
   line-height: 26px;
-  text-transform: none;
 }
 
 .header-search {
