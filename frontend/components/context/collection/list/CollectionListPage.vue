@@ -12,6 +12,9 @@ const showCreateDialog = ref(false);
 const isEmpty = computed(
   () => !loading.value && serverItems.value.length === 0 && !searchResultHint.value,
 );
+const isSearchEmpty = computed(
+  () => !loading.value && serverItems.value.length === 0 && !!searchResultHint.value,
+);
 </script>
 
 <template>
@@ -42,6 +45,31 @@ const isEmpty = computed(
               </template>
               Create collection
             </v-btn>
+          </v-col>
+        </template>
+
+        <template v-else-if="isSearchEmpty">
+          <v-col cols="12" sm="auto" class="pb-4">
+            <CollectionSearchField :search-result-hint="searchResultHint" />
+          </v-col>
+          <v-spacer />
+          <v-col cols="12" sm="auto" class="pb-4">
+            <v-btn
+              class="bg-primary text-canvas"
+              variant="flat"
+              :style="{ marginTop: '3px' }"
+              @click="showCreateDialog = true"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-plus-circle" color="canvas" />
+              </template>
+              Create new collection
+            </v-btn>
+          </v-col>
+          <v-col cols="12" class="d-flex flex-column align-center py-12">
+            <v-icon icon="mdi-magnify" size="64" color="textbody2" class="mb-4" />
+            <div class="text-h5 text-textbody1 mb-2">No collections found</div>
+            <div class="text-body-1 text-textbody2">{{ searchResultHint }}</div>
           </v-col>
         </template>
 

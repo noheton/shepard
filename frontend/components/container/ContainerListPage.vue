@@ -13,6 +13,9 @@ const showCreateDialog = ref(false);
 const isEmpty = computed(
   () => !loading.value && serverItems.value.length === 0 && !searchResultHint.value,
 );
+const isSearchEmpty = computed(
+  () => !loading.value && serverItems.value.length === 0 && !!searchResultHint.value,
+);
 </script>
 
 <template>
@@ -53,6 +56,31 @@ const isEmpty = computed(
               </template>
               Create container
             </v-btn>
+          </v-col>
+        </template>
+
+        <template v-else-if="isSearchEmpty">
+          <v-col class="pb-4" cols="auto">
+            <ContainerSearchField :search-result-hint="searchResultHint" />
+          </v-col>
+          <v-spacer />
+          <v-col class="pb-4" cols="auto" justify-self="end">
+            <v-btn
+              :style="{ marginTop: '3px' }"
+              class="bg-primary text-canvas"
+              variant="flat"
+              @click="showCreateDialog = true"
+            >
+              <template #prepend>
+                <v-icon color="canvas" icon="mdi-plus-circle" />
+              </template>
+              Create new container
+            </v-btn>
+          </v-col>
+          <v-col cols="12" class="d-flex flex-column align-center py-12">
+            <v-icon icon="mdi-magnify" size="64" color="textbody2" class="mb-4" />
+            <div class="text-h5 text-textbody1 mb-2">No containers found</div>
+            <div class="text-body-1 text-textbody2">{{ searchResultHint }}</div>
           </v-col>
         </template>
 

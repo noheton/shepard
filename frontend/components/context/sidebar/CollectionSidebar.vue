@@ -20,6 +20,11 @@ const {
 } = useTreeviewItems(routeParams);
 const { advancedMode } = useAdvancedMode();
 
+const collectionAppId = computed<string | undefined>(() => {
+  const raw = (collection.value as unknown as { appId?: string | null })?.appId;
+  return raw ?? undefined;
+});
+
 // QW2: client-side text filter for data objects in the sidebar.
 //
 // Filtering applies to already-loaded nodes only. Children that have not been
@@ -267,7 +272,7 @@ const { mobile } = useDisplay();
             <CollectionSidebarItemContextMenu
               v-if="isAllowedToEditCollection"
               :collection-id="routeParams.collectionId"
-              :collection-app-id="(collection as unknown as { appId?: string | null })?.appId ?? undefined"
+              :collection-app-id="collectionAppId"
               :data-object-id="item.id"
               :parent-id="item.parentId"
               :item-name="item.title"
@@ -330,7 +335,7 @@ const { mobile } = useDisplay();
     v-if="createDataObjectDialogOpened"
     v-model:show-dialog="createDataObjectDialogOpened"
     :collection-id="routeParams.collectionId"
-    :collection-app-id="(collection as unknown as { appId?: string | null })?.appId ?? undefined"
+    :collection-app-id="collectionAppId"
     @data-object-created="refreshItems"
   />
 
