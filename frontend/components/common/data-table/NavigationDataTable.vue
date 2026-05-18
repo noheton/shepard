@@ -52,4 +52,8 @@ function navigateTo(url: string): void {
   </DataTable>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+:deep(tbody > tr) {
+  cursor: pointer;
+}
+</style>
