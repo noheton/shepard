@@ -205,6 +205,16 @@ watch(collection, () => {
               />
             </section>
 
+            <!-- Always-visible: flat, searchable DataObjects list. The
+                 #24 "Collection-scale navigation" entry point — user
+                 can answer "where is X" without opening collapsibles. -->
+            <section class="page-section">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Data Objects</div>
+              </div>
+              <CollectionDataObjectsPanel :collection-id="collectionId" />
+            </section>
+
             <!-- Deeper-dive content stays in collapsibles. Snapshots and
                  Publishing are dev/admin tooling — hidden in basic mode. -->
             <v-row no-gutters>
