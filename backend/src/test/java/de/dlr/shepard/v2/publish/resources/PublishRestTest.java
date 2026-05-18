@@ -101,7 +101,7 @@ class PublishRestTest {
   @Test
   void permissionDeniedReturns403() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong())).thenReturn(false);
     Response r = rest.publish("data-objects", "01HF-A", false, securityContext, uriInfo);
     assertEquals(403, r.getStatus());
   }
@@ -278,7 +278,7 @@ class PublishRestTest {
   @Test
   void retirePermissionDeniedReturns403() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong())).thenReturn(false);
     Response r = rest.retire("data-objects", "01HF-A", securityContext);
     assertEquals(403, r.getStatus());
   }

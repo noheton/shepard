@@ -66,7 +66,7 @@ class CollectionPropertiesRestTest {
     when(propertiesDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
     Response r = resource.read(COLL_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
   }
 
   @Test

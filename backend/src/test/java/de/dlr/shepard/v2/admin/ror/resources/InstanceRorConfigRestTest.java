@@ -1,4 +1,4 @@
-package de.dlr.shepard.v2.admin.ror;
+package de.dlr.shepard.v2.admin.ror.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -15,7 +15,6 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
 import de.dlr.shepard.v2.admin.ror.io.InstanceRorConfigIO;
 import de.dlr.shepard.v2.admin.ror.io.InstanceRorConfigPatchIO;
-import de.dlr.shepard.v2.admin.ror.resources.InstanceRorConfigRest;
 import de.dlr.shepard.v2.admin.ror.services.InstanceRorConfigService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Path;
