@@ -23,6 +23,7 @@ import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.spi.payload.PayloadKind;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
+import de.dlr.shepard.v2.watches.entities.Watch;
 import io.quarkus.logging.Log;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -104,6 +105,8 @@ public class NeoConnector implements IConnector {
           TimeseriesReference.class.getPackageName(),
           // TS_CHART_VIEW1 — per-container chart-overview persistence
           TimeseriesContainerChartView.class.getPackageName(),
+          // WATCH1 — Collection -> Container watch links
+          Watch.class.getPackageName(),
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
           Version.class.getPackageName()

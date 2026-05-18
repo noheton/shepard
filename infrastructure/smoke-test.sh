@@ -199,6 +199,17 @@ check "PATCH /v2/timeseries-containers/1/chart-view (no auth → 401)" \
       "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
       "401,403" "" PATCH
 
+# WATCH1 — Collection -> Container watch links
+check "GET /v2/collections/0/watched-containers (no auth → 401)" \
+      "$BACKEND_URL/v2/collections/0/watched-containers" \
+      "401,403"
+check "POST /v2/collections/0/watched-containers (no auth → 401)" \
+      "$BACKEND_URL/v2/collections/0/watched-containers" \
+      "401,403" "" POST
+check "DELETE /v2/collections/0/watched-containers/0 (no auth → 401)" \
+      "$BACKEND_URL/v2/collections/0/watched-containers/0" \
+      "401,403" "" DELETE
+
 echo ""
 echo "──────────────────────────────────────────────"
 echo "PASS: $PASS    FAIL: $FAIL"
