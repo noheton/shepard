@@ -58,20 +58,17 @@
     </v-autocomplete>
 
     <template #append>
-      <!-- Desktop-only extra nav links -->
-      <v-btn to="/help" class="nav-item d-none d-md-inline-flex" prepend-icon="mdi-help-circle-outline">
-        Help
-      </v-btn>
-      <v-btn :to="{ path: '/about', hash: '#version' }" class="nav-item d-none d-md-inline-flex">
-        About
-      </v-btn>
-      <v-btn
-        :href="apiDocsUrl"
-        target="_blank"
-        class="nav-item d-none d-md-inline-flex"
-      >
-        API Docs
-      </v-btn>
+      <!-- Desktop: secondary nav behind overflow menu -->
+      <v-menu location="bottom end">
+        <template #activator="{ props: menuProps }">
+          <v-btn icon="mdi-dots-vertical" class="d-none d-md-inline-flex" v-bind="menuProps" />
+        </template>
+        <v-list density="compact" nav>
+          <v-list-item to="/help" title="Help" prepend-icon="mdi-help-circle-outline" />
+          <v-list-item :to="{ path: '/about', hash: '#version' }" title="About" prepend-icon="mdi-information-outline" />
+          <v-list-item :href="apiDocsUrl" target="_blank" title="API Docs" prepend-icon="mdi-api" />
+        </v-list>
+      </v-menu>
       <v-btn
         icon="mdi-account-outline"
         :to="{ path: '/me', hash: '#profile' }"

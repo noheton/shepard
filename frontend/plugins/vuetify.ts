@@ -57,7 +57,7 @@ const lightTheme: ThemeDefinition = {
 };
 const darkTheme: ThemeDefinition = {
   colors: {
-    primary: "#00c7e3",
+    primary: "#4db3e6",
     textbody1: "#ffffff",
     textbody2: "#f5f7f9",
     "medium-emphasis": "#ffffff",
@@ -65,7 +65,7 @@ const darkTheme: ThemeDefinition = {
     divider1: "#f5f7f9",
     divider2: "#3e4347",
     focus1: "#4b545f",
-    focus2: "#99e9f4",
+    focus2: "#7fccef",
     treeview: "#323d49",
     canvas: "#272d33",
     error: "#dc3545",
