@@ -59,7 +59,15 @@ public class URIReferenceRest {
 
   @GET
   @Tag(name = Constants.URI_REFERENCE)
-  @Operation(description = "Get all uri references")
+  @Operation(
+    summary = "List URIReferences on a DataObject.",
+    description =
+      "Returns the URIReferences attached to the DataObject. A URIReference is " +
+      "a lightweight string-shaped pointer to an external resource (publication " +
+      "DOI, dataset URL, …) — no payload bytes, only metadata. Optional " +
+      "'versionUID' returns references at a specific Version snapshot. Requires " +
+      "Read on the parent DataObject."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -92,7 +100,13 @@ public class URIReferenceRest {
   @GET
   @Path("/{" + Constants.URI_REFERENCE_ID + "}")
   @Tag(name = Constants.URI_REFERENCE)
-  @Operation(description = "Get uri reference")
+  @Operation(
+    summary = "Get a single URIReference.",
+    description =
+      "Returns one URIReference identified by 'referenceId' on the given " +
+      "DataObject. Optional 'versionUID' selects a specific Version snapshot. " +
+      "Requires Read on the parent DataObject."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -123,7 +137,15 @@ public class URIReferenceRest {
   @POST
   @Subscribable
   @Tag(name = Constants.URI_REFERENCE)
-  @Operation(description = "Create a new uri reference")
+  @Operation(
+    summary = "Create a URIReference on a DataObject.",
+    description =
+      "Attaches a new URIReference to the given DataObject. Body fields: " +
+      "'name' (required), 'description', 'uri' (the external URL/IRI being " +
+      "referenced; required and validated). Example: " +
+      "{\"name\":\"Project DOI\", \"uri\":\"https://doi.org/10.5072/abc\"}. " +
+      "Requires Write on the parent DataObject."
+  )
   @APIResponse(
     description = "created",
     responseCode = "201",
@@ -151,7 +173,13 @@ public class URIReferenceRest {
   @Path("/{" + Constants.URI_REFERENCE_ID + "}")
   @Subscribable
   @Tag(name = Constants.URI_REFERENCE)
-  @Operation(description = "Delete uri reference")
+  @Operation(
+    summary = "Delete a URIReference.",
+    description =
+      "Soft-deletes the URIReference identified by 'referenceId'. Returns 204 " +
+      "when the reference is removed (or was already gone). Requires Write " +
+      "permission on the parent DataObject."
+  )
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")

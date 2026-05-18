@@ -53,7 +53,15 @@ public class BasicReferenceRest {
 
   @GET
   @Tag(name = Constants.BASIC_REFERENCE)
-  @Operation(description = "Get all references")
+  @Operation(
+    summary = "List all references on a DataObject (any kind).",
+    description =
+      "Returns the union of all reference kinds — Timeseries, File, " +
+      "StructuredData, URI, Git, DataObject, Collection — attached to the " +
+      "DataObject. Use the kind-specific endpoints (e.g. /timeseriesReferences) " +
+      "when you only want one kind. Pagination: 'page' / 'size'. " +
+      "Requires Read on the parent DataObject."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -95,7 +103,14 @@ public class BasicReferenceRest {
   @GET
   @Path("/{" + Constants.BASIC_REFERENCE_ID + "}")
   @Tag(name = Constants.BASIC_REFERENCE)
-  @Operation(description = "Get reference")
+  @Operation(
+    summary = "Get any reference by id (polymorphic).",
+    description =
+      "Returns one reference identified by 'referenceId' regardless of kind. " +
+      "The response is the common BasicReference shape (id, name, description, " +
+      "attributes, createdBy/createdAt, …); kind-specific fields are returned " +
+      "by the kind-specific GET endpoints. Requires Read on the parent DataObject."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -121,7 +136,14 @@ public class BasicReferenceRest {
   @Path("/{" + Constants.BASIC_REFERENCE_ID + "}")
   @Subscribable
   @Tag(name = Constants.BASIC_REFERENCE)
-  @Operation(description = "Delete reference")
+  @Operation(
+    summary = "Delete any reference by id (polymorphic).",
+    description =
+      "Soft-deletes the reference identified by 'referenceId' regardless of " +
+      "kind. The payload it points at (container, URI, etc.) is NOT deleted " +
+      "— only the reference edge. Returns 204 when removed (or already gone). " +
+      "Requires Write on the parent DataObject."
+  )
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")

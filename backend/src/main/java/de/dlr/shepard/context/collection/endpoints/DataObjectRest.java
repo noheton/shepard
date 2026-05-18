@@ -206,7 +206,14 @@ public class DataObjectRest {
   @Path("/{" + Constants.DATA_OBJECT_ID + "}")
   @Subscribable
   @Tag(name = Constants.DATA_OBJECT)
-  @Operation(description = "Update dataObject")
+  @Operation(
+    summary = "Replace a DataObject (full update).",
+    description =
+      "Full-replacement update: every writable field of the DataObject is " +
+      "overwritten by the body. Use PATCH (RFC 7396 merge-patch) for partial " +
+      "updates instead — safer for forwards compatibility because new fields " +
+      "added later don't get cleared. Requires Write on the DataObject."
+  )
   @APIResponse(
     description = "ok",
     responseCode = "200",
@@ -304,7 +311,15 @@ public class DataObjectRest {
   @Path("/{" + Constants.DATA_OBJECT_ID + "}")
   @Subscribable
   @Tag(name = Constants.DATA_OBJECT)
-  @Operation(description = "Delete dataObject")
+  @Operation(
+    summary = "Delete a DataObject.",
+    description =
+      "Soft-deletes the DataObject identified by 'dataObjectId' within " +
+      "'collectionId'. Cascades to attached references (the references " +
+      "become deleted; the containers they point at are NOT removed). " +
+      "Idempotent: deleting a non-existent or already-deleted DataObject " +
+      "returns 204. Requires Write on the DataObject."
+  )
   @APIResponse(description = "deleted", responseCode = "204")
   @APIResponse(responseCode = "400", description = "bad request")
   @APIResponse(responseCode = "401", description = "not authorized")

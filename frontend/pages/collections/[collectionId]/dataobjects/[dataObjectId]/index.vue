@@ -35,6 +35,9 @@ const showAttributeEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
 
+// Provenance sub-view: structured log (default) vs force-directed graph.
+const provView = ref<"log" | "graph">("log");
+
 // ── Inline description editing ────────────────────────────────────────────
 const descEditActive = ref(false);
 const descDraft = ref("");
@@ -308,11 +311,29 @@ watch(dataObject, () => {
                 >
                   <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
-                <!-- Provenance Graph is a panel of data, not an advanced-mode
-                     field — visible in both modes per the refined policy. -->
-                <ExpansionPanelItem title="Provenance Graph">
+                <!-- Provenance: two views — a structured time-based log
+                     (default, easier to read) and the force-directed
+                     graph (eye-candy, second tab). Both render the same
+                     /v2/provenance/activities data; the user picks
+                     whichever shape they want. -->
+                <ExpansionPanelItem title="Provenance">
+                  <v-tabs v-model="provView" density="compact" color="primary" class="pb-2">
+                    <v-tab value="log">
+                      <v-icon size="small" class="me-1">mdi-format-list-bulleted</v-icon>
+                      Log
+                    </v-tab>
+                    <v-tab value="graph">
+                      <v-icon size="small" class="me-1">mdi-graph-outline</v-icon>
+                      Graph
+                    </v-tab>
+                  </v-tabs>
                   <div class="pt-2 pb-2">
+                    <DataObjectProvLog
+                      v-if="provView === 'log' && dataObject.appId"
+                      :target-app-id="dataObject.appId"
+                    />
                     <DataObjectProvGraph
+                      v-else-if="provView === 'graph'"
                       :data-object="dataObject"
                       :collection-id="collectionId"
                     />
