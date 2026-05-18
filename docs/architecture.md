@@ -75,6 +75,27 @@ Concrete `*Rest.java` endpoints live under
 `SemanticRepositoryRest`, `SubscriptionRest`,
 `UserRest`, `UserGroupRest`, `ApiKeyRest`, `SearchRest`.
 
+## API shelves — `/shepard/api/` and `/v2/`
+
+This fork exposes the REST surface on two shelves that share the same
+backend and the same Neo4j graph:
+
+- **`/shepard/api/...`** — the upstream surface. **Frozen for
+  byte-for-byte parity with shepard 5.2.0.** Existing clients
+  (Python, TypeScript, Java) built against upstream keep working
+  without modification.
+- **`/v2/...`** — this fork's development surface. New endpoints
+  land here additively: container-level semantic annotations
+  (`/v2/{kind}-containers/{id}/annotations`), server-enforced
+  safe-delete (`DELETE /v2/{kind}-containers/{id}?force=…`), the
+  instance-identity public read (`GET /v2/instance/identity`),
+  curated SQL-over-HTTP (`POST /v2/sql/timeseries`), file V2 + git +
+  video references, runtime admin-config endpoints, …
+
+`aidocs/25` formalises this split (L2 chain). Operators upgrading
+from upstream see zero breakage on `/shepard/api/` and choose when
+to start consuming `/v2/`.
+
 ## Auth model
 
 - **Inbound** — JWT bearer tokens from an external OIDC provider (Keycloak in

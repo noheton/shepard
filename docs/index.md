@@ -74,11 +74,39 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 
 | Aspect | Today |
 |---|---|
-| API surface | REST under `/shepard/api`, OpenAPI 3.0 at `/shepard/doc/openapi.json`, Swagger UI at `/shepard/doc/swagger-ui` |
+| API surface | Two shelves: upstream-compatible `/shepard/api/...` (frozen for byte-for-byte parity with shepard 5.2.0) + this fork's additive `/v2/...` development surface. OpenAPI 3.0 at `/shepard/doc/openapi.json`, Swagger UI at `/shepard/doc/swagger-ui/` |
 | Backend | Quarkus 3.27.x on Java 21 |
 | Frontend | Nuxt 3 + Vue 3 + Vuetify 3 (separate Docker image) |
 | Persistence | Neo4j 5.24 + MongoDB 8.0 + Postgres+TimescaleDB; optional Postgres+PostGIS |
 | Auth | External OIDC (Keycloak typical) + secondary `X-API-KEY` header |
 | Deployment | docker-compose, on-premises (no cloud assumed) |
+
+## What's new on this fork
+
+Recent capabilities not in upstream shepard 5.2.0:
+
+- **Semantic annotations on every primitive.** Collections, DataObjects,
+  References, Timeseries channels, **and now Containers themselves** —
+  see the [container annotations reference](/reference/container-annotations/).
+  An n10s-backed [internal semantic repository](/reference/semantic-repositories/)
+  ships with eleven pre-seeded ontologies so casual users have resolvable
+  IRIs out of the box.
+- **Server-enforced safe-delete on containers.** `DELETE /v2/{kind}-containers/{id}`
+  refuses with 409 + `{referenceCount, sampleDataObjectAppIds}` when the
+  container still has active references; opt in to orphaning with
+  `?force=true`. See [container safe-delete](/reference/container-safe-delete/).
+- **AI anomaly detection** on timeseries references — pure-Java
+  rolling-median MAD, no LLM required. Invoke from the UI or
+  `POST /v2/timeseries-references/{refAppId}/detect-anomalies?createAnnotations=true`.
+- **Curated SQL over HTTP** for bulk timeseries reads
+  (`POST /v2/sql/timeseries`) with row + duration caps and
+  CSV / JSON / NDJSON output.
+- **Per-instance organisation identity** via ROR — admins set the
+  instance's ROR id once; the About → Organization pane fetches live
+  details from ror.org.
+- **Plugin extensibility** — drop `shepard-plugin-*.jar` files into
+  `/deployments/plugins/`, restart; bundled plugins cover Helmholtz
+  Unhide publish, KIP minting, DataCite, S3 file storage, HDF5,
+  Git references, spatial data.
 
 Snapshot date: {{ site.snapshot_date }}.

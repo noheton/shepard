@@ -52,6 +52,27 @@ kinds verified in source today (under
 | Video | `VideoStreamReferenceV2Rest` | MP4/WebM video files + ffprobe metadata, backed by MongoDB GridFS; see [Video stream references](/reference/video-stream-references/) |
 | Collection / DataObject | (cross-references) | Links between entities |
 
+## Basic vs advanced mode
+
+Every user can toggle a personal **Advanced mode** preference (icon in
+the top-right of the app bar). The two modes are about information
+density, not feature gating:
+
+- **Basic** — reduces friction. Hides internal numeric ids in
+  metadata strips, hides operator-flavoured panels (Snapshots,
+  Publishing on Collections; Provenance Graph on DataObjects). Default
+  for fresh accounts.
+- **Advanced** — same content, plus the dev knobs: numeric ids,
+  Snapshots, Publishing (PID / Handle minting), the full Provenance
+  Graph visualisation.
+
+Annotations, descriptions, attributes, references, lab-journal
+entries, and lineage are visible in both modes — they're primary
+research content, not implementation details.
+
+The preference is stored at `/v2/users/me/preferences` so it follows
+the user across browsers.
+
 ## Permissions
 
 Per `backend/src/main/java/de/dlr/shepard/auth/permission/model/Permissions.java`

@@ -225,6 +225,60 @@ RO-Crate manifest. When R2c lands, the notebook needs no changes.
 
 ---
 
+## Bonus stops — fork-only features
+
+The seed also exercises capabilities that don't exist in upstream
+shepard 5.2.0. They're not numbered into the ten-stop tour because
+they're additive, but new visitors should know about them.
+
+### Container annotations
+
+Open `lumen-inspired-sensors` (the timeseries container behind the
+TR-001…TR-007 references). The detail page shows a **Semantic
+Annotations** panel for the container itself — distinct from the
+per-channel annotations and the per-reference annotations. Use it
+to tag the whole container with "campaign = LUMEN-3", "instrument =
+B&K LAN-XI front-end", or any other ontology term. See
+[container annotations (reference)](/reference/container-annotations/).
+
+### Server-enforced safe-delete
+
+Click the trash icon on the same container. The confirm dialog
+shows a yellow warning naming the data objects that reference the
+container (the in-UI client-side check). Behind the scenes the
+frontend calls `DELETE /v2/timeseries-containers/{id}?force=true`;
+external clients hitting that endpoint without `?force=true` get
+a `409 Conflict` with `{referenceCount, sampleDataObjectAppIds}`.
+See [container safe-delete (reference)](/reference/container-safe-delete/).
+
+### Anomaly detection in the UI
+
+Open TR-004's timeseries reference (`tr-004-sensors`). The
+**Anomalies & intervals** section near the bottom of the page has a
+**Run anomaly detection** button. One click invokes the AI1b
+rolling-median MAD detector on the server; the detected intervals
+appear inline as `aiGenerated=true` annotations with confidence
+scores.
+
+### SQL over HTTP
+
+The Git References panel on TR-006 points at
+[`examples/seed-showcase/notebooks/sql-channel-summary.py`](../examples/seed-showcase/notebooks/sql-channel-summary.py).
+The script demonstrates the P10 curated-SQL endpoint
+`POST /v2/sql/timeseries` end-to-end (per-channel min / max / mean /
+stddev over the whole campaign in one request).
+
+### Instance identity (ROR)
+
+Open **About → Organization** in the app bar's overflow menu. The
+demo instance is preseeded with DLR's ROR id (`04bwf3e34`); the page
+fetches live details from ror.org and shows the organisation name,
+location, established date, and primary website. An admin sets the
+ROR id once via `PATCH /v2/admin/instance/ror` and every authenticated
+user can read it through `GET /v2/instance/identity`.
+
+---
+
 ## Where to next
 
 - The seed and its disclaimer:
