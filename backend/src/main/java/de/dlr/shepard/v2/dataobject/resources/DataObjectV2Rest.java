@@ -1,0 +1,329 @@
+package de.dlr.shepard.v2.dataobject.resources;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import de.dlr.shepard.auth.permission.services.PermissionsService;
+import de.dlr.shepard.common.exceptions.InvalidBodyException;
+import de.dlr.shepard.common.identifier.EntityIdResolver;
+import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.collection.io.DataObjectIO;
+import de.dlr.shepard.context.collection.services.DataObjectService;
+import io.quarkus.security.Authenticated;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.Validator;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * L2d Phase A.2 — {@code /v2/collections/{collectionAppId}/data-objects}.
+ * Mirrors {@link de.dlr.shepard.v2.collection.resources.CollectionV2Rest}
+ * for the {@code DataObject} entity. Both shelves hit the same
+ * {@link DataObjectService}; this resource translates {@code appId →
+ * ogmId} at the boundary via {@link EntityIdResolver}.
+ *
+ * <p>Hierarchy follows the v1 shape: {@code DataObject}s live under a
+ * specific {@code Collection}, so list / create are keyed by
+ * {@code collectionAppId}.
+ *
+ * <p><b>Scope (Phase A.2).</b> Core CRUD only: list / get / create /
+ * RFC-7396 merge-patch / delete. Deferred to Phase B:
+ * <ul>
+ *   <li>{@code parentId} / {@code predecessorId} / {@code successorId}
+ *       filters — they exist on v1 as long-id query params; the v2
+ *       shape will take appIds and translate, but the structural
+ *       traversal endpoints (e.g. children, predecessors) are the
+ *       natural home for those lookups and ship together.</li>
+ *   <li>{@code versionUID} query parameter — versioned reads land with
+ *       the v2 snapshot work.</li>
+ *   <li>Permissions / roles — covered by a dedicated
+ *       {@code /v2/permissions/{appId}} resource (Phase C).</li>
+ * </ul>
+ *
+ * <p><b>Auth.</b> Read on the parent Collection to list; Read on the
+ * DataObject to get; Write on the DataObject to PATCH or DELETE; Write
+ * on the parent Collection to create. Permissions for an existing
+ * DataObject are inherited from its Collection in shepard's model, so
+ * the gate at the DataObject level is just the inherited check.
+ */
+@Path("/v2/collections/{collectionAppId}/data-objects")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@RequestScoped
+@Authenticated
+@Tag(name = "DataObjects (v2)")
+public class DataObjectV2Rest {
+
+  @Inject
+  DataObjectService dataObjectService;
+
+  @Inject
+  PermissionsService permissionsService;
+
+  @Inject
+  EntityIdResolver entityIdResolver;
+
+  @Inject
+  Validator validator;
+
+  @Inject
+  ObjectMapper objectMapper;
+
+  @GET
+  @Operation(
+    summary = "List DataObjects under a Collection.",
+    description =
+      "Returns a page of DataObjects belonging to the given Collection. " +
+      "Filtering: 'name' query param matches by name substring. " +
+      "Pagination: page=0, size=50 by default (size capped at 200 server-side). " +
+      "Requires Read on the parent Collection."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "DataObject page (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response list(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @QueryParam(Constants.QP_NAME) String name,
+    @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
+    @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @Context SecurityContext sc
+  ) {
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceAccess(collectionOgmId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 200);
+
+    var params = new QueryParamHelper();
+    if (name != null) params = params.withName(name);
+    params = params.withPageAndSize(safePage, safeSize);
+
+    var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
+    var result = new ArrayList<DataObjectIO>(dataObjects.size());
+    for (var d : dataObjects) {
+      result.add(new DataObjectIO(d));
+    }
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{dataObjectAppId}")
+  @Operation(
+    summary = "Get a DataObject by appId.",
+    description = "Returns the DataObject identified by 'dataObjectAppId'. Requires Read permission."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "DataObject found.",
+    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
+  public Response get(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Context SecurityContext sc
+  ) {
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (collectionOgmId == null || dataObjectOgmId == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    Response gate = enforceAccess(dataObjectOgmId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    return Response.ok(new DataObjectIO(d)).build();
+  }
+
+  @POST
+  @Operation(
+    summary = "Create a DataObject under a Collection.",
+    description =
+      "Creates a new DataObject in the given Collection. Body fields: 'name' (required), " +
+      "'description', 'attributes', 'status'. The server mints the 'appId' and returns it in the 201 response."
+  )
+  @APIResponse(
+    responseCode = "201",
+    description = "DataObject created.",
+    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Bad request — body validation failed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the Collection.")
+  @APIResponse(responseCode = "404", description = "No Collection with that appId.")
+  public Response create(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+    ) @Valid DataObjectIO body,
+    @Context SecurityContext sc
+  ) {
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceAccess(collectionOgmId, AccessType.Write, sc);
+    if (gate != null) return gate;
+
+    DataObject created = dataObjectService.createDataObject(collectionOgmId, body);
+    return Response.status(Response.Status.CREATED).entity(new DataObjectIO(created)).build();
+  }
+
+  @PATCH
+  @Path("/{dataObjectAppId}")
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
+  @Operation(
+    summary = "Partially update a DataObject (RFC 7396 JSON Merge Patch).",
+    description =
+      "Applies an RFC 7396 JSON Merge Patch to the DataObject. Fields present in the body replace " +
+      "the corresponding fields on the entity; absent fields are left unchanged; explicit JSON null " +
+      "clears the field. The merged result is Bean-Validated; constraint violations on the final state " +
+      "return 400. Requires Write permission."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "DataObject updated.",
+    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Bad request — body is not a JSON object or validation failed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
+  public Response patch(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @RequestBody(
+      required = true,
+      description = "Partial DataObject (RFC 7396). Every field is optional; absent fields are preserved.",
+      content = @Content(
+        mediaType = Constants.APPLICATION_MERGE_PATCH_JSON,
+        schema = @Schema(implementation = DataObjectIO.class)
+      )
+    ) JsonNode patch,
+    @Context SecurityContext sc
+  ) {
+    if (patch == null || !patch.isObject()) {
+      throw new InvalidBodyException("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
+    }
+
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (collectionOgmId == null || dataObjectOgmId == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    Response gate = enforceAccess(dataObjectOgmId, AccessType.Write, sc);
+    if (gate != null) return gate;
+
+    DataObject existing = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    DataObjectIO merged = new DataObjectIO(existing);
+    try {
+      objectMapper.readerForUpdating(merged).readValue(patch);
+    } catch (JsonProcessingException e) {
+      throw new InvalidBodyException("Invalid JSON Merge Patch body: %s".formatted(e.getOriginalMessage()));
+    } catch (IOException e) {
+      throw new InvalidBodyException("Could not read JSON Merge Patch body: %s".formatted(e.getMessage()));
+    }
+
+    Set<ConstraintViolation<DataObjectIO>> violations = validator.validate(merged);
+    if (!violations.isEmpty()) {
+      throw new ConstraintViolationException(violations);
+    }
+
+    DataObject updated = dataObjectService.updateDataObject(collectionOgmId, dataObjectOgmId, merged);
+    return Response.ok(new DataObjectIO(updated)).build();
+  }
+
+  @DELETE
+  @Path("/{dataObjectAppId}")
+  @Operation(
+    summary = "Delete a DataObject.",
+    description =
+      "Soft-deletes the DataObject identified by 'dataObjectAppId'. " +
+      "Requires Write permission. Idempotent: deleting a non-existent or already-deleted " +
+      "DataObject returns 204."
+  )
+  @APIResponse(responseCode = "204", description = "DataObject deleted (or already gone).")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
+  public Response delete(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Context SecurityContext sc
+  ) {
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (collectionOgmId == null || dataObjectOgmId == null) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    Response gate = enforceAccess(dataObjectOgmId, AccessType.Write, sc);
+    if (gate != null) return gate;
+
+    dataObjectService.deleteDataObject(collectionOgmId, dataObjectOgmId);
+    return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  // ── helpers ───────────────────────────────────────────────────────────────
+
+  private Long resolveOrNull(String appId) {
+    try {
+      return entityIdResolver.resolveLong(appId);
+    } catch (NotFoundException nfe) {
+      return null;
+    }
+  }
+
+  private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
+    String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+    return null;
+  }
+}

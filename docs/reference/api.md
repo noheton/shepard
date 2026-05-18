@@ -52,28 +52,32 @@ operations, each tagged with its own shelf badge.
 
 ### Migrating from `/v1` long ids to `/v2` `appId`s
 
-The same `Collection` is reachable on both shelves:
+`Collection` and `DataObject` are both reachable on the new shelf:
 
-| Operation | Upstream-frozen `/v1` shape | Fork `/v2` shape |
+| Entity | Upstream-frozen `/v1` shape | Fork `/v2` shape |
 |---|---|---|
-| List | `GET /shepard/api/collections?page=0&size=50` | `GET /v2/collections?page=0&size=50` |
-| Get one | `GET /shepard/api/collections/{long-id}` | `GET /v2/collections/{appId}` |
-| Create | `POST /shepard/api/collections` | `POST /v2/collections` |
-| Update (partial) | `PATCH /shepard/api/collections/{long-id}` | `PATCH /v2/collections/{appId}` (RFC 7396 merge-patch) |
-| Delete | `DELETE /shepard/api/collections/{long-id}` | `DELETE /v2/collections/{appId}` |
+| **Collection** list | `GET /shepard/api/collections?page=0&size=50` | `GET /v2/collections?page=0&size=50` |
+| Collection get one | `GET /shepard/api/collections/{long-id}` | `GET /v2/collections/{appId}` |
+| Collection create | `POST /shepard/api/collections` | `POST /v2/collections` |
+| Collection update (partial) | `PATCH /shepard/api/collections/{long-id}` | `PATCH /v2/collections/{appId}` (RFC 7396 merge-patch) |
+| Collection delete | `DELETE /shepard/api/collections/{long-id}` | `DELETE /v2/collections/{appId}` |
+| **DataObject** list | `GET /shepard/api/collections/{long}/dataObjects?page=0&size=50` | `GET /v2/collections/{collectionAppId}/data-objects?page=0&size=50` |
+| DataObject get one | `GET /shepard/api/collections/{long}/dataObjects/{long}` | `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` |
+| DataObject create | `POST /shepard/api/collections/{long}/dataObjects` | `POST /v2/collections/{collectionAppId}/data-objects` |
+| DataObject update (partial) | `PATCH /shepard/api/collections/{long}/dataObjects/{long}` | `PATCH /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` |
+| DataObject delete | `DELETE /shepard/api/collections/{long}/dataObjects/{long}` | `DELETE /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` |
 
-Every `/v1` Collection response already carries the `appId` field
+Every `/v1` response already carries the `appId` field
 (it's on the shared `BasicEntityIO` base class, populated by the
 L2a/L2b chain), so a client mid-migration can pick up the `appId`
 from a `/v1` response and start using the `/v2` shape immediately.
-The two shelves share the same `CollectionService` underneath — the
-`/v2` resource just translates `appId → ogmId` at the boundary via
-the request-scoped `EntityIdResolver`.
+The two shelves share the same services underneath — each `/v2`
+resource translates `appId → ogmId` at the boundary via the
+request-scoped `EntityIdResolver`.
 
-The same `appId` shape is the prerequisite for the v2 versions of
-`DataObject` and the three container kinds (`FileContainer`,
-`TimeseriesContainer`, `StructuredDataContainer`); those land in
-the next phase of L2d (see `aidocs/44`).
+The three container kinds (`FileContainer`, `TimeseriesContainer`,
+`StructuredDataContainer`) follow the same shape in the next slice
+of L2d Phase A (see `aidocs/44`).
 
 ## Choosing a client generator
 
