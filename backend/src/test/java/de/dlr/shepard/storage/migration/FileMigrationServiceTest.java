@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.StorageException;
 import de.dlr.shepard.storage.StorageGetResponse;
 import de.dlr.shepard.storage.StorageLocator;
 import de.dlr.shepard.storage.StoragePutRequest;
@@ -45,14 +46,14 @@ class FileMigrationServiceTest {
     return new FileStorage() {
       @Override public String id() { return id; }
       @Override public boolean isEnabled() { return true; }
-      @Override public StorageLocator put(StoragePutRequest r) throws Exception {
+      @Override public StorageLocator put(StoragePutRequest r) throws StorageException {
         return new StorageLocator(id, r.container() + "/" + r.fileName());
       }
-      @Override public StorageGetResponse get(StorageLocator l) throws Exception {
+      @Override public StorageGetResponse get(StorageLocator l) throws StorageException {
         return new StorageGetResponse(id, "f.bin", null, 3L,
           new ByteArrayInputStream(new byte[]{1, 2, 3}));
       }
-      @Override public void delete(StorageLocator l) throws Exception {}
+      @Override public void delete(StorageLocator l) throws StorageException {}
     };
   }
 

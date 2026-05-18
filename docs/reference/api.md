@@ -27,6 +27,29 @@ unchanged; the per-shelf split (`v1.json`, `v2.json`) is additive and
 exists so each client-generation pipeline can target exactly the
 surface it's best at.
 
+### How shelf membership shows up in the docs
+
+Every operation in the **combined** OpenAPI spec carries an inline
+shelf badge so you don't have to read the URL to know which surface
+you're on:
+
+| Badge | Meaning |
+|---|---|
+| `[v1] …` in the operation summary | Lives on the `/shepard/api/...` upstream-frozen shelf |
+| `[v2] …` in the operation summary | Lives on the `/v2/...` fork-development shelf |
+| `[platform] …` | Server-internal (`/healthz`, `/openapi`, …) — not part of either shelf |
+
+Machine readers (custom doc renderers, the Kiota generator) can branch
+on the `x-shepard-shelf: v1 \| v2 \| platform` vendor extension that
+the same filter writes on every `PathItem`, instead of string-parsing
+the summary.
+
+Endpoints never appear on both shelves — the path prefix is the
+authoritative split. When a feature exists on both (rare: e.g. a
+read-only legacy GET kept identical on `/shepard/api` and republished
+under `/v2/` with a new payload shape), the docs show two separate
+operations, each tagged with its own shelf badge.
+
 ## Choosing a client generator
 
 Three sanctioned paths. The right one depends on what you're calling

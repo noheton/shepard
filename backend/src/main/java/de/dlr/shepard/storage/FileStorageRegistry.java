@@ -96,8 +96,9 @@ public class FileStorageRegistry {
   /** Constructor for CDI. */
   public FileStorageRegistry() {}
 
-  /** Visible for testing. */
-  FileStorageRegistry(String configuredProviderId, Instance<FileStorage> storages) {
+  /** Visible for testing. Public so cross-package tests (e.g. the
+   *  migration suite) can wire stub storages without reflection. */
+  public FileStorageRegistry(String configuredProviderId, Instance<FileStorage> storages) {
     this.configuredProviderId = configuredProviderId;
     this.storages = storages;
     resolve();
