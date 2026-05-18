@@ -37,7 +37,7 @@ to include Jupyter notebooks for inline data analysis."
   shepard users do their analysis in Jupyter; the journal entry
   today says *"see TR-004-analysis.ipynb in the files"* and the
   reader has to download, open Jupyter, find the notebook, and
-  re-execute. The companion `examples/seed-showcase/notebooks/anomaly-analysis.ipynb`
+  re-execute. The companion `examples/lumen-showcase/notebooks/anomaly-analysis.ipynb`
   is exactly this pattern.
 
 ## 2. The "lab journal v2" reassessment

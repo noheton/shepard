@@ -62,7 +62,7 @@ equivalence. TR-004's `vib_fuel_pump` channel carries the vibration
 anomaly: a +6.0 g gaussian spike centred at t = 32.5 s, σ = 0.4 s. TR-006
 is the re-fly with the fix in place; the spike does not appear.
 
-If `examples/seed-showcase/data/generate.py` is present (sibling agent has
+If `examples/lumen-showcase/data/generate.py` is present (sibling agent has
 landed), the importer reads its CSVs from `data/timeseries/TR-NNN.csv`. If
 not, the bundled `_data_fallback.py` regenerates them in-place using the
 same spec. The fallback is by-design bit-identical to the sibling
@@ -80,7 +80,7 @@ pip install shepard-client \
   --index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple
 pip install numpy  # only needed if you use the data fallback
 
-python examples/seed-showcase/import_upstream.py \
+python examples/lumen-showcase/import_upstream.py \
   --host http://localhost:8081/shepard/api \
   --apikey "$SHEPARD_APIKEY"
 ```
@@ -88,7 +88,7 @@ python examples/seed-showcase/import_upstream.py \
 ### 2. Against a remote upstream instance
 
 ```sh
-python examples/seed-showcase/import_upstream.py \
+python examples/lumen-showcase/import_upstream.py \
   --host https://shepard.example.org/shepard/api \
   --apikey "$SHEPARD_APIKEY"
 ```
@@ -96,7 +96,7 @@ python examples/seed-showcase/import_upstream.py \
 ### 3. Wipe-and-re-seed
 
 ```sh
-python examples/seed-showcase/import_upstream.py \
+python examples/lumen-showcase/import_upstream.py \
   --host http://localhost:8081/shepard/api \
   --apikey "$SHEPARD_APIKEY" \
   --reset

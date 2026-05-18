@@ -11,12 +11,12 @@ description: Ten-stop tour of shepard's feature surface against a synthetic LUME
 > [LUMEN](https://www.dlr.de/en/ra/research-transfer/projects/project-archive/liquid-upper-stage-demonstrator-engine-lumen)
 > demonstrator at Lampoldshausen, but contains no real DLR or LUMEN
 > measurements. Numerical values are deterministic outputs of
-> `examples/seed-showcase/data/generate.py` (`numpy.random.default_rng(2024)`).
+> `examples/lumen-showcase/data/generate.py` (`numpy.random.default_rng(2024)`).
 
 This page is a ten-stop tour of shepard's feature surface against the
 seeded `LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic)`
 Collection. The seed lives at
-[`examples/seed-showcase/`](../examples/seed-showcase/) and each stop
+[`examples/lumen-showcase/`](../examples/lumen-showcase/) and each stop
 links to the matching Python snippet a reader can paste into a REPL or
 Jupyter cell.
 
@@ -263,7 +263,7 @@ scores.
 ### SQL over HTTP
 
 The Git References panel on TR-006 points at
-[`examples/seed-showcase/notebooks/sql-channel-summary.py`](../examples/seed-showcase/notebooks/sql-channel-summary.py).
+[`examples/lumen-showcase/notebooks/sql-channel-summary.py`](../examples/lumen-showcase/notebooks/sql-channel-summary.py).
 The script demonstrates the P10 curated-SQL endpoint
 `POST /v2/sql/timeseries` end-to-end (per-channel min / max / mean /
 stddev over the whole campaign in one request).
@@ -282,9 +282,9 @@ user can read it through `GET /v2/instance/identity`.
 ## Where to next
 
 - The seed and its disclaimer:
-  [`examples/seed-showcase/README.md`](../examples/seed-showcase/README.md).
+  [`examples/lumen-showcase/README.md`](../examples/lumen-showcase/README.md).
 - The deeper-analysis hook (anomaly walkthrough, MAD detector, export
   body):
-  [`examples/seed-showcase/notebooks/anomaly-analysis.ipynb`](../examples/seed-showcase/notebooks/anomaly-analysis.ipynb).
+  [`examples/lumen-showcase/notebooks/anomaly-analysis.ipynb`](../examples/lumen-showcase/notebooks/anomaly-analysis.ipynb).
 - The deterministic generator:
-  [`examples/seed-showcase/data/generate.py`](../examples/seed-showcase/data/generate.py).
+  [`examples/lumen-showcase/data/generate.py`](../examples/lumen-showcase/data/generate.py).

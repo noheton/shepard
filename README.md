@@ -45,7 +45,7 @@ Source under `docs/`; built and deployed by `.github/workflows/pages.yml` on pus
 A fully-seeded demo is running at **<https://shepard.nuclide.systems>**. 
 
 The instance is pre-loaded with the LUMEN-inspired hot-fire test campaign
-(`examples/seed-showcase/seed.py`) — 15 synthetic engine test runs with 25
+(`examples/lumen-showcase/seed.py`) — 15 synthetic engine test runs with 25
 timeseries channels each, file references, lab journal entries, semantic
 annotations, and git references. Explore it without setting up anything:
 
@@ -62,7 +62,7 @@ Swagger UI at <https://shepard-api.nuclide.systems/shepard/api/q/swagger-ui>.
 
 > The demo data is **synthetic** — it is loosely inspired by the DLR LUMEN
 > demonstrator at Lampoldshausen but contains no real measurement data.
-> See `examples/seed-showcase/seed.py` for the generation logic.
+> See `examples/lumen-showcase/seed.py` for the generation logic.
 
 ## Quick test / evaluation setup
 

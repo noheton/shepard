@@ -187,14 +187,14 @@ invoked by a separate seeder service (same shape as the LUMEN seeder).
 ## 6. Renames before this lands
 
 User direction 2026-05-18:
-- `examples/seed-showcase/` → `examples/lumen-showcase/`
+- `examples/lumen-showcase/` → `examples/lumen-showcase/`
 - new `examples/home-showcase/`
 - separate `examples/instance-seed/` for the bits shared by both
   data seeds (ROR preseed, ontology config, templates, …)
 
 Lands in three commits:
 
-1. **rename**: pure `git mv` of `seed-showcase/` → `lumen-showcase/`,
+1. **rename**: pure `git mv` of `lumen-showcase/` → `lumen-showcase/`,
    update `infrastructure/docker-compose.override.yml` `seeder` service
    to point at the new path. Zero behaviour change.
 2. **extract instance seed**: lift the instance-level helpers

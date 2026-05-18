@@ -1073,7 +1073,7 @@ def best_effort_git_references(
     best-effort helpers.
 
     The "demo data" the user asked to link is this repository's own
-    examples/seed-showcase/notebooks/ folder, which contains the
+    examples/lumen-showcase/notebooks/ folder, which contains the
     anomaly-analysis notebook + (when added) the SQL channel summary
     script. The repo URL points at noheton/shepard — replace with your
     fork's URL when forking this seed."""
@@ -1439,19 +1439,19 @@ def main(argv: list[str] | None = None) -> int:
     best_effort_ror_preseed(apis)
 
     # Git references — link the LUMEN run data objects to the analysis
-    # scripts in this repo's examples/seed-showcase/notebooks/ folder, so
+    # scripts in this repo's examples/lumen-showcase/notebooks/ folder, so
     # users see how external code consumes shepard data.
     GIT_DEMO_REPO = "https://github.com/noheton/shepard"
     GIT_DEMO_REF = "main"
     best_effort_git_references(apis, [
         (runs[ANOMALY_RUN], GIT_DEMO_REPO,
-         "examples/seed-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
+         "examples/lumen-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
         (investigation, GIT_DEMO_REPO,
-         "examples/seed-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
+         "examples/lumen-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
         # SQL summary showcase — uses /v2/sql/timeseries (P10) to compute
         # per-channel min/max/mean/stddev across the campaign.
         (runs[6], GIT_DEMO_REPO,
-         "examples/seed-showcase/notebooks/sql-channel-summary.py", GIT_DEMO_REF),
+         "examples/lumen-showcase/notebooks/sql-channel-summary.py", GIT_DEMO_REF),
     ])
 
     # Versions + api keys (best-effort).

@@ -313,7 +313,7 @@ Five typical entry points:
    user profile**.
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
-   The `examples/seed-showcase/notebooks/` are the canonical
+   The `examples/lumen-showcase/notebooks/` are the canonical
    pattern.
 3. **`h5pyd` against shepard's HSDS sidecar** *(post-A5)*. Existing
    `h5py.File(...)` analysis code keeps working — just point at
@@ -552,7 +552,7 @@ has a low-friction path (see `aidocs/34`).
   `<host>/shepard/doc/openapi.json`; generated clients on
   `gitlab.com/groups/dlr-shepard/-/packages`.
 - **Showcase walk** ("show me a real example") →
-  `examples/seed-showcase/` + `examples/seed-showcase/notebooks/anomaly-analysis.ipynb`.
+  `examples/lumen-showcase/` + `examples/lumen-showcase/notebooks/anomaly-analysis.ipynb`.
 - **Per-feature design** → the `aidocs/00-index.md` table of
   contents; each row's link is a self-contained design note.
 - **What's coming** → `aidocs/16-dispatcher-backlog.md` (the live

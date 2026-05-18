@@ -28,7 +28,7 @@ suggestions for improvement of shepard-timeseries-collector."
 | **`dlr-shepard-clients/typescript`** | Generated TS client | TypeScript | OpenAPI-generated | Same as above. |
 | **`dlr-shepard-clients/java`** | Generated Java client | Java | OpenAPI-generated | Same as above. |
 | **`dlr-shepard-frontend`** | Standalone frontend repo (the Nuxt 3 app) | Vue 3 / Vuetify 3 | shepard REST | Per `aidocs/33` review. |
-| **(future)** companion notebooks / examples (`examples/seed-showcase/notebooks/`) | Tutorial / showcase notebooks | Python | shepard-client | Lives in this repo as part of the showcase seed (`examples/seed-showcase/`). |
+| **(future)** companion notebooks / examples (`examples/lumen-showcase/notebooks/`) | Tutorial / showcase notebooks | Python | shepard-client | Lives in this repo as part of the showcase seed (`examples/lumen-showcase/`). |
 
 The fork-vs-upstream rule from `CLAUDE.md` applies across every
 boundary: **the upstream OpenAPI surface stays frozen** so existing
@@ -161,7 +161,7 @@ Ranked by leverage × likely-easy-to-ship:
 | **i3** | **Health endpoint compatible with shepard A1b** | sTC reporting `/healthz` with the same shape shepard backend uses (per `aidocs/16` row A1b) lets a single dashboard cover both. | New health endpoint |
 | **i4** | **Stable `containerAppId` lookup post-L2c** | When shepard's L2c lands and timeseries containers are addressed by `appId`, sTC's container-resolution path should switch to `appId`. Lock-step migration. | shepard sink, container provisioning |
 | **i5** | **Per-source rate limiting / backpressure** | A flapping OPC/UA source can saturate the event bus. Token-bucket per source, configurable in YAML. | Internal event bus |
-| **i6** | **Schema-aware sources** — emit per-channel metadata (unit, range, hysteresis) into shepard `Attribute` writes | shepard's attributes store this today but sTC sends only raw timeseries. Enriches search and the showcase-style channel inventory (per `examples/seed-showcase`). | All sources + sink |
+| **i6** | **Schema-aware sources** — emit per-channel metadata (unit, range, hysteresis) into shepard `Attribute` writes | shepard's attributes store this today but sTC sends only raw timeseries. Enriches search and the showcase-style channel inventory (per `examples/lumen-showcase`). | All sources + sink |
 | **i7** | **Java 21 LTS instead of Java 25** | Java 25 is non-LTS as of 2025-09. Many DLR deploy targets pin to LTS. Compile-target downgrade to Java 21 if no Java-25-only features used. | `pom.xml` / `build.gradle` |
 | **i8** | **MQTT 5 support** | sTC's MQTT source likely targets MQTT 3.1.1; 5 adds shared subscriptions, message expiry, and reason codes useful for telemetry triage. | MQTT source |
 | **i9** | **Modbus + REST sources** | Common in industrial test rigs; would broaden adoption beyond OPC/UA shops. | New source modules |

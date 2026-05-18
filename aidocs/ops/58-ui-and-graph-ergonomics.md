@@ -395,7 +395,7 @@ requirement.
 | ID | Slice | Size | Gate |
 |---|---|---|---|
 | **ONT1a** | Download + SHA-256 pin + bundled `obo-relations.owl` + import-on-startup hook (extends `aidocs/48` N1b). | S | N1a (`aidocs/48`) |
-| **ONT1b** | Showcase seed (`examples/seed-showcase/`) uses RO terms — `prov:wasGeneratedBy` + `ro:derives_from` for the bearing-replaced re-test edge in the LUMEN process-graph. | S | ONT1a |
+| **ONT1b** | Showcase seed (`examples/lumen-showcase/`) uses RO terms — `prov:wasGeneratedBy` + `ro:derives_from` for the bearing-replaced re-test edge in the LUMEN process-graph. | S | ONT1a |
 | **ONT1c** | Frontend ontology-picker dropdown surfaces RO terms by default in the annotation flow (couples to N1e). | S | ONT1a + N1e |
 
 **Note.** This could ship as a single slice in a `aidocs/48 §6`

@@ -432,7 +432,7 @@ Each row has a recommended default.
    for v1; Markdown wrapper deferred to T1g. **Owner:** maintainer
    signoff before T1b dispatch.
 2. **Default-template-bundle in the showcase seed.** Should
-   `examples/seed-showcase/seed.py` mint LUMEN-style starter
+   `examples/lumen-showcase/seed.py` mint LUMEN-style starter
    templates (`hot-fire-run-recipe`, `calibration-run-recipe`,
    `post-run-debrief-recipe`)? Recommend **yes** — same casual-user
    payoff as the showcase Collection.

@@ -122,6 +122,61 @@ services:
   # TLS is terminated upstream by Zoraxy.
   # No SSL certs needed; Caddyfile uses auto_https off.
 
+  # ── home-showcase (HOME1) — MQTT collector for live HA telemetry ──
+  #
+  # Two services, both gated behind the `home-showcase` compose profile so
+  # the default `docker compose up` doesn't spin them up.
+  #
+  # home-showcase-seeder: one-shot provisioning. Creates the Collection +
+  #   3 TimeseriesContainers + DataObjects + References. Idempotent.
+  # home-showcase-collector: long-lived MQTT subscriber. Streams zigbee2mqtt
+  #   readings into the seeded containers.
+  #
+  # Bring up: docker compose --profile home-showcase up -d
+  home-showcase-seeder:
+    image: python:3.12-slim
+    profiles: ["home-showcase"]
+    environment:
+      BACKEND_URL: "http://backend:8080/shepard/api"
+      SHEPARD_API_KEY: "${SHEPARD_API_KEY:?set SHEPARD_API_KEY in your shell or .env}"
+      HOME_SHOWCASE_LOOKUP_PATH: "/opt/home-showcase/seeded.json"
+    volumes:
+      - ../examples/home-showcase:/seed:ro
+      - home-showcase-state:/opt/home-showcase
+    depends_on:
+      backend:
+        condition: service_healthy
+    command: bash -c "pip install shepard-client && python /seed/seed.py"
+    networks:
+      - shepard
+    restart: "no"
+
+  home-showcase-collector:
+    image: python:3.12-slim
+    profiles: ["home-showcase"]
+    environment:
+      MQTT_HOST: "${MQTT_HOST:?set MQTT_HOST in .env}"
+      MQTT_PORT: "${MQTT_PORT:-1883}"
+      MQTT_USER: "${MQTT_USER:?set MQTT_USER in .env}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD:?set MQTT_PASSWORD in .env}"
+      MQTT_TLS: "${MQTT_TLS:-0}"
+      MQTT_TLS_VERIFY: "${MQTT_TLS_VERIFY:-0}"
+      SHEPARD_API: "http://backend:8080/shepard/api"
+      SHEPARD_API_KEY: "${SHEPARD_API_KEY:?set SHEPARD_API_KEY in .env}"
+      BATCH_INTERVAL_SEC: "${BATCH_INTERVAL_SEC:-30}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      HOME_SHOWCASE_LOOKUP_PATH: "/opt/home-showcase/seeded.json"
+    volumes:
+      - ../examples/home-showcase:/collector:ro
+      - home-showcase-state:/opt/home-showcase:ro
+    depends_on:
+      home-showcase-seeder:
+        condition: service_completed_successfully
+    command: bash -c "pip install paho-mqtt shepard-client && python /collector/collector.py"
+    networks:
+      - shepard
+    restart: unless-stopped
+
   # One-shot demo seeder — runs once after backend is healthy, then exits.
   # Installs numpy + shepard-client, bootstraps admin, and runs seed.py.
   seeder:
@@ -139,7 +194,7 @@ services:
       BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap:ro
-      - ../examples/seed-showcase:/seed
+      - ../examples/lumen-showcase:/seed
     command: bash -c "apt-get update -qq && apt-get install -y -qq curl && /seed/entrypoint.sh"
     networks:
       - shepard
@@ -148,3 +203,4 @@ services:
 volumes:
   keycloak-data:
   bootstrap-token:
+  home-showcase-state:

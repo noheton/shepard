@@ -1,7 +1,7 @@
 """Deterministic synthetic data generator for the LUMEN-inspired showcase.
 
 This is a *fallback* for when the sibling LUMEN agent's
-``examples/seed-showcase/data/generate.py`` has not yet been committed.
+``examples/lumen-showcase/data/generate.py`` has not yet been committed.
 The two generators MUST produce bit-for-bit identical CSVs because both
 ``seed.py`` (dispatcher branch) and ``import_upstream.py`` (this script)
 need to import the same Collection contents into shepard.

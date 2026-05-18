@@ -43,7 +43,7 @@ both writes duplicate annotations and lab-journal entries).
 ## What it ships
 
 ```
-examples/seed-showcase/
+examples/lumen-showcase/
 ├── README.md                 # this file (operator instructions for seed.py)
 ├── README-upstream.md        # operator instructions for import_upstream.py
 ├── seed.py                   # idempotent dispatcher-branch importer
@@ -137,7 +137,7 @@ summary so a re-generation can be diffed.
 ```
 docker compose -f infrastructure/docker-compose.yml up -d
 # Provision an API key via the UI, then:
-python examples/seed-showcase/seed.py \
+python examples/lumen-showcase/seed.py \
     --host http://localhost:8080/shepard/api \
     --apikey <your-key>
 ```
@@ -145,7 +145,7 @@ python examples/seed-showcase/seed.py \
 To wipe and re-seed:
 
 ```
-python examples/seed-showcase/seed.py --host ... --apikey ... --reset
+python examples/lumen-showcase/seed.py --host ... --apikey ... --reset
 ```
 
 ## Two-pass workflow (anomaly close)
@@ -157,7 +157,7 @@ to set a deterministic ISO timestamp; this matches the v2 export the
 notebook walks through.
 
 ```
-python examples/seed-showcase/seed.py --host ... --apikey ... --close-anomaly
+python examples/lumen-showcase/seed.py --host ... --apikey ... --close-anomaly
 ```
 
 ## Output
@@ -177,7 +177,7 @@ produce only `SKIP` lines (idempotent).
 
 ```
 $ python data/generate.py
-OK generated 7 runs into .../examples/seed-showcase/data
+OK generated 7 runs into .../examples/lumen-showcase/data
 OK anomaly: TR-004 vib_fuel_pump peak 12.669 g rms at t=7.85 s (rng_seed=2024)
 ```
 

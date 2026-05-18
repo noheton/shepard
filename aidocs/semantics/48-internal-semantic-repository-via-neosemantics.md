@@ -208,7 +208,7 @@ and re-imports only when the bundled Turtle's SHA-256 differs.
 
 ## 5. LUMEN demo integration
 
-The LUMEN-inspired showcase seed (`examples/seed-showcase/`)
+The LUMEN-inspired showcase seed (`examples/lumen-showcase/`)
 currently uses **placeholder IRIs** under
 `https://shepard.dlr.de/showcase/lumen-inspired#` for phase-of-burn
 annotations and the `dlr:vibration-anomaly` marker. This works for
@@ -226,7 +226,7 @@ IRIs** drawn from the pre-seeded set:
 | `dlr:campaign` | `http://www.w3.org/ns/prov#Activity` | PROV-O |
 | Channel-quality `dlr:severity=HIGH` | `http://www.w3.org/2006/time#Instant` for the anomaly timestamp + custom SKOS scheme for severity (ships as a small `lumen-severity.ttl` in the seed) | W3C Time + bespoke SKOS |
 
-The seed gains a new **`examples/seed-showcase/data/ontologies/`**
+The seed gains a new **`examples/lumen-showcase/data/ontologies/`**
 directory containing:
 
 - `lumen-phases.ttl` — the seven phase-of-burn IRIs declared as a
@@ -382,5 +382,5 @@ the casual-user UX loop.
   (new `WHERE NOT n:Resource` filter).
 - **Backlog:** new **N1** umbrella + N1a-N1g sub-IDs in
   `aidocs/16`.
-- **Showcase:** `examples/seed-showcase/data/ontologies/`,
+- **Showcase:** `examples/lumen-showcase/data/ontologies/`,
   `seed.py`, `import_upstream.py`, `anomaly-analysis.ipynb`.

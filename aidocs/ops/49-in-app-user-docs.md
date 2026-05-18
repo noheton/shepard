@@ -209,7 +209,7 @@ the stack down. The spec:
 1. Authenticates with a bootstrap-minted API key created against
    the freshly-booted stack.
 2. Navigates the LUMEN showcase Collection (loaded via the seed
-   per `examples/seed-showcase/seed.py`).
+   per `examples/lumen-showcase/seed.py`).
 3. Captures one screenshot per `data-target="<id>"` marker in the
    `docs/` Markdown source.
 4. Saves PNGs to `docs/assets/screenshots/<id>.png`.
@@ -289,7 +289,7 @@ jobs:
           docker compose -f infrastructure/docker-compose.yml up -d
           ./infrastructure/wait-for-healthz.sh   # polls /shepard/api/healthz
       - name: Seed LUMEN showcase
-        run: python examples/seed-showcase/seed.py
+        run: python examples/lumen-showcase/seed.py
       - name: Mint screenshot-pipeline API key
         run: ./infrastructure/mint-bootstrap-apikey.sh   # uses A0 bootstrap-token
       - name: Install Playwright

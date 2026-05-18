@@ -281,7 +281,7 @@ def load_data_generator(data_dir: Path):
     """Return a callable (run_id) -> list[dict] for the timeseries CSVs.
 
     Order of preference:
-      1. Sibling agent's ``examples/seed-showcase/data/generate.py`` if it
+      1. Sibling agent's ``examples/lumen-showcase/data/generate.py`` if it
          exposes ``read_csv`` / ``generate``. (Single source of truth.)
       2. On-disk CSVs at ``data/timeseries/TR-NNN.csv``. (Sibling already
          materialised them; we just read.)

@@ -54,7 +54,7 @@ Ranked by leverage × shippability with current shepard primitives.
 
 ### 3.1 Anomaly detection on timeseries
 
-**Existing pattern.** `examples/seed-showcase/notebooks/anomaly-analysis.ipynb`
+**Existing pattern.** `examples/lumen-showcase/notebooks/anomaly-analysis.ipynb`
 implements a rolling-median ± k·MAD detector by hand. Generalising
 this into a service that any user can invoke against any
 `TimeseriesReference` is a straightforward extraction.
