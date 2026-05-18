@@ -22,6 +22,9 @@ import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.spi.payload.PayloadKind;
+import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
+import de.dlr.shepard.v2.admin.sqltimeseries.entities.SqlTimeseriesConfig;
+import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
 import de.dlr.shepard.v2.watches.entities.Watch;
 import io.quarkus.logging.Log;
@@ -107,6 +110,15 @@ public class NeoConnector implements IConnector {
           TimeseriesContainerChartView.class.getPackageName(),
           // WATCH1 — Collection -> Container watch links
           Watch.class.getPackageName(),
+          // ROR1 — instance-level Research Organization Registry config singleton.
+          // Without this register call the OGM session can't load
+          // :InstanceRorConfig nodes and admin PATCH calls 500 with
+          // "Unable to find database label for entity ...InstanceRorConfig".
+          InstanceRorConfig.class.getPackageName(),
+          // SQL timeseries admin config (parallel to ROR1).
+          SqlTimeseriesConfig.class.getPackageName(),
+          // /v2/timeseries-references annotation entity.
+          TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
           Version.class.getPackageName()

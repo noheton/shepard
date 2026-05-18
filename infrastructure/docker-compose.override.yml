@@ -137,8 +137,11 @@ services:
   #
   # Bring up: docker compose --profile home-showcase up -d
   home-showcase-seeder:
+    # No profile gate — every deploy seeds the home Collection metadata so
+    # the page exists for visitors even when the live MQTT collector is
+    # off. The collector itself stays profile-gated below (it needs MQTT
+    # creds the seeder doesn't).
     image: python:3.12-slim
-    profiles: ["home-showcase"]
     environment:
       # API key minted internally via entrypoint.sh against Keycloak admin —
       # no SHEPARD_API_KEY needs to be set by the deployer.
@@ -152,10 +155,15 @@ services:
     volumes:
       - ../examples/home-showcase:/home-showcase:ro
       - home-showcase-state:/opt/home-showcase
+      - seeder-logs:/var/log/shepard-seed
     depends_on:
       backend:
         condition: service_healthy
-    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && bash /home-showcase/entrypoint.sh"
+    # The tee captures every byte of seeder stdout/stderr to a timestamped
+    # file under /var/log/shepard-seed so the audit trail of "did the
+    # demo seed yesterday" survives a container recycle (compose's
+    # docker logs only persists until the next force-recreate).
+    command: bash -o pipefail -c "apt-get update -qq && apt-get install -y -qq curl && mkdir -p /var/log/shepard-seed && bash /home-showcase/entrypoint.sh 2>&1 | tee -a /var/log/shepard-seed/home-showcase-$(date +%Y%m%dT%H%M%SZ).log"
     networks:
       - shepard
     restart: "no"
@@ -212,7 +220,12 @@ services:
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap:ro
       - ../examples/lumen-showcase:/seed
-    command: bash -c "apt-get update -qq && apt-get install -y -qq curl && /seed/entrypoint.sh"
+      - seeder-logs:/var/log/shepard-seed
+    # See home-showcase-seeder above for the tee-to-file rationale.
+    # set -o pipefail so the entrypoint's exit code survives the tee — otherwise
+    # tee always exits 0 and we'd lose seed-failure signals at the container
+    # exit code level. With pipefail, container exit code reflects the seed.
+    command: bash -o pipefail -c "apt-get update -qq && apt-get install -y -qq curl && mkdir -p /var/log/shepard-seed && /seed/entrypoint.sh 2>&1 | tee -a /var/log/shepard-seed/lumen-showcase-$(date +%Y%m%dT%H%M%SZ).log"
     networks:
       - shepard
     restart: "no"
@@ -221,3 +234,7 @@ volumes:
   keycloak-data:
   bootstrap-token:
   home-showcase-state:
+  # seeder-logs persists timestamped per-run logs of both demo seeders
+  # so an operator can answer "did yesterday's seed land?" without
+  # depending on docker logs (which clears on container recreate).
+  seeder-logs:

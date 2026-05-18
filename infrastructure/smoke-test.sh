@@ -211,6 +211,41 @@ check "DELETE /v2/collections/0/watched-containers/0 (no auth → 401)" \
       "401,403" "" DELETE
 
 echo ""
+echo "Demo seed success check"
+# Read the actual exit code of each seeder container from this deploy.
+# 'exited (0)' = clean run; non-zero = failure; 'missing' = didn't run at
+# all (e.g. profile-gated when it shouldn't be). Logs persist at
+# /var/log/shepard-seed/ inside the seeder-logs volume.
+seed_state() {
+  local name="$1"
+  local label="$2"
+  local state code
+  state=$(docker inspect -f '{{.State.Status}}' "$name" 2>/dev/null || echo "missing")
+  code=$(docker inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo "?")
+  if [ "$state" = "missing" ]; then
+    echo "  ✗ $label seeder container not found (didn't run this deploy?)"
+    FAIL=$((FAIL+1))
+    FAILED+=("$label seeder missing")
+    return
+  fi
+  if [ "$state" = "running" ]; then
+    echo "  … $label seeder still running (state=$state) — re-run smoke after it finishes"
+    PASS=$((PASS+1))
+    return
+  fi
+  if [ "$state" = "exited" ] && [ "$code" = "0" ]; then
+    echo "  ✓ $label seeder exited 0"
+    PASS=$((PASS+1))
+  else
+    echo "  ✗ $label seeder exited with code=$code state=$state — check /var/log/shepard-seed/${label}-*.log"
+    FAIL=$((FAIL+1))
+    FAILED+=("$label seeder exit=$code state=$state")
+  fi
+}
+seed_state infrastructure-seeder-1               lumen-showcase
+seed_state infrastructure-home-showcase-seeder-1 home-showcase
+
+echo ""
 echo "──────────────────────────────────────────────"
 echo "PASS: $PASS    FAIL: $FAIL"
 if [ "$FAIL" -gt 0 ]; then

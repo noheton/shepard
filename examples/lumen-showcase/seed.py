@@ -210,11 +210,24 @@ def _ensure_public(api, get_perms_fn, set_perms_fn, entity_id: int) -> None:
     The seed's three logical roles (campaign_lead / analyst / reviewer)
     are documented in the README and surfaced via the two API keys created
     at the end of the seed; group-based RBAC requires an admin and is left
-    as the operator's responsibility."""
-    perms: Permissions = get_perms_fn(entity_id)
+    as the operator's responsibility.
+
+    Soft-fail on 403: an entity created by a different admin user in a
+    prior seed run leaves the seeder without MANAGE rights to read the
+    permissions object. The entity is still usable by the original
+    owner; we just can't flip its permission-type to PUBLIC. Log + skip
+    rather than crash the whole seed."""
+    try:
+        perms: Permissions = get_perms_fn(entity_id)
+    except Exception as e:
+        _log("SKIP", f"ensure-public (entity_id={entity_id})", f"403 — stale ownership? ({str(e)[:60]})")
+        return
     if perms.permission_type != PermissionType.PUBLIC:
-        perms.permission_type = PermissionType.PUBLIC
-        set_perms_fn(entity_id, perms)
+        try:
+            perms.permission_type = PermissionType.PUBLIC
+            set_perms_fn(entity_id, perms)
+        except Exception as e:
+            _log("SKIP", f"set-public (entity_id={entity_id})", f"403 — ({str(e)[:60]})")
 
 
 # ---------------------------------------------------------------------------
@@ -962,8 +975,15 @@ def best_effort_ror_preseed(apis: Apis) -> None:
         v2_base = v2_base[: -len("/shepard/api/")]
 
     url = f"{v2_base}/v2/admin/instance/ror"
+    # Backend's API-key filter requires the X-API-KEY header (case-sensitive)
+    # for /v2/ admin endpoints — the upstream-client's lowercase `apikey`
+    # configuration works for the /shepard/api/... surface (which the rest
+    # of this seeder uses) but not here. Send both so the filter picks
+    # whichever it's configured to accept.
+    api_key = apis.client.configuration.api_key.get("apikey", "")
     headers = {
-        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "X-API-KEY": api_key,
+        "apikey": api_key,
         # The endpoint declares @Consumes(MediaType.APPLICATION_JSON) — RFC 7396
         # semantics are observed in the resource code, but the wire content-type
         # is plain application/json.
@@ -1403,12 +1423,26 @@ def main(argv: list[str] | None = None) -> int:
     if args.reset:
         reset(apis)
 
+    # Instance identity preseed — run FIRST, before anything that can crash.
+    # The :InstanceRorConfig PATCH is independent of every other seed step
+    # and we want the About → Organization pane populated even when later
+    # steps blow up (e.g. an existing file container with stale perms).
+    best_effort_ror_preseed(apis)
+
     coll = ensure_collection(apis)
     runs = ensure_run_data_objects(apis, coll)
     investigation = ensure_anomaly_investigation(apis, coll, runs, close_anomaly=args.close_anomaly)
 
     tsc = ensure_timeseries_container(apis, "lumen-inspired-sensors")
-    fc = ensure_file_container(apis, "lumen-inspired-artifacts")
+    try:
+        fc = ensure_file_container(apis, "lumen-inspired-artifacts")
+    except Exception as e:
+        # A stale file container left over from an earlier seed run with a
+        # different admin user can 403 the permissions probe inside
+        # _ensure_public. Don't let it kill the whole seed — every other
+        # step (lab journals, ROR, templates, git refs) is independent.
+        print(f"warn: file container ensure failed ({str(e)[:120]}); skipping file uploads.", file=sys.stderr)
+        fc = None
     sc = ensure_structured_container(apis, "lumen-inspired-runlogs")
 
     try:
@@ -1420,7 +1454,8 @@ def main(argv: list[str] | None = None) -> int:
     for n in range(1, N_RUNS + 1):
         run_do = runs[n]
         tsr = upload_run_timeseries(apis, coll, run_do, tsc, args.data_dir, n)
-        upload_run_files(apis, coll, run_do, fc, args.data_dir, n)
+        if fc is not None:
+            upload_run_files(apis, coll, run_do, fc, args.data_dir, n)
         upload_run_structured(apis, coll, run_do, sc, args.data_dir, n)
         if repo is not None:
             annotate_phase_boundaries(apis, coll, run_do, tsr, repo, is_anomaly_run=(n == ANOMALY_RUN))
@@ -1434,9 +1469,8 @@ def main(argv: list[str] | None = None) -> int:
     best_effort_publications(apis, coll, sc)
     best_effort_template(apis)
 
-    # Instance identity preseed — sets DLR as the running organisation
-    # so the About → Organization pane shows live ror.org data.
-    best_effort_ror_preseed(apis)
+    # ROR preseed already ran at top of main() so it lands even if a
+    # later step crashes — no need to repeat here.
 
     # Git references — link the LUMEN run data objects to the analysis
     # scripts in this repo's examples/lumen-showcase/notebooks/ folder, so
