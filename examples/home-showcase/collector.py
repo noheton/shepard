@@ -101,6 +101,21 @@ def _room_of(friendly_name: str) -> str:
     return re.sub(r"[^A-Za-zÀ-ſ]", "", head) or "unknown"
 
 
+# Backend validates 5-tuple key segments against a banlist that rejects
+# spaces, commas, and a few other delimiters. Map disallowed chars to "_"
+# so zigbee2mqtt friendly names like "Wohnzimmer Rolladen" round-trip.
+_FORBIDDEN_IN_KEY = re.compile(r"[\s,.;:'\"|/\\=\?\&#@<>]")
+
+
+def _sanitize_key_segment(s: str) -> str:
+    if not s:
+        return "_"
+    s = _FORBIDDEN_IN_KEY.sub("_", s)
+    # Collapse repeated underscores so "  " doesn't become "__"
+    s = re.sub(r"_+", "_", s).strip("_")
+    return s or "_"
+
+
 def _ieee_address(payload: dict) -> Optional[str]:
     """zigbee2mqtt friendly_name → ieee_address. Some payloads include it;
     others don't. Falls back to the friendly_name slug."""
@@ -188,11 +203,11 @@ def on_message(client, state: CollectorState, msg):
         if not container_name:
             continue
         channel = (
-            cls,         # measurement
-            friendly,    # device
-            location,    # location
-            ieee,        # symbolicName
-            "value",     # field
+            _sanitize_key_segment(cls),       # measurement
+            _sanitize_key_segment(friendly),  # device — friendly names contain spaces, sanitise
+            _sanitize_key_segment(location),  # location
+            _sanitize_key_segment(ieee),      # symbolicName
+            "value",                          # field
         )
         state.add(container_name, channel, {"timestamp": ts_ns, "value": float(value)})
 
@@ -202,10 +217,19 @@ def on_message(client, state: CollectorState, msg):
 
 def flush_loop(
     state: CollectorState,
-    ts_api,
-    TimeseriesDataPoint,
+    ts_api,  # unused — kept for backwards compatibility
+    TimeseriesDataPoint,  # unused
     stop_event: threading.Event,
+    shepard_api: str,
+    api_key: str,
 ) -> None:
+    """Direct urllib POST to /timeseriesContainers/{id}/payload — bypasses
+    the upstream client's `cfg.api_key["apikey"]` mapping which on this
+    deploy was producing a header the backend rejected. Backend expects
+    `X-API-KEY` exactly; sending that explicitly works."""
+    import urllib.request
+    import urllib.error
+
     while not stop_event.wait(BATCH_INTERVAL_SEC):
         batches = state.drain()
         if not batches:
@@ -216,49 +240,49 @@ def flush_loop(
                 log.warning("No container id for %s — dropping %d points",
                             container_name, len(items))
                 continue
-            # Group points by channel — the upstream API expects a list of
-            # Timeseries blocks each carrying its own data_points.
             grouped: dict[tuple, list] = defaultdict(list)
             for (channel, point) in items:
                 grouped[channel].append(point)
 
-            # Build the upstream Timeseries + TimeseriesDataPoint payloads.
-            try:
-                from shepard_client import (  # type: ignore
-                    Timeseries,
-                    TimeseriesWithDataPoints,
-                )
-            except Exception as e:
-                log.error("client import failed during flush: %s", e)
-                continue
-
-            blocks = []
+            ok_blocks = 0
+            ok_points = 0
             for (meas, dev, loc, sym, fld), points in grouped.items():
-                pts = [TimeseriesDataPoint(timestamp=p["timestamp"], value=p["value"])
-                       for p in points]
-                ts = Timeseries(
-                    measurement=meas,
-                    device=dev,
-                    location=loc,
-                    symbolic_name=sym,
-                    field=fld,
-                    value_type="Float",
+                body = json.dumps({
+                    "timeseries": {
+                        "measurement": meas,
+                        "device": dev,
+                        "location": loc,
+                        "symbolicName": sym,
+                        "field": fld,
+                        "valueType": "Float",
+                    },
+                    "points": [{"timestamp": p["timestamp"], "value": p["value"]} for p in points],
+                }).encode("utf-8")
+                req = urllib.request.Request(
+                    f"{shepard_api.rstrip('/')}/timeseriesContainers/{cid}/payload",
+                    data=body,
+                    headers={
+                        "X-API-KEY": api_key,
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
                 )
-                blocks.append(TimeseriesWithDataPoints(
-                    timeseries=ts,
-                    data_points=pts,
-                ))
-            try:
-                ts_api.create_timeseries_payload(
-                    timeseries_container_id=cid,
-                    timeseries_with_data_points=blocks,
-                )
+                try:
+                    with urllib.request.urlopen(req, timeout=15) as resp:
+                        if resp.status in (200, 201):
+                            ok_blocks += 1
+                            ok_points += len(points)
+                except urllib.error.HTTPError as e:
+                    body_preview = e.read().decode("utf-8", errors="replace")[:200]
+                    log.warning("Flush %s/%s/%s -> HTTP %s: %s",
+                                container_name, meas, fld, e.code, body_preview)
+                except Exception as e:
+                    log.warning("Flush %s/%s/%s failed: %s",
+                                container_name, meas, fld, e)
+            if ok_blocks:
                 state.flush_count += 1
-                log.info("Flushed %d points across %d channels to %s (cid=%s)",
-                         len(items), len(grouped), container_name, cid)
-            except Exception as e:
-                log.error("Flush to %s failed: %s — dropping batch",
-                          container_name, e)
+                log.info("Flushed %d points across %d/%d channels to %s (cid=%s)",
+                         ok_points, ok_blocks, len(grouped), container_name, cid)
         state.last_flush_ts = time.time()
 
 
@@ -333,7 +357,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Flush thread
     flush_thread = threading.Thread(
         target=flush_loop,
-        args=(state, ts_api, TimeseriesDataPoint, stop_event),
+        args=(state, ts_api, TimeseriesDataPoint, stop_event,
+              args.shepard_api, args.shepard_apikey),
         daemon=True,
     )
     flush_thread.start()

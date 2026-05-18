@@ -115,56 +115,116 @@ def _find_container_by_name(coll_api_or_client, ts_api, name):
     return None
 
 
+def _attrs_equal(existing, target: dict) -> bool:
+    """`existing.attributes` may be a dict, a list of (key,value) records,
+    or a list of pydantic Attribute objects depending on client version."""
+    got = getattr(existing, "attributes", None) or {}
+    if isinstance(got, list):
+        flat = {}
+        for entry in got:
+            k = getattr(entry, "key", None) or (entry.get("key") if isinstance(entry, dict) else None)
+            v = getattr(entry, "value", None) or (entry.get("value") if isinstance(entry, dict) else None)
+            if k is not None:
+                flat[k] = v
+        got = flat
+    return got == target
+
+
 def ensure_collection(coll_api):
+    """Idempotent. On re-run, if description/attributes have drifted from
+    the seed source, reconcile them in place — so editing this file and
+    re-running picks up the change without manual cleanup."""
+    from shepard_client import Collection  # type: ignore
+    target_attrs = {"source": "home-showcase", "live": "true"}
     existing = _find_collection_by_name(coll_api, COLLECTION_NAME)
     if existing is not None:
-        _log("SKIP", COLLECTION_NAME, "Collection", existing.id)
+        drift = (
+            getattr(existing, "description", None) != COLLECTION_DESCRIPTION
+            or not _attrs_equal(existing, target_attrs)
+        )
+        if not drift:
+            _log("SKIP", COLLECTION_NAME, "Collection", existing.id)
+            return existing
+        try:
+            updated_body = Collection(
+                name=COLLECTION_NAME,
+                description=COLLECTION_DESCRIPTION,
+                attributes=target_attrs,
+            )
+            coll_api.update_collection(collection_id=existing.id, collection=updated_body)
+            _log("UPD", COLLECTION_NAME, "Collection", existing.id)
+        except Exception as e:
+            _log("WARN", COLLECTION_NAME, f"reconcile failed ({str(e)[:80]})", existing.id)
         return existing
-    from shepard_client import Collection  # type: ignore
-    new = Collection(
-        name=COLLECTION_NAME,
-        description=COLLECTION_DESCRIPTION,
-        attributes={"source": "home-showcase", "live": "true"},
+    created = coll_api.create_collection(
+        Collection(name=COLLECTION_NAME, description=COLLECTION_DESCRIPTION, attributes=target_attrs)
     )
-    created = coll_api.create_collection(new)
     _log("OK", COLLECTION_NAME, "Collection", created.id)
     return created
 
 
 def ensure_data_object(do_api, coll_id: int, name: str, description: str):
-    # Walk children of the collection's root.
+    from shepard_client import DataObject  # type: ignore
+    target_attrs = {"source": "home-showcase"}
+    existing_match = None
     try:
-        # api shape varies; assume there's a get_all_data_objects(collection_id, page, size)
         existing = do_api.get_all_data_objects(collection_id=coll_id, page=0, size=200)
         for d in (existing or []):
             if getattr(d, "name", None) == name:
-                _log("SKIP", name, "DataObject", d.id)
-                return d
+                existing_match = d
+                break
     except Exception:
         pass
-    from shepard_client import DataObject  # type: ignore
-    new = DataObject(
-        name=name,
-        description=description,
-        attributes={"source": "home-showcase"},
+    if existing_match is not None:
+        drift = (
+            getattr(existing_match, "description", None) != description
+            or not _attrs_equal(existing_match, target_attrs)
+        )
+        if not drift:
+            _log("SKIP", name, "DataObject", existing_match.id)
+            return existing_match
+        try:
+            do_api.update_data_object(
+                collection_id=coll_id,
+                data_object_id=existing_match.id,
+                data_object=DataObject(name=name, description=description, attributes=target_attrs),
+            )
+            _log("UPD", name, "DataObject", existing_match.id)
+        except Exception as e:
+            _log("WARN", name, f"reconcile failed ({str(e)[:80]})", existing_match.id)
+        return existing_match
+    created = do_api.create_data_object(
+        collection_id=coll_id,
+        data_object=DataObject(name=name, description=description, attributes=target_attrs),
     )
-    created = do_api.create_data_object(collection_id=coll_id, data_object=new)
     _log("OK", name, "DataObject", created.id)
     return created
 
 
 def ensure_timeseries_container(ts_api, name: str, description: str):
+    """Idempotent create. The upstream `/shepard/api` TimeseriesContainerApi
+    does NOT expose an update method (containers are append-only by design —
+    metadata mutation would race with concurrent ingest). So on re-run we
+    only LOG drift; an operator who actually wants to refresh container
+    metadata deletes-and-recreates manually."""
+    from shepard_client import TimeseriesContainer  # type: ignore
+    target_attrs = {"source": "home-showcase"}
     existing = _find_container_by_name(None, ts_api, name)
     if existing is not None:
-        _log("SKIP", name, "TimeseriesContainer", existing.id)
+        drift = (
+            getattr(existing, "description", None) != description
+            or not _attrs_equal(existing, target_attrs)
+        )
+        if drift:
+            _log("NOTE", name, "TimeseriesContainer drift (no update API — recreate to refresh)", existing.id)
+        else:
+            _log("SKIP", name, "TimeseriesContainer", existing.id)
         return existing
-    from shepard_client import TimeseriesContainer  # type: ignore
-    new = TimeseriesContainer(
-        name=name,
-        description=description,
-        attributes={"source": "home-showcase"},
+    created = ts_api.create_timeseries_container(
+        timeseries_container=TimeseriesContainer(
+            name=name, description=description, attributes=target_attrs,
+        ),
     )
-    created = ts_api.create_timeseries_container(timeseries_container=new)
     _log("OK", name, "TimeseriesContainer", created.id)
     return created
 
@@ -244,9 +304,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         ct = ensure_timeseries_container(ts_api, container_name, description)
         data_objects[do_name] = do.id
         containers[container_name] = ct.id
-        ensure_timeseries_reference(
-            tsr_api, coll.id, do.id, ct.id, f"{container_name}-ref"
-        )
+        # Skip creating an empty TimeseriesReference up-front — the upstream
+        # API requires `timeseries: [...]` to have ≥1 channel and we don't
+        # know the channel list before the collector ingests its first
+        # message. The collector / WATCH1 watch-link surfaces the container
+        # on the collection page even without a per-DataObject Reference.
+        _log("DEFER", f"{container_name}-ref", "TimeseriesReference (created lazily by collector)")
 
     # Dump the lookup table for the collector to consume.
     out = {
