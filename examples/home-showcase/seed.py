@@ -78,6 +78,120 @@ def _import_client_or_die():
     )
 
 
+def _fetch_collection_app_id(host: str, api_key: str, collection_id: int) -> Optional[str]:
+    """Read the raw v1 JSON to extract `appId` — the upstream
+    `shepard_client.Collection` typed model omits it."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:
+        return None
+    base = host.rstrip("/")
+    if not base.endswith("/shepard/api"):
+        base = base + "/shepard/api"
+    url = f"{base}/collections/{collection_id}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "X-API-KEY": api_key,
+            "apikey": api_key,
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+            return body.get("appId")
+    except Exception:
+        return None
+
+
+def _fetch_container_app_id(host: str, api_key: str, container_id: int) -> Optional[str]:
+    """Mirror of `_fetch_collection_app_id` for TimeseriesContainers —
+    the typed model omits appId here too."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:
+        return None
+    base = host.rstrip("/")
+    if not base.endswith("/shepard/api"):
+        base = base + "/shepard/api"
+    url = f"{base}/timeseriesContainers/{container_id}"
+    req = urllib.request.Request(
+        url,
+        headers={
+            "X-API-KEY": api_key,
+            "apikey": api_key,
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+            return body.get("appId")
+    except Exception:
+        return None
+
+
+def _ensure_watches(host: str, api_key: str, coll_app_id: str, ts_api, container_names: list) -> None:
+    """POST a :Watch from the home Collection to each TimeseriesContainer
+    so the Collection page's WATCH1 panel shows the live containers.
+
+    Uses direct urllib (the upstream shepard_client has no Watch API yet)
+    against /v2/collections/{collectionAppId}/watched-containers. The
+    endpoint is idempotent on (collection, container) — a duplicate POST
+    returns the existing watch, not 409.
+
+    Container appIds come from the TimeseriesContainerApi look-ups
+    (already paginated through during ensure_timeseries_container)."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:
+        _log("SKIP", "watches", "urllib unavailable")
+        return
+
+    v2_base = host.rstrip("/")
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+
+    # Look up each container by name to get its appId.
+    headers = {
+        "X-API-KEY": api_key,
+        "apikey": api_key,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    for name in container_names:
+        existing = _find_container_by_name(None, ts_api, name)
+        if existing is None:
+            _log("SKIP", f"watch-{name}", "container not found")
+            continue
+        # Same caveat as the Collection appId: the typed model omits
+        # `appId`, so fall back to a raw v1 GET that returns the
+        # full JSON shape including the appId.
+        container_app_id = _fetch_container_app_id(host, api_key, existing.id)
+        if not container_app_id:
+            _log("SKIP", f"watch-{name}", "container has no appId")
+            continue
+        url = f"{v2_base}/v2/collections/{coll_app_id}/watched-containers"
+        body = json.dumps({
+            "containerKind": "TIMESERIES",
+            "containerAppId": container_app_id,
+        }).encode("utf-8")
+        try:
+            req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                _log("OK", f"watch-{name}", "Watch", container_app_id[:8])
+        except urllib.error.HTTPError as e:
+            _log("SKIP", f"watch-{name}", f"HTTP {e.code}")
+        except Exception as exc:
+            _log("SKIP", f"watch-{name}", f"error: {str(exc)[:60]}")
+
+
 def _ensure_public(get_perms_fn, set_perms_fn, entity_id: int, label: str) -> None:
     """Flip an entity's permission-type to PUBLIC so every authenticated user
     (alice, bob, anyone in Keycloak) can read it. The seeder runs as
@@ -333,6 +447,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         "collection",
     )
 
+    # Pull the Collection's appId so we can wire WATCH1 watch links
+    # below. The upstream shepard-client's `Collection` model doesn't
+    # carry `appId` (it was generated before L2a shipped), so we hit
+    # the raw v1 endpoint and parse the response — the appId IS in
+    # the response body since L2a/L2b, just not in the typed model.
+    coll_app_id = _fetch_collection_app_id(args.host, args.apikey, coll.id)
+
     data_objects = {}
     containers = {}
     for (do_name, container_name, description) in TARGETS:
@@ -358,6 +479,19 @@ def main(argv: Optional[list[str]] = None) -> int:
         # message. The collector / WATCH1 watch-link surfaces the container
         # on the collection page even without a per-DataObject Reference.
         _log("DEFER", f"{container_name}-ref", "TimeseriesReference (created lazily by collector)")
+
+    # WATCH1 — wire each TimeseriesContainer as a "watched container" on
+    # the home Collection so the Collection's detail page surfaces the
+    # live data flowing in. Idempotent on the (collection, container)
+    # pair (server returns the existing watch, not 409). Requires the
+    # backend's NeoConnector to know about the :Watch entity (added in
+    # an earlier commit). Best-effort — failure here doesn't kill the
+    # seed; the collector still flushes, just the Collection page won't
+    # show the watch panel until this step succeeds on a re-run.
+    if coll_app_id:
+        _ensure_watches(args.host, args.apikey, coll_app_id, ts_api, list(containers.keys()))
+    else:
+        _log("SKIP", "watches", "no Collection appId — can't address /v2/collections/{appId}/watched-containers")
 
     # Dump the lookup table for the collector to consume.
     out = {

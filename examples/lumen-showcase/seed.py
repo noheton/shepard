@@ -1039,8 +1039,10 @@ def best_effort_user_orcid_preseed(apis: Apis) -> None:
     elif v2_base.endswith("/shepard/api/"):
         v2_base = v2_base[: -len("/shepard/api/")]
 
+    api_key = apis.client.configuration.api_key.get("apikey", "")
     headers = {
-        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "X-API-KEY": api_key,
+        "apikey": api_key,
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -1428,6 +1430,11 @@ def main(argv: list[str] | None = None) -> int:
     # and we want the About → Organization pane populated even when later
     # steps blow up (e.g. an existing file container with stale perms).
     best_effort_ror_preseed(apis)
+    # Per-user ORCID preseed — same defensive ordering, runs early so a
+    # crash in the data-upload path doesn't keep flo's ORCID off the
+    # avatar. Idempotent; SKIPs gracefully if the user hasn't logged in
+    # yet (no :User node).
+    best_effort_user_orcid_preseed(apis)
 
     coll = ensure_collection(apis)
     runs = ensure_run_data_objects(apis, coll)

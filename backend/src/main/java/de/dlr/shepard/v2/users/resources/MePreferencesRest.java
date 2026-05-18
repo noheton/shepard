@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.users.resources;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.util.Constants;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -68,7 +69,11 @@ public class MePreferencesRest {
   }
 
   @PATCH
-  @Consumes(MediaType.APPLICATION_JSON)
+  // Accept both application/merge-patch+json (RFC 7396 preferred) and
+  // application/json — the upstream client + the Kiota client default to
+  // merge-patch+json for any PATCH; the old listing of just JSON 415'd them.
+  // Fix lands with the matching CollectionRest / DataObjectRest pattern.
+  @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "Partial-update the caller's UI preferences.",
     description = "RFC 7396 JSON Merge Patch. Keys with non-null string values are set or updated. " +
