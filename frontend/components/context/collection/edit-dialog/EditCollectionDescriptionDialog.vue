@@ -26,7 +26,7 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
 <template>
   <FormDialog
     v-model:show-dialog="showDialog"
-    title="Add Description"
+    title="Description & Status"
     :submit-disabled="!isValid"
     @submit="saveChanges"
   >

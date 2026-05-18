@@ -30,7 +30,7 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
 <template>
   <FormDialog
     v-model:show-dialog="showDialog"
-    title="Edit Description"
+    title="Description & Status"
     :loading="loading"
     :submit-disabled="!isValid"
     @submit="saveChanges"
