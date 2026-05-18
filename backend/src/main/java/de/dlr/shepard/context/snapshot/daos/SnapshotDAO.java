@@ -55,14 +55,27 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
    * @param collectionAppId the {@code appId} of the root {@link de.dlr.shepard.context.collection.entities.Collection}.
    * @return ordered list of snapshots; empty when none exist.
    */
-  public List<Snapshot> findByCollectionAppId(String collectionAppId) {
+  public List<Snapshot> findByCollectionAppId(String collectionAppId, int page, int size) {
+    // Cypher SKIP/LIMIT require non-negative ints; the caller clamps but we
+    // belt-and-brace here so a stray test or future caller can't blow up
+    // Neo4j with a negative argument.
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.max(size, 1);
+    long skip = (long) safePage * (long) safeSize;
     String query =
       "MATCH (s:Snapshot)-[:SNAPSHOT_OF]->(c:Collection) " +
       "WHERE c.appId = $collectionAppId AND (s.deleted IS NULL OR s.deleted = false) " +
       "RETURN s " +
-      "ORDER BY s.snapshotCapturedAtMs DESC";
+      "ORDER BY s.snapshotCapturedAtMs DESC " +
+      "SKIP $skip LIMIT $limit";
     return StreamSupport
-      .stream(findByQuery(query, Map.of("collectionAppId", collectionAppId)).spliterator(), false)
+      .stream(
+        findByQuery(
+          query,
+          Map.of("collectionAppId", collectionAppId, "skip", skip, "limit", (long) safeSize)
+        ).spliterator(),
+        false
+      )
       .toList();
   }
 

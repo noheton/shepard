@@ -9,12 +9,14 @@ import de.dlr.shepard.context.snapshot.services.SnapshotService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -126,11 +128,15 @@ public class CollectionSnapshotRest {
   @GET
   @Operation(
     summary = "List snapshots of a Collection.",
-    description = "Returns all non-deleted snapshots for the Collection, ordered newest first. Requires Read permission."
+    description =
+      "Returns one page of non-deleted snapshots for the Collection, " +
+      "ordered newest first. Requires Read permission. " +
+      "Pagination defaults: page=0, size=50 (max 200). " +
+      "Use the upstream-style 'page' and 'size' query params for navigation."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Snapshot list (may be empty).",
+    description = "Snapshot page (may be empty).",
     content = @Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = @Schema(type = SchemaType.ARRAY, implementation = SnapshotIO.class)
@@ -139,12 +145,20 @@ public class CollectionSnapshotRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection with that appId.")
-  public Response list(@PathParam("collectionAppId") String collectionAppId, @Context SecurityContext sc) {
+  public Response list(
+    @PathParam("collectionAppId") String collectionAppId,
+    @QueryParam("page") @DefaultValue("0") int page,
+    @QueryParam("size") @DefaultValue("50") int size,
+    @Context SecurityContext sc
+  ) {
     Response gate = checkAccess(collectionAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
+    int safePage = Math.max(page, 0);
+    int safeSize = Math.min(Math.max(size, 1), 200);
+
     List<SnapshotIO> rows = snapshotService
-      .listByCollection(collectionAppId)
+      .listByCollection(collectionAppId, safePage, safeSize)
       .stream()
       .map(SnapshotIO::new)
       .toList();

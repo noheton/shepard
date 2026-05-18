@@ -122,12 +122,12 @@ class SnapshotServiceTest {
   // ── listByCollection ──────────────────────────────────────────────────────
 
   @Test
-  void listByCollection_delegatesToDAO() {
+  void listByCollection_delegatesToDAO_withPagination() {
     Snapshot s = new Snapshot();
     s.setAppId(SNAP_APP_ID);
-    when(snapshotDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of(s));
+    when(snapshotDAO.findByCollectionAppId(COLL_APP_ID, 0, 50)).thenReturn(List.of(s));
 
-    List<Snapshot> result = service.listByCollection(COLL_APP_ID);
+    List<Snapshot> result = service.listByCollection(COLL_APP_ID, 0, 50);
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getAppId()).isEqualTo(SNAP_APP_ID);
   }

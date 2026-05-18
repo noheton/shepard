@@ -103,13 +103,12 @@ public class SnapshotService {
   }
 
   /**
-   * Returns all non-deleted snapshots for the given collection, newest first.
-   *
-   * @param collectionAppId the appId of the root Collection.
-   * @return ordered list of snapshots; empty when none exist.
+   * Returns one page of non-deleted snapshots for the given collection,
+   * newest first. {@code page} is 0-indexed; {@code size} is the maximum
+   * number of rows returned.
    */
-  public List<Snapshot> listByCollection(String collectionAppId) {
-    return snapshotDAO.findByCollectionAppId(collectionAppId);
+  public List<Snapshot> listByCollection(String collectionAppId, int page, int size) {
+    return snapshotDAO.findByCollectionAppId(collectionAppId, page, size);
   }
 
   /**

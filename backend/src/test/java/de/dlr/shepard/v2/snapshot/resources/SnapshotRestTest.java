@@ -165,9 +165,9 @@ class SnapshotRestTest {
 
   @Test
   void list_returns200WithRows() {
-    when(snapshotService.listByCollection(COLL_APP_ID)).thenReturn(List.of(snapshot));
+    when(snapshotService.listByCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of(snapshot));
 
-    Response r = collectionRest.list(COLL_APP_ID, sc);
+    Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     List<SnapshotIO> body = (List<SnapshotIO>) r.getEntity();
     assertThat(body).hasSize(1);
@@ -176,8 +176,8 @@ class SnapshotRestTest {
 
   @Test
   void list_returns200WithEmptyList_whenNoSnapshots() {
-    when(snapshotService.listByCollection(COLL_APP_ID)).thenReturn(List.of());
-    Response r = collectionRest.list(COLL_APP_ID, sc);
+    when(snapshotService.listByCollection(COLL_APP_ID, 0, 50)).thenReturn(List.of());
+    Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat((List<?>) r.getEntity()).isEmpty();
   }
@@ -185,7 +185,7 @@ class SnapshotRestTest {
   @Test
   void list_returns401_whenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
-    Response r = collectionRest.list(COLL_APP_ID, sc);
+    Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(401);
   }
 
@@ -193,14 +193,14 @@ class SnapshotRestTest {
   void list_returns403_whenNoReadPermission() {
     when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, 0L))
       .thenReturn(false);
-    Response r = collectionRest.list(COLL_APP_ID, sc);
+    Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(403);
   }
 
   @Test
   void list_returns404_whenCollectionNotFound() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = collectionRest.list(COLL_APP_ID, sc);
+    Response r = collectionRest.list(COLL_APP_ID, 0, 50, sc);
     assertThat(r.getStatus()).isEqualTo(404);
   }
 
