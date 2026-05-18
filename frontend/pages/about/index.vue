@@ -15,6 +15,7 @@ const { routeFragment } = useRouteFragment();
 <template>
   <PaneLayout header="About" :menu-entries="AboutMenuEntries">
     <VersionPane v-if="routeFragment === AboutFragments.VERSION" />
+    <OrganizationPane v-if="routeFragment === AboutFragments.ORGANIZATION" />
     <HealthPane v-if="routeFragment === AboutFragments.HEALTH" />
     <DocumentationPane v-if="routeFragment === AboutFragments.DOCUMENTATION" />
   </PaneLayout>

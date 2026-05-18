@@ -11,16 +11,15 @@ interface AnnotatedTimeseries extends TimeseriesEntity {
 
 const props = defineProps<{
   measurements: TimeseriesEntity[];
+  containerId: number;
   isAllowedToEditData: boolean;
 }>();
 
 const am: Ref<AnnotatedTimeseries[]> = computed(() =>
-  props.measurements.map(value => {
-    return {
-      ...value,
-      annotations: ref(null),
-    };
-  }),
+  props.measurements.map(value => ({
+    ...value,
+    annotations: ref(null),
+  })),
 );
 
 const headers = [
@@ -38,12 +37,8 @@ const itemsPerPage = 10;
 
 <template>
   <DataTable
-    :cell-props="{
-      class: 'text-textbody1',
-    }"
-    :header-props="{
-      class: 'text-subtitle-2 text-textbody1',
-    }"
+    :cell-props="{ class: 'text-textbody1' }"
+    :header-props="{ class: 'text-subtitle-2 text-textbody1' }"
     :headers="headers"
     :items-for-pagination="am"
     :items-per-page="itemsPerPage"
@@ -53,13 +48,18 @@ const itemsPerPage = 10;
     <template #[`expanded-row`]="{ item }">
       <tr class="expanded">
         <td :colspan="headers.length">
+          <!-- inline channel chart -->
+          <ChannelPreviewChart
+            :channel="item"
+            :container-id="containerId"
+          />
+
+          <!-- annotations -->
           <v-table>
             <tbody>
               <tr class="semantic-row">
                 <td
-                  v-if="
-                    item.annotations.value && item.annotations.value.length > 0
-                  "
+                  v-if="item.annotations.value && item.annotations.value.length > 0"
                 >
                   <strong>Semantic Annotations:</strong>
                 </td>
@@ -75,9 +75,7 @@ const itemsPerPage = 10;
                   <SemanticAnnotationList
                     :annotated="new AnnotatedTimeseries(item)"
                     :can-delete="isAllowedToEditData"
-                    @annotations="
-                      annotations => (item.annotations.value = annotations)
-                    "
+                    @annotations="annotations => (item.annotations.value = annotations)"
                   />
                 </td>
                 <td>
@@ -117,12 +115,10 @@ const itemsPerPage = 10;
   border-bottom: 0 !important;
 }
 
-// set hover styling on row if its expanded part is hovered
 :deep(tr:where(tr:has(+ tr.expanded:hover))) {
   background-color: rgb(var(--v-theme-focus1));
 }
 
-// set hover styling on expanded row if "parent" is hovered
 :deep(tr:hover + tr.expanded) {
   background-color: rgb(var(--v-theme-focus1));
 }

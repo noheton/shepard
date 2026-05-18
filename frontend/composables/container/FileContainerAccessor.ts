@@ -8,6 +8,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
+import { safeDeleteContainer } from "./safeDeleteContainer";
 
 // Sentinel: backend returned 503 — no S3 adapter active; caller falls back to legacy upload.
 class PresignedUnavailable extends Error {
@@ -33,10 +34,18 @@ export class FileContainerAccessor extends ContainerAccessor {
   loading = ref<boolean>(true);
 
   async delete() {
+    // DI1 — see TimeseriesContainerAccessor.delete for rationale.
     try {
-      await this.api.value.deleteFileContainer({
-        fileContainerId: this.id,
-      });
+      const result = await safeDeleteContainer("file", this.id, { force: true });
+      if (!result.ok) {
+        handleError(
+          new Error(
+            `Server reported ${result.conflict.referenceCount} active references; delete blocked.`,
+          ),
+          "deleting file container",
+        );
+        return;
+      }
       emitSuccess(
         `Successfully deleted container "${this.fileContainer.value?.name}"`,
       );

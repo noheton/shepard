@@ -58,8 +58,12 @@ public class UserinfoService {
   public UserinfoService() {
     String oidcAuthority = ConfigProvider.getConfig().getValue("oidc.authority", String.class);
     try {
-      URI base = new URI(oidcAuthority + "/").normalize();
+      URI base = new URI(oidcAuthority.endsWith("/") ? oidcAuthority : oidcAuthority + "/").normalize();
       oidcConfigurationURI = base.resolve(WELL_KNOWN_PATH);
+      // Derive the userinfo URL directly from oidc.authority so we use the same
+      // scheme and host the backend can actually reach (e.g. internal HTTP), rather
+      // than the public HTTPS URL advertised by the discovery document.
+      userinfoEndpoint = base.resolve("protocol/openid-connect/userinfo").toString();
     } catch (URISyntaxException e) {
       throw new ShepardProcessingException(e.getMessage());
     }
@@ -70,7 +74,8 @@ public class UserinfoService {
     if (openIdConfiguration == null) {
       throw new ShepardProcessingException("Could not fetch openid configuration");
     }
-    userinfoEndpoint = openIdConfiguration.getUserinfoEndpoint();
+    // userinfoEndpoint is already set in the constructor; discovery is kept for
+    // other callers that may inspect the full OpenIdConfiguration.
   }
 
   public Userinfo fetchUserinfo(String accessToken) {

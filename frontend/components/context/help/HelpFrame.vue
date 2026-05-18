@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useDisplay } from "vuetify";
 import {
   DOC_SECTIONS,
   findDocPage,
   renderDocMarkdown,
   ALL_DOC_PAGES,
+  type DocPage,
 } from "~/utils/helpMarkdown";
 
 // ── Route / query param ─────────────────────────────────────────────────────
@@ -16,8 +18,14 @@ const activePage = computed(() => {
   return typeof p === "string" && p ? p : "index";
 });
 
-const activeDocPage = computed(
-  () => findDocPage(activePage.value) ?? ALL_DOC_PAGES[0],
+const FALLBACK_PAGE: DocPage = ALL_DOC_PAGES[0] ?? {
+  page: "index",
+  title: "Overview",
+  fetchPath: "/docs/index.md",
+};
+
+const activeDocPage = computed<DocPage>(
+  () => findDocPage(activePage.value) ?? FALLBACK_PAGE,
 );
 
 // ── Markdown content ─────────────────────────────────────────────────────────

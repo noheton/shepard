@@ -124,15 +124,28 @@ PHASES: list[tuple[str, float, float]] = [
     ("purge",       28.0, 30.0),
 ]
 
-# Project-local IRI placeholders. These are intentionally not resolvable —
-# shepard accepts them as opaque IRIs, and a future ontology server can
-# replace them with real PURLs. The phase IRIs follow a flat scheme
-# `dlr:phase/<phase_name>` so they read well in the UI.
+# Semantic IRI namespaces.
+# Phase properties and values use the canonical shepard-experiment ontology
+# (pre-seeded by OntologySeedService) for phases that have an exact concept.
+# The seven hotfire sub-phases are more granular than the generic ExperimentPhase
+# scheme, so five are mapped to the closest shex: concept and two that are
+# rocket-engine-specific (ignition, throttle) keep a DLR showcase namespace.
 DLR_NS = "https://shepard.dlr.de/showcase/lumen-inspired#"
-PROP_PHASE = DLR_NS + "phase"
-PROP_ANOMALY = DLR_NS + "anomaly"
-VAL_PHASE = {p[0]: f"{DLR_NS}phase/{p[0]}" for p in PHASES}
-VAL_VIBRATION_ANOMALY = DLR_NS + "vibration-anomaly"
+SHEX_NS = "https://shepard.dlr.de/ontologies/experiment#"
+
+PROP_PHASE = SHEX_NS + "ExperimentPhase"      # skos:ConceptScheme as predicate
+PROP_QUALITY = SHEX_NS + "QualityFlag"        # quality-flag predicate
+
+VAL_PHASE: dict[str, str] = {
+    "precool":      SHEX_NS + "Preparation",   # pre-test cooling → Preparation
+    "ignition":     DLR_NS  + "phase/ignition", # engine-specific, no shex match
+    "ramp_up":      SHEX_NS + "TestRun",        # thrust ramp → start of TestRun
+    "steady_state": SHEX_NS + "TestRun",        # nominal burn → TestRun
+    "throttle":     DLR_NS  + "phase/throttle", # throttle sweep, engine-specific
+    "shutdown":     SHEX_NS + "Cooldown",       # engine shutdown → Cooldown
+    "purge":        SHEX_NS + "PostProcessing", # propellant purge → PostProcessing
+}
+VAL_VIBRATION_ANOMALY = SHEX_NS + "QualitySuspect"  # TR-004 anomaly run
 
 # Bulk upload chunk size for timeseries (sample count per request).
 TIMESERIES_CHUNK = 1000
@@ -666,10 +679,13 @@ SEMANTIC_REPO_NAME = "shepard-showcase-local"
 
 
 def ensure_semantic_repo(apis: Apis) -> SemanticRepository:
-    """A fake SPARQL repo entry pointing at a project-local IRI namespace.
+    """Semantic repository entry for the showcase annotations.
 
-    The endpoint URL is intentionally unreachable; the IRIs are opaque
-    placeholders. A future ontology server can replace them."""
+    Most value IRIs use the pre-seeded shepard-experiment ontology
+    (https://shepard.dlr.de/ontologies/experiment) which ships with shepard.
+    Engine-specific phases that have no exact concept use the DLR showcase
+    namespace (https://shepard.dlr.de/showcase/lumen-inspired#).
+    The endpoint is informational; shepard accepts opaque IRIs regardless."""
     # operationId: getAllSemanticRepositories
     repos = apis.semantic_repo.get_all_semantic_repositories() or []
     for r in repos:
@@ -679,7 +695,7 @@ def ensure_semantic_repo(apis: Apis) -> SemanticRepository:
     repo = SemanticRepository(
         name=SEMANTIC_REPO_NAME,
         type=SemanticRepositoryType.SPARQL,
-        endpoint="https://shepard.dlr.de/showcase/lumen-inspired",
+        endpoint="https://shepard.dlr.de/ontologies/experiment",
     )
     repo = apis.semantic_repo.create_semantic_repository(repo)
     _log("OK", SEMANTIC_REPO_NAME, "SemanticRepository", repo.id)
@@ -717,7 +733,7 @@ def annotate_phase_boundaries(
             continue
     if is_anomaly_run:
         anomaly = SemanticAnnotation(
-            propertyIRI=PROP_ANOMALY,
+            propertyIRI=PROP_QUALITY,
             propertyRepositoryId=repo.id,
             valueIRI=VAL_VIBRATION_ANOMALY,
             valueRepositoryId=repo.id,
@@ -921,6 +937,169 @@ HOTFIRE_TEMPLATE_BODY = json.dumps({
         },
     ],
 })
+
+
+def best_effort_ror_preseed(apis: Apis) -> None:
+    """Preseed the demo instance's :InstanceRorConfig with DLR's ROR id.
+
+    The About → Organization pane reads this back and fetches richer details
+    from ror.org client-side. Idempotent: re-runs are no-ops once the rorId is
+    set (the PATCH endpoint accepts the same value without complaint).
+    Requires instance-admin; skips on 401/403/404 the same way other best-effort
+    helpers do."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", "ror preseed", "urllib unavailable")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    url = f"{v2_base}/v2/admin/instance/ror"
+    headers = {
+        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        # The endpoint declares @Consumes(MediaType.APPLICATION_JSON) — RFC 7396
+        # semantics are observed in the resource code, but the wire content-type
+        # is plain application/json.
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+    # DLR — Deutsches Zentrum für Luft- und Raumfahrt e.V.
+    body = json.dumps({
+        "rorId": "04bwf3e34",
+        "organizationName": "Deutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)",
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(url, data=body, headers=headers, method="PATCH")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            _log("OK", "ror preseed", "InstanceRorConfig", "04bwf3e34")
+    except urllib.error.HTTPError as e:
+        if e.code in (401, 403):
+            _log("SKIP", "ror preseed", f"InstanceRorConfig (not admin: HTTP {e.code})")
+        elif e.code in (404, 501):
+            _log("SKIP", "ror preseed", "InstanceRorConfig (endpoint not deployed)")
+        else:
+            _log("SKIP", "ror preseed", f"InstanceRorConfig HTTP {e.code}")
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", "ror preseed", f"InstanceRorConfig error: {str(exc)[:60]}")
+
+
+def _data_object_app_id(do: DataObject) -> str | None:
+    """Pull the appId off a DataObject defensively — the upstream-generated
+    client doesn't expose it on the typed model, but it's on the wire.
+    Returns None if the response shape lacks it (very old backend builds)."""
+    raw = getattr(do, "_appId", None) or getattr(do, "appId", None)
+    if raw:
+        return str(raw)
+    # The upstream model stores unknown fields under additional_properties.
+    extras = getattr(do, "additional_properties", None) or {}
+    if isinstance(extras, dict):
+        v = extras.get("appId")
+        if v:
+            return str(v)
+    return None
+
+
+def best_effort_git_references(
+    apis: Apis,
+    targets: list[tuple[DataObject, str, str, str | None]],
+) -> None:
+    """Seed Git references showcasing the analysis scripts in this repo.
+
+    Each tuple is (data_object, repo_url, path, ref). Idempotent — checks
+    the existing list and skips duplicates. Requires the /v2/data-objects/
+    {appId}/git-references endpoint (PL1d). Skips on 401/404 like other
+    best-effort helpers.
+
+    The "demo data" the user asked to link is this repository's own
+    examples/seed-showcase/notebooks/ folder, which contains the
+    anomaly-analysis notebook + (when added) the SQL channel summary
+    script. The repo URL points at noheton/shepard — replace with your
+    fork's URL when forking this seed."""
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", "git references", "urllib unavailable")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    apikey = apis.client.configuration.api_key.get("apikey", "")
+
+    for (do, repo_url, path, ref) in targets:
+        app_id = _data_object_app_id(do)
+        if not app_id:
+            _log("SKIP", f"{do.name}/{path}", "GitReference (no appId on DO)")
+            continue
+        base = f"{v2_base}/v2/data-objects/{app_id}/git-references"
+
+        # List existing to skip duplicates.
+        existing: list[dict] = []
+        try:
+            req = urllib.request.Request(
+                base,
+                headers={"apikey": apikey, "Accept": "application/json"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                existing = json.loads(resp.read().decode("utf-8")) or []
+        except urllib.error.HTTPError as e:
+            if e.code in (404, 501):
+                _log("SKIP", f"{do.name}/{path}", "GitReference (endpoint not deployed)")
+                continue
+            if e.code in (401, 403):
+                _log("SKIP", f"{do.name}/{path}", f"GitReference (auth: HTTP {e.code})")
+                continue
+        except Exception as exc:  # pragma: no cover
+            _log("SKIP", f"{do.name}/{path}", f"GitReference list error: {str(exc)[:60]}")
+            continue
+
+        if any(
+            isinstance(g, dict)
+            and g.get("repoUrl") == repo_url
+            and g.get("path") == path
+            and (g.get("ref") or None) == ref
+            for g in existing
+        ):
+            _log("SKIP", f"{do.name}/{path}", "GitReference (already present)")
+            continue
+
+        # Create.
+        body_obj: dict[str, str] = {"repoUrl": repo_url, "path": path}
+        if ref:
+            body_obj["ref"] = ref
+        body = json.dumps(body_obj).encode("utf-8")
+        try:
+            req = urllib.request.Request(
+                base,
+                data=body,
+                headers={
+                    "apikey": apikey,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                created = json.loads(resp.read().decode("utf-8"))
+                _log("OK", f"{do.name}/{path}", "GitReference", created.get("appId", resp.status))
+        except urllib.error.HTTPError as e:
+            _log("SKIP", f"{do.name}/{path}", f"GitReference create HTTP {e.code}")
+        except Exception as exc:  # pragma: no cover
+            _log("SKIP", f"{do.name}/{path}", f"GitReference create error: {str(exc)[:60]}")
 
 
 def best_effort_template(apis: Apis) -> None:
@@ -1200,6 +1379,26 @@ def main(argv: list[str] | None = None) -> int:
     # Publications DataObject + turbine template (best-effort).
     best_effort_publications(apis, coll, sc)
     best_effort_template(apis)
+
+    # Instance identity preseed — sets DLR as the running organisation
+    # so the About → Organization pane shows live ror.org data.
+    best_effort_ror_preseed(apis)
+
+    # Git references — link the LUMEN run data objects to the analysis
+    # scripts in this repo's examples/seed-showcase/notebooks/ folder, so
+    # users see how external code consumes shepard data.
+    GIT_DEMO_REPO = "https://github.com/noheton/shepard"
+    GIT_DEMO_REF = "main"
+    best_effort_git_references(apis, [
+        (runs[ANOMALY_RUN], GIT_DEMO_REPO,
+         "examples/seed-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
+        (investigation, GIT_DEMO_REPO,
+         "examples/seed-showcase/notebooks/anomaly-analysis.ipynb", GIT_DEMO_REF),
+        # SQL summary showcase — uses /v2/sql/timeseries (P10) to compute
+        # per-channel min/max/mean/stddev across the campaign.
+        (runs[6], GIT_DEMO_REPO,
+         "examples/seed-showcase/notebooks/sql-channel-summary.py", GIT_DEMO_REF),
+    ])
 
     # Versions + api keys (best-effort).
     best_effort_versions(apis, coll)

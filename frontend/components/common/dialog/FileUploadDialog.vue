@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplay } from "vuetify";
 interface FileUploadDialogProps {
   accept: string;
   filter: (files: File[]) => File[];

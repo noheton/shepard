@@ -7,6 +7,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
+import { safeDeleteContainer } from "./safeDeleteContainer";
 
 export class StructuredDataContainerAccessor extends ContainerAccessor {
   api = useShepardApi(StructuredDataContainerApi);
@@ -15,10 +16,20 @@ export class StructuredDataContainerAccessor extends ContainerAccessor {
   loading = ref<boolean>(true);
 
   override async delete(): Promise<void> {
+    // DI1 — see TimeseriesContainerAccessor.delete for rationale.
     try {
-      await this.api.value.deleteStructuredDataContainer({
-        structuredDataContainerId: this.id,
+      const result = await safeDeleteContainer("structured-data", this.id, {
+        force: true,
       });
+      if (!result.ok) {
+        handleError(
+          new Error(
+            `Server reported ${result.conflict.referenceCount} active references; delete blocked.`,
+          ),
+          "deleting structured data container",
+        );
+        return;
+      }
       emitSuccess(
         `Successfully deleted container "${this.container.value?.name}"`,
       );

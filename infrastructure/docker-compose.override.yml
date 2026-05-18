@@ -4,7 +4,7 @@
 # External routing (via Zoraxy):
 #   https://shepard.nuclide.systems     → 192.168.1.49:80  → frontend:3000
 #   https://shepard-api.nuclide.systems → 192.168.1.49:8080 → backend:8080
-#   http://192.168.1.49:8082            → keycloak:8082 (OIDC)
+#   https://shepard-auth.nuclide.systems → 192.168.1.49:8082 → keycloak directly
 #
 # The `Deploy to test instance` workflow sets SHEPARD_BACKEND_IMAGE /
 # SHEPARD_FRONTEND_IMAGE env vars before invoking `docker compose pull && up -d`.
@@ -13,6 +13,14 @@
 # It bootstraps the admin user, creates an API key, and runs seed.py.
 # On subsequent `docker compose up` the seeder exits immediately (seed is idempotent).
 # To re-seed from scratch: docker compose run --rm seeder bash -c "cd /seed && python seed.py --reset --regenerate --host http://backend:8080/shepard/api --apikey <key>"
+#
+# Post-deployment verification: after `docker compose up -d`, run
+#   ./smoke-test.sh
+# to catch the regressions we've actually hit on this fork (frontend SSR
+# crash from a skipped patch-output.mjs, backend missing REST classes,
+# Quarkus config crashes, Flyway duplicate-version migrations). Set
+# FRONTEND_URL / BACKEND_URL to point at the public hostnames when
+# verifying a remote deploy.
 
 services:
   backend:
@@ -20,9 +28,11 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Backend uses the same Keycloak URL as the browser so tokens' `iss`
-      # claim matches the userinfo endpoint's expectation.
-      OIDC_AUTHORITY: "http://192.168.1.49:8082/realms/shepard-demo"
+      # Internal HTTP URL so the backend can reach Keycloak for OIDC discovery
+      # without going through the public internet. Keycloak's KC_HOSTNAME forces
+      # the issuer in the discovery doc and in tokens to the public HTTPS URL,
+      # so Quarkus validates `iss` correctly against the discovery-doc issuer.
+      OIDC_AUTHORITY: "http://shepard-auth.nuclide.systems:8082/realms/shepard-demo"
       # Write the one-shot bootstrap token to a volume shared with the seeder.
       SHEPARD_BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
       # Quarkus 3.27 treats empty-string @ConfigProperty defaults as required
@@ -40,6 +50,16 @@ services:
       SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PATH: "none"
       SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PASSWORD: "none"
       SHEPARD_PLUGINS_SIGNING_TRUST_ANCHORS: "none"
+      # FS1b / FS1e2 — S3 storage and migration auto-sweep are disabled on
+      # the demo instance. Quarkus 3.27 rejects empty-string defaultValue on
+      # @ConfigProperty, so these placeholders satisfy validation without
+      # enabling the feature (shepard.storage.provider stays "local").
+      SHEPARD_FILES_S3_ENDPOINT: "none"
+      SHEPARD_FILES_S3_ACCESS_KEY_ID: "none"
+      SHEPARD_FILES_S3_SECRET_ACCESS_KEY: "none"
+      SHEPARD_FILES_S3_BUCKET: "none"
+      SHEPARD_MIGRATION_AUTO_SWEEP_SOURCE: "none"
+      SHEPARD_MIGRATION_AUTO_SWEEP_TARGET: "none"
       # V1.7.0 (int_to_bigint) was applied manually to the DB but never
       # recorded in flyway_schema_history — set out-of-order so Flyway
       # applies it and registers it. Safe to keep permanently; subsequent
@@ -60,8 +80,8 @@ services:
   frontend:
     image: ${SHEPARD_FRONTEND_IMAGE:-shepard-frontend:local}
     environment:
-      # Browser-facing Keycloak URL for the OIDC flow.
-      NUXT_OIDC_ISSUER: "http://192.168.1.49:8082/realms/shepard-demo/"
+      # Public Keycloak URL — must be reachable from the user's browser.
+      NUXT_OIDC_ISSUER: "https://shepard-auth.nuclide.systems/realms/shepard-demo/"
       NUXT_OIDC_CLIENT_ID: "frontend-dev"
 
   # Keycloak — imports the pre-seeded demo realm on first start.
@@ -82,11 +102,20 @@ services:
       KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
       KC_BOOTSTRAP_ADMIN_PASSWORD: "admin"
       KC_HTTP_PORT: "8082"
+      # Forces Keycloak to always use this URL as the issuer in tokens
+      # (Keycloak 26 v2 hostname option — replaces deprecated KC_HOSTNAME_URL).
+      # Must match OIDC_AUTHORITY in the backend so `iss` claim validation passes.
+      KC_HOSTNAME: "https://shepard-auth.nuclide.systems"
+      KC_HTTP_ENABLED: "true"
     volumes:
       - ./keycloak/shepard-demo-realm.json:/opt/keycloak/data/import/shepard-demo-realm.json:ro
       - keycloak-data:/opt/keycloak/data
     networks:
-      - shepard
+      shepard:
+        # DNS alias so backend/seeder can resolve shepard-auth.nuclide.systems
+        # to this container without going through the public internet.
+        aliases:
+          - shepard-auth.nuclide.systems
     restart: unless-stopped
 
   # Caddy proxies frontend:3000 on HTTP port 80.
@@ -102,7 +131,7 @@ services:
         condition: service_healthy
     environment:
       BACKEND_URL: "http://backend:8080/shepard/api"
-      KC_URL: "http://192.168.1.49:8082"
+      KC_URL: "http://keycloak:8082"
       KC_REALM: "shepard-demo"
       KC_CLIENT_ID: "frontend-dev"
       KC_ADMIN_USER: "admin"

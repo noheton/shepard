@@ -1,16 +1,19 @@
 <script lang="ts" setup>
-import EditDataObjectDescriptionDialog from "~/components/context/data-object/edit-dialog/EditDataObjectDescriptionDialog.vue";
 import DataObjectFileUpload from "~/components/context/data-object/upload-data/DataObjectFileUpload.vue";
 import DataObjectNotebooksPane from "~/components/context/lab-journal/DataObjectNotebooksPane.vue";
 import GitReferencesPane from "~/components/context/dataobject/GitReferencesPane.vue";
 import VideoStreamReferencesPane from "~/components/context/dataobject/VideoStreamReferencesPane.vue";
 import AddRelationshipDialog from "~/components/context/display-components/relationships/add-dialog/AddRelationshipDialog.vue";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
+import { DataObjectApi } from "@dlr-shepard/backend-client";
+import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
+const { advancedMode } = useAdvancedMode();
 
 // We cast this because this page will only be invoked with a data object id.
 const { collectionId, dataObjectId } =
@@ -28,11 +31,53 @@ const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
 } = useCounter();
+const dataObjectApi = useShepardApi(DataObjectApi);
 
 const showAttributeEditDialog = ref(false);
-const showDescriptionEditDialog = ref(false);
 const showCreateDataReferenceDialog = ref(false);
 const showAddRelationshipDialog = ref(false);
+
+// ── Inline description editing ────────────────────────────────────────────
+const descEditActive = ref(false);
+const descDraft = ref("");
+const descStatusDraft = ref<string | null>(null);
+const descSaving = ref(false);
+
+function startDescEdit() {
+  descDraft.value = dataObject.value?.description ?? "";
+  descStatusDraft.value = dataObject.value?.status ?? null;
+  descEditActive.value = true;
+}
+
+function cancelDescEdit() {
+  descEditActive.value = false;
+}
+
+async function saveDescEdit() {
+  if (!dataObject.value) return;
+  descSaving.value = true;
+  try {
+    await dataObjectApi.value.updateDataObject({
+      collectionId,
+      dataObjectId,
+      dataObject: {
+        name: dataObject.value.name,
+        description: descDraft.value,
+        status: descStatusDraft.value ?? undefined,
+        attributes: dataObject.value.attributes ?? {},
+        parentId: dataObject.value.parentId,
+        predecessorIds: dataObject.value.predecessorIds ?? [],
+      },
+    });
+    emitSuccess(`Description updated`);
+    handleDataObjectUpdate();
+    descEditActive.value = false;
+  } catch (e) {
+    handleError(e, "updating description");
+  } finally {
+    descSaving.value = false;
+  }
+}
 
 watch(dataObject, () => {
   useHead({
@@ -91,39 +136,68 @@ watch(dataObject, () => {
                 :entity-name="dataObject.name"
               />
             </v-row>
+            <!-- Always-visible: Description with inline edit. -->
+            <section class="page-section">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Description</div>
+                <v-btn
+                  v-if="isAllowedToEditCollection && !descEditActive"
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  prepend-icon="mdi-pencil-outline"
+                  @click="startDescEdit"
+                >Edit</v-btn>
+              </div>
+              <RichTextEditor
+                v-if="descEditActive"
+                v-model="descDraft"
+                :is-editable="true"
+              />
+              <DescriptionDisplay v-else :entity="dataObject" />
+              <div v-if="descEditActive" class="d-flex align-center ga-2 mt-3">
+                <v-select
+                  v-model="descStatusDraft"
+                  label="Status"
+                  :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
+                  density="compact"
+                  clearable
+                  hide-details
+                  style="max-width: 200px"
+                />
+                <v-spacer />
+                <v-btn variant="text" size="small" @click="cancelDescEdit">Cancel</v-btn>
+                <v-btn
+                  variant="flat"
+                  color="primary"
+                  size="small"
+                  :loading="descSaving"
+                  @click="saveDescEdit"
+                >Save</v-btn>
+              </div>
+            </section>
+
+            <!-- Always-visible: Semantic Annotation chips. -->
+            <section class="page-section">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Semantic Annotations</div>
+                <AddAnnotationButton
+                  v-if="isAllowedToEditCollection"
+                  :annotated="
+                    new AnnotatedDataObject(collectionId, dataObjectId)
+                  "
+                />
+              </div>
+              <SemanticAnnotationList
+                :annotated="
+                  new AnnotatedDataObject(collection.id, dataObject.id)
+                "
+                :can-delete="!!isAllowedToEditCollection"
+              />
+            </section>
+
             <v-row no-gutters>
-              <ExpansionPanels :default-open="[4]">
-                <ExpansionPanelItem title="Description">
-                  <DescriptionDisplay :entity="dataObject" />
-                  <template v-if="isAllowedToEditCollection" #append>
-                    <ExpansionPanelTitleButton
-                      icon="mdi-pencil-outline"
-                      text="Edit"
-                      @click="() => (showDescriptionEditDialog = true)"
-                    />
-                    <EditDataObjectDescriptionDialog
-                      v-if="showDescriptionEditDialog"
-                      v-model:show-dialog="showDescriptionEditDialog"
-                      :collection-id="collectionId"
-                      :data-object-id="dataObjectId"
-                    />
-                  </template>
-                </ExpansionPanelItem>
-                <ExpansionPanelItem title="Semantic Annotations">
-                  <template v-if="isAllowedToEditCollection" #append>
-                    <AddAnnotationButton
-                      :annotated="
-                        new AnnotatedDataObject(collectionId, dataObjectId)
-                      "
-                    />
-                  </template>
-                  <SemanticAnnotationList
-                    :annotated="
-                      new AnnotatedDataObject(collection.id, dataObject.id)
-                    "
-                    :can-delete="!!isAllowedToEditCollection"
-                  />
-                </ExpansionPanelItem>
+              <ExpansionPanels :default-open="[2]">
                 <ExpansionPanelItem
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                   title="Attributes"
@@ -218,6 +292,12 @@ watch(dataObject, () => {
                 >
                   <DataObjectNotebooksPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
+                <!-- Git References and Video References are research-facing
+                     features (link an analysis notebook; embed a test
+                     recording) — visible in both modes. The Provenance Graph
+                     stays advanced-only: it's a heavy graph visualisation
+                     and overlaps with the simpler Dataset Lineage on the
+                     collection page. -->
                 <ExpansionPanelItem
                   v-if="dataObject.appId"
                   title="Git References"
@@ -230,6 +310,14 @@ watch(dataObject, () => {
                 >
                   <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
+                <ExpansionPanelItem v-if="advancedMode" title="Provenance Graph">
+                  <div class="pt-2 pb-2">
+                    <DataObjectProvGraph
+                      :data-object="dataObject"
+                      :collection-id="collectionId"
+                    />
+                  </div>
+                </ExpansionPanelItem>
               </ExpansionPanels>
             </v-row>
           </v-container>
@@ -239,3 +327,16 @@ watch(dataObject, () => {
     </v-container>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.page-section {
+  margin-bottom: 24px;
+}
+.page-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-left: 32px;
+}
+</style>

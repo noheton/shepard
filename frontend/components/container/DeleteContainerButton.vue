@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-defineProps<{ entityName: string }>();
+defineProps<{ entityName: string; warning?: string }>();
 const showDialog = ref(false);
 const emit = defineEmits(["delete"]);
 </script>
@@ -22,6 +22,7 @@ const emit = defineEmits(["delete"]);
     v-model:show-dialog="showDialog"
     :target-name="entityName"
     entity-type="container"
+    :warning="warning"
     @confirmed="emit('delete')"
   />
 </template>

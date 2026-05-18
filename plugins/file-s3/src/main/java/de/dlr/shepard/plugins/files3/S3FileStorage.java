@@ -132,7 +132,19 @@ public class S3FileStorage implements FileStorage {
         .build());
 
     if (endpoint != null && !endpoint.isBlank()) {
-      URI endpointUri = URI.create(endpoint.trim());
+      URI endpointUri;
+      try {
+        endpointUri = URI.create(endpoint.trim());
+      } catch (IllegalArgumentException e) {
+        Log.warnf("S3FileStorage: invalid endpoint URI '%s' — adapter disabled", endpoint);
+        enabled = false;
+        return;
+      }
+      if (endpointUri.getScheme() == null) {
+        Log.warnf("S3FileStorage: endpoint '%s' has no URI scheme — adapter disabled", endpoint);
+        enabled = false;
+        return;
+      }
       builder.endpointOverride(endpointUri);
       presignerBuilder.endpointOverride(endpointUri);
     }

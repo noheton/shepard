@@ -79,6 +79,22 @@
       </v-btn>
       <!-- Mobile: sign out/in icon only -->
       <v-btn class="d-md-none" :icon="authIcon" @click="handleAuth()" />
+      <!-- DLR institutional mark, subordinate to the shepard wordmark.
+           Matches the docs-site utility-bar treatment. -->
+      <a
+        href="https://www.dlr.de"
+        target="_blank"
+        rel="external noopener"
+        title="shepard is developed by DLR"
+        class="dlr-mark d-none d-md-inline-flex"
+      >
+        <v-img
+          :src="dlrLogoSrc"
+          height="22"
+          width="74"
+          alt="Deutsches Zentrum für Luft- und Raumfahrt"
+        />
+      </a>
     </template>
   </v-app-bar>
 
@@ -144,9 +160,23 @@ const router = useRouter();
 const mobileDrawerOpen = ref(false);
 
 const apiDocsUrl = computed(() => {
+  // Quarkus serves the Swagger UI under quarkus.http.non-application-root-path
+  // (configured to /shepard/doc — see application.properties). The trailing
+  // slash is required: /shepard/doc/swagger-ui without it 302-redirects, which
+  // some browsers won't follow when opening a new tab.
   const base = (publicConfig.backendApiUrl as string) || "";
-  return base ? `${base.replace(/\/$/, "")}/q/swagger-ui` : "/shepard/api/q/swagger-ui";
+  if (!base) return "/shepard/doc/swagger-ui/";
+  // backendApiUrl typically ends in /shepard/api — swap the suffix.
+  return base.replace(/\/shepard\/api\/?$/, "") + "/shepard/doc/swagger-ui/";
 });
+
+// DLR institutional mark — pick the dark-mode variant on dark themes.
+const themeForLogo = useTheme();
+const dlrLogoSrc = computed(() =>
+  themeForLogo.global.current.value.dark
+    ? new URL("../../assets/dlr_logo_white.svg", import.meta.url).href
+    : new URL("../../assets/dlr_logo.svg", import.meta.url).href,
+);
 const theme = useTheme();
 
 const isSignedIn = computed(
@@ -267,6 +297,23 @@ function clearSearch() {
   .header-search {
     min-width: 80px;
     max-width: 160px;
+  }
+}
+
+// DLR institutional mark — subordinate to the shepard wordmark, with a
+// hairline separator on its left so it reads as institutional attribution.
+.dlr-mark {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 16px;
+  margin-left: 8px;
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 1;
   }
 }
 </style>

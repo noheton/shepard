@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplay } from "vuetify";
 interface InformationDialogProps {
   title: string;
   loading?: boolean;

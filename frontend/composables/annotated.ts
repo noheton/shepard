@@ -121,6 +121,89 @@ export class AnnotatedReference implements Annotated {
   }
 }
 
+// ─── SA-CONT: container-level annotations via /v2/ endpoints ────────────────
+//
+// Shared raw-fetch wiring. The generated SemanticAnnotationApi only covers the
+// upstream /shepard/api/ targets (collection, data-object, reference,
+// timeseries-channel); the /v2/{type}-containers/{id}/annotations endpoints
+// are new on this fork, so we hit them directly until the OpenAPI client is
+// regenerated.
+
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  if (!accessToken) throw new Error("Not authenticated");
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+}
+
+abstract class ContainerAnnotated implements Annotated {
+  abstract readonly basePath: string; // e.g. "timeseries-containers"
+  readonly containerId: number;
+
+  constructor(containerId: number) {
+    this.containerId = containerId;
+  }
+
+  private endpoint(annotationId?: number): string {
+    const base = `${v2BaseUrl()}/v2/${this.basePath}/${this.containerId}/annotations`;
+    return annotationId === undefined ? base : `${base}/${annotationId}`;
+  }
+
+  async fetchAnnotations(): Promise<SemanticAnnotation[]> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(), { headers });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.json()) as SemanticAnnotation[];
+  }
+
+  async deleteAnnotation(annotationId: number): Promise<void> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(annotationId), {
+      method: "DELETE",
+      headers,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async addAnnotation(annotation: AnnotationToAdd): Promise<SemanticAnnotation> {
+    const headers = await authHeaders();
+    const response = await fetch(this.endpoint(), {
+      method: "POST",
+      headers,
+      body: JSON.stringify(annotation),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return (await response.json()) as SemanticAnnotation;
+  }
+}
+
+export class AnnotatedTimeseriesContainer extends ContainerAnnotated {
+  readonly basePath = "timeseries-containers";
+}
+
+export class AnnotatedFileContainer extends ContainerAnnotated {
+  readonly basePath = "file-containers";
+}
+
+export class AnnotatedStructuredDataContainer extends ContainerAnnotated {
+  readonly basePath = "structured-data-containers";
+}
+
+// ─── Per-Timeseries-channel annotations (covered by upstream API) ───────────
+
 export class AnnotatedTimeseries implements Annotated {
   api = useShepardApi(TimeseriesContainerApi);
   entity: TimeseriesEntity;

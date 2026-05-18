@@ -1,7 +1,8 @@
 package de.dlr.shepard.auth.users.services;
 
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.ReplaceOptions.createReplaceOptions;
+
+import com.mongodb.client.model.ReplaceOptions;
 
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,7 +31,7 @@ public class UserAvatarService {
 
   static final String COLLECTION = "userAvatars";
   static final long MAX_BYTES = 2 * 1024 * 1024L; // 2 MB
-  static final Set<String> ALLOWED_MIME_TYPES = Set.of(
+  public static final Set<String> ALLOWED_MIME_TYPES = Set.of(
       "image/jpeg", "image/png", "image/gif", "image/webp");
 
   @Inject
@@ -64,7 +65,7 @@ public class UserAvatarService {
         .append("sizeBytes", bytes.length)
         .append("uploadedAt", new Date());
 
-    collection().replaceOne(eq("_id", userAppId), doc, createReplaceOptions().upsert(true));
+    collection().replaceOne(eq("_id", userAppId), doc, new ReplaceOptions().upsert(true));
     return true;
   }
 

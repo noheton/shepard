@@ -75,6 +75,20 @@ Effective access is therefore:
 - `Public` — broader read; specifics governed by the visibility flag.
 - `Private` — only the explicit lists apply.
 
+## Task guides
+
+Step-by-step walkthroughs for common tasks:
+
+- [Plot timeseries data](help/timeseries-plotting.md) — interactive charts, zoom/pan, channel selection, container-level previews
+- [Explore collection lineage](help/collection-lineage.md) — parent/child and predecessor/successor graph
+- [Trace dataset provenance](help/provenance-tracing.md) — who acted on a dataset and when
+- [Upload data](help/upload-data.md) — files, JSON, CSV
+- [Monitor collection activity](help/monitor-collection-activity.md) — activity sparklines
+- [Publish a data object](help/publish-data-object.md) — lifecycle publishing
+- [Publish to Helmholtz Unhide](help/publish-to-helmholtz-unhide.md) — federated harvesting
+- [Annotate a container with semantic tags](help/annotate-container.md) — attach ontology terms to a timeseries / file / SD container
+- [Delete a container that has references](help/delete-container-with-references.md) — the safe-delete warning and what "orphaned references" mean
+
 ## Search
 
 A REST search endpoint exists at `SearchRest`

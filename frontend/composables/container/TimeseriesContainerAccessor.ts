@@ -8,6 +8,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
+import { safeDeleteContainer } from "./safeDeleteContainer";
 
 export class TimeseriesContainerAccessor extends ContainerAccessor {
   api = useShepardApi(TimeseriesContainerApi);
@@ -16,10 +17,24 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
   loading = ref<boolean>(true);
 
   async delete() {
+    // DI1: call the /v2/ safe-delete endpoint. The UI has already shown the
+    // active-references warning in the confirm dialog, so force=true here.
+    // External clients (admin CLI, scripts) that call the same endpoint without
+    // force get the server-side 409 protection.
     try {
-      await this.api.value.deleteTimeseriesContainer({
-        timeseriesContainerId: this.id,
+      const result = await safeDeleteContainer("timeseries", this.id, {
+        force: true,
       });
+      if (!result.ok) {
+        // Shouldn't happen with force=true, but fall back gracefully.
+        handleError(
+          new Error(
+            `Server reported ${result.conflict.referenceCount} active references; delete blocked.`,
+          ),
+          "deleting timeseries container",
+        );
+        return;
+      }
       emitSuccess(
         `Successfully deleted container "${this.container.value?.name}"`,
       );

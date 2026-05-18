@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useTreeviewItems } from "./useTreeviewItems";
 import type { TreeviewItem } from "./treeviewItem";
+import { useDisplay } from "vuetify";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();

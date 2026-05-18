@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useDisplay } from "vuetify";
 import {
   ContainerType,
   PermissionType,

@@ -4,6 +4,22 @@ import { useTheme } from "vuetify";
 const theme = useTheme();
 const isDarkMode = computed(() => theme.global.current.value.dark);
 
+// Quarkus Swagger UI lives on the backend, not the frontend domain.
+// Build the URL from backendApiUrl (e.g. https://shepard-api.example/shepard/api
+// → https://shepard-api.example/shepard/doc/swagger-ui/). Trailing slash matters.
+const { public: publicConfig } = useRuntimeConfig();
+const apiDocsUrl = computed(() => {
+  const base = (publicConfig.backendApiUrl as string) || "";
+  if (!base) return "/shepard/doc/swagger-ui/";
+  return base.replace(/\/shepard\/api\/?$/, "") + "/shepard/doc/swagger-ui/";
+});
+
+const dlrLogoSrc = computed(() =>
+  isDarkMode.value
+    ? new URL("../../../assets/dlr_logo_white.svg", import.meta.url).href
+    : new URL("../../../assets/dlr_logo.svg", import.meta.url).href,
+);
+
 const containerIconSrc = computed(() =>
   isDarkMode.value
     ? new URL("../../../assets/container_icon_dark.svg", import.meta.url).href
@@ -36,6 +52,22 @@ const dataObjectIconSrc = computed(() =>
         <div class="text-subtitle-1">
           Storage for Heterogeneous Product and Research Data
         </div>
+        <!-- DLR institutional attribution, subordinate to the shepard wordmark. -->
+        <a
+          href="https://www.dlr.de"
+          target="_blank"
+          rel="external noopener"
+          class="dlr-credit mt-4 d-flex align-center"
+          title="shepard is developed by DLR"
+        >
+          <span class="text-caption text-medium-emphasis mr-2">Developed by</span>
+          <v-img
+            :src="dlrLogoSrc"
+            height="22"
+            width="74"
+            alt="Deutsches Zentrum für Luft- und Raumfahrt"
+          />
+        </a>
       </v-col>
     </v-container>
 
@@ -157,7 +189,7 @@ const dataObjectIconSrc = computed(() =>
           <div class="d-flex justify-end gap-3 w-100">
             <v-btn
               variant="outlined"
-              href="/shepard/api/q/swagger-ui"
+              :href="apiDocsUrl"
               target="_blank"
             >
               API Docs
@@ -176,3 +208,14 @@ const dataObjectIconSrc = computed(() =>
     </v-container>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.dlr-credit {
+  text-decoration: none;
+  opacity: 0.9;
+  transition: opacity 0.15s ease;
+  &:hover {
+    opacity: 1;
+  }
+}
+</style>

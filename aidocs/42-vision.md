@@ -67,7 +67,7 @@ shepard organises everything into five primitives:
 | **Collection** | A campaign, project, or topic — the top-level grouping | "LUMEN-Inspired Hot-Fire Test Campaign — Q3 2024" |
 | **DataObject** | A logical thing inside a Collection, freely nestable, with attributes | "TR-004 — fired run with anomaly" |
 | **Reference** | A pointer from a DataObject to a payload of one of five kinds | "`tr-004-sensors`" — TimeseriesReference |
-| **Annotation** | A semantic tag from an ontology attached to anything | `phase = ramp_up`, `severity = HIGH` |
+| **Annotation** | A semantic tag from an ontology attached to a Collection, DataObject, Reference, Timeseries channel, **or Container itself** (SA-CONT shipped) | `phase = ramp_up`, `severity = HIGH`, `instrument = "B&K LAN-XI"` |
 | **Lab journal entry** | A CommonMark + GFM markdown note attached to anything. **J1a shipped**: `GET /v2/lab-journal/{appId}/render` returns sanitised HTML. **J1b shipped**: `GET /v2/lab-journal/{dataObjectAppId}/notebooks` lists `.ipynb` file references. **J1d shipped**: `GET /v2/lab-journal/{entryAppId}/history` returns append-only revision history — researchers can recover earlier versions of their notes. Plain-text entries render unchanged as `<p>` elements. | "Vibration spike on fuel-turbopump observed at t=8s..." |
 
 Plus payload kinds (the things References point at):

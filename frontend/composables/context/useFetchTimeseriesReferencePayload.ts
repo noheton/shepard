@@ -10,7 +10,7 @@ export function useFetchTimeseriesPayload(
   timeseriesReferenceId: number,
 ) {
   const timeseriesWithDataPoints = ref<TimeseriesWithDataPoints[]>();
-  const isLoading = ref<boolean>(true);
+  const isLoading = ref<boolean>(false);
 
   function fetchTimeseriesPayload(
     collectionId: number,
@@ -28,6 +28,9 @@ export function useFetchTimeseriesPayload(
       })
       .catch(error => {
         handleError(error, "getTimeseriesPayload");
+      })
+      .finally(() => {
+        isLoading.value = false;
       });
   }
 

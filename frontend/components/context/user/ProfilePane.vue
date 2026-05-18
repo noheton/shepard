@@ -9,6 +9,12 @@ const { patchMe, isSaving } = usePatchMe();
 const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
 
+// appId is a fork extension not in the auto-generated User type
+const userAppId = computed<string | undefined>(() => {
+  const raw = (user.value as unknown as { appId?: string | null })?.appId;
+  return raw ?? undefined;
+});
+
 // U1e: Avatar upload/delete
 const avatarKey = ref(0); // bump to force img reload after upload
 const avatarError = ref(false);
@@ -111,8 +117,8 @@ async function saveJupyterUrl() {
       <div class="avatar-wrapper">
         <v-avatar size="80" color="primary">
           <v-img
-            v-if="!avatarError && user.appId"
-            :src="avatarUrl(user.appId)"
+            v-if="!avatarError && userAppId"
+            :src="avatarUrl(userAppId)"
             cover
             @error="onAvatarError"
           />
@@ -140,7 +146,7 @@ async function saveJupyterUrl() {
           Upload avatar
         </v-btn>
         <v-btn
-          v-if="!avatarError && user.appId"
+          v-if="!avatarError && userAppId"
           size="small"
           variant="text"
           color="error"

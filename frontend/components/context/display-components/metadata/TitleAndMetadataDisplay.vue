@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ContainerType } from "@dlr-shepard/backend-client";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import MetadataColumn from "./MetadataColumn.vue";
 import MetadataContainerField from "./MetadataContainerField.vue";
 import MetadataField from "./MetadataTextField.vue";
@@ -27,6 +28,10 @@ interface TitleAndMetadataDisplayProps {
   onAnnotate?: () => void;
 }
 defineProps<TitleAndMetadataDisplayProps>();
+
+// Internal numeric IDs (Neo4j OGM long ids) are dev-facing. Hide them in
+// basic mode — researchers don't need them; devs flip on advanced mode.
+const { advancedMode } = useAdvancedMode();
 </script>
 
 <template>
@@ -38,9 +43,13 @@ defineProps<TitleAndMetadataDisplayProps>();
       </v-col>
     </v-row>
     <v-row no-gutters class="justify-start flex-nowrap">
-      <MetadataColumn>
+      <MetadataColumn v-if="advancedMode || entity.type">
         <MetadataField v-if="entity.type" label="Type" :text="entity.type" />
-        <MetadataField label="ID" :text="entity.id.toString() ?? ''" />
+        <MetadataField
+          v-if="advancedMode"
+          label="ID"
+          :text="entity.id.toString() ?? ''"
+        />
       </MetadataColumn>
 
       <MetadataColumn>

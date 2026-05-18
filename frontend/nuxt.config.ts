@@ -90,11 +90,13 @@ export default defineNuxtConfig({
 
 
   typescript: {
-    typeCheck: true,
+    typeCheck: process.env.NUXT_TYPECHECK !== "false",
   },
 
   build: {
-    transpile: ["vuetify"],
+    // echarts and zrender are excluded from SSR transpile — see vite.ssr.external below.
+    // vue-echarts must be transpiled for client-side ESM compat.
+    transpile: ["vuetify", "vue-echarts"],
   },
 
   future: {
@@ -152,6 +154,12 @@ export default defineNuxtConfig({
   css: ["@/styles/main.scss"],
 
   vite: {
+    ssr: {
+      // Keep echarts/zrender out of the Nitro SSR bundle — their circular ESM
+      // dependencies cause a TDZ error when bundled by Rollup. Charts are always
+      // wrapped in <ClientOnly> so they never render on the server.
+      external: ["echarts", "zrender"],
+    },
     css: {
       preprocessorOptions: {
         sass: {

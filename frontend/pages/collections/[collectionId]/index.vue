@@ -2,11 +2,13 @@
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { collectionsPath } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
+const { advancedMode } = useAdvancedMode();
 
 const {
   counter: numberOfLabJournalEntries,
@@ -17,10 +19,49 @@ const collectionId = routeParams.value.collectionId;
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
+const collectionApi = useShepardApi(CollectionApi);
 
 const showAttributeEditDialog = ref(false);
-const showDescriptionEditDialog = ref(false);
 const isExporting = ref(false);
+
+// ── Inline description editing ────────────────────────────────────────────
+const descEditActive = ref(false);
+const descDraft = ref("");
+const descStatusDraft = ref<string | null>(null);
+const descSaving = ref(false);
+
+function startDescEdit() {
+  descDraft.value = collection.value?.description ?? "";
+  descStatusDraft.value = collection.value?.status ?? null;
+  descEditActive.value = true;
+}
+
+function cancelDescEdit() {
+  descEditActive.value = false;
+}
+
+async function saveDescEdit() {
+  if (!collection.value) return;
+  descSaving.value = true;
+  try {
+    await collectionApi.value.updateCollection({
+      collectionId,
+      collection: {
+        name: collection.value.name,
+        description: descDraft.value,
+        status: descStatusDraft.value ?? undefined,
+        attributes: collection.value.attributes ?? {},
+      },
+    });
+    emitSuccess(`Description updated`);
+    handleCollectionUpdate();
+    descEditActive.value = false;
+  } catch (e) {
+    handleError(e, "updating description");
+  } finally {
+    descSaving.value = false;
+  }
+}
 
 async function downloadRoCrate() {
   if (isExporting.value) return;
@@ -108,35 +149,68 @@ watch(collection, () => {
                 :entity-name="collection.name"
               />
             </v-row>
+            <!-- Always-visible: Description with inline edit. Lives outside the
+                 collapsibles so users don't have to click to read it. -->
+            <section class="page-section">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Description</div>
+                <v-btn
+                  v-if="isAllowedToEditCollection && !descEditActive"
+                  variant="text"
+                  density="comfortable"
+                  size="small"
+                  prepend-icon="mdi-pencil-outline"
+                  @click="startDescEdit"
+                >Edit</v-btn>
+              </div>
+              <RichTextEditor
+                v-if="descEditActive"
+                v-model="descDraft"
+                :is-editable="true"
+              />
+              <DescriptionDisplay v-else :entity="collection" />
+              <div v-if="descEditActive" class="d-flex align-center ga-2 mt-3">
+                <v-select
+                  v-model="descStatusDraft"
+                  label="Status"
+                  :items="['DRAFT', 'IN_REVIEW', 'READY', 'PUBLISHED', 'ARCHIVED']"
+                  density="compact"
+                  clearable
+                  hide-details
+                  style="max-width: 200px"
+                />
+                <v-spacer />
+                <v-btn variant="text" size="small" @click="cancelDescEdit">Cancel</v-btn>
+                <v-btn
+                  variant="flat"
+                  color="primary"
+                  size="small"
+                  :loading="descSaving"
+                  @click="saveDescEdit"
+                >Save</v-btn>
+              </div>
+            </section>
+
+            <!-- Always-visible: Semantic Annotation chips. Out of the
+                 collapsibles so users see the tags at a glance. -->
+            <section class="page-section">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Semantic Annotations</div>
+                <AddAnnotationButton
+                  v-if="isAllowedToEditCollection"
+                  :annotated="new AnnotatedCollection(collectionId)"
+                />
+              </div>
+              <SemanticAnnotationList
+                :annotated="new AnnotatedCollection(collection.id)"
+                :can-delete="!!isAllowedToEditCollection"
+              />
+            </section>
+
+            <!-- Deeper-dive content stays in collapsibles. Snapshots and
+                 Publishing are dev/admin tooling — hidden in basic mode. -->
             <v-row no-gutters>
               <ExpansionPanels>
-                <ExpansionPanelItem title="Description">
-                  <DescriptionDisplay :entity="collection" />
-                  <template v-if="isAllowedToEditCollection" #append>
-                    <ExpansionPanelTitleButton
-                      icon="mdi-pencil-outline"
-                      text="Edit"
-                      @click="() => (showDescriptionEditDialog = true)"
-                    />
-                    <EditCollectionDescriptionDialog
-                      v-if="showDescriptionEditDialog"
-                      v-model:show-dialog="showDescriptionEditDialog"
-                      :collection="collection"
-                    />
-                  </template>
-                </ExpansionPanelItem>
-                <ExpansionPanelItem title="Semantic Annotations">
-                  <template v-if="isAllowedToEditCollection" #append>
-                    <AddAnnotationButton
-                      :annotated="new AnnotatedCollection(collectionId)"
-                    />
-                  </template>
-                  <SemanticAnnotationList
-                    :annotated="new AnnotatedCollection(collection.id)"
-                    :can-delete="!!isAllowedToEditCollection"
-                  />
-                </ExpansionPanelItem>
-
                 <ExpansionPanelItem
                   :count="Object.keys(collection.attributes ?? {}).length"
                   title="Attributes"
@@ -177,8 +251,13 @@ watch(collection, () => {
                     />
                   </div>
                 </ExpansionPanelItem>
+                <ExpansionPanelItem title="Dataset Lineage">
+                  <div class="pt-2 pb-2">
+                    <CollectionLineageGraph :collection-id="collectionId" />
+                  </div>
+                </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  v-if="isAllowedToEditCollection && collectionAppId"
+                  v-if="advancedMode && isAllowedToEditCollection && collectionAppId"
                   title="Snapshots"
                 >
                   <div class="pt-4">
@@ -186,7 +265,7 @@ watch(collection, () => {
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  v-if="isAllowedToEditCollection && collectionAppId"
+                  v-if="advancedMode && isAllowedToEditCollection && collectionAppId"
                   title="Publishing"
                 >
                   <div class="pt-2">
@@ -202,3 +281,18 @@ watch(collection, () => {
     </v-container>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.page-section {
+  margin-bottom: 24px;
+}
+.page-section-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  // Match the v-expansion-panel-title left edge so reading flow is consistent
+  // with the collapsibles below.
+  padding-left: 32px;
+}
+</style>

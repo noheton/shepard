@@ -133,6 +133,23 @@ public class SnapshotDAO extends GenericDAO<Snapshot> {
   }
 
   /**
+   * Returns a map of {@code entityAppId} → {@code revision} for all entries
+   * in the given snapshot. Used by V2e diff computation.
+   *
+   * @param snapshotNeo4jId the OGM-managed Long id of the snapshot.
+   * @return map of entityAppId to revision; empty when the snapshot has no entries.
+   */
+  public Map<String, Long> getEntryRevisionMap(long snapshotNeo4jId) {
+    return findEntriesBySnapshot(snapshotNeo4jId)
+      .stream()
+      .collect(Collectors.toMap(
+        SnapshotEntry::getEntityAppId,
+        SnapshotEntry::getRevision,
+        (a, b) -> b
+      ));
+  }
+
+  /**
    * Filters the provided set of {@code appId} strings to only those that
    * exist as non-deleted {@code :DataObject} nodes in the graph.
    *

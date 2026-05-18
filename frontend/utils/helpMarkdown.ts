@@ -50,15 +50,8 @@ function jekyllPathToPage(href: string): string | null {
 const renderer = new marked.Renderer();
 
 // Open external links in a new tab; rewrite internal Jekyll doc links.
-renderer.link = ({
-  href,
-  title,
-  text,
-}: {
-  href: string;
-  title?: string | null;
-  text: string;
-}) => {
+// Note: marked v9 passes individual arguments (href, title, text).
+renderer.link = (href: string, title: string | null | undefined, text: string) => {
   if (!href) return text;
   const isExternal = /^https?:\/\//.test(href);
   const titleAttr = title ? ` title="${title}"` : "";
@@ -73,27 +66,20 @@ renderer.link = ({
 };
 
 // Syntax-highlight fenced code blocks using highlight.js.
-renderer.code = ({
-  text,
-  lang,
-}: {
-  text: string;
-  lang?: string;
-  escaped?: boolean;
-}) => {
-  if (lang) {
+// Note: marked v9 passes individual arguments (code, language, escaped).
+renderer.code = (code: string, language: string | undefined) => {
+  if (language) {
     try {
-      const highlighted = hljs.highlight(text, {
-        language: lang,
+      const highlighted = hljs.highlight(code, {
+        language,
         ignoreIllegals: true,
       }).value;
-      return `<pre><code class="hljs language-${lang}">${highlighted}</code></pre>`;
+      return `<pre><code class="hljs language-${language}">${highlighted}</code></pre>`;
     } catch {
       // Unknown language — fall through to plain render
     }
   }
-  // Escape HTML for unknown languages
-  const escaped = text
+  const escaped = code
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");

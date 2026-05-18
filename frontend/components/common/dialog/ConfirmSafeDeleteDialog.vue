@@ -2,6 +2,12 @@
 interface ConfirmSafeDeleteDialog {
   entityType: string;
   targetName: string;
+  /**
+   * When set, renders a warning banner above the type-the-name prompt.
+   * Used e.g. for containers that have active references — the delete still
+   * proceeds, but the user is informed they'll be leaving orphaned references.
+   */
+  warning?: string;
 }
 
 const props = defineProps<ConfirmSafeDeleteDialog>();
@@ -50,6 +56,15 @@ onMounted(() => {
         </div>
       </template>
       <v-card-text>
+        <v-alert
+          v-if="warning"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-3"
+        >
+          {{ warning }}
+        </v-alert>
         <v-row class="pt-5">
           <v-col>
             <span class="text-body-1 text-textbody1">{{ promptText }}</span>

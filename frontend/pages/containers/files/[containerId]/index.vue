@@ -11,6 +11,15 @@ const containerAccessor = new FileContainerAccessor(containerId);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useFileContainerLinkedDataObjects(containerId);
 
+const deleteWarning = computed<string | undefined>(() => {
+  const n = linkedDataObjects.value?.length ?? 0;
+  if (n === 0) return undefined;
+  return (
+    `${n} data object${n === 1 ? "" : "s"} reference this container. ` +
+    "Deleting it now will leave those references orphaned (the files they used to point at will no longer be retrievable)."
+  );
+});
+
 const fetchData = () => {
   containerAccessor.fetchData();
   containerAccessor.fetchFiles();
@@ -74,6 +83,7 @@ watch(containerAccessor.fileContainer, () => {
                 <DeleteContainerButton
                   v-if="containerAccessor.isAllowedToDelete.value"
                   :entity-name="containerAccessor.fileContainer.value.name"
+                  :warning="deleteWarning"
                   @delete="containerAccessor.delete()"
                 />
               </template>
@@ -92,9 +102,29 @@ watch(containerAccessor.fileContainer, () => {
         (file: ShepardFile) => containerAccessor.downloadFile(file)
       "
     />
+    <!-- SA-CONT: container-level semantic annotations -->
+    <ExpansionPanels class="mt-4" :default-open="[0]">
+      <ExpansionPanelItem title="Semantic Annotations">
+        <template
+          v-if="containerAccessor.isAllowedToEditData.value"
+          #append
+        >
+          <AddAnnotationButton
+            :annotated="new AnnotatedFileContainer(containerId)"
+          />
+        </template>
+        <SemanticAnnotationList
+          :annotated="new AnnotatedFileContainer(containerId)"
+          :can-delete="!!containerAccessor.isAllowedToEditData.value"
+        />
+      </ExpansionPanelItem>
+    </ExpansionPanels>
     <!-- CC1b: Referenced by — wired to GET /v2/file-containers/{id}/linked-data-objects -->
     <ExpansionPanels class="mt-4" :default-open="[0]">
-      <ExpansionPanelItem title="Referenced by">
+      <ExpansionPanelItem
+        title="Referenced by"
+        :count="linkedDataObjects?.length"
+      >
         <div v-if="linkedDataObjectsLoading" class="pa-4">
           <v-progress-circular indeterminate size="20" />
         </div>
@@ -106,12 +136,10 @@ watch(containerAccessor.fileContainer, () => {
         </div>
         <div v-else class="pa-2">
           <v-list density="compact">
-            <v-list-item
+            <LinkedDataObjectRow
               v-for="obj in linkedDataObjects"
               :key="obj.id"
-              :to="`/collections/${obj.collectionId}/dataObjects/${obj.id}`"
-              prepend-icon="mdi-database-outline"
-              :title="obj.name"
+              :data-object="obj"
             />
           </v-list>
         </div>

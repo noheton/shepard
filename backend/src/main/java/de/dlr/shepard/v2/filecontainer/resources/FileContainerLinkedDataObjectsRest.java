@@ -3,17 +3,23 @@ package de.dlr.shepard.v2.filecontainer.resources;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.data.file.services.FileContainerService;
+import de.dlr.shepard.v2.integrity.SafeDeleteConflict;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -70,5 +76,44 @@ public class FileContainerLinkedDataObjectsRest {
       result.add(new DataObjectIO(dataObject));
     }
     return Response.ok(result).build();
+  }
+
+  /** DI1 — safe delete: refuses with 409 if active references exist unless ?force=true. */
+  @DELETE
+  @Path("/{containerId}")
+  @Operation(
+    summary = "Safely delete this FileContainer.",
+    description = "Refuses with 409 if active references exist unless ?force=true is supplied. " +
+    "Use this in preference to the upstream /shepard/api/fileContainers/{id} DELETE, which " +
+    "always deletes and silently orphans any surviving references."
+  )
+  @APIResponse(responseCode = "204", description = "Container deleted.")
+  @APIResponse(
+    responseCode = "409",
+    description = "Container has active references; retry with ?force=true to delete anyway.",
+    content = @Content(schema = @Schema(implementation = SafeDeleteConflict.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
+  @APIResponse(responseCode = "404", description = "No FileContainer with that id.")
+  public Response safeDeleteContainer(
+    @PathParam("containerId") long containerId,
+    @QueryParam("force") @DefaultValue("false") boolean force
+  ) {
+    if (!force) {
+      List<DataObject> linked = fileContainerService.findLinkedDataObjectsById(containerId);
+      if (!linked.isEmpty()) {
+        List<String> sample = linked.stream()
+          .map(DataObject::getAppId)
+          .filter(Objects::nonNull)
+          .limit(SafeDeleteConflict.SAMPLE_LIMIT)
+          .toList();
+        return Response.status(Status.CONFLICT)
+          .entity(new SafeDeleteConflict(linked.size(), sample))
+          .build();
+      }
+    }
+    fileContainerService.deleteContainer(containerId);
+    return Response.status(Status.NO_CONTENT).build();
   }
 }

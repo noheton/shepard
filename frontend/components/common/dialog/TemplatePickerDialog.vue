@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useDisplay } from "vuetify";
 import type { ShepardTemplateIO } from "@dlr-shepard/backend-client";
 
 defineProps<{

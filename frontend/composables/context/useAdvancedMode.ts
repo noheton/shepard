@@ -1,5 +1,6 @@
 import { MeApi } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
+import { handleError } from "~/utils/errorBus";
 
 const PREF_KEY = "ui.advancedMode";
 
