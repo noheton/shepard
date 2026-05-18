@@ -38,7 +38,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @RequestScoped
 public class AasServerSelfDescriptionService {
 
-  static final String AAS_SUBMODEL_TEMPLATE_KIND = "AAS_SUBMODEL_TEMPLATE";
+  public static final String AAS_SUBMODEL_TEMPLATE_KIND = "AAS_SUBMODEL_TEMPLATE";
   static final String DEFAULT_API_PROFILE = "Submodel-Repository-Read-3.1";
   static final String IDTA_REGISTRY_KIND = "idta-registry";
 

@@ -1,0 +1,200 @@
+---
+# Bundled IDTA Submodel Templates for AAS1d.
+# Loaded by AasIdtaTemplateImportService on POST /v2/admin/aas/import-idta-templates.
+# Import is idempotent: an entry is skipped when a live template with the same
+# name + templateKind already has identical body, description, and tags.
+#
+# Body format: JSON DSL per aidocs/52 §6.1:
+#   { "submodel": { "semanticId", "version", "revision" },
+#     "submodelElements": [ { "idShort", "kind", "valueType"?, "semanticId"?,
+#                              "required", "description" } ] }
+
+- name: "IDTA Digital Nameplate"
+  templateKind: "AAS_SUBMODEL_TEMPLATE"
+  description: >-
+    IDTA Submodel Template 02006 — Digital Nameplate v3.0 (revision 0).
+    Captures the legally required and commercially relevant identification
+    data for industrial products: manufacturer, product designation,
+    serial number, hardware/firmware/software versions, and country of origin.
+    Mandatory elements: ManufacturerName, ManufacturerProductDesignation,
+    YearOfConstruction.
+  tags:
+    - idta
+    - nameplate
+    - identification
+  body: |-
+    {
+      "submodel": {
+        "semanticId": "https://admin-shell.io/IDTA-02006/3/0",
+        "version": "3",
+        "revision": "0"
+      },
+      "submodelElements": [
+        {
+          "idShort": "ManufacturerName",
+          "kind": "MultiLanguageProperty",
+          "semanticId": "0173-1#02-AAO677#002",
+          "required": true,
+          "description": "Legally valid designation of the natural or juridical person directly responsible for the design, production, packaging and labelling of the product in respect to its being brought into the market."
+        },
+        {
+          "idShort": "ManufacturerProductDesignation",
+          "kind": "MultiLanguageProperty",
+          "semanticId": "0173-1#02-AAW338#001",
+          "required": true,
+          "description": "Short description of the product (short text)."
+        },
+        {
+          "idShort": "YearOfConstruction",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAP906#001",
+          "required": true,
+          "description": "Year as per which the naming is established and which is given in the market. Four-digit year, e.g. 2024."
+        },
+        {
+          "idShort": "SerialNumber",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAM556#002",
+          "required": false,
+          "description": "Unique combination of numbers and letters used to identify the device once it has been manufactured."
+        },
+        {
+          "idShort": "BatchNumber",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAQ327#001",
+          "required": false,
+          "description": "Number used to identify a quantity of material of limited extent, typically manufactured under the same conditions."
+        },
+        {
+          "idShort": "HardwareVersion",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAN270#002",
+          "required": false,
+          "description": "Version of the hardware supplied with the device."
+        },
+        {
+          "idShort": "FirmwareVersion",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAM985#002",
+          "required": false,
+          "description": "Version of the firmware supplied with the device."
+        },
+        {
+          "idShort": "SoftwareVersion",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAM737#002",
+          "required": false,
+          "description": "Version of the software used by the device."
+        },
+        {
+          "idShort": "CountryOfOrigin",
+          "kind": "Property",
+          "valueType": "xs:string",
+          "semanticId": "0173-1#02-AAO259#004",
+          "required": false,
+          "description": "Country where the product was manufactured. Use ISO 3166-1 alpha-2 country code."
+        },
+        {
+          "idShort": "CompanyLogo",
+          "kind": "File",
+          "semanticId": "0173-1#02-AAY812#001",
+          "required": false,
+          "description": "A graphic mark used to represent the manufacturer company or organisation."
+        }
+      ]
+    }
+
+- name: "IDTA Technical Data"
+  templateKind: "AAS_SUBMODEL_TEMPLATE"
+  description: >-
+    IDTA Submodel Template 02003 — Technical Data v2.0 (revision 0).
+    Provides the technical and commercial properties of industrial equipment
+    in a machine-readable form. Mandatory top-level collections:
+    GeneralInformation (with ManufacturerName and ManufacturerProductDesignation)
+    and TechnicalProperties. Optional: ProductClassifications, FurtherInformation.
+  tags:
+    - idta
+    - technical-data
+    - properties
+  body: |-
+    {
+      "submodel": {
+        "semanticId": "https://admin-shell.io/IDTA-02003/2/0",
+        "version": "2",
+        "revision": "0"
+      },
+      "submodelElements": [
+        {
+          "idShort": "GeneralInformation",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02003/2/0/GeneralInformation",
+          "required": true,
+          "description": "General and commercially relevant information about the product, including ManufacturerName, ManufacturerProductDesignation, ManufacturerArticleNumber, and an optional ManufacturerLogo."
+        },
+        {
+          "idShort": "TechnicalProperties",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02003/2/0/TechnicalProperties",
+          "required": true,
+          "description": "Technical and product properties of the industrial equipment. Fully open-ended: integrators add individual Property or Range elements with appropriate ECLASS / IEC CDD semantic IDs."
+        },
+        {
+          "idShort": "ProductClassifications",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02003/2/0/ProductClassifications",
+          "required": false,
+          "description": "Product classifications as per established international or national product classification systems (e.g. ECLASS, UNSPSC, eCl@ss)."
+        },
+        {
+          "idShort": "FurtherInformation",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02003/2/0/FurtherInformation",
+          "required": false,
+          "description": "Further information on the product, such as TextStatement elements for certifications, warnings, or supplementary remarks."
+        }
+      ]
+    }
+
+- name: "IDTA Time Series Data"
+  templateKind: "AAS_SUBMODEL_TEMPLATE"
+  description: >-
+    IDTA Submodel Template 02008 — Time Series Data v1.1 (revision 1).
+    Structures time-ordered measurement data for machine or process monitoring.
+    A Metadata collection carries global annotations; one or more Segment
+    collections inside Segments each hold a self-contained time-ordered dataset
+    (timestamps + variable values) with sampling metadata.
+    Append-only semantics recommended for write access.
+  tags:
+    - idta
+    - time-series
+    - measurement
+  body: |-
+    {
+      "submodel": {
+        "semanticId": "https://admin-shell.io/IDTA-02008/1/1",
+        "version": "1",
+        "revision": "1"
+      },
+      "submodelElements": [
+        {
+          "idShort": "Metadata",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02008/1/1/Metadata",
+          "required": true,
+          "description": "Global metadata for the time-series submodel. Contains Name (MultiLanguageProperty), optional Description (MultiLanguageProperty), optional RecordingDuration (Property, xs:duration), and optional ConformsTo (Property, xs:anyURI) identifying the data format convention."
+        },
+        {
+          "idShort": "Segments",
+          "kind": "SubmodelElementCollection",
+          "semanticId": "https://admin-shell.io/IDTA-02008/1/1/Segments",
+          "required": true,
+          "description": "Container for one or more time-series segments. Each Segment child is a SubmodelElementCollection carrying Name, optional Description, RecordingPeriod (xs:duration), LastUpdate (xs:dateTime), SamplingInterval (xs:duration), SamplingRate (xs:double), and a Data payload (InternalData Blob or ExternalData File reference)."
+        }
+      ]
+    }
