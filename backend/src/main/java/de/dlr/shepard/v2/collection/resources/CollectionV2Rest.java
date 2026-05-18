@@ -122,21 +122,32 @@ public class CollectionV2Rest {
 
   @GET
   @Operation(
-    summary = "List Collections.",
+    summary = "List Collections the caller may read.",
     description =
-      "Returns a page of Collections the caller may Read. " +
-      "Filtering: 'name' query param matches by name substring. " +
-      "Pagination: page=0, size=50 by default (size capped at 200 server-side). " +
-      "Sort: ordered by Neo4j-OGM id by default; 'orderBy' / 'orderDesc' query " +
-      "params accept the same {@code DataObjectAttributes} enum the v1 endpoint takes."
+      "Returns a page of `:Collection` entities (`CollectionIO` JSON shape) that the " +
+      "authenticated caller has Read permission on. The page is unordered by default; " +
+      "supply `orderBy` (one of the `DataObjectAttributes` enum: `createdAt`, `name`, " +
+      "`status`, …) with `orderDesc=true` for a sorted result.\n\n" +
+      "Pagination: omit `page` / `size` to get the first 50; supply both to paginate. " +
+      "The server caps `size` at 200 to avoid unbounded result sets.\n\n" +
+      "Filtering: `name` does a case-insensitive substring match.\n\n" +
+      "Each returned `CollectionIO` carries both `id` (legacy long) and `appId` " +
+      "(canonical UUID v7); v2 clients should branch on `appId` and use the matching " +
+      "`/v2/...` endpoints for follow-up calls.\n\n" +
+      "Auth: no role gate — the result is filtered server-side to entities the caller " +
+      "may Read, so an unauthorised caller simply gets a smaller list (not 403).\n\n" +
+      "Next step: `GET /v2/collections/{collectionAppId}` to fetch a specific " +
+      "Collection with its DataObjects expanded."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Collection page (may be empty).",
+    description = "Page of Collections the caller may Read (may be empty).",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = CollectionIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Bad request — page/size out of range.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400",
+    description = "Bean Validation rejected the query — `page` or `size` is negative.")
+  @APIResponse(responseCode = "401",
+    description = "Authentication required (no JWT and no X-API-KEY).")
   public Response list(
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
@@ -160,11 +171,20 @@ public class CollectionV2Rest {
   @GET
   @Path("/{collectionAppId}")
   @Operation(
-    summary = "Get a Collection by appId.",
+    summary = "Get a Collection by appId, with DataObjects and incoming references.",
     description =
-      "Returns the Collection identified by 'collectionAppId', including " +
-      "its DataObjects and incoming references (the same 'full' shape the " +
-      "v1 endpoint serves). Requires Read permission."
+      "Returns the `:Collection` identified by `collectionAppId` (UUID v7) " +
+      "in the full `CollectionIO` shape: name, description, status, attributes, " +
+      "`dataObjectIds[]` (legacy long ids of contained DataObjects — use the " +
+      "matching `/v2/collections/{collectionAppId}/data-objects` endpoint when " +
+      "you want appIds), `incomingIds[]` (CollectionReferences pointing at this " +
+      "Collection), `defaultFileContainerId` (nullable).\n\n" +
+      "Auth: Read on the Collection. `404` is returned for unknown appIds " +
+      "*before* the auth check — distinguishing 'doesn't exist' from " +
+      "'exists but you can't see it' is intentionally not done (timing-safe).\n\n" +
+      "Next step: `GET /v2/collections/{collectionAppId}/data-objects` for " +
+      "the DataObject list, or `PATCH /v2/collections/{collectionAppId}` for " +
+      "an RFC 7396 merge-patch update."
   )
   @APIResponse(
     responseCode = "200",
@@ -190,11 +210,35 @@ public class CollectionV2Rest {
 
   @POST
   @Operation(
-    summary = "Create a Collection.",
+    summary = "Create a new Collection.",
     description =
-      "Creates a new Collection. Body fields: 'name' (required), 'description', " +
-      "'attributes', 'status', 'defaultFileContainerId' (optional). The server " +
-      "mints the 'appId' and returns it in the 201 response body."
+      "Creates a `:Collection` and returns the full entity in the 201 body. " +
+      "The server mints both `appId` (UUID v7, canonical) and `id` (legacy long); " +
+      "the caller becomes the owner with Manage permission.\n\n" +
+      "Body fields:\n" +
+      "  - `name` (string, required, non-blank).\n" +
+      "  - `description` (string, optional, supports CommonMark + GFM).\n" +
+      "  - `attributes` (string-to-string map, optional; keys must not contain " +
+      "the delimiter characters `Space, Comma, Point, Slash`).\n" +
+      "  - `status` (optional, one of `DRAFT`, `IN_REVIEW`, `READY`, " +
+      "`PUBLISHED`, `ARCHIVED`).\n" +
+      "  - `defaultFileContainerId` (optional, legacy long id of a FileContainer " +
+      "to serve as the Collection's default).\n\n" +
+      "Example minimal body: `{\"name\": \"My experiment\"}`.\n" +
+      "Example with attributes: `{\"name\": \"TR-001\", \"description\": \"Hot-fire run\", " +
+      "\"attributes\": {\"campaign\": \"Q3\", \"site\": \"Lampoldshausen\"}, " +
+      "\"status\": \"DRAFT\"}`.\n\n" +
+      "Auth: any authenticated user can create a Collection (the request is " +
+      "authenticated via JWT or `X-API-KEY`). The created Collection's " +
+      "permission-type defaults to `PRIVATE`; flip it to `PUBLIC` via " +
+      "`PUT /shepard/api/collections/{id}/permissions` to make it visible " +
+      "to all other users.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records a `CREATE` Activity " +
+      "addressable at `GET /v2/provenance/entity/{appId}`. A `:Version` node " +
+      "is created with `Constants.HEAD` as its initial version.\n\n" +
+      "Next step: `POST /v2/collections/{collectionAppId}/data-objects` to " +
+      "add DataObjects, or `PATCH /v2/collections/{collectionAppId}` to set " +
+      "additional metadata."
   )
   @APIResponse(
     responseCode = "201",
@@ -219,11 +263,22 @@ public class CollectionV2Rest {
   @Operation(
     summary = "Partially update a Collection (RFC 7396 JSON Merge Patch).",
     description =
-      "Applies an RFC 7396 JSON Merge Patch to the Collection. Fields present " +
-      "in the body replace the corresponding fields on the entity; absent fields " +
-      "are left unchanged; explicit JSON null clears the field. The merged " +
-      "result is Bean-Validated; constraint violations on the final state " +
-      "return 400. Requires Write permission."
+      "Applies an RFC 7396 JSON Merge Patch to the `:Collection`:\n" +
+      "  - Fields PRESENT in the body REPLACE the corresponding fields.\n" +
+      "  - Fields ABSENT from the body are LEFT UNCHANGED.\n" +
+      "  - Fields set to explicit JSON `null` are CLEARED.\n\n" +
+      "The merged result is Bean-Validated against `CollectionIO` constraints; " +
+      "violations on the final state return 400 (e.g. clearing `name` would " +
+      "produce a constraint violation because `name` is `@NotBlank`).\n\n" +
+      "Example: rename a Collection without touching other fields — \n" +
+      "`{\"name\": \"renamed\"}`. Clear the description — `{\"description\": null}`.\n\n" +
+      "Auth: Write permission on the Collection.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json` (the RFC 7396 type); " +
+      "the endpoint also accepts `application/json` for clients that can't set " +
+      "the dedicated type.\n\n" +
+      "Side effects: ProvenanceCaptureFilter records an `UPDATE` Activity. " +
+      "The `:Version` HEAD is advanced; the previous state is reachable via " +
+      "`GET /shepard/api/collections/{id}/versions`."
   )
   @APIResponse(
     responseCode = "200",
@@ -278,12 +333,19 @@ public class CollectionV2Rest {
   @DELETE
   @Path("/{collectionAppId}")
   @Operation(
-    summary = "Delete a Collection.",
+    summary = "Soft-delete a Collection and cascade.",
     description =
-      "Soft-deletes the Collection identified by 'collectionAppId' and " +
-      "every entity reachable from it (DataObjects, References, …). " +
-      "Idempotent: deleting a non-existent or already-deleted Collection " +
-      "returns 204. Requires Write permission."
+      "Marks the `:Collection` deleted (`deleted=true`) plus every reachable " +
+      "DataObject, Reference, LabJournalEntry and Snapshot. The underlying " +
+      "containers (FileContainer / TimeseriesContainer / StructuredDataContainer) " +
+      "stay — they are top-level entities, not nested under a Collection, so " +
+      "deleting a Collection orphans its references but does not destroy the " +
+      "payload bytes. Use the container-kind DELETE endpoints for that.\n\n" +
+      "Idempotency: deleting a non-existent or already-deleted Collection " +
+      "returns 204 without error.\n\n" +
+      "Auth: Write permission on the Collection.\n\n" +
+      "Side effects: ProvenanceCaptureFilter records a `DELETE` Activity. " +
+      "Subscriptions attached to the Collection fire on this write."
   )
   @APIResponse(responseCode = "204", description = "Collection deleted (or already gone).")
   @APIResponse(responseCode = "401", description = "Authentication required.")

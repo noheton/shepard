@@ -105,10 +105,20 @@ public class DataObjectV2Rest {
   @Operation(
     summary = "List DataObjects under a Collection.",
     description =
-      "Returns a page of DataObjects belonging to the given Collection. " +
-      "Filtering: 'name' query param matches by name substring. " +
-      "Pagination: page=0, size=50 by default (size capped at 200 server-side). " +
-      "Requires Read on the parent Collection."
+      "Returns a page of `:DataObject` entities (`DataObjectIO` JSON shape) " +
+      "belonging to the Collection identified by `collectionAppId`.\n\n" +
+      "Pagination: omit `page` / `size` to get the first 50; supply both to " +
+      "paginate. `size` capped at 200 server-side.\n\n" +
+      "Filtering: `name` does a case-insensitive substring match. Each row " +
+      "carries `referenceIds[]` (length tells you how many references the DO " +
+      "has) and `childrenIds[]` (direct child DOs). The flat `referenceIds` " +
+      "array doesn't discriminate by ref kind — to filter by kind (videos " +
+      "only, timeseries only, …) you'll have to GET each reference; a " +
+      "join-on-server endpoint is queued (aidocs/16 #24 Phase 2).\n\n" +
+      "Auth: Read on the parent Collection. DataObjects inherit Collection " +
+      "permissions; there is no per-DO permission gate.\n\n" +
+      "Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` " +
+      "to fetch a specific DataObject with full reference detail."
   )
   @APIResponse(
     responseCode = "200",
@@ -184,10 +194,26 @@ public class DataObjectV2Rest {
 
   @POST
   @Operation(
-    summary = "Create a DataObject under a Collection.",
+    summary = "Create a DataObject inside a Collection.",
     description =
-      "Creates a new DataObject in the given Collection. Body fields: 'name' (required), " +
-      "'description', 'attributes', 'status'. The server mints the 'appId' and returns it in the 201 response."
+      "Creates a `:DataObject` in the Collection identified by `collectionAppId` " +
+      "and returns the full entity in the 201 body. The server mints `appId` " +
+      "(UUID v7) and `id` (legacy long).\n\n" +
+      "Body fields:\n" +
+      "  - `name` (string, required, non-blank).\n" +
+      "  - `description` (string, optional, CommonMark + GFM).\n" +
+      "  - `attributes` (string-to-string map, optional).\n" +
+      "  - `status` (optional, DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED).\n\n" +
+      "Example body: `{\"name\": \"TR-001\", \"description\": \"hot-fire run\", " +
+      "\"attributes\": {\"campaign\": \"Q3\"}}`.\n\n" +
+      "Auth: Write on the parent Collection.\n\n" +
+      "Side effects: ProvenanceCaptureFilter records a `CREATE` Activity " +
+      "addressable at `GET /v2/provenance/entity/{appId}`. Versioning HEAD is " +
+      "advanced on the parent Collection.\n\n" +
+      "Next step: `POST /shepard/api/collections/{cid}/data-objects/{doid}/" +
+      "timeseriesReferences` (or fileReferences / structuredDataReferences) to " +
+      "attach payload, or `GET /v2/collections/{collectionAppId}/data-objects/" +
+      "{dataObjectAppId}` to confirm the entity."
   )
   @APIResponse(
     responseCode = "201",

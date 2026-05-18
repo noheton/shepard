@@ -76,11 +76,23 @@ public class MePreferencesRest {
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "Partial-update the caller's UI preferences.",
-    description = "RFC 7396 JSON Merge Patch. Keys with non-null string values are set or updated. " +
-    "Keys with explicit JSON `null` values are removed. Keys absent from the body are preserved. " +
-    "Returns the resulting preference map after the patch is applied. " +
-    "Known keys: `theme`, `language`, `timeZone`, `dateFormat`, `defaultPageSize`, `defaultLandingPage`. " +
-    "Unknown string keys are accepted (open-world). Non-string non-null values return 400."
+    description = "Applies an RFC 7396 JSON Merge Patch to the caller's preference map. " +
+    "Keys with non-null string values are set or updated. Keys with explicit JSON `null` " +
+    "values are REMOVED. Keys absent from the body are PRESERVED. The endpoint returns " +
+    "the resulting map after the patch is applied.\n\n" +
+    "Example: set theme and remove a stale key — " +
+    "`{\"theme\": \"dark\", \"defaultPageSize\": null}`.\n\n" +
+    "Known UI keys (open-world — unknown string keys are also accepted): " +
+    "`theme` (light / dark / auto), `language` (BCP-47), `timeZone` (IANA), " +
+    "`dateFormat`, `defaultPageSize` (integer-as-string), `defaultLandingPage` " +
+    "(URL path), `ui.advancedMode` (\"true\"/\"false\"), `ui.showOrcidBadge` " +
+    "(\"true\"/\"false\"). Plugins may stake out their own keys (recommended " +
+    "namespacing: `<plugin>.<setting>`).\n\n" +
+    "Content-Type: prefer `application/merge-patch+json`; the endpoint also " +
+    "accepts `application/json` for clients that can't set the dedicated type.\n\n" +
+    "Auth: any authenticated user — preferences are scoped to the caller's " +
+    "`:User` node and never affect other users.\n\n" +
+    "Constraint: non-string non-null values return 400."
   )
   @APIResponse(
     responseCode = "200",
