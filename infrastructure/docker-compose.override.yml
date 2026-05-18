@@ -137,8 +137,12 @@ services:
     image: python:3.12-slim
     profiles: ["home-showcase"]
     environment:
+      # NB: `${VAR:?...}` validation runs on EVERY compose invocation, even
+      # for profile-gated services, which broke `docker compose restart
+      # backend`. Use `${VAR-}` (empty default) instead — the seeder script
+      # itself bails with a clear error when the value is empty at runtime.
       BACKEND_URL: "http://backend:8080/shepard/api"
-      SHEPARD_API_KEY: "${SHEPARD_API_KEY:?set SHEPARD_API_KEY in your shell or .env}"
+      SHEPARD_API_KEY: "${SHEPARD_API_KEY-}"
       HOME_SHOWCASE_LOOKUP_PATH: "/opt/home-showcase/seeded.json"
     volumes:
       - ../examples/home-showcase:/seed:ro
@@ -155,14 +159,14 @@ services:
     image: python:3.12-slim
     profiles: ["home-showcase"]
     environment:
-      MQTT_HOST: "${MQTT_HOST:?set MQTT_HOST in .env}"
+      MQTT_HOST: "${MQTT_HOST-}"
       MQTT_PORT: "${MQTT_PORT:-1883}"
-      MQTT_USER: "${MQTT_USER:?set MQTT_USER in .env}"
-      MQTT_PASSWORD: "${MQTT_PASSWORD:?set MQTT_PASSWORD in .env}"
+      MQTT_USER: "${MQTT_USER-}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD-}"
       MQTT_TLS: "${MQTT_TLS:-0}"
       MQTT_TLS_VERIFY: "${MQTT_TLS_VERIFY:-0}"
       SHEPARD_API: "http://backend:8080/shepard/api"
-      SHEPARD_API_KEY: "${SHEPARD_API_KEY:?set SHEPARD_API_KEY in .env}"
+      SHEPARD_API_KEY: "${SHEPARD_API_KEY-}"
       BATCH_INTERVAL_SEC: "${BATCH_INTERVAL_SEC:-30}"
       LOG_LEVEL: "${LOG_LEVEL:-INFO}"
       HOME_SHOWCASE_LOOKUP_PATH: "/opt/home-showcase/seeded.json"
