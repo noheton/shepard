@@ -2,13 +2,11 @@
 import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { collectionsPath } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-const { advancedMode } = useAdvancedMode();
 
 const {
   counter: numberOfLabJournalEntries,
@@ -256,8 +254,12 @@ watch(collection, () => {
                     <CollectionLineageGraph :collection-id="collectionId" />
                   </div>
                 </ExpansionPanelItem>
+                <!-- Snapshots and Publishing are panels of data, not advanced-mode
+                     fields — visible to anyone with edit permission, in both modes
+                     (per the refined basic/advanced policy: the toggle gates fields,
+                     not whole panels). -->
                 <ExpansionPanelItem
-                  v-if="advancedMode && isAllowedToEditCollection && collectionAppId"
+                  v-if="isAllowedToEditCollection && collectionAppId"
                   title="Snapshots"
                 >
                   <div class="pt-4">
@@ -265,7 +267,7 @@ watch(collection, () => {
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  v-if="advancedMode && isAllowedToEditCollection && collectionAppId"
+                  v-if="isAllowedToEditCollection && collectionAppId"
                   title="Publishing"
                 >
                   <div class="pt-2">

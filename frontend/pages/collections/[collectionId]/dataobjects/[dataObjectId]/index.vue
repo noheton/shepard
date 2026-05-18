@@ -7,13 +7,11 @@ import AddRelationshipDialog from "~/components/context/display-components/relat
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { DataObjectApi } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
-import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { collectionsPath, dataObjectsPathFragment } from "~/utils/constants";
 
 definePageMeta({ layout: "collection" });
 
 const { routeParams } = useCollectionRouteParams();
-const { advancedMode } = useAdvancedMode();
 
 // We cast this because this page will only be invoked with a data object id.
 const { collectionId, dataObjectId } =
@@ -310,7 +308,9 @@ watch(dataObject, () => {
                 >
                   <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
-                <ExpansionPanelItem v-if="advancedMode" title="Provenance Graph">
+                <!-- Provenance Graph is a panel of data, not an advanced-mode
+                     field — visible in both modes per the refined policy. -->
+                <ExpansionPanelItem title="Provenance Graph">
                   <div class="pt-2 pb-2">
                     <DataObjectProvGraph
                       :data-object="dataObject"

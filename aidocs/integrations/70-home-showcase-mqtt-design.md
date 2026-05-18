@@ -33,26 +33,22 @@ protocol-errors with the supplied creds; demo uses 1883). Creds `mqtt`/`mqtt`.
 | `ps5-mqtt/...` | 1 | Console status — out of scope. |
 | `appdaemon_mqtt_client/...` | 1 | AppDaemon ping — out of scope. |
 
-**Numeric metrics worth ingesting** (from `homeassistant/sensor/.../<class>/config` count):
+**Revised container layout** (user direction 2026-05-18 — "too many.
+powerocean is inverter. 3 container tops. grid is in tibber an inoexy"):
 
-| Class | Sensor count | Container kind |
-|---|---:|---|
-| **power** (W) | 27 | TimeseriesContainer `home-energy-power` |
-| **energy** (kWh) | 27 | TimeseriesContainer `home-energy-energy` |
-| **voltage** (V) | 19 | TimeseriesContainer `home-electrical` |
-| **current** (A) | 6 | TimeseriesContainer `home-electrical` |
-| **temperature** (°C) | 17 | TimeseriesContainer `home-climate-temperature` |
-| **humidity** (%) | 13 | TimeseriesContainer `home-climate-humidity` |
-| **illuminance** (lux) | 15 | TimeseriesContainer `home-climate-light` |
-| **pressure** (hPa) | 2 | TimeseriesContainer `home-climate-pressure` |
-| **eco2 / aqi** | 6 / 6 | TimeseriesContainer `home-airquality` |
-| **soil_moisture / soil_fertility** | 5 / 5 | TimeseriesContainer `home-plants` |
+| Container | What it carries |
+|---|---|
+| **`solar-powerocean`** | Inverter telemetry from PowerOcean — solar production + battery state + grid in/out. The headline numerical signal. |
+| **`home-environment`** | Combined temperature / humidity / illuminance / pressure readings across all rooms. The measurement class is encoded as a channel attribute, not a separate container. |
+| **`home-energy-appliances`** | Per-appliance smart-plug power + energy from zigbee2mqtt (the 27/27 power+energy sensors). |
 
-**Diagnostics intentionally dropped** (linkquality, battery, last_seen,
-action_duration, motor_state, action) — these are device-health
-metadata, useful for ops but noise for the data showcase. They land in
-a sidecar `home-diagnostics` container that's hidden by default in
-basic mode (per the established advanced-mode policy).
+**Dropped from this design** per the same direction:
+- `home-airquality` (eco2 / aqi) — fold into `home-environment` if the data is interesting, otherwise drop.
+- `home-plants` (soil_moisture / soil_fertility) — drop.
+- `home-diagnostics` (linkquality / battery / last_seen) — drop. Diagnostics noise belongs in HA's UI, not shepard.
+
+Grid metering data lives in **Tibber + Inoexy** cloud APIs (not on MQTT) —
+a separate connector if/when we add them. Out of scope for this design.
 
 **Solar / grid telemetry**: not visible at the explored prefixes.
 Either the inverter integration publishes under a different root, or
@@ -67,27 +63,18 @@ either flips it on or points at the right topic.
 
 ## 2. Demo collection shape
 
-Single shepard Collection: **"Home energy & climate (live)"**.
+Single shepard Collection: **"Home energy & environment (live)"**.
 
-DataObject tree:
+DataObject tree (matches the 3-container layout above):
 
 ```
-Home energy & climate (live)               [Collection]
-├── Electrical infrastructure              [DataObject]
-│   ├── ref → home-energy-power            [TimeseriesReference]
-│   ├── ref → home-energy-energy           [TimeseriesReference]
-│   └── ref → home-electrical              [TimeseriesReference]
-├── Indoor climate                         [DataObject]
-│   ├── ref → home-climate-temperature     [TimeseriesReference]
-│   ├── ref → home-climate-humidity        [TimeseriesReference]
-│   ├── ref → home-climate-pressure        [TimeseriesReference]
-│   └── ref → home-climate-light           [TimeseriesReference]
-├── Air quality                            [DataObject]
-│   └── ref → home-airquality              [TimeseriesReference]
-├── Plants                                 [DataObject]
-│   └── ref → home-plants                  [TimeseriesReference]
-└── Diagnostics (advanced)                 [DataObject]
-    └── ref → home-diagnostics             [TimeseriesReference]
+Home energy & environment (live)           [Collection]
+├── Solar & battery                        [DataObject]
+│   └── ref → solar-powerocean             [TimeseriesReference]
+├── Smart plugs                            [DataObject]
+│   └── ref → home-energy-appliances       [TimeseriesReference]
+└── Indoor environment                     [DataObject]
+    └── ref → home-environment             [TimeseriesReference]
 ```
 
 Channel keys inside each timeseries container map 1:1 from zigbee2mqtt:

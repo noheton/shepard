@@ -87,6 +87,27 @@
       "realmRoles": [
         "user"
       ]
+    },
+    {
+      "username": "flo",
+      "firstName": "Flo",
+      "lastName": "Researcher",
+      "email": "flo@demo.shepard.local",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "orcid": ["0000-0001-6033-801X"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "flo-demo",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ]
     }
   ],
   "roles": {

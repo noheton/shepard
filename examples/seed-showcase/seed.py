@@ -991,6 +991,60 @@ def best_effort_ror_preseed(apis: Apis) -> None:
         _log("SKIP", "ror preseed", f"InstanceRorConfig error: {str(exc)[:60]}")
 
 
+def best_effort_user_orcid_preseed(apis: Apis) -> None:
+    """Preseed demo users' shepard-side ORCID via the admin endpoint
+    `PATCH /v2/admin/users/{username}/orcid`.
+
+    The target user must already exist on the shepard side (i.e. they
+    have logged in at least once so UserinfoService minted their User
+    node). On a fresh deploy where the demo user hasn't logged in yet,
+    this PATCH returns 404 — we log SKIP and the operator re-runs the
+    seeder after the first login. The endpoint is idempotent.
+
+    User pairs (username, orcid) live in DEMO_USER_ORCIDS below."""
+    DEMO_USER_ORCIDS = [
+        ("flo", "0000-0001-6033-801X"),
+    ]
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", "user orcid preseed", "urllib unavailable")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    headers = {
+        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    for username, orcid in DEMO_USER_ORCIDS:
+        url = f"{v2_base}/v2/admin/users/{username}/orcid"
+        body = json.dumps({"orcid": orcid}).encode("utf-8")
+        try:
+            req = urllib.request.Request(url, data=body, headers=headers, method="PATCH")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                _log("OK", username, "User.orcid", orcid)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                _log("SKIP", username, "User.orcid (user not yet logged in)")
+            elif e.code in (401, 403):
+                _log("SKIP", username, f"User.orcid (not admin: HTTP {e.code})")
+            elif e.code in (404, 501):
+                _log("SKIP", username, "User.orcid (endpoint not deployed)")
+            else:
+                _log("SKIP", username, f"User.orcid HTTP {e.code}")
+        except Exception as exc:  # pragma: no cover
+            _log("SKIP", username, f"User.orcid error: {str(exc)[:60]}")
+
+
 def _data_object_app_id(do: DataObject) -> str | None:
     """Pull the appId off a DataObject defensively — the upstream-generated
     client doesn't expose it on the typed model, but it's on the wire.
