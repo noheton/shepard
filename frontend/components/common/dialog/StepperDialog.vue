@@ -66,15 +66,25 @@ const { mobile } = useDisplay();
               >
                 Cancel
               </v-btn>
-              <v-btn
-                v-if="currentStep === 1"
-                :disabled="submitDisabled"
-                variant="flat"
-                color="primary"
-                @click="currentStep = 2"
-              >
-                Next
-              </v-btn>
+              <template v-if="currentStep === 1">
+                <v-btn
+                  :disabled="submitDisabled"
+                  variant="tonal"
+                  color="primary"
+                  class="mr-2"
+                  @click="currentStep = 2"
+                >
+                  Next
+                </v-btn>
+                <v-btn
+                  :disabled="submitDisabled"
+                  variant="flat"
+                  color="primary"
+                  @click="() => emit('submit')"
+                >
+                  Create
+                </v-btn>
+              </template>
               <v-btn
                 v-else
                 :disabled="submitDisabled"

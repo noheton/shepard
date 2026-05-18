@@ -93,7 +93,7 @@ watch(containerAccessor.fileContainer, () => {
       "
     />
     <!-- CC1b: Referenced by — wired to GET /v2/file-containers/{id}/linked-data-objects -->
-    <ExpansionPanels class="mt-4">
+    <ExpansionPanels class="mt-4" :default-open="[0]">
       <ExpansionPanelItem title="Referenced by">
         <div v-if="linkedDataObjectsLoading" class="pa-4">
           <v-progress-circular indeterminate size="20" />

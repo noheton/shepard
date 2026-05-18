@@ -92,7 +92,7 @@ watch(dataObject, () => {
               />
             </v-row>
             <v-row no-gutters>
-              <ExpansionPanels>
+              <ExpansionPanels :default-open="[4]">
                 <ExpansionPanelItem title="Description">
                   <DescriptionDisplay :entity="dataObject" />
                   <template v-if="isAllowedToEditCollection" #append>
