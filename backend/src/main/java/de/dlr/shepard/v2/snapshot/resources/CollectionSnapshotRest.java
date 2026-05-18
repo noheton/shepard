@@ -80,10 +80,29 @@ public class CollectionSnapshotRest {
    */
   @POST
   @Operation(
-    summary = "Create a snapshot of a Collection's current state.",
+    summary = "Create a Snapshot of a Collection's current state (V2b).",
     description =
-      "Walks the Collection subtree (up to 15 hops) and records the current " +
-      "revision of every VersionableEntity. Requires Write permission on the Collection."
+      "Creates a point-in-time `:Snapshot` of the Collection identified by " +
+      "`collectionAppId`. The server walks the Collection subtree up to 15 " +
+      "hops deep and records the current `revision` counter of every " +
+      "`:VersionableEntity` (DataObject, Reference, …) it reaches. The " +
+      "resulting Snapshot is immutable — future writes to the underlying " +
+      "entities don't affect what the Snapshot reports.\n\n" +
+      "Body fields:\n" +
+      "  - `name` (required, non-blank) — operator-chosen label, e.g. " +
+      "`\"v1.0\"`, `\"pre-publication\"`, `\"after-fix\"`.\n" +
+      "  - `description` (optional) — free-form, CommonMark/GFM.\n\n" +
+      "Example body: `{\"name\": \"v1.0\", \"description\": \"Initial " +
+      "publication-ready state.\"}`.\n\n" +
+      "Auth: Write on the Collection (snapshotting is a state-recording " +
+      "mutation on the snapshot subgraph, even though it doesn't modify the " +
+      "snapshotted entities themselves).\n\n" +
+      "Side effects: a `:Snapshot` node plus one `:SnapshotEntry` per " +
+      "reachable VersionableEntity. ProvenanceCaptureFilter records a " +
+      "`CREATE` Activity addressable at `GET /v2/provenance/entity/{appId}`.\n\n" +
+      "Next step: `GET /v2/collections/{collectionAppId}/snapshots` to list, " +
+      "`GET /v2/snapshots/{snapshotAppId}` for metadata, or " +
+      "`GET /v2/snapshots/{snapshotAppId}/manifest` for the per-entity entries."
   )
   @APIResponse(
     responseCode = "201",
@@ -127,12 +146,21 @@ public class CollectionSnapshotRest {
    */
   @GET
   @Operation(
-    summary = "List snapshots of a Collection.",
+    summary = "List Snapshots of a Collection, newest first (V2b).",
     description =
-      "Returns one page of non-deleted snapshots for the Collection, " +
-      "ordered newest first. Requires Read permission. " +
-      "Pagination defaults: page=0, size=50 (max 200). " +
-      "Use the upstream-style 'page' and 'size' query params for navigation."
+      "Returns one page of non-deleted `:Snapshot` entities for the " +
+      "Collection identified by `collectionAppId`, ordered by " +
+      "`snapshotCapturedAtMs` DESC (newest first).\n\n" +
+      "Each `SnapshotIO` carries: `appId`, `name`, `description`, " +
+      "`snapshotCapturedAtMs` (millis-epoch), `snapshotCreatedByUsername`, " +
+      "and `entryCount` (number of VersionableEntities recorded in the " +
+      "manifest).\n\n" +
+      "Pagination: omit `page` / `size` to get the first 50; supply both " +
+      "to paginate. `size` capped at 200 server-side.\n\n" +
+      "Auth: Read on the Collection.\n\n" +
+      "Next step: `GET /v2/snapshots/{snapshotAppId}/manifest` for the " +
+      "per-entity entries of a specific Snapshot, or " +
+      "`GET /v2/snapshots/{a}/diff/{b}` to compare two Snapshots."
   )
   @APIResponse(
     responseCode = "200",
