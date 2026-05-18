@@ -9,6 +9,7 @@ import de.dlr.shepard.context.references.git.adapters.ParsedRepoUrl;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import de.dlr.shepard.context.references.git.io.CheckUpdateResultIO;
 import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -214,5 +215,71 @@ public class GitReferenceService {
       out.setContentTruncated(false);
     }
     return out;
+  }
+
+  /**
+   * G1d — check whether the upstream Git ref has moved since the last
+   * resolution. Side-effect: persists the new {@code resolvedSha} +
+   * {@code resolvedAtMillis} on the reference.
+   *
+   * <p>Unlike {@link #pinSnapshot(GitReference, String)} this method
+   * tolerates the absence of a stored PAT — public-repo hosts (most
+   * notably github.com) serve the underlying ref-resolution API
+   * anonymously (subject to rate limits). When the host's adapter
+   * rejects the unauthenticated request the failure surfaces back to
+   * the caller as a {@link GitAdapterException} with the adapter's
+   * error message.
+   *
+   * @param gr        the (already-loaded, already-permission-checked)
+   *                  reference. Caller is responsible for persisting
+   *                  the mutated entity.
+   * @param username  the caller's username — used to look up their PAT
+   *                  (optional; null is passed to the adapter when no
+   *                  PAT is registered for the host).
+   * @return  {currentSha, previousSha, updated, checkedAtMillis}.
+   * @throws GitAdapterException if the ref cannot be resolved (bad
+   *         URL / unsupported host / 4xx from upstream / network).
+   */
+  public CheckUpdateResultIO checkForUpdate(GitReference gr, String username) {
+    if (gr.getRef() == null || gr.getRef().isBlank()) {
+      throw new GitAdapterException(
+        400,
+        "check-update requires a non-blank `ref` to resolve"
+      );
+    }
+
+    ParsedRepoUrl parsed;
+    try {
+      parsed = ParsedRepoUrl.parse(gr.getRepoUrl());
+    } catch (GitAdapterException e) {
+      throw new GitAdapterException(400, "Cannot parse repoUrl: " + e.getMessage(), e);
+    }
+
+    Optional<GitAdapter> adapterOpt = gitAdapterRegistry.findByHost(parsed.host());
+    if (adapterOpt.isEmpty()) {
+      throw new GitAdapterException(
+        400,
+        "check-update requires a git adapter for this host — no adapter is registered for '"
+          + parsed.host() + "'"
+      );
+    }
+
+    // PAT is OPTIONAL here — public repos work without one.
+    String pat = gitCredentialService.findPatForHost(username, parsed.host()).orElse(null);
+
+    String previousSha = gr.getResolvedSha();
+    String currentSha;
+    try {
+      currentSha = adapterOpt.get().resolveRef(gr.getRepoUrl(), gr.getRef(), pat);
+    } catch (GitAdapterException e) {
+      throw new GitAdapterException(502, "Unable to resolve ref to SHA: " + e.getMessage(), e);
+    }
+
+    long checkedAt = System.currentTimeMillis();
+    gr.setResolvedSha(currentSha);
+    gr.setResolvedAtMillis(checkedAt);
+
+    boolean updated = previousSha != null && !previousSha.equals(currentSha);
+    return new CheckUpdateResultIO(currentSha, previousSha, updated, checkedAt);
   }
 }

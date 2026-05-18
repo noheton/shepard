@@ -19,6 +19,7 @@ import de.dlr.shepard.context.references.git.adapters.GitAdapterException;
 import de.dlr.shepard.context.references.git.adapters.GitAdapterRegistry;
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import de.dlr.shepard.context.references.git.io.CheckUpdateResultIO;
 import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -260,5 +261,115 @@ class GitReferenceServiceTest {
     assertEquals("deadbeef123", gr.getResolvedSha());
     assertNotNull(gr.getResolvedAtMillis());
     assertTrue(gr.getResolvedAtMillis() > 0);
+  }
+
+  // ── checkForUpdate (G1d) ────────────────────────────────────────────────
+
+  private GitReferenceService svcForCheckUpdate(GitAdapter adapter, GitCredentialService creds) {
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost("gitlab.com")).thenReturn(Optional.of(adapter));
+    return new GitReferenceService(creds, registry, realCache(), 1_048_576L);
+  }
+
+  @Test
+  void checkForUpdate_blankRef_throws400() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", null, null);
+    GitReferenceService svc = svcForCheckUpdate(mock(GitAdapter.class), mock(GitCredentialService.class));
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.checkForUpdate(gr, "alice"));
+    assertEquals(400, ex.getStatus());
+  }
+
+  @Test
+  void checkForUpdate_noAdapter_throws400() {
+    GitReference gr = new GitReference("https://example.invalid/foo/bar", "main", null);
+    GitAdapterRegistry registry = mock(GitAdapterRegistry.class);
+    when(registry.findByHost(anyString())).thenReturn(Optional.empty());
+    GitReferenceService svc = new GitReferenceService(
+      mock(GitCredentialService.class), registry, realCache(), 1_048_576L);
+    GitAdapterException ex = assertThrows(GitAdapterException.class, () -> svc.checkForUpdate(gr, "alice"));
+    assertEquals(400, ex.getStatus());
+  }
+
+  @Test
+  void checkForUpdate_publicRepoNoPat_resolvesAnonymously() {
+    // The check-update path tolerates a missing PAT — public-repo flows
+    // hit upstream anonymously. This is the key difference vs pinSnapshot.
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", null);
+    gr.setMode(GitReferenceMode.LOOSE_LINK);
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), eq("main"), isNullPat())).thenReturn("abc123");
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost(anyString(), anyString())).thenReturn(Optional.empty());
+
+    CheckUpdateResultIO out = svcForCheckUpdate(adapter, creds).checkForUpdate(gr, "alice");
+
+    assertEquals("abc123", out.currentSha());
+    assertNull(out.previousSha());
+    assertFalse(out.updated());                  // previousSha null → not "updated"
+    assertTrue(out.checkedAtMillis() > 0);
+    assertEquals("abc123", gr.getResolvedSha()); // side-effect persisted on entity
+    assertNotNull(gr.getResolvedAtMillis());
+  }
+
+  @Test
+  void checkForUpdate_shaUnchanged_returnsUpdatedFalse() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", null);
+    gr.setMode(GitReferenceMode.LOOSE_LINK);
+    gr.setResolvedSha("same-sha");
+    gr.setResolvedAtMillis(100L);
+
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), eq("main"), eq("PAT"))).thenReturn("same-sha");
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost("alice", "gitlab.com")).thenReturn(Optional.of("PAT"));
+
+    CheckUpdateResultIO out = svcForCheckUpdate(adapter, creds).checkForUpdate(gr, "alice");
+
+    assertEquals("same-sha", out.currentSha());
+    assertEquals("same-sha", out.previousSha());
+    assertFalse(out.updated());
+    assertTrue(gr.getResolvedAtMillis() > 100L); // timestamp still refreshed
+  }
+
+  @Test
+  void checkForUpdate_shaMoved_returnsUpdatedTrue() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", null);
+    gr.setMode(GitReferenceMode.LOOSE_LINK);
+    gr.setResolvedSha("old-sha");
+    gr.setResolvedAtMillis(100L);
+
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), eq("main"), eq("PAT"))).thenReturn("new-sha");
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost("alice", "gitlab.com")).thenReturn(Optional.of("PAT"));
+
+    CheckUpdateResultIO out = svcForCheckUpdate(adapter, creds).checkForUpdate(gr, "alice");
+
+    assertEquals("new-sha", out.currentSha());
+    assertEquals("old-sha", out.previousSha());
+    assertTrue(out.updated());
+    assertEquals("new-sha", gr.getResolvedSha());
+  }
+
+  @Test
+  void checkForUpdate_adapterFails_throws502() {
+    GitReference gr = new GitReference("https://gitlab.com/foo/bar", "main", null);
+    gr.setMode(GitReferenceMode.LOOSE_LINK);
+
+    GitAdapter adapter = mock(GitAdapter.class);
+    when(adapter.resolveRef(anyString(), anyString(), any()))
+      .thenThrow(new GitAdapterException(404, "ref not found"));
+    GitCredentialService creds = mock(GitCredentialService.class);
+    when(creds.findPatForHost(anyString(), anyString())).thenReturn(Optional.empty());
+
+    GitAdapterException ex = assertThrows(GitAdapterException.class,
+      () -> svcForCheckUpdate(adapter, creds).checkForUpdate(gr, "alice"));
+    assertEquals(502, ex.getStatus());
+  }
+
+  /** Mockito matcher: stub on a null PAT argument explicitly so the
+      "no-PAT" path goes through {@code resolveRef(..., null)}. */
+  private static String isNullPat() {
+    return org.mockito.ArgumentMatchers.<String>isNull();
   }
 }

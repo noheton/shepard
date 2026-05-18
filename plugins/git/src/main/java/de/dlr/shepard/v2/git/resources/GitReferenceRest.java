@@ -14,6 +14,7 @@ import de.dlr.shepard.context.references.git.adapters.ParsedRepoUrl;
 import de.dlr.shepard.context.references.git.daos.GitReferenceDAO;
 import de.dlr.shepard.context.references.git.entities.GitReference;
 import de.dlr.shepard.context.references.git.entities.GitReferenceMode;
+import de.dlr.shepard.context.references.git.io.CheckUpdateResultIO;
 import de.dlr.shepard.context.references.git.io.GitArtifactPreviewIO;
 import de.dlr.shepard.context.references.git.io.GitReferenceIO;
 import de.dlr.shepard.context.references.git.services.GitReferenceService;
@@ -359,6 +360,51 @@ public class GitReferenceRest {
         .build();
     }
     return Response.ok(out).build();
+  }
+
+  @POST
+  @Path("/{appId}/check-update")
+  @Operation(
+    summary = "Check whether the upstream Git ref has moved since last resolution (G1d).",
+    description = "Resolves the GitReference's ref via the matching GitAdapter " +
+    "(using the caller's stored PAT if present; works without a PAT for public " +
+    "repos that the adapter can read anonymously). Compares the current SHA to " +
+    "the persisted resolvedSha. Side-effect: updates resolvedSha + " +
+    "resolvedAtMillis on the reference, even when nothing changed (refreshes " +
+    "the timestamp). Returns {currentSha, previousSha, updated, checkedAtMillis}."
+  )
+  @APIResponse(
+    responseCode = "200",
+    content = @Content(schema = @Schema(implementation = CheckUpdateResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Reference has no ref to resolve, or repoUrl can't be parsed.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
+  @APIResponse(responseCode = "404", description = "No DataObject or GitReference with those appIds.")
+  @APIResponse(responseCode = "502", description = "Adapter failed to resolve the ref against upstream.")
+  public Response checkUpdate(
+    @PathParam("dataObjectAppId") String dataObjectAppId,
+    @PathParam("appId") String gitReferenceAppId,
+    @Context SecurityContext securityContext
+  ) {
+    var gate = checkAccess(dataObjectAppId, AccessType.Write, securityContext);
+    if (gate != null) return gate;
+
+    GitReference gr = gitReferenceDAO.findByAppId(gitReferenceAppId);
+    if (gr == null || gr.getDataObject() == null || !dataObjectAppId.equals(gr.getDataObject().getAppId())) {
+      return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    String caller = securityContext.getUserPrincipal().getName();
+    try {
+      CheckUpdateResultIO result = gitReferenceService.checkForUpdate(gr, caller);
+      gitReferenceDAO.createOrUpdate(gr);
+      return Response.ok(result).build();
+    } catch (GitAdapterException e) {
+      return Response.status(e.getStatus())
+        .entity("{\"error\":\"" + e.getMessage().replace("\"", "'") + "\"}")
+        .build();
+    }
   }
 
   /**
