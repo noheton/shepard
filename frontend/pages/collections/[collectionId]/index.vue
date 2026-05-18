@@ -20,6 +20,7 @@ const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
 
 const showAttributeEditDialog = ref(false);
+const showCreateDataObjectDialog = ref(false);
 const isExporting = ref(false);
 
 // ── Inline description editing ────────────────────────────────────────────
@@ -211,8 +212,28 @@ watch(collection, () => {
             <section class="page-section">
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Data Objects</div>
+                <v-btn
+                  v-if="isAllowedToEditCollection"
+                  variant="tonal"
+                  size="small"
+                  color="primary"
+                  prepend-icon="mdi-plus-circle-outline"
+                  @click="showCreateDataObjectDialog = true"
+                >
+                  New DataObject
+                </v-btn>
               </div>
               <CollectionDataObjectsPanel :collection-id="collectionId" />
+              <!-- Re-uses the existing CreateDataObjectDialog which already
+                   includes the template picker when allowed templates exist
+                   for the Collection — passing `collectionAppId` flips it
+                   into picker-first mode (was sidebar-only before). -->
+              <CreateDataObjectDialog
+                v-if="showCreateDataObjectDialog && collectionAppId"
+                v-model:show-dialog="showCreateDataObjectDialog"
+                :collection-id="collectionId"
+                :collection-app-id="collectionAppId"
+              />
             </section>
 
             <!-- Deeper-dive content stays in collapsibles. Snapshots and

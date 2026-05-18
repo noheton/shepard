@@ -22,14 +22,19 @@ const am: Ref<AnnotatedTimeseries[]> = computed(() =>
   })),
 );
 
+// Column widths sized to content — pre-fix the table sprawled with
+// equal columns because the v-data-table defaults to "flex auto"
+// everywhere. Narrow ID + Field; the wider string columns absorb the
+// rest. Improves density on the TimeseriesReference page where this
+// table is the main content (user feedback 2026-05-19).
 const headers = [
-  { key: "data-table-expand" },
-  { title: "ID", key: "id", sortable: true },
+  { key: "data-table-expand", width: "32px" },
+  { title: "ID", key: "id", sortable: true, width: "60px" },
   { title: "Measurement", key: "measurement", sortable: true },
   { title: "Device", key: "device", sortable: true },
   { title: "Location", key: "location", sortable: true },
   { title: "Symbolic Name", key: "symbolicName", sortable: true },
-  { title: "Field", key: "field", sortable: true },
+  { title: "Field", key: "field", sortable: true, width: "100px" },
 ];
 
 const itemsPerPage = 10;

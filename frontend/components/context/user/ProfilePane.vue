@@ -3,11 +3,13 @@ import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { usePatchMe } from "~/composables/context/usePatchMe";
 import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { useShowOrcidBadge } from "~/composables/context/useShowOrcidBadge";
 
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
 const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
+const { showOrcidBadge, isSaving: isOrcidBadgeSaving, setShowOrcidBadge } = useShowOrcidBadge();
 
 // appId is a fork extension not in the auto-generated User type
 const userAppId = computed<string | undefined>(() => {
@@ -112,7 +114,7 @@ async function saveJupyterUrl() {
       </v-btn>
     </div>
 
-    <!-- U1e: avatar -->
+    <!-- U1e: avatar (+ ORCID badge overlay when set & opt-in) -->
     <div v-if="user && !isLoading" class="d-flex align-center ga-4">
       <div class="avatar-wrapper">
         <v-avatar size="80" color="primary">
@@ -126,6 +128,26 @@ async function saveJupyterUrl() {
             {{ (user.effectiveDisplayName ?? user.username ?? "?").charAt(0).toUpperCase() }}
           </span>
         </v-avatar>
+        <!-- ORCID badge — bottom-right of avatar. Encourages adoption
+             by making a configured ORCID immediately visible. User
+             can hide via the Display settings switch below. -->
+        <a
+          v-if="user.orcid && showOrcidBadge"
+          :href="`https://orcid.org/${user.orcid}`"
+          target="_blank"
+          rel="noopener"
+          class="orcid-badge"
+          :title="`ORCID: ${user.orcid} — click to view on orcid.org`"
+        >
+          <svg viewBox="0 0 256 256" width="24" height="24" aria-label="ORCID iD" role="img">
+            <circle cx="128" cy="128" r="128" fill="#A6CE39" />
+            <g fill="#FFFFFF">
+              <rect x="83" y="105" width="14" height="78" />
+              <circle cx="90" cy="88" r="9" />
+              <path d="M115 105 h35 c25 0 41 18 41 39 0 22 -18 39 -41 39 h-35 z M129 117 v54 h19 c20 0 28 -14 28 -27 0 -16 -10 -27 -28 -27 z" />
+            </g>
+          </svg>
+        </a>
       </div>
       <div class="d-flex flex-column ga-1">
         <input
@@ -244,6 +266,20 @@ async function saveJupyterUrl() {
       <p class="text-body-2 text-medium-emphasis">
         Shows advanced features like container management and low-level data views. Off by default for a simpler experience.
       </p>
+      <v-switch
+        v-if="user && user.orcid"
+        :model-value="showOrcidBadge"
+        label="Show ORCID badge on my avatar"
+        :loading="isOrcidBadgeSaving"
+        :disabled="isOrcidBadgeSaving"
+        color="primary"
+        density="comfortable"
+        hide-details
+        @update:model-value="val => setShowOrcidBadge(Boolean(val))"
+      />
+      <p v-if="user && user.orcid" class="text-body-2 text-medium-emphasis">
+        When on, a green ORCID badge overlays the bottom-right of your avatar, linking to your ORCID profile. Visible to everyone viewing your profile.
+      </p>
     </div>
 
     <!-- Edit dialog -->
@@ -285,4 +321,31 @@ async function saveJupyterUrl() {
   </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.avatar-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.orcid-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+  text-decoration: none;
+}
+.orcid-badge:hover {
+  transform: scale(1.1);
+}
+.orcid-badge svg {
+  display: block;
+}
+</style>
