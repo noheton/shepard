@@ -131,5 +131,9 @@ function onPageChange(page: number) {
   :deep(tbody) > tr > td {
     padding: 20px 24px !important;
   }
+
+  :deep(tbody > tr) {
+    cursor: pointer;
+  }
 }
 </style>
