@@ -68,6 +68,9 @@ services:
       # C3: backfill orphan-permission edges for nodes created before the
       # has_permissions constraint was enforced. Set to the instance-admin sub.
       SHEPARD_PERMISSIONS_DEFAULT_OWNER: "a1c6b74a-d04d-4ee7-a509-20bd6a90cbf6"
+      # OAS1 — public base URL surfaced in the OpenAPI `servers` list so
+      # OpenAPI-Generator clients downloading the spec get an absolute URL.
+      SHEPARD_PUBLIC_BASE_URL: "https://shepard-api.nuclide.systems"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:
