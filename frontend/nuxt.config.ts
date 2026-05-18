@@ -103,6 +103,19 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  // Stale-cache safety net: when a lazy-loaded route chunk fails to load
+  // (404 because the deploy rotated and the user's browser is still on
+  // an older bundle pointing at the now-gone `_nuxt/<hash>.js` files),
+  // Nuxt's `app:chunkError` hook fires. `'automatic'` makes Nuxt reload
+  // the page once on next navigation — most users never notice and
+  // refused-to-refresh edge cases get a console error rather than a
+  // silent blank page. The visible-banner path (useBackendVersion
+  // composable, separate slice) is a slower / more deliberate check
+  // sitting on top of this.
+  experimental: {
+    emitRouteChunkError: "automatic",
+  },
+
   components: [{ path: "~/components", pathPrefix: false }],
 
   modules: [
