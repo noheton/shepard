@@ -2,6 +2,7 @@
 import DeleteContainerButton from "~/components/container/DeleteContainerButton.vue";
 import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesContainerAccessor";
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
+import { useTimeseriesContainerChartView } from "~/composables/containers/useTimeseriesContainerChartView";
 import { useTimeseriesContainerLinkedDataObjects } from "~/composables/containers/useTimeseriesContainerLinkedDataObjects";
 
 const { routeParams } = useContainerRouteParams();
@@ -11,6 +12,55 @@ const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useTimeseriesContainerLinkedDataObjects(containerId);
+
+// TS_CHART_VIEW1 — curated channel selection persisted per-container.
+// Writers can change it; readers see it; everyone can override per-session
+// with the "Show all channels" toggle below the chart.
+const {
+  selectedChannelKeys: persistedChannelKeys,
+  updatedAt: chartViewUpdatedAt,
+  updatedBy: chartViewUpdatedBy,
+  saving: chartViewSaving,
+  save: saveChartView,
+} = useTimeseriesContainerChartView(containerId);
+
+// Per-session "Show all channels" override — ignores the persisted curated
+// view but doesn't change it. Pure browser state.
+const showAllChannels = ref(false);
+const effectiveChannelKeys = computed<string[] | undefined>(() => {
+  if (showAllChannels.value) return undefined; // ⇒ chart's legacy first-N path
+  return persistedChannelKeys.value;
+});
+
+// Edit mode for the channel selector. When active, render checkboxes
+// alongside the chart; when not, just the chart.
+const editingChartView = ref(false);
+const draftChannelKeys = ref<string[]>([]);
+function startEditChartView() {
+  draftChannelKeys.value = [...persistedChannelKeys.value];
+  editingChartView.value = true;
+}
+function cancelEditChartView() {
+  editingChartView.value = false;
+}
+async function commitEditChartView() {
+  const ok = await saveChartView(draftChannelKeys.value);
+  if (ok) editingChartView.value = false;
+}
+function toggleChannelDraft(key: string, on: boolean) {
+  const set = new Set(draftChannelKeys.value);
+  if (on) set.add(key);
+  else set.delete(key);
+  draftChannelKeys.value = Array.from(set);
+}
+
+function channelKey(ch: { measurement?: string | null; device?: string | null; location?: string | null; symbolicName?: string | null; field?: string | null }): string {
+  return [ch.measurement ?? "", ch.device ?? "", ch.location ?? "", ch.symbolicName ?? "", ch.field ?? ""].join("|");
+}
+function channelLabel(ch: { measurement?: string | null; device?: string | null; location?: string | null; symbolicName?: string | null; field?: string | null }): string {
+  const parts = [ch.device, ch.field, ch.location, ch.measurement, ch.symbolicName].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "(unnamed channel)";
+}
 
 const deleteWarning = computed<string | undefined>(() => {
   const n = linkedDataObjects.value?.length ?? 0;
@@ -111,10 +161,80 @@ watch(containerAccessor.container, () => {
       <CenteredLoadingSpinner v-else />
       <ExpansionPanels class="mb-4" :default-open="[0, 1]">
         <ExpansionPanelItem title="Channel Overview">
+          <template
+            v-if="containerAccessor.isAllowedToEditData.value && !editingChartView"
+            #append
+          >
+            <ExpansionPanelTitleButton
+              icon="mdi-tune-variant"
+              text="Edit channels"
+              @click="startEditChartView"
+            />
+          </template>
           <TimeseriesAllChannelsChart
             :container-id="containerId"
             :measurements="containerAccessor.measurements.value"
+            :selected-channel-keys="effectiveChannelKeys"
           />
+          <!-- Persisted-view summary + "show all" override (session-only) -->
+          <div
+            v-if="persistedChannelKeys.length > 0 || showAllChannels"
+            class="d-flex flex-wrap align-center ga-3 mt-2 px-2 text-caption text-medium-emphasis"
+          >
+            <span v-if="!showAllChannels && persistedChannelKeys.length > 0">
+              Curated view — {{ persistedChannelKeys.length }} channel{{ persistedChannelKeys.length === 1 ? "" : "s" }}
+              <span v-if="chartViewUpdatedBy">
+                · set by {{ chartViewUpdatedBy }}
+              </span>
+            </span>
+            <span v-if="showAllChannels">
+              Showing all channels (overrides the curated view for this session)
+            </span>
+            <v-spacer />
+            <v-btn
+              v-if="persistedChannelKeys.length > 0"
+              variant="text"
+              size="x-small"
+              @click="showAllChannels = !showAllChannels"
+            >
+              {{ showAllChannels ? "Use curated view" : "Show all channels" }}
+            </v-btn>
+          </div>
+          <!-- Edit mode: checkboxes for each available channel -->
+          <div
+            v-if="editingChartView"
+            class="mt-4 chart-view-editor pa-3"
+          >
+            <div class="d-flex align-center mb-2">
+              <div class="text-body-2 font-weight-medium">
+                Pick channels for the Channel Overview chart
+              </div>
+              <v-spacer />
+              <v-btn variant="text" size="small" @click="cancelEditChartView">Cancel</v-btn>
+              <v-btn
+                variant="flat"
+                color="primary"
+                size="small"
+                :loading="chartViewSaving"
+                @click="commitEditChartView"
+              >Save</v-btn>
+            </div>
+            <div class="text-caption text-medium-emphasis mb-2">
+              The selection is shared — everyone viewing this container sees the
+              same default chart. Per-session "show all" override remains.
+            </div>
+            <div class="d-flex flex-wrap ga-x-4 ga-y-1">
+              <v-checkbox
+                v-for="ch in containerAccessor.measurements.value"
+                :key="channelKey(ch)"
+                :model-value="draftChannelKeys.includes(channelKey(ch))"
+                :label="channelLabel(ch)"
+                density="compact"
+                hide-details
+                @update:model-value="(v) => toggleChannelDraft(channelKey(ch), !!v)"
+              />
+            </div>
+          </div>
         </ExpansionPanelItem>
         <!-- SA-CONT: container-level semantic annotations -->
         <ExpansionPanelItem title="Semantic Annotations">
@@ -167,3 +287,11 @@ watch(containerAccessor.container, () => {
     </v-container>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.chart-view-editor {
+  background: rgba(var(--v-border-color), 0.05);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+  border-radius: 4px;
+}
+</style>

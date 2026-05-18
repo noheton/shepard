@@ -191,6 +191,14 @@ check "GET /v2/instance/identity (no auth → 401)" \
       "$BACKEND_URL/v2/instance/identity" \
       "401,403"
 
+# TS_CHART_VIEW1 — per-container persisted chart-overview selection
+check "GET /v2/timeseries-containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+      "401,403"
+check "PATCH /v2/timeseries-containers/1/chart-view (no auth → 401)" \
+      "$BACKEND_URL/v2/timeseries-containers/1/chart-view" \
+      "401,403" "" PATCH
+
 echo ""
 echo "──────────────────────────────────────────────"
 echo "PASS: $PASS    FAIL: $FAIL"

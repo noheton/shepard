@@ -17,7 +17,26 @@ const PALETTE = [
 const props = defineProps<{
   containerId: number;
   measurements: TimeseriesEntity[];
+  /**
+   * Optional curated channel selection. Each entry is the 5-tuple key
+   * `measurement|device|location|symbolicName|field`. When provided
+   * (and non-empty), the chart renders ONLY these channels (in this order,
+   * not capped at MAX_CHANNELS — the operator chose them intentionally).
+   * Undefined / empty means "show first MAX_CHANNELS in the natural order"
+   * (legacy behaviour).
+   */
+  selectedChannelKeys?: string[];
 }>();
+
+function channelKey(ch: TimeseriesEntity): string {
+  return [
+    ch.measurement ?? "",
+    ch.device ?? "",
+    ch.location ?? "",
+    ch.symbolicName ?? "",
+    ch.field ?? "",
+  ].join("|");
+}
 
 const series = ref<TimeseriesSeries[]>([]);
 const loading = ref(false);
@@ -55,7 +74,22 @@ async function fetchAll() {
   loading.value = true;
   error.value = false;
   try {
-    const channels = props.measurements.slice(0, MAX_CHANNELS);
+    // When a curated selection exists, render exactly those channels in
+    // order. Otherwise fall back to "first MAX_CHANNELS" legacy behaviour.
+    const curated = (props.selectedChannelKeys ?? []).filter(k => k.length > 0);
+    let channels: TimeseriesEntity[];
+    if (curated.length > 0) {
+      const byKey = new Map(props.measurements.map(m => [channelKey(m), m]));
+      channels = curated
+        .map(k => byKey.get(k))
+        .filter((m): m is TimeseriesEntity => m != null);
+      if (channels.length === 0) {
+        // Curated selection is stale (channels deleted / renamed). Fall back.
+        channels = props.measurements.slice(0, MAX_CHANNELS);
+      }
+    } else {
+      channels = props.measurements.slice(0, MAX_CHANNELS);
+    }
     const points = await Promise.all(channels.map(fetchChannel));
     series.value = channels
       .map((ch, i) => ({
@@ -72,6 +106,7 @@ async function fetchAll() {
 }
 
 watch(() => props.measurements, fetchAll, { immediate: true });
+watch(() => props.selectedChannelKeys, fetchAll);
 </script>
 
 <template>
