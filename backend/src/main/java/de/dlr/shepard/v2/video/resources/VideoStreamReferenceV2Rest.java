@@ -91,7 +91,11 @@ public class VideoStreamReferenceV2Rest {
     Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
     if (doOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
 
-    if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, AccessType.Read, caller, 0L)) {
+    // DataObjects have no own :Permissions node — walk up to the parent
+    // Collection via the perm-walk helper. Gating on doOgmId directly
+    // always 403'd because PermissionsDAO.findByEntityNeo4jId returns
+    // null for DOs.
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -139,7 +143,8 @@ public class VideoStreamReferenceV2Rest {
     Long doOgmId = videoStreamReferenceService.getDataObjectOgmId(dataObjectAppId);
     if (doOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
 
-    if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, AccessType.Write, caller, 0L)) {
+    // Walk DO → parent Collection for the perm check (see GET above).
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Write, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 

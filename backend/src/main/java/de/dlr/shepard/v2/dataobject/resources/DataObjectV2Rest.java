@@ -171,7 +171,11 @@ public class DataObjectV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    Response gate = enforceAccess(dataObjectOgmId, AccessType.Read, sc);
+    // DataObjects don't have their own :Permissions node — access is
+    // inherited from the parent Collection. The walk helper handles the
+    // Cypher hop; gating on dataObjectOgmId directly always 403'd because
+    // PermissionsDAO.findByEntityNeo4jId returns null for DOs.
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
     if (gate != null) return gate;
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
@@ -255,7 +259,7 @@ public class DataObjectV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    Response gate = enforceAccess(dataObjectOgmId, AccessType.Write, sc);
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
     if (gate != null) return gate;
 
     DataObject existing = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
@@ -301,7 +305,7 @@ public class DataObjectV2Rest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    Response gate = enforceAccess(dataObjectOgmId, AccessType.Write, sc);
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Write, sc);
     if (gate != null) return gate;
 
     dataObjectService.deleteDataObject(collectionOgmId, dataObjectOgmId);
@@ -322,6 +326,17 @@ public class DataObjectV2Rest {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
     if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
+      return Response.status(Response.Status.FORBIDDEN).build();
+    }
+    return null;
+  }
+
+  /** Same shape as {@link #enforceAccess}, but walks DO → parent Collection
+   *  via the permissions service helper because DOs have no own perms node. */
+  private Response enforceDataObjectAccess(String dataObjectAppId, AccessType accessType, SecurityContext sc) {
+    String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
+    if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

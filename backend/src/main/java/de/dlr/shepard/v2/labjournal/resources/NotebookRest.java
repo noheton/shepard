@@ -122,8 +122,10 @@ public class NotebookRest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    // Permission gate — 403 if caller lacks Read
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, AccessType.Read, caller, 0L)) {
+    // Permission gate — DataObjects don't have their own :Permissions
+    // node; access is inherited from the parent Collection. The walk
+    // helper does the Cypher hop. Fail-closed if the DO has no parent.
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 

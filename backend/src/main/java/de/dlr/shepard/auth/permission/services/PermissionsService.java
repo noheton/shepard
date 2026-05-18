@@ -260,6 +260,46 @@ public class PermissionsService {
   }
 
   /**
+   * DataObject perm-walk — DataObjects (and the reference / payload edges
+   * underneath them) don't have their own {@code :Permissions} node; access
+   * is inherited from the parent Collection. This helper does the
+   * one-hop Cypher walk and then gates on the Collection.
+   *
+   * <p>The v1 stack walks via the OGM-loaded {@code dataObject.getCollection()}
+   * inside services like {@link de.dlr.shepard.context.collection.services.DataObjectService#getDataObject(long, long, java.util.UUID)};
+   * the v2 stack needs this same walk at the resource boundary without
+   * loading the entire DataObject, so the single Cypher MATCH below is
+   * cheaper and more direct.
+   *
+   * <p>Returns {@code false} for a missing / orphaned DataObject (no
+   * parent Collection) — fail-closed, matching the C3 policy on missing
+   * Permissions nodes.
+   *
+   * @param dataObjectAppId  the DataObject's appId
+   * @param accessType       Read / Write / Manage
+   * @param username         the caller's username
+   * @return whether the caller is allowed the access via the parent Collection
+   */
+  public boolean isAccessAllowedForDataObjectAppId(String dataObjectAppId, AccessType accessType, String username) {
+    if (dataObjectAppId == null || dataObjectAppId.isBlank()) return false;
+    if (dbHealthRegistry != null && dbHealthRegistry.isCurrentlyDown(DatabaseKind.NEO4J)) {
+      return false; // fail-closed when Neo4j is down (mirrors isAllowed's F5 gate)
+    }
+    var session = de.dlr.shepard.common.neo4j.NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) return false;
+    String cypher =
+      "MATCH (c:Collection)-[:" + Constants.HAS_DATAOBJECT + "]->(d:DataObject {appId: $appId}) " +
+      "RETURN id(c) AS collOgmId LIMIT 1";
+    var result = session.query(cypher, Map.of("appId", dataObjectAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return false;
+    Object obj = iter.next().get("collOgmId");
+    if (obj == null) return false;
+    long collOgmId = ((Number) obj).longValue();
+    return isAccessTypeAllowedForUser(collOgmId, accessType, username, currentIat());
+  }
+
+  /**
    * Returns the subset of {@code usernames} for which {@code (entityId, accessType, username)} is
    * allowed. Symmetric counterpart of {@link #filterAllowedForUser(Collection, AccessType, String)}:
    * one fixed entity, N usernames. The Permissions node for {@code entityId} is fetched in a single

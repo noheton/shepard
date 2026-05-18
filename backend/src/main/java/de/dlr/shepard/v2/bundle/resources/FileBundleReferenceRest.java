@@ -359,8 +359,18 @@ public class FileBundleReferenceRest {
       // the bundle exists for this DataObject anyway).
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    long dataObjectOgmId = bundle.getDataObject().getId();
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller, 0L)) {
+    // DataObjects have no own :Permissions node — walk up to the parent
+    // Collection via the perm-walk helper. Falls back to the long-id
+    // check only for pre-L2a DOs that have no appId yet.
+    String doAppId = bundle.getDataObject().getAppId();
+    if (doAppId == null) {
+      long dataObjectOgmId = bundle.getDataObject().getId();
+      if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller, 0L)) {
+        return Response.status(Response.Status.FORBIDDEN).build();
+      }
+      return null;
+    }
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(doAppId, accessType, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;
