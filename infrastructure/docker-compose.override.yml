@@ -169,8 +169,10 @@ services:
     restart: "no"
 
   home-showcase-collector:
+    # No profile gate — every deploy starts the collector. If MQTT_HOST is
+    # unset the entrypoint exits clean (0) with a one-line log so the
+    # container doesn't crashloop for operators without MQTT.
     image: python:3.12-slim
-    profiles: ["home-showcase"]
     environment:
       # MQTT broker creds still come from the deployer's env (LAN-only).
       # Empty defaults to keep unrelated compose invocations from erroring.

@@ -78,6 +78,32 @@ def _import_client_or_die():
     )
 
 
+def _ensure_public(get_perms_fn, set_perms_fn, entity_id: int, label: str) -> None:
+    """Flip an entity's permission-type to PUBLIC so every authenticated user
+    (alice, bob, anyone in Keycloak) can read it. The seeder runs as
+    admin and creates entities as private-to-admin by default — without
+    this step, a freshly-deployed demo shows nothing to non-admin users
+    and "demo confusion" sets in (user reports 2026-05-18).
+
+    Soft-fail on permission errors: an entity left over from an earlier
+    seed run by a different admin user can 403 the perms read. Log +
+    skip rather than abort — the rest of the seed should still run."""
+    try:
+        from shepard_client import PermissionType  # type: ignore
+    except Exception:
+        _log("SKIP", f"public-{label}", "shepard_client.PermissionType unavailable")
+        return
+    try:
+        perms = get_perms_fn(entity_id)
+        if getattr(perms, "permission_type", None) == PermissionType.PUBLIC:
+            return
+        perms.permission_type = PermissionType.PUBLIC
+        set_perms_fn(entity_id, perms)
+        _log("OK", f"public-{label}", "PUBLIC", entity_id)
+    except Exception as e:
+        _log("SKIP", f"public-{label}", f"403 — stale ownership? ({str(e)[:60]})", entity_id)
+
+
 # ---------------------------------------------------------------------------
 # Idempotent provisioning steps
 
@@ -297,11 +323,33 @@ def main(argv: Optional[list[str]] = None) -> int:
     tsr_api = TimeseriesReferenceApi(client)
 
     coll = ensure_collection(coll_api)
+    # Make the Collection readable by every authenticated user so
+    # non-admin demo visitors (alice, bob) see the home Collection on
+    # /collections. Mirrors LUMEN's `_ensure_public` pattern.
+    _ensure_public(
+        coll_api.get_collection_permissions,
+        coll_api.edit_collection_permissions,
+        coll.id,
+        "collection",
+    )
+
     data_objects = {}
     containers = {}
     for (do_name, container_name, description) in TARGETS:
         do = ensure_data_object(do_api, coll.id, do_name, description)
         ct = ensure_timeseries_container(ts_api, container_name, description)
+        # DataObjects inherit Collection-level permissions in shepard's model
+        # — no separate Permissions node — so making the Collection PUBLIC
+        # above is sufficient for DO visibility. TimeseriesContainers ARE
+        # separate root entities with their own Permissions node, so the
+        # explicit flip below is the only way alice's
+        # GET /timeseriesContainers/{id} stops returning 403.
+        _ensure_public(
+            ts_api.get_timeseries_permissions,
+            ts_api.edit_timeseries_permissions,
+            ct.id,
+            f"tsc-{container_name}",
+        )
         data_objects[do_name] = do.id
         containers[container_name] = ct.id
         # Skip creating an empty TimeseriesReference up-front — the upstream
