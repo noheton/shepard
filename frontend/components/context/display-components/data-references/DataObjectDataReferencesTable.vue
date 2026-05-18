@@ -33,9 +33,40 @@ function showDetails(pathFragment: string, id: number) {
   router.push(route);
 }
 
-const tableItems = computed(() =>
+const allTableItems = computed(() =>
   props.dataReferences.map(mapDataReferenceToDataTableElement),
 );
+
+// Per-kind filter chips above the table. "All" is the default; clicking a
+// kind narrows the rows. Counts come from the un-filtered list so empty
+// kinds still show (greyed) and users learn the data shape at a glance.
+type RefKind = DataTableElement["type"];
+const allKind = "All" as const;
+type SelectedKind = typeof allKind | RefKind;
+const selectedKind = ref<SelectedKind>(allKind);
+
+const kindCounts = computed<Record<RefKind, number>>(() => {
+  const counts: Record<RefKind, number> = {
+    TimeSeries: 0,
+    "Structured Data": 0,
+    File: 0,
+  };
+  for (const item of allTableItems.value) counts[item.type]++;
+  return counts;
+});
+
+const tableItems = computed(() =>
+  selectedKind.value === allKind
+    ? allTableItems.value
+    : allTableItems.value.filter(item => item.type === selectedKind.value),
+);
+
+const kindIcons: Record<RefKind, string> = {
+  TimeSeries: "mdi-chart-line",
+  "Structured Data": "mdi-code-json",
+  File: "mdi-file-outline",
+};
+const KIND_ORDER: RefKind[] = ["TimeSeries", "Structured Data", "File"];
 
 const headers = [
   {
@@ -70,6 +101,31 @@ const itemsPerPage = 10;
 </script>
 
 <template>
+  <!-- Kind summary + filter chips. Always rendered (even when empty) so the
+       data shape is communicated at a glance. -->
+  <div class="d-flex flex-wrap align-center ga-2 pb-3">
+    <v-chip
+      :variant="selectedKind === 'All' ? 'flat' : 'tonal'"
+      :color="selectedKind === 'All' ? 'primary' : undefined"
+      size="small"
+      @click="selectedKind = 'All'"
+    >
+      All ({{ allTableItems.length }})
+    </v-chip>
+    <v-chip
+      v-for="kind in KIND_ORDER"
+      :key="kind"
+      :variant="selectedKind === kind ? 'flat' : 'tonal'"
+      :color="selectedKind === kind ? 'primary' : undefined"
+      :disabled="kindCounts[kind] === 0"
+      size="small"
+      :prepend-icon="kindIcons[kind]"
+      @click="selectedKind = kind"
+    >
+      {{ kind }} ({{ kindCounts[kind] }})
+    </v-chip>
+  </div>
+
   <EmptyListIcon v-if="tableItems.length === 0" label="No data yet" />
   <div v-else style="overflow-x: auto">
   <DataTable

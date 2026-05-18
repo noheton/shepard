@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import type { ResponseError, Timeseries } from "@dlr-shepard/backend-client";
+import type {
+  ResponseError,
+  Timeseries,
+  TimeseriesWithDataPoints,
+} from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
+import type { TimeseriesSeries } from "~/components/common/chart/types";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import {
   useFetchTimeseriesReferenceMetrics,
   type Metrics,
 } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
+import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
 
 definePageMeta({ layout: "collection" });
@@ -66,7 +72,72 @@ function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): strin
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog = ref<boolean>(false);
-const showTimeseriesReferenceDialog = ref<boolean>(false);
+
+// Inline chart state — lazily fetched the first time any channel is selected.
+// We don't fetch on page load because the payload can be large; the channel
+// list and metrics are useful on their own without it.
+const chartPayloadLoading = ref<boolean>(false);
+const chartPayload = ref<TimeseriesWithDataPoints[] | undefined>(undefined);
+const chartPayloadFetched = ref<boolean>(false);
+async function ensureChartPayload() {
+  if (chartPayloadFetched.value || chartPayloadLoading.value) return;
+  chartPayloadLoading.value = true;
+  try {
+    const { timeseriesWithDataPoints, isLoading } = useFetchTimeseriesPayload(
+      collectionId,
+      dataObjectId,
+      timeseriesReferenceId,
+    );
+    // Mirror the inner refs into our state. useFetchTimeseriesPayload kicks
+    // off the fetch eagerly when called.
+    chartPayload.value = timeseriesWithDataPoints.value;
+    watch(timeseriesWithDataPoints, v => {
+      chartPayload.value = v;
+      chartPayloadFetched.value = true;
+    });
+    watch(isLoading, v => {
+      chartPayloadLoading.value = v;
+    });
+  } catch (e) {
+    handleError(e as ResponseError, "fetching timeseries payload");
+  }
+}
+
+const chartColors = [
+  "#7ECA8F", "#FCA54D", "#B799DB", "#E56874",
+  "#4097CC", "#FFD145", "#8C8C8C", "#F06292",
+];
+function getColor(index: number): string {
+  return chartColors[index % chartColors.length] ?? "#8C8C8C";
+}
+function timeseriesKey(ts: Timeseries): string {
+  return `${ts.measurement}-${ts.device}-${ts.location}-${ts.symbolicName}-${ts.field}`;
+}
+function channelLabel(ts: Timeseries): string {
+  return [ts.device, ts.field, ts.location, ts.measurement, ts.symbolicName]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+// The series passed to TimeseriesChart — filtered to the rows the user
+// ticked, in the order they appear in the table.
+const chartSeries = computed<TimeseriesSeries[]>(() => {
+  if (!chartPayload.value) return [];
+  const selectedKeys = new Set(
+    timeseriesDataTableItems.value
+      .filter(item => item.isSelected)
+      .map(item => timeseriesKey(item)),
+  );
+  if (selectedKeys.size === 0) return [];
+  return chartPayload.value
+    .filter(p => selectedKeys.has(timeseriesKey(p.timeseries)))
+    .map((p, idx) => ({
+      key: timeseriesKey(p.timeseries),
+      name: channelLabel(p.timeseries),
+      color: getColor(idx),
+      data: p.points.map(pt => [pt.timestamp, pt.value] as [number, number]),
+    }));
+});
 const headers = [
   {
     title: "Select",
@@ -124,10 +195,6 @@ const getSelectedTimeseries = () => {
   return timeseriesDataTableItems.value.filter(item => item.isSelected);
 };
 
-const plotSelectedTimeseries = () => {
-  showTimeseriesReferenceDialog.value = true;
-};
-
 const downloadTimeseries = (filename: string) => {
   useShepardApi(TimeseriesReferenceApi)
     .value.exportTimeseriesPayload({
@@ -173,6 +240,7 @@ const onDownload = (name: string) => {
 
 const onSelectedItemChanged = () => {
   numberOfSelectedItems.value = getSelectedTimeseries().length;
+  if (numberOfSelectedItems.value > 0) ensureChartPayload();
 };
 
 const itemsPerPage = 10;
@@ -261,25 +329,10 @@ watch(timeseriesReference, () => {
                 </div>
               </v-col>
               <v-col class="text-right" cols="auto">
-                <div class="pa-4">
-                  Selected items: {{ numberOfSelectedItems }} /
-                  {{ MaxSelectableItems }}
+                <div class="pa-4 text-medium-emphasis text-body-2">
+                  Tick channels below to chart — selected
+                  {{ numberOfSelectedItems }} / {{ MaxSelectableItems }}
                 </div>
-              </v-col>
-              <v-col class="text-right" cols="auto">
-                <v-btn
-                  rounded="lg"
-                  variant="flat"
-                  color="primary"
-                  prepend-icon="mdi-chart-line"
-                  :disabled="
-                    numberOfSelectedItems === 0 ||
-                    numberOfSelectedItems > MaxSelectableItems
-                  "
-                  @click="plotSelectedTimeseries"
-                >
-                  Metrics and Plotter
-                </v-btn>
               </v-col>
             </v-row>
             <div style="overflow-x: auto">
@@ -332,6 +385,36 @@ watch(timeseriesReference, () => {
               </template>
             </DataTable>
             </div>
+
+            <!-- Inline chart — renders when ≥1 channel is ticked. Replaces
+                 the legacy "Metrics and Plotter" modal so users don't have
+                 to leave the page to see the trace. -->
+            <section
+              v-if="numberOfSelectedItems > 0"
+              class="page-section mt-6"
+            >
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Chart</div>
+                <span class="text-caption text-medium-emphasis">
+                  {{ chartSeries.length }} channel{{ chartSeries.length === 1 ? "" : "s" }}
+                </span>
+              </div>
+              <div
+                v-if="chartPayloadLoading || !chartPayloadFetched"
+                class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-4"
+              >
+                <v-progress-circular indeterminate size="16" width="2" />
+                Loading payload…
+              </div>
+              <TimeseriesChart
+                v-else-if="chartSeries.length > 0"
+                :series="chartSeries"
+                height="340px"
+              />
+              <div v-else class="text-medium-emphasis text-body-2 pa-2">
+                No data points available for the selected channels.
+              </div>
+            </section>
 
             <!-- TA1a / AI1b — interval & point annotations on this reference.
                  Shown inline so users see anomalies without opening a dialog. -->
@@ -421,20 +504,6 @@ watch(timeseriesReference, () => {
     <ConfirmDeleteDialog
       v-model:show-dialog="showDeleteDialog"
       @confirmed="deleteTimeseriesReference"
-    />
-    <ShowTimeseriesReferenceDialog
-      v-if="
-        showTimeseriesReferenceDialog &&
-        timeseriesReference?.timeseriesContainerId
-      "
-      v-model:show-dialog="showTimeseriesReferenceDialog"
-      :collection-id="collectionId"
-      :data-object-id="dataObjectId"
-      :timeseries-reference-id="timeseriesReferenceId"
-      :timeseries="getSelectedTimeseries()"
-      :timeseries-container-id="timeseriesReference?.timeseriesContainerId"
-      :timeseries-reference="timeseriesReference"
-      :is-allowed-to-edit-collection="isAllowedToEditCollection"
     />
   </div>
 </template>
