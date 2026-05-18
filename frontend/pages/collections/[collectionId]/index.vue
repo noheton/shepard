@@ -254,6 +254,21 @@ watch(collection, () => {
                     <CollectionLineageGraph :collection-id="collectionId" />
                   </div>
                 </ExpansionPanelItem>
+                <!-- WATCH1 — containers this collection is watching but does
+                     not own via DataObject references. Useful for live-data
+                     collections (home-showcase) that don't structure their
+                     data per-DataObject. -->
+                <ExpansionPanelItem
+                  v-if="collectionAppId"
+                  title="Watched containers"
+                >
+                  <div class="pt-2 pb-2">
+                    <WatchedContainersPanel
+                      :collection-app-id="collectionAppId"
+                      :is-allowed-to-edit="!!isAllowedToEditCollection"
+                    />
+                  </div>
+                </ExpansionPanelItem>
                 <!-- Snapshots and Publishing are panels of data, not advanced-mode
                      fields — visible to anyone with edit permission, in both modes
                      (per the refined basic/advanced policy: the toggle gates fields,
