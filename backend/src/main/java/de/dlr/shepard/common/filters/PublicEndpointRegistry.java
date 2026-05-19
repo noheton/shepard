@@ -3,6 +3,7 @@ package de.dlr.shepard.common.filters;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Registry of request paths that bypass {@link JWTFilter}. Path
@@ -95,6 +96,29 @@ public class PublicEndpointRegistry {
   private static final Set<String> PUBLIC_PATH_PREFIXES = Set.of("/v2/.well-known/kip");
 
   /**
+   * Public-endpoint regex patterns — for paths where the variable
+   * segment sits between fixed prefix and fixed suffix and the prefix
+   * alone is too broad to mark public. Used by U1e avatar GET
+   * ({@code /v2/users/{appId}/avatar}): the surrounding {@code /v2/users}
+   * namespace contains private endpoints like {@code /v2/users/me/preferences},
+   * so a prefix entry would over-grant. The {@code avatar} suffix
+   * pins the public surface narrowly.
+   *
+   * <p>Public avatar GET is required because the frontend renders the
+   * profile image with a bare {@code <img src=…>} tag, which cannot
+   * attach an Authorization header. The endpoint returns only an
+   * image blob keyed by an opaque UUID v7 appId — no PII surface
+   * beyond what {@code GET /shepard/api/users} already exposes for
+   * authenticated callers.
+   *
+   * <p>Patterns must match the full normalised application-relative
+   * path (matcher uses {@code matches()}, not {@code find()}).
+   */
+  private static final Set<Pattern> PUBLIC_PATH_PATTERNS = Set.of(
+    Pattern.compile("^/v2/users/[^/]+/avatar$")
+  );
+
+  /**
    * Returns {@code true} when the request path matches a registered public
    * endpoint exactly (modulo {@code /shepard/api/} prefix and trailing
    * slash), or when it sits under a registered structural prefix
@@ -125,6 +149,9 @@ public class PublicEndpointRegistry {
     if (PUBLIC_PATHS.contains(normalised)) return true;
     for (String prefix : PUBLIC_PATH_PREFIXES) {
       if (matchesPrefix(normalised, prefix)) return true;
+    }
+    for (Pattern pattern : PUBLIC_PATH_PATTERNS) {
+      if (pattern.matcher(normalised).matches()) return true;
     }
     return false;
   }
