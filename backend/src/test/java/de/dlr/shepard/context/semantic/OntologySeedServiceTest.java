@@ -448,6 +448,102 @@ class OntologySeedServiceTest {
     verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
   }
 
+  // ---------- fetchUrl tests ------------------------------------------------
+
+  @Test
+  void seedOne_withFetchUrl_prefersFetchOverInline() {
+    Session session = mock(Session.class);
+    Result count = singleRow(Map.of("total", 0L));
+    Result fetchResult = singleRow(Map.of("status", "OK", "loaded", 100L, "parsed", 100L, "info", ""));
+    when(session.query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), any())).thenReturn(fetchResult);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    var entry = new OntologySeedService.OntologyEntry(
+      "test", "Test", "test.ttl", null, "Turtle", null, null, null,
+      SAMPLE_SHA, SAMPLE_TTL.length(), false, OntologySeedService.OntologyEntry.Source.BUILTIN,
+      "https://example.org/test.rdf", "RDF/XML"
+    );
+
+    assertDoesNotThrow(() -> svc.seedOne(entry));
+    verify(session).query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), eq(Map.of("url", "https://example.org/test.rdf", "format", "RDF/XML")));
+    verify(session, never()).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seedOne_fetchFails_fallsBackToInline() {
+    Session session = mock(Session.class);
+    Result count = singleRow(Map.of("total", 0L));
+    Result inlineResult = singleRow(Map.of("status", "OK", "loaded", 5L, "parsed", 5L, "info", ""));
+    when(session.query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), any()))
+      .thenThrow(new RuntimeException("connection refused"));
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(inlineResult);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+
+    String manifest = manifestJson(List.of(entryWithFetch("nasa", "nasa.ttl", SAMPLE_SHA, SAMPLE_TTL.length(), "https://example.org/nasa.xml", "RDF/XML")));
+    ClassLoader cl = classLoaderWith(Map.of(
+      "ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8),
+      "ontologies/nasa.ttl", SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+    ));
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc::seedIfNeeded);
+
+    verify(session).query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), any());
+    verify(session).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void seedOne_fetchNonOkStatus_fallsBackToInline() {
+    Session session = mock(Session.class);
+    Result count = singleRow(Map.of("total", 0L));
+    Result fetchBad = singleRow(Map.of("status", "KO", "loaded", 0L, "info", "parse error"));
+    Result inlineOk = singleRow(Map.of("status", "OK", "loaded", 5L));
+    when(session.query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), any())).thenReturn(fetchBad);
+    when(session.query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any())).thenReturn(inlineOk);
+    when(session.query(eq(OntologySeedService.RESOURCE_COUNT_CYPHER), any())).thenReturn(count);
+
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), classLoaderWith(Map.of()));
+    var entry = new OntologySeedService.OntologyEntry(
+      "test", "Test", "test.ttl", null, "Turtle", null, null, null,
+      SAMPLE_SHA, SAMPLE_TTL.length(), false, OntologySeedService.OntologyEntry.Source.BUILTIN,
+      "https://example.org/test.rdf", "RDF/XML"
+    );
+
+    // Non-OK fetch falls back to inline; but readBundleBytes will fail
+    // because "test.ttl" isn't in the empty classloader — that's OK,
+    // the test checks both Cypher calls fired before the bundle-read throws.
+    // Use a classloader that has the stub to make the full round-trip work.
+    String manifest = manifestJson(List.of(entryWithFetch("test", "test.ttl", SAMPLE_SHA, SAMPLE_TTL.length(), "https://example.org/test.rdf", "RDF/XML")));
+    ClassLoader cl = classLoaderWith(Map.of(
+      "ontologies/ontologies-manifest.json", manifest.getBytes(StandardCharsets.UTF_8),
+      "ontologies/test.ttl", SAMPLE_TTL.getBytes(StandardCharsets.UTF_8)
+    ));
+    Result detect = singleRow(Map.of("available", Boolean.TRUE));
+    when(session.query(eq(OntologySeedService.DETECT_CYPHER), any())).thenReturn(detect);
+
+    var svc2 = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), cl);
+    assertDoesNotThrow(svc2::seedIfNeeded);
+
+    verify(session).query(eq(OntologySeedService.IMPORT_FETCH_CYPHER), any());
+    verify(session).query(eq(OntologySeedService.IMPORT_INLINE_CYPHER), any());
+  }
+
+  @Test
+  void realManifest_nasaThesaurus_hasFetchUrl() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var nasa = svc.loadManifest().stream()
+      .filter(e -> "nasa-thesaurus".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("nasa-thesaurus missing from manifest"));
+    assertEquals("https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml", nasa.fetchUrl, "NASA Thesaurus fetchUrl");
+    assertEquals("RDF/XML", nasa.fetchFormat, "NASA Thesaurus fetchFormat");
+    assertEquals("Turtle", nasa.format, "NASA Thesaurus stub format (fallback)");
+  }
+
   // ---------- Real-classpath sanity test ------------------------------------
 
   /**
@@ -484,8 +580,8 @@ class OntologySeedServiceTest {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    // Per aidocs/48 §3.2 + ONT1a (aidocs/58 §6) + ONT1b the bundle ships exactly these 10 ontologies.
-    assertEquals(10, ids.size(), "expected 10 bundled ontologies (8 from N1b + RO from ONT1a + metadata4ing from ONT1b)");
+    // 8 N1b + obo-relations (ONT1a) + metadata4ing (ONT1b) + simat + lumen-inspired + nasa-thesaurus (N1e) + shepard-experiment (AI1r) = 14.
+    assertEquals(14, ids.size(), "expected 14 bundled ontologies");
     assertTrue(ids.contains("prov-o"), "manifest missing prov-o");
     assertTrue(ids.contains("dublin-core"), "manifest missing dublin-core");
     assertTrue(ids.contains("schema-org"), "manifest missing schema-org");
@@ -496,6 +592,8 @@ class OntologySeedServiceTest {
     assertTrue(ids.contains("geosparql"), "manifest missing geosparql");
     assertTrue(ids.contains("obo-relations"), "manifest missing obo-relations (ONT1a)");
     assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
+    assertTrue(ids.contains("shepard-experiment"), "manifest missing shepard-experiment (AI1r)");
+    assertTrue(ids.contains("nasa-thesaurus"), "manifest missing nasa-thesaurus (N1e)");
   }
 
   /**
@@ -532,7 +630,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(9, kept.size(), "skip-bundles=obo-relations should leave 9 entries");
+    assertEquals(13, kept.size(), "skip-bundles=obo-relations should leave 13 entries");
     assertFalse(kept.contains("obo-relations"), "obo-relations should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=obo-relations must not affect prov-o");
     assertTrue(kept.contains("geosparql"), "skip-bundles=obo-relations must not affect geosparql");
@@ -542,17 +640,15 @@ class OntologySeedServiceTest {
   // ONT1b — metadata4ing (NFDI4Ing) bundle.
 
   /**
-   * ONT1b — manifest declares the metadata4ing bundle as the tenth
-   * entry alongside the eight original N1b bundles and the ONT1a RO
-   * bundle. Cardinality check is what catches an accidental drop /
-   * dup of the ONT1b entry in a future refactor.
+   * ONT1b — manifest declares the metadata4ing bundle alongside the eight
+   * original N1b bundles and the ONT1a RO bundle. Cardinality check is what
+   * catches an accidental drop / dup of the ONT1b entry in a future refactor.
    */
   @Test
-  void realManifest_metadata4ingIsTenthBundle() {
+  void realManifest_metadata4ingIsPresent() {
     Session session = mock(Session.class);
     var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
     List<String> ids = svc.loadManifest().stream().map(e -> e.id).toList();
-    assertEquals(10, ids.size(), "ONT1b lifts the bundle count to 10 (8 N1b + RO + metadata4ing)");
     assertTrue(ids.contains("metadata4ing"), "manifest missing metadata4ing (ONT1b)");
   }
 
@@ -602,7 +698,7 @@ class OntologySeedServiceTest {
       .map(e -> e.id)
       .filter(id -> !skip.contains(id))
       .toList();
-    assertEquals(9, kept.size(), "skip-bundles=metadata4ing should leave 9 entries");
+    assertEquals(13, kept.size(), "skip-bundles=metadata4ing should leave 13 entries");
     assertFalse(kept.contains("metadata4ing"), "metadata4ing should be excluded by skip-bundles");
     assertTrue(kept.contains("prov-o"), "skip-bundles=metadata4ing must not affect prov-o");
     assertTrue(kept.contains("obo-relations"), "skip-bundles=metadata4ing must not affect obo-relations");
@@ -659,6 +755,14 @@ class OntologySeedServiceTest {
   private static Map<String, Object> entryRequired(String id, String file, String sha, long size, boolean required) {
     Map<String, Object> m = entry(id, file, sha, size);
     m.put("required", required);
+    return m;
+  }
+
+  /** Like {@link #entry} but with N1e's {@code fetchUrl} + {@code fetchFormat} fields. */
+  private static Map<String, Object> entryWithFetch(String id, String file, String sha, long size, String fetchUrl, String fetchFormat) {
+    Map<String, Object> m = entry(id, file, sha, size);
+    m.put("fetchUrl", fetchUrl);
+    m.put("fetchFormat", fetchFormat);
     return m;
   }
 

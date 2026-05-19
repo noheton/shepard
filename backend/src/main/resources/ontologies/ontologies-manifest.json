@@ -1,12 +1,13 @@
 {
   "$schema": "https://shepard.dlr.de/schemas/ontologies-manifest-v1.json",
   "comment": [
-    "N1b (+ ONT1a + ONT1b + AI1r additions) — manifest of common ontologies",
+    "N1b (+ ONT1a + ONT1b + AI1r + N1e additions) — manifest of common ontologies",
     "pre-seeded into the internal neosemantics (n10s) semantic",
-    "repository on shepard startup. Currently eleven bundles (eight from",
+    "repository on shepard startup. Currently twelve bundles (eight from",
     "N1b plus the OBO Relation Ontology added by ONT1a, see",
     "aidocs/58 §6, plus the NFDI4Ing metadata4ing ontology added by",
-    "ONT1b, plus the shepard-experiment domain ontology added by AI1r).",
+    "ONT1b, plus the shepard-experiment domain ontology added by AI1r,",
+    "plus the NASA Thesaurus propulsion stub added by N1e).",
     "Each",
     "entry pins the classpath-bundled file by SHA-256; the seed service",
     "(de.dlr.shepard.context.semantic.OntologySeedService) refuses to",
@@ -226,6 +227,24 @@
       "retrievedAt": "2026-05-19",
       "sha256": "5ec9a7d2edf6530da449a2856901dda237e6e7368d23896367daf3fd819d5d4f",
       "sizeBytes": 22947,
+      "required": false
+    },
+    {
+      "id": "nasa-thesaurus",
+      "name": "NASA Thesaurus (propulsion stub + full fetch)",
+      "file": "nasa-thesaurus.ttl",
+      "iriPrefix": "https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml#",
+      "format": "Turtle",
+      "canonicalUrl": "https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml",
+      "fetchUrl": "https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml",
+      "fetchFormat": "RDF/XML",
+      "sourceRationale": "The NASA Thesaurus is a controlled vocabulary of ~18,400 aerospace and engineering concepts published by the NASA Scientific and Technical Information (STI) Program. On startup the seed service attempts n10s.rdf.import.fetch from fetchUrl (full ~66 MB SKOS/RDF-XML, public domain). If the network is unavailable the bundled stub (~120 propulsion concepts) is imported inline as fallback. Concept IRIs use fragment-identifier form (#termId) resolved against the fetch URL as base. SKOS properties: skos:prefLabel, skos:altLabel.",
+      "license": "Public domain (NASA STI Program)",
+      "licenseUrl": "https://www.sti.nasa.gov/",
+      "version": "2024 edition",
+      "retrievedAt": "2026-05-19",
+      "sha256": "dc9cd385934b099679971a51bd92c41693626b05d9b8bc40972b4639f6fbd356",
+      "sizeBytes": 19926,
       "required": false
     },
     {

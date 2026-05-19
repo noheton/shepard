@@ -80,11 +80,14 @@ public class SemanticTermSearchRest {
    * Uses {@code $q + "*"} for prefix matching. Returns at most {@code $limit}
    * results ordered by score (Neo4j native relevance).
    *
-   * <p>n10s with {@code handleVocabUris=IGNORE} stores bare local names:
-   * {@code label} (rdfs:label), {@code prefLabel} (skos:prefLabel),
-   * {@code altLabel} (skos:altLabel), {@code name} (foaf/schema:name),
-   * {@code title} (dcterms:title). Language tags are embedded in the value
-   * as a {@code @lang} suffix and are stripped by {@link #stripLangSuffix}.
+   * <p>n10s with {@code handleVocabUris=IGNORE} stores bare local names.
+   * The fulltext index (V51) covers label properties, synonym properties, and
+   * classification codes: {@code label}, {@code prefLabel}, {@code altLabel},
+   * {@code name}, {@code title}, {@code hiddenLabel}, {@code notation},
+   * {@code hasExactSynonym}, {@code hasRelatedSynonym}, {@code hasBroadSynonym},
+   * {@code hasNarrowSynonym}, {@code alternateName}.
+   * Language tags are embedded in the value as a {@code @lang} suffix
+   * and are stripped by {@link #stripLangSuffix}.
    */
   static final String FULLTEXT_CYPHER =
     "CALL db.index.fulltext.queryNodes('resource_labels', $q + '*') " +
@@ -99,8 +102,20 @@ public class SemanticTermSearchRest {
    * CONTAINS-based fallback used when the fulltext index is absent.
    *
    * <p>Scans all {@code :Resource} nodes with a case-insensitive
-   * {@code CONTAINS} check across label properties and the URI.
+   * {@code CONTAINS} check across label and synonym properties and the URI.
    * Slower on large ontologies but always safe.
+   *
+   * <p>Properties searched (bare IGNORE-mode local names stored by n10s):
+   * <ul>
+   *   <li>{@code label} / {@code prefLabel} / {@code altLabel} / {@code name} /
+   *       {@code title} — standard label properties</li>
+   *   <li>{@code comment} / {@code definition} / {@code scopeNote} — descriptions</li>
+   *   <li>{@code hiddenLabel} — SKOS search-only labels (abbreviations, misspellings)</li>
+   *   <li>{@code hasExactSynonym} / {@code hasRelatedSynonym} / {@code hasBroadSynonym} /
+   *       {@code hasNarrowSynonym} — OBO-format synonyms (Gene Ontology, CHEBI, UBERON)</li>
+   *   <li>{@code alternateName} — schema.org alternate names</li>
+   *   <li>{@code notation} — SKOS classification codes (e.g. NASA Thesaurus numeric IDs)</li>
+   * </ul>
    *
    * <p>Note: the {@code @lang} suffix embedded in values by n10s IGNORE mode
    * (e.g. {@code "Anomaly Detected@en"}) is included in the CONTAINS match,
@@ -118,6 +133,14 @@ public class SemanticTermSearchRest {
     "    OR any(v IN coalesce(r.title, []) WHERE toLower(v) CONTAINS toLower($q)) " +
     "    OR any(v IN coalesce(r.comment, []) WHERE toLower(v) CONTAINS toLower($q)) " +
     "    OR any(v IN coalesce(r.definition, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hiddenLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasExactSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasRelatedSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasBroadSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.hasNarrowSynonym, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.alternateName, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.notation, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.scopeNote, []) WHERE toLower(v) CONTAINS toLower($q)) " +
     "    OR toLower(r.uri) CONTAINS toLower($q) " +
     "  ) " +
     "RETURN r.uri AS uri, " +

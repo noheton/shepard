@@ -96,6 +96,18 @@ public class OntologySeedService {
     "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo " +
     "RETURN terminationStatus AS status, triplesLoaded AS loaded, triplesParsed AS parsed, extraInfo AS info";
 
+  /**
+   * URL-based import used when a manifest entry supplies {@code fetchUrl}.
+   * n10s resolves relative IRIs against the fetch URL as base, which is
+   * required for ontologies like the NASA Thesaurus SKOS file whose concepts
+   * use fragment-identifier URIs ({@code #64538}) with no {@code xml:base}.
+   * Also handles large files that would exceed inline string limits.
+   */
+  static final String IMPORT_FETCH_CYPHER =
+    "CALL n10s.rdf.import.fetch($url, $format) " +
+    "YIELD terminationStatus, triplesLoaded, triplesParsed, namespaces, extraInfo " +
+    "RETURN terminationStatus AS status, triplesLoaded AS loaded, triplesParsed AS parsed, extraInfo AS info";
+
   /** Cypher for the cumulative {@code :Resource} count emitted per-ontology + at end. */
   static final String RESOURCE_COUNT_CYPHER = "MATCH (r:Resource) RETURN count(r) AS total";
 
@@ -413,11 +425,51 @@ public class OntologySeedService {
   }
 
   /**
-   * Import one ontology: verify SHA-256, call n10s, log progress.
-   * Throws on hash mismatch / missing file / n10s call error so the
-   * outer loop can route to the per-bundle WARN path.
+   * Import one ontology: prefer URL fetch when {@code entry.fetchUrl} is set
+   * (handles large files and correct relative-IRI resolution), otherwise fall
+   * back to the bundled stub via inline import. On fetch failure the stub is
+   * always attempted so at least the curated core terms survive a network outage.
+   * Throws on hash mismatch / missing file / n10s call error so the outer loop
+   * can route to the per-bundle WARN path.
    */
   void seedOne(OntologyEntry entry) {
+    if (entry.fetchUrl != null && !entry.fetchUrl.isBlank()) {
+      String fetchFormat = entry.fetchFormat != null && !entry.fetchFormat.isBlank()
+        ? entry.fetchFormat : "RDF/XML";
+      boolean fetchOk = false;
+      try {
+        Map<String, Object> result = invokeFetch(entry.fetchUrl, fetchFormat);
+        Object status = result.get("status");
+        Object loaded = result.get("loaded");
+        LOG.infof(
+          "OntologySeedService: bundle '%s' fetched from %s — status=%s triplesLoaded=%s (cumulative :Resource=%d)",
+          entry.id,
+          entry.fetchUrl,
+          status,
+          loaded,
+          readResourceCount()
+        );
+        fetchOk = status == null || "OK".equalsIgnoreCase(status.toString());
+        if (!fetchOk) {
+          LOG.warnf(
+            "OntologySeedService: bundle '%s' fetch returned non-OK status '%s'; falling back to inline stub.",
+            entry.id,
+            status
+          );
+        }
+      } catch (RuntimeException fetchEx) {
+        LOG.warnf(
+          "OntologySeedService: bundle '%s' fetch from %s failed (%s: %s); falling back to inline stub.",
+          entry.id,
+          entry.fetchUrl,
+          fetchEx.getClass().getSimpleName(),
+          fetchEx.getMessage()
+        );
+      }
+      if (fetchOk) return;
+    }
+
+    // Inline import — primary path when no fetchUrl, or fallback when fetch failed.
     byte[] bytes = readBundleBytes(entry.file);
     String actualSha = sha256Hex(bytes);
     if (!actualSha.equalsIgnoreCase(entry.sha256)) {
@@ -468,6 +520,18 @@ public class OntologySeedService {
    */
   Map<String, Object> invokeImport(String rdf, String format) {
     var result = session.query(IMPORT_INLINE_CYPHER, Map.of("rdf", rdf, "format", format));
+    var it = result.queryResults().iterator();
+    if (!it.hasNext()) return Collections.emptyMap();
+    return new java.util.LinkedHashMap<>(it.next());
+  }
+
+  /**
+   * Invoke {@code n10s.rdf.import.fetch} with the given URL + format.
+   * n10s streams the remote file directly — no size limit, and relative
+   * IRIs resolve against the fetch URL as base. Visible-for-tests.
+   */
+  Map<String, Object> invokeFetch(String url, String format) {
+    var result = session.query(IMPORT_FETCH_CYPHER, Map.of("url", url, "format", format));
     var it = result.queryResults().iterator();
     if (!it.hasNext()) return Collections.emptyMap();
     return new java.util.LinkedHashMap<>(it.next());
@@ -650,6 +714,10 @@ public class OntologySeedService {
     public final long sizeBytes;
     public final boolean required;
     public final Source source;
+    /** Optional URL for n10s.rdf.import.fetch — preferred over inline when set. */
+    public final String fetchUrl;
+    /** RDF serialisation format for the fetchUrl resource (e.g. "RDF/XML"). Defaults to "RDF/XML". */
+    public final String fetchFormat;
 
     public OntologyEntry(
       String id,
@@ -663,7 +731,7 @@ public class OntologySeedService {
       String sha256,
       long sizeBytes
     ) {
-      this(id, name, file, iriPrefix, format, canonicalUrl, license, version, sha256, sizeBytes, false, Source.BUILTIN);
+      this(id, name, file, iriPrefix, format, canonicalUrl, license, version, sha256, sizeBytes, false, Source.BUILTIN, null, null);
     }
 
     public OntologyEntry(
@@ -680,6 +748,25 @@ public class OntologySeedService {
       boolean required,
       Source source
     ) {
+      this(id, name, file, iriPrefix, format, canonicalUrl, license, version, sha256, sizeBytes, required, source, null, null);
+    }
+
+    public OntologyEntry(
+      String id,
+      String name,
+      String file,
+      String iriPrefix,
+      String format,
+      String canonicalUrl,
+      String license,
+      String version,
+      String sha256,
+      long sizeBytes,
+      boolean required,
+      Source source,
+      String fetchUrl,
+      String fetchFormat
+    ) {
       this.id = Objects.requireNonNull(id, "id");
       this.name = name;
       this.file = Objects.requireNonNull(file, "file");
@@ -692,6 +779,8 @@ public class OntologySeedService {
       this.sizeBytes = sizeBytes;
       this.required = required;
       this.source = source == null ? Source.BUILTIN : source;
+      this.fetchUrl = fetchUrl;
+      this.fetchFormat = fetchFormat;
     }
 
     static OntologyEntry fromJson(JsonNode n) {
@@ -715,7 +804,9 @@ public class OntologySeedService {
         sha,
         n.path("sizeBytes").asLong(-1L),
         n.path("required").asBoolean(false),
-        Source.BUILTIN
+        Source.BUILTIN,
+        textOrNull(n, "fetchUrl"),
+        textOrNull(n, "fetchFormat")
       );
     }
 

@@ -1,0 +1,286 @@
+# Canonical source: https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml (66 MB SKOS/RDF-XML)
+# Ontology IRI:    https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml
+# Retrieved:       SEE ontologies-manifest.json
+# License:         Public domain (NASA STI Program)
+#
+# shepard-bundled stub of the NASA Thesaurus (~18,400 terms). This file contains a
+# curated excerpt of ~110 concepts covering propulsion, combustion, test engineering,
+# cryogenic fluids, measurement, and structural/materials topics relevant to
+# liquid-propellant rocket engine research (the LUMEN showcase domain).
+#
+# Concept IRIs use fragment identifiers that match the termID fields in the canonical
+# SKOS/RDF-XML source so that a full import via `shepard-admin semantic refresh-ontologies`
+# (using n10s.rdf.import.fetch) produces the same :Resource URIs as this stub and
+# deduplicates cleanly.
+#
+# Operators wanting the full 18,400-term NASA Thesaurus run:
+#   shepard-admin semantic refresh-ontologies   (downloads from canonicalUrl, re-imports)
+# or import the SKOS XML directly via the admin UI (Semantic Repositories → Upload).
+
+@base <https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:   <http://www.w3.org/2002/07/owl#> .
+@prefix skos:  <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<> a owl:Ontology ;
+   dcterms:title "NASA Thesaurus (shepard-bundled propulsion stub)"@en ;
+   rdfs:label    "NASA Thesaurus"@en ;
+   rdfs:comment  "Controlled vocabulary of the NASA Scientific and Technical Information Program. This file is a curated stub of the aerospace propulsion / test engineering subset."@en .
+
+# ── Propulsion (general) ────────────────────────────────────────────────────
+
+<#50177> a skos:Concept ; skos:prefLabel "propulsion" .
+<#50178> a skos:Concept ; skos:prefLabel "propulsion system configurations" .
+<#50179> a skos:Concept ; skos:prefLabel "propulsion system performance" .
+<#38738> a skos:Concept ; skos:prefLabel "ascent propulsion systems" .
+<#41628> a skos:Concept ; skos:prefLabel "descent propulsion systems" .
+<#42377> a skos:Concept ; skos:prefLabel "electromagnetic propulsion" .
+<#42496> a skos:Concept ; skos:prefLabel "electrostatic propulsion" .
+<#61549> a skos:Concept ; skos:prefLabel "electric propulsion" .
+<#40314> a skos:Concept ; skos:prefLabel "chemical propulsion" ; skos:altLabel "chemonuclear propulsion" .
+<#63802> a skos:Concept ; skos:prefLabel "spacecraft propulsion" .
+<#49875> a skos:Concept ; skos:prefLabel "post boost propulsion system" .
+<#52224> a skos:Concept ; skos:prefLabel "solar electric propulsion" .
+<#52263> a skos:Concept ; skos:prefLabel "solar propulsion" .
+<#49596> a skos:Concept ; skos:prefLabel "plasma propulsion" .
+<#53107> a skos:Concept ; skos:prefLabel "submarine propulsion" .
+<#63251> a skos:Concept ; skos:prefLabel "propulsive efficiency" .
+
+# ── Rocket engines ───────────────────────────────────────────────────────────
+
+<#63514> a skos:Concept ; skos:prefLabel "rocket engines" ; skos:altLabel "interplanetary propulsion" .
+<#62509> a skos:Concept ; skos:prefLabel "liquid propellant rocket engines" .
+<#184253> a skos:Concept ; skos:prefLabel "liquid oxygen hydrocarbon rocket engines" .
+<#184309> a skos:Concept ; skos:prefLabel "LOX-hydrogen engines" ; skos:altLabel "hydrogen oxygen engines" .
+<#62158> a skos:Concept ; skos:prefLabel "hydrogen oxygen engines" ; skos:altLabel "hydrox engines" .
+<#43012> a skos:Concept ; skos:prefLabel "F-1 rocket engine" .
+<#42040> a skos:Concept ; skos:prefLabel "ducted rocket engines" .
+<#42306> a skos:Concept ; skos:prefLabel "electric rocket engines" .
+<#42970> a skos:Concept ; skos:prefLabel "external combustion engines" .
+<#51022> a skos:Concept ; skos:prefLabel "restartable rocket engines" .
+<#51056> a skos:Concept ; skos:prefLabel "reusable rocket engines" .
+<#51170> a skos:Concept ; skos:prefLabel "rocket engine cases" ; skos:altLabel "missile engine cases" .
+<#51171> a skos:Concept ; skos:prefLabel "rocket engine control" .
+<#51172> a skos:Concept ; skos:prefLabel "rocket engine design" .
+<#63742> a skos:Concept ; skos:prefLabel "solid propellant rocket engines" .
+<#54419> a skos:Concept ; skos:prefLabel "ullage rocket engines" .
+<#54541> a skos:Concept ; skos:prefLabel "upper stage rocket engines" .
+<#63959> a skos:Concept ; skos:prefLabel "sustainer rocket engines" .
+<#63486> a skos:Concept ; skos:prefLabel "retrorocket engines" .
+<#54339> a skos:Concept ; skos:prefLabel "turborocket engines" .
+<#39574> a skos:Concept ; skos:prefLabel "booster rocket engines" ; skos:altLabel "rocket boosters" .
+
+# ── Thrust chambers, nozzles ─────────────────────────────────────────────────
+
+<#53870> a skos:Concept ; skos:prefLabel "thrust chambers" ; skos:altLabel "rocket chambers" .
+<#53869> a skos:Concept ; skos:prefLabel "thrust chamber pressure" .
+<#53878> a skos:Concept ; skos:prefLabel "thrust vector control" ; skos:altLabel "TVC (control)" .
+<#63517> a skos:Concept ; skos:prefLabel "rocket nozzles" .
+<#38488> a skos:Concept ; skos:prefLabel "annular nozzles" .
+<#61124> a skos:Concept ; skos:prefLabel "coaxial nozzles" .
+<#40994> a skos:Concept ; skos:prefLabel "convergent nozzles" .
+<#40995> a skos:Concept ; skos:prefLabel "convergent-divergent nozzles" ; skos:altLabel "de Laval nozzles" .
+<#182953> a skos:Concept ; skos:prefLabel "de Laval nozzles" .
+<#41913> a skos:Concept ; skos:prefLabel "divergent nozzles" .
+<#42860> a skos:Concept ; skos:prefLabel "exhaust nozzles" .
+<#49464> a skos:Concept ; skos:prefLabel "pipe nozzles" .
+<#49663> a skos:Concept ; skos:prefLabel "plug nozzles" .
+<#52352> a skos:Concept ; skos:prefLabel "sonic nozzles" .
+<#52723> a skos:Concept ; skos:prefLabel "spray nozzles" .
+<#63951> a skos:Concept ; skos:prefLabel "supersonic nozzles" .
+<#54162> a skos:Concept ; skos:prefLabel "transonic nozzles" .
+<#54321> a skos:Concept ; skos:prefLabel "turbine exhaust nozzles" .
+<#51872> a skos:Concept ; skos:prefLabel "shrouded nozzles" .
+<#37916> a skos:Concept ; skos:prefLabel "acoustic nozzles" .
+<#52663> a skos:Concept ; skos:prefLabel "spike nozzles" .
+<#42856> a skos:Concept ; skos:prefLabel "exhaust diffusers" .
+
+# ── Turbines, pumps ──────────────────────────────────────────────────────────
+
+<#186132> a skos:Concept ; skos:prefLabel "turbopumps" .
+<#54323> a skos:Concept ; skos:prefLabel "turbine pumps" ; skos:altLabel "turbopumps" .
+<#54325> a skos:Concept ; skos:prefLabel "turbines" .
+<#64170> a skos:Concept ; skos:prefLabel "turbine blades" .
+<#64171> a skos:Concept ; skos:prefLabel "turbine engines" .
+<#64172> a skos:Concept ; skos:prefLabel "turbine wheels" ; skos:altLabel "rotor disks" .
+<#39034> a skos:Concept ; skos:prefLabel "axial flow turbines" .
+<#53237> a skos:Concept ; skos:prefLabel "supersonic turbines" ; skos:altLabel "transonic turbines" .
+<#52859> a skos:Concept ; skos:prefLabel "steam turbines" .
+<#51874> a skos:Concept ; skos:prefLabel "shrouded turbines" .
+<#54322> a skos:Concept ; skos:prefLabel "turbine instruments" .
+<#50314> a skos:Concept ; skos:prefLabel "pumps" ; skos:altLabel "hydraulic pumps" .
+<#50311> a skos:Concept ; skos:prefLabel "pump impellers" .
+<#50312> a skos:Concept ; skos:prefLabel "pump seals" .
+<#40169> a skos:Concept ; skos:prefLabel "centrifugal pumps" .
+<#54609> a skos:Concept ; skos:prefLabel "vacuum pumps" .
+<#50636> a skos:Concept ; skos:prefLabel "rams (pumps)" .
+<#54624> a skos:Concept ; skos:prefLabel "valves" ; skos:altLabel "hydraulic valves" .
+<#50924> a skos:Concept ; skos:prefLabel "relief valves" .
+<#52298> a skos:Concept ; skos:prefLabel "solenoid valves" .
+
+# ── Combustion ───────────────────────────────────────────────────────────────
+
+<#61151> a skos:Concept ; skos:prefLabel "combustion" ; skos:altLabel "burning" .
+<#61152> a skos:Concept ; skos:prefLabel "combustion chambers" ; skos:altLabel "combustors" .
+<#61153> a skos:Concept ; skos:prefLabel "combustion chemistry" .
+<#61154> a skos:Concept ; skos:prefLabel "combustion control" .
+<#61155> a skos:Concept ; skos:prefLabel "combustion efficiency" .
+<#40682> a skos:Concept ; skos:prefLabel "combustion physics" .
+<#40683> a skos:Concept ; skos:prefLabel "combustion products" .
+<#40684> a skos:Concept ; skos:prefLabel "combustion stability" ; skos:altLabel "acoustic combustion" ; skos:altLabel "chugging" .
+<#40685> a skos:Concept ; skos:prefLabel "combustion synthesis" .
+<#40686> a skos:Concept ; skos:prefLabel "combustion temperature" .
+<#40687> a skos:Concept ; skos:prefLabel "combustion vibration" .
+<#182753> a skos:Concept ; skos:prefLabel "combustion instability" .
+<#182754> a skos:Concept ; skos:prefLabel "combustion waves" .
+<#182752> a skos:Concept ; skos:prefLabel "combustion heat" .
+<#182163> a skos:Concept ; skos:prefLabel "acoustic combustion" .
+<#50144> a skos:Concept ; skos:prefLabel "propellant combustion" .
+<#63741> a skos:Concept ; skos:prefLabel "solid propellant combustion" .
+<#39627> a skos:Concept ; skos:prefLabel "boundary layer combustion" .
+<#182522> a skos:Concept ; skos:prefLabel "blowoff (combustion)" .
+<#182400> a skos:Concept ; skos:prefLabel "autoignition" .
+<#42291> a skos:Concept ; skos:prefLabel "electric ignition" .
+<#52311> a skos:Concept ; skos:prefLabel "solid propellant ignition" .
+
+# ── Propellants ───────────────────────────────────────────────────────────────
+
+<#63518> a skos:Concept ; skos:prefLabel "rocket propellants" ; skos:altLabel "multipropellants" .
+<#62510> a skos:Concept ; skos:prefLabel "liquid rocket propellants" ; skos:altLabel "bipropellants" .
+<#61305> a skos:Concept ; skos:prefLabel "cryogenic rocket propellants" .
+<#61174> a skos:Concept ; skos:prefLabel "composite propellants" .
+<#52315> a skos:Concept ; skos:prefLabel "solid rocket propellants" .
+<#63743> a skos:Concept ; skos:prefLabel "solid propellants" .
+<#52953> a skos:Concept ; skos:prefLabel "storable propellants" .
+<#63249> a skos:Concept ; skos:prefLabel "propellants" .
+<#50156> a skos:Concept ; skos:prefLabel "propellant tanks" ; skos:altLabel "rocket propellant tanks" .
+<#50155> a skos:Concept ; skos:prefLabel "propellant storage" .
+<#50158> a skos:Concept ; skos:prefLabel "propellant transfer" .
+<#50157> a skos:Concept ; skos:prefLabel "propellant tests" .
+<#50150> a skos:Concept ; skos:prefLabel "propellant mass ratio" .
+<#50153> a skos:Concept ; skos:prefLabel "propellant sprays" .
+<#185102> a skos:Concept ; skos:prefLabel "propellant oxidizers" .
+<#51268> a skos:Concept ; skos:prefLabel "RP-1 rocket propellants" .
+<#41964> a skos:Concept ; skos:prefLabel "double base rocket propellants" .
+<#63248> a skos:Concept ; skos:prefLabel "propellant explosions" .
+
+# ── Cryogenic fluids ──────────────────────────────────────────────────────────
+
+<#46428> a skos:Concept ; skos:prefLabel "liquid oxygen" ; skos:altLabel "LOX (oxygen)" .
+<#46417> a skos:Concept ; skos:prefLabel "liquid hydrogen" .
+<#44906> a skos:Concept ; skos:prefLabel "hydrogen" .
+<#44915> a skos:Concept ; skos:prefLabel "hydrogen fuels" .
+<#45908> a skos:Concept ; skos:prefLabel "kerosene" .
+<#44640> a skos:Concept ; skos:prefLabel "high energy oxidizers" .
+<#62979> a skos:Concept ; skos:prefLabel "oxidizers" .
+<#46427> a skos:Concept ; skos:prefLabel "liquid oxidizers" .
+<#41267> a skos:Concept ; skos:prefLabel "cryogenic fluids" .
+<#41266> a skos:Concept ; skos:prefLabel "cryogenic fluid storage" .
+<#41265> a skos:Concept ; skos:prefLabel "cryogenic equipment" ; skos:altLabel "Dewar systems" .
+<#41272> a skos:Concept ; skos:prefLabel "cryogenic temperature" ; skos:altLabel "ultralow temperature" .
+<#61307> a skos:Concept ; skos:prefLabel "cryogenics" .
+<#61304> a skos:Concept ; skos:prefLabel "cryogenic cooling" .
+<#64656> a skos:Concept ; skos:prefLabel "cryogenic tanks" ; skos:altLabel "cryotanks" .
+<#43675> a skos:Concept ; skos:prefLabel "fuel tanks" .
+<#43674> a skos:Concept ; skos:prefLabel "fuel tank pressurization" .
+
+# ── Performance ───────────────────────────────────────────────────────────────
+
+<#52599> a skos:Concept ; skos:prefLabel "specific impulse" .
+<#47110> a skos:Concept ; skos:prefLabel "mass flow" .
+<#47112> a skos:Concept ; skos:prefLabel "mass flow rate" .
+<#183450> a skos:Concept ; skos:prefLabel "flow rate" .
+<#43393> a skos:Concept ; skos:prefLabel "flow measurement" .
+<#42859> a skos:Concept ; skos:prefLabel "exhaust gases" ; skos:altLabel "exhaust jets" .
+<#61694> a skos:Concept ; skos:prefLabel "exhaust velocity" .
+<#61693> a skos:Concept ; skos:prefLabel "exhaust emission" .
+<#64056> a skos:Concept ; skos:prefLabel "thermodynamic efficiency" ; skos:altLabel "thermal efficiency" .
+<#63307> a skos:Concept ; skos:prefLabel "quantum efficiency" .
+
+# ── Test engineering ──────────────────────────────────────────────────────────
+
+<#64022> a skos:Concept ; skos:prefLabel "test stands" ; skos:altLabel "test beds" .
+<#52837> a skos:Concept ; skos:prefLabel "static tests" .
+<#43095> a skos:Concept ; skos:prefLabel "fatigue tests" .
+<#49141> a skos:Concept ; skos:prefLabel "performance tests" .
+<#51839> a skos:Concept ; skos:prefLabel "shock tests" .
+<#50157> a skos:Concept ; skos:prefLabel "propellant tests" .
+<#62856> a skos:Concept ; skos:prefLabel "nondestructive tests" ; skos:altLabel "flaw detection" .
+<#50018> a skos:Concept ; skos:prefLabel "pressure measurement" .
+<#53582> a skos:Concept ; skos:prefLabel "temperature measurement" ; skos:altLabel "pyrometry" .
+<#52975> a skos:Concept ; skos:prefLabel "strain measurement" .
+<#44227> a skos:Concept ; skos:prefLabel "ground support systems" .
+<#62019> a skos:Concept ; skos:prefLabel "ground support equipment" .
+
+# ── Instrumentation and data systems ─────────────────────────────────────────
+
+<#64122> a skos:Concept ; skos:prefLabel "transducers" .
+<#49416> a skos:Concept ; skos:prefLabel "piezoresistive transducers" .
+<#63114> a skos:Concept ; skos:prefLabel "piezoelectric transducers" .
+<#52375> a skos:Concept ; skos:prefLabel "sound transducers" ; skos:altLabel "sound detectors" .
+<#54437> a skos:Concept ; skos:prefLabel "ultrasonic wave transducers" .
+<#185079> a skos:Concept ; skos:prefLabel "pressure transducers" .
+<#50027> a skos:Concept ; skos:prefLabel "pressure sensors" ; skos:altLabel "pressure probes" .
+<#53588> a skos:Concept ; skos:prefLabel "temperature sensors" .
+<#63896> a skos:Concept ; skos:prefLabel "strain gages" .
+<#52972> a skos:Concept ; skos:prefLabel "strain gage balances" .
+<#52971> a skos:Concept ; skos:prefLabel "strain gage accelerometers" .
+<#41433> a skos:Concept ; skos:prefLabel "data acquisition" .
+<#41457> a skos:Concept ; skos:prefLabel "data systems" ; skos:altLabel "data handling systems" .
+<#183992> a skos:Concept ; skos:prefLabel "instrumentation" .
+<#51921> a skos:Concept ; skos:prefLabel "signal processing" .
+<#60899> a skos:Concept ; skos:prefLabel "biotelemetry" ; skos:altLabel "physiological telemetry" .
+
+# ── Pressure / temperature / vibration (measurement domains) ─────────────────
+
+<#60759> a skos:Concept ; skos:prefLabel "atmospheric pressure" ; skos:altLabel "barometric pressure" .
+<#60849> a skos:Concept ; skos:prefLabel "base pressure" .
+<#61292> a skos:Concept ; skos:prefLabel "critical pressure" .
+<#61496> a skos:Concept ; skos:prefLabel "dynamic pressure" .
+<#41738> a skos:Concept ; skos:prefLabel "differential pressure" .
+<#50019> a skos:Concept ; skos:prefLabel "pressure oscillations" .
+<#60652> a skos:Concept ; skos:prefLabel "ambient temperature" ; skos:altLabel "environmental temperature" .
+<#40686> a skos:Concept ; skos:prefLabel "combustion temperature" .
+<#61293> a skos:Concept ; skos:prefLabel "critical temperature" .
+<#41272> a skos:Concept ; skos:prefLabel "cryogenic temperature" ; skos:altLabel "ultralow temperature" .
+<#39269> a skos:Concept ; skos:prefLabel "bending vibration" .
+<#40687> a skos:Concept ; skos:prefLabel "combustion vibration" .
+<#182168> a skos:Concept ; skos:prefLabel "acoustic vibrations" .
+<#60508> a skos:Concept ; skos:prefLabel "acceleration (physics)" ; skos:altLabel "G force" .
+<#60670> a skos:Concept ; skos:prefLabel "angular acceleration" .
+<#55502> a skos:Concept ; skos:prefLabel "acceleration measurement" .
+
+# ── Heat transfer ─────────────────────────────────────────────────────────────
+
+<#38038> a skos:Concept ; skos:prefLabel "aerodynamic heat transfer" .
+<#40853> a skos:Concept ; skos:prefLabel "conductive heat transfer" ; skos:altLabel "heat conduction" .
+<#40991> a skos:Concept ; skos:prefLabel "convective heat transfer" .
+<#62072> a skos:Concept ; skos:prefLabel "heat flux" .
+<#64031> a skos:Concept ; skos:prefLabel "thermal analysis" ; skos:altLabel "differential thermal analysis" .
+<#64039> a skos:Concept ; skos:prefLabel "thermal fatigue" ; skos:altLabel "high temperature fatigue" .
+
+# ── Structural / materials ────────────────────────────────────────────────────
+
+<#43557> a skos:Concept ; skos:prefLabel "fracture mechanics" ; skos:altLabel "fault mechanics" .
+<#61728> a skos:Concept ; skos:prefLabel "fatigue (materials)" ; skos:altLabel "strain fatigue" .
+<#61729> a skos:Concept ; skos:prefLabel "fatigue life" .
+<#43095> a skos:Concept ; skos:prefLabel "fatigue tests" .
+<#37908> a skos:Concept ; skos:prefLabel "acoustic fatigue" ; skos:altLabel "sonic fatigue" .
+<#39266> a skos:Concept ; skos:prefLabel "bending fatigue" .
+<#39039> a skos:Concept ; skos:prefLabel "axial stress" .
+<#61173> a skos:Concept ; skos:prefLabel "composite materials" ; skos:altLabel "composites" .
+<#39967> a skos:Concept ; skos:prefLabel "carbon-carbon composites" .
+<#39968> a skos:Concept ; skos:prefLabel "carbon-phenolic composites" .
+<#61039> a skos:Concept ; skos:prefLabel "ceramic matrix composites" .
+<#40757> a skos:Concept ; skos:prefLabel "composite structures" .
+<#60645> a skos:Concept ; skos:prefLabel "aluminum boron composites" .
+<#60647> a skos:Concept ; skos:prefLabel "aluminum graphite composites" .
+<#64754> a skos:Concept ; skos:prefLabel "carbon-silicon carbide composites" .
+
+# ── Exhaust / gas dynamics ────────────────────────────────────────────────────
+
+<#42858> a skos:Concept ; skos:prefLabel "exhaust flow simulation" .
+<#42861> a skos:Concept ; skos:prefLabel "exhaust systems" .
+<#61692> a skos:Concept ; skos:prefLabel "exhaust clouds" ; skos:altLabel "ground clouds" ; skos:altLabel "launch clouds" .
