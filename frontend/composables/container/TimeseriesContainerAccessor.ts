@@ -62,8 +62,14 @@ export class TimeseriesContainerAccessor extends ContainerAccessor {
         timeseriesContainerId: this.id,
       });
     } catch (e) {
-      handleError(e as ResponseError, "fetching files");
-      throw e;
+      // Was "fetching files" — copy-paste from FileContainerAccessor. The
+      // misleading label fired on this TimeseriesContainerAccessor, which
+      // is what the user saw on `/containers/timeseries/{id}`.
+      handleError(e as ResponseError, "fetching timeseries channels");
+      // Don't rethrow — the caller doesn't always swallow it, so a
+      // single fetch failure would cascade into an infinite spinner.
+      // Clear loading via the finally block and surface the toast.
+      this.measurements.value = [];
     } finally {
       this.loading.value = false;
     }

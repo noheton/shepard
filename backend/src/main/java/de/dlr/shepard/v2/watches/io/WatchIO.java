@@ -26,6 +26,15 @@ public record WatchIO(
   String watchAppId,
   Watch.Kind containerKind,
   String containerAppId,
+  /**
+   * Container's legacy Neo4j long id, when resolvable. Container detail
+   * pages (`/containers/timeseries/{containerOgmId}`, etc.) are still
+   * on the v1 long-id route shape; until they accept appId, the
+   * frontend needs both ids to render the "open container" link
+   * without a 404. Null when the container is missing or the caller
+   * lacks Read.
+   */
+  Long containerOgmId,
   String containerName,
   String containerAvailability,
   Long since,
@@ -39,17 +48,19 @@ public record WatchIO(
       w.getContainerAppId(),
       null,
       null,
+      null,
       w.getSince(),
       w.getAddedBy()
     );
   }
 
   /** Builder helper for resolved-container case. */
-  public WatchIO withResolution(String containerName, String availability) {
+  public WatchIO withResolution(Long ogmId, String containerName, String availability) {
     return new WatchIO(
       watchAppId,
       containerKind,
       containerAppId,
+      ogmId,
       containerName,
       availability,
       since,

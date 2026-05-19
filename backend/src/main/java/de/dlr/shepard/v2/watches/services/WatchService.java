@@ -125,39 +125,39 @@ public class WatchService {
 
   private WatchIO resolveContainer(WatchIO io) {
     if (io.containerKind() == null || io.containerAppId() == null) {
-      return io.withResolution(null, "error");
+      return io.withResolution(null, null, "error");
     }
     try {
       switch (io.containerKind()) {
         case TIMESERIES -> {
           TimeseriesContainer c = timeseriesContainerService.getContainerByAppId(io.containerAppId());
-          if (c == null) return io.withResolution(null, "deleted");
-          return io.withResolution(c.getName(), "available");
+          if (c == null) return io.withResolution(null, null, "deleted");
+          return io.withResolution(c.getId(), c.getName(), "available");
         }
         case FILE -> {
           FileContainer c = fileContainerService.getContainerByAppId(io.containerAppId());
-          if (c == null) return io.withResolution(null, "deleted");
-          return io.withResolution(c.getName(), "available");
+          if (c == null) return io.withResolution(null, null, "deleted");
+          return io.withResolution(c.getId(), c.getName(), "available");
         }
         case STRUCTURED_DATA -> {
           StructuredDataContainer c = structuredDataContainerService.getContainerByAppId(io.containerAppId());
-          if (c == null) return io.withResolution(null, "deleted");
-          return io.withResolution(c.getName(), "available");
+          if (c == null) return io.withResolution(null, null, "deleted");
+          return io.withResolution(c.getId(), c.getName(), "available");
         }
       }
     } catch (de.dlr.shepard.common.exceptions.InvalidAuthException e) {
-      return io.withResolution(null, "forbidden");
+      return io.withResolution(null, null, "forbidden");
     } catch (de.dlr.shepard.common.exceptions.InvalidPathException e) {
-      return io.withResolution(null, "deleted");
+      return io.withResolution(null, null, "deleted");
     } catch (Exception e) {
-      return io.withResolution(null, "error");
+      return io.withResolution(null, null, "error");
     }
-    return io.withResolution(null, "error");
+    return io.withResolution(null, null, "error");
   }
 
   /** Returns the container's name when the caller has Read on it. */
   private String resolveContainerName(Watch.Kind kind, String containerAppId) {
-    WatchIO io = new WatchIO(null, kind, containerAppId, null, null, null, null);
+    WatchIO io = new WatchIO(null, kind, containerAppId, null, null, null, null, null);
     WatchIO resolved = resolveContainer(io);
     return "available".equals(resolved.containerAvailability()) ? resolved.containerName() : null;
   }
