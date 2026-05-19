@@ -9,9 +9,11 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.QueryParamHelper;
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -38,6 +40,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -90,6 +94,9 @@ public class DataObjectV2Rest {
   DataObjectService dataObjectService;
 
   @Inject
+  DataObjectDAO dataObjectDAO;
+
+  @Inject
   PermissionsService permissionsService;
 
   @Inject
@@ -105,16 +112,17 @@ public class DataObjectV2Rest {
   @Operation(
     summary = "List DataObjects under a Collection.",
     description =
-      "Returns a page of `:DataObject` entities (`DataObjectIO` JSON shape) " +
-      "belonging to the Collection identified by `collectionAppId`.\n\n" +
+      "Returns a page of `:DataObject` entities belonging to the Collection " +
+      "identified by `collectionAppId`. Each row in the response carries the full " +
+      "`DataObjectIO` fields plus three per-kind reference counts: " +
+      "`timeseriesCount`, `fileCount`, `structuredDataCount`. Counts reflect " +
+      "non-deleted references only and are computed in a single Cypher round-trip " +
+      "(no N+1 queries).\n\n" +
       "Pagination: omit `page` / `size` to get the first 50; supply both to " +
       "paginate. `size` capped at 200 server-side.\n\n" +
       "Filtering: `name` does a case-insensitive substring match. Each row " +
-      "carries `referenceIds[]` (length tells you how many references the DO " +
-      "has) and `childrenIds[]` (direct child DOs). The flat `referenceIds` " +
-      "array doesn't discriminate by ref kind — to filter by kind (videos " +
-      "only, timeseries only, …) you'll have to GET each reference; a " +
-      "join-on-server endpoint is queued (aidocs/16 #24 Phase 2).\n\n" +
+      "also carries `referenceIds[]` (legacy long ids of all refs) and " +
+      "`childrenIds[]` (direct child DOs).\n\n" +
       "Auth: Read on the parent Collection. DataObjects inherit Collection " +
       "permissions; there is no per-DO permission gate.\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` " +
@@ -122,8 +130,8 @@ public class DataObjectV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "DataObject page (may be empty).",
-    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectIO.class))
+    description = "DataObject page (may be empty). Each item includes `timeseriesCount`, `fileCount`, `structuredDataCount`.",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
@@ -149,9 +157,18 @@ public class DataObjectV2Rest {
     params = params.withPageAndSize(safePage, safeSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);
-    var result = new ArrayList<DataObjectIO>(dataObjects.size());
+
+    // Collect appIds for the batch count query (one round-trip for the whole page).
+    List<String> appIds = new ArrayList<>(dataObjects.size());
     for (var d : dataObjects) {
-      result.add(new DataObjectIO(d));
+      if (d.getAppId() != null) appIds.add(d.getAppId());
+    }
+    Map<String, long[]> counts = dataObjectDAO.findRefCountsByAppIds(appIds);
+
+    var result = new ArrayList<DataObjectListItemV2IO>(dataObjects.size());
+    for (var d : dataObjects) {
+      long[] c = d.getAppId() != null ? counts.getOrDefault(d.getAppId(), new long[] { 0, 0, 0 }) : new long[] { 0, 0, 0 };
+      result.add(new DataObjectListItemV2IO(d, c[0], c[1], c[2]));
     }
     return Response.ok(result).build();
   }
@@ -160,15 +177,28 @@ public class DataObjectV2Rest {
   @Path("/{dataObjectAppId}")
   @Operation(
     summary = "Get a DataObject by appId.",
-    description = "Returns the DataObject identified by 'dataObjectAppId'. Requires Read permission."
+    description =
+      "Returns the full `DataObjectIO` shape for the DataObject identified by " +
+      "`dataObjectAppId` (UUID v7) within the Collection identified by `collectionAppId`.\n\n" +
+      "The response includes `id` (legacy long), `appId` (UUID v7, canonical), `name`, " +
+      "`description`, `status`, `attributes` (string-to-string map), `referenceIds[]` " +
+      "(legacy long ids of all references — timeseries, file, structured-data — attached " +
+      "to this DataObject), `childrenIds[]` (direct child DataObjects), and timestamps.\n\n" +
+      "Auth: Read permission on the parent Collection (DataObjects inherit Collection " +
+      "permissions; there is no per-DataObject permission node). Returns 404 when either " +
+      "`collectionAppId` or `dataObjectAppId` is unknown, or when the DataObject does not " +
+      "belong to the stated Collection.\n\n" +
+      "Next step: use the `referenceIds` values with the upstream " +
+      "`GET /shepard/api/...` reference endpoints to fetch payload, or " +
+      "`PATCH /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` to update."
   )
   @APIResponse(
     responseCode = "200",
-    description = "DataObject found.",
+    description = "Full DataObjectIO for the requested DataObject.",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent Collection.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
   public Response get(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
@@ -248,19 +278,31 @@ public class DataObjectV2Rest {
   @Operation(
     summary = "Partially update a DataObject (RFC 7396 JSON Merge Patch).",
     description =
-      "Applies an RFC 7396 JSON Merge Patch to the DataObject. Fields present in the body replace " +
-      "the corresponding fields on the entity; absent fields are left unchanged; explicit JSON null " +
-      "clears the field. The merged result is Bean-Validated; constraint violations on the final state " +
-      "return 400. Requires Write permission."
+      "Applies an RFC 7396 JSON Merge Patch to the `:DataObject` identified by " +
+      "`dataObjectAppId` within `collectionAppId`:\n" +
+      "  - Fields PRESENT in the body REPLACE the corresponding fields.\n" +
+      "  - Fields ABSENT from the body are LEFT UNCHANGED.\n" +
+      "  - Fields set to explicit JSON `null` are CLEARED (except `name`, which is " +
+      "    `@NotBlank` — clearing it returns 400).\n\n" +
+      "The merged result is Bean-Validated; violations on the final state return 400.\n\n" +
+      "Example: rename without touching other fields — `{\"name\": \"TR-001-renamed\"}`.\n" +
+      "Example: advance status — `{\"status\": \"IN_REVIEW\"}`.\n" +
+      "Example: add an attribute — `{\"attributes\": {\"campaign\": \"Q3\"}}`.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json` (RFC 7396); " +
+      "`application/json` is also accepted.\n\n" +
+      "Auth: Write permission on the parent Collection. DataObjects do not have their " +
+      "own permission node — the check walks up to the Collection.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity " +
+      "addressable at `GET /v2/provenance/entity/{appId}`."
   )
   @APIResponse(
     responseCode = "200",
-    description = "DataObject updated.",
+    description = "Full DataObjectIO reflecting the state after the patch was applied.",
     content = @Content(schema = @Schema(implementation = DataObjectIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Bad request — body is not a JSON object or validation failed.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
+  @APIResponse(responseCode = "400", description = "Body is not a JSON object, or Bean Validation failed on the merged state (e.g. name is blank).")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent Collection.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
   public Response patch(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
@@ -310,15 +352,22 @@ public class DataObjectV2Rest {
   @DELETE
   @Path("/{dataObjectAppId}")
   @Operation(
-    summary = "Delete a DataObject.",
+    summary = "Delete a DataObject and its references.",
     description =
-      "Soft-deletes the DataObject identified by 'dataObjectAppId'. " +
-      "Requires Write permission. Idempotent: deleting a non-existent or already-deleted " +
-      "DataObject returns 204."
+      "Soft-deletes the `:DataObject` identified by `dataObjectAppId` within the Collection " +
+      "identified by `collectionAppId`. Cascades to the DataObject's attached references " +
+      "(TimeseriesReferences, FileReferences, StructuredDataReferences, CollectionReferences, " +
+      "LabJournalEntries). The underlying containers (FileContainer, TimeseriesContainer, " +
+      "StructuredDataContainer) are not deleted — they are top-level entities independent " +
+      "of the DataObject hierarchy; use the container-kind DELETE endpoints to remove them.\n\n" +
+      "Idempotency: returns 204 whether or not the DataObject existed before the call.\n\n" +
+      "Auth: Write permission on the parent Collection.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records a `DELETE` Activity addressable at " +
+      "`GET /v2/provenance/entity/{appId}`. Subscriptions attached to the DataObject fire."
   )
-  @APIResponse(responseCode = "204", description = "DataObject deleted (or already gone).")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Write permission.")
+  @APIResponse(responseCode = "204", description = "DataObject and its references deleted (or DataObject was already gone).")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent Collection.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId, or it doesn't belong to that Collection.")
   public Response delete(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,

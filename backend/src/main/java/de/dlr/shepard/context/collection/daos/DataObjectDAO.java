@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -361,6 +362,61 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     var queryResult = findByQuery(query, Collections.emptyMap());
     List<DataObject> ret = StreamSupport.stream(queryResult.spliterator(), false).toList();
     return ret;
+  }
+
+  /**
+   * Batch-computes per-kind reference counts for a list of DataObject
+   * {@code appId} values in a single Cypher round-trip (no N+1 queries).
+   *
+   * <p>Reference kinds covered:
+   * <ul>
+   *   <li><b>timeseries</b> — {@code :TimeseriesReference} nodes</li>
+   *   <li><b>file</b> — {@code :FileReference} (bundles, FR1a) and
+   *       {@code :SingletonFileReference} (singletons, FR1b) — both labels
+   *       must be included; querying only one would produce incorrect counts</li>
+   *   <li><b>structured-data</b> — {@code :StructuredDataReference} nodes</li>
+   * </ul>
+   *
+   * <p>Only non-deleted references are counted ({@code WHERE NOT
+   * coalesce(r.deleted, false)}), matching the post-load
+   * {@code cutDeleted()} filter applied by
+   * {@link de.dlr.shepard.context.collection.services.DataObjectService}.
+   *
+   * <p>DataObjects whose {@code appId} is not found in the graph (stale
+   * OGM cache, race-delete) are silently omitted from the result map —
+   * callers should default to zero for missing keys.
+   *
+   * @param appIds list of DataObject {@code appId} values (may be empty)
+   * @return map keyed by {@code appId}; value is {@code long[3]} where
+   *         {@code [0]=tsCount}, {@code [1]=fileCount}, {@code [2]=sdCount}
+   */
+  public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
+    if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
+
+    // One UNWIND pass — Neo4j evaluates each OPTIONAL MATCH independently
+    // per row produced by UNWIND, so a DataObject with no timeseries refs
+    // still appears in the result with tsCount=0.
+    String cypher =
+      "UNWIND $dataObjectAppIds AS doAppId " +
+      "MATCH (d:DataObject {appId: doAppId}) " +
+      "OPTIONAL MATCH (d)-[:has_reference]->(tr:TimeseriesReference) WHERE NOT coalesce(tr.deleted, false) " +
+      "WITH d, count(DISTINCT tr) AS tsCount " +
+      "OPTIONAL MATCH (d)-[:has_reference]->(fr) WHERE (fr:FileReference OR fr:SingletonFileReference) AND NOT coalesce(fr.deleted, false) " +
+      "WITH d, tsCount, count(DISTINCT fr) AS fileCount " +
+      "OPTIONAL MATCH (d)-[:has_reference]->(sdr:StructuredDataReference) WHERE NOT coalesce(sdr.deleted, false) " +
+      "RETURN d.appId AS appId, tsCount, fileCount, count(DISTINCT sdr) AS sdCount";
+
+    var result = session.query(cypher, Map.of("dataObjectAppIds", appIds));
+    Map<String, long[]> out = new LinkedHashMap<>();
+    for (Map<String, Object> row : result.queryResults()) {
+      String appId = (String) row.get("appId");
+      if (appId == null) continue;
+      long tsCount = row.get("tsCount") instanceof Number n ? n.longValue() : 0L;
+      long fileCount = row.get("fileCount") instanceof Number n ? n.longValue() : 0L;
+      long sdCount = row.get("sdCount") instanceof Number n ? n.longValue() : 0L;
+      out.put(appId, new long[] { tsCount, fileCount, sdCount });
+    }
+    return out;
   }
 
 }

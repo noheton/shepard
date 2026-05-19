@@ -17,9 +17,12 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.context.collection.daos.DataObjectDAO;
+import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -27,6 +30,7 @@ import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -45,8 +49,23 @@ class DataObjectV2RestTest {
   static final long DO_OGM_ID = 84L;
   static final String CALLER = "alice";
 
+  /** Build a minimal DataObject with a stub Collection so DataObjectIO(d) does not NPE. */
+  static DataObject makeDataObject(long ogmId, String appId, String name) {
+    Collection coll = new Collection();
+    coll.setShepardId(COLL_OGM_ID);
+    DataObject d = new DataObject();
+    d.setShepardId(ogmId);
+    d.setAppId(appId);
+    d.setName(name);
+    d.setCollection(coll);
+    return d;
+  }
+
   @Mock
   DataObjectService dataObjectService;
+
+  @Mock
+  DataObjectDAO dataObjectDAO;
 
   @Mock
   PermissionsService permissionsService;
@@ -70,6 +89,7 @@ class DataObjectV2RestTest {
     MockitoAnnotations.openMocks(this);
     resource = new DataObjectV2Rest();
     resource.dataObjectService = dataObjectService;
+    resource.dataObjectDAO = dataObjectDAO;
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
     resource.validator = validator;
@@ -77,6 +97,8 @@ class DataObjectV2RestTest {
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(validator.validate(any())).thenReturn(Collections.emptySet());
+    // Default: batch count query returns empty map (counts default to 0).
+    when(dataObjectDAO.findRefCountsByAppIds(any())).thenReturn(Collections.emptyMap());
   }
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -100,10 +122,7 @@ class DataObjectV2RestTest {
 
   @Test
   void listReturns200WithRows() {
-    DataObject d = new DataObject();
-    d.setShepardId(DO_OGM_ID);
-    d.setAppId(DO_APP_ID);
-    d.setName("sensor-track-1");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
       .thenReturn(true);
@@ -114,9 +133,34 @@ class DataObjectV2RestTest {
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
-    List<DataObjectIO> body = (List<DataObjectIO>) r.getEntity();
+    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
     assertEquals(1, body.size());
     assertEquals(DO_APP_ID, body.get(0).getAppId());
+  }
+
+  @Test
+  void listIncludesRefCounts() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d));
+    // Simulate the batch count query returning specific counts for this DO.
+    when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
+      .thenReturn(Map.of(DO_APP_ID, new long[] { 3L, 5L, 2L }));
+
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    assertEquals(1, body.size());
+    DataObjectListItemV2IO item = body.get(0);
+    assertEquals(DO_APP_ID, item.getAppId());
+    assertEquals(3L, item.getTimeseriesCount());
+    assertEquals(5L, item.getFileCount());
+    assertEquals(2L, item.getStructuredDataCount());
   }
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -127,14 +171,14 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(any()), anyLong());
+    verify(permissionsService, never()).isAccessAllowedForDataObjectAppId(any(), any(), any());
   }
 
   @Test
   void getReturns403WhenNoRead() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(403, r.getStatus());
@@ -142,13 +186,10 @@ class DataObjectV2RestTest {
 
   @Test
   void getReturns200WithDataObject() {
-    DataObject d = new DataObject();
-    d.setShepardId(DO_OGM_ID);
-    d.setAppId(DO_APP_ID);
-    d.setName("sensor-track-1");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
 
@@ -185,10 +226,7 @@ class DataObjectV2RestTest {
 
   @Test
   void createReturns201WithMintedAppId() {
-    DataObject created = new DataObject();
-    created.setShepardId(99L);
-    created.setAppId("018f9c5a-9999-7000-a000-000000000099");
-    created.setName("new do");
+    DataObject created = makeDataObject(99L, "018f9c5a-9999-7000-a000-000000000099", "new do");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
       .thenReturn(true);
@@ -226,7 +264,7 @@ class DataObjectV2RestTest {
   void patchReturns403WhenNoWrite() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
     ObjectNode body = JsonNodeFactory.instance.objectNode();
     body.put("description", "x");
@@ -237,16 +275,10 @@ class DataObjectV2RestTest {
 
   @Test
   void patchReturns200WithMergedBody() {
-    DataObject existing = new DataObject();
-    existing.setShepardId(DO_OGM_ID);
-    existing.setAppId(DO_APP_ID);
-    existing.setName("sensor-track-1");
+    DataObject existing = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     existing.setDescription("old");
 
-    DataObject updated = new DataObject();
-    updated.setShepardId(DO_OGM_ID);
-    updated.setAppId(DO_APP_ID);
-    updated.setName("sensor-track-1");
+    DataObject updated = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     updated.setDescription("new");
 
     ObjectNode body = JsonNodeFactory.instance.objectNode();
@@ -254,7 +286,7 @@ class DataObjectV2RestTest {
 
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
     when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(existing);
     when(dataObjectService.updateDataObject(eq(COLL_OGM_ID), eq(DO_OGM_ID), any())).thenReturn(updated);
@@ -281,7 +313,7 @@ class DataObjectV2RestTest {
   void deleteReturns403WhenNoWrite() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
     Response r = resource.delete(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(403, r.getStatus());
@@ -292,7 +324,7 @@ class DataObjectV2RestTest {
   void deleteReturns204OnSuccess() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
     Response r = resource.delete(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(204, r.getStatus());
