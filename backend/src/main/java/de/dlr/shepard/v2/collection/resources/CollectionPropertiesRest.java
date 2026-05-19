@@ -53,16 +53,26 @@ public class CollectionPropertiesRest {
   @GET
   @Operation(
     summary = "Read the per-Collection settings node.",
-    description = "Returns the :CollectionProperties row attached to the Collection. Creates one " +
-    "lazily if missing (e.g. legacy Collection not yet backfilled). Requires Read permission " +
-    "on the Collection."
+    description =
+      "Returns the `:CollectionProperties` node attached to the Collection identified by " +
+      "`appId` (UUID v7). The node is created lazily on first access if it does not yet " +
+      "exist — this covers legacy Collections created before CP1b shipped.\n\n" +
+      "Fields in the response include `webdavVisible` (boolean, controls whether the " +
+      "Collection is mounted in the WebDAV tree), `defaultOntologyUri` (the ontology " +
+      "pre-selected in the annotation UI), `uiDefaultsJson` (arbitrary JSON string " +
+      "the frontend stores per-Collection UI preferences in), and " +
+      "`publishToHelmholtzKG` (boolean, opt-in to Helmholtz Knowledge Graph harvest).\n\n" +
+      "Auth: Read permission on the parent Collection. Returns 403 when the caller " +
+      "lacks Read access; 404 when no Collection with that appId exists.\n\n" +
+      "Next step: `PATCH /v2/collections/{appId}/properties` to flip any of the " +
+      "settings (requires Manage permission)."
   )
   @APIResponse(
     responseCode = "200",
-    description = "The Collection's properties.",
+    description = "The Collection's :CollectionProperties settings node, created lazily if missing.",
     content = @Content(schema = @Schema(implementation = CollectionPropertiesIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection found with the supplied appId.")
   public Response read(@PathParam("appId") String collectionAppId, @Context SecurityContext securityContext) {
@@ -82,15 +92,29 @@ public class CollectionPropertiesRest {
   @PATCH
   @Operation(
     summary = "Partial-update the per-Collection settings node.",
-    description = "Every body field is nullable; only supplied fields apply. Requires Manage " +
-    "permission on the Collection."
+    description =
+      "Applies a partial update to the `:CollectionProperties` node for the Collection " +
+      "identified by `appId` (UUID v7). Every body field is optional; only the fields " +
+      "present in the request are changed — absent fields are left unchanged.\n\n" +
+      "Patchable fields: `webdavVisible` (boolean), `defaultOntologyUri` (string, URI of " +
+      "the ontology to pre-select in the annotation UI), `uiDefaultsJson` (arbitrary JSON " +
+      "string for frontend per-Collection preferences), `publishToHelmholtzKG` (boolean).\n\n" +
+      "Example: enable WebDAV visibility — `{\"webdavVisible\": true}`. Example: set a " +
+      "default ontology — `{\"defaultOntologyUri\": \"https://example.org/onto/v1\"}`. " +
+      "Example: opt into Helmholtz KG publish — `{\"publishToHelmholtzKG\": true}`.\n\n" +
+      "Auth: Manage permission on the parent Collection (stronger than Write). Returns " +
+      "403 when the caller only has Read or Write access; 404 when no Collection with " +
+      "that appId exists.\n\n" +
+      "Side effects: the `:CollectionProperties` node is created lazily if it does not " +
+      "yet exist before applying the patch. Changes to `publishToHelmholtzKG` take effect " +
+      "on the next Helmholtz KG harvest cycle."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Updated properties.",
+    description = "Updated :CollectionProperties node with all fields after the patch applied.",
     content = @Content(schema = @Schema(implementation = CollectionPropertiesIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Manage permission on the Collection.")
   @APIResponse(responseCode = "404", description = "No Collection found with the supplied appId.")
   public Response patch(

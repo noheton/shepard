@@ -90,17 +90,33 @@ public class FileReferenceV2Rest {
   @POST
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Operation(
-    summary = "Upload one file → create a singleton FileReference.",
-    description = "Multipart body. The new Reference attaches to the DataObject named in the " +
-    "parentDataObjectAppId query parameter. A 'name' query parameter sets the Reference's " +
-    "human-readable name; if omitted, the uploaded filename is used."
+    summary = "Upload one file and create a singleton FileReference attached to a DataObject.",
+    description =
+      "Accepts a `multipart/form-data` body with a single `file` part and creates a " +
+      "`:FileReference` (FR1b singleton shape) in the active storage backend. The " +
+      "Reference is immediately linked to the DataObject identified by the required " +
+      "`parentDataObjectAppId` query parameter (UUID v7 of the DataObject).\n\n" +
+      "Query parameters: `parentDataObjectAppId` (required, UUID v7) — the DataObject " +
+      "to attach the new Reference to. `name` (optional, string) — the human-readable " +
+      "display name for the Reference; defaults to the uploaded filename when omitted.\n\n" +
+      "Form field: `file` (required, binary) — the file bytes.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection). " +
+      "Permission is checked against the DataObject OGM id resolved from `parentDataObjectAppId` " +
+      "before any bytes are stored.\n\n" +
+      "Side effects: bytes are stored in the active storage backend " +
+      "(GridFS or S3 depending on `shepard.storage.provider`). A `:FileReference` node " +
+      "and its relationship to the DataObject are written to Neo4j. " +
+      "`ProvenanceCaptureFilter` records a `CREATE` Activity.\n\n" +
+      "Next step: `GET /v2/files/{appId}` to read metadata, or " +
+      "`GET /v2/files/{appId}/content` to download the bytes."
   )
   @APIResponse(
     responseCode = "201",
+    description = "FileReference created; body contains the new entity including its minted appId.",
     content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
   )
-  @APIResponse(responseCode = "400", description = "Missing file part / missing parentDataObjectAppId.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "Missing required `file` form part, or `parentDataObjectAppId` is absent or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
   public Response createSingleton(
@@ -155,12 +171,29 @@ public class FileReferenceV2Rest {
 
   @GET
   @Path("/{appId}")
-  @Operation(summary = "Get singleton FileReference metadata by appId.")
+  @Operation(
+    summary = "Get singleton FileReference metadata by appId.",
+    description =
+      "Returns the `FileReferenceV2IO` metadata record for the FR1b singleton `:FileReference` " +
+      "identified by `appId` (UUID v7). The response includes: `appId` (UUID v7), `name` " +
+      "(human-readable display name), `dataObjectId` (OGM id of the parent DataObject), " +
+      "`type`, `createdAt`, `createdBy`, `updatedAt`, `updatedBy`, `revision`; and an " +
+      "embedded `file` object (nullable for degenerate rows) containing `filename` " +
+      "(original upload name), `md5` checksum, and `fileSize` (bytes, nullable for files " +
+      "uploaded before the FB1a size-capture migration).\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
+      "The parent DataObject is resolved from the Reference's graph relationship; 404 is " +
+      "returned both when the Reference is unknown and when its DataObject link is missing " +
+      "(graph inconsistency treated as not-found).\n\n" +
+      "Next step: `GET /v2/files/{appId}/content` to download the file bytes, or " +
+      "`PATCH /v2/files/{appId}` to rename the Reference."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "FileReferenceV2IO metadata record for the singleton Reference.",
     content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
   public Response getSingleton(
@@ -180,11 +213,27 @@ public class FileReferenceV2Rest {
   @Path("/{appId}/content")
   @Produces({ MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON })
   @Operation(
-    summary = "Download the singleton's bytes.",
-    description = "Supports HTTP range requests via the Range header (single 'bytes=...' range)."
+    summary = "Download the raw bytes of a singleton FileReference.",
+    description =
+      "Streams the file bytes stored for the FR1b singleton `:FileReference` identified " +
+      "by `appId` (UUID v7). The response `Content-Disposition` header is set to " +
+      "`attachment; filename=\"<originalName>\"` and `Content-Length` is set to the " +
+      "stored byte count so the caller can show a progress bar.\n\n" +
+      "Range requests: a single `Range: bytes=START-END` header is honoured (single-range " +
+      "only; FR1b does not support multi-range or suffix-range). A valid range returns " +
+      "HTTP 206 with `Content-Range` and `Accept-Ranges: bytes` headers. An unsatisfiable " +
+      "range (start ≥ total) returns 416 with `Content-Range: bytes */TOTAL`.\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
+      "The `Accept-Ranges` header is always included in 200 responses so clients can " +
+      "probe range support.\n\n" +
+      "Note: the underlying bytes live in the active storage backend (GridFS or S3). " +
+      "This endpoint proxies them through the shepard JVM; for large-file scenarios " +
+      "prefer `POST /v2/collections/{appId}/export-url` (presigned download) where " +
+      "supported."
   )
   @APIResponse(
     responseCode = "200",
+    description = "Full file bytes as `application/octet-stream`; `Content-Disposition` and `Content-Length` are set.",
     content = @Content(
       mediaType = MediaType.APPLICATION_OCTET_STREAM,
       schema = @Schema(type = SchemaType.STRING, format = "binary")
@@ -192,12 +241,12 @@ public class FileReferenceV2Rest {
   )
   @APIResponse(
     responseCode = "206",
-    description = "Partial content (range request honoured)."
+    description = "Partial content — single-range `Range: bytes=START-END` was honoured; `Content-Range` header is set."
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No singleton FileReference / file missing.")
-  @APIResponse(responseCode = "416", description = "Requested range not satisfiable.")
+  @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId, or its backing bytes are missing.")
+  @APIResponse(responseCode = "416", description = "Range not satisfiable — start offset is beyond the file size; `Content-Range: bytes */TOTAL` is included.")
   public Response getContent(
     @PathParam("appId") String appId,
     @HeaderParam("Range") String rangeHeader,
@@ -275,14 +324,26 @@ public class FileReferenceV2Rest {
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
     summary = "RFC 7396 merge-patch on a singleton FileReference.",
-    description = "Patchable field: name. All other fields are immutable in FR1b."
+    description =
+      "Applies a partial update to the `:FileReference` identified by `appId` (UUID v7). " +
+      "In FR1b the only mutable field via PATCH is `name` (the human-readable display " +
+      "name shown in the UI). The embedded `file` object fields (`filename`, `md5`, " +
+      "`fileSize`) are immutable after upload — re-upload to replace bytes.\n\n" +
+      "Example body: `{\"name\": \"calibration-run-2026\"}`.\n\n" +
+      "Setting `name` to `null` or an empty string returns 400. Absent fields are left " +
+      "unchanged per RFC 7396 semantics.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json`; `application/json` is also " +
+      "accepted.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records an `UPDATE` Activity."
   )
   @APIResponse(
     responseCode = "200",
+    description = "Updated FileReferenceV2IO with the new name applied.",
     content = @Content(schema = @Schema(implementation = FileReferenceV2IO.class))
   )
-  @APIResponse(responseCode = "400", description = "Patch body invalid (e.g. name null/blank).")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "Patch body is not a JSON object, or `name` is null or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
   public Response patchSingleton(
@@ -313,9 +374,24 @@ public class FileReferenceV2Rest {
 
   @DELETE
   @Path("/{appId}")
-  @Operation(summary = "Hard-delete a singleton FileReference + its bytes.")
-  @APIResponse(responseCode = "204", description = "Deleted.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @Operation(
+    summary = "Hard-delete a singleton FileReference and its stored bytes.",
+    description =
+      "Permanently removes the `:FileReference` identified by `appId` (UUID v7) from " +
+      "Neo4j and deletes its stored bytes from the active storage backend (GridFS or S3). " +
+      "This is a hard delete — the bytes are unrecoverable after this call. To remove " +
+      "only the graph node without deleting bytes, use the upstream " +
+      "`DELETE /shepard/api/...` endpoint (which soft-deletes the Reference).\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Idempotency: if the Reference no longer exists the call returns 404, not 204 — " +
+      "the operation is not idempotent in the HTTP sense because a second call after " +
+      "deletion will find nothing to return.\n\n" +
+      "Side effects: `ProvenanceCaptureFilter` records a `DELETE` Activity. The parent " +
+      "DataObject's `referenceIds[]` list no longer includes this Reference's id after " +
+      "the call."
+  )
+  @APIResponse(responseCode = "204", description = "FileReference and its backing bytes permanently deleted.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No singleton FileReference with that appId.")
   public Response deleteSingleton(

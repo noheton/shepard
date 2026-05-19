@@ -105,12 +105,29 @@ public class FileBundleReferenceRest {
 
   @GET
   @Path("/{bundleAppId}")
-  @Operation(summary = "Get a FileBundleReference (with its groups) by appId.")
+  @Operation(
+    summary = "Get a FileBundleReference with its FileGroups by appId.",
+    description =
+      "Returns the full `FileBundleReferenceIO` for the `:FileBundleReference` identified " +
+      "by `bundleAppId` (UUID v7), including the embedded list of `:FileGroup` nodes " +
+      "ordered by `index` ascending.\n\n" +
+      "The `FileBundleReferenceIO` shape includes `appId`, `name`, `description`, " +
+      "`attributes` (string-to-string map), `parentDataObjectAppId`, and `groups[]` — " +
+      "each group carries `appId`, `name`, `description`, `attributes`, `startedAt`, " +
+      "`endedAt`, `index`, and `files[]` (the list of `ShepardFile` records in that " +
+      "group).\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection). " +
+      "The permission check walks from the bundle's graph relationship to the DataObject " +
+      "and then up to the Collection.\n\n" +
+      "Next step: `GET /v2/bundles/{bundleAppId}/groups` for a groups-only view, or " +
+      "`POST /v2/bundles/{bundleAppId}/groups/{groupAppId}/files` to upload a file."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "FileBundleReferenceIO with all FileGroups (and their files) embedded.",
     content = @Content(schema = @Schema(implementation = FileBundleReferenceIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response getBundle(
@@ -134,12 +151,26 @@ public class FileBundleReferenceRest {
 
   @GET
   @Path("/{bundleAppId}/groups")
-  @Operation(summary = "List FileGroups under a bundle, ordered by ascending index.")
+  @Operation(
+    summary = "List FileGroups under a bundle, ordered by ascending index.",
+    description =
+      "Returns the ordered list of `:FileGroup` nodes belonging to the " +
+      "`:FileBundleReference` identified by `bundleAppId` (UUID v7). Groups are sorted " +
+      "by their `index` field ascending (lowest index first), which matches the display " +
+      "order in the UI.\n\n" +
+      "Each `FileGroupIO` includes `appId`, `name`, `description`, `attributes`, " +
+      "`startedAt`, `endedAt`, `index`, and `files[]` (the `ShepardFile` records attached " +
+      "to that group via the FileContainer).\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` for a single group, " +
+      "or `POST /v2/bundles/{bundleAppId}/groups` to add a new group."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "JSON array of FileGroupIO records ordered by index ascending; may be empty.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = FileGroupIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response listGroups(
@@ -157,13 +188,32 @@ public class FileBundleReferenceRest {
 
   @POST
   @Path("/{bundleAppId}/groups")
-  @Operation(summary = "Create a new FileGroup under a bundle.")
+  @Operation(
+    summary = "Create a new FileGroup under a bundle.",
+    description =
+      "Creates a `:FileGroup` node and links it to the `:FileBundleReference` identified " +
+      "by `bundleAppId` (UUID v7). The server mints `appId` (UUID v7) for the new group.\n\n" +
+      "Body fields (`CreateFileGroupIO`): `name` (string, required, non-blank — display " +
+      "name of the group), `description` (string, optional), `attributes` (string-to-string " +
+      "map, optional), `startedAt` (ISO-8601 timestamp, optional — start of the experiment " +
+      "period this group covers), `endedAt` (ISO-8601 timestamp, optional), `index` (integer, " +
+      "optional — display order; if omitted, the group is appended after the last existing " +
+      "group).\n\n" +
+      "Example minimal body: `{\"name\": \"run-001\"}`.\n" +
+      "Example full body: `{\"name\": \"run-001\", \"description\": \"hot-fire sequence\", " +
+      "\"startedAt\": \"2026-05-01T10:00:00Z\", \"endedAt\": \"2026-05-01T10:30:00Z\", " +
+      "\"index\": 0}`.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Next step: `POST /v2/bundles/{bundleAppId}/groups/{groupAppId}/files` to upload " +
+      "files into the new group."
+  )
   @APIResponse(
     responseCode = "201",
+    description = "FileGroup created; body contains the new FileGroupIO with its minted appId.",
     content = @Content(schema = @Schema(implementation = FileGroupIO.class))
   )
-  @APIResponse(responseCode = "400", description = "name missing or blank.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "`name` field is missing, null, or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No FileBundleReference with that appId.")
   public Response createGroup(
@@ -192,14 +242,29 @@ public class FileBundleReferenceRest {
 
   @GET
   @Path("/{bundleAppId}/groups/{groupAppId}")
-  @Operation(summary = "Get a single FileGroup with its files.")
+  @Operation(
+    summary = "Get a single FileGroup with its files.",
+    description =
+      "Returns the `FileGroupIO` for the `:FileGroup` identified by `groupAppId` (UUID v7) " +
+      "within the `:FileBundleReference` identified by `bundleAppId`. The response includes " +
+      "the group's `appId`, `name`, `description`, `attributes`, `startedAt`, `endedAt`, " +
+      "`index`, and `files[]` — the list of `ShepardFile` records attached to this group " +
+      "via the FileContainer.\n\n" +
+      "Both path parameters are required; 404 is returned if the bundle is unknown, if " +
+      "the group is unknown, or if the group does not belong to the stated bundle (prevents " +
+      "cross-bundle access).\n\n" +
+      "Auth: Read permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Next step: `PATCH /v2/bundles/{bundleAppId}/groups/{groupAppId}` to update the " +
+      "group metadata, or `POST .../files` to upload a file into the group."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "FileGroupIO with the group's files embedded.",
     content = @Content(schema = @Schema(implementation = FileGroupIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No FileBundleReference / FileGroup with those appIds.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
   public Response getGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
@@ -222,17 +287,30 @@ public class FileBundleReferenceRest {
   @Consumes({ "application/merge-patch+json", MediaType.APPLICATION_JSON })
   @Operation(
     summary = "RFC 7396 merge-patch on a FileGroup.",
-    description = "Patchable fields: name, description, attributes, startedAt, endedAt, index. " +
-    "Fields absent from the body are preserved; explicit null clears the field (except name)."
+    description =
+      "Applies a partial update to the `:FileGroup` identified by `groupAppId` within " +
+      "the `:FileBundleReference` identified by `bundleAppId`.\n\n" +
+      "Patchable fields: `name` (string, non-blank required if present), `description` " +
+      "(string, nullable — explicit JSON `null` clears it), `attributes` (string-to-string " +
+      "map, nullable), `startedAt` (ISO-8601 timestamp, nullable), `endedAt` " +
+      "(ISO-8601 timestamp, nullable), `index` (integer — repositions the group in the " +
+      "display order; other groups' indices are not automatically adjusted).\n\n" +
+      "Fields absent from the body are left unchanged; explicit JSON `null` clears a " +
+      "nullable field. Setting `name` to `null` returns 400.\n\n" +
+      "Example: rename and set experiment window — `{\"name\": \"run-001-relabelled\", " +
+      "\"startedAt\": \"2026-05-01T10:00:00Z\", \"endedAt\": \"2026-05-01T10:30:00Z\"}`.\n\n" +
+      "Content-Type: prefer `application/merge-patch+json`; `application/json` also accepted.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection)."
   )
   @APIResponse(
     responseCode = "200",
+    description = "FileGroupIO reflecting the state after the patch was applied.",
     content = @Content(schema = @Schema(implementation = FileGroupIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Patch body invalid (e.g. name null/blank).")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "Patch body is not a JSON object, or `name` is null or blank.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No FileBundleReference / FileGroup with those appIds.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
   public Response patchGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
@@ -264,15 +342,28 @@ public class FileBundleReferenceRest {
   @DELETE
   @Path("/{bundleAppId}/groups/{groupAppId}")
   @Operation(
-    summary = "Delete a FileGroup.",
-    description = "Refuses with 400 if the group has files (pass ?force=true to delete the group AND its files). " +
-    "Refuses with 400 if the group is the last remaining group of its bundle (would orphan all files)."
+    summary = "Delete a FileGroup from a bundle.",
+    description =
+      "Removes the `:FileGroup` identified by `groupAppId` from the `:FileBundleReference` " +
+      "identified by `bundleAppId`. Two safety guards prevent accidental data loss:\n\n" +
+      "  1. If the group has files attached and `?force=true` is not passed, the call " +
+      "returns 400 with a message explaining the conflict. Pass `?force=true` to delete " +
+      "the group and permanently remove all its files from the FileContainer (bytes in " +
+      "storage are deleted).\n" +
+      "  2. If the group is the last remaining group in the bundle, the call returns 400 " +
+      "regardless of `force` — a bundle must always have at least one group, so removing " +
+      "the last one is never allowed.\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection).\n\n" +
+      "Side effects when `force=true`: files stored in the backing GridFS / S3 container " +
+      "are permanently deleted. This operation is not reversible.\n\n" +
+      "Note: deleting a group that does not belong to the stated bundle returns 404 " +
+      "(not 400), to prevent cross-bundle leakage of group existence information."
   )
-  @APIResponse(responseCode = "204", description = "Deleted.")
-  @APIResponse(responseCode = "400", description = "Has files (pass ?force=true) OR is the last group.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "204", description = "FileGroup (and its files, if force=true) permanently deleted.")
+  @APIResponse(responseCode = "400", description = "Group has files and `?force=true` was not supplied, OR the group is the last in its bundle.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No FileBundleReference / FileGroup with those appIds.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
   public Response deleteGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,
@@ -302,15 +393,37 @@ public class FileBundleReferenceRest {
   @POST
   @Path("/{bundleAppId}/groups/{groupAppId}/files")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
-  @Operation(summary = "Upload one file into a specific FileGroup.")
+  @Operation(
+    summary = "Upload one file into a specific FileGroup.",
+    description =
+      "Accepts a `multipart/form-data` body with a single `file` part and stores the " +
+      "bytes in the `FileContainer` backing the `:FileBundleReference` identified by " +
+      "`bundleAppId`. The stored `ShepardFile` is then linked to the `:FileGroup` " +
+      "identified by `groupAppId`.\n\n" +
+      "Form field: `file` (required, binary) — the file bytes. The original filename " +
+      "from the `Content-Disposition` header of the form part is preserved as the " +
+      "`ShepardFile.name`.\n\n" +
+      "The endpoint returns 400 when the bundle has no underlying `FileContainer` " +
+      "(i.e. the bundle was created by a legacy code path that didn't initialise a " +
+      "container; in that case contact an admin to run the backfill).\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection). " +
+      "Both `bundleAppId` and `groupAppId` must resolve, and the group must belong to " +
+      "the bundle; otherwise 404 is returned.\n\n" +
+      "Side effects: bytes are stored in the active storage backend (GridFS or S3). " +
+      "The `ShepardFile` node is linked to the `FileGroup` in Neo4j. A `PayloadVersion` " +
+      "record is created for the file (PV1a).\n\n" +
+      "Next step: `GET /v2/bundles/{bundleAppId}/groups/{groupAppId}` to confirm " +
+      "the file appears in the group's `files[]` list."
+  )
   @APIResponse(
     responseCode = "201",
+    description = "ShepardFile stored and linked to the FileGroup; body contains the ShepardFile record with its storage id and metadata.",
     content = @Content(schema = @Schema(implementation = ShepardFile.class))
   )
-  @APIResponse(responseCode = "400", description = "Missing file part / bundle has no FileContainer.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "`file` form part is missing, or the bundle has no underlying FileContainer.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
-  @APIResponse(responseCode = "404", description = "No FileBundleReference / FileGroup with those appIds.")
+  @APIResponse(responseCode = "404", description = "No FileBundleReference with `bundleAppId`, or no FileGroup with `groupAppId`, or the group does not belong to that bundle.")
   public Response uploadFileIntoGroup(
     @PathParam("bundleAppId") String bundleAppId,
     @PathParam("groupAppId") String groupAppId,

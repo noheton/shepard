@@ -64,18 +64,29 @@ public class PayloadVersionRest {
   @GET
   @Path("/{containerAppId}/files/{originalName}/versions")
   @Operation(
-    summary = "List all payload versions for a named file.",
-    description = "Returns the full upload history for the specified file name within the container, " +
-    "ordered by versionNumber ascending (oldest first). " +
-    "Requires Read permission on the container."
+    summary = "List all payload versions for a named file in a FileContainer.",
+    description =
+      "Returns the complete upload history for the file identified by `originalName` " +
+      "within the FileContainer identified by `containerAppId` (UUID v7), ordered by " +
+      "`versionNumber` ascending (oldest first, version 1 at index 0).\n\n" +
+      "Each `PayloadVersionIO` record includes `appId` (UUID v7 of the version), " +
+      "`versionNumber` (1-based integer), `fileOid` (storage-backend object id), " +
+      "`sha256` (hex checksum for integrity verification), `sizeBytes`, `uploadedBy` " +
+      "(username string), and `uploadedAt` (ISO-8601 timestamp).\n\n" +
+      "Returns an empty array when no versions exist for the named file yet (e.g. the " +
+      "file was committed via a presigned URL path before PV1a shipped).\n\n" +
+      "Auth: Read permission on the FileContainer, enforced by " +
+      "`FileContainerService.getContainerByAppId` (throws 403 / 404 on failure).\n\n" +
+      "Use the `sha256` field to detect unchanged re-uploads and the `versionNumber` " +
+      "to reconstruct the sequence of changes to a given file over time."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Version list (may be empty).",
+    description = "JSON array of PayloadVersionIO records ordered by versionNumber ascending; may be empty when no versions exist.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = PayloadVersionIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the container.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the FileContainer.")
   @APIResponse(responseCode = "404", description = "No FileContainer with that appId.")
   public Response listVersions(
     @PathParam("containerAppId") String containerAppId,

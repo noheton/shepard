@@ -141,18 +141,38 @@ public class AnomalyDetectionRest {
   @POST
   @Operation(
     summary = "Run rolling-median MAD anomaly detection on a single timeseries in a TimeseriesReference.",
-    description = "Fetches the timeseries data in the reference's time window, applies the rolling-median MAD " +
-      "algorithm, and returns detected anomaly intervals. When createAnnotations=true each interval is " +
-      "persisted as a TimeseriesAnnotation (requires Write permission)."
+    description =
+      "Fetches the timeseries data linked to the `:TimeseriesReference` identified by " +
+      "`refAppId`, selects one channel series, applies the rolling-median Median Absolute " +
+      "Deviation (MAD) algorithm, and returns detected anomaly intervals as an " +
+      "`AnomalyDetectResultIO` response.\n\n" +
+      "Series selection rules:\n" +
+      "  - If the reference holds exactly one series and all five filter fields " +
+      "(`measurement`, `device`, `location`, `symbolicName`, `field`) are null in the " +
+      "request body, that series is selected automatically.\n" +
+      "  - Otherwise all non-null filter fields must together resolve to exactly one " +
+      "series; 400 is returned if zero or multiple series match.\n\n" +
+      "Request body fields (all optional with defaults): `window` (int ≥ 3, default 51 — " +
+      "rolling window size), `k` (float > 0, default 6.0 — MAD sensitivity multiplier; " +
+      "higher = fewer detections), `createAnnotations` (boolean, default false — when " +
+      "true, each detected interval is persisted as a `TimeseriesAnnotation` with " +
+      "`aiGenerated=true`), `measurement`, `device`, `location`, `symbolicName`, `field` " +
+      "(strings — series filter keys; omit all to auto-select when there is exactly one " +
+      "series).\n\n" +
+      "Example — auto-select, default params: `{}`. Example — explicit series and " +
+      "tighter detection: `{\"measurement\": \"pressure\", \"field\": \"bar\", " +
+      "\"window\": 7, \"k\": 2.5, \"createAnnotations\": true}`.\n\n" +
+      "Auth: Read permission is sufficient when `createAnnotations=false`; Write " +
+      "permission on the parent DataObject is required when `createAnnotations=true`."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Detection ran successfully.",
+    description = "Detection completed; `AnomalyDetectResultIO` contains the list of detected intervals and, when `createAnnotations=true`, the appIds of the created annotations.",
     content = @Content(schema = @Schema(implementation = AnomalyDetectResultIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Invalid parameters or ambiguous / unresolvable series selection.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller lacks the required permission on the parent DataObject.")
+  @APIResponse(responseCode = "400", description = "Invalid parameters (`window < 3`, `k <= 0`), or series selection failed (zero or multiple matches, or the reference's container is missing/deleted).")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Caller lacks the required permission on the parent DataObject (Read for detection, Write when createAnnotations=true).")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
   public Response detect(
     @PathParam("refAppId") String refAppId,

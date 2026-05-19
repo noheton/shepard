@@ -80,13 +80,38 @@ public class TimeseriesReferenceV2Rest {
    */
   @PATCH
   @Path("/{appId}")
-  @Operation(summary = "Update time-reference fields on a TimeseriesReference (TM1a merge-patch).")
+  @Operation(
+    summary = "Update time-reference fields on a TimeseriesReference (TM1a merge-patch).",
+    description =
+      "Applies a merge-patch to the three TM1 time-alignment fields of the " +
+      "`:TimeseriesReference` identified by `appId` (UUID v7). Only the fields " +
+      "present in the request body are updated; absent fields are left unchanged.\n\n" +
+      "Patchable fields:\n" +
+      "  - `timeReference` (string) — the time-base mode; valid values are " +
+      "`\"WALL_CLOCK\"` (timestamps are wall-clock UTC; default), `\"EXPERIMENT_RELATIVE\"` " +
+      "(timestamps are offsets in nanoseconds from a known wall-clock anchor specified " +
+      "by `wallClockOffset`).\n" +
+      "  - `wallClockOffset` (long, nanoseconds) — the wall-clock anchor for " +
+      "`EXPERIMENT_RELATIVE` mode; the epoch from which all channel timestamps are " +
+      "measured. Required when `timeReference` is or becomes `EXPERIMENT_RELATIVE`.\n" +
+      "  - `wallClockOffsetSource` (string) — human-readable description of how the " +
+      "offset was determined (e.g. `\"GPS sync\"`, `\"NTP\"`, `\"manual estimate\"`).\n\n" +
+      "Example: align to a known experiment start time — `{\"timeReference\": " +
+      "\"EXPERIMENT_RELATIVE\", \"wallClockOffset\": 1700000000000000000, " +
+      "\"wallClockOffsetSource\": \"GPS sync\"}`.\n\n" +
+      "Validation: if the effective `timeReference` after the patch is " +
+      "`EXPERIMENT_RELATIVE` and no `wallClockOffset` is present (neither in the patch " +
+      "nor already stored on the entity), the call returns 400.\n\n" +
+      "Content-Type: `application/merge-patch+json` (required).\n\n" +
+      "Auth: Write permission on the parent DataObject (inherited from its Collection)."
+  )
   @APIResponse(
     responseCode = "200",
+    description = "Full TimeseriesReferenceIO reflecting the state after the patch was applied.",
     content = @Content(schema = @Schema(implementation = TimeseriesReferenceIO.class))
   )
-  @APIResponse(responseCode = "400", description = "EXPERIMENT_RELATIVE requires a wallClockOffset.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "timeReference is `EXPERIMENT_RELATIVE` but no wallClockOffset is present in the patch or stored on the entity.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the parent DataObject.")
   @APIResponse(responseCode = "404", description = "No TimeseriesReference with that appId.")
   public Response patch(@PathParam("appId") String appId, TimeseriesReferenceIO body, @Context SecurityContext sc) {
