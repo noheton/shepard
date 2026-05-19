@@ -71,6 +71,15 @@ services:
       # OAS1 — public base URL surfaced in the OpenAPI `servers` list so
       # OpenAPI-Generator clients downloading the spec get an absolute URL.
       SHEPARD_PUBLIC_BASE_URL: "https://shepard-api.nuclide.systems"
+      # CORS: list the frontend origins explicitly so the browser's
+      # CORS-with-credentials gate succeeds. `*` is incompatible with
+      # `credentials: include` per the spec; the spec REQUIRES an exact
+      # origin echo when credentials are sent. Without these, every
+      # PATCH/PUT/POST from the frontend fails with "ERR_FAILED 200" and
+      # the misleading "Access-Control-Allow-Credentials must be true"
+      # message in the browser console (root cause for the bug cluster
+      # seen 2026-05-19: avatar upload, advanced-mode save, etc.).
+      SHEPARD_CORS_ORIGINS: "https://shepard.nuclide.systems,http://localhost:3000,http://127.0.0.1:3000"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:

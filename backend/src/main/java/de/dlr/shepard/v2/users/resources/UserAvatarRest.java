@@ -42,7 +42,13 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
  * Max size: {@value UserAvatarService#MAX_BYTES} bytes (2 MB).
  * Allowed types: JPEG, PNG, GIF, WebP.
  */
-@Path("/v2")
+// Class-level @Path was just "/v2" with each method redeclaring the
+// "/users/..." prefix. Combined-path resolution in this Quarkus/Resteasy
+// build was producing routes that didn't match incoming requests
+// (PUT/GET/DELETE /v2/users/me/avatar all 404'd "Unable to find
+// matching target resource method"). Moved the full path onto each
+// @Path annotation below.
+@Path("/v2/users")
 @RequestScoped
 @Tag(name = "Me")
 public class UserAvatarRest {

@@ -124,8 +124,14 @@ const chartOption = computed(() => ({
 
 <template>
   <ClientOnly>
+    <!-- `update-options.notMerge=false` lets echarts diff series in
+         place instead of tearing down and rebuilding the canvas on
+         every `chartOption` change. Stops the visible "blink" the
+         user reported when live-mode polls every 5s.
+         `manual-update=false` (default) keeps reactivity. -->
     <v-chart
       :option="chartOption"
+      :update-options="{ notMerge: false, lazyUpdate: true, replaceMerge: ['series'] }"
       :style="{ height }"
       autoresize
     />

@@ -76,19 +76,18 @@ function channelLabel(ch: TimeseriesEntity): string {
 async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number]>> {
   const nowNs = Date.now() * 1e6;
   // Sliding-window start: only in live mode. Otherwise start=0 (legacy
-  // "show everything" for static datasets).
+  // "show everything" for static datasets). User feedback 2026-05-19:
+  // include a tail of points just OUTSIDE the window so the line
+  // doesn't visually start mid-air when the window's leading edge
+  // happens to fall between two MQTT samples. Look back 2x the window
+  // to catch the most-recent point before the window.
   const startNs = liveMode.value
-    ? nowNs - (liveWindowSec.value * 1_000_000_000)
+    ? nowNs - (liveWindowSec.value * 2 * 1_000_000_000)
     : 0;
-  // Bucket size: aim for ~120 points on the window (smooth-spline-able
-  // density without 1-pixel-per-bucket sparseness). For low-frequency
-  // feeds like home-MQTT (every ~30-60 s per device) a 5-min window
-  // buckets at 2.5 s — enough resolution to catch real changes; for a
-  // 24h window the bucket is ~12 min which keeps the SVG sane. The
-  // previous /600 target produced ~0.5 s buckets on 5-min windows,
-  // which renders as flat-line plateaus when the data is actually
-  // sub-sampled at the device end (the "weird display in livemode"
-  // screenshot 2026-05-19).
+  // Bucket size: ~120 buckets on the window (smooth-spline-able
+  // density without 1-px-per-bucket sparseness). Bucket sized against
+  // the visible window, not the fetch span — the extra leading points
+  // get the same bucket and slot in cleanly.
   const TARGET_BUCKETS = 120;
   const bucketNs = liveMode.value
     ? Math.max(1_000_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / TARGET_BUCKETS))
