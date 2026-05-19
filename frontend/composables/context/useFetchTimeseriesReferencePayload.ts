@@ -17,6 +17,7 @@ export function useFetchTimeseriesPayload(
     dataObjectId: number,
     timeseriesReferenceId: number,
   ) {
+    isLoading.value = true;
     useShepardApi(TimeseriesReferenceApi)
       .value.getTimeseriesPayload({
         collectionId: collectionId,
