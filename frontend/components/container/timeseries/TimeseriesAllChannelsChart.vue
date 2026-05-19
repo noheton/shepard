@@ -53,7 +53,19 @@ const error = ref(false);
 const liveMode = ref(false);
 const liveIntervalMs = ref(5000); // 5 s default
 const liveWindowSec = ref(300);   // last 5 min default
+const smoothChart = ref(false);   // off by default — step data (switches) looks wrong with spline
+const stepChart = ref(false);     // step/switch mode — overrides smooth when on
 let liveTimer: ReturnType<typeof setInterval> | null = null;
+let liveFetchInFlight = false;    // guard against overlapping fetches at fast refresh rates
+
+// Auto-detect boolean channels: when all values across all series are 0 or 1,
+// suggest step mode and dim the smooth toggle (step overrides smooth anyway).
+const looksBoolean = computed(() => {
+  if (!series.value.length) return false;
+  return series.value.every(s =>
+    s.data.length > 0 && s.data.every(([_, v]) => v === 0 || v === 1)
+  );
+});
 
 // TS_STATS1 — ingest rate displayed in live toolbar
 const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(props.containerId);
@@ -98,8 +110,10 @@ async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number
   // the visible window, not the fetch span — the extra leading points
   // get the same bucket and slot in cleanly.
   const TARGET_BUCKETS = 120;
+  // Allow sub-1s buckets in live mode so short windows (1 min at 100ms refresh)
+  // still resolve 120 distinct buckets rather than collapsing to 60 × 1s.
   const bucketNs = liveMode.value
-    ? Math.max(1_000_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / TARGET_BUCKETS))
+    ? Math.max(200_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / TARGET_BUCKETS))
     : 1_000_000_000;
   try {
     const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
@@ -122,6 +136,11 @@ async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number
 
 async function fetchAll(silent = false) {
   if (!props.measurements.length) return;
+  // Skip live-mode ticks while a previous fetch is still in-flight.
+  // Without this, fast intervals (100 ms) stack requests faster than the
+  // backend can respond, which increases perceived latency rather than reducing it.
+  if (silent && liveFetchInFlight) return;
+  if (silent) liveFetchInFlight = true;
   if (!silent) loading.value = true;
   error.value = false;
   try {
@@ -153,6 +172,7 @@ async function fetchAll(silent = false) {
     error.value = true;
   } finally {
     loading.value = false;
+    if (silent) liveFetchInFlight = false;
   }
 }
 
@@ -275,6 +295,29 @@ onBeforeUnmount(() => {
             <v-icon size="x-small" start>mdi-upload-network-outline</v-icon>
             {{ ingestMBps }} MB/s
           </v-chip>
+          <v-btn
+            :color="stepChart ? 'primary' : undefined"
+            :variant="stepChart ? 'tonal' : 'text'"
+            size="x-small"
+            class="ms-1"
+            :title="looksBoolean && !stepChart ? 'Looks like switch/boolean data — Step mode recommended' : 'Toggle step-line mode (ON/OFF axis, no interpolation)'"
+            @click="stepChart = !stepChart; if (stepChart) smoothChart = false"
+          >
+            <v-icon size="x-small" start>mdi-stairs</v-icon>
+            Step{{ looksBoolean && !stepChart ? " ←" : "" }}
+          </v-btn>
+          <v-btn
+            :color="smoothChart && !stepChart ? 'primary' : undefined"
+            :variant="smoothChart && !stepChart ? 'tonal' : 'text'"
+            :disabled="stepChart"
+            size="x-small"
+            class="ms-1"
+            title="Toggle smooth (spline) interpolation — turn off for step/switch data"
+            @click="smoothChart = !smoothChart"
+          >
+            <v-icon size="x-small" start>mdi-chart-bell-curve-cumulative</v-icon>
+            Smooth
+          </v-btn>
           <v-tooltip location="top" max-width="320">
             <template #activator="{ props: tipProps }">
               <v-icon
@@ -309,7 +352,8 @@ onBeforeUnmount(() => {
         :series="series"
         height="300px"
         :show-legend="true"
-        :smooth="liveMode"
+        :smooth="smoothChart && !stepChart"
+        :step="stepChart"
       />
     </div>
   </div>

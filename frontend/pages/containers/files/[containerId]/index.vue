@@ -11,6 +11,17 @@ const containerAccessor = new FileContainerAccessor(containerId);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useFileContainerLinkedDataObjects(containerId);
 
+const totalFileSizeBytes = computed(() =>
+  (containerAccessor.files.value ?? []).reduce((sum, f) => sum + (f.fileSize ?? 0), 0)
+);
+
+function fmtBytes(b: number): string {
+  if (b === 0) return "0 B";
+  if (b < 1_048_576) return `${(b / 1_024).toFixed(1)} KB`;
+  if (b < 1_073_741_824) return `${(b / 1_048_576).toFixed(1)} MB`;
+  return `${(b / 1_073_741_824).toFixed(2)} GB`;
+}
+
 const deleteWarning = computed<string | undefined>(() => {
   const n = linkedDataObjects.value?.length ?? 0;
   if (n === 0) return undefined;
@@ -93,6 +104,18 @@ watch(containerAccessor.fileContainer, () => {
       </v-col>
     </v-row>
     <CenteredLoadingSpinner v-else />
+    <!-- Storage stats chips — computed from loaded files -->
+    <div
+      v-if="containerAccessor.files.value?.length"
+      class="d-flex flex-wrap align-center ga-2 mb-3"
+    >
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-database-outline">
+        {{ fmtBytes(totalFileSizeBytes) }} total
+      </v-chip>
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-file-multiple-outline">
+        {{ containerAccessor.files.value.length }} file{{ containerAccessor.files.value.length === 1 ? "" : "s" }}
+      </v-chip>
+    </div>
     <FilesTable
       :files="containerAccessor.files.value"
       :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"

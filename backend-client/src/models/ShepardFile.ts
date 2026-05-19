@@ -20,29 +20,35 @@ import { mapValues } from '../runtime';
  */
 export interface ShepardFile {
     /**
-     * 
+     *
      * @type {string}
      * @memberof ShepardFile
      */
     readonly oid?: string;
     /**
-     * 
+     *
      * @type {Date}
      * @memberof ShepardFile
      */
     readonly createdAt?: Date | null;
     /**
-     * 
+     *
      * @type {string}
      * @memberof ShepardFile
      */
     readonly filename?: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof ShepardFile
      */
     readonly md5?: string | null;
+    /**
+     * Payload size in bytes. Null for files uploaded before FB1a.
+     * @type {number}
+     * @memberof ShepardFile
+     */
+    readonly fileSize?: number | null;
 }
 
 /**
@@ -66,6 +72,7 @@ export function ShepardFileFromJSONTyped(json: any, ignoreDiscriminator: boolean
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'filename': json['filename'] == null ? undefined : json['filename'],
         'md5': json['md5'] == null ? undefined : json['md5'],
+        'fileSize': json['fileSize'] == null ? undefined : json['fileSize'],
     };
 }
 

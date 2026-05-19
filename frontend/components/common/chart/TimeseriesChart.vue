@@ -36,8 +36,14 @@ const props = withDefaults(
      * use. Live-mode charts flip this on.
      */
     smooth?: boolean;
+    /**
+     * Render as a step-line (echarts `step: 'end'`). Appropriate for
+     * boolean / switch channels where the value jumps discretely.
+     * Overrides smooth when both are true.
+     */
+    step?: boolean;
   }>(),
-  { height: "360px", showLegend: false, smooth: false },
+  { height: "360px", showLegend: false, smooth: false, step: false },
 );
 
 const chartOption = computed(() => ({
@@ -90,7 +96,14 @@ const chartOption = computed(() => ({
   yAxis: {
     type: "value",
     splitLine: { lineStyle: { opacity: 0.5 } },
-    axisLabel: { fontSize: 11 },
+    axisLabel: {
+      fontSize: 11,
+      // In step mode, format 0/1 as OFF/ON for switch/boolean channels.
+      formatter: props.step
+        ? (v: number) => v === 1 ? "ON" : v === 0 ? "OFF" : String(v)
+        : undefined,
+    },
+    ...(props.step ? { min: 0, max: 1 } : {}),
   },
   dataZoom: [
     {
@@ -111,7 +124,8 @@ const chartOption = computed(() => ({
     name: s.name,
     type: "line",
     symbol: "none",
-    smooth: props.smooth,
+    smooth: props.step ? false : props.smooth,
+    step: props.step ? "end" : undefined,
     ...(s.color !== undefined
       ? { lineStyle: { width: 1.5, color: s.color }, itemStyle: { color: s.color } }
       : { lineStyle: { width: 1.5 } }),

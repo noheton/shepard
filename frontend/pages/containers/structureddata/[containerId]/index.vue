@@ -160,6 +160,15 @@ watch(containerAccessor.container, () => {
         </v-col>
       </v-row>
       <CenteredLoadingSpinner v-else />
+      <!-- Storage stats chip — item count from loaded data -->
+      <div
+        v-if="containerAccessor.items.value.length > 0"
+        class="d-flex flex-wrap align-center ga-2 mb-3"
+      >
+        <v-chip size="small" variant="tonal" prepend-icon="mdi-code-json">
+          {{ containerAccessor.items.value.length }} object{{ containerAccessor.items.value.length === 1 ? "" : "s" }}
+        </v-chip>
+      </div>
       <StructuredDataTable
         :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
         :items="containerAccessor.items.value"
