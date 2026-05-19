@@ -60,11 +60,14 @@
         <tr>
           <th>Name</th>
           <th style="width: 1%; white-space: nowrap">Status</th>
-          <th style="width: 1%; white-space: nowrap" :title="'Total number of references (timeseries / file / structured / video / git / URI)'">
+          <th style="width: 1%; white-space: nowrap" :title="'References attached to this DataObject (timeseries / file / structured / video / git / URI)'">
             Refs
           </th>
           <th style="width: 1%; white-space: nowrap" :title="'Direct children DataObjects'">
             Children
+          </th>
+          <th style="width: 1%; white-space: nowrap" :title="'Incoming DataObjectReferences (other DOs pointing at this one)'">
+            Incoming
           </th>
           <th style="width: 1%; white-space: nowrap">Created</th>
         </tr>
@@ -97,14 +100,53 @@
             <span v-else class="text-medium-emphasis">—</span>
           </td>
           <td class="text-no-wrap">
-            <span :class="row.refCount === 0 ? 'text-medium-emphasis' : ''">
-              {{ row.refCount }}
-            </span>
+            <!-- app-notifier-style icon + count badge. Today we only
+                 have a flat `referenceIds` total from DataObjectIO,
+                 so this is one generic chain-link icon. Phase 2 (#24)
+                 swaps this for one badge per kind (mdi-chart-line for
+                 TS, mdi-file-outline for files, mdi-code-json for SD,
+                 mdi-video-outline for video, mdi-git for git) once the
+                 backend joins per-kind counts onto the list endpoint.
+                 Same visual pattern as the user asked for; just one
+                 icon-bucket instead of N for now. -->
+            <v-badge
+              v-if="row.refCount > 0"
+              :content="row.refCount"
+              color="primary"
+              inline
+            >
+              <v-icon size="small">mdi-link-variant</v-icon>
+            </v-badge>
+            <v-icon
+              v-else
+              size="small"
+              color="rgba(0,0,0,0.3)"
+              :title="'No references attached'"
+            >
+              mdi-link-variant-off
+            </v-icon>
           </td>
           <td class="text-no-wrap">
-            <span :class="row.childCount === 0 ? 'text-medium-emphasis' : ''">
-              {{ row.childCount }}
-            </span>
+            <v-badge
+              v-if="row.childCount > 0"
+              :content="row.childCount"
+              color="secondary"
+              inline
+            >
+              <v-icon size="small">mdi-file-tree</v-icon>
+            </v-badge>
+            <span v-else class="text-medium-emphasis">—</span>
+          </td>
+          <td class="text-no-wrap">
+            <v-badge
+              v-if="row.incomingCount > 0"
+              :content="row.incomingCount"
+              color="info"
+              inline
+            >
+              <v-icon size="small">mdi-import</v-icon>
+            </v-badge>
+            <span v-else class="text-medium-emphasis">—</span>
           </td>
           <td class="text-no-wrap text-medium-emphasis" :title="row.createdAt.toISOString()">
             {{ formatRelative(row.createdAt) }}
@@ -171,6 +213,7 @@ interface Row {
   status: string | null;
   refCount: number;
   childCount: number;
+  incomingCount: number;
   createdAt: Date;
 }
 
@@ -181,6 +224,7 @@ const rows = computed<Row[]>(() =>
     status: (d.status as string) ?? null,
     refCount: (d.referenceIds ?? []).length,
     childCount: (d.childrenIds ?? []).length,
+    incomingCount: (d.incomingIds ?? []).length,
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
   })),
 );

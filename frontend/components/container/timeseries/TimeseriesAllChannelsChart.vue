@@ -42,6 +42,31 @@ const series = ref<TimeseriesSeries[]>([]);
 const loading = ref(false);
 const error = ref(false);
 
+// ── Live mode ────────────────────────────────────────────────────────────
+// User feedback 2026-05-19: channel overview should support live refresh
+// for high-frequency data (home-showcase MQTT, hot-fire DAQs). When live
+// mode is on, the chart re-fetches on `liveIntervalMs` and shows the
+// last `liveWindowSec` seconds (sliding). Off = legacy "fetch once".
+// Pauses on document hidden (avoids burning battery / hammering the
+// backend on background tabs).
+const liveMode = ref(false);
+const liveIntervalMs = ref(5000); // 5 s default
+const liveWindowSec = ref(300);   // last 5 min default
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+
+// User-tunable lists for the v-select dropdowns.
+const LIVE_INTERVALS = [
+  { value: 1000,  title: "1 s" },
+  { value: 5000,  title: "5 s" },
+  { value: 30000, title: "30 s" },
+];
+const LIVE_WINDOWS = [
+  { value: 60,    title: "Last 1 min" },
+  { value: 300,   title: "Last 5 min" },
+  { value: 3600,  title: "Last 1 h" },
+  { value: 86400, title: "Last 24 h" },
+];
+
 function channelLabel(ch: TimeseriesEntity): string {
   const parts = [ch.device, ch.field, ch.location, ch.measurement, ch.symbolicName]
     .filter(Boolean);
@@ -49,7 +74,17 @@ function channelLabel(ch: TimeseriesEntity): string {
 }
 
 async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number]>> {
-  const endNs = Date.now() * 1e6;
+  const nowNs = Date.now() * 1e6;
+  // Sliding-window start: only in live mode. Otherwise start=0 (the
+  // legacy "show everything" behaviour for static datasets).
+  const startNs = liveMode.value
+    ? nowNs - (liveWindowSec.value * 1_000_000_000)
+    : 0;
+  // Bucket size scales with window so the chart isn't drowning in
+  // 1-second buckets on a 24h window. Roughly aim for ~600 buckets.
+  const bucketNs = liveMode.value
+    ? Math.max(1_000_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / 600))
+    : 1_000_000_000;
   try {
     const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
       timeseriesContainerId: props.containerId,
@@ -58,10 +93,10 @@ async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number
       location: ch.location ?? "",
       symbolicName: ch.symbolicName ?? "",
       field: ch.field ?? "",
-      start: 0,
-      end: endNs,
+      start: startNs,
+      end: nowNs,
       _function: AggregateFunction.Mean,
-      groupBy: 1_000_000_000,
+      groupBy: bucketNs,
     });
     return (result.points ?? []).map(p => [p.timestamp, p.value] as [number, number]);
   } catch {
@@ -107,6 +142,43 @@ async function fetchAll() {
 
 watch(() => props.measurements, fetchAll, { immediate: true });
 watch(() => props.selectedChannelKeys, fetchAll);
+
+// Live-mode lifecycle: arm a setInterval when toggled on, clear when off
+// or when the component unmounts. Pause when the tab goes background.
+function startLiveTimer() {
+  stopLiveTimer();
+  liveTimer = setInterval(() => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    void fetchAll();
+  }, liveIntervalMs.value);
+}
+function stopLiveTimer() {
+  if (liveTimer != null) {
+    clearInterval(liveTimer);
+    liveTimer = null;
+  }
+}
+watch(liveMode, on => {
+  if (on) {
+    void fetchAll(); // immediate first tick on toggle-on
+    startLiveTimer();
+  } else {
+    stopLiveTimer();
+    void fetchAll(); // re-fetch with start=0 so the chart returns to "all data"
+  }
+});
+watch(liveIntervalMs, () => { if (liveMode.value) startLiveTimer(); });
+watch(liveWindowSec, () => { if (liveMode.value) void fetchAll(); });
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && liveMode.value) void fetchAll();
+  });
+}
+
+onBeforeUnmount(() => {
+  stopLiveTimer();
+});
 </script>
 
 <template>
@@ -133,13 +205,64 @@ watch(() => props.selectedChannelKeys, fetchAll);
       Channels have no data points yet. Upload a CSV to get started.
     </div>
     <div v-else>
-      <div
-        v-if="measurements.length > MAX_CHANNELS"
-        class="text-caption text-medium-emphasis mb-2 px-2"
-      >
-        Showing first {{ MAX_CHANNELS }} of {{ measurements.length }} channels — expand rows below to preview individual channels.
+      <!-- Live-mode toolbar — toggles sliding-window refresh for
+           high-frequency feeds (home-showcase MQTT, hot-fire DAQ). -->
+      <div class="d-flex flex-wrap align-center ga-3 mb-2 px-2">
+        <v-switch
+          v-model="liveMode"
+          color="primary"
+          density="compact"
+          hide-details
+          inset
+          :label="liveMode ? 'Live' : 'Live mode off'"
+        />
+        <template v-if="liveMode">
+          <v-select
+            v-model="liveIntervalMs"
+            :items="LIVE_INTERVALS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Refresh"
+            style="max-width: 140px"
+          />
+          <v-select
+            v-model="liveWindowSec"
+            :items="LIVE_WINDOWS"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            hide-details
+            label="Window"
+            style="max-width: 160px"
+          />
+          <v-chip
+            size="x-small"
+            color="success"
+            variant="tonal"
+            class="ms-2"
+          >
+            <v-icon size="x-small" start>mdi-circle</v-icon>
+            updating every {{ liveIntervalMs / 1000 }}s
+          </v-chip>
+        </template>
+        <v-spacer />
+        <div
+          v-if="measurements.length > MAX_CHANNELS"
+          class="text-caption text-medium-emphasis"
+        >
+          Showing first {{ MAX_CHANNELS }} of {{ measurements.length }} channels
+        </div>
       </div>
-      <TimeseriesChart :series="series" height="300px" :show-legend="true" />
+      <TimeseriesChart
+        :series="series"
+        height="300px"
+        :show-legend="true"
+        :smooth="liveMode"
+      />
     </div>
   </div>
 </template>

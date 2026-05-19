@@ -29,8 +29,15 @@ const props = withDefaults(
     series: TimeseriesSeries[];
     height?: string;
     showLegend?: boolean;
+    /**
+     * Smooth the line via echarts spline interpolation. Useful for
+     * high-frequency live-mode feeds where raw points look spiky.
+     * Off by default — preserves exact-value fidelity for analytical
+     * use. Live-mode charts flip this on.
+     */
+    smooth?: boolean;
   }>(),
-  { height: "360px", showLegend: false },
+  { height: "360px", showLegend: false, smooth: false },
 );
 
 const chartOption = computed(() => ({
@@ -104,6 +111,7 @@ const chartOption = computed(() => ({
     name: s.name,
     type: "line",
     symbol: "none",
+    smooth: props.smooth,
     ...(s.color !== undefined
       ? { lineStyle: { width: 1.5, color: s.color }, itemStyle: { color: s.color } }
       : { lineStyle: { width: 1.5 } }),
