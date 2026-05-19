@@ -2,7 +2,7 @@
 
 **Status.** **Live.** Updated whenever a feature ships, a design doc
 lands, or upstream cuts a new release.
-**Snapshot date.** 2026-05-08.
+**Snapshot date.** 2026-05-19.
 **Upstream baseline.** `gitlab.com/dlr-shepard/shepard 5.2.0`.
 
 This is the **progress tracker** comparing what's available in this
@@ -309,7 +309,7 @@ backlog and `aidocs/00-index.md`. A row that's stale is the bug.
 | `GET /v2/admin/features`, `PATCH /v2/admin/features/{name}` | DX7 / A3b / `aidocs/22 §4.6` — ✓ shipped | — |
 | `GET /v2/processes`, `POST /v2/processes/import` | PR1a, PR1c | `aidocs/40 §2` |
 | `POST /v2/hdf-containers`, `GET /v2/hdf-containers/{appId}{,/file,/datasets/{path}/value}`, `POST /v2/data-objects/{id}/hdf-references`, `POST /api-keys/{id}/hsds-token` | A5a-e | `aidocs/35` |
-| `POST /v2/sql/timeseries` | P10a | `aidocs/29` |
+| `POST /v2/sql/timeseries` | P10a+P10b+P10c — ✓ shipped | `aidocs/29` |
 | `GET /v2/admin/instance/ror`, `PATCH /v2/admin/instance/ror` | ROR1 — ✓ shipped | `aidocs/16 ROR1` |
 
 This list is **maintained alongside the design docs that propose
@@ -328,6 +328,17 @@ each endpoint**; if you add a new design doc that introduces
 
 Plugins (per `aidocs/47 §2.1`) get their own `/v2/<kind-name>-...`
 namespace; core enforces the shape.
+
+## 13c. Frontend UI features
+
+| Capability | Upstream | This fork | Status | Refs |
+|---|---|---|---|---|
+| **Inline timeseries chart** on container pages — Apache ECharts `LineChart`; channel select checkboxes; persisted curated channel view (`GET/PATCH /v2/timeseries-containers/{id}/chart-view`; `TS_CHART_VIEW1` composable); per-session "show all channels" override. `TimeseriesChart.vue` + `TimeseriesAllChannelsChart.vue` | none | **shipped** — `frontend/components/common/chart/TimeseriesChart.vue`, `frontend/components/container/timeseries/TimeseriesAllChannelsChart.vue`; `useTimeseriesContainerChartView` composable; step-line toggle for boolean channels; smooth toggle; `animationDuration` prop for live-mode transitions | **✓ ↑** (TS_CHART1) | `frontend/components/common/chart/` + `frontend/composables/containers/useTimeseriesContainerChartView.ts` |
+| **Live-mode auto-refresh** on inline timeseries chart — interval-based re-fetch of latest data points; smooth animation on data transition | none | **shipped** — configurable interval; `animationDuration` prop on `TimeseriesChart`; `smooth` prop on for live feeds | **✓ ↑** | `frontend/components/common/chart/TimeseriesChart.vue` |
+| **Channel preview mini-chart** — per-row sparkline (last-N points, 1-second averages) rendered when a channel row is expanded on the timeseries container page | none | **shipped** — `frontend/components/container/timeseries/ChannelPreviewChart.vue`; `useFetchChannelPreview` composable calling `GET /shepard/api/timeseriesContainers/{id}/payload` with short window | **✓ ↑** (TS_PREVIEW1) | `frontend/components/container/timeseries/ChannelPreviewChart.vue` + `frontend/composables/container/useFetchChannelPreview.ts` |
+| **Timeseries container storage stats chip** — point count shown as a coloured chip in the container header via `GET /v2/timeseries-containers/{containerId}/stats` | none | **shipped** — `useFetchTimeseriesContainerStats` composable; `frontend/pages/containers/timeseries/[containerId]/index.vue` renders chip | **✓ ↑** (TS_STATS1) | `frontend/composables/containers/useFetchTimeseriesContainerStats.ts` |
+| **Collection Lineage Graph** — interactive ECharts force-directed graph on the collection page showing parent/child and predecessor/successor edges between DataObjects; colour-coded by lifecycle status; drag, zoom, hover for details, click to highlight neighbours | none | **shipped** — `frontend/components/context/collection/CollectionLineageGraph.vue`; `useFetchAllDataObjects` composable; GraphChart + LegendComponent; no new backend endpoints (uses existing DataObject `parent`/`predecessors` fields) | **✓ ↑** (UI_LINEAGE1) | `frontend/components/context/collection/CollectionLineageGraph.vue` + `docs/help/collection-lineage.md` |
+| **DataObject Provenance Graph** — force-directed graph on the dataset detail page; dataset node at centre; predecessor/child dataset nodes (orange circles); agent nodes for users who acted on it (purple diamonds); edge labels for action kinds and counts; reads from `GET /v2/provenance/entity/{appId}` | none | **shipped** — `frontend/components/context/data-object/DataObjectProvGraph.vue`; reads `ProvenanceApi.getEntityActivities`; `useFetchAllDataObjects` for peer-node labels | **✓ ↑** (UI_PROV1) | `frontend/components/context/data-object/DataObjectProvGraph.vue` + `docs/help/provenance-tracing.md` |
 
 ## 15. API versioning policy
 
@@ -350,7 +361,7 @@ namespace; core enforces the shape.
 | Upstream-current parallel import script (`import_upstream.py`) for the same showcase data | n/a (the upstream itself) | shipped | **✓ ↑** | PR #1001 |
 | **In-app user docs** — Nuxt `/help` route serving `docs/*.md` from the same source as the Pages site | none | Shipped: `frontend/pages/help.vue` + `HelpFrame.vue` + `HelpSidebar.vue` + `helpMarkdown.ts`; `marked` + `highlight.js` renderer; Jekyll frontmatter/Liquid pre-pass; two-column sidebar layout with mobile drawer. "Help" link added to top nav. | **✓ ↑** (D1a) | `aidocs/49` |
 | **Playwright screenshot pipeline** capturing against a CI-booted compose stack, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
-| Task-shaped help pages (upload-data / share-collection / export-rocrate / process-step) for casual users | none | TBD | 📐 (queued, D1c) | `aidocs/49 §2.2` |
+| Task-shaped help pages for casual users | none | Partial: `upload-data`, `create-from-template`, `publish-data-object`, `publish-to-helmholtz-unhide`, `monitor-collection-activity`, `timeseries-plotting`, `collection-lineage`, `provenance-tracing`, `annotate-container`, `delete-container-with-references`, `minter-epic-quickstart` shipped under `docs/help/` and registered in `helpMarkdown.ts` | **🚧 ↑** (D1c partial) | `aidocs/49 §2.2` + `docs/help/` |
 | Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
 
 ## 16a. Experiment orchestration
