@@ -159,4 +159,10 @@ describe("ALL_DOC_PAGES", () => {
     const unique = new Set(keys);
     expect(unique.size).toBe(keys.length);
   });
+
+  it("includes the three previously-missing how-to pages", () => {
+    expect(findDocPage("help/annotate-container")).toBeDefined();
+    expect(findDocPage("help/delete-container-with-references")).toBeDefined();
+    expect(findDocPage("help/minter-epic-quickstart")).toBeDefined();
+  });
 });

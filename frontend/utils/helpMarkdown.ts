@@ -226,6 +226,21 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         title: "Trace dataset provenance",
         fetchPath: "/docs/help/provenance-tracing.md",
       },
+      {
+        page: "help/annotate-container",
+        title: "Annotate a timeseries container",
+        fetchPath: "/docs/help/annotate-container.md",
+      },
+      {
+        page: "help/delete-container-with-references",
+        title: "Delete a container with references",
+        fetchPath: "/docs/help/delete-container-with-references.md",
+      },
+      {
+        page: "help/minter-epic-quickstart",
+        title: "Mint an ePIC PID",
+        fetchPath: "/docs/help/minter-epic-quickstart.md",
+      },
     ],
   },
   {
