@@ -1,0 +1,55 @@
+# shepard local build / deploy Makefile
+#
+# Background: the Dockerfiles copy pre-built artifacts, so you MUST run
+# the language-specific build before docker build:
+#   backend  → mvn package → docker build  (image: shepard-backend-patched:local)
+#   frontend → npm run build → docker build (image: shepard-frontend:local)
+#
+# Usage:
+#   make build-backend        compile + package backend JAR via Maven
+#   make image-backend        docker build the backend image (requires build-backend first)
+#   make build-frontend       Nuxt build (generates frontend/.output)
+#   make image-frontend       docker build the frontend image (requires build-frontend first)
+#   make deploy               docker compose up -d for backend + frontend
+#   make redeploy-backend     build-backend + image-backend + deploy backend only
+#   make redeploy-frontend    build-frontend + image-frontend + deploy frontend only
+#   make redeploy             full rebuild and deploy of both services
+#   make check-images         print image timestamps to verify freshness
+
+BACKEND_IMAGE  := shepard-backend-patched:local
+FRONTEND_IMAGE := shepard-frontend:local
+COMPOSE_DIR    := ./infrastructure
+MVN            := ./backend/mvnw
+
+.PHONY: build-backend image-backend build-frontend image-frontend \
+        deploy redeploy-backend redeploy-frontend redeploy check-images
+
+build-backend:
+	cd backend && $(CURDIR)/backend/mvnw package -Dmaven.test.skip=true -q
+
+image-backend: build-backend
+	docker build -t $(BACKEND_IMAGE) ./backend
+
+build-frontend:
+	cd frontend && npm run build
+
+image-frontend: build-frontend
+	docker build -t $(FRONTEND_IMAGE) ./frontend
+
+deploy:
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
+
+redeploy-backend: image-backend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend
+
+redeploy-frontend: image-frontend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build frontend
+
+redeploy: image-backend image-frontend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
+
+check-images:
+	@echo "Backend  image: $$(docker images $(BACKEND_IMAGE)  --format '{{.CreatedAt}}')"
+	@echo "Frontend image: $$(docker images $(FRONTEND_IMAGE) --format '{{.CreatedAt}}')"
+	@echo "Backend  container: $$(docker inspect infrastructure-backend-1  --format '{{.Config.Image}} (started {{.State.StartedAt}})' 2>/dev/null || echo 'not running')"
+	@echo "Frontend container: $$(docker inspect infrastructure-frontend-1 --format '{{.Config.Image}} (started {{.State.StartedAt}})' 2>/dev/null || echo 'not running')"
