@@ -56,6 +56,7 @@ let liveTimer: ReturnType<typeof setInterval> | null = null;
 
 // User-tunable lists for the v-select dropdowns.
 const LIVE_INTERVALS = [
+  { value: 100,   title: "100 ms" },
   { value: 1000,  title: "1 s" },
   { value: 5000,  title: "5 s" },
   { value: 30000, title: "30 s" },
@@ -111,9 +112,9 @@ async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number
   }
 }
 
-async function fetchAll() {
+async function fetchAll(silent = false) {
   if (!props.measurements.length) return;
-  loading.value = true;
+  if (!silent) loading.value = true;
   error.value = false;
   try {
     // When a curated selection exists, render exactly those channels in
@@ -156,7 +157,7 @@ function startLiveTimer() {
   stopLiveTimer();
   liveTimer = setInterval(() => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-    void fetchAll();
+    void fetchAll(true); // silent — keep existing chart visible during refresh
   }, liveIntervalMs.value);
 }
 function stopLiveTimer() {

@@ -71,10 +71,13 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
       "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:StructuredDataContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
-      "RETURN DISTINCT do";
+      "RETURN DISTINCT id(do) AS neo4jId";
     var result = new ArrayList<DataObject>();
-    for (var dataObject : session.query(DataObject.class, query, Map.of("containerAppId", containerAppId))) {
-      result.add(dataObject);
+    for (var row : session.query(query, Map.of("containerAppId", containerAppId))) {
+      Long neo4jId = (Long) row.get("neo4jId");
+      if (neo4jId == null) continue;
+      DataObject loaded = session.load(DataObject.class, neo4jId, DEPTH_ENTITY);
+      if (loaded != null) result.add(loaded);
     }
     return result;
   }
