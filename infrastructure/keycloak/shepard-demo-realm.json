@@ -96,7 +96,9 @@
       "enabled": true,
       "emailVerified": true,
       "attributes": {
-        "orcid": ["0000-0001-6033-801X"]
+        "orcid": [
+          "0000-0001-6033-801X"
+        ]
       },
       "credentials": [
         {
@@ -168,7 +170,24 @@
       "attributes": {
         "post.logout.redirect.uris": "+",
         "pkce.code.challenge.method": "S256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "id": "1847eadd-a057-4ac2-9e9f-92ee553ed089",
+          "name": "orcid-attribute-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "orcid",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "orcid",
+            "jsonType.label": "String"
+          }
+        }
+      ]
     },
     {
       "clientId": "shepard-backend",
