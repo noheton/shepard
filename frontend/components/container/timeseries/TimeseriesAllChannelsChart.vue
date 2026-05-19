@@ -75,15 +75,23 @@ function channelLabel(ch: TimeseriesEntity): string {
 
 async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number]>> {
   const nowNs = Date.now() * 1e6;
-  // Sliding-window start: only in live mode. Otherwise start=0 (the
-  // legacy "show everything" behaviour for static datasets).
+  // Sliding-window start: only in live mode. Otherwise start=0 (legacy
+  // "show everything" for static datasets).
   const startNs = liveMode.value
     ? nowNs - (liveWindowSec.value * 1_000_000_000)
     : 0;
-  // Bucket size scales with window so the chart isn't drowning in
-  // 1-second buckets on a 24h window. Roughly aim for ~600 buckets.
+  // Bucket size: aim for ~120 points on the window (smooth-spline-able
+  // density without 1-pixel-per-bucket sparseness). For low-frequency
+  // feeds like home-MQTT (every ~30-60 s per device) a 5-min window
+  // buckets at 2.5 s — enough resolution to catch real changes; for a
+  // 24h window the bucket is ~12 min which keeps the SVG sane. The
+  // previous /600 target produced ~0.5 s buckets on 5-min windows,
+  // which renders as flat-line plateaus when the data is actually
+  // sub-sampled at the device end (the "weird display in livemode"
+  // screenshot 2026-05-19).
+  const TARGET_BUCKETS = 120;
   const bucketNs = liveMode.value
-    ? Math.max(1_000_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / 600))
+    ? Math.max(1_000_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / TARGET_BUCKETS))
     : 1_000_000_000;
   try {
     const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({

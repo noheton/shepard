@@ -24,7 +24,9 @@ const isAvatarUploading = ref(false);
 const avatarFileInput = ref<HTMLInputElement | null>(null);
 
 function avatarUrl(appId: string) {
-  return `/v2/users/${appId}/avatar?v=${avatarKey.value}`;
+  // Compose against the v2 base — same rationale as the upload PUT above.
+  // The avatar GET is public so no auth header is needed; just the URL.
+  return `${v2BaseUrl()}/v2/users/${appId}/avatar?v=${avatarKey.value}`;
 }
 
 function onAvatarError() {
@@ -35,6 +37,22 @@ function triggerAvatarUpload() {
   avatarFileInput.value?.click();
 }
 
+// V2 base URL + bearer token plumbing — previously the fetch was a
+// bare relative `/v2/users/me/avatar` PUT with no auth header. In
+// production the frontend hostname (shepard.nuclide.systems) is
+// distinct from the backend (shepard-api.nuclide.systems), so the
+// relative path resolved against the frontend SSR (no /v2/ route → 404)
+// and the OIDC session cookie wouldn't have attached cross-origin
+// anyway. Use the same plumbing as `useV2ShepardApi` so the PUT
+// lands on the real backend with the user's Bearer token.
+const { data: authData } = useAuth();
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit;
+  return (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+}
+
 async function onAvatarFileSelected(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -43,7 +61,14 @@ async function onAvatarFileSelected(event: Event) {
   try {
     const form = new FormData();
     form.append("file", file);
-    const resp = await fetch("/v2/users/me/avatar", { method: "PUT", body: form });
+    const token = (authData.value as unknown as { accessToken?: string } | null)?.accessToken;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const resp = await fetch(`${v2BaseUrl()}/v2/users/me/avatar`, {
+      method: "PUT",
+      body: form,
+      headers,
+    });
     if (resp.ok) {
       avatarError.value = false;
       avatarKey.value++;
@@ -55,7 +80,10 @@ async function onAvatarFileSelected(event: Event) {
 }
 
 async function deleteAvatar() {
-  await fetch("/v2/users/me/avatar", { method: "DELETE" });
+  const token = (authData.value as unknown as { accessToken?: string } | null)?.accessToken;
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  await fetch(`${v2BaseUrl()}/v2/users/me/avatar`, { method: "DELETE", headers });
   avatarError.value = true;
   avatarKey.value++;
 }
