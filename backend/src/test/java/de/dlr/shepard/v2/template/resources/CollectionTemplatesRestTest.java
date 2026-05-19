@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -73,13 +74,13 @@ class CollectionTemplatesRestTest {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.empty());
     Response r = resource.listAllowed(COLL_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(any()), anyLong());
   }
 
   @Test
   void listAllowedReturns403WhenCallerLacksRead() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
     Response r = resource.listAllowed(COLL_APP_ID, securityContext);
     assertEquals(403, r.getStatus());
   }
@@ -87,7 +88,7 @@ class CollectionTemplatesRestTest {
   @Test
   void listAllowedReturnsTemplates() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("tmpl-1");
     when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of(t));
@@ -104,7 +105,7 @@ class CollectionTemplatesRestTest {
   @Test
   void listUsedReturnsTemplates() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
     var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("tmpl-used");
     when(templateDAO.listUsedByCollection(COLL_APP_ID)).thenReturn(List.of(t));
@@ -121,7 +122,7 @@ class CollectionTemplatesRestTest {
   @Test
   void setAllowedRequiresManage() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(false);
     Response r = resource.setAllowed(COLL_APP_ID, new AllowedTemplatesIO(List.of("t1")), securityContext);
     assertEquals(403, r.getStatus());
     verify(templateDAO, never()).setAllowedForCollection(any(), any());
@@ -130,7 +131,7 @@ class CollectionTemplatesRestTest {
   @Test
   void setAllowedReplacesAndReturnsNewSet() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
     var t = new ShepardTemplate("recipe", "EXPERIMENT_RECIPE", "{}");
     t.setAppId("tmpl-1");
     when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of(t));
@@ -147,7 +148,7 @@ class CollectionTemplatesRestTest {
   @Test
   void setAllowedNullBodyClearsTheSet() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
 
     Response r = resource.setAllowed(COLL_APP_ID, null, securityContext);
@@ -159,7 +160,7 @@ class CollectionTemplatesRestTest {
   @Test
   void setAllowedEmptyListClearsTheSet() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Manage, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Manage), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.listAllowedForCollection(COLL_APP_ID)).thenReturn(List.of());
 
     Response r = resource.setAllowed(COLL_APP_ID, new AllowedTemplatesIO(List.of()), securityContext);
@@ -178,7 +179,7 @@ class CollectionTemplatesRestTest {
   @Test
   void instantiateReturns403WhenCallerLacksWrite() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(de.dlr.shepard.common.util.AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
     Response r = resource.instantiate(COLL_APP_ID, "tmpl-1", securityContext);
     assertEquals(403, r.getStatus());
     verify(templateDAO, never()).recordUsageReportingCreation(any(), any());
@@ -187,7 +188,7 @@ class CollectionTemplatesRestTest {
   @Test
   void instantiateReturns404WhenTemplateMissing() {
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(de.dlr.shepard.common.util.AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.findByAppId("ghost")).thenReturn(Optional.empty());
 
     Response r = resource.instantiate(COLL_APP_ID, "ghost", securityContext);
@@ -201,7 +202,7 @@ class CollectionTemplatesRestTest {
     t.setAppId("retired-tmpl");
     t.setRetired(true);
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(de.dlr.shepard.common.util.AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.findByAppId("retired-tmpl")).thenReturn(Optional.of(t));
 
     Response r = resource.instantiate(COLL_APP_ID, "retired-tmpl", securityContext);
@@ -215,7 +216,7 @@ class CollectionTemplatesRestTest {
     t.setAppId("tmpl-1");
     t.setVersion(3);
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(de.dlr.shepard.common.util.AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(t));
     when(templateDAO.recordUsageReportingCreation(COLL_APP_ID, "tmpl-1")).thenReturn(true);
 
@@ -236,7 +237,7 @@ class CollectionTemplatesRestTest {
     t.setAppId("tmpl-1");
     t.setVersion(3);
     when(propsDAO.findCollectionIdByAppId(COLL_APP_ID)).thenReturn(Optional.of(COLL_OGM_ID));
-    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, de.dlr.shepard.common.util.AccessType.Write, CALLER, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(de.dlr.shepard.common.util.AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
     when(templateDAO.findByAppId("tmpl-1")).thenReturn(Optional.of(t));
     when(templateDAO.recordUsageReportingCreation(COLL_APP_ID, "tmpl-1")).thenReturn(false);
 

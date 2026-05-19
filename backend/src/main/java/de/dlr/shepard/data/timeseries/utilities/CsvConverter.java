@@ -100,18 +100,29 @@ public final class CsvConverter {
   private static Object parseValue(Object input) {
     List<String> boolString = List.of("true", "false");
     if (input instanceof String sInput) {
+      // Fix D: coerce IEEE 754 special-value strings to null so they are
+      // skipped rather than stored as non-finite doubles or mis-classified
+      // as String type (which would lock the channel to String forever).
+      String trimmed = sInput.trim();
+      String lower = trimmed.toLowerCase();
+      if (lower.equals("nan") || lower.equals("infinity") || lower.equals("-infinity") || lower.equals("+infinity")) {
+        return null;
+      }
       if (NumberUtils.isCreatable(sInput)) {
         try {
-          Integer intValue = Integer.parseInt(sInput);
-          return intValue;
+          return Integer.parseInt(sInput);
         } catch (NumberFormatException e) {
-          Double doubleValue = Double.parseDouble(sInput);
-          return doubleValue;
+          double d = Double.parseDouble(sInput);
+          // Guard: isCreatable may accept "NaN"/"Infinity" in some Commons Lang versions.
+          if (!Double.isFinite(d)) return null;
+          return d;
         }
-      } else if (boolString.contains(sInput.toLowerCase())) {
+      } else if (boolString.contains(lower)) {
         return sInput.equalsIgnoreCase("true");
       }
     }
+    // Fix D: non-finite Double arriving directly (e.g. from Jackson) → skip.
+    if (input instanceof Double d && !Double.isFinite(d)) return null;
     return input;
   }
 }

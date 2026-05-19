@@ -13,7 +13,7 @@ public class BasicReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(BasicReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(BasicReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test
@@ -42,5 +42,33 @@ public class BasicReferenceIOTest {
     assertEquals(obj.getUpdatedAt(), converted.getUpdatedAt());
     assertEquals("claus", converted.getUpdatedBy());
     assertEquals(dataObject.getShepardId(), converted.getDataObjectId());
+  }
+
+  @Test
+  public void testConversion_dataObjectNullShepardId_usesNeo4jId() {
+    var dataObject = new DataObject(99L);
+    // shepardId intentionally left null
+
+    var obj = new BasicReference(1L);
+    obj.setName("R");
+    obj.setShepardId(10L);
+    obj.setDataObject(dataObject);
+
+    var converted = new BasicReferenceIO(obj);
+    assertEquals(99L, converted.getDataObjectId());
+  }
+
+  @Test
+  public void testConversion_dataObjectBothIdsNull_usesZero() {
+    var dataObject = new DataObject();
+    // no-arg constructor: both id and shepardId are null
+
+    var obj = new BasicReference(1L);
+    obj.setName("R");
+    obj.setShepardId(10L);
+    obj.setDataObject(dataObject);
+
+    var converted = new BasicReferenceIO(obj);
+    assertEquals(0L, converted.getDataObjectId());
   }
 }

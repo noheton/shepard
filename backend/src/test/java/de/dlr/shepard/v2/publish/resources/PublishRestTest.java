@@ -78,7 +78,7 @@ class PublishRestTest {
   @Test
   void happyPathReturns200WithPublicationAndResolverUrl() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     Publication pub = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     when(publishService.publish(eq(PublishableKind.DATA_OBJECTS), eq("01HF-A"), anyString(), eq("alice"), eq(false)))
       .thenReturn(new PublishService.PublishOutcome(pub, true));
@@ -101,7 +101,7 @@ class PublishRestTest {
   @Test
   void permissionDeniedReturns403() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(anyString()), anyLong())).thenReturn(false);
     Response r = rest.publish("data-objects", "01HF-A", false, securityContext, uriInfo);
     assertEquals(403, r.getStatus());
   }
@@ -131,7 +131,7 @@ class PublishRestTest {
   @Test
   void wrongKindReturns404WithProblemJson() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.publish(any(), anyString(), anyString(), anyString(), anyBoolean()))
       .thenThrow(new NotFoundException("No DataObject entity with appId 01HF-A exists"));
     Response r = rest.publish("data-objects", "01HF-A", false, securityContext, uriInfo);
@@ -143,7 +143,7 @@ class PublishRestTest {
   @Test
   void minterFailureReturns500WithProblemJson() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.publish(any(), anyString(), anyString(), anyString(), anyBoolean()))
       .thenThrow(new MinterException("ePIC returned 503"));
     Response r = rest.publish("data-objects", "01HF-A", false, securityContext, uriInfo);
@@ -158,7 +158,7 @@ class PublishRestTest {
     // MinterNotInstalledException; REST maps it to 503 RFC 7807
     // `publish.minter.not-installed` with an actionable hint.
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.publish(any(), anyString(), anyString(), anyString(), anyBoolean()))
       .thenThrow(new MinterNotInstalledException("shepard.publish.minter is unset or no matching plugin is installed. Install plugins/minter-local/ ..."));
 
@@ -174,7 +174,7 @@ class PublishRestTest {
   @Test
   void idempotentSecondCallReturnsExistingPublication() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     Publication existing = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v1");
     when(publishService.publish(any(), anyString(), anyString(), anyString(), eq(false)))
       .thenReturn(new PublishService.PublishOutcome(existing, false));
@@ -189,7 +189,7 @@ class PublishRestTest {
   @Test
   void forceTrueIsPropagatedToService() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     Publication fresh = publication("shepard:dlr.de/shepard-prod:data-objects:01HF-A:v2");
     when(publishService.publish(any(), anyString(), anyString(), anyString(), eq(true)))
       .thenReturn(new PublishService.PublishOutcome(fresh, true));
@@ -227,7 +227,7 @@ class PublishRestTest {
     // Smoke test that 'collections' kind also routes correctly through
     // the same code path as 'data-objects'.
     when(entityIdResolver.resolveLong("01HF-C")).thenReturn(99L);
-    when(permissionsService.isAccessTypeAllowedForUser(99L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(99L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     Publication pub = publication("shepard:dlr.de/shepard-prod:collections:01HF-C:v1");
     pub.setEntityKind("collections");
     pub.setEntityAppId("01HF-C");
@@ -245,7 +245,7 @@ class PublishRestTest {
   @Test
   void retireHappyPathReturns204() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(true);
 
     Response r = rest.retire("data-objects", "01HF-A", securityContext);
@@ -278,7 +278,7 @@ class PublishRestTest {
   @Test
   void retirePermissionDeniedReturns403() {
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(anyLong(), any(), anyString(), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(anyString()), anyLong())).thenReturn(false);
     Response r = rest.retire("data-objects", "01HF-A", securityContext);
     assertEquals(403, r.getStatus());
   }
@@ -287,7 +287,7 @@ class PublishRestTest {
   void retireWhenNoPublicationReturns404WithProblemJson() {
     // Entity exists + caller has Write, but entity has no :Publication.
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(false);
 
     Response r = rest.retire("data-objects", "01HF-A", securityContext);
@@ -300,7 +300,7 @@ class PublishRestTest {
   void retireWrongKindReturns404WithProblemJson() {
     // Service throws NotFoundException (entity exists but not under this kind).
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.retire(any(), anyString()))
       .thenThrow(new NotFoundException("No DataObject entity with appId 01HF-A"));
 
@@ -315,7 +315,7 @@ class PublishRestTest {
     // Second retire call on an already-retired row still returns 204
     // (the service / DAO are idempotent).
     when(entityIdResolver.resolveLong("01HF-A")).thenReturn(42L);
-    when(permissionsService.isAccessTypeAllowedForUser(42L, AccessType.Write, "alice", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(42L), eq(AccessType.Write), eq("alice"), anyLong())).thenReturn(true);
     when(publishService.retire(PublishableKind.DATA_OBJECTS, "01HF-A")).thenReturn(true);
 
     assertEquals(204, rest.retire("data-objects", "01HF-A", securityContext).getStatus());

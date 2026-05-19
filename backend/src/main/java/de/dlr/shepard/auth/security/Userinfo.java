@@ -25,12 +25,4 @@ public class Userinfo {
   @JsonProperty("preferred_username")
   private String preferredUsername;
 
-  /**
-   * ORCID identifier carried as a custom claim by the IdP (U1g).
-   * Keycloak exposes user attributes as OIDC claims via a "User
-   * Attribute" protocol mapper; the claim name matches the attribute
-   * name ({@code orcid}). Nullable: realms without the mapper leave
-   * this null and the auto-sync skips it.
-   */
-  private String orcid;
 }

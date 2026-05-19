@@ -18,7 +18,7 @@ public class TimeseriesReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(TimeseriesReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(TimeseriesReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

@@ -45,24 +45,15 @@ public class UserService {
     String firstName = user.getFirstName() != null ? user.getFirstName() : oldUser.getFirstName();
     String lastName = user.getLastName() != null ? user.getLastName() : oldUser.getLastName();
     String email = user.getEmail() != null ? user.getEmail() : oldUser.getEmail();
-    // U1g — ORCID "fill if missing" semantics. If the user manually
-    // PATCHed their ORCID via /v2/users/me the value stays put across
-    // logins; if the local value is null and the IdP supplies one,
-    // adopt it on next login. (Same posture as the rest of this block
-    // for firstName/lastName/email: IdP wins only when local is null,
-    // which the ternaries above enforce via != null fallback.)
-    String orcid = oldUser.getOrcid() != null ? oldUser.getOrcid() : user.getOrcid();
 
     if (
       !firstName.equals(oldUser.getFirstName()) ||
       !lastName.equals(oldUser.getLastName()) ||
-      !email.equals(oldUser.getEmail()) ||
-      !java.util.Objects.equals(orcid, oldUser.getOrcid())
+      !email.equals(oldUser.getEmail())
     ) {
       oldUser.setFirstName(firstName);
       oldUser.setLastName(lastName);
       oldUser.setEmail(email);
-      oldUser.setOrcid(orcid);
       Log.infof("Update user %s", oldUser);
       return userDAO.createOrUpdate(oldUser);
     }

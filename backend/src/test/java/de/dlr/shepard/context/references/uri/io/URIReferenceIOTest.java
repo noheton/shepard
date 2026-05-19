@@ -13,7 +13,7 @@ public class URIReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(URIReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(URIReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -193,10 +194,10 @@ public class CollectionServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(updateUser.getUsername());
 
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Read), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Write), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(true);
 
     var actual = service.updateCollectionByShepardId(old.getShepardId(), input);
@@ -246,10 +247,10 @@ public class CollectionServiceTest {
     when(authenticationContext.getCurrentUserName()).thenReturn(updateUser.getUsername());
 
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Read), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Write), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(false);
 
     assertThrows(InvalidAuthException.class, () -> service.updateCollectionByShepardId(old.getShepardId(), input));
@@ -302,10 +303,10 @@ public class CollectionServiceTest {
     when(fileContainerService.getContainer(fileContainer.getId())).thenReturn(fileContainer);
 
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Read, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Read), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(old.getShepardId(), AccessType.Write, updateUser.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(old.getShepardId()), eq(AccessType.Write), eq(updateUser.getUsername()), anyLong())
     ).thenReturn(true);
 
     var actual = service.updateCollectionByShepardId(old.getShepardId(), input);
@@ -325,10 +326,10 @@ public class CollectionServiceTest {
     when(dao.findByShepardId(collection.getShepardId(), true)).thenReturn(collection);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
 
-    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, "bob", anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(collection.getShepardId()), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Write, "bob", anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(collection.getShepardId()), eq(AccessType.Write), eq("bob"), anyLong())).thenReturn(
       true
     );
 
@@ -348,11 +349,11 @@ public class CollectionServiceTest {
     when(dao.findByShepardId(collection.getShepardId(), true)).thenReturn(collection);
     when(authenticationContext.getCurrentUserName()).thenReturn("timbo");
 
-    when(permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Read, "timbo", anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(collection.getShepardId()), eq(AccessType.Read), eq("timbo"), anyLong())).thenReturn(
       true
     );
     when(
-      permissionsService.isAccessTypeAllowedForUser(collection.getShepardId(), AccessType.Write, "timbo", anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(collection.getShepardId()), eq(AccessType.Write), eq("timbo"), anyLong())
     ).thenReturn(false);
 
     assertThrows(InvalidAuthException.class, () -> service.deleteCollection(collection.getShepardId()));
@@ -364,7 +365,7 @@ public class CollectionServiceTest {
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId);
     assertEquals(ret, result);
     assertEquals(null, result.getFileContainer());
@@ -396,7 +397,7 @@ public class CollectionServiceTest {
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, false)).thenReturn(ret);
     when(authenticationContext.getCurrentUserName()).thenReturn("eric");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "eric", anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("eric"), anyLong())).thenReturn(false);
     assertThrows(InvalidAuthException.class, () -> service.getCollectionWithDataObjectsAndIncomingReferences(shepardId)
     );
   }
@@ -408,7 +409,7 @@ public class CollectionServiceTest {
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, versionUID, false)).thenReturn(ret);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
     var result = service.getCollectionWithDataObjectsAndIncomingReferences(shepardId, versionUID);
     assertEquals(ret, result);
   }
@@ -445,8 +446,8 @@ public class CollectionServiceTest {
 
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Manage), eq("bob"), anyLong())).thenReturn(true);
     when(permissionsService.getPermissionsOfEntity(shepardId)).thenReturn(ret);
 
     var result = service.getCollectionPermissions(shepardId);
@@ -462,8 +463,8 @@ public class CollectionServiceTest {
     long shepardId = 2L;
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob", anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Manage), eq("bob"), anyLong())).thenReturn(false);
     when(permissionsService.getPermissionsOfEntityOptional(shepardId)).thenReturn(Optional.of(ret));
     assertThrows(InvalidAuthException.class, () -> service.getCollectionPermissions(shepardId));
   }
@@ -477,8 +478,8 @@ public class CollectionServiceTest {
     PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob", anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Manage), eq("bob"), anyLong())).thenReturn(true);
     when(permissionsService.updatePermissionsByNeo4jId(permissionsIO, shepardId)).thenReturn(newPermissions);
     var result = service.updateCollectionPermissions(permissionsIO, shepardId);
     assertEquals(newPermissions, result);
@@ -493,8 +494,8 @@ public class CollectionServiceTest {
     PermissionsIO permissionsIO = new PermissionsIO(newPermissions);
     when(dao.findByShepardId(shepardId, true)).thenReturn(col);
     when(authenticationContext.getCurrentUserName()).thenReturn("bob");
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Read, "bob", anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(shepardId, AccessType.Manage, "bob", anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Read), eq("bob"), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(shepardId), eq(AccessType.Manage), eq("bob"), anyLong())).thenReturn(false);
     when(permissionsService.updatePermissionsByNeo4jId(permissionsIO, shepardId)).thenReturn(newPermissions);
     assertThrows(InvalidAuthException.class, () -> service.updateCollectionPermissions(permissionsIO, shepardId));
   }

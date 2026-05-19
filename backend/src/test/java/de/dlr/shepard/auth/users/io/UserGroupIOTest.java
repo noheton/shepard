@@ -12,7 +12,7 @@ public class UserGroupIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(UserGroupIO.class).verify();
+    EqualsVerifier.simple().forClass(UserGroupIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

@@ -120,7 +120,7 @@ class FileReferenceV2RestTest {
   @Test
   void getSingleton_returns403WhenNoRead() {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(PARENT_DO_OGM_ID, AccessType.Read, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
     assertEquals(403, resource.getSingleton(SINGLETON_APP_ID, securityContext).getStatus());
   }
 
@@ -324,7 +324,7 @@ class FileReferenceV2RestTest {
       when(fileUpload.uploadedFile()).thenReturn(tmp);
       when(fileUpload.fileName()).thenReturn("doc.pdf");
       when(singletonService.getDataObjectOgmId(PARENT_DO_APP_ID)).thenReturn(PARENT_DO_OGM_ID);
-      when(permissionsService.isAccessTypeAllowedForUser(PARENT_DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
+      when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
 
       var r = resource.createSingleton(PARENT_DO_APP_ID, null, fileUpload, securityContext);
       assertEquals(403, r.getStatus());
@@ -410,7 +410,7 @@ class FileReferenceV2RestTest {
   @Test
   void patchSingleton_returns403WhenNoWrite() throws Exception {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(PARENT_DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
     JsonNode body = new ObjectMapper().readTree("{\"name\":\"x\"}");
     assertEquals(403, resource.patchSingleton(SINGLETON_APP_ID, body, securityContext).getStatus());
   }
@@ -443,7 +443,7 @@ class FileReferenceV2RestTest {
   @Test
   void deleteSingleton_returns403WhenNoWrite() {
     when(singletonService.getByAppId(SINGLETON_APP_ID)).thenReturn(existing());
-    when(permissionsService.isAccessTypeAllowedForUser(PARENT_DO_OGM_ID, AccessType.Write, CALLER, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(PARENT_DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
     assertEquals(403, resource.deleteSingleton(SINGLETON_APP_ID, securityContext).getStatus());
   }
 

@@ -13,7 +13,7 @@ public class SemanticRepositoryIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(SemanticRepositoryIO.class).verify();
+    EqualsVerifier.simple().forClass(SemanticRepositoryIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

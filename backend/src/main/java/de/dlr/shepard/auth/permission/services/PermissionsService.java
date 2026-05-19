@@ -58,6 +58,9 @@ public class PermissionsService {
   PermissionsDAO permissionsDAO;
 
   @Inject
+  de.dlr.shepard.common.identifier.EntityIdResolver entityIdResolver;
+
+  @Inject
   UserService userService;
 
   @Inject
@@ -257,6 +260,32 @@ public class PermissionsService {
   public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username, long jwtIat) {
     Roles userRolesOnEntity = getUserRolesOnEntity(entityId, username);
     return rolesGrantAccess(userRolesOnEntity, accessType);
+  }
+
+  /**
+   * Backward-compat overload for compiled upstream classes (e.g. GitReferenceRest) that
+   * were compiled against the pre-jwtIat 3-parameter signature.
+   *
+   * <p>DataObjects do not have their own {@code :Permissions} node; access is inherited from
+   * the parent Collection. If the direct entity lookup returns null (no direct Permissions
+   * node), this overload falls back to the DataObject→Collection walk via
+   * {@link #isAccessAllowedForDataObjectAppId} so the git plugin (and any other upstream-
+   * compiled class that calls this signature with a DataObject id) gets correct inheritance
+   * semantics without the git plugin needing to be recompiled.
+   */
+  public boolean isAccessTypeAllowedForUser(long entityId, AccessType accessType, String username) {
+    // Fast path: entity has its own Permissions node (e.g. Collection, Container).
+    if (permissionsDAO.findByEntityNeo4jId(entityId) != null) {
+      return isAccessTypeAllowedForUser(entityId, accessType, username, currentIat());
+    }
+    // Fallback: no direct Permissions node — resolve to appId and walk up to
+    // the parent Collection (handles DataObject inheritance).
+    try {
+      String appId = entityIdResolver.resolveAppId(entityId);
+      return isAccessAllowedForDataObjectAppId(appId, accessType, username);
+    } catch (jakarta.ws.rs.NotFoundException e) {
+      return false; // Unknown entity — fail-closed.
+    }
   }
 
   /**

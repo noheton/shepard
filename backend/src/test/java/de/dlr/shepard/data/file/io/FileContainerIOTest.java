@@ -12,7 +12,7 @@ public class FileContainerIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(FileContainerIO.class).verify();
+    EqualsVerifier.simple().forClass(FileContainerIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

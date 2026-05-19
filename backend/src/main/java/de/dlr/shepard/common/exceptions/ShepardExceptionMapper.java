@@ -79,16 +79,28 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
     // ERROR-level log streams or echoing PII into them.
     Log.debugf(exception, "[%s] %s on %s %s", traceId, exception.getClass().getSimpleName(), httpMethod, requestPath);
 
-    // ERROR line carries only the structural fields. No request body, no
-    // headers (auth / api-key / cookies), no exception message.
-    Log.errorf(
-      "[%s] Unhandled %s on %s %s -> HTTP %d",
-      traceId,
-      exception.getClass().getSimpleName(),
-      httpMethod,
-      requestPath,
-      status
-    );
+    if (isReverseProxyRootProbe(exception, httpMethod, requestPath)) {
+      // Suppress ERROR-level noise from Zoraxy/reverse-proxy health probes
+      // hitting GET / on the backend port. The backend has no root handler so
+      // JAX-RS throws NotFoundException every ~3 s. The debug line above is
+      // sufficient for diagnosis; escalating to ERROR floods the logs.
+      Log.debugf("[%s] suppressing ERROR for reverse-proxy root probe %s %s", traceId, httpMethod, requestPath);
+    } else {
+      // ERROR line carries only the structural fields. No request body, no
+      // headers (auth / api-key / cookies), no exception message.
+      Log.errorf(
+        "[%s] Unhandled %s on %s %s -> HTTP %d",
+        traceId,
+        exception.getClass().getSimpleName(),
+        httpMethod,
+        requestPath,
+        status
+      );
+      // INFO: exception message for in-dev diagnosis (no stack trace, no PII from headers/body).
+      if (exception.getMessage() != null) {
+        Log.infof("[%s] cause: %s", traceId, exception.getMessage());
+      }
+    }
 
     boolean preferLegacy = wantsLegacyOnly();
 
@@ -282,5 +294,26 @@ public class ShepardExceptionMapper implements ExceptionMapper<Exception> {
     } catch (Exception e) {
       return "<unknown>";
     }
+  }
+
+  /**
+   * Returns {@code true} when the exception is a {@link NotFoundException}
+   * on {@code GET /} (or {@code GET ""} — JAX-RS / Quarkus returns an empty
+   * string for the root path in some contexts).
+   *
+   * <p>This is the signature of a reverse-proxy health probe (e.g. Zoraxy)
+   * hitting the backend port directly. The backend has no root handler, so
+   * JAX-RS throws {@link NotFoundException} every probe cycle. Escalating
+   * these to ERROR would flood the log with noise; they are already captured
+   * at DEBUG by the unconditional {@code Log.debugf} above.
+   *
+   * <p>The check is intentionally narrow: only {@link NotFoundException} +
+   * {@code GET} + root path. A {@code POST /}, a 404 on any other path, and
+   * any other exception type still reaches the normal ERROR path.
+   */
+  static boolean isReverseProxyRootProbe(Exception exception, String httpMethod, String requestPath) {
+    if (!(exception instanceof NotFoundException)) return false;
+    if (!"GET".equalsIgnoreCase(httpMethod)) return false;
+    return requestPath == null || requestPath.isEmpty() || "/".equals(requestPath);
   }
 }

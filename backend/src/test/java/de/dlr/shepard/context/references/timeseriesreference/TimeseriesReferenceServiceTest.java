@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
@@ -253,7 +254,7 @@ public class TimeseriesReferenceServiceTest {
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     var actual = referenceService.createReference(collectionShepardId, dataObject.getShepardId(), input);
@@ -334,7 +335,7 @@ public class TimeseriesReferenceServiceTest {
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     TimeseriesReference actual = referenceService.createReference(
@@ -365,7 +366,7 @@ public class TimeseriesReferenceServiceTest {
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(user);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     var ex = assertThrows(InvalidBodyException.class, () ->
@@ -398,7 +399,7 @@ public class TimeseriesReferenceServiceTest {
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
     when(userService.getCurrentUser()).thenReturn(user);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     var ex = assertThrows(InvalidRequestException.class, () ->
@@ -492,7 +493,7 @@ public class TimeseriesReferenceServiceTest {
       timeseriesService.getManyTimeseriesWithDataPoints(container.getId(), List.of(ts.toTimeseries()), queryParams)
     ).thenReturn(List.of(timeseriesWithDataPoints));
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
@@ -539,7 +540,7 @@ public class TimeseriesReferenceServiceTest {
 
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
@@ -631,7 +632,7 @@ public class TimeseriesReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(false);
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(userService.getCurrentUser()).thenReturn(user);
@@ -686,7 +687,7 @@ public class TimeseriesReferenceServiceTest {
 
     when(timeseriesReferenceDAO.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(
       timeseriesCsvService.exportManyTimeseriesWithDataPointsToCsv(
@@ -700,7 +701,7 @@ public class TimeseriesReferenceServiceTest {
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerService.getContainer(container.getId())).thenReturn(container);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
 
@@ -747,7 +748,7 @@ public class TimeseriesReferenceServiceTest {
     when(dataObjectService.getDataObject(collectionShepardId, dataObject.getShepardId())).thenReturn(dataObject);
     when(timeseriesContainerService.getContainer(container.getId())).thenReturn(container);
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
 
@@ -802,7 +803,7 @@ public class TimeseriesReferenceServiceTest {
     when(timeseriesContainerService.getContainer(container.getId())).thenThrow(new InvalidAuthException());
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(false);
 
     assertThrows(InvalidAuthException.class, () ->
@@ -850,7 +851,7 @@ public class TimeseriesReferenceServiceTest {
     when(timeseriesContainerService.getContainer(container.getId())).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     assertThrows(NotFoundException.class, () ->

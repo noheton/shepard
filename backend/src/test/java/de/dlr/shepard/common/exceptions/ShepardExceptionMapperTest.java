@@ -300,4 +300,99 @@ public class ShepardExceptionMapperTest {
     var body = assertInstanceOf(ProblemJson.class, response.getEntity());
     assertNull(body.detail());
   }
+
+  // ─── Reverse-proxy root-probe suppression ────────────────────────────
+
+  @Test
+  public void reverseProxyRootProbeNotFoundOnSlashSuppressesErrorLog() {
+    // Zoraxy probes GET / on the backend port every few seconds.  The backend
+    // has no root handler so JAX-RS throws NotFoundException.  This must NOT
+    // produce an ERROR log line — only the debug stack-trace is acceptable.
+    when(uriInfo.getPath()).thenReturn("/");
+    when(request.getMethod()).thenReturn("GET");
+
+    mapper.toResponse(new NotFoundException());
+
+    assertTrue(
+      ExceptionMapperLogCapture.errorMessages().isEmpty(),
+      "Expected no ERROR log for GET / probe, but got: " + ExceptionMapperLogCapture.errorMessages()
+    );
+  }
+
+  @Test
+  public void reverseProxyRootProbeNotFoundOnEmptyPathSuppressesErrorLog() {
+    // JAX-RS / Quarkus may return "" rather than "/" for the root path.
+    when(uriInfo.getPath()).thenReturn("");
+    when(request.getMethod()).thenReturn("GET");
+
+    mapper.toResponse(new NotFoundException());
+
+    assertTrue(
+      ExceptionMapperLogCapture.errorMessages().isEmpty(),
+      "Expected no ERROR log for GET (empty-path) probe, but got: " + ExceptionMapperLogCapture.errorMessages()
+    );
+  }
+
+  @Test
+  public void notFoundOnRealApiPathStillLogsError() {
+    // A genuine 404 on a real endpoint path must still reach ERROR level.
+    when(uriInfo.getPath()).thenReturn("/shepard/api/collections/999");
+    when(request.getMethod()).thenReturn("GET");
+
+    mapper.toResponse(new NotFoundException("not found"));
+
+    assertFalse(
+      ExceptionMapperLogCapture.errorMessages().isEmpty(),
+      "Expected ERROR log for GET /shepard/api/collections/999 but got none"
+    );
+    assertTrue(
+      ExceptionMapperLogCapture.errorMessages().stream().anyMatch(m -> m.contains("NotFoundException")),
+      "ERROR log should name the exception class: " + ExceptionMapperLogCapture.errorMessages()
+    );
+  }
+
+  @Test
+  public void postOnRootPathStillLogsError() {
+    // Only GET / is a known probe signature.  POST / is anomalous and must
+    // still reach ERROR level.
+    when(uriInfo.getPath()).thenReturn("/");
+    when(request.getMethod()).thenReturn("POST");
+
+    mapper.toResponse(new NotFoundException());
+
+    assertFalse(
+      ExceptionMapperLogCapture.errorMessages().isEmpty(),
+      "Expected ERROR log for POST / but got none"
+    );
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsTrueForGetSlash() {
+    assertTrue(ShepardExceptionMapper.isReverseProxyRootProbe(new NotFoundException(), "GET", "/"));
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsTrueForGetEmptyPath() {
+    assertTrue(ShepardExceptionMapper.isReverseProxyRootProbe(new NotFoundException(), "GET", ""));
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsTrueForGetNullPath() {
+    assertTrue(ShepardExceptionMapper.isReverseProxyRootProbe(new NotFoundException(), "GET", null));
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsFalseForNonGetMethod() {
+    assertFalse(ShepardExceptionMapper.isReverseProxyRootProbe(new NotFoundException(), "POST", "/"));
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsFalseForNonRootPath() {
+    assertFalse(ShepardExceptionMapper.isReverseProxyRootProbe(new NotFoundException(), "GET", "/shepard/api"));
+  }
+
+  @Test
+  public void isReverseProxyRootProbeReturnsFalseForNonNotFoundException() {
+    assertFalse(ShepardExceptionMapper.isReverseProxyRootProbe(new ForbiddenException(), "GET", "/"));
+  }
 }

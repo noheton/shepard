@@ -85,11 +85,9 @@ public class UserFilter implements ContainerRequestFilter {
     var splitted = userinfo.getSub().split(":");
     String username = splitted[splitted.length - 1];
 
-    User user = new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
-    // U1g — propagate ORCID from the IdP claim. UserService.createOrUpdateUser
-    // applies "fill if missing" semantics so a user who manually PATCHed their
-    // ORCID is not clobbered by the OIDC value on next login.
-    user.setOrcid(userinfo.getOrcid());
-    return user;
+    // ORCID is not read from the OIDC claim — it is a pure user profile
+    // setting managed via PATCH /v2/users/me. IdP-managed ORCID attributes
+    // vary wildly across realms and are not reliably present.
+    return new User(username, userinfo.getGivenName(), userinfo.getFamilyName(), userinfo.getEmail());
   }
 }

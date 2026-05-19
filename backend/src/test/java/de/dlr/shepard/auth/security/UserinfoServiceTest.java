@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.BaseTestCase;
 import de.dlr.shepard.common.exceptions.ShepardProcessingException;
 import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.Invocation.Builder;
@@ -93,7 +94,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 
   @Test
   public void testFetchUser_Successful() throws IllegalAccessException {
-    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi", null);
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
 
     FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
     when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
@@ -105,8 +106,10 @@ public class UserinfoServiceTest extends BaseTestCase {
 
   @Test
   public void testFetchUser_InvokeInit() throws IllegalAccessException {
-    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi", null);
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
 
+    // Constructor sets userinfoEndpoint; null it to force the init() code path.
+    FieldUtils.writeField(service, "userinfoEndpoint", null, true);
     doAnswer(
       new Answer<>() {
         @Override
@@ -173,6 +176,21 @@ public class UserinfoServiceTest extends BaseTestCase {
   public void testFetchUser_ProcessingException() throws IllegalAccessException {
     FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
     when(invocation.invoke(Userinfo.class)).thenThrow(new ProcessingException("Message"));
+
+    assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
+  }
+
+  @Test
+  public void testInit_WebApplicationException() {
+    when(invocation.invoke(OpenIdConfiguration.class)).thenThrow(new WebApplicationException("OIDC error"));
+
+    assertThrows(ShepardProcessingException.class, service::init);
+  }
+
+  @Test
+  public void testFetchUser_WebApplicationException() throws IllegalAccessException {
+    FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
+    when(invocation.invoke(Userinfo.class)).thenThrow(new WebApplicationException("userinfo error"));
 
     assertThrows(ShepardProcessingException.class, () -> service.fetchUserinfo("Bearer myToken"));
   }

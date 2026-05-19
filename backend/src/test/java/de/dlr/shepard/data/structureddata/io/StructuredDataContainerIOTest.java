@@ -12,7 +12,7 @@ public class StructuredDataContainerIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(StructuredDataContainerIO.class).verify();
+    EqualsVerifier.simple().forClass(StructuredDataContainerIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

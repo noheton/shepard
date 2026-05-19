@@ -1,4 +1,4 @@
-package de.dlr.shepard.data.timeseries.sql;
+package de.dlr.shepard.v2.sql.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -6,6 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
+import de.dlr.shepard.data.timeseries.sql.CsvWriter;
+import de.dlr.shepard.data.timeseries.sql.NdjsonWriter;
+import de.dlr.shepard.data.timeseries.sql.PreparedStatementSpec;
+import de.dlr.shepard.data.timeseries.sql.QueryTimeoutExceptionMapper;
+import de.dlr.shepard.data.timeseries.sql.SqlQueryCompiler;
+import de.dlr.shepard.data.timeseries.sql.SqlQueryExecutor;
+import de.dlr.shepard.data.timeseries.sql.SqlQuerySpec;
+import de.dlr.shepard.data.timeseries.sql.WriteResult;
 import de.dlr.shepard.v2.admin.sqltimeseries.services.SqlTimeseriesConfigService;
 import io.vertx.core.http.HttpServerResponse;
 import jakarta.ws.rs.core.Response;

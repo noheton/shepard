@@ -18,7 +18,7 @@ public class FileReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(FileReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(FileReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

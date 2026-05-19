@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.auth.permission.services.PermissionsService;
@@ -194,7 +195,7 @@ public class FileBundleReferenceServiceTest {
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
 
     FileBundleReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
@@ -253,7 +254,7 @@ public class FileBundleReferenceServiceTest {
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
@@ -285,7 +286,7 @@ public class FileBundleReferenceServiceTest {
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
 
@@ -312,7 +313,7 @@ public class FileBundleReferenceServiceTest {
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(nullFileContainerId, AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(nullFileContainerId), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(nullFileContainerId)).thenReturn(null);
 
@@ -368,7 +369,7 @@ public class FileBundleReferenceServiceTest {
     when(userService.getCurrentUser()).thenReturn(user);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, user.getUsername(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
     ).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
@@ -440,7 +441,7 @@ public class FileBundleReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, username, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(20L), eq(AccessType.Read), eq(username), anyLong())).thenReturn(false);
 
     assertThrows(InvalidAuthException.class, () ->
       service.getPayload(15L, dataObject.getShepardId(), ref.getShepardId(), "oid", null)
@@ -467,7 +468,7 @@ public class FileBundleReferenceServiceTest {
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(username);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(username), anyLong())).thenReturn(true);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(nis2);
 
@@ -499,7 +500,7 @@ public class FileBundleReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(authenticationContext.getCurrentUserName()).thenReturn(username);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(username), anyLong())).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.getFirst());
     when(fileService.getPayload(container.getMongoId(), "oid2")).thenThrow(new NotFoundException());
@@ -528,7 +529,7 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(container.getId(), AccessType.Read, username, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(username), anyLong())).thenReturn(true);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
 
     assertThrows(NotFoundException.class, () ->
@@ -568,7 +569,7 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, username, anyLong())).thenReturn(false);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(20L), eq(AccessType.Read), eq(username), anyLong())).thenReturn(false);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
 
     assertThrows(InvalidAuthException.class, () -> service.getAllPayloads(collectionId, dataObject.getShepardId(), 15L)
@@ -598,7 +599,7 @@ public class FileBundleReferenceServiceTest {
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(20L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(20L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     List<ShepardFile> actual = service.getFiles(collectionId, dataObject.getShepardId(), ref.getShepardId(), null);
     assertEquals(files, actual);

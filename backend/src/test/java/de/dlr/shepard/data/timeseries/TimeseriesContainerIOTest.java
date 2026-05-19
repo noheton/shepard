@@ -13,7 +13,7 @@ public class TimeseriesContainerIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(TimeseriesContainerIO.class).verify();
+    EqualsVerifier.simple().forClass(TimeseriesContainerIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

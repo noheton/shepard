@@ -80,7 +80,7 @@ public class UserFilterTest {
   @Test
   public void testFilter_Successful() throws IOException, ShepardProcessingException {
     Principal p = new JWTPrincipal("bob", "MyKeyId");
-    Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo", null);
+    Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
     User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
@@ -101,7 +101,7 @@ public class UserFilterTest {
   @Test
   public void testFilter_SuccessfulUsernameConversion() throws IOException, ShepardProcessingException {
     Principal p = new JWTPrincipal("bob", "MyKeyId");
-    Userinfo ui = new Userinfo("f:123:bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo", null);
+    Userinfo ui = new Userinfo("f:123:bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
     User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
@@ -219,7 +219,7 @@ public class UserFilterTest {
   @Test
   public void testFilter_InconsistentUsernames() throws IOException, ShepardProcessingException {
     Principal p = new JWTPrincipal("bob", "MyKeyId");
-    Userinfo ui = new Userinfo("claus", "name", "john.doe@example.com", "John", "Doe", "doe_jo", null);
+    Userinfo ui = new Userinfo("claus", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");
     when(securityContext.getUserPrincipal()).thenReturn(p);
@@ -237,7 +237,7 @@ public class UserFilterTest {
   @Test
   public void testFilter_UpdatedFailed() throws IOException, ShepardProcessingException {
     Principal p = new JWTPrincipal("bob", "MyKeyId");
-    Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo", null);
+    Userinfo ui = new Userinfo("bob", "name", "john.doe@example.com", "John", "Doe", "doe_jo");
     User u = new User("bob", "John", "Doe", "john.doe@example.com");
 
     when(requestContext.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer abc");

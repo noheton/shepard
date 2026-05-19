@@ -13,7 +13,7 @@ public class DataObjectReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(DataObjectReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(DataObjectReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

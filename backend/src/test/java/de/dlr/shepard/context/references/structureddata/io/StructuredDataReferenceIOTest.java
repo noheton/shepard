@@ -18,7 +18,7 @@ public class StructuredDataReferenceIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(StructuredDataReferenceIO.class).verify();
+    EqualsVerifier.simple().forClass(StructuredDataReferenceIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

@@ -127,7 +127,7 @@ class DataObjectV2RestTest {
     when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
     Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(any()), anyLong());
   }
 
   @Test

@@ -117,7 +117,7 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -129,7 +129,7 @@ public class FileContainerServiceTest {
   public void getFileContainerTest_isNull() {
     when(dao.findByNeo4jId(1L)).thenReturn(null);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     assertThrows(InvalidPathException.class, () -> service.getContainer(1L));
@@ -141,7 +141,7 @@ public class FileContainerServiceTest {
     container.setDeleted(true);
 
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     when(dao.findByNeo4jId(1L)).thenReturn(container);
@@ -219,7 +219,7 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     when(permissionsService.isCurrentUserOwner(1L)).thenReturn(true);
@@ -251,10 +251,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -283,10 +283,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -315,10 +315,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.createFileWithSha256("mongoId", fileName, null)).thenReturn(new FileCreateResult(file, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     var actual = service.createFile(1L, "", null);
@@ -353,10 +353,10 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     when(fileService.createFileWithSha256("mongoId", "filename", null)).thenThrow(InternalServerErrorException.class);
@@ -375,10 +375,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.getPayload("mongoId", "oid")).thenReturn(result);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -421,10 +421,10 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -456,10 +456,10 @@ public class FileContainerServiceTest {
       .when(fileService)
       .deleteFile("mongoId", "abc");
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -499,10 +499,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.createFileWithSha256("mongoId", "filename", null)).thenReturn(new FileCreateResult(created, "SHA256HEX"));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -522,10 +522,10 @@ public class FileContainerServiceTest {
     container.setMongoId("mongoId");
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     when(fileStorageRegistry.requireActive()).thenThrow(
@@ -554,10 +554,10 @@ public class FileContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(fileService.getPayload("mongoId", "oid")).thenReturn(payload);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -576,7 +576,7 @@ public class FileContainerServiceTest {
     container.setAppId("app-1");
     when(dao.findByAppId("app-1")).thenReturn(Optional.of(container));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(5L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(5L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -606,10 +606,10 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
     when(dateHelper.getDate()).thenReturn(now);
@@ -632,10 +632,10 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -662,10 +662,10 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -686,7 +686,7 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -715,7 +715,7 @@ public class FileContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(
       true
     );
 
@@ -741,8 +741,8 @@ public class FileContainerServiceTest {
     when(payloadVersionDAO.findMaxVersionNumber("container-app-1", "sensor.csv")).thenReturn(0L);
     when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
 
     ShepardFile result = service.createFile(1L, "sensor.csv", null);
 
@@ -775,8 +775,8 @@ public class FileContainerServiceTest {
     when(payloadVersionDAO.findMaxVersionNumber("container-app-2", "data.bin")).thenReturn(1L);
     when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
 
     service.createFile(1L, "data.bin", null);
 
@@ -798,8 +798,8 @@ public class FileContainerServiceTest {
       .thenReturn(new FileCreateResult(file, "SHA256"));
     when(userService.getCurrentUser()).thenReturn(defaultUser);
     when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, defaultUser.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, defaultUser.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
 
     service.createFile(1L, "file.csv", null);
 

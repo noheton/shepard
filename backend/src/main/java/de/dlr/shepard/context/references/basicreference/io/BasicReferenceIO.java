@@ -21,7 +21,8 @@ public class BasicReferenceIO extends BasicEntityIO {
   public BasicReferenceIO(BasicReference ref) {
     super(ref);
     this.type = ref.getType();
-    this.dataObjectId = ref.getDataObject().getShepardId();
+    Long sid = ref.getDataObject().getShepardId();
+    this.dataObjectId = sid != null ? sid : (ref.getDataObject().getId() != null ? ref.getDataObject().getId() : 0L);
   }
 
   @Override

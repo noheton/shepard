@@ -12,8 +12,20 @@ public class ObjectTypeEvaluator {
    */
   public static Optional<DataPointValueType> determineType(Object value) {
     if (value instanceof Boolean) return Optional.of(DataPointValueType.Boolean);
-    if (value instanceof Double) return Optional.of(DataPointValueType.Double);
-    if (value instanceof String) return Optional.of(DataPointValueType.String);
+    // Fix D: NaN / Infinity are not representable — treat as unclassifiable
+    // so they are skipped rather than stored as a non-finite double or
+    // misclassified as String when they arrive as the text "NaN".
+    if (value instanceof Double d) {
+      if (!Double.isFinite(d)) return Optional.empty();
+      return Optional.of(DataPointValueType.Double);
+    }
+    if (value instanceof String s) {
+      String t = s.trim().toLowerCase();
+      if (t.equals("nan") || t.equals("infinity") || t.equals("-infinity") || t.equals("+infinity")) {
+        return Optional.empty();
+      }
+      return Optional.of(DataPointValueType.String);
+    }
     if (value instanceof Long || value instanceof Integer) return Optional.of(DataPointValueType.Integer);
     return Optional.empty();
   }

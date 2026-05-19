@@ -1,5 +1,6 @@
 package de.dlr.shepard.common.neo4j;
 
+import de.dlr.shepard.aas.entities.AasRegistration;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.bootstrap.BootstrapState;
 import de.dlr.shepard.auth.permission.model.Permissions;
@@ -9,19 +10,23 @@ import de.dlr.shepard.common.subscription.entities.Subscription;
 import de.dlr.shepard.common.util.IConnector;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
-import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.references.dataobject.entities.CollectionReference;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
+import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
+import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.publish.entities.Publication;
 import de.dlr.shepard.spi.payload.PayloadKind;
+import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
 import de.dlr.shepard.v2.admin.sqltimeseries.entities.SqlTimeseriesConfig;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
@@ -121,7 +126,18 @@ public class NeoConnector implements IConnector {
           TimeseriesAnnotation.class.getPackageName(),
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
-          Version.class.getPackageName()
+          Version.class.getPackageName(),
+          // VID1a — video stream references. Without this the OGM session
+          // refuses session.save() with "not a valid entity class".
+          VideoStreamReference.class.getPackageName(),
+          // PROV1a — provenance activity rows. Without this provenance
+          // recording silently fails (save throws IAE, filter swallows it).
+          Activity.class.getPackageName(),
+          // Publication, ShepardTemplate, AasRegistration have @NodeEntity
+          // and are persisted via GenericDAO — must be in the scan path.
+          Publication.class.getPackageName(),
+          ShepardTemplate.class.getPackageName(),
+          AasRegistration.class.getPackageName()
         ));
         for (PayloadKind kind : ServiceLoader.load(PayloadKind.class)) {
           Log.infof("NeoConnector: registering entity packages from PayloadKind '%s': %s",

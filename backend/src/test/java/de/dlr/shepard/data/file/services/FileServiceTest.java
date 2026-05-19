@@ -313,7 +313,7 @@ public class FileServiceTest {
 
     FileService.FileCreateResult result = fileService.createFileWithSha256(mongoid, fileName, emptyStream);
     org.junit.jupiter.api.Assertions.assertNotNull(result.file());
-    assertEquals(fileName, result.file().getName());
+    assertEquals(fileName, result.file().getFilename());
     assertEquals(fileSize, result.file().getFileSize());
     org.junit.jupiter.api.Assertions.assertNotNull(result.sha256());
     assertEquals(64, result.sha256().length()); // SHA-256 hex is always 64 chars

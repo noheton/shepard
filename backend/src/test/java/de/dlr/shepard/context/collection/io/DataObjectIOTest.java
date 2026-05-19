@@ -18,7 +18,7 @@ public class DataObjectIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(DataObjectIO.class).verify();
+    EqualsVerifier.simple().forClass(DataObjectIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

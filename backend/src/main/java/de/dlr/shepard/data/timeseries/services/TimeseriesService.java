@@ -226,9 +226,10 @@ public class TimeseriesService {
     timeseriesContainerService.getContainer(timeseriesContainerId);
     timeseriesContainerService.assertIsAllowedToEditContainer(timeseriesContainerId);
 
-    DataPointValueType incomingValueType = ObjectTypeEvaluator.determineType(
-      dataPoints.getFirst().getValue()
-    ).orElseThrow(() -> new InvalidBodyException());
+    // Fix B: scan first few points instead of blindly trusting the first.
+    // A glitch first-point (null, NaN, "NaN" string) would otherwise
+    // lock the channel to the wrong type for all future ingest.
+    DataPointValueType incomingValueType = inferValueType(dataPoints);
 
     return saveDataPoints(timeseriesContainerId, timeseries, dataPoints, incomingValueType);
   }
@@ -302,15 +303,27 @@ public class TimeseriesService {
     return found.get();
   }
 
+  /** Fix B: look at up to 5 leading points to infer type, skipping null / non-finite values. */
+  private DataPointValueType inferValueType(List<TimeseriesDataPoint> dataPoints) {
+    int scanned = 0;
+    for (TimeseriesDataPoint dp : dataPoints) {
+      Optional<DataPointValueType> t = ObjectTypeEvaluator.determineType(dp.getValue());
+      if (t.isPresent()) return t.get();
+      if (++scanned >= 5) break;
+    }
+    throw new InvalidBodyException("Could not determine value type from the first data points (all null or non-finite)");
+  }
+
   private void assertDataPointsMatchTimeseriesValueType(
     TimeseriesEntity timeseriesEntity,
     List<TimeseriesDataPoint> dataPoints
   ) {
     for (TimeseriesDataPoint dataPoint : dataPoints) {
-      DataPointValueType expectedType = ObjectTypeEvaluator.determineType(dataPoint.getValue()).orElseThrow(() ->
-        new InvalidBodyException()
-      );
-      assertValueTypeMatchesTimeseries(timeseriesEntity, expectedType);
+      Optional<DataPointValueType> typeOpt = ObjectTypeEvaluator.determineType(dataPoint.getValue());
+      // Fix D: null / NaN / Infinity values produce an empty Optional — skip them
+      // rather than rejecting the whole batch. They will not be inserted.
+      if (typeOpt.isEmpty()) continue;
+      assertValueTypeMatchesTimeseries(timeseriesEntity, typeOpt.get());
     }
   }
 

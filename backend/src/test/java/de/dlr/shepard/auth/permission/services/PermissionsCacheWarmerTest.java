@@ -59,7 +59,7 @@ public class PermissionsCacheWarmerTest {
     warmer.warmingFuture().get(1, TimeUnit.SECONDS);
 
     verify(provider, never()).findMostUsedEntities(anyInt());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), eq(AccessType.Read), eq("alice"), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(eq(AccessType.Read)), eq(eq("alice")), anyLong());
   }
 
   @Test
@@ -72,6 +72,6 @@ public class PermissionsCacheWarmerTest {
     warmer.warmingFuture().get(5, TimeUnit.SECONDS);
 
     verify(provider, times(1)).findMostUsedEntities(10);
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), eq(AccessType.Read), eq("alice"), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(eq(AccessType.Read)), eq(eq("alice")), anyLong());
   }
 }

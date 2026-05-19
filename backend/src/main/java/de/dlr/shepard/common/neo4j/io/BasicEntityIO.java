@@ -103,7 +103,15 @@ public class BasicEntityIO implements HasId {
   }
 
   protected static long[] extractShepardIds(List<? extends VersionableEntity> entities) {
-    return entities.stream().map(VersionableEntity::getShepardId).mapToLong(Long::longValue).toArray();
+    return entities.stream().mapToLong(e -> {
+      Long sid = e.getShepardId();
+      // Compiled plugins (e.g. git plugin) may persist VersionableEntity rows with a single
+      // createOrUpdate call, leaving shepardId null. Fall back to the Neo4j internal id so
+      // the containing IO constructor doesn't NPE on Long::longValue.
+      if (sid != null) return sid;
+      Long neoId = e.getId();
+      return neoId != null ? neoId : 0L;
+    }).toArray();
   }
 
   @Override

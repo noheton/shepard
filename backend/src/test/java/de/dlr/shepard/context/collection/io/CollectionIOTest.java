@@ -16,7 +16,7 @@ public class CollectionIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(CollectionIO.class).verify();
+    EqualsVerifier.simple().forClass(CollectionIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test

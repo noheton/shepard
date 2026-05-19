@@ -145,6 +145,13 @@ public abstract class GenericDAO<T> {
       }
     }
     session.save(entity, DEPTH_ENTITY);
+    // Auto-assign shepardId for compiled plugins (e.g. git plugin) that issue only a single
+    // createOrUpdate rather than the service-layer two-step pattern. Without this, the Neo4j
+    // node is left with shepardId = NULL, causing NPE in BasicEntityIO.extractShepardIds.
+    if (entity instanceof VersionableEntity ve && ve.getId() != null && ve.getShepardId() == null) {
+      ve.setShepardId(ve.getId());
+      session.save(ve, DEPTH_ENTITY);
+    }
     return entity;
   }
 

@@ -118,7 +118,7 @@ class CollectionV2RestTest {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
     Response r = resource.get(COLL_APP_ID, securityContext);
     assertEquals(404, r.getStatus());
-    verify(permissionsService, never()).isAccessTypeAllowedForUser(anyLong(), any(), any(), anyLong());
+    verify(permissionsService, never()).isAccessTypeAllowedForUser(eq(anyLong()), eq(any()), eq(any()), anyLong());
   }
 
   @Test

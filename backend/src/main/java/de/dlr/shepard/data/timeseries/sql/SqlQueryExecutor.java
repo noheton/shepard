@@ -206,8 +206,8 @@ public class SqlQueryExecutor {
    * Thrown by {@link #executeWithFormat} when PostgreSQL fires {@code statement_timeout}
    * (SQLState 57014). The REST layer maps this to HTTP 504.
    */
-  static class QueryTimeoutException extends RuntimeException {
-    QueryTimeoutException(String message, Throwable cause) {
+  public static class QueryTimeoutException extends RuntimeException {
+    public QueryTimeoutException(String message, Throwable cause) {
       super(message, cause);
     }
   }

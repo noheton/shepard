@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,7 +73,7 @@ public class StructuredDataContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(userName);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, userName, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(userName), anyLong())).thenReturn(true);
 
     var actual = service.getContainer(1L);
     assertEquals(container, actual);
@@ -84,7 +85,7 @@ public class StructuredDataContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(null);
     when(authenticationContext.getCurrentUserName()).thenReturn(userName);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, userName, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(userName), anyLong())).thenReturn(true);
 
     assertThrows(InvalidPathException.class, () -> service.getContainer(1L));
   }
@@ -97,7 +98,7 @@ public class StructuredDataContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(userName);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, userName, anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(userName), anyLong())).thenReturn(true);
 
     assertThrows(InvalidPathException.class, () -> service.getContainer(1L));
   }
@@ -109,7 +110,7 @@ public class StructuredDataContainerServiceTest {
     var container2 = new StructuredDataContainer(2L);
 
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(dao.findAllStructuredDataContainers(null, user.getUsername())).thenReturn(List.of(container1, container2));
     when(userService.getCurrentUser()).thenReturn(user);
 
@@ -177,7 +178,7 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(old);
     when(dao.createOrUpdate(expected)).thenReturn(expected);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(permissionsService.isCurrentUserOwner(1L)).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteContainer(1L));
@@ -211,8 +212,8 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     var actual = service.createStructuredData(1L, payload);
 
@@ -227,8 +228,8 @@ public class StructuredDataContainerServiceTest {
     var payload = new StructuredDataPayload(structuredData, "payload");
 
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(dao.findByNeo4jId(1L)).thenReturn(null);
 
     assertThrows(InvalidPathException.class, () -> service.createStructuredData(1L, payload));
@@ -243,8 +244,8 @@ public class StructuredDataContainerServiceTest {
     var payload = new StructuredDataPayload(structuredData, "payload");
 
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(dao.findByNeo4jId(1L)).thenReturn(container);
 
     assertThrows(InvalidPathException.class, () -> service.createStructuredData(1L, payload));
@@ -260,8 +261,8 @@ public class StructuredDataContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(structuredDataService.createStructuredData("mongoId", payload)).thenThrow(InternalServerErrorException.class);
 
     //TODO: as of right now, this test does not properly test anything
@@ -281,7 +282,7 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(structuredDataService.getPayload("mongoId", "oid")).thenReturn(result);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     var actual = service.getStructuredData(1L, "oid");
     assertEquals(result, actual);
@@ -320,8 +321,8 @@ public class StructuredDataContainerServiceTest {
 
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteStructuredData(1L, "abc"));
     verify(dao).createOrUpdate(updated);
@@ -366,8 +367,8 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     when(payloadVersionDAO.findMaxVersionNumber("container-app-sd-1", "readings")).thenReturn(0L);
     when(payloadVersionDAO.createOrUpdate(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -399,8 +400,8 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
 
     service.createStructuredData(1L, payload);
@@ -424,8 +425,8 @@ public class StructuredDataContainerServiceTest {
     when(dao.findByNeo4jId(1L)).thenReturn(container);
     when(structuredDataService.createStructuredData("mongoId", payload)).thenReturn(structuredData);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, user.getUsername(), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, user.getUsername(), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(user.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(user.getUsername()), anyLong())).thenReturn(true);
     when(userService.getCurrentUser()).thenReturn(user);
     when(payloadVersionDAO.findMaxVersionNumber("container-app-sd-2", "telemetry"))
       .thenThrow(new RuntimeException("Neo4j unavailable"));

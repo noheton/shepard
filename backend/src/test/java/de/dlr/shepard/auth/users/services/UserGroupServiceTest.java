@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -157,10 +158,10 @@ public class UserGroupServiceTest {
     when(userGroupDAO.createOrUpdate(oldGroup)).thenReturn(newGroup);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     var actual = service.updateUserGroup(input.getId(), input);
@@ -180,10 +181,10 @@ public class UserGroupServiceTest {
     when(permissionsService.deletePermissions(permissions)).thenReturn(true);
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteUserGroup(1L));
@@ -199,10 +200,10 @@ public class UserGroupServiceTest {
     when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.empty());
     when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteUserGroup(1L));
@@ -219,10 +220,10 @@ public class UserGroupServiceTest {
     when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(false);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));
@@ -234,10 +235,10 @@ public class UserGroupServiceTest {
   public void deleteUserGroupTest_notFound() {
     when(userGroupDAO.findByNeo4jId(1L)).thenReturn(null);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     assertThrows(InvalidPathException.class, () -> service.deleteUserGroup(1L));
@@ -256,10 +257,10 @@ public class UserGroupServiceTest {
     when(permissionsService.getPermissionsOfEntityOptional(1L)).thenReturn(Optional.of(permissions));
     when(permissionsService.deletePermissions(permissions)).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Read, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
     when(
-      permissionsService.isAccessTypeAllowedForUser(1L, AccessType.Write, authenticationContext.getCurrentUserName(), anyLong())
+      permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(authenticationContext.getCurrentUserName()), anyLong())
     ).thenReturn(true);
 
     assertThrows(NotFoundException.class, () -> service.deleteUserGroup(1L));

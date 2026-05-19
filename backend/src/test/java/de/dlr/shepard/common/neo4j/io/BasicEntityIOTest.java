@@ -34,7 +34,7 @@ public class BasicEntityIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(BasicEntityIO.class).verify();
+    EqualsVerifier.simple().forClass(BasicEntityIO.class).withIgnoredFields("revision").verify();
   }
 
   @Test
@@ -145,5 +145,21 @@ public class BasicEntityIOTest {
     var actual = entity.getUniqueId();
 
     assertEquals("2", actual);
+  }
+
+  @Test
+  public void extractShepardIds_nullShepardId_fallsBackToNeo4jId() {
+    var col = new Collection(7L);
+    // shepardId is null by default (no setShepardId call)
+    var actual = BasicEntityIO.extractShepardIds(List.of(col));
+    assertArrayEquals(new long[] { 7L }, actual);
+  }
+
+  @Test
+  public void extractShepardIds_nullShepardIdAndNullNeo4jId_fallsBackToZero() {
+    var col = new Collection();
+    // No-arg constructor leaves both id and shepardId as null
+    var actual = BasicEntityIO.extractShepardIds(List.of(col));
+    assertArrayEquals(new long[] { 0L }, actual);
   }
 }

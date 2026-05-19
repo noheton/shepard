@@ -3,8 +3,7 @@ package de.dlr.shepard.context.references.videostreamreference.services;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,19 +12,23 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
-import de.dlr.shepard.common.mongoDB.NamedInputStream;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.videostreamreference.daos.VideoStreamReferenceDAO;
 import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
-import de.dlr.shepard.data.file.entities.ShepardFile;
-import de.dlr.shepard.data.file.services.FileService;
+import de.dlr.shepard.storage.FileStorage;
+import de.dlr.shepard.storage.FileStorageRegistry;
+import de.dlr.shepard.storage.StorageException;
+import de.dlr.shepard.storage.StorageGetResponse;
+import de.dlr.shepard.storage.StorageLocator;
+import de.dlr.shepard.storage.StorageNotInstalledException;
+import de.dlr.shepard.storage.StoragePutRequest;
 import jakarta.ws.rs.NotFoundException;
-import java.io.File;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,14 +43,16 @@ class VideoStreamReferenceServiceTest {
   static final String DO_APPID = "do-test-appid";
   static final long DO_OGM_ID = 42L;
   static final String REF_APPID = "vsr-test-appid";
-  static final String CONTAINER_ID = "FileContainerABC";
-  static final String FILE_OID = "fileoid123";
+  static final String PROVIDER_ID = "gridfs";
+  static final String LOCATOR_KEY = "locator-abc";
+  static final String STORAGE_LOCATOR = PROVIDER_ID + ":" + LOCATOR_KEY;
 
   VideoStreamReferenceService service;
 
   VideoStreamReferenceDAO videoStreamReferenceDAO;
   DataObjectDAO dataObjectDAO;
-  FileService fileService;
+  FileStorageRegistry fileStorageRegistry;
+  FileStorage fileStorage;
   VideoProbeService videoProbeService;
   UserService userService;
   DateHelper dateHelper;
@@ -60,7 +65,8 @@ class VideoStreamReferenceServiceTest {
   void setUp() {
     videoStreamReferenceDAO = mock(VideoStreamReferenceDAO.class);
     dataObjectDAO = mock(DataObjectDAO.class);
-    fileService = mock(FileService.class);
+    fileStorageRegistry = mock(FileStorageRegistry.class);
+    fileStorage = mock(FileStorage.class);
     videoProbeService = mock(VideoProbeService.class);
     userService = mock(UserService.class);
     dateHelper = mock(DateHelper.class);
@@ -69,7 +75,7 @@ class VideoStreamReferenceServiceTest {
     service = new VideoStreamReferenceService();
     service.videoStreamReferenceDAO = videoStreamReferenceDAO;
     service.dataObjectDAO = dataObjectDAO;
-    service.fileService = fileService;
+    service.fileStorageRegistry = fileStorageRegistry;
     service.videoProbeService = videoProbeService;
     service.userService = userService;
     service.dateHelper = dateHelper;
@@ -85,38 +91,39 @@ class VideoStreamReferenceServiceTest {
     when(dateHelper.getDate()).thenReturn(new Date(0L));
     when(entityIdResolver.resolveLong(DO_APPID)).thenReturn(DO_OGM_ID);
     when(dataObjectDAO.findByNeo4jId(DO_OGM_ID)).thenReturn(parentDataObject);
+    when(fileStorageRegistry.activeStorage()).thenReturn(Optional.of(fileStorage));
   }
 
-  // ─── listByDataObjectAppId ─────────────────────────────────────────────────
+  // ─── listByDataObject ─────────────────────────────────────────────────────
 
   @Test
-  void listByDataObjectAppId_returnsRefs() {
+  void listByDataObject_returnsRefs() {
     VideoStreamReference ref = new VideoStreamReference(1L);
-    when(videoStreamReferenceDAO.findByDataObjectOgmId(DO_OGM_ID)).thenReturn(List.of(ref));
+    when(videoStreamReferenceDAO.findByDataObjectNeo4jId(DO_OGM_ID)).thenReturn(List.of(ref));
 
-    List<VideoStreamReference> result = service.listByDataObjectAppId(DO_APPID);
+    List<VideoStreamReference> result = service.listByDataObject(DO_APPID);
 
     assertThat(result).containsExactly(ref);
   }
 
   @Test
-  void listByDataObjectAppId_missingDataObject_throws() {
+  void listByDataObject_missingDataObject_throws() {
     when(entityIdResolver.resolveLong(DO_APPID)).thenThrow(new NotFoundException("not found"));
 
-    assertThatThrownBy(() -> service.listByDataObjectAppId(DO_APPID)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.listByDataObject(DO_APPID)).isInstanceOf(NotFoundException.class);
   }
 
-  // ─── getByAppId ────────────────────────────────────────────────────────────
+  // ─── findByAppId ──────────────────────────────────────────────────────────
 
   @Test
-  void getByAppId_delegatesToDAO() {
+  void findByAppId_delegatesToDAO() {
     VideoStreamReference ref = new VideoStreamReference(2L);
     when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(ref);
 
-    assertThat(service.getByAppId(REF_APPID)).isSameAs(ref);
+    assertThat(service.findByAppId(REF_APPID)).isSameAs(ref);
   }
 
-  // ─── getDataObjectOgmId ────────────────────────────────────────────────────
+  // ─── getDataObjectOgmId ───────────────────────────────────────────────────
 
   @Test
   void getDataObjectOgmId_returnsId() {
@@ -132,137 +139,169 @@ class VideoStreamReferenceServiceTest {
   // ─── create ────────────────────────────────────────────────────────────────
 
   @Test
-  void create_happyPath_persistsAndReturnRef() throws Exception {
-    VideoProbeResult probe = new VideoProbeResult(120.0, 1920, 1080, 29.97, "h264", "aac", 1L);
-    when(videoProbeService.probe(any(InputStream.class))).thenReturn(probe);
-    when(fileService.createFileContainer()).thenReturn(CONTAINER_ID);
+  void create_happyPath_persistsAndReturnsRef() throws Exception {
+    StorageLocator locator = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(locator);
 
-    ShepardFile savedFile = new ShepardFile(FILE_OID, new Date(), "video.mp4", "abc");
-    savedFile.setFileSize(1024L);
-    when(fileService.createFile(eq(CONTAINER_ID), eq("video.mp4"), any(InputStream.class))).thenReturn(savedFile);
+    StorageGetResponse getResp = mock(StorageGetResponse.class);
+    when(getResp.stream()).thenReturn(InputStream.nullInputStream());
+    when(fileStorage.get(locator)).thenReturn(getResp);
+
+    VideoProbeResult probe = new VideoProbeResult(120.0, 1024L, 1920, 1080, 29.97, "h264", "aac", null);
+    when(videoProbeService.probe(any(InputStream.class), any())).thenReturn(probe);
 
     VideoStreamReference persisted = new VideoStreamReference(10L);
     persisted.setAppId(REF_APPID);
-    persisted.setMongoContainerId(CONTAINER_ID);
-    persisted.setFileOid(FILE_OID);
     when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(persisted);
 
-    ShepardFile backfillFile = new ShepardFile(FILE_OID, new Date(), "video.mp4", "abc");
-    backfillFile.setFileSize(2048L);
-    when(fileService.getFile(CONTAINER_ID, FILE_OID)).thenReturn(backfillFile);
-
-    File tempFile = File.createTempFile("vsr-test", ".mp4");
-    tempFile.deleteOnExit();
-
-    VideoStreamReference result = service.create(DO_APPID, "My Video", "video.mp4", "video/mp4", tempFile);
+    VideoStreamReference result = service.create(
+      DO_APPID, "My Video", "video.mp4", "video/mp4", 1024L, InputStream.nullInputStream()
+    );
 
     assertThat(result).isNotNull();
     assertThat(result.getAppId()).isEqualTo(REF_APPID);
-    // Three createOrUpdate calls: initial persist, setShepardId, fileSizeBytes backfill
-    verify(videoStreamReferenceDAO, org.mockito.Mockito.times(3)).createOrUpdate(any());
+    verify(videoStreamReferenceDAO, org.mockito.Mockito.times(2)).createOrUpdate(any());
   }
 
   @Test
   void create_nullName_usesFilename() throws Exception {
-    VideoProbeResult probe = new VideoProbeResult(null, null, null, null, null, null, null);
-    when(videoProbeService.probe(any(InputStream.class))).thenReturn(probe);
-    when(fileService.createFileContainer()).thenReturn(CONTAINER_ID);
+    StorageLocator locator = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(locator);
 
-    ShepardFile savedFile = new ShepardFile(FILE_OID, new Date(), "clip.mkv", "def");
-    when(fileService.createFile(eq(CONTAINER_ID), eq("clip.mkv"), any(InputStream.class))).thenReturn(savedFile);
+    StorageGetResponse getResp = mock(StorageGetResponse.class);
+    when(getResp.stream()).thenReturn(InputStream.nullInputStream());
+    when(fileStorage.get(locator)).thenReturn(getResp);
+
+    when(videoProbeService.probe(any(InputStream.class), any())).thenReturn(VideoProbeResult.empty());
 
     VideoStreamReference persisted = new VideoStreamReference(11L);
     persisted.setAppId("vsr-2");
     when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(persisted);
-    when(fileService.getFile(anyString(), anyString())).thenThrow(new NotFoundException("no file"));
 
-    File tempFile = File.createTempFile("vsr-test2", ".mkv");
-    tempFile.deleteOnExit();
+    VideoStreamReference result = service.create(
+      DO_APPID, null, "clip.mkv", "video/x-matroska", null, InputStream.nullInputStream()
+    );
 
-    // name=null → falls back to filename "clip.mkv" (handled in service)
-    VideoStreamReference result = service.create(DO_APPID, null, "clip.mkv", "video/x-matroska", tempFile);
     assertThat(result).isNotNull();
+    verify(fileStorage).put(argThat(req -> "clip.mkv".equals(req.fileName())));
   }
 
   @Test
   void create_missingDataObject_throws() throws Exception {
     when(entityIdResolver.resolveLong(DO_APPID)).thenThrow(new NotFoundException());
 
-    File tempFile = File.createTempFile("vsr-test3", ".mp4");
-    tempFile.deleteOnExit();
+    assertThatThrownBy(() ->
+      service.create(DO_APPID, "v", "v.mp4", "video/mp4", null, InputStream.nullInputStream())
+    ).isInstanceOf(NotFoundException.class);
+    verify(fileStorage, never()).put(any());
+  }
 
-    assertThatThrownBy(() -> service.create(DO_APPID, "v", "v.mp4", "video/mp4", tempFile)).isInstanceOf(
-      NotFoundException.class
+  @Test
+  void create_noStorageAdapter_throws() throws Exception {
+    when(fileStorageRegistry.activeStorage()).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() ->
+      service.create(DO_APPID, "v", "v.mp4", "video/mp4", null, InputStream.nullInputStream())
+    ).isInstanceOf(StorageNotInstalledException.class);
+  }
+
+  @Test
+  void create_probeFails_stillPersists() throws Exception {
+    StorageLocator locator = new StorageLocator(PROVIDER_ID, LOCATOR_KEY);
+    when(fileStorage.put(any(StoragePutRequest.class))).thenReturn(locator);
+    when(fileStorage.get(locator)).thenThrow(new StorageException("probe-fetch failed"));
+
+    VideoStreamReference persisted = new VideoStreamReference(12L);
+    persisted.setAppId("vsr-probe-fail");
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(persisted);
+
+    VideoStreamReference result = service.create(
+      DO_APPID, "v", "v.mp4", "video/mp4", 512L, InputStream.nullInputStream()
     );
-    verify(fileService, never()).createFileContainer();
-  }
 
-  // ─── delete ────────────────────────────────────────────────────────────────
-
-  @Test
-  void delete_softDeletesNodeAndDropsContainer() {
-    VideoStreamReference ref = new VideoStreamReference(20L);
-    ref.setAppId(REF_APPID);
-    ref.setMongoContainerId(CONTAINER_ID);
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(ref);
-    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(ref);
-
-    service.delete(REF_APPID);
-
-    assertThat(ref.isDeleted()).isTrue();
-    verify(fileService).deleteFileContainer(CONTAINER_ID);
-  }
-
-  @Test
-  void delete_nullContainerId_skipsContainerDelete() {
-    VideoStreamReference ref = new VideoStreamReference(21L);
-    ref.setAppId(REF_APPID);
-    ref.setMongoContainerId(null);
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(ref);
-    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(ref);
-
-    service.delete(REF_APPID);
-
-    verify(fileService, never()).deleteFileContainer(anyString());
-  }
-
-  @Test
-  void delete_missingRef_throws() {
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(null);
-    assertThatThrownBy(() -> service.delete(REF_APPID)).isInstanceOf(NotFoundException.class);
+    assertThat(result).isNotNull();
+    verify(videoStreamReferenceDAO, org.mockito.Mockito.times(2)).createOrUpdate(any());
   }
 
   // ─── getPayload ────────────────────────────────────────────────────────────
 
   @Test
-  void getPayload_happyPath_returnsStream() {
+  void getPayload_happyPath_returnsStream() throws Exception {
     VideoStreamReference ref = new VideoStreamReference(30L);
     ref.setAppId(REF_APPID);
-    ref.setMongoContainerId(CONTAINER_ID);
-    ref.setFileOid(FILE_OID);
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(ref);
+    ref.setStorageLocator(STORAGE_LOCATOR);
 
-    NamedInputStream nis = new NamedInputStream(FILE_OID, InputStream.nullInputStream(), "video.mp4", 1024L);
-    when(fileService.getPayload(CONTAINER_ID, FILE_OID)).thenReturn(nis);
+    StorageGetResponse getResp = mock(StorageGetResponse.class);
+    when(fileStorage.get(new StorageLocator(PROVIDER_ID, LOCATOR_KEY))).thenReturn(getResp);
 
-    NamedInputStream result = service.getPayload(REF_APPID);
-    assertThat(result).isSameAs(nis);
+    StorageGetResponse result = service.getPayload(ref);
+    assertThat(result).isSameAs(getResp);
   }
 
   @Test
-  void getPayload_missingRef_throws() {
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(null);
-    assertThatThrownBy(() -> service.getPayload(REF_APPID)).isInstanceOf(NotFoundException.class);
-  }
-
-  @Test
-  void getPayload_nullMongoContainerId_throws() {
+  void getPayload_nullLocator_throws() {
     VideoStreamReference ref = new VideoStreamReference(31L);
-    ref.setAppId(REF_APPID);
-    ref.setMongoContainerId(null);
-    ref.setFileOid(FILE_OID);
-    when(videoStreamReferenceDAO.findByAppId(REF_APPID)).thenReturn(ref);
+    ref.setStorageLocator(null);
 
-    assertThatThrownBy(() -> service.getPayload(REF_APPID)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.getPayload(ref)).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  void getPayload_malformedLocator_throws() {
+    VideoStreamReference ref = new VideoStreamReference(32L);
+    ref.setStorageLocator("no-colon-here");
+
+    assertThatThrownBy(() -> service.getPayload(ref)).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  void getPayload_noStorageAdapter_throws() {
+    VideoStreamReference ref = new VideoStreamReference(33L);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    when(fileStorageRegistry.activeStorage()).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.getPayload(ref)).isInstanceOf(StorageNotInstalledException.class);
+  }
+
+  // ─── delete ────────────────────────────────────────────────────────────────
+
+  @Test
+  void delete_withLocator_deletesFromStorageAndSoftDeletes() throws Exception {
+    VideoStreamReference ref = new VideoStreamReference(20L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(ref);
+
+    service.delete(ref);
+
+    assertThat(ref.isDeleted()).isTrue();
+    verify(fileStorage).delete(new StorageLocator(PROVIDER_ID, LOCATOR_KEY));
+  }
+
+  @Test
+  void delete_nullLocator_skipsStorageDelete() throws Exception { // FileStorage.delete() throws StorageException
+    VideoStreamReference ref = new VideoStreamReference(21L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(null);
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(ref);
+
+    service.delete(ref);
+
+    verify(fileStorage, never()).delete(any());
+    assertThat(ref.isDeleted()).isTrue();
+  }
+
+  @Test
+  void delete_storageDeleteFails_stillSoftDeletes() throws Exception {
+    VideoStreamReference ref = new VideoStreamReference(22L);
+    ref.setAppId(REF_APPID);
+    ref.setStorageLocator(STORAGE_LOCATOR);
+    when(videoStreamReferenceDAO.createOrUpdate(any())).thenReturn(ref);
+    org.mockito.Mockito.doThrow(new StorageException("boom")).when(fileStorage).delete(any());
+
+    service.delete(ref);
+
+    assertThat(ref.isDeleted()).isTrue();
+    verify(videoStreamReferenceDAO).createOrUpdate(ref);
   }
 }

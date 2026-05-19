@@ -117,8 +117,9 @@ public class TimeseriesNdjsonService {
 
       Optional<DataPointValueType> typeOpt = ObjectTypeEvaluator.determineType(point.getValue());
       if (typeOpt.isEmpty()) {
-        rejected++;
-        writeLineEvent(writer, lineNumber, "error", "unsupported value type");
+        // Fix D: null / NaN / Infinity → silently skip, don't count as rejected.
+        // Sensor glitches that emit NaN must not lock the channel to String type.
+        writeLineEvent(writer, lineNumber, "skip", "non-finite or null value coerced to skip");
         continue;
       }
       DataPointValueType lineType = typeOpt.get();
