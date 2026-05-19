@@ -162,6 +162,11 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
     pages: [
       { page: "index", title: "Overview", fetchPath: "/docs/index.md" },
       {
+        page: "comparison",
+        title: "What's new in this fork",
+        fetchPath: "/docs/comparison.md",
+      },
+      {
         page: "getting-started",
         title: "Getting started",
         fetchPath: "/docs/getting-started.md",
