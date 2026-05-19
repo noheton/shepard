@@ -90,6 +90,7 @@ async function confirmDelete() {
 }
 
 const { credentials, isLoading: credentialsLoading } = useFetchGitCredentials();
+const credentialsBannerDismissed = ref(false);
 
 const urlSuggestions = computed(() =>
   credentials.value.map(c => ({
@@ -116,10 +117,12 @@ const urlSuggestions = computed(() =>
     <v-alert v-if="saveError" type="error" closable>{{ saveError }}</v-alert>
 
     <v-alert
-      v-if="!credentialsLoading && credentials.length === 0"
+      v-if="!credentialsLoading && credentials.length === 0 && !credentialsBannerDismissed"
       type="info"
       variant="tonal"
       density="compact"
+      closable
+      @click:close="credentialsBannerDismissed = true"
     >
       No git credentials configured — autocomplete won't work and private repos will be inaccessible.
       <template #append>
@@ -128,7 +131,7 @@ const urlSuggestions = computed(() =>
           variant="text"
           size="small"
         >
-          Go to profile
+          Configure
         </v-btn>
       </template>
     </v-alert>

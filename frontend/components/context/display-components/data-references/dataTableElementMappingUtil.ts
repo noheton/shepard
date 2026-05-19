@@ -18,7 +18,7 @@ export const mapDataReferenceToDataTableElement = (
 
 const mapRefType = (ref: DataReference): DataTableElement["type"] => {
   if (instanceOfTimeseriesReference(ref)) return "TimeSeries";
-  if (instanceOfFileReference(ref)) return "File";
+  if (instanceOfFileReference(ref)) return "File Bundle";
   if (instanceOfStructuredDataReference(ref)) return "Structured Data";
 
   throw Error("Cannot map ref type: Unknown reference type.");
@@ -73,7 +73,7 @@ function buildShowDetailsArgs(ref: DataReference): {
   if (refType === "TimeSeries") {
     return { enabled: true, pathFragment: timeseriesReferencePathFragment };
   }
-  if (refType === "File") {
+  if (refType === "File Bundle") {
     return { enabled: true, pathFragment: fileReferencesPathFragment };
   }
   if (refType === "Structured Data") {

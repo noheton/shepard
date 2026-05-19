@@ -42,13 +42,45 @@ const props = withDefaults(
      * Overrides smooth when both are true.
      */
     step?: boolean;
+    /**
+     * Animation duration in milliseconds for data transitions.
+     * 0 (default) = instant snap. Set to e.g. 400 in live mode so each
+     * data refresh animates smoothly instead of jumping.
+     */
+    animationDuration?: number;
+    /**
+     * Restrict the visible X window to the last N milliseconds of data.
+     * When set, the chart clips to [latestPoint - N, latestPoint] so only
+     * the intended live window is shown, even though the series data may
+     * contain older anchor points needed for a smooth line start.
+     * Undefined (default) = show all data.
+     */
+    visibleWindowMs?: number;
   }>(),
-  { height: "360px", showLegend: false, smooth: false, step: false },
+  { height: "360px", showLegend: false, smooth: false, step: false, animationDuration: 0 },
 );
+
+// Max timestamp across all series (ms). Recomputes whenever series data changes.
+// Used to anchor the xAxis clip window to the latest data rather than Date.now(),
+// so the right edge is the most recent sample, not a future "now" gap.
+const dataMaxMs = computed(() => {
+  let max = 0;
+  for (const s of props.series) {
+    for (const [tsNs] of s.data) {
+      const ms = tsNs / 1e6;
+      if (ms > max) max = ms;
+    }
+  }
+  return max;
+});
 
 const chartOption = computed(() => ({
   backgroundColor: "transparent",
-  animation: false,
+  animation: props.animationDuration > 0,
+  animationDuration: props.animationDuration,
+  animationDurationUpdate: props.animationDuration,
+  animationEasing: "linear" as const,
+  animationEasingUpdate: "linear" as const,
   tooltip: {
     trigger: "axis",
     axisPointer: { type: "cross", snap: true },
@@ -92,6 +124,13 @@ const chartOption = computed(() => ({
   xAxis: {
     type: "time",
     axisLabel: { fontSize: 11 },
+    // When visibleWindowMs is set (live mode), pin the view to
+    // [latestPoint − window, latestPoint] so the extra anchor data
+    // fetched before the window boundary stays off-screen but still
+    // allows the line to cross the left clip edge without starting mid-air.
+    ...(props.visibleWindowMs != null && dataMaxMs.value > 0
+      ? { min: dataMaxMs.value - props.visibleWindowMs, max: dataMaxMs.value }
+      : {}),
   },
   yAxis: {
     type: "value",

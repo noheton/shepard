@@ -1,7 +1,7 @@
 import type { ReferencedContainerMeta } from "./dataReference";
 
 export type DataTableElement = {
-  type: "TimeSeries" | "Structured Data" | "File";
+  type: "TimeSeries" | "Structured Data" | "File Bundle";
   name: string;
   meta: {
     id: number;

@@ -260,6 +260,12 @@ watch(dataObject, () => {
                       isAllowedToEditCollection ?? false
                     "
                   />
+                  <template v-if="dataObject.appId">
+                    <v-divider class="my-6" />
+                    <GitReferencesPane :data-object-app-id="dataObject.appId" />
+                    <v-divider class="my-6" />
+                    <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
+                  </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
                   :count="relatedEntities.length"
@@ -292,24 +298,6 @@ watch(dataObject, () => {
                   title="Jupyter Notebooks"
                 >
                   <DataObjectNotebooksPane :data-object-app-id="dataObject.appId" />
-                </ExpansionPanelItem>
-                <!-- Git References and Video References are research-facing
-                     features (link an analysis notebook; embed a test
-                     recording) — visible in both modes. The Provenance Graph
-                     stays advanced-only: it's a heavy graph visualisation
-                     and overlaps with the simpler Dataset Lineage on the
-                     collection page. -->
-                <ExpansionPanelItem
-                  v-if="dataObject.appId"
-                  title="Git References"
-                >
-                  <GitReferencesPane :data-object-app-id="dataObject.appId" />
-                </ExpansionPanelItem>
-                <ExpansionPanelItem
-                  v-if="dataObject.appId"
-                  title="Video References"
-                >
-                  <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
                 </ExpansionPanelItem>
                 <!-- Provenance: two views — a structured time-based log
                      (default, easier to read) and the force-directed

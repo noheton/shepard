@@ -211,6 +211,21 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         title: "Monitor collection activity",
         fetchPath: "/docs/help/monitor-collection-activity.md",
       },
+      {
+        page: "help/timeseries-plotting",
+        title: "Plot timeseries data",
+        fetchPath: "/docs/help/timeseries-plotting.md",
+      },
+      {
+        page: "help/collection-lineage",
+        title: "Explore collection lineage",
+        fetchPath: "/docs/help/collection-lineage.md",
+      },
+      {
+        page: "help/provenance-tracing",
+        title: "Trace dataset provenance",
+        fetchPath: "/docs/help/provenance-tracing.md",
+      },
     ],
   },
   {

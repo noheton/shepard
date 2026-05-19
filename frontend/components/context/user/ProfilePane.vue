@@ -4,12 +4,16 @@ import { usePatchMe } from "~/composables/context/usePatchMe";
 import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { useShowOrcidBadge } from "~/composables/context/useShowOrcidBadge";
+import { useOrcidProfile } from "~/composables/context/useOrcidProfile";
 
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
 const { preferredJupyterUrl, isSaving: isJupyterSaving, save: saveJupyter } = useJupyterPreference();
 const { advancedMode, isSaving: isAdvancedSaving, setAdvancedMode } = useAdvancedMode();
 const { showOrcidBadge, isSaving: isOrcidBadgeSaving, setShowOrcidBadge } = useShowOrcidBadge();
+
+const userOrcid = computed(() => user.value?.orcid ?? null);
+const { profile: orcidProfile, loading: orcidLoading } = useOrcidProfile(userOrcid);
 
 // appId is a fork extension not in the auto-generated User type
 const userAppId = computed<string | undefined>(() => {
@@ -247,6 +251,48 @@ async function saveJupyterUrl() {
         </tr>
       </tbody>
     </v-table>
+
+    <!-- ORCID public profile data — keywords + recent works -->
+    <div v-if="user && user.orcid && !isLoading" class="d-flex flex-column ga-2">
+      <h5 class="text-h5">ORCID Profile</h5>
+      <centered-loading-spinner v-if="orcidLoading" />
+      <template v-else-if="orcidProfile">
+        <div v-if="orcidProfile.keywords.length" class="d-flex flex-wrap ga-1 align-center">
+          <span class="text-body-2 text-medium-emphasis me-1">Keywords:</span>
+          <v-chip
+            v-for="kw in orcidProfile.keywords"
+            :key="kw"
+            size="x-small"
+            variant="tonal"
+          >{{ kw }}</v-chip>
+        </div>
+        <div v-if="orcidProfile.works.length" class="d-flex flex-column ga-1">
+          <span class="text-body-2 text-medium-emphasis">Recent publications:</span>
+          <ol class="ps-4 ma-0">
+            <li
+              v-for="work in orcidProfile.works"
+              :key="work.title"
+              class="text-body-2"
+            >
+              <a
+                v-if="work.url"
+                :href="work.url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >{{ work.title }}</a>
+              <span v-else>{{ work.title }}</span>
+              <span v-if="work.year" class="text-medium-emphasis ms-1">({{ work.year }})</span>
+            </li>
+          </ol>
+        </div>
+        <p
+          v-if="!orcidProfile.keywords.length && !orcidProfile.works.length"
+          class="text-body-2 text-medium-emphasis"
+        >
+          No public keywords or works found on this ORCID record.
+        </p>
+      </template>
+    </div>
 
     <!-- JupyterHub URL section -->
     <div v-if="user && !isLoading" class="d-flex flex-column ga-2">

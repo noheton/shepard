@@ -15,7 +15,7 @@ const { watches, loading, mutating, add, remove } =
 
 const containerKindIcons: Record<WatchedContainerKind, string> = {
   TIMESERIES: "mdi-chart-line",
-  FILE: "mdi-file-outline",
+  FILE: "mdi-file-multiple-outline",
   STRUCTURED_DATA: "mdi-code-json",
 };
 const containerKindRoutes: Record<WatchedContainerKind, string> = {

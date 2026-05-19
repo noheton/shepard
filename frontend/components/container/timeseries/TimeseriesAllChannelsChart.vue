@@ -58,6 +58,19 @@ const stepChart = ref(false);     // step/switch mode — overrides smooth when 
 let liveTimer: ReturnType<typeof setInterval> | null = null;
 let liveFetchInFlight = false;    // guard against overlapping fetches at fast refresh rates
 
+// Animation: 60% of the refresh interval, capped at 1500ms so it never outlasts
+// the next tick. 0 in static mode — no animation for analytical views.
+const chartAnimationMs = computed(() =>
+  liveMode.value ? Math.min(Math.floor(liveIntervalMs.value * 0.6), 1500) : 0
+);
+
+// Clip the visible window to exactly liveWindowSec seconds in live mode.
+// The query fetches 2x the window for anchor points (so the line doesn't
+// start mid-air at the left edge), but visually we show only liveWindowSec.
+const chartVisibleWindowMs = computed(() =>
+  liveMode.value ? liveWindowSec.value * 1000 : undefined
+);
+
 // Auto-detect boolean channels: when all values across all series are 0 or 1,
 // suggest step mode and dim the smooth toggle (step overrides smooth anyway).
 const looksBoolean = computed(() => {
@@ -354,6 +367,8 @@ onBeforeUnmount(() => {
         :show-legend="true"
         :smooth="smoothChart && !stepChart"
         :step="stepChart"
+        :animation-duration="chartAnimationMs"
+        :visible-window-ms="chartVisibleWindowMs"
       />
     </div>
   </div>

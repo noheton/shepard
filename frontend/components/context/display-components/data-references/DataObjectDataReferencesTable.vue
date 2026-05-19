@@ -49,7 +49,7 @@ const kindCounts = computed<Record<RefKind, number>>(() => {
   const counts: Record<RefKind, number> = {
     TimeSeries: 0,
     "Structured Data": 0,
-    File: 0,
+    "File Bundle": 0,
   };
   for (const item of allTableItems.value) counts[item.type]++;
   return counts;
@@ -64,9 +64,9 @@ const tableItems = computed(() =>
 const kindIcons: Record<RefKind, string> = {
   TimeSeries: "mdi-chart-line",
   "Structured Data": "mdi-code-json",
-  File: "mdi-file-outline",
+  "File Bundle": "mdi-file-multiple-outline",
 };
-const KIND_ORDER: RefKind[] = ["TimeSeries", "Structured Data", "File"];
+const KIND_ORDER: RefKind[] = ["TimeSeries", "Structured Data", "File Bundle"];
 
 const headers = [
   {
