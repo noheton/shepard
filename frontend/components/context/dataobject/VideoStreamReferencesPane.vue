@@ -23,6 +23,9 @@ const props = defineProps<{ dataObjectAppId: string }>();
 const { references, isLoading, fetchError, downloadUrl } =
   useFetchVideoStreamReferences(props.dataObjectAppId);
 
+const { data: session } = useAuth();
+const accessToken = computed(() => session.value?.accessToken ?? null);
+
 /** Format duration in seconds as HH:MM:SS or MM:SS */
 function formatDuration(seconds: number | null | undefined): string {
   if (seconds == null) return "—";
@@ -83,7 +86,7 @@ function formatBitrate(
 
         <v-card-text class="pt-0">
           <!-- Player -->
-          <VideoPlayer :src="downloadUrl(ref.appId)" />
+          <VideoPlayer :src="downloadUrl(ref.appId)" :access-token="accessToken" />
 
           <!-- Metadata chips -->
           <div class="d-flex flex-wrap ga-2 pt-3">
