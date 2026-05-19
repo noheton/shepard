@@ -80,6 +80,10 @@ services:
       # message in the browser console (root cause for the bug cluster
       # seen 2026-05-19: avatar upload, advanced-mode save, etc.).
       SHEPARD_CORS_ORIGINS: "https://shepard.nuclide.systems,http://localhost:3000,http://127.0.0.1:3000"
+      # AES-256-GCM key for encrypting stored git credential PATs.
+      # Required for PATCH /v2/me/git-credentials and the admin preseed
+      # endpoint to function. Generate a new key: openssl rand -base64 32
+      SHEPARD_SECRETS_ENCRYPTION_KEY: ${SECRETS_ENCRYPTION_KEY}
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:
@@ -228,6 +232,7 @@ services:
       KC_ADMIN_USER: "admin"
       KC_ADMIN_PASS: "admin-demo"
       BOOTSTRAP_TOKEN_PATH: "/opt/shepard-bootstrap/.bootstrap-token"
+      GITHUB_PAT: ${GITHUB_PAT:-}
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap:ro
       - ../examples/lumen-showcase:/seed

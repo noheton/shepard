@@ -1,6 +1,6 @@
 # Case Study: One Month of AI-Assisted Fork Development
 **Project:** Shepard Research Data Management Platform (DLR fork)  
-**Period:** ~2026-04-20 to 2026-05-19  
+**Period:** ~2026-05-04 to 2026-05-19  
 **Collaborators:** Flo Researcher (project lead), Claude (Anthropic, Sonnet 4.6 / Opus 4.7)  
 **Audience:** Researchers, funders, engineering team, and the analysis agent reading this document
 
@@ -25,14 +25,14 @@ The goal was to evolve the platform meaningfully without abandoning upstream com
 
 The work started with design docs, not code. The collaboration opened with an audit of the upstream API surface: API critique (`aidocs/23`), permission system review (`aidocs/24`), CRUD consistency table (`aidocs/26`), and a Neo4j ID migration design (`aidocs/25` — the L2a-L2e roadmap that led to `appId`).
 
-This phase produced ~120 commits, almost all documentation. The human set the direction; Claude drafted the design docs, cross-referenced them, and built the backlog items that would gate future engineering. Notable: the L2 design (`aidocs/platform/25`) formalised the fork's identity — stable `appId` UUIDs for all entities, the `/v2/` API shelf, and the upgrade-path guarantees now encoded in `aidocs/34`.
+This phase produced ~126 commits, almost all documentation. The human set the direction; Claude drafted the design docs, cross-referenced them, and built the backlog items that would gate future engineering. Notable: the L2 design (`aidocs/platform/25`) formalised the fork's identity — stable `appId` UUIDs for all entities, the `/v2/` API shelf, and the upgrade-path guarantees now encoded in `aidocs/34`.
 
 **Process note:** Document-first worked well here. Having a written design before touching code meant that when the implementation came, the trade-offs were already settled. Claude's role in this phase was primarily synthesising requirements into coherent docs that the human could redirect.
 
 ---
 
 ### Phase 2 — Backend Feature Sprint (May 7–17)
-**~490 commits over 8 days**
+**~340 commits over 10 days**
 
 A long sequential sprint. Each session followed a pattern:
 1. Human describes what's needed ("build the Unhide harvest plugin")
@@ -70,7 +70,7 @@ Also in this phase: a complete migration to the `aidocs/` folder structure (8 su
 ---
 
 ### Phase 3 — UI Modernisation (May 17–18)
-**~50 commits over 1–2 days**
+**~100 commits over 2 days**
 
 The frontend received a large modernisation pass:
 - Landing page rebuilt action-first
@@ -92,7 +92,7 @@ The human's feedback loop here was tight — screenshot → fix → redeploy →
 ---
 
 ### Phase 4 — Profile, Auth, and Infrastructure (May 18–19)
-**~40 commits**
+**~30 commits**
 
 A cluster of interconnected features that each required multiple debugging rounds:
 
@@ -118,14 +118,14 @@ A cluster of interconnected features that each required multiple debugging round
 
 ### Commits: upstream vs fork
 - **Upstream (2021-07 to 2026-04):** ~350 commits over ~5 years
-- **Fork (April–May 2026):** ~1163 commits in ~1 month
+- **Fork (May 2026):** ~496 commits in ~16 days (2026-05-04 to 2026-05-19)
 
-That's a ~3.5× acceleration on raw commit volume. The comparison is imperfect (upstream had multiple maintainers, different priorities, slower review cycles), but directionally useful.
+That's a ~3.5× acceleration on raw commit volume per calendar month. The comparison is imperfect (upstream had multiple maintainers, different priorities, slower review cycles), but directionally useful.
 
-### Feature throughput (May 2026 alone)
-490 commits in May, covering roughly 25 distinct backend features, a full frontend modernisation pass, 3 plugin modules, 65+ design documents, a CI/CD pipeline rebuild, and multiple rounds of bug fixing.
+### Feature throughput (May 2026)
+496 commits covering roughly 25 distinct backend features, a full frontend modernisation pass, 3 plugin modules, 98 design documents, a CI/CD pipeline rebuild, and multiple rounds of bug fixing — all in under three weeks with one human and one AI.
 
-A conventional 2-engineer team in this codebase (Quarkus + Neo4j OGM + Nuxt 3) would realistically ship 3-5 features per engineer per sprint (2 weeks). The May sprint shipped ~25 features in 2 weeks with one human and one AI — approximately 5–6× throughput against a 2-person baseline.
+A conventional 2-engineer team in this codebase (Quarkus + Neo4j OGM + Nuxt 3) would realistically ship 3-5 features per engineer per sprint (2 weeks). This fork shipped ~25 features in roughly the same window — approximately 5–6× throughput against a 2-person baseline.
 
 ### Where the multiplier came from
 1. **No context-switching cost for exploration.** Grep, read, and cross-reference happen in seconds. A human engineer reading a new codebase pays 30-60 minutes per new module; Claude can survey a 50-file subsystem in under a minute.
@@ -219,12 +219,12 @@ This is only sustainable because:
 
 | Metric | Value |
 |--------|-------|
-| Total commits (fork work, Apr-May 2026) | ~1163 |
-| Commits in May 2026 alone | 490 |
+| Total commits (fork work, May 2026) | ~496 |
+| Fork start | 2026-05-04 |
 | Peak day | 2026-05-17: 107 commits |
-| Distinct backend features shipped | ~30 |
+| Distinct backend features shipped | ~25 |
 | Plugin modules created | 3 (Unhide, ePIC minter, shepard-py) |
-| Design documents written | 65+ |
+| Design documents written | 98 |
 | CI pipelines created or rewritten | 6 |
 | Test files added/modified | ~40 |
 | Bugs fixed in deployed system (May 18-19 alone) | 6 |
@@ -248,3 +248,28 @@ This is only sustainable because:
 - A staging environment with automatic deployment on every commit, so "is it deployed?" is never ambiguous.
 - A lightweight integration test suite that runs against the live container on every deploy (not just Playwright e2e — actual API-level assertions with known seed data).
 - Longer-lived sessions or a better session-continuation mechanism to avoid the context-compression overhead.
+
+---
+
+## 9. What's Next
+
+The first sprint established the platform's structural foundations — stable IDs, the `/v2/` API shelf, provenance, plugin SPI, and a modernised frontend. The next frontier is researcher-facing quality of life: making the platform feel responsive, personal, and alive.
+
+**Near-term (actionable now, no new backend needed):**
+
+- **Personal landing page (#43).** Replace the bare collections list with a digest: greeting card, per-collection activity thumbnails with last-change timestamps and contributor avatars, and sparklines pulled from `ChannelPreviewChart.vue` for watched timeseries containers. Frontend-only first pass — the existing search and provenance endpoints supply everything. Design: `aidocs/ux/73-personal-landing-page.md`.
+
+- **Auto-refresh on stale session (#49).** Three layered fixes: a 401 interceptor in `useV2ShepardApi` that triggers nuxt-auth's `refresh()` and retries once before redirecting to sign-in; a `ChunkLoadError` recovery guard (layered on the existing `emitRouteChunkError: "automatic"` in `nuxt.config.ts`); and a session-expiry warning toast that fires 5 minutes before JWT `exp`. All composable-layer, no backend changes. Design: `aidocs/ux/74-auto-refresh-stale-session.md`.
+
+- **Basic mode containerless UX (#51).** In basic mode, containers should be invisible — a researcher attaches files and timeseries directly to a DataObject without ever navigating to a separate Container page. The routing and permission layers are already in place; this is a frontend routing and component change.
+
+**Longer-horizon design work:**
+
+- **MCP plugin (#30).** The OpenAPI spec already carries `x-mcp-tool-name` and `x-mcp-side-effects` extensions (V2S1a). The next step is generating an MCP server from the `/v2/` spec and wiring it into a Matrix bot (MTX1b) or a standalone tool. This is a design-phase item: the generated client needs review for tool-call ergonomics before the extensions are finalised.
+
+- **File preview and thumbnail SPI (#34).** Researchers want to see a thumbnail before opening a file reference. The right shape is a plugin SPI (`ThumbnailProvider`) with implementations for common types (image, PDF first page, video still via ffprobe). Relates to the file-storage SPI (FS1a) already landed; the SPI seam design is the open work.
+
+- **uPlot migration for live-mode chart (#56).** The current timeseries chart (ECharts via `vue-echarts`) works but is heavy and struggles in live-mode update loops. uPlot is 40× lighter and purpose-built for streaming data. The migration is a chart-layer swap with no API changes — the blocker is agreeing on the interaction model (zoom, tooltip, crosshair) before starting the component rewrite.
+
+The pattern for the next phase is the same as the first: design doc first, then implementation in a single focused session, then deploy and validate on the live hostname before moving on.
+

@@ -3,7 +3,7 @@
 **Status.** **Live.** Kept current as features land. The doc you'd
 hand a researcher who asks "what is shepard, and should I use it?"
 
-**Snapshot date.** 2026-05-17.
+**Snapshot date.** 2026-05-19.
 **Audience.** Researchers, group leads, principal investigators.
 Not operators (they have `docs/admin.md`), not developers (they have
 the rest of `aidocs/`).
@@ -310,7 +310,22 @@ Five typical entry points:
    **Templates admin page** (browse, create, edit, retire ShepardTemplates),
    **RO-Crate download button** on collection pages, **admin health
    dashboard** (heap, uptime, HTTP metrics), and **JupyterHub URL in
-   user profile**.
+   user profile**. New in 2026-05-19: **inline timeseries charting**
+   (Apache ECharts line chart on every timeseries container page, with
+   channel selection, live-mode auto-refresh, step-line toggle for
+   boolean channels, smooth toggle, and per-container curated channel
+   view persisted at `GET/PATCH /v2/timeseries-containers/{id}/chart-view`);
+   **channel preview mini-chart** (last-N-points sparkline in each
+   expanded channel row — 1-second averages for fast load even on large
+   datasets); **container storage stats chip** (point count displayed as
+   a coloured chip in the timeseries container header); **Collection
+   Lineage Graph** (interactive force-directed graph on the collection
+   page showing parent/child and predecessor/successor edges between
+   datasets — drag, zoom, hover for status, click to highlight
+   neighbours); **DataObject Provenance Graph** (force-directed graph on
+   the dataset detail page linking the dataset to related datasets and to
+   the users who acted on it, with edge labels for action kinds and
+   counts).
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/lumen-showcase/notebooks/` are the canonical

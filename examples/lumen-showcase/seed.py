@@ -983,10 +983,6 @@ def best_effort_ror_preseed(apis: Apis) -> None:
     api_key = apis.client.configuration.api_key.get("apikey", "")
     headers = {
         "X-API-KEY": api_key,
-        "apikey": api_key,
-        # The endpoint declares @Consumes(MediaType.APPLICATION_JSON) — RFC 7396
-        # semantics are observed in the resource code, but the wire content-type
-        # is plain application/json.
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -1042,7 +1038,6 @@ def best_effort_user_orcid_preseed(apis: Apis) -> None:
     api_key = apis.client.configuration.api_key.get("apikey", "")
     headers = {
         "X-API-KEY": api_key,
-        "apikey": api_key,
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -1067,9 +1062,10 @@ def best_effort_user_orcid_preseed(apis: Apis) -> None:
             _log("SKIP", username, f"User.orcid error: {str(exc)[:60]}")
 
 
-def _data_object_app_id(do: DataObject) -> str | None:
+def _data_object_app_id(do: DataObject, apis: "Apis | None" = None) -> str | None:
     """Pull the appId off a DataObject defensively — the upstream-generated
     client doesn't expose it on the typed model, but it's on the wire.
+    Falls back to a v2 API lookup when apis is provided.
     Returns None if the response shape lacks it (very old backend builds)."""
     raw = getattr(do, "_appId", None) or getattr(do, "appId", None)
     if raw:
@@ -1080,7 +1076,35 @@ def _data_object_app_id(do: DataObject) -> str | None:
         v = extras.get("appId")
         if v:
             return str(v)
+    # Fall back to v2 endpoint — pydantic drops unknown fields so appId
+    # never lands on the typed model even though the backend sends it.
+    if apis is not None:
+        return _v2_lookup_do_app_id(apis, do)
     return None
+
+
+def _v2_lookup_do_app_id(apis: "Apis", do: DataObject) -> str | None:
+    """Fetch appId for a DataObject by hitting the v1 single-object endpoint
+    and reading the raw JSON (pydantic drops unknown fields; the raw JSON has
+    appId). Falls back to the v2 collection list scan on any 4xx/5xx."""
+    try:
+        import json
+        import urllib.request
+
+        host = apis.client.configuration.host.rstrip("/")
+        v1_base = host  # e.g. http://…/shepard/api
+        api_key = apis.client.configuration.api_key.get("apikey", "")
+        headers = {"X-API-KEY": api_key, "Accept": "application/json"}
+
+        # Direct v1 DataObject endpoint — returns appId in the JSON even
+        # though the upstream pydantic model drops it as an unknown field.
+        url = f"{v1_base}/collections/{do.collection_id}/dataObjects/{do.id}"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+        return data.get("appId") or None
+    except Exception:
+        return None
 
 
 def best_effort_git_references(
@@ -1116,7 +1140,7 @@ def best_effort_git_references(
     apikey = apis.client.configuration.api_key.get("apikey", "")
 
     for (do, repo_url, path, ref) in targets:
-        app_id = _data_object_app_id(do)
+        app_id = _data_object_app_id(do, apis)
         if not app_id:
             _log("SKIP", f"{do.name}/{path}", "GitReference (no appId on DO)")
             continue
@@ -1127,7 +1151,7 @@ def best_effort_git_references(
         try:
             req = urllib.request.Request(
                 base,
-                headers={"apikey": apikey, "Accept": "application/json"},
+                headers={"X-API-KEY": apikey, "Accept": "application/json"},
                 method="GET",
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -1163,7 +1187,7 @@ def best_effort_git_references(
                 base,
                 data=body,
                 headers={
-                    "apikey": apikey,
+                    "X-API-KEY": apikey,
                     "Content-Type": "application/json",
                     "Accept": "application/json",
                 },
@@ -1202,7 +1226,7 @@ def best_effort_template(apis: Apis) -> None:
     list_url = f"{v2_base}/v2/templates?kind=DATAOBJECT_RECIPE"
     create_url = f"{v2_base}/v2/templates"
     headers = {
-        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "X-API-KEY": apis.client.configuration.api_key.get("apikey", ""),
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -1277,7 +1301,7 @@ def best_effort_versions(apis: Apis, coll: Collection) -> None:
     host = apis.client.configuration.host.rstrip("/")
     url = f"{host}/collections/{coll.id}/versions"
     headers = {
-        "apikey": apis.client.configuration.api_key.get("apikey", ""),
+        "X-API-KEY": apis.client.configuration.api_key.get("apikey", ""),
         "Content-Type": "application/json",
     }
     versions = [
@@ -1356,6 +1380,205 @@ def best_effort_api_keys(apis: Apis, owning_username: str) -> dict[str, str]:
     return out
 
 
+
+def best_effort_git_credential_preseed(
+    apis: Apis,
+    targets: list[tuple[str, str, str, str | None]],
+) -> None:
+    """Preseed git credentials for demo users via the admin endpoint.
+
+    Each tuple is (username, host, git_username, pat).
+    The PAT is not hardcoded — pass via env var GITHUB_PAT or the --github-pat
+    argument.  If a credential for the same host already exists it is replaced.
+
+    Requires the /v2/admin/users/{username}/git-credentials endpoint and the
+    shepard.secrets.encryption-key config to be set. Skips gracefully on
+    404/503 (endpoint not deployed or key not configured).
+    """
+    try:
+        import urllib.error
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", "git credential preseed", "urllib unavailable")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    headers = {
+        "X-API-KEY": apis.client.configuration.api_key.get("apikey", ""),
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
+
+    for username, git_host, git_username, pat in targets:
+        if not pat:
+            _log("SKIP", f"{username}/{git_host}", "GitCredential (no PAT provided)")
+            continue
+        label = f"{username}/{git_host}"
+        url = f"{v2_base}/v2/admin/users/{username}/git-credentials"
+        body = json.dumps({
+            "host": git_host,
+            "username": git_username,
+            "pat": pat,
+            "displayName": f"{git_host} — {git_username}",
+        }).encode("utf-8")
+        try:
+            req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                _log("OK", label, "GitCredential", result.get("appId", resp.status))
+        except urllib.error.HTTPError as e:
+            if e.code == 503:
+                _log("SKIP", label, "GitCredential (encryption key not configured — set SECRETS_ENCRYPTION_KEY)")
+            elif e.code == 404:
+                _log("SKIP", label, "GitCredential (user not found — must log in first)")
+            elif e.code in (401, 403):
+                _log("SKIP", label, f"GitCredential (not admin: HTTP {e.code})")
+            elif e.code == 501:
+                _log("SKIP", label, "GitCredential (endpoint not deployed)")
+            else:
+                _log("SKIP", label, f"GitCredential HTTP {e.code}")
+        except Exception as exc:  # pragma: no cover
+            _log("SKIP", label, f"GitCredential error: {str(exc)[:80]}")
+
+
+def best_effort_video_reference(
+    apis: Apis,
+    data_object: DataObject,
+    youtube_url: str,
+    ref_name: str,
+) -> None:
+    """Download a YouTube video and upload it as a VideoStreamReference.
+
+    Demonstrates multi-modal data linking: the hot-fire video is attached
+    to the same DataObject as timeseries sensor data and semantic phase
+    annotations, so a viewer can correlate the visual phases (ignition
+    transient, steady-state burn, throttle-down, shutdown) with the
+    instrument readings.
+
+    Requires yt-dlp and the /v2/data-objects/{appId}/video-stream-references
+    endpoint. Skips gracefully when either is absent. The video is downloaded
+    to a temp file and cleaned up after upload.
+    """
+    try:
+        import urllib.error
+        import urllib.parse
+        import urllib.request
+    except Exception:  # pragma: no cover
+        _log("SKIP", ref_name, "VideoStreamReference (urllib unavailable)")
+        return
+
+    app_id = _data_object_app_id(data_object, apis)
+    if not app_id:
+        _log("SKIP", ref_name, "VideoStreamReference (no appId on DO)")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    list_url = f"{v2_base}/v2/data-objects/{app_id}/video-stream-references"
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+
+    # Check if already uploaded.
+    try:
+        req = urllib.request.Request(
+            list_url,
+            headers={"X-API-KEY": api_key, "Accept": "application/json"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            existing = json.loads(resp.read().decode("utf-8"))
+            if isinstance(existing, list) and any(
+                v.get("name") == ref_name for v in existing
+            ):
+                _log("SKIP", ref_name, "VideoStreamReference (already present)")
+                return
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 501):
+            _log("SKIP", ref_name, "VideoStreamReference (endpoint not deployed)")
+            return
+        if e.code in (401, 403):
+            _log("SKIP", ref_name, f"VideoStreamReference (auth: HTTP {e.code})")
+            return
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", ref_name, f"VideoStreamReference list error: {str(exc)[:60]}")
+        return
+
+    # Download via yt-dlp (360p mp4 — small, self-contained).
+    import tempfile
+    import os
+    import shutil
+    tmp_path = None
+    try:
+        yt_dlp_bin = shutil.which("yt-dlp")
+        if yt_dlp_bin is None:
+            _log("SKIP", ref_name, "VideoStreamReference (yt-dlp not installed)")
+            return
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=".mp4")
+        os.close(tmp_fd)
+        import subprocess
+        result = subprocess.run(
+            [yt_dlp_bin, "-f", "18", "-o", tmp_path, "--no-playlist", "--force-overwrites", youtube_url],
+            capture_output=True, text=True, timeout=120,
+        )
+        if result.returncode != 0:
+            _log("SKIP", ref_name, f"VideoStreamReference (yt-dlp failed: {result.stderr[:80]})")
+            return
+        if not os.path.exists(tmp_path) or os.path.getsize(tmp_path) == 0:
+            _log("SKIP", ref_name, "VideoStreamReference (empty download)")
+            return
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", ref_name, f"VideoStreamReference (download error: {str(exc)[:60]})")
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return
+
+    # Upload as multipart.
+    try:
+        import mimetypes
+        boundary = "shepardseedvid"
+        with open(tmp_path, "rb") as fh:
+            video_bytes = fh.read()
+        body = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="lumen-hotfire.mp4"\r\n'
+            f"Content-Type: video/mp4\r\n\r\n"
+        ).encode("utf-8") + video_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+        upload_url = f"{list_url}?name={urllib.parse.quote(ref_name)}"
+        req = urllib.request.Request(
+            upload_url,
+            data=body,
+            headers={
+                "X-API-KEY": api_key,
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "Accept": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            created = json.loads(resp.read().decode("utf-8"))
+            _log("OK", ref_name, "VideoStreamReference", created.get("appId", resp.status))
+    except urllib.error.HTTPError as e:
+        if e.code == 503:
+            _log("SKIP", ref_name, "VideoStreamReference (no file storage adapter configured)")
+        else:
+            _log("SKIP", ref_name, f"VideoStreamReference upload HTTP {e.code}")
+    except Exception as exc:  # pragma: no cover
+        _log("SKIP", ref_name, f"VideoStreamReference upload error: {str(exc)[:80]}")
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+
 # ---------------------------------------------------------------------------
 # Top-level entry point
 
@@ -1405,6 +1628,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--regenerate",
         action="store_true",
         help="re-run data/generate.py before seeding (useful after editing the generator)",
+    )
+    p.add_argument(
+        "--github-pat",
+        default=os.environ.get("GITHUB_PAT"),
+        help="GitHub Personal Access Token for git credential preseed (flo's account). "
+             "Also readable from the GITHUB_PAT env var. Skips git credential preseed when absent.",
     )
     args = p.parse_args(argv)
     if not args.host or not args.apikey:
@@ -1493,6 +1722,27 @@ def main(argv: list[str] | None = None) -> int:
         # per-channel min/max/mean/stddev across the campaign.
         (runs[6], GIT_DEMO_REPO,
          "examples/lumen-showcase/notebooks/sql-channel-summary.py", GIT_DEMO_REF),
+    ])
+
+    # LUMEN hot-fire video — attached to the investigation DataObject so
+    # viewers can correlate visual phases (ignition transient, steady-state
+    # burn, throttle-down, shutdown) with the instrument timeseries and
+    # semantic phase-boundary annotations that live on the same DO.
+    # Source: "DLR LUMEN – The Liquid Upper Stage Demonstrator Engine" (official DLR channel, 2:55).
+    # https://www.youtube.com/watch?v=WTrfouUTYBg
+    best_effort_video_reference(
+        apis,
+        investigation,
+        "https://www.youtube.com/watch?v=WTrfouUTYBg",
+        "LUMEN – The Liquid Upper Stage Demonstrator Engine (DLR, 2024)",
+    )
+
+    # Git credential preseed — DB-only, no Keycloak dependency (same as ORCID).
+    # PAT passed via --github-pat or GITHUB_PAT env var; skips when absent.
+    # flo must have logged in at least once for the :User node to exist;
+    # the preseed gracefully SKIPs with HTTP 404 if the node isn't there yet.
+    best_effort_git_credential_preseed(apis, [
+        ("flo", "github.com", "noheton", args.github_pat),
     ])
 
     # Versions + api keys (best-effort).

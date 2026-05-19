@@ -89,7 +89,7 @@ log "API key created."
 # ---- install Python dependencies -------------------------------------------
 
 log "Installing Python dependencies ..."
-pip install --quiet --no-cache-dir numpy \
+pip install --quiet --no-cache-dir numpy yt-dlp \
   --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple \
   shepard-client
 
@@ -100,5 +100,6 @@ cd /seed
 python seed.py \
   --host "${BACKEND}" \
   --apikey "${SEED_API_KEY}" \
-  --regenerate
+  --regenerate \
+  ${GITHUB_PAT:+--github-pat "${GITHUB_PAT}"}
 log "Seed complete."
