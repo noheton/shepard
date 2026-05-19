@@ -133,3 +133,8 @@ backend/config/keys/
 # Python bytecode
 **/__pycache__/
 **/*.pyc
+
+# Playwright / Vitest test artifacts
+test-results/
+playwright-report/
+e2e/screenshots/
