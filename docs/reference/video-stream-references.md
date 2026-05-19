@@ -23,6 +23,11 @@ shelf; not present in upstream 5.2.0).
 | `GET /v2/data-objects/{appId}/video-stream-references/{refAppId}` | Fetch metadata for one reference. |
 | `GET /v2/data-objects/{appId}/video-stream-references/{refAppId}/download` | Stream the raw video bytes (progressive download; `Content-Type` reflects detected MIME type). |
 | `DELETE /v2/data-objects/{appId}/video-stream-references/{refAppId}` | Delete the reference and its stored video bytes. |
+| `GET /v2/data-objects/{appId}/video-stream-references/{refAppId}/annotations` | List all interval annotations on a video reference. |
+| `POST /v2/data-objects/{appId}/video-stream-references/{refAppId}/annotations` | Create an interval annotation (`startSeconds`, `endSeconds`, `label`). |
+| `GET /v2/data-objects/{appId}/video-stream-references/{refAppId}/annotations/{annId}` | Fetch one annotation by appId. |
+| `PATCH /v2/data-objects/{appId}/video-stream-references/{refAppId}/annotations/{annId}` | Merge-patch update (label, description, timestamps, confidence). |
+| `DELETE /v2/data-objects/{appId}/video-stream-references/{refAppId}/annotations/{annId}` | Delete an annotation. |
 
 ## Upload example
 
@@ -124,6 +129,70 @@ frontend `<video>` element renders natively in-browser:
 | WebM / VP9+Opus | `.webm` | Good (Chrome, Firefox, Edge) |
 | QuickTime | `.mov` | Varies (Safari; limited elsewhere) |
 | Matroska / H.264 | `.mkv` | Limited (requires browser codec support) |
+
+## Interval annotations
+
+Attach named time-range segments to a `VideoStreamReference` using the
+annotations sub-resource. The classic use case is labelling experiment
+phases — ignition, burn, cooldown — directly on the video timeline.
+
+### Annotation fields
+
+| Field | Type | Description |
+|---|---|---|
+| `appId` | `string` | Stable identifier (read-only, minted on creation). |
+| `startSeconds` | `double` | Start of the annotated interval in seconds from video start (required). |
+| `endSeconds` | `double` | End of the interval in seconds. `null` for a point annotation. |
+| `label` | `string` | Short display label (required, non-blank). |
+| `description` | `string` | Optional longer text. |
+| `aiGenerated` | `boolean` | `true` when created by an automated detector (default `false`). |
+| `confidence` | `double` | Confidence score `[0.0, 1.0]` from AI detection. `null` for human-created. |
+
+### Create example
+
+```http
+POST /v2/data-objects/do-abc123/video-stream-references/vsr-xyz789/annotations
+Content-Type: application/json
+
+[
+  {"startSeconds": 0,  "endSeconds": 5,  "label": "ignition"},
+  {"startSeconds": 5,  "endSeconds": 35, "label": "burn"},
+  {"startSeconds": 35, "endSeconds": 50, "label": "cooldown"}
+]
+```
+
+Each annotation is created with a separate POST request. The server
+mints an `appId` (UUID v7) for each.
+
+Response (201 Created):
+
+```json
+{
+  "appId": "ann-111...",
+  "startSeconds": 0.0,
+  "endSeconds": 5.0,
+  "label": "ignition",
+  "description": null,
+  "aiGenerated": false,
+  "confidence": null
+}
+```
+
+### Viewing annotations in the frontend
+
+The **Video References** panel renders a colour-coded timeline bar
+below each video player when annotations are present. Each labelled
+segment is shown as a proportionally-sized coloured block. Hover over
+a segment to see the label and description. Point annotations (no
+`endSeconds`) appear as a 0.5%-wide marker.
+
+### Auth
+
+Annotation CRUD piggybacks on the parent DataObject's permissions:
+Read permission to list/get; Write permission to create/update/delete.
+The `PATCH` endpoint accepts RFC 7396 merge-patch semantics (only
+provided non-null fields are updated). `aiGenerated` cannot be patched
+after creation.
 
 ## Storage
 

@@ -4,6 +4,8 @@
  *
  * Shows all VideoStreamReferences for a DataObject. Each reference renders:
  *   - A native <video> element (VideoPlayer.vue) against the /download endpoint
+ *   - An annotation timeline bar (VID1b-annotation) showing labelled time-range
+ *     segments when annotations are present
  *   - An ffprobe-extracted metadata row (duration, resolution, codec, FPS, size)
  *   - A download button
  *
@@ -17,11 +19,55 @@ import {
   type VideoStreamReferenceIO,
   useFetchVideoStreamReferences,
 } from "~/composables/context/useFetchVideoStreamReferences";
+import { useFetchVideoAnnotations } from "~/composables/context/useFetchVideoAnnotations";
 
 const props = defineProps<{ dataObjectAppId: string }>();
 
 const { references, isLoading, fetchError, downloadUrl } =
   useFetchVideoStreamReferences(props.dataObjectAppId);
+
+/**
+ * Per-reference annotation state. We lazily create a composable for each
+ * reference appId when it first appears.
+ */
+const annotationStates = new Map<
+  string,
+  ReturnType<typeof useFetchVideoAnnotations>
+>();
+
+function annotationsFor(refAppId: string) {
+  if (!annotationStates.has(refAppId)) {
+    annotationStates.set(
+      refAppId,
+      useFetchVideoAnnotations(props.dataObjectAppId, refAppId),
+    );
+  }
+  return annotationStates.get(refAppId)!;
+}
+
+/** Small palette for annotation segment colors, cycled by label. */
+const SEGMENT_COLORS = [
+  "#4CAF50", // green
+  "#2196F3", // blue
+  "#FF9800", // orange
+  "#9C27B0", // purple
+  "#F44336", // red
+  "#00BCD4", // cyan
+  "#FF5722", // deep-orange
+  "#795548", // brown
+];
+
+const labelColorCache = new Map<string, string>();
+let colorIndex = 0;
+
+function colorForLabel(label: string): string {
+  if (!labelColorCache.has(label)) {
+    const color =
+      SEGMENT_COLORS[colorIndex++ % SEGMENT_COLORS.length] ?? "#4CAF50";
+    labelColorCache.set(label, color);
+  }
+  return labelColorCache.get(label) ?? "#4CAF50";
+}
 
 const { data: session } = useAuth();
 const accessToken = computed(() => session.value?.accessToken ?? null);
@@ -87,6 +133,42 @@ function formatBitrate(
         <v-card-text class="pt-0">
           <!-- Player -->
           <VideoPlayer :src="downloadUrl(ref.appId)" :access-token="accessToken" />
+
+          <!-- Annotation timeline bar (VID1b-annotation) -->
+          <template v-if="ref.durationSeconds != null && ref.durationSeconds > 0">
+            <div v-if="annotationsFor(ref.appId).isLoading.value" class="mt-2">
+              <v-skeleton-loader type="text" height="16" />
+            </div>
+            <div
+              v-else-if="annotationsFor(ref.appId).annotations.value.length > 0"
+              class="timeline-bar mt-2"
+            >
+              <v-tooltip
+                v-for="ann in annotationsFor(ref.appId).annotations.value"
+                :key="ann.appId"
+                :text="ann.label + (ann.description ? ' — ' + ann.description : '')"
+                location="top"
+              >
+                <template #activator="{ props: tooltipProps }">
+                  <div
+                    v-bind="tooltipProps"
+                    class="annotation-segment"
+                    :style="{
+                      left: ((ann.startSeconds / ref.durationSeconds!) * 100).toFixed(3) + '%',
+                      width: (
+                        ann.endSeconds != null
+                          ? ((ann.endSeconds - ann.startSeconds) / ref.durationSeconds!) * 100
+                          : 0.5
+                      ).toFixed(3) + '%',
+                      backgroundColor: colorForLabel(ann.label),
+                    }"
+                  />
+                </template>
+              </v-tooltip>
+              <!-- Track baseline -->
+              <div class="timeline-track" />
+            </div>
+          </template>
 
           <!-- Metadata chips -->
           <div class="d-flex flex-wrap ga-2 pt-3">
@@ -174,5 +256,35 @@ function formatBitrate(
 <style scoped lang="scss">
 .video-card {
   border-radius: 8px;
+}
+
+.timeline-bar {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timeline-track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.annotation-segment {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 2px;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+  }
 }
 </style>
