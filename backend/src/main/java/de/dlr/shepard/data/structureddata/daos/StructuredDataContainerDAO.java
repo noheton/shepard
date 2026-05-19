@@ -61,14 +61,14 @@ public class StructuredDataContainerDAO extends GenericDAO<StructuredDataContain
    * StructuredDataReference.
    *
    * <p>The relationship path is:
-   * {@code DataObject -[:has_reference]->()-[:has_payload]-> StructuredDataContainer}
+   * {@code DataObject -[:has_reference]-> StructuredDataReference -[:is_in_container]-> StructuredDataContainer}
    *
    * @param containerAppId the appId of the StructuredDataContainer
    * @return distinct non-deleted DataObjects linked to this container
    */
   public List<DataObject> findLinkedDataObjectsByContainerAppId(String containerAppId) {
     String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:StructuredDataContainer) " +
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:StructuredDataContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
       "RETURN DISTINCT do";

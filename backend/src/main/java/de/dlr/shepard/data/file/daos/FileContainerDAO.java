@@ -56,22 +56,20 @@ public class FileContainerDAO extends GenericDAO<FileContainer> {
   }
 
   /**
-   * CC1b — find all DataObjects that reference this FileContainer via any
-   * reference type (SingletonFileReference or FileReference/FileBundleReference).
+   * CC1b — find all DataObjects that reference this FileContainer via a
+   * FileBundleReference (the only reference type that links to a FileContainer).
+   * SingletonFileReference stores files in a shared Mongo namespace without a
+   * container node, so it never appears in this traversal.
    *
    * <p>The relationship path is:
-   * {@code DataObject -[:has_reference]->()-[:has_payload]-> FileContainer}
-   *
-   * <p>The reference node label is intentionally unlabelled (plain {@code ()})
-   * to match both {@code SingletonFileReference} and {@code FileReference}
-   * labels in a single pass.
+   * {@code DataObject -[:has_reference]-> FileBundleReference -[:is_in_container]-> FileContainer}
    *
    * @param containerAppId the appId of the FileContainer
    * @return distinct non-deleted DataObjects linked to this container
    */
   public List<DataObject> findLinkedDataObjectsByContainerAppId(String containerAppId) {
     String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:FileContainer) " +
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:FileContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
       "RETURN DISTINCT do";

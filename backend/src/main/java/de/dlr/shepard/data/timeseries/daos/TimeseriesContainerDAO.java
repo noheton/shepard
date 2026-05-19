@@ -61,14 +61,14 @@ public class TimeseriesContainerDAO extends GenericDAO<TimeseriesContainer> {
    * TimeseriesReference.
    *
    * <p>The relationship path is:
-   * {@code DataObject -[:has_reference]->()-[:has_payload]-> TimeseriesContainer}
+   * {@code DataObject -[:has_reference]-> TimeseriesReference -[:is_in_container]-> TimeseriesContainer}
    *
    * @param containerAppId the appId of the TimeseriesContainer
    * @return distinct non-deleted DataObjects linked to this container
    */
   public List<DataObject> findLinkedDataObjectsByContainerAppId(String containerAppId) {
     String query =
-      "MATCH (do:DataObject)-[:has_reference]->()-[:has_payload]->(c:TimeseriesContainer) " +
+      "MATCH (do:DataObject)-[:has_reference]->()-[:is_in_container]->(c:TimeseriesContainer) " +
       "WHERE c.appId = $containerAppId " +
       "  AND (do.deleted IS NULL OR do.deleted = false) " +
       "RETURN DISTINCT do";
