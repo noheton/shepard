@@ -219,15 +219,16 @@ This is only sustainable because:
 
 | Metric | Value |
 |--------|-------|
-| Total commits (fork work, May 2026) | ~496 |
+| Total commits (fork work, May 2026) | ~510 |
 | Fork start | 2026-05-04 |
 | Peak day | 2026-05-17: 107 commits |
-| Distinct backend features shipped | ~25 |
+| Distinct backend features shipped | ~28 |
 | Plugin modules created | 3 (Unhide, ePIC minter, shepard-py) |
-| Design documents written | 98 |
+| Design documents written | 100+ |
 | CI pipelines created or rewritten | 6 |
-| Test files added/modified | ~40 |
-| Bugs fixed in deployed system (May 18-19 alone) | 6 |
+| Frontend Vitest unit tests added | 36 |
+| Test files added/modified | ~45 |
+| Bugs fixed in deployed system (May 18-19 alone) | 8 |
 | Deploy cycles (May 18-19 alone) | ~15 |
 
 ---
@@ -255,13 +256,25 @@ This is only sustainable because:
 
 The first sprint established the platform's structural foundations — stable IDs, the `/v2/` API shelf, provenance, plugin SPI, and a modernised frontend. The next frontier is researcher-facing quality of life: making the platform feel responsive, personal, and alive.
 
-**Near-term (actionable now, no new backend needed):**
+**Shipped in the continuation session (2026-05-19, afternoon):**
 
-- **Personal landing page (#43).** Replace the bare collections list with a digest: greeting card, per-collection activity thumbnails with last-change timestamps and contributor avatars, and sparklines pulled from `ChannelPreviewChart.vue` for watched timeseries containers. Frontend-only first pass — the existing search and provenance endpoints supply everything. Design: `aidocs/ux/73-personal-landing-page.md`.
+- **Personal landing page (#43) — shipped.** `PersonalDigest.vue` shows the 6 most-recently-updated accessible collections, a greeting card, and quick-action buttons. `useFetchRecentCollections` composable; `pages/index.vue` routes to digest when authenticated. 5 unit tests.
 
-- **Auto-refresh on stale session (#49).** Three layered fixes: a 401 interceptor in `useV2ShepardApi` that triggers nuxt-auth's `refresh()` and retries once before redirecting to sign-in; a `ChunkLoadError` recovery guard (layered on the existing `emitRouteChunkError: "automatic"` in `nuxt.config.ts`); and a session-expiry warning toast that fires 5 minutes before JWT `exp`. All composable-layer, no backend changes. Design: `aidocs/ux/74-auto-refresh-stale-session.md`.
+- **Auto-refresh on stale session (#49) — shipped.** `useAuthRefreshMiddleware` (wired into both API clients), `SessionExpiryWarning.vue`, and `chunk-error-recovery.client.ts` plugin. 8 unit tests. Covers the "annoying reload" (#45) for the non-navigation chunk-error path.
 
-- **Basic mode containerless UX (#51).** In basic mode, containers should be invisible — a researcher attaches files and timeseries directly to a DataObject without ever navigating to a separate Container page. The routing and permission layers are already in place; this is a frontend routing and component change.
+- **Per-kind reference counts on DataObject list (#37) — shipped.** `DataObjectListItemV2IO` with `timeseriesCount`, `fileCount`, `structuredDataCount`. Batch Cypher query; no N+1. `DataObjectV2RestTest` fixed and extended (17 tests).
+
+- **API docs enrichment (#29/#31/#32) — shipped.** 7 v2 REST endpoints enriched with field-level response shapes, auth requirements, and Next-step links. Factual corrections to AnomalyDetectionRest defaults and TimeseriesReferenceV2Rest valid-value list.
+
+- **Fork-vs-upstream comparison page — shipped.** `docs/comparison.md` with compact tables, ✓/📐/🗓 status indicators, registered in in-app /help nav.
+
+**Near-term (designed, not yet shipped):**
+
+- **Basic mode containerless UX (#51).** In basic mode, containers should be invisible — researchers attach files and timeseries directly to a DataObject. Routing and permission layers are in place; frontend routing and component change needed.
+
+- **API-level integration test suite** (`aidocs/ops/75-api-integration-test-suite.md`). pytest + httpx suite against the live container using seed data; runs post-deploy in CI. Design in progress.
+
+- **uPlot migration for live-mode chart (#56)** (`aidocs/ux/76-uplot-timeseries-chart.md`). Swap ECharts for uPlot (40× lighter, purpose-built for streaming). Design in progress.
 
 **Longer-horizon design work:**
 
