@@ -6,11 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class JWTSecurityContextTest {
 
-  private String[] roles = { "role1", "role2" };
+  private List<String> roles = List.of("role1", "role2");
   private JWTPrincipal principal = new JWTPrincipal("MyAudience", "MyIssuedFor", "MyUsername", "MyKeyId", roles);
 
   private SecurityContext sc = new SecurityContext() {

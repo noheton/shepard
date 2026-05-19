@@ -79,7 +79,7 @@ class UserAvatarServiceTest {
         .append("mimeType", "image/jpeg");
 
     FindIterable<Document> iterable = mock(FindIterable.class);
-    when(collection.find(any())).thenReturn(iterable);
+    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(iterable);
     when(iterable.first()).thenReturn(doc);
 
     Document result = service.find("user-app-id-3");
@@ -91,7 +91,7 @@ class UserAvatarServiceTest {
   @Test
   void find_noAvatar_returnsNull() {
     FindIterable<Document> iterable = mock(FindIterable.class);
-    when(collection.find(any())).thenReturn(iterable);
+    when(collection.find(any(org.bson.conversions.Bson.class))).thenReturn(iterable);
     when(iterable.first()).thenReturn(null);
 
     Document result = service.find("user-app-id-4");

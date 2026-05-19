@@ -357,7 +357,7 @@ public class JWTFilterTest extends BaseTestCase {
       .signWith(privateKey)
       .compact();
 
-    JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", keyId.toString(), new String[0]);
+    JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", keyId.toString(), java.util.Collections.emptyList());
     JWTSecurityContext securityContext = new JWTSecurityContext(context.getSecurityContext(), principal);
 
     when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);

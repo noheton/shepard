@@ -93,7 +93,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 
   @Test
   public void testFetchUser_Successful() throws IllegalAccessException {
-    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi", null);
 
     FieldUtils.writeField(service, "userinfoEndpoint", "https://userinfo.endpoint/userinfo", true);
     when(invocation.invoke(Userinfo.class)).thenReturn(userinfo);
@@ -105,7 +105,7 @@ public class UserinfoServiceTest extends BaseTestCase {
 
   @Test
   public void testFetchUser_InvokeInit() throws IllegalAccessException {
-    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi");
+    var userinfo = new Userinfo("f:sub:name_fi", "first name", "first.name@example.com", "first", "name", "name_fi", null);
 
     doAnswer(
       new Answer<>() {
