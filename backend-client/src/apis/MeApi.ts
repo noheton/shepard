@@ -50,7 +50,7 @@ export class MeApi extends runtime.BaseAPI {
         path: `/v2/users/me`,
         method: 'PATCH',
         headers: headerParameters,
-        body: JSON.stringify(requestParameters.body),
+        body: requestParameters.body as any,
       },
       initOverrides,
     );
@@ -120,7 +120,7 @@ export class MeApi extends runtime.BaseAPI {
       path: `/v2/users/me/preferences`,
       method: 'PATCH',
       headers: headerParameters,
-      body: JSON.stringify(body),
+      body: body as any,
     });
 
     return response.json();
