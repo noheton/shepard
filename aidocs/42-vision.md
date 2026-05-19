@@ -325,7 +325,16 @@ Five typical entry points:
    neighbours); **DataObject Provenance Graph** (force-directed graph on
    the dataset detail page linking the dataset to related datasets and to
    the users who acted on it, with edge labels for action kinds and
-   counts).
+   counts); **personal landing page** (authenticated users land on a
+   digest of their 6 most recently active collections with quick-action
+   buttons, replacing the static marketing page); **401 auto-refresh**
+   (the API client now transparently refreshes the OIDC token on 401,
+   retries the request, and redirects to sign-in only when the refresh
+   token itself has expired — no more sudden logout mid-session);
+   **session-expiry warning** (a snackbar fires 5 minutes before the
+   access token expires, offering a "Stay signed in" button); **chunk
+   error guard** (dynamic-import failures after a deploy now trigger a
+   single silent page reload rather than a broken UI loop).
 2. **The Python client.** `pip install shepard-client`. Open a
    notebook, walk a Collection, run analysis, write results back.
    The `examples/lumen-showcase/notebooks/` are the canonical
