@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { v2BaseUrl } from "~/composables/common/api/useV2ShepardApi";
 import { AdminFragments } from "./adminMenuItems";
+
+function getV2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  return explicit && explicit.length > 0
+    ? explicit
+    : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+}
 
 interface TimescaleStats {
   hypertableSizeBytes: number;
@@ -33,7 +40,7 @@ async function loadOverview() {
     const { data: session } = useAuth();
     const token = session.value?.accessToken;
     if (!token) return;
-    const res = await fetch(`${v2BaseUrl()}/v2/admin/storage-overview`, {
+    const res = await fetch(`${getV2BaseUrl()}/v2/admin/storage-overview`, {
       headers: { Authorization: `Bearer ${token}` },
       credentials: "include",
     });

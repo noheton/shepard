@@ -156,8 +156,8 @@ async function fetchAll(silent = false) {
   }
 }
 
-watch(() => props.measurements, fetchAll, { immediate: true });
-watch(() => props.selectedChannelKeys, fetchAll);
+watch(() => props.measurements, () => fetchAll(), { immediate: true });
+watch(() => props.selectedChannelKeys, () => fetchAll());
 
 // Live-mode lifecycle: arm a setInterval when toggled on, clear when off
 // or when the component unmounts. Pause when the tab goes background.

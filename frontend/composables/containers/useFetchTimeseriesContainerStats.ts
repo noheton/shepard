@@ -2,7 +2,6 @@
  * TS_STATS1 — fetches storage + ingest stats for a TimeseriesContainer.
  * Calls GET /v2/timeseries-containers/{containerId}/stats.
  */
-import { v2BaseUrl } from "~/composables/common/api/useV2ShepardApi";
 
 export interface TimeseriesContainerStats {
   pointCount: number;
@@ -10,6 +9,14 @@ export interface TimeseriesContainerStats {
   estimatedSizeBytes: number;
   recentPointsLast10s: number;
   ingestRateBytesPerSec: number;
+}
+
+function getV2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  return explicit && explicit.length > 0
+    ? explicit
+    : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
 }
 
 export function useFetchTimeseriesContainerStats(containerId: number) {
@@ -23,7 +30,7 @@ export function useFetchTimeseriesContainerStats(containerId: number) {
       const { data: session } = useAuth();
       const accessToken = session.value?.accessToken;
       if (!accessToken) return;
-      const url = `${v2BaseUrl()}/v2/timeseries-containers/${containerId}/stats`;
+      const url = `${getV2BaseUrl()}/v2/timeseries-containers/${containerId}/stats`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
         credentials: "include",
