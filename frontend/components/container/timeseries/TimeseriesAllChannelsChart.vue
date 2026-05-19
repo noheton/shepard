@@ -255,6 +255,27 @@ onBeforeUnmount(() => {
             <v-icon size="x-small" start>mdi-circle</v-icon>
             updating every {{ liveIntervalMs / 1000 }}s
           </v-chip>
+          <v-tooltip location="top" max-width="320">
+            <template #activator="{ props: tipProps }">
+              <v-icon
+                v-bind="tipProps"
+                size="small"
+                color="info"
+                class="ms-1"
+                style="cursor: help"
+              >
+                mdi-information-outline
+              </v-icon>
+            </template>
+            <div>
+              <strong>Live mode notes:</strong>
+              <ul class="my-2 ps-4">
+                <li>Points are <em>aggregated</em> per bucket (mean over each interval) — not raw samples.</li>
+                <li>The leading edge of the line is anchored on a point from <em>outside</em> the visible window — that point is <strong>interpolated</strong> from the most recent real sample. Helps avoid a mid-air line start when data is sparse; flagged here because the value is not at the time you see it.</li>
+                <li>Smoothing is cubic-spline; the curve between points is also interpolated.</li>
+              </ul>
+            </div>
+          </v-tooltip>
         </template>
         <v-spacer />
         <div

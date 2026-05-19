@@ -124,14 +124,17 @@ const chartOption = computed(() => ({
 
 <template>
   <ClientOnly>
-    <!-- `update-options.notMerge=false` lets echarts diff series in
-         place instead of tearing down and rebuilding the canvas on
-         every `chartOption` change. Stops the visible "blink" the
-         user reported when live-mode polls every 5s.
-         `manual-update=false` (default) keeps reactivity. -->
+    <!-- Live-refresh flicker fix: echarts otherwise rebuilds the
+         canvas every time `chartOption` changes (which happens every
+         tick of the live-mode setInterval). `notMerge: false` +
+         `lazyUpdate: true` lets it diff in place. We DON'T pass
+         `replaceMerge: ['series']` because that's a full series-array
+         swap which forces a re-render; the default merge updates each
+         series's `data` field in place. At 1s refresh the result is a
+         smooth slide, not a re-render flash. -->
     <v-chart
       :option="chartOption"
-      :update-options="{ notMerge: false, lazyUpdate: true, replaceMerge: ['series'] }"
+      :update-options="{ notMerge: false, lazyUpdate: true }"
       :style="{ height }"
       autoresize
     />

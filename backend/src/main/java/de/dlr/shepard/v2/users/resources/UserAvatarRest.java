@@ -7,22 +7,17 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.bson.Document;
-import org.bson.types.Binary;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -30,25 +25,23 @@ import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 /**
- * U1e — avatar upload/delete/render endpoints.
+ * U1e — caller's avatar (PUT + DELETE).
  *
- * <ul>
- *   <li>{@code PUT    /v2/users/me/avatar}        — upload or replace avatar (multipart)</li>
- *   <li>{@code DELETE /v2/users/me/avatar}        — remove avatar</li>
- *   <li>{@code GET    /v2/users/{appId}/avatar}   — public render (no auth required)</li>
- * </ul>
+ * <p>Routing note: this resource's class-level {@code @Path} is the FULL
+ * path. Previously the file mixed class-level {@code @Path("/v2/users")}
+ * with method-level {@code @Path("/me/avatar")}, but {@link MeRest}
+ * already claims {@code /v2/users/me} — JAX-RS picks the most-specific
+ * matching resource class, and {@code MeRest} won, leaving the
+ * `/avatar` sub-path with no matching method (404 "Unable to find
+ * matching target resource method"). Putting the full path on the
+ * class makes the route resolution unambiguous; the GET-by-appId
+ * path lives in its sibling {@link UserAvatarByAppIdRest}.
  *
- * <p>Avatars are stored in MongoDB collection {@code userAvatars} keyed by {@code userAppId}.
- * Max size: {@value UserAvatarService#MAX_BYTES} bytes (2 MB).
- * Allowed types: JPEG, PNG, GIF, WebP.
+ * <p>Avatars are stored in MongoDB collection {@code userAvatars} keyed
+ * by {@code userAppId}. Max size: {@value UserAvatarService#MAX_BYTES}
+ * bytes (2 MB). Allowed types: JPEG, PNG, GIF, WebP.
  */
-// Class-level @Path was just "/v2" with each method redeclaring the
-// "/users/..." prefix. Combined-path resolution in this Quarkus/Resteasy
-// build was producing routes that didn't match incoming requests
-// (PUT/GET/DELETE /v2/users/me/avatar all 404'd "Unable to find
-// matching target resource method"). Moved the full path onto each
-// @Path annotation below.
-@Path("/v2/users")
+@Path("/v2/users/me/avatar")
 @RequestScoped
 @Tag(name = "Me")
 public class UserAvatarRest {
@@ -59,10 +52,7 @@ public class UserAvatarRest {
   @Inject
   UserService userService;
 
-  // ── PUT /v2/users/me/avatar ───────────────────────────────────────────────
-
   @PUT
-  @Path("/users/me/avatar")
   @Consumes(MediaType.MULTIPART_FORM_DATA)
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Upload or replace the caller's avatar (max 2 MB; JPEG/PNG/GIF/WebP).")
@@ -112,10 +102,7 @@ public class UserAvatarRest {
     return Response.noContent().build();
   }
 
-  // ── DELETE /v2/users/me/avatar ────────────────────────────────────────────
-
   @DELETE
-  @Path("/users/me/avatar")
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(summary = "Remove the caller's avatar.")
   @APIResponse(responseCode = "204", description = "Avatar removed (or was already absent).")
@@ -132,33 +119,5 @@ public class UserAvatarRest {
 
     avatarService.delete(caller.getAppId());
     return Response.noContent().build();
-  }
-
-  // ── GET /v2/users/{appId}/avatar ──────────────────────────────────────────
-
-  @GET
-  @Path("/users/{appId}/avatar")
-  @Produces("image/*")
-  @Operation(summary = "Get a user's avatar. No authentication required; returns 404 if none uploaded.")
-  @APIResponse(responseCode = "200", description = "Avatar bytes.")
-  @APIResponse(responseCode = "404", description = "No avatar for this user.")
-  public Response getAvatar(@PathParam("appId") String appId) {
-    Document doc = avatarService.find(appId);
-    if (doc == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    Binary binary = doc.get("data", Binary.class);
-    String mimeType = doc.getString("mimeType");
-    if (binary == null || mimeType == null) {
-      return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    byte[] data = binary.getData();
-    StreamingOutput stream = out -> out.write(data);
-
-    return Response.ok(stream, mimeType)
-        .header("Cache-Control", "max-age=3600, must-revalidate")
-        .build();
   }
 }
