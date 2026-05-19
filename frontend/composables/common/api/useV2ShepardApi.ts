@@ -1,6 +1,7 @@
 import type { BaseAPI } from "@dlr-shepard/backend-client";
 import { Configuration } from "@dlr-shepard/backend-client";
 import { ref, watch } from "vue";
+import { useAuthRefreshMiddleware } from "./useAuthRefreshMiddleware";
 
 /**
  * Like useShepardApi but routes to `/v2/...` endpoints which live at the
@@ -13,6 +14,7 @@ export function useV2ShepardApi<A extends BaseAPI>(
   apiClass: new (config: Configuration) => A,
 ) {
   const { data } = useAuth();
+  const authMiddleware = useAuthRefreshMiddleware();
 
   const configuration = computed(() => {
     const config = useRuntimeConfig().public;
@@ -24,6 +26,7 @@ export function useV2ShepardApi<A extends BaseAPI>(
     return new Configuration({
       basePath: v2Base,
       accessToken: data.value?.accessToken,
+      middleware: [authMiddleware],
     });
   });
 
