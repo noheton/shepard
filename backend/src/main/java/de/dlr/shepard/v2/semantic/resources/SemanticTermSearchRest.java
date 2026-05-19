@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -75,38 +76,53 @@ public class SemanticTermSearchRest {
    * Fulltext-index-backed query for n10s {@code :Resource} nodes.
    *
    * <p>Expects the {@code resource_labels} fulltext index to exist
-   * (created by {@code V44__Add_fulltext_index_Resource_labels.cypher}).
+   * (created by {@code V50__Fix_fulltext_index_Resource_labels.cypher}).
    * Uses {@code $q + "*"} for prefix matching. Returns at most {@code $limit}
    * results ordered by score (Neo4j native relevance).
+   *
+   * <p>n10s with {@code handleVocabUris=IGNORE} stores bare local names:
+   * {@code label} (rdfs:label), {@code prefLabel} (skos:prefLabel),
+   * {@code altLabel} (skos:altLabel), {@code name} (foaf/schema:name),
+   * {@code title} (dcterms:title). Language tags are embedded in the value
+   * as a {@code @lang} suffix and are stripped by {@link #stripLangSuffix}.
    */
   static final String FULLTEXT_CYPHER =
     "CALL db.index.fulltext.queryNodes('resource_labels', $q + '*') " +
     "YIELD node AS r " +
     "WHERE r.uri IS NOT NULL " +
     "RETURN r.uri AS uri, " +
-    "       coalesce(r.`rdfs__label`, r.`skos__prefLabel`, r.`skos__altLabel`, r.uri) AS label, " +
-    "       r.`rdfs__comment` AS description " +
+    "       coalesce(r.label[0], r.prefLabel[0], r.altLabel[0], r.name[0], r.title[0], r.uri) AS label, " +
+    "       coalesce(r.comment[0], r.definition[0]) AS description " +
     "LIMIT $limit";
 
   /**
    * CONTAINS-based fallback used when the fulltext index is absent.
    *
    * <p>Scans all {@code :Resource} nodes with a case-insensitive
-   * {@code CONTAINS} check across three label properties and the URI.
+   * {@code CONTAINS} check across label properties and the URI.
    * Slower on large ontologies but always safe.
+   *
+   * <p>Note: the {@code @lang} suffix embedded in values by n10s IGNORE mode
+   * (e.g. {@code "Anomaly Detected@en"}) is included in the CONTAINS match,
+   * so searching for "en" would spuriously match all English-labelled terms.
+   * This is acceptable for the fallback path; the fulltext index avoids it.
    */
   static final String CONTAINS_CYPHER =
     "MATCH (r:Resource) " +
     "WHERE r.uri IS NOT NULL " +
     "  AND (" +
-    "    toLower(coalesce(r.`rdfs__label`, '')) CONTAINS toLower($q) " +
-    "    OR toLower(coalesce(r.`skos__prefLabel`, '')) CONTAINS toLower($q) " +
-    "    OR toLower(coalesce(r.`skos__altLabel`, '')) CONTAINS toLower($q) " +
+    "    any(v IN coalesce(r.label, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.prefLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.altLabel, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.name, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.title, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.comment, []) WHERE toLower(v) CONTAINS toLower($q)) " +
+    "    OR any(v IN coalesce(r.definition, []) WHERE toLower(v) CONTAINS toLower($q)) " +
     "    OR toLower(r.uri) CONTAINS toLower($q) " +
     "  ) " +
     "RETURN r.uri AS uri, " +
-    "       coalesce(r.`rdfs__label`, r.`skos__prefLabel`, r.`skos__altLabel`, r.uri) AS label, " +
-    "       r.`rdfs__comment` AS description " +
+    "       coalesce(r.label[0], r.prefLabel[0], r.altLabel[0], r.name[0], r.title[0], r.uri) AS label, " +
+    "       coalesce(r.comment[0], r.definition[0]) AS description " +
     "LIMIT $limit";
 
   // ─── endpoint ─────────────────────────────────────────────────────────────
@@ -209,8 +225,24 @@ public class SemanticTermSearchRest {
   }
 
   /**
+   * Language-tag suffix embedded in n10s IGNORE-mode values: {@code @lang} at end of string.
+   * e.g. {@code "Anomaly Detected@en"} → label {@code "Anomaly Detected"}, lang {@code en}.
+   */
+  private static final Pattern LANG_SUFFIX = Pattern.compile("@[a-zA-Z]{2,3}(?:-[a-zA-Z0-9]+)?$");
+
+  /**
+   * Strip a BCP-47 language suffix embedded by n10s IGNORE mode ({@code "label@en"} → {@code "label"}).
+   * Returns {@code raw} unchanged if no suffix is present or {@code raw} is null/blank.
+   */
+  static String stripLangSuffix(String raw) {
+    if (raw == null || raw.isBlank()) return raw;
+    return LANG_SUFFIX.matcher(raw).replaceAll("").trim();
+  }
+
+  /**
    * Execute a Cypher query and map each row to a {@link TermSuggestionIO}.
    * Rows with a null or blank {@code uri} are silently skipped.
+   * Language suffixes embedded in n10s IGNORE-mode values are stripped before returning.
    */
   private static List<TermSuggestionIO> executeQuery(Session session, String cypher, String q, int limit) {
     var result = session.query(cypher, Map.of("q", q, "limit", (long) limit));
@@ -221,9 +253,10 @@ public class SemanticTermSearchRest {
       String uri = uriRaw.toString();
       if (uri.isBlank()) continue;
       Object labelRaw = row.get("label");
-      String label = labelRaw != null ? labelRaw.toString() : uri;
+      String label = labelRaw != null ? stripLangSuffix(labelRaw.toString()) : uri;
+      if (label == null || label.isBlank()) label = uri;
       Object descRaw = row.get("description");
-      String description = descRaw != null ? descRaw.toString() : null;
+      String description = descRaw != null ? stripLangSuffix(descRaw.toString()) : null;
       out.add(new TermSuggestionIO(uri, label, description));
     }
     return out;

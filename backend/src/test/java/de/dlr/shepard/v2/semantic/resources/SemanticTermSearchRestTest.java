@@ -231,6 +231,52 @@ class SemanticTermSearchRestTest {
     assertTrue(body.isEmpty());
   }
 
+  // ─── stripLangSuffix ──────────────────────────────────────────────────────
+
+  @Test
+  void stripLangSuffix_removesSimpleLangTag() {
+    assertEquals("Anomaly Detected", SemanticTermSearchRest.stripLangSuffix("Anomaly Detected@en"));
+  }
+
+  @Test
+  void stripLangSuffix_removesSubtaggedLangTag() {
+    assertEquals("Testphase", SemanticTermSearchRest.stripLangSuffix("Testphase@de-CH"));
+  }
+
+  @Test
+  void stripLangSuffix_leavesPlainValueUnchanged() {
+    assertEquals("Activity", SemanticTermSearchRest.stripLangSuffix("Activity"));
+  }
+
+  @Test
+  void stripLangSuffix_handlesNullAndBlank() {
+    assertEquals(null, SemanticTermSearchRest.stripLangSuffix(null));
+    assertEquals("", SemanticTermSearchRest.stripLangSuffix(""));
+  }
+
+  /** Embedded lang tags from n10s IGNORE mode are stripped from returned labels. */
+  @Test
+  void matchingTerms_embeddedLangTagStripped() {
+    Map<String, Object> row = new LinkedHashMap<>();
+    row.put("uri", "https://shepard.dlr.de/showcase/lumen-inspired#AnomalyDetected");
+    row.put("label", "Anomaly Detected@en");  // n10s IGNORE mode embeds @en in value
+    row.put("description", "A significant off-nominal event was detected.@en");
+
+    stubResultRows(List.of(row));
+
+    Response r = rest.search("Anomaly", 20, sc);
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<TermSuggestionIO> body = (List<TermSuggestionIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("Anomaly Detected", body.get(0).label(), "Lang suffix must be stripped from label");
+    assertEquals(
+      "A significant off-nominal event was detected.",
+      body.get(0).description(),
+      "Lang suffix must be stripped from description"
+    );
+  }
+
   // ─── helpers ──────────────────────────────────────────────────────────────
 
   private void stubEmptyResult() {

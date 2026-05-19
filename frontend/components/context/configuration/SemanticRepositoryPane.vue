@@ -6,6 +6,7 @@ import {
 import { ConfigurationFragments } from "~/components/context/configuration/configurationMenuItems";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useFetchSemanticRepositories } from "~/composables/context/useFetchSemanticRepositories";
+import { useTermSearch } from "~/composables/context/useTermSearch";
 import { handleSemanticRepositoryListUpdate } from "~/utils/resourceUpdateBus";
 
 const showCreateDialog = ref(false);
@@ -23,6 +24,25 @@ const headers = [
 
 const { repositories: repositoryList, isLoading } =
   useFetchSemanticRepositories();
+
+const { search } = useTermSearch();
+const noLabelsWarning = ref(false);
+
+watch(
+  [repositoryList, isLoading],
+  async ([repos, loading]) => {
+    if (loading || repos.length === 0) {
+      noLabelsWarning.value = false;
+      return;
+    }
+    // Only probe when an INTERNAL repository is present.
+    // The TypeScript client predates the INTERNAL type, so cast to any.
+    if (!repos.some(r => (r as any).type === "INTERNAL")) return;
+    const results = await search("aa", 1);
+    noLabelsWarning.value = results.length === 0;
+  },
+  { immediate: true },
+);
 
 const semanticRepositoryToDelete = ref<SemanticRepository | undefined>(
   undefined,
@@ -83,6 +103,16 @@ async function onDelete() {
         />
       </template>
       <template #table>
+        <v-alert
+          v-if="noLabelsWarning"
+          type="warning"
+          density="compact"
+          variant="tonal"
+          class="mx-4 mb-3"
+          icon="mdi-label-off-outline"
+          title="No searchable labels found"
+          text="The internal semantic repository has no human-readable labels indexed. Ontology data may not be loaded, or the imported RDF lacks rdfs:label / skos:prefLabel properties. Annotation term search will return empty results until this is resolved."
+        />
         <DataTable
           class="pt-4"
           :cell-props="{

@@ -228,6 +228,105 @@ class InternalSemanticConnectorTest {
     assertEquals("naked", labels.get(""));
   }
 
+  // ── IGNORE-format (bare property names, lang embedded in value) ──────────
+
+  /** n10s IGNORE mode: bare {@code prefLabel} with embedded {@code @lang} suffix. */
+  @Test
+  void extractLabels_ignoreFormat_prefLabelWithEmbeddedLang() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("prefLabel", new String[]{"Anomaly Detected@en"});
+    props.put("uri", "https://shepard.dlr.de/showcase/lumen-inspired#AnomalyDetected");
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(1, labels.size());
+    assertEquals("Anomaly Detected", labels.get("en"));
+  }
+
+  /** n10s IGNORE mode: bare {@code label} wins over bare {@code prefLabel} for same lang. */
+  @Test
+  void extractLabels_ignoreFormat_labelWinsOverPrefLabel() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("label", new String[]{"rdfs-wins@en"});
+    props.put("prefLabel", new String[]{"skos-loses@en"});
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(1, labels.size());
+    assertEquals("rdfs-wins", labels.get("en"));
+  }
+
+  /** n10s IGNORE mode: prefLabel backfills a language absent from label. */
+  @Test
+  void extractLabels_ignoreFormat_prefLabelBackfillsMissingLang() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("label", new String[]{"Test Phase@en"});
+    props.put("prefLabel", new String[]{"Testphase@de"});
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(2, labels.size());
+    assertEquals("Test Phase", labels.get("en"));
+    assertEquals("Testphase", labels.get("de"));
+  }
+
+  /** n10s IGNORE mode: value without lang tag uses empty-string key. */
+  @Test
+  void extractLabels_ignoreFormat_noLangTagUsesEmptyKey() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("label", new String[]{"wasGeneratedBy@en", "wasGeneratedBy"});
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(2, labels.size());
+    assertEquals("wasGeneratedBy", labels.get("en"));
+    assertEquals("wasGeneratedBy", labels.get(""));
+  }
+
+  // ── SHORTEN-format (prefixed key names, plain values) ────────────────────
+
+  /** n10s SHORTEN mode: {@code skos__prefLabel@en} key, plain value (legacy format). */
+  @Test
+  void extractLabels_shortenFormat_skosPrefLabel() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("skos__prefLabel@en", "Pre-Cooling");
+    props.put("uri", "https://shepard.dlr.de/showcase/lumen-inspired#PreCooling");
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(1, labels.size());
+    assertEquals("Pre-Cooling", labels.get("en"));
+  }
+
+  /** n10s SHORTEN mode: rdfs__label wins over skos__prefLabel for same language. */
+  @Test
+  void extractLabels_shortenFormat_rdfsLabelTakesPrecedence() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("rdfs__label@en", "rdfs-wins");
+    props.put("skos__prefLabel@en", "skos-loses");
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(1, labels.size());
+    assertEquals("rdfs-wins", labels.get("en"));
+  }
+
+  /** n10s SHORTEN mode: prefLabel backfills a language absent from rdfs:label. */
+  @Test
+  void extractLabels_shortenFormat_prefLabelBackfillsMissingLanguage() {
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("rdfs__label@en", "Test Phase");
+    props.put("skos__prefLabel@de", "Testphase");
+    var labels = InternalSemanticConnector.extractLabels(props);
+    assertEquals(2, labels.size());
+    assertEquals("Test Phase", labels.get("en"));
+    assertEquals("Testphase", labels.get("de"));
+  }
+
+  /** getTerm: IGNORE-mode SKOS prefLabel node resolves end-to-end. */
+  @Test
+  void getTerm_ignoreFormat_resolvesSkosPrefLabelOnlyNode() {
+    Session session = mock(Session.class);
+    Map<String, Object> props = new LinkedHashMap<>();
+    props.put("prefLabel", new String[]{"Pre-Cooling@en"});
+    props.put("uri", "https://shepard.dlr.de/showcase/lumen-inspired#PreCooling");
+    Result result = singleRow(Map.of("props", props));
+    when(session.query(eq(InternalSemanticConnector.GET_TERM_CYPHER), any())).thenReturn(result);
+
+    var connector = new InternalSemanticConnector(session);
+    var labels = connector.getTerm("https://shepard.dlr.de/showcase/lumen-inspired#PreCooling");
+
+    assertEquals("Pre-Cooling", labels.get("en"));
+  }
+
   // ----- helpers ----------------------------------------------------------
 
   static Result singleRow(Map<String, Object> row) {

@@ -21,6 +21,7 @@ import csv
 import json
 import os
 import sys
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -715,15 +716,28 @@ SEMANTIC_REPO_NAME_INTERNAL = "Built-in Semantic Store (n10s)"
 def ensure_semantic_repo(apis: Apis) -> SemanticRepository:
     """Return the pre-seeded INTERNAL semantic repository (V49 migration).
 
-    The INTERNAL repo holds the lumen-inspired and shepard-experiment
-    ontologies, seeded by OntologySeedService on startup. Using it means
-    annotation IRIs resolve against the bundled vocabularies so the picker
-    shows human-readable labels."""
-    repos = apis.semantic_repo.get_all_semantic_repositories() or []
-    for r in repos:
-        if getattr(r, "type", None) == "INTERNAL" or r.name == SEMANTIC_REPO_NAME_INTERNAL:
-            _log("SKIP", SEMANTIC_REPO_NAME_INTERNAL, "SemanticRepository", r.id)
-            return r
+    The generated Python client's SemanticRepositoryType enum pre-dates the
+    INTERNAL type, so Pydantic rejects the response. We bypass it with a
+    raw urllib call and hand-construct the SemanticRepository object."""
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    req = urllib.request.Request(
+        f"{host}/semanticRepositories",
+        headers={"X-API-KEY": api_key, "Accept": "application/json"},
+    )
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read().decode())
+    repos_raw: list[dict] = data if isinstance(data, list) else []
+    for r in repos_raw:
+        if r.get("type") == "INTERNAL" or r.get("name") == SEMANTIC_REPO_NAME_INTERNAL:
+            # model_construct bypasses Pydantic validation so the INTERNAL
+            # type (unknown to the generated client enum) doesn't raise.
+            repo = SemanticRepository.model_construct(
+                id=r["id"],
+                name=r.get("name", SEMANTIC_REPO_NAME_INTERNAL),
+            )
+            _log("OK", SEMANTIC_REPO_NAME_INTERNAL, "SemanticRepository", repo.id)
+            return repo
     raise RuntimeError(
         "INTERNAL semantic repository not found. "
         "Ensure V49 migration has run (upgrade the backend to the latest image)."

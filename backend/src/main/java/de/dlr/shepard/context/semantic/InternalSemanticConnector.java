@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.neo4j.ogm.session.Session;
 
 /**
@@ -52,14 +53,11 @@ public class InternalSemanticConnector implements ISemanticRepositoryConnector {
     "MATCH (r:Resource {uri: $uri}) " + "RETURN properties(r) AS props " + "LIMIT 1";
 
   /**
-   * Lightweight existence-probe for n10s. Returns 1 when the
-   * procedure namespace is registered, 0 otherwise. We can't use
-   * {@code CALL n10s.graphconfig.show()} directly because the
-   * procedure raises in Neo4j 5 when called against an unconfigured
-   * graph — counting the registration is exception-free.
+   * Lightweight existence-probe for n10s. {@code dbms.procedures()} was
+   * removed in Neo4j 5.26; {@code SHOW PROCEDURES} is the supported form.
    */
   static final String HEALTH_CYPHER =
-    "CALL dbms.procedures() YIELD name WHERE name STARTS WITH 'n10s.' " +
+    "SHOW PROCEDURES YIELD name WHERE name STARTS WITH 'n10s.' " +
     "RETURN count(name) > 0 AS available";
 
   private final Session session;
@@ -127,26 +125,82 @@ public class InternalSemanticConnector implements ISemanticRepositoryConnector {
    * {@link ISemanticRepositoryConnector} contract.
    *
    * <p>n10s with {@code handleVocabUris=IGNORE} + {@code keepLangTag=true}
-   * yields property names of the shape {@code rdfs__label} (no
-   * language tag) or {@code rdfs__label@en} (language tag preserved).
-   * For the bare form we use the empty string as the language key —
-   * same convention as {@link SparqlConnector#parseResult}.
+   * yields property names in one of two shapes depending on the
+   * {@code handleVocabUris} n10s config:
+   *
+   * <ul>
+   *   <li><b>IGNORE (default — used by shepard):</b> bare local name, e.g.
+   *       {@code label}, {@code prefLabel}. The language tag is embedded
+   *       in the <em>value</em> string as a {@code @lang} suffix, e.g.
+   *       {@code "Anomaly Detected@en"}. Values without a tag are treated
+   *       as language-neutral (key {@code ""}).</li>
+   *   <li><b>SHORTEN (legacy, not used by shepard):</b> prefixed name as
+   *       the <em>key</em>, e.g. {@code rdfs__label@en}. The value is
+   *       the bare label string. We still recognise this shape for
+   *       forward-compat in case an operator overrides the config.</li>
+   * </ul>
+   *
+   * <p>Accepted label property names (priority order):
+   * {@code label} / {@code rdfs__label*} (rdfs:label) then
+   * {@code prefLabel} / {@code skos__prefLabel*} (skos:prefLabel).
+   * {@code rdfs:label} wins over {@code skos:prefLabel} for the same lang.
    */
+  // Language-tag suffix in embedded-tag values: @xx or @xx-XX (BCP-47 basic).
+  private static final Pattern LANG_SUFFIX = Pattern.compile("@([a-zA-Z]{2,3}(?:-[a-zA-Z0-9]+)?)$");
+
   static Map<String, String> extractLabels(Map<String, Object> props) {
     if (props == null || props.isEmpty()) return Collections.emptyMap();
+    // Two-pass: rdfs:label wins over skos:prefLabel for the same language.
     Map<String, String> labels = new HashMap<>();
+    Map<String, String> prefLabels = new HashMap<>();
     for (var e : props.entrySet()) {
       String key = e.getKey();
       if (key == null) continue;
-      // Only look at rdfs:label (n10s prefixes vocabulary with `__`).
-      if (!key.startsWith("rdfs__label")) continue;
-      String value = stringValue(e.getValue());
-      if (value == null || value.isBlank()) continue;
-      int at = key.indexOf('@');
-      String lang = (at >= 0 && at < key.length() - 1) ? key.substring(at + 1) : "";
-      labels.put(lang, value);
+      boolean isRdfsLabel = key.equals("label") || key.startsWith("rdfs__label");
+      boolean isPrefLabel = key.equals("prefLabel") || key.startsWith("skos__prefLabel");
+      if (!isRdfsLabel && !isPrefLabel) continue;
+      // ── SHORTEN format: lang tag is a KEY suffix (rdfs__label@en) ──
+      if (key.contains("__")) {
+        // Language extracted from key after '@', value is plain.
+        String value = stringValue(e.getValue());
+        if (value == null || value.isBlank()) continue;
+        int at = key.indexOf('@');
+        String lang = (at >= 0 && at < key.length() - 1) ? key.substring(at + 1) : "";
+        if (isRdfsLabel) labels.put(lang, value);
+        else prefLabels.put(lang, value);
+        continue;
+      }
+      // ── IGNORE format: lang tag is a VALUE suffix ("Anomaly Detected@en") ──
+      Iterable<?> values = toIterable(e.getValue());
+      for (Object raw : values) {
+        if (raw == null) continue;
+        String s = raw.toString().trim();
+        if (s.isBlank()) continue;
+        var m = LANG_SUFFIX.matcher(s);
+        String lang;
+        String text;
+        if (m.find()) {
+          lang = m.group(1).toLowerCase();
+          text = s.substring(0, m.start()).trim();
+        } else {
+          lang = "";
+          text = s;
+        }
+        if (text.isBlank()) continue;
+        if (isRdfsLabel) labels.putIfAbsent(lang, text);
+        else prefLabels.putIfAbsent(lang, text);
+      }
     }
+    // Backfill: any lang present in prefLabels but not in rdfs labels.
+    prefLabels.forEach(labels::putIfAbsent);
     return labels;
+  }
+
+  private static Iterable<?> toIterable(Object raw) {
+    if (raw == null) return Collections.emptyList();
+    if (raw instanceof Iterable<?> it) return it;
+    if (raw instanceof String[] arr) return java.util.Arrays.asList(arr);
+    return Collections.singletonList(raw);
   }
 
   private static String stringValue(Object raw) {
