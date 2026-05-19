@@ -17,6 +17,17 @@ public class UserIO {
   @Schema(readOnly = true, required = true)
   private String username;
 
+  /**
+   * UUID v7 application-level identifier (`HasAppId`). Stable across DB
+   * rebuilds; used in `/v2/` paths (`/v2/users/{appId}/avatar`, etc.).
+   * The frontend needs this on the v1 `/shepard/api/users` response so
+   * the profile page can construct the by-appId avatar URL — without it,
+   * the avatar uploads (PUT /v2/users/me/avatar) succeed but the GET
+   * (which goes via /v2/users/{appId}/avatar) can't be addressed.
+   */
+  @Schema(readOnly = true, required = true)
+  private String appId;
+
   private String firstName;
 
   private String lastName;
@@ -59,6 +70,7 @@ public class UserIO {
 
   public UserIO(User user) {
     this.username = user.getUsername();
+    this.appId = user.getAppId();
     this.firstName = user.getFirstName();
     this.lastName = user.getLastName();
     this.email = user.getEmail();

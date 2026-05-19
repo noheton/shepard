@@ -26,7 +26,14 @@ export interface User {
      */
     readonly username: string;
     /**
-     * 
+     * UUID v7 application-level identifier (fork extension). Stripped by the
+     * upstream OpenAPI-generated deserializer until this manual carry-through.
+     * @type {string}
+     * @memberof User
+     */
+    readonly appId?: string;
+    /**
+     *
      * @type {string}
      * @memberof User
      */
@@ -96,6 +103,7 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
     return {
         
         'username': json['username'],
+        'appId': json['appId'] == null ? undefined : json['appId'],
         'firstName': json['firstName'] == null ? undefined : json['firstName'],
         'lastName': json['lastName'] == null ? undefined : json['lastName'],
         'email': json['email'] == null ? undefined : json['email'],
