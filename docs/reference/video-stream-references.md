@@ -99,13 +99,19 @@ The DataObject detail page shows a **Video References** expansion
 panel for any DataObject that has an `appId`. The panel:
 
 - Renders a native `<video>` player for each reference (progressive
-  MP4/WebM playback; no HLS in VID1a).
+  MP4/WebM playback; no HLS in VID1a). The player fetches the video
+  as a blob using the session Bearer token on mount, then hands the
+  browser a `blob:` URL — so the auth-gated `/download` endpoint works
+  without any extra cookie or signed-URL setup.
 - Displays metadata chips: duration, resolution, video codec, audio
   codec, frame rate, file size, estimated bitrate.
 - Provides a per-reference **Download** button.
 
 HLS segmented delivery is deferred to VID1b. The native player works
-for all MP4 and WebM files in modern browsers.
+for all MP4 and WebM files in modern browsers. Large video files are
+loaded into browser memory before playback begins — for very large
+files prefer the **Download** button and play locally until VID1b
+ships the streaming endpoint.
 
 ## Supported container formats
 

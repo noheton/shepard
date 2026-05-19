@@ -33,12 +33,19 @@ pre-seeded common ontologies (see table below) land into.
 
 ## Bundled ontologies
 
-shepard ships ten common ontologies as classpath-bundled Turtle
-files under `backend/src/main/resources/ontologies/`, each pinned
-by SHA-256 in `ontologies-manifest.json`. The `OntologySeedService`
-loads them into the `INTERNAL` repository on startup. To skip a
-subset, set
+shepard ships fourteen common ontologies under
+`backend/src/main/resources/ontologies/`, each pinned by SHA-256 in
+`ontologies-manifest.json`. The `OntologySeedService` loads them into
+the `INTERNAL` repository on startup. To skip a subset, set
 `shepard.semantic.internal.preseed-ontologies.skip-bundles=<csv>`.
+
+Most bundles are **classpath-bundled Turtle stubs** — minimal
+representative triples, enough for the annotation picker on a fresh
+install. The **NASA Thesaurus** is the exception: on startup the seed
+service calls `n10s.rdf.import.fetch` against the canonical SKOS/RDF-XML
+URL and imports the full ~18,400-concept vocabulary directly. If the
+network is unavailable the bundled stub (120 propulsion concepts) is
+used as a fallback.
 
 | Ontology | IRI prefix | Licence | What it gives you |
 |---|---|---|---|
@@ -51,18 +58,17 @@ subset, set
 | **W3C Time Ontology** | `http://www.w3.org/2006/time#` | W3C Document License | Time interval / duration vocabulary; annotate timeseries spans and lab-journal events. |
 | **OGC GeoSPARQL** | `http://www.opengis.net/ont/geosparql#` | OGC Open Data Licence | Spatial-data references — Feature / Geometry / `hasGeometry` / `asWKT`. |
 | **OBO Relation Ontology (RO)** | `http://purl.obolibrary.org/obo/RO_` | CC0 1.0 | Cross-cutting relations — `part_of` / `has_part` / `derives_from` / `participates_in` / `has_input` / `has_output` / `precedes`-family. Widely used in life-sciences research-data work. |
-| **Metadata4Ing (NFDI4Ing) 1.4.0** | `http://w3id.org/nfdi4ing/metadata4ing/` | CC BY 4.0 | NFDI4Ing engineering-research extension of PROV-O — `m4i:ProcessingStep` (subtype of `prov:Activity`), `m4i:Method`, `m4i:Tool`, `m4i:InvestigatedObject` (subtype of `prov:Entity`), `m4i:NumericalVariable` + QUDT-unit hookup, `m4i:Person` / `m4i:Organization` subtypes of the `prov:` equivalents. Composes with shepard's PROV-O provenance baseline + RO-Crate export. A future PROV1h slice will render `/v2/provenance/*` in `m4i:`-flavoured shapes when `Accept: application/ld+json; profile=metadata4ing` is set. |
+| **Metadata4Ing (NFDI4Ing) 1.4.0** | `http://w3id.org/nfdi4ing/metadata4ing/` | CC BY 4.0 | NFDI4Ing engineering-research extension of PROV-O — `m4i:ProcessingStep` (subtype of `prov:Activity`), `m4i:Method`, `m4i:Tool`, `m4i:InvestigatedObject` (subtype of `prov:Entity`), `m4i:NumericalVariable` + QUDT-unit hookup, `m4i:Person` / `m4i:Organization` subtypes of the `prov:` equivalents. |
+| **SIMAT** (stub) | *(instance-specific)* | *(instance-specific)* | Aerospace / structures domain vocabulary for the SIMAT research context. |
+| **Lumen-inspired** (stub) | *(instance-specific)* | *(instance-specific)* | Experiment-level concepts used in the LUMEN demonstration seed. |
+| **NASA Thesaurus (2024)** | `https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml#` | Public domain (NASA STI) | ~18,400 aerospace / engineering concepts with `skos:prefLabel` + `skos:altLabel`. Fetched as full SKOS/RDF-XML on first startup; 120-concept propulsion stub used offline. Searchable immediately via the annotation picker. |
+| **Shepard Experiment Ontology** | `https://shepard.dlr.de/ontologies/experiment#` | CC BY 4.0 | 7 SKOS concept schemes (ExperimentPhase / MeasurementRole / QualityFlag / DefectType / InspectionMethod / ManufacturingProcess / SensorRole) for engineering experimental-data annotation. `ExperimentPhase` subclasses `prov:Activity`. |
 
-The currently-bundled files are **minimum-viable Turtle stubs**
-carrying each ontology's canonical IRI prefix plus a handful of
-representative classes / properties — enough for the casual
-annotation flow on a fresh install. Operators who want the full
-canonical vocabularies run `shepard-admin semantic refresh-ontologies`
-(N1c) — see [admin CLI reference](/reference/admin-cli/#shepard-admin-semantic-refresh-ontologies)
-for the invocation; the command walks the manifest, fetches each
-bundle's pinned `canonicalUrl`, recomputes SHA-256, and re-imports
-into `n10s` when the hash differs from the bundled stub. The
-backend endpoint behind it is `POST /v2/admin/semantic/refresh-ontologies`
+For the eight standard bundles (PROV-O through metadata4ing), operators
+who want the full canonical vocabularies run
+`shepard-admin semantic refresh-ontologies` (N1c) — see
+[admin CLI reference](/reference/admin-cli/#shepard-admin-semantic-refresh-ontologies).
+The backend endpoint is `POST /v2/admin/semantic/refresh-ontologies`
 (instance-admin gated).
 
 ## Admin-configurable preseed (N1c2)
@@ -269,44 +275,56 @@ loaded into the INTERNAL n10s repository and returns up to `limit`
 (max 50) matching suggestions.
 
 ```
-GET /v2/semantic/terms/search?q=Activity&limit=10
+GET /v2/semantic/terms/search?q=turbopump&limit=5
 Authorization: Bearer <token>
 
 200 OK
 [
   {
-    "uri": "http://www.w3.org/ns/prov#Activity",
-    "label": "Activity",
-    "description": "An activity is something that occurs over a period of time and acts upon or with entities."
+    "uri": "https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml#186132",
+    "label": "turbopumps",
+    "description": null
   },
   {
-    "uri": "https://schema.org/Action",
-    "label": "Action",
+    "uri": "https://sti.nasa.gov/docs/thesaurus/thesaurus-SKOS.xml#62509",
+    "label": "liquid propellant rocket engines",
     "description": null
   }
 ]
 ```
 
-The search matches against `rdfs:label`, `skos:prefLabel`,
-`skos:altLabel`, and the URI itself (case-insensitive). The query
-must be at least 2 characters.
+**Properties searched.** The endpoint matches against a wide set of
+standard label and synonym properties:
+
+- `rdfs:label` / `skos:prefLabel` / `skos:altLabel` / `schema:name` / `dct:title`
+- `skos:hiddenLabel` (abbreviations and alternative spellings)
+- `skos:notation` (classification codes, e.g. NASA Thesaurus numeric IDs)
+- OBO synonym properties: `oboInOwl:hasExactSynonym`, `hasRelatedSynonym`, `hasBroadSynonym`, `hasNarrowSynonym`
+- `schema:alternateName` (schema.org and Wikidata-style alternates)
+- `rdfs:comment` / `skos:definition` / `skos:scopeNote` (description fields)
+- The URI itself
+
+The query must be at least 2 characters.
 
 **Performance.** When the `resource_labels` fulltext index exists
-(created by `V44__Add_fulltext_index_Resource_labels.cypher` on
-startup), the endpoint uses Neo4j fulltext search (relevance-ranked,
-fast on large ontologies). On fresh databases before the index is
-built, the endpoint falls back to a CONTAINS scan automatically.
+(created by `V50` / `V51` on startup), the endpoint uses Neo4j
+fulltext search — relevance-ranked and fast even on the full
+365,000-node NASA Thesaurus graph. The index covers all the properties
+listed above. On databases that haven't run those migrations yet the
+endpoint falls back to a CONTAINS scan automatically.
 
-**Graceful degradation.** If no ontology data is loaded (n10s not
-configured, or `shepard.semantic.internal.preseed-ontologies.enabled=false`),
-the endpoint returns `200` with an empty array — it never errors.
+**Graceful degradation.** If no ontology data is loaded the endpoint
+returns `200` with an empty array — it never errors. The
+Semantic Repositories configuration page shows a warning banner when
+an INTERNAL repository is present but no searchable labels are found.
 
 **Auth.** Any authenticated shepard user. No per-entity permission
 check — matching the SPARQL proxy posture.
 
 The annotation picker in the UI (`AddAnnotationDialog.vue`) uses
-this endpoint automatically. Users who know the exact IRI can still
-type it directly into the field without selecting from suggestions.
+this endpoint automatically with a 300 ms debounce. Users who know
+the exact IRI can still type it directly into the field without
+selecting from suggestions.
 
 ## See also
 
