@@ -116,6 +116,33 @@ export default defineNuxtConfig({
     emitRouteChunkError: "automatic",
   },
 
+  // Cache-control authority: shepard decides, not the upstream proxy.
+  // Caddy doesn't add caching, but the absence of any `Cache-Control` on
+  // HTML responses lets intermediaries / browsers fall back to heuristic
+  // caching (typically based on Last-Modified), which masks freshly
+  // deployed bundles — the browser keeps reading an old index.html that
+  // references rotated `_nuxt/<hash>.js` filenames, so the page boots a
+  // stale app even though the deploy is fresh on disk.
+  //
+  // Posture:
+  //   - HTML / page responses → `no-store, must-revalidate`. Cheap; the
+  //     payload is tiny and revalidation guarantees the freshly-built
+  //     chunk-hash table is the one the browser reads.
+  //   - `/_nuxt/**` hashed assets → `immutable, 1y`. The filename IS the
+  //     cache key, so they can sit in cache forever.
+  //   - `/docs/**` (markdown source for the in-app /help) → 5-minute
+  //     public cache; docs change often enough that 1y is wrong but they
+  //     don't need the no-store treatment HTML does.
+  routeRules: {
+    "/**": { headers: { "Cache-Control": "no-store, must-revalidate" } },
+    "/_nuxt/**": {
+      headers: { "Cache-Control": "public, max-age=31536000, immutable" },
+    },
+    "/docs/**": {
+      headers: { "Cache-Control": "public, max-age=300, must-revalidate" },
+    },
+  },
+
   components: [{ path: "~/components", pathPrefix: false }],
 
   modules: [
