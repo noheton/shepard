@@ -211,4 +211,81 @@ public class SemanticRepositoryServiceTest {
 
     assertThrows(InvalidPathException.class, () -> service.deleteRepository(1L));
   }
+
+  @Test
+  public void createRepositoryTest_internalType_skipsUrlValidation() {
+    var date = new Date();
+    var input = new SemanticRepositoryIO() {
+      {
+        setEndpoint("");
+        setName("Built-in Semantic Store (n10s)");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+    var toCreate = new SemanticRepository() {
+      {
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setEndpoint("");
+        setName("Built-in Semantic Store (n10s)");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+    var expected = new SemanticRepository() {
+      {
+        setId(1L);
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setEndpoint("");
+        setName("Built-in Semantic Store (n10s)");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(semanticRepositoryDAO.createOrUpdate(toCreate)).thenReturn(expected);
+
+    // Must not throw — INTERNAL type bypasses URL parsing and health-check.
+    var actual = assertDoesNotThrow(() -> service.createRepository(input));
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  public void createRepositoryTest_internalType_withMalformedEndpoint_doesNotThrow() {
+    var date = new Date();
+    var input = new SemanticRepositoryIO() {
+      {
+        setEndpoint("not-a-url");
+        setName("Internal");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+    var toCreate = new SemanticRepository() {
+      {
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setEndpoint("not-a-url");
+        setName("Internal");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+    var expected = new SemanticRepository() {
+      {
+        setId(2L);
+        setCreatedAt(date);
+        setCreatedBy(user);
+        setEndpoint("not-a-url");
+        setName("Internal");
+        setType(SemanticRepositoryType.INTERNAL);
+      }
+    };
+
+    when(userService.getCurrentUser()).thenReturn(user);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(semanticRepositoryDAO.createOrUpdate(toCreate)).thenReturn(expected);
+
+    // Malformed endpoint is harmless for INTERNAL — connector ignores it entirely.
+    assertDoesNotThrow(() -> service.createRepository(input));
+  }
 }

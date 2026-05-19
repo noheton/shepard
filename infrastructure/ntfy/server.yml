@@ -1,0 +1,18 @@
+# ntfy server configuration for shepard notifications
+# Docs: https://docs.ntfy.sh/config/
+#
+# Messages are retained for 7 days so admins who miss a push notification
+# can still read it on the web UI or via the API.
+
+base-url: "https://shepard-ntfy.nuclide.systems"
+
+# 7-day message retention (default is 12h)
+cache-duration: "168h"
+attachment-expiry-duration: "168h"
+
+# Cache file — persisted via Docker volume so messages survive container restarts
+cache-file: "/var/cache/ntfy/cache.db"
+
+# Allow unauthenticated read/write for internal use.
+# Lock down with auth-file + user accounts for production.
+auth-default-access: "read-write"

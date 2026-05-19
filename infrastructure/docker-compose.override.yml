@@ -80,6 +80,10 @@ services:
       # message in the browser console (root cause for the bug cluster
       # seen 2026-05-19: avatar upload, advanced-mode save, etc.).
       SHEPARD_CORS_ORIGINS: "https://shepard.nuclide.systems,http://localhost:3000,http://127.0.0.1:3000"
+      # ntfy push notification endpoint — backend and future plugins publish
+      # admin alerts here. The default topic is "shepard-admin".
+      SHEPARD_NTFY_URL: "http://ntfy:80"
+      SHEPARD_NTFY_TOPIC: "${SHEPARD_NTFY_TOPIC:-shepard-admin}"
       # AES-256-GCM key for encrypting stored git credential PATs.
       # Required for PATCH /v2/me/git-credentials and the admin preseed
       # endpoint to function. Generate a new key: openssl rand -base64 32
@@ -246,6 +250,26 @@ services:
       - shepard
     restart: "no"
 
+  # ── ntfy — push notification server ──
+  #
+  # All shepard alerts (admin events, MCP gateway memory warnings, etc.)
+  # are routed here. Zoraxy routes shepard-ntfy.nuclide.systems → port 8085.
+  # Messages are retained for 7 days (server.yml cache-duration = 168h).
+  #
+  # Subscribe to topics in the ntfy web UI at https://shepard-ntfy.nuclide.systems
+  # or via the ntfy app. The default admin topic is "shepard-admin".
+  ntfy:
+    image: binwiederhier/ntfy
+    command: serve --config /etc/ntfy/server.yml
+    ports:
+      - "8085:80"
+    volumes:
+      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
+      - ntfy-cache:/var/cache/ntfy
+    networks:
+      - shepard
+    restart: unless-stopped
+
 volumes:
   keycloak-data:
   bootstrap-token:
@@ -254,3 +278,5 @@ volumes:
   # so an operator can answer "did yesterday's seed land?" without
   # depending on docker logs (which clears on container recreate).
   seeder-logs:
+  # ntfy message cache — 7-day retention
+  ntfy-cache:

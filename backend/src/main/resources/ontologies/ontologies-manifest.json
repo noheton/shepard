@@ -197,6 +197,22 @@
       "required": false
     },
     {
+      "id": "simat",
+      "name": "SiMaT — Material Testing and Simulation Ontology",
+      "file": "simat.ttl",
+      "iriPrefix": "https://w3id.org/simat/",
+      "format": "Turtle",
+      "canonicalUrl": "https://w3id.org/simat/",
+      "sourceRationale": "DLR Institute for Structures and Design (Mathieu Vinot). Full canonical release v1.0.0 from Zenodo record 18712842 / GitLab dlr-bt/simat-ontology. Covers material characterisation (AdditiveManufacturing, CompositeMaterial, EngineeredMaterial, Metals, ManufacturingProcess, MechanicalProperty, ElasticProperty, DamageProperty, etc.) and simulation ontology for engineering material-science ELNs. Added per user request 2026-05-19.",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "1.0.0",
+      "retrievedAt": "2026-05-19",
+      "sha256": "033845473a4e194e27edd5831859bd8a483ea183b953692426bb5ff664739347",
+      "sizeBytes": 407870,
+      "required": false
+    },
+    {
       "id": "shepard-experiment",
       "name": "Shepard Experiment Ontology",
       "file": "shepard-experiment.ttl",

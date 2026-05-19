@@ -7,6 +7,7 @@ import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.common.util.DateHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.semantic.SemanticRepositoryConnectorFactory;
+import de.dlr.shepard.context.semantic.SemanticRepositoryType;
 import de.dlr.shepard.context.semantic.daos.SemanticRepositoryDAO;
 import de.dlr.shepard.context.semantic.entities.SemanticRepository;
 import de.dlr.shepard.context.semantic.io.SemanticRepositoryIO;
@@ -86,6 +87,12 @@ public class SemanticRepositoryService {
   }
 
   private void validateRepository(SemanticRepositoryIO repository) {
+    // N1a — INTERNAL connector ignores the endpoint field entirely; skip URL
+    // format validation and health-check so operators can create/update INTERNAL
+    // repositories without supplying a dummy URL.
+    if (repository.getType() == SemanticRepositoryType.INTERNAL) {
+      return;
+    }
     try {
       new URL(repository.getEndpoint());
     } catch (MalformedURLException e) {

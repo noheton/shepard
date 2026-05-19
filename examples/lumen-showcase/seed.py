@@ -549,7 +549,7 @@ def upload_run_timeseries(
         run_tn_ns = points[-1].timestamp if run_tn_ns is None else max(run_tn_ns, points[-1].timestamp)
         ts = Timeseries(
             measurement="hotfire",
-            device=f"tr-{run_idx:03d}-bench-daq",
+            device="lumen-testbench-p3-lampoldshausen-daq",
             location="P3-Lampoldshausen",
             symbolicName=chan,
             field=chan,
