@@ -6,6 +6,7 @@ import {
 import SemanticRepositoryPane from "~/components/context/configuration/SemanticRepositoryPane.vue";
 import UserGroupsPane from "~/components/context/configuration/UserGroupsPane.vue";
 import InstanceRorPane from "~/components/context/admin/InstanceRorPane.vue";
+import AdminStoragePane from "~/components/context/admin/AdminStoragePane.vue";
 
 useHead({
   title: "Admin | shepard",
@@ -46,6 +47,9 @@ const { routeFragment } = useRouteFragment();
     />
     <InstanceRorPane
       v-if="routeFragment === AdminFragments.INSTANCE_ROR"
+    />
+    <AdminStoragePane
+      v-if="routeFragment === AdminFragments.STORAGE_OVERVIEW"
     />
   </PaneLayout>
 </template>

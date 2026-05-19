@@ -4,6 +4,7 @@ import { TimeseriesContainerAccessor } from "~/composables/container/TimeseriesC
 import { containerTypeUrlPathSegmentMappings } from "~/utils/containerPathMappings";
 import { useTimeseriesContainerChartView } from "~/composables/containers/useTimeseriesContainerChartView";
 import { useTimeseriesContainerLinkedDataObjects } from "~/composables/containers/useTimeseriesContainerLinkedDataObjects";
+import { useFetchTimeseriesContainerStats } from "~/composables/containers/useFetchTimeseriesContainerStats";
 
 const { routeParams } = useContainerRouteParams();
 const containerId = routeParams.value.containerId;
@@ -12,6 +13,15 @@ const urlSegment = containerTypeUrlPathSegmentMappings.TIMESERIES;
 const containerAccessor = new TimeseriesContainerAccessor(containerId);
 const { dataObjects: linkedDataObjects, isLoading: linkedDataObjectsLoading } =
   useTimeseriesContainerLinkedDataObjects(containerId);
+
+const { stats: containerStats } = useFetchTimeseriesContainerStats(containerId);
+
+function fmtBytes(b: number): string {
+  if (b === 0) return "0 B";
+  if (b < 1_048_576) return `${(b / 1_024).toFixed(1)} KB`;
+  if (b < 1_073_741_824) return `${(b / 1_048_576).toFixed(1)} MB`;
+  return `${(b / 1_073_741_824).toFixed(2)} GB`;
+}
 
 // TS_CHART_VIEW1 — curated channel selection persisted per-container.
 // Writers can change it; readers see it; everyone can override per-session
@@ -159,6 +169,21 @@ watch(containerAccessor.container, () => {
         </v-col>
       </v-row>
       <CenteredLoadingSpinner v-else />
+      <!-- TS_STATS1 — size on disk + channel/point counts -->
+      <div
+        v-if="containerStats"
+        class="d-flex flex-wrap align-center ga-2 mb-3"
+      >
+        <v-chip size="small" variant="tonal" prepend-icon="mdi-database-outline">
+          {{ fmtBytes(containerStats.estimatedSizeBytes) }} uncompressed
+        </v-chip>
+        <v-chip size="small" variant="tonal" prepend-icon="mdi-chart-line">
+          {{ containerStats.pointCount.toLocaleString() }} points
+        </v-chip>
+        <v-chip size="small" variant="tonal" prepend-icon="mdi-wave">
+          {{ containerStats.channelCount }} channel{{ containerStats.channelCount === 1 ? "" : "s" }}
+        </v-chip>
+      </div>
       <ExpansionPanels class="mb-4" :default-open="[0, 1]">
         <ExpansionPanelItem title="Channel Overview">
           <template

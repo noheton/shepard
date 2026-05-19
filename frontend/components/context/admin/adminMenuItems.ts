@@ -7,6 +7,7 @@ export enum AdminFragments {
   SEMANTIC_REPOSITORIES = "semantic-repositories",
   USER_GROUPS = "user-groups",
   INSTANCE_ROR = "instance-ror",
+  STORAGE_OVERVIEW = "storage-overview",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -19,6 +20,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Instance Health",
     fragment: AdminFragments.INSTANCE_HEALTH,
     icon: "mdi-heart-pulse",
+  },
+  {
+    name: "Storage Overview",
+    fragment: AdminFragments.STORAGE_OVERVIEW,
+    icon: "mdi-database-eye-outline",
   },
   {
     name: "Templates",

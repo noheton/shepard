@@ -6,6 +6,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
+import { useFetchTimeseriesContainerStats } from "~/composables/containers/useFetchTimeseriesContainerStats";
 
 const MAX_CHANNELS = 8;
 
@@ -53,6 +54,13 @@ const liveMode = ref(false);
 const liveIntervalMs = ref(5000); // 5 s default
 const liveWindowSec = ref(300);   // last 5 min default
 let liveTimer: ReturnType<typeof setInterval> | null = null;
+
+// TS_STATS1 — ingest rate displayed in live toolbar
+const { stats: containerStats, refresh: refreshStats } = useFetchTimeseriesContainerStats(props.containerId);
+const ingestMBps = computed(() => {
+  if (!containerStats.value || containerStats.value.ingestRateBytesPerSec === 0) return null;
+  return (containerStats.value.ingestRateBytesPerSec / 1_048_576).toFixed(3);
+});
 
 // User-tunable lists for the v-select dropdowns.
 const LIVE_INTERVALS = [
@@ -158,6 +166,7 @@ function startLiveTimer() {
   liveTimer = setInterval(() => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
     void fetchAll(true); // silent — keep existing chart visible during refresh
+    void refreshStats();
   }, liveIntervalMs.value);
 }
 function stopLiveTimer() {
@@ -254,7 +263,17 @@ onBeforeUnmount(() => {
             class="ms-2"
           >
             <v-icon size="x-small" start>mdi-circle</v-icon>
-            updating every {{ liveIntervalMs / 1000 }}s
+            updating every {{ liveIntervalMs >= 1000 ? liveIntervalMs / 1000 + "s" : liveIntervalMs + "ms" }}
+          </v-chip>
+          <v-chip
+            v-if="ingestMBps != null"
+            size="x-small"
+            color="info"
+            variant="tonal"
+            class="ms-1"
+          >
+            <v-icon size="x-small" start>mdi-upload-network-outline</v-icon>
+            {{ ingestMBps }} MB/s
           </v-chip>
           <v-tooltip location="top" max-width="320">
             <template #activator="{ props: tipProps }">
