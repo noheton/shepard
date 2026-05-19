@@ -7,6 +7,7 @@ import SemanticRepositoryPane from "~/components/context/configuration/SemanticR
 import UserGroupsPane from "~/components/context/configuration/UserGroupsPane.vue";
 import InstanceRorPane from "~/components/context/admin/InstanceRorPane.vue";
 import AdminStoragePane from "~/components/context/admin/AdminStoragePane.vue";
+import PluginsAdminPane from "~/components/context/admin/PluginsAdminPane.vue";
 
 useHead({
   title: "Admin | shepard",
@@ -33,6 +34,7 @@ const { routeFragment } = useRouteFragment();
     <FeatureTogglesPane
       v-if="routeFragment === AdminFragments.FEATURE_TOGGLES"
     />
+    <PluginsAdminPane v-if="routeFragment === AdminFragments.PLUGINS" />
     <AdminMetricsCard
       v-if="routeFragment === AdminFragments.INSTANCE_HEALTH"
     />

@@ -2,6 +2,7 @@ import type { MenuEntry } from "~/components/common/pane-menu/menuListTypes";
 
 export enum AdminFragments {
   FEATURE_TOGGLES = "feature-toggles",
+  PLUGINS = "plugins",
   INSTANCE_HEALTH = "instance-health",
   TEMPLATES = "templates",
   SEMANTIC_REPOSITORIES = "semantic-repositories",
@@ -15,6 +16,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Feature Toggles",
     fragment: AdminFragments.FEATURE_TOGGLES,
     icon: "mdi-toggle-switch-outline",
+  },
+  {
+    name: "Plugins",
+    fragment: AdminFragments.PLUGINS,
+    icon: "mdi-puzzle-outline",
   },
   {
     name: "Instance Health",
