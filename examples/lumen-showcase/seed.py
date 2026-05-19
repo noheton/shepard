@@ -125,27 +125,48 @@ PHASES: list[tuple[str, float, float]] = [
 ]
 
 # Semantic IRI namespaces.
-# Phase properties and values use the canonical shepard-experiment ontology
-# (pre-seeded by OntologySeedService) for phases that have an exact concept.
-# The seven hotfire sub-phases are more granular than the generic ExperimentPhase
-# scheme, so five are mapped to the closest shex: concept and two that are
-# rocket-engine-specific (ignition, throttle) keep a DLR showcase namespace.
-DLR_NS = "https://shepard.dlr.de/showcase/lumen-inspired#"
+# Phase properties and values use the lumen-inspired ontology (pre-seeded by
+# OntologySeedService) which provides native concepts for all seven hotfire
+# sub-phases. The shepard-experiment (shex) ontology is still used for the
+# QualityFlag predicate and value.
+LUMEN_NS = "https://shepard.dlr.de/showcase/lumen-inspired#"
 SHEX_NS = "https://shepard.dlr.de/ontologies/experiment#"
 
-PROP_PHASE = SHEX_NS + "ExperimentPhase"      # skos:ConceptScheme as predicate
-PROP_QUALITY = SHEX_NS + "QualityFlag"        # quality-flag predicate
+# Phase annotation: use lumen-inspired ontology for all seven phases.
+PROP_PHASE = LUMEN_NS + "TestPhase"           # lumen:TestPhase ConceptScheme as predicate
+PROP_OUTCOME = LUMEN_NS + "TestOutcome"       # lumen:TestOutcome predicate
+PROP_CAMPAIGN_ROLE = LUMEN_NS + "CampaignRole"  # lumen:CampaignRole predicate
+PROP_ANOMALY_TYPE = LUMEN_NS + "AnomalyType"  # lumen:AnomalyType predicate
+PROP_QUALITY = SHEX_NS + "QualityFlag"        # quality-flag still from shex
 
 VAL_PHASE: dict[str, str] = {
-    "precool":      SHEX_NS + "Preparation",   # pre-test cooling → Preparation
-    "ignition":     DLR_NS  + "phase/ignition", # engine-specific, no shex match
-    "ramp_up":      SHEX_NS + "TestRun",        # thrust ramp → start of TestRun
-    "steady_state": SHEX_NS + "TestRun",        # nominal burn → TestRun
-    "throttle":     DLR_NS  + "phase/throttle", # throttle sweep, engine-specific
-    "shutdown":     SHEX_NS + "Cooldown",       # engine shutdown → Cooldown
-    "purge":        SHEX_NS + "PostProcessing", # propellant purge → PostProcessing
+    "precool":      LUMEN_NS + "PreCooling",
+    "ignition":     LUMEN_NS + "IgnitionSequence",
+    "ramp_up":      LUMEN_NS + "ThrustRampUp",
+    "steady_state": LUMEN_NS + "SteadyStateBurn",
+    "throttle":     LUMEN_NS + "ThrottleTransient",
+    "shutdown":     LUMEN_NS + "ShutdownSequence",
+    "purge":        LUMEN_NS + "PropellantPurge",
 }
-VAL_VIBRATION_ANOMALY = SHEX_NS + "QualitySuspect"  # TR-004 anomaly run
+VAL_VIBRATION_ANOMALY = SHEX_NS + "QualitySuspect"  # TR-004 anomaly quality flag
+
+# Run-level outcome and role IRIs — keyed by run index (1-based).
+# Runs not listed get NominalBurn + NominalRun defaults.
+VAL_OUTCOME: dict[int, str] = {
+    ANOMALY_RUN: LUMEN_NS + "AnomalyDetected",   # TR-004
+    5:           LUMEN_NS + "HoldForInspection",  # bearing teardown
+    6:           LUMEN_NS + "NominalBurn",         # re-test after repair (still nominal)
+    12:          LUMEN_NS + "HoldForInspection",  # pre-cert inspection
+}
+VAL_CAMPAIGN_ROLE: dict[int, str] = {
+    ANOMALY_RUN: LUMEN_NS + "AnomalyRun",        # TR-004
+    5:           LUMEN_NS + "HoldRun",            # bearing teardown hold
+    6:           LUMEN_NS + "AnomalyRetest",      # re-test
+    12:          LUMEN_NS + "PreCertificationTest", # pre-cert
+}
+VAL_ANOMALY_TYPE_FOR_RUN: dict[int, str] = {
+    ANOMALY_RUN: LUMEN_NS + "VibrationAnomaly",  # TR-004 turbopump bearing
+}
 
 # Bulk upload chunk size for timeseries (sample count per request).
 TIMESERIES_CHUNK = 1000
@@ -688,31 +709,25 @@ def ensure_lab_journal(apis: Apis, target: DataObject, body: str, marker: str) -
 # ---- semantic annotations --------------------------------------------------
 
 
-SEMANTIC_REPO_NAME = "shepard-showcase-local"
+SEMANTIC_REPO_NAME_INTERNAL = "Built-in Semantic Store (n10s)"
 
 
 def ensure_semantic_repo(apis: Apis) -> SemanticRepository:
-    """Semantic repository entry for the showcase annotations.
+    """Return the pre-seeded INTERNAL semantic repository (V49 migration).
 
-    Most value IRIs use the pre-seeded shepard-experiment ontology
-    (https://shepard.dlr.de/ontologies/experiment) which ships with shepard.
-    Engine-specific phases that have no exact concept use the DLR showcase
-    namespace (https://shepard.dlr.de/showcase/lumen-inspired#).
-    The endpoint is informational; shepard accepts opaque IRIs regardless."""
-    # operationId: getAllSemanticRepositories
+    The INTERNAL repo holds the lumen-inspired and shepard-experiment
+    ontologies, seeded by OntologySeedService on startup. Using it means
+    annotation IRIs resolve against the bundled vocabularies so the picker
+    shows human-readable labels."""
     repos = apis.semantic_repo.get_all_semantic_repositories() or []
     for r in repos:
-        if r.name == SEMANTIC_REPO_NAME:
-            _log("SKIP", SEMANTIC_REPO_NAME, "SemanticRepository", r.id)
+        if getattr(r, "type", None) == "INTERNAL" or r.name == SEMANTIC_REPO_NAME_INTERNAL:
+            _log("SKIP", SEMANTIC_REPO_NAME_INTERNAL, "SemanticRepository", r.id)
             return r
-    repo = SemanticRepository(
-        name=SEMANTIC_REPO_NAME,
-        type=SemanticRepositoryType.SPARQL,
-        endpoint="https://shepard.dlr.de/ontologies/experiment",
+    raise RuntimeError(
+        "INTERNAL semantic repository not found. "
+        "Ensure V49 migration has run (upgrade the backend to the latest image)."
     )
-    repo = apis.semantic_repo.create_semantic_repository(repo)
-    _log("OK", SEMANTIC_REPO_NAME, "SemanticRepository", repo.id)
-    return repo
 
 
 def annotate_phase_boundaries(
@@ -761,6 +776,56 @@ def annotate_phase_boundaries(
             _log("OK", f"{run_do.name}/anomaly", "SemanticAnnotation")
         except Exception as exc:  # pragma: no cover
             _log("SKIP", f"{run_do.name}/anomaly", "SemanticAnnotation", str(exc)[:60])
+
+
+def annotate_run(
+    apis: Apis,
+    coll: Collection,
+    run_do: DataObject,
+    repo: SemanticRepository,
+    run_idx: int,
+) -> None:
+    """Annotate the run DataObject with TestOutcome, CampaignRole, and (for TR-004) AnomalyType."""
+    outcome_iri = VAL_OUTCOME.get(run_idx, LUMEN_NS + "NominalBurn")
+    role_iri = VAL_CAMPAIGN_ROLE.get(run_idx, LUMEN_NS + "NominalRun")
+
+    for prop_iri, val_iri in [
+        (PROP_OUTCOME, outcome_iri),
+        (PROP_CAMPAIGN_ROLE, role_iri),
+    ]:
+        ann = SemanticAnnotation(
+            propertyIRI=prop_iri,
+            propertyRepositoryId=repo.id,
+            valueIRI=val_iri,
+            valueRepositoryId=repo.id,
+        )
+        try:
+            apis.annotation.create_data_object_annotation(
+                collection_id=coll.id,
+                data_object_id=run_do.id,
+                semantic_annotation=ann,
+            )
+        except Exception as exc:
+            _log("SKIP", f"{run_do.name}/{prop_iri.split('#')[-1]}", "SemanticAnnotation", str(exc)[:60])
+            continue
+
+    anomaly_iri = VAL_ANOMALY_TYPE_FOR_RUN.get(run_idx)
+    if anomaly_iri:
+        ann = SemanticAnnotation(
+            propertyIRI=PROP_ANOMALY_TYPE,
+            propertyRepositoryId=repo.id,
+            valueIRI=anomaly_iri,
+            valueRepositoryId=repo.id,
+        )
+        try:
+            apis.annotation.create_data_object_annotation(
+                collection_id=coll.id,
+                data_object_id=run_do.id,
+                semantic_annotation=ann,
+            )
+            _log("OK", f"{run_do.name}/anomaly-type", "SemanticAnnotation")
+        except Exception as exc:
+            _log("SKIP", f"{run_do.name}/anomaly-type", "SemanticAnnotation", str(exc)[:60])
 
 
 # ---- publications DataObject (best-effort) ---------------------------------
@@ -1695,6 +1760,7 @@ def main(argv: list[str] | None = None) -> int:
         upload_run_structured(apis, coll, run_do, sc, args.data_dir, n)
         if repo is not None:
             annotate_phase_boundaries(apis, coll, run_do, tsr, repo, is_anomaly_run=(n == ANOMALY_RUN))
+            annotate_run(apis, coll, run_do, repo, n)
 
     # Lab journals
     ensure_lab_journal(apis, runs[ANOMALY_RUN], JOURNAL_TR4, "tr4-debrief")

@@ -213,6 +213,22 @@
       "required": false
     },
     {
+      "id": "lumen-inspired",
+      "name": "LUMEN-Inspired Hotfire Test Ontology",
+      "file": "lumen-inspired.ttl",
+      "iriPrefix": "https://shepard.dlr.de/showcase/lumen-inspired#",
+      "format": "Turtle",
+      "canonicalUrl": "https://shepard.dlr.de/showcase/lumen-inspired",
+      "sourceRationale": "Shepard-authored domain ontology for the LUMEN-inspired hotfire test campaign showcase. Five SKOS ConceptSchemes covering test phases (with prov:Activity subclassing), test outcomes, anomaly types, campaign roles, and measurement channel semantic roles. Designed for annotation of the lumen-showcase seed data (15 synthetic hot-fire runs). Authoritative; no canonical upstream URL — extend via shepard-admin semantic ontologies upload.",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "version": "1.0.0",
+      "retrievedAt": "2026-05-19",
+      "sha256": "5ec9a7d2edf6530da449a2856901dda237e6e7368d23896367daf3fd819d5d4f",
+      "sizeBytes": 22947,
+      "required": false
+    },
+    {
       "id": "shepard-experiment",
       "name": "Shepard Experiment Ontology",
       "file": "shepard-experiment.ttl",

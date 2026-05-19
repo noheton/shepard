@@ -1,0 +1,338 @@
+# Canonical source: https://shepard.dlr.de/showcase/lumen-inspired (shepard-authored ontology)
+# Ontology IRI:    https://shepard.dlr.de/showcase/lumen-inspired#
+# IRI prefix:      https://shepard.dlr.de/showcase/lumen-inspired#  (prefix lumen)
+# Retrieved:       SEE ontologies-manifest.json
+# License:         CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+#
+# lumen-inspired — domain-level OWL-Lite + SKOS ontology for liquid-propellant
+# rocket-engine hot-fire test campaign data management. Inspired by the DLR
+# LUMEN demonstrator at Lampoldshausen. Ships as a bundle in the
+# OntologySeedService pre-seed manifest. Five SKOS ConceptSchemes cover:
+# test phase (with prov:Activity subclassing for PROV1-series provenance
+# stamping), test outcome, anomaly type, campaign role, and measurement
+# channel semantic role.
+#
+# The TestPhase ConceptScheme is simultaneously an OWL class with
+# rdfs:subClassOf prov:Activity so individual phase instances can be
+# materialised as PROV activities (stamped with prov:startedAtTime /
+# prov:endedAtTime) in the provenance trail — composing cleanly with
+# the PROV1-series audit model and the metadata4ing ONT1b preseed.
+# It mirrors the dual-typing of shex:ExperimentPhase in shepard-experiment.ttl
+# and the phase concepts carry skos:related links to the closest shex: concepts.
+#
+# This is a shepherded stub authored by the shepard project for the
+# lumen-showcase seed data (15 synthetic hot-fire runs). Operators who need
+# additional concept coverage can either upload a richer bundle via
+# `shepard-admin semantic ontologies upload` (N1c2) or extend the file
+# and regenerate the manifest SHA-256.
+
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix shex:    <https://shepard.dlr.de/ontologies/experiment#> .
+@prefix lumen:   <https://shepard.dlr.de/showcase/lumen-inspired#> .
+
+# ── Ontology declaration ──────────────────────────────────────────────────────
+
+<https://shepard.dlr.de/showcase/lumen-inspired>
+    a owl:Ontology ;
+    dcterms:title   "LUMEN-Inspired Hotfire Test Ontology"@en ;
+    dcterms:creator "shepard project (DLR / noheton fork)"@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "1.0.0" ;
+    rdfs:label      "lumen-inspired"@en ;
+    rdfs:comment    "OWL-Lite + SKOS ontology for liquid-propellant rocket-engine hot-fire test campaign data management. Inspired by the DLR LUMEN demonstrator engine at Lampoldshausen. Five SKOS ConceptSchemes cover test phases (with prov:Activity subclassing for PROV1 provenance stamping), test outcomes, anomaly types, campaign roles, and measurement channel semantic roles. Designed for annotation of the lumen-showcase seed data (15 synthetic hot-fire runs)."@en .
+
+# ── 1. TestPhase ─────────────────────────────────────────────────────────────
+# OWL class *and* SKOS ConceptScheme — instances of individual phases can be
+# dual-typed as prov:Activity entries in the PROV1 audit trail.
+# Mirrors the dual-typing of shex:ExperimentPhase in shepard-experiment.ttl.
+
+lumen:TestPhase
+    a owl:Class , skos:ConceptScheme ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label  "Test Phase"@en ;
+    rdfs:comment "The ordered stages through which a liquid-propellant rocket engine hot-fire test passes, from propellant system pre-cooling through post-shutdown purge. Subclass of prov:Activity so individual phase instances can carry prov:startedAtTime / prov:endedAtTime provenance stamps."@en ;
+    skos:prefLabel "Test Phase"@en .
+
+lumen:PreCooling
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Pre-Cooling"@en ;
+    skos:definition "Propellant system pre-test cooldown to cryogenic temperatures. Liquid oxygen and liquid methane (or LH2) are circulated through the feed lines and turbomachinery to condition them thermally before ignition. Prevents thermal shock and cavitation at ignition transient onset."@en ;
+    skos:related    shex:Preparation .
+
+lumen:IgnitionSequence
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Ignition Sequence"@en ;
+    skos:definition "Spark or pyrotechnic igniter activation combined with propellant valve opening transient. Engine-specific phase covering the interval from igniter command to first confirmed pressure rise in the combustion chamber. No exact equivalent in the generic shex:ExperimentPhase scheme."@en ;
+    skos:broader    lumen:TestPhase .
+
+lumen:ThrustRampUp
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Thrust Ramp-Up"@en ;
+    skos:definition "Combustion chamber pressure and thrust building from ignition confirmation to the nominal steady-state level. Turbopump shaft speed, mixture ratio, and coolant flow rates stabilise during this transient. Corresponds to the start of the primary test run interval."@en ;
+    skos:related    shex:TestRun .
+
+lumen:SteadyStateBurn
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Steady-State Burn"@en ;
+    skos:definition "Nominal thrust plateau at the commanded operating point. The primary performance measurement window during which specific impulse, mixture ratio, film-cooling effectiveness, and turbopump health data are recorded at full acquisition rate."@en ;
+    skos:related    shex:TestRun .
+
+lumen:ThrottleTransient
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Throttle Transient"@en ;
+    skos:definition "Controlled thrust reduction and/or re-ramp away from the nominal operating point. Engine-specific phase exercising the throttle authority of the propellant valves. Combustion stability margin and turbopump operability at off-nominal mixture ratio and chamber pressure are evaluated. No exact equivalent in the generic shex:ExperimentPhase scheme."@en ;
+    skos:broader    lumen:TestPhase .
+
+lumen:ShutdownSequence
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Shutdown Sequence"@en ;
+    skos:definition "Main propellant valve closure and resulting thrust decay from nominal to zero. Covers the interval from shutdown command to confirmed chamber pressure below ignition threshold. Corresponds to post-load cooldown in the generic experiment life-cycle."@en ;
+    skos:related    shex:Cooldown .
+
+lumen:PropellantPurge
+    a skos:Concept ;
+    skos:inScheme   lumen:TestPhase ;
+    skos:prefLabel  "Propellant Purge"@en ;
+    skos:definition "Inert gas (GN2 or GHe) purge of propellant feed lines, injector manifolds, and combustion chamber after shutdown. Removes residual cryogenic propellant and prevents ice formation in valves. Corresponds to post-processing / cleanup in the generic experiment life-cycle."@en ;
+    skos:related    shex:PostProcessing .
+
+# ── 2. TestOutcome ───────────────────────────────────────────────────────────
+
+lumen:TestOutcome
+    a skos:ConceptScheme ;
+    rdfs:label   "Test Outcome"@en ;
+    rdfs:comment "Overall outcome classification for a hot-fire test run, assigned after data review. Indicates whether the run met its objectives and the usability of the acquired data."@en ;
+    skos:prefLabel "Test Outcome"@en .
+
+lumen:NominalBurn
+    a skos:Concept ;
+    skos:inScheme   lumen:TestOutcome ;
+    skos:prefLabel  "Nominal Burn"@en ;
+    skos:definition "All performance parameters (chamber pressure, thrust, mixture ratio, turbopump speeds, temperatures) remained within design bounds for the full planned burn duration. Data is fully usable for performance reporting."@en .
+
+lumen:PartialSuccess
+    a skos:Concept ;
+    skos:inScheme   lumen:TestOutcome ;
+    skos:prefLabel  "Partial Success"@en ;
+    skos:definition "Burn completed for the full planned duration but with at least one parameter exceeding its nominal bounds for part of the run. The test objective was partially met and data is still scientifically useful, but anomaly review is required before the affected channels are included in primary performance analysis."@en .
+
+lumen:AnomalyDetected
+    a skos:Concept ;
+    skos:inScheme   lumen:TestOutcome ;
+    skos:prefLabel  "Anomaly Detected"@en ;
+    skos:definition "A significant off-nominal event was detected during the run (vibration spike, pressure excursion, combustion instability, or sensor fault). The run may have completed but requires investigation and review board sign-off before the next hot-fire. See lumen:AnomalyType for classification."@en .
+
+lumen:TestAborted
+    a skos:Concept ;
+    skos:inScheme   lumen:TestOutcome ;
+    skos:prefLabel  "Test Aborted"@en ;
+    skos:definition "Automatic or manually commanded early shutdown was triggered before the planned burn duration was reached. Partial data was acquired up to the abort time. Root cause investigation is mandatory before the next run."@en .
+
+lumen:HoldForInspection
+    a skos:Concept ;
+    skos:inScheme   lumen:TestOutcome ;
+    skos:prefLabel  "Hold for Inspection"@en ;
+    skos:definition "The scheduled run slot was not executed. A mandatory stand-down for inspection, teardown, or component replacement was in effect (e.g. turbopump bearing check, nozzle survey, injector dye-penetrant). No hot-fire data was acquired for this slot."@en .
+
+# ── 3. AnomalyType ───────────────────────────────────────────────────────────
+
+lumen:AnomalyType
+    a skos:ConceptScheme ;
+    rdfs:label   "Anomaly Type"@en ;
+    rdfs:comment "Classification of the primary anomaly type detected during a hot-fire test run. Used to filter and group anomaly runs in campaign reviews and root-cause analysis workflows."@en ;
+    skos:prefLabel "Anomaly Type"@en .
+
+lumen:VibrationAnomaly
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Vibration Anomaly"@en ;
+    skos:definition "Anomalous turbopump or combustor vibration level exceeding specification limits, as measured by accelerometers on the fuel-pump, LOX-pump, or combustion chamber structure. May indicate bearing precursor, rotor imbalance, or structural resonance."@en .
+
+lumen:CombustionInstability
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Combustion Instability"@en ;
+    skos:definition "Acoustic or pressure oscillations in the combustion chamber exceeding allowable amplitude or frequency bounds. May be triggered by mixture ratio perturbations, injector coupling, or feed-system coupling. Requires spectral analysis of dynamic pressure transducer data."@en .
+
+lumen:PressureSpike
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Pressure Spike"@en ;
+    skos:definition "Transient over-pressure event in the combustion chamber or propellant feed lines exceeding the maximum allowable working pressure for the duration of the spike. May indicate water hammer, valve timing issue, or incipient combustion instability."@en .
+
+lumen:IgnitionDelay
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Ignition Delay"@en ;
+    skos:definition "Ignition was detected later than the allowable ignition window after the propellant valve opening command. Late ignition increases the risk of a hard start due to propellant accumulation in the chamber prior to combustion onset."@en .
+
+lumen:FlowAnomaly
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Flow Anomaly"@en ;
+    skos:definition "Propellant mass flow rate (fuel or oxidiser) deviating from the commanded value beyond the allowable tolerance band. May indicate valve malfunction, cavitation in the turbopump inducer, or flowmeter fault. Affects mixture ratio and specific impulse."@en .
+
+lumen:ThermalAnomaly
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Thermal Anomaly"@en ;
+    skos:definition "Temperature exceedance in the combustion chamber wall, nozzle extension, coolant circuit, or injector face beyond the thermal limit defined in the test matrix. May indicate coolant flow degradation, film-cooling effectiveness loss, or localised hot streaks."@en .
+
+lumen:SensorFault
+    a skos:Concept ;
+    skos:inScheme   lumen:AnomalyType ;
+    skos:prefLabel  "Sensor Fault"@en ;
+    skos:definition "Confirmed instrument malfunction during the run (open circuit, saturation, offset drift, or cross-talk). The affected measurement channel is excluded from primary performance analysis. Other channels on the same DAQ crate should be checked for correlated faults."@en .
+
+# ── 4. CampaignRole ──────────────────────────────────────────────────────────
+
+lumen:CampaignRole
+    a skos:ConceptScheme ;
+    rdfs:label   "Campaign Role"@en ;
+    rdfs:comment "Logical role of a test run within the overall hot-fire test campaign, capturing the intent of the run slot independently of its outcome. Used to sequence campaign reviews and determine which runs contribute to the performance baseline."@en ;
+    skos:prefLabel "Campaign Role"@en .
+
+lumen:NominalRun
+    a skos:Concept ;
+    skos:inScheme   lumen:CampaignRole ;
+    skos:prefLabel  "Nominal Run"@en ;
+    skos:definition "Standard campaign run with no pre-planned deviations from the approved test matrix. The run is executed at the nominal operating point and is expected to contribute to the primary performance database."@en .
+
+lumen:AnomalyRun
+    a skos:Concept ;
+    skos:inScheme   lumen:CampaignRole ;
+    skos:prefLabel  "Anomaly Run"@en ;
+    skos:definition "Run during which a monitored anomaly first appeared. The run may have completed nominally in terms of duration but the anomaly event is the defining characteristic of this slot in the campaign sequence. An investigation sub-DataObject should be created under this run."@en .
+
+lumen:AnomalyRetest
+    a skos:Concept ;
+    skos:inScheme   lumen:CampaignRole ;
+    skos:prefLabel  "Anomaly Retest"@en ;
+    skos:definition "Re-run of a previously anomalous configuration after corrective action (e.g. bearing replacement, valve recalibration). The run is intended to demonstrate that the corrective action resolved the root cause and to re-establish the nominal performance baseline."@en .
+
+lumen:HoldRun
+    a skos:Concept ;
+    skos:inScheme   lumen:CampaignRole ;
+    skos:prefLabel  "Hold Run"@en ;
+    skos:definition "Slot reserved for mandatory inspection, teardown, or component replacement. No hot-fire is conducted. The hold is a planned campaign event and is not an anomaly; it may be scheduled after an anomaly run or as a routine maintenance checkpoint."@en .
+
+lumen:PreCertificationTest
+    a skos:Concept ;
+    skos:inScheme   lumen:CampaignRole ;
+    skos:prefLabel  "Pre-Certification Test"@en ;
+    skos:definition "Final qualification test run before acceptance sign-off. The run must demonstrate full compliance with the acceptance test matrix (chamber pressure, thrust, mixture ratio, heat flux, and structural loads within qualified limits) to allow the engine to be cleared for flight or operational use."@en .
+
+# ── 5. ChannelRole ───────────────────────────────────────────────────────────
+
+lumen:ChannelRole
+    a skos:ConceptScheme ;
+    rdfs:label   "Channel Role"@en ;
+    rdfs:comment "Semantic role of a measurement channel within the hot-fire test DAQ system. Maps instrument identifiers (e.g. pc_chamber, mdot_fuel) to their physical quantity and location in the engine system. Used to annotate TimeseriesReferences and support cross-run channel correlation."@en ;
+    skos:prefLabel "Channel Role"@en .
+
+lumen:ChamberPressure
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Chamber Pressure"@en ;
+    skos:definition "Combustion chamber static pressure, measured by a pressure transducer at the chamber wall or nozzle end. Primary performance parameter; used to derive specific impulse and combustion efficiency. Typical channels: pc_chamber, pc_nozzle."@en .
+
+lumen:FuelMassFlowRate
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Fuel Mass Flow Rate"@en ;
+    skos:definition "Fuel (LH2, liquid methane, or kerosene) volumetric or mass flow rate through the turbopump and injector feed line. Combined with the oxidiser mass flow to compute mixture ratio and total propellant consumption. Typical channels: mdot_fuel."@en .
+
+lumen:OxidizerMassFlowRate
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Oxidizer Mass Flow Rate"@en ;
+    skos:definition "Liquid oxygen (LOX) mass flow rate through the oxidiser turbopump and injector manifold. Combined with the fuel mass flow to compute mixture ratio. Typical channels: mdot_lox."@en .
+
+lumen:FuelPumpSpeed
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Fuel Pump Speed"@en ;
+    skos:definition "Rotational speed of the turbopump shaft on the fuel side, measured by a tachometer or eddy-current proximity sensor. Used to assess turbopump health and diagnose bearing or rotor faults. Typical channels: rpm_fuel_pump."@en .
+
+lumen:OxidizerPumpSpeed
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Oxidizer Pump Speed"@en ;
+    skos:definition "Rotational speed of the turbopump shaft on the LOX side, measured by a tachometer or eddy-current proximity sensor. Typically coupled to the fuel pump via a shared turbine drive; deviations indicate seal or bearing degradation. Typical channels: rpm_lox_pump."@en .
+
+lumen:ChamberWallTemperature
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Chamber Wall Temperature"@en ;
+    skos:definition "Temperature of the regenerative cooling channel wall or combustion chamber inner wall, measured by a thermocouple or resistance temperature device. Monitors heat flux and regenerative cooling circuit effectiveness. Typical channels: tc_chamber."@en .
+
+lumen:NozzleWallTemperature
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Nozzle Wall Temperature"@en ;
+    skos:definition "Temperature of the nozzle extension or throat region wall, measured by a thermocouple or embedded sensor. Critical for structural integrity assessment and ablative or regenerative cooling verification. Typical channels: tc_nozzle."@en .
+
+lumen:InjectorTemperature
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Injector Temperature"@en ;
+    skos:definition "Temperature at the injector face or in the injector manifold body. Elevated injector face temperature can indicate recirculation of hot combustion gas into the injection elements. Typical channels: tc_injector."@en .
+
+lumen:CoolantTemperature
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Coolant Temperature"@en ;
+    skos:definition "Temperature of the regenerative coolant circuit at the inlet and/or outlet of the cooling jacket. The temperature rise across the jacket quantifies the heat absorbed by the coolant and is used to compute wall heat flux. Typical channels: t_coolant_in, t_coolant_out."@en .
+
+lumen:PropellantTankPressure
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Propellant Tank Pressure"@en ;
+    skos:definition "Ullage or bulk liquid pressure in the propellant run tank. Used to monitor feed system pressure drops and to detect cavitation onset conditions at the turbopump inducer inlet. Typical channels: p_tank_fuel, p_tank_lox."@en .
+
+lumen:InjectorPressure
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Injector Pressure"@en ;
+    skos:definition "Propellant manifold pressure immediately upstream of the injection elements. The pressure drop across the injector (manifold pressure minus chamber pressure) is a key design parameter governing injection quality and combustion stability margin. Typical channels: p_inj_fuel, p_inj_lox."@en .
+
+lumen:VibrationLevel
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Vibration Level"@en ;
+    skos:definition "Accelerometer-based vibration measurement on the turbopump housing, combustor body, or engine structure. Expressed as RMS acceleration (g rms) over a defined frequency band. Used for turbopump health monitoring and combustion instability detection. Typical channels: vib_fuel_pump, vib_lox_pump, vib_chamber."@en .
+
+lumen:ValvePosition
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Valve Position"@en ;
+    skos:definition "Commanded or actual position of a propellant control valve, expressed as a fraction of full-open (0.0 to 1.0 or 0 % to 100 %). Used to verify valve authority, diagnose stiction or actuator faults, and correlate throttle transients with flow and thrust response. Typical channels: valve_fuel, valve_lox."@en .
+
+lumen:StructuralStrain
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Structural Strain"@en ;
+    skos:definition "Nozzle extension or engine-mount structural strain gauge reading in microstrain. Used to verify that thermal and pressure loads remain within the structural qualification envelope and to identify resonance or buckling risk. Typical channels: strain_nozzle."@en .
+
+lumen:GimbalAccelerometer
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Gimbal Accelerometer"@en ;
+    skos:definition "Accelerometer reading on the gimbal ring or engine thrust-vector-control structure, measuring lateral or axial accelerations induced by thrust vector perturbations and structural vibration. Used to verify gimbal load margins. Typical channels: acc_gimbal_x, acc_gimbal_y."@en .
+
+lumen:ThrustForce
+    a skos:Concept ;
+    skos:inScheme   lumen:ChannelRole ;
+    skos:prefLabel  "Thrust Force"@en ;
+    skos:definition "Engine axial thrust measured by the test bench load cell. The primary figure of merit for performance assessment; used to compute specific impulse in conjunction with propellant mass flow rates and nozzle exit conditions. Typical channels: thrust_kn."@en .

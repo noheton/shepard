@@ -1,6 +1,6 @@
 # Bundled ontology licensing
 
-This directory ships twelve ontologies as **shepard-bundled Turtle
+This directory ships thirteen ontologies as **shepard-bundled Turtle
 files** for the N1b "pre-seeded common ontologies" feature (see
 `aidocs/48 §4`) plus the ONT1a follow-up (OBO Relation Ontology),
 the ONT1b follow-up (Metadata4Ing), and the 2026-05-19 addition
@@ -20,6 +20,7 @@ All twelve are openly licensed for redistribution.
 | `obo-relations.ttl` | OBO Relation Ontology (RO)        | CC0 1.0               | <https://creativecommons.org/publicdomain/zero/1.0/> |
 | `metadata4ing.ttl`  | Metadata4Ing (NFDI4Ing) 1.4.0    | CC BY 4.0             | <https://creativecommons.org/licenses/by/4.0/> |
 | `simat.ttl`         | SiMaT v1.0.0 (DLR BT)            | CC BY 4.0             | <https://creativecommons.org/licenses/by/4.0/> |
+| `lumen-inspired.ttl` | LUMEN-Inspired Hotfire Test Ontology | CC BY 4.0        | <https://creativecommons.org/licenses/by/4.0/> |
 | `shepard-experiment.ttl` | Shepard Experiment Ontology | CC BY 4.0             | <https://creativecommons.org/licenses/by/4.0/> |
 
 ### Citations
