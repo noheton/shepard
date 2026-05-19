@@ -248,15 +248,10 @@ onBeforeUnmount(() => {
     >
       No channels in this container yet.
     </div>
-    <div
-      v-else-if="!series.length"
-      class="pa-4 text-body-2 text-medium-emphasis"
-    >
-      Channels have no data points yet. Upload a CSV to get started.
-    </div>
     <div v-else>
-      <!-- Live-mode toolbar — toggles sliding-window refresh for
-           high-frequency feeds (home-showcase MQTT, hot-fire DAQ). -->
+      <!-- Live-mode toolbar — always visible once channels exist so
+           live-feed containers (MQTT, hot-fire DAQ) don't mislead users
+           with "upload a CSV" when they just need to enable live mode. -->
       <div class="d-flex flex-wrap align-center ga-3 mb-2 px-2">
         <v-switch
           v-model="liveMode"
@@ -361,7 +356,19 @@ onBeforeUnmount(() => {
           Showing first {{ MAX_CHANNELS }} of {{ measurements.length }} channels
         </div>
       </div>
+      <div
+        v-if="!series.length"
+        class="pa-4 text-body-2 text-medium-emphasis"
+      >
+        <template v-if="liveMode">
+          Waiting for incoming data…
+        </template>
+        <template v-else>
+          No data points yet. Enable live mode to stream incoming data, or upload a CSV.
+        </template>
+      </div>
       <TimeseriesChart
+        v-else
         :series="series"
         height="300px"
         :show-legend="true"
