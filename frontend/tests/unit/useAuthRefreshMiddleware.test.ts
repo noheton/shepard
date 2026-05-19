@@ -70,7 +70,7 @@ describe("useAuthRefreshMiddleware", () => {
 
     expect(mockRefresh).toHaveBeenCalledOnce();
     expect(fetchFn).toHaveBeenCalledOnce();
-    const usedHeaders = fetchFn.mock.calls[0][1].headers;
+    const usedHeaders = (fetchFn.mock.calls[0] as [string, { headers: { Authorization: string } }])[1].headers;
     expect(usedHeaders.Authorization).toBe("Bearer refreshed-token");
     expect(result).toBe(retryResponse);
   });
@@ -82,7 +82,7 @@ describe("useAuthRefreshMiddleware", () => {
     await m.post!(makeContext(401));
 
     expect(mockSignIn).toHaveBeenCalledWith("oidc", expect.objectContaining({ redirect: true }));
-    const [, opts] = mockSignIn.mock.calls[0];
+    const [, opts] = mockSignIn.mock.calls[0] as [string, { callbackUrl: string }];
     expect(opts.callbackUrl).toContain(encodeURIComponent("/test"));
   });
 
