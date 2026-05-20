@@ -1,7 +1,21 @@
-# 78 — Containerless Basic Mode
+# 78 — Container-hiding Basic Mode
 
 **Status:** design (task #51, task #42)
 **Audience:** frontend contributors, product
+
+---
+
+## Core principle
+
+**Containers are used, not removed. Basic mode hides them.**
+
+Containers continue to exist in the graph exactly as they do today —
+the backend, permissions, API, and data model are unchanged.
+What changes is the frontend vocabulary: in basic mode, the word
+"container" never appears. Users see their data directly; the container
+is auto-managed behind the scenes.
+
+This is a frontend concern only. No backend changes are required.
 
 ---
 
@@ -20,6 +34,8 @@ to my dataset" must:
 
 Steps 2–5 are invisible friction for someone who just wants to deposit data.
 In basic mode the goal is: **open a DataObject, click "Add data", done.**
+A container is created silently if one doesn't exist; the user never names it,
+navigates to it, or knows it's there.
 
 ---
 
@@ -80,12 +96,17 @@ existing container rather than creating a second one.
 
 ---
 
-## What stays unchanged
+## What stays unchanged (everything backend)
 
-- The backend graph: containers still exist, permissions still attach to
-  them, the upstream API surface is untouched.
+- Containers are created, stored, and queried exactly as today.
+- Permissions attach to containers as today — nothing changes.
+- The upstream `/shepard/api/...` surface and the `/v2/` REST surface
+  are untouched.
 - Advanced mode: unchanged — full container tab, create/delete, settings.
-- The `basic` preference toggle in `useAdvancedMode.ts` is the gate.
+- The `basic` preference toggle in `useAdvancedMode.ts` is the only gate.
+
+The implementation is purely in the frontend: hide UI chrome, auto-create
+containers on first data deposit, show content inline instead of nested.
 
 ---
 
