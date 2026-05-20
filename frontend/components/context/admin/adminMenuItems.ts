@@ -9,6 +9,7 @@ export enum AdminFragments {
   USER_GROUPS = "user-groups",
   INSTANCE_ROR = "instance-ror",
   STORAGE_OVERVIEW = "storage-overview",
+  PERMISSION_AUDIT_LOG = "permission-audit-log",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -51,5 +52,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Research Organization",
     fragment: AdminFragments.INSTANCE_ROR,
     icon: "mdi-office-building",
+  },
+  {
+    name: "Permission Audit Log",
+    fragment: AdminFragments.PERMISSION_AUDIT_LOG,
+    icon: "mdi-shield-account-outline",
   },
 ];

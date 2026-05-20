@@ -2,6 +2,7 @@
 /* eslint-disable */
 export * from './AdminFeaturesApi';
 export * from './AdminMetricsApi';
+export * from './AdminPermissionAuditApi';
 export * from './CollectionContainersApi';
 export * from './DataObjectV2Api';
 export * from './ShepardTemplateApi';
