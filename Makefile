@@ -29,8 +29,8 @@ MVN            := $(CURDIR)/backend/mvnw
 # ADR-0023 two-pass dance: backend install (no plugins) → plugins install → backend package.
 # Required whenever a plugin module changes; safe to run even when only backend changed.
 build-plugins:
-	cd backend && $(MVN) -DnoPlugins -DskipTests -Dquarkus.build.skip=true install -q
-	cd plugins/video && $(MVN) -DskipTests install -q
+	cd backend && $(MVN) -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q
+	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
 
 build-backend: build-plugins
 	cd backend && $(MVN) package -Dmaven.test.skip=true -q
