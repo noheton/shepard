@@ -60,7 +60,7 @@
         <tr>
           <th>Name</th>
           <th style="width: 1%; white-space: nowrap">Status</th>
-          <th style="width: 1%; white-space: nowrap" :title="'References attached to this DataObject (timeseries / file / structured / video / git / URI)'">
+          <th style="width: 1%; white-space: nowrap" :title="'References attached to this DataObject'">
             Refs
           </th>
           <th style="width: 1%; white-space: nowrap" :title="'Direct children DataObjects'">
@@ -99,32 +99,48 @@
             </v-chip>
             <span v-else class="text-medium-emphasis">—</span>
           </td>
-          <td class="text-no-wrap">
-            <!-- app-notifier-style icon + count badge. Today we only
-                 have a flat `referenceIds` total from DataObjectIO,
-                 so this is one generic chain-link icon. Phase 2 (#24)
-                 swaps this for one badge per kind (mdi-chart-line for
-                 TS, mdi-file-outline for files, mdi-code-json for SD,
-                 mdi-video-outline for video, mdi-git for git) once the
-                 backend joins per-kind counts onto the list endpoint.
-                 Same visual pattern as the user asked for; just one
-                 icon-bucket instead of N for now. -->
-            <v-badge
-              v-if="row.refCount > 0"
-              :content="row.refCount"
-              color="primary"
-              inline
-            >
-              <v-icon size="small">mdi-link-variant</v-icon>
-            </v-badge>
-            <v-icon
-              v-else
-              size="small"
-              color="rgba(0,0,0,0.3)"
-              :title="'No references attached'"
-            >
-              mdi-link-variant-off
-            </v-icon>
+          <td class="text-no-wrap ref-kind-cell">
+            <span v-if="row.refCount === 0" title="No references">
+              <v-icon size="small" color="rgba(0,0,0,0.25)">mdi-link-variant-off</v-icon>
+            </span>
+            <template v-else>
+              <v-badge
+                v-if="row.tsCount > 0"
+                :content="row.tsCount"
+                color="primary"
+                inline
+                title="Timeseries references"
+              >
+                <v-icon size="small">mdi-chart-line</v-icon>
+              </v-badge>
+              <v-badge
+                v-if="row.fileBundleCount > 0"
+                :content="row.fileBundleCount"
+                color="secondary"
+                inline
+                title="File-bundle references"
+              >
+                <v-icon size="small">mdi-file-multiple-outline</v-icon>
+              </v-badge>
+              <v-badge
+                v-if="row.sdCount > 0"
+                :content="row.sdCount"
+                color="info"
+                inline
+                title="Structured-data references"
+              >
+                <v-icon size="small">mdi-code-json</v-icon>
+              </v-badge>
+              <v-badge
+                v-if="row.videoCount > 0"
+                :content="row.videoCount"
+                color="warning"
+                inline
+                title="Video-stream references"
+              >
+                <v-icon size="small">mdi-video-outline</v-icon>
+              </v-badge>
+            </template>
           </td>
           <td class="text-no-wrap">
             <v-badge
@@ -212,6 +228,10 @@ interface Row {
   name: string;
   status: string | null;
   refCount: number;
+  tsCount: number;
+  fileBundleCount: number;
+  sdCount: number;
+  videoCount: number;
   childCount: number;
   incomingCount: number;
   createdAt: Date;
@@ -223,6 +243,10 @@ const rows = computed<Row[]>(() =>
     name: d.name ?? `#${d.id}`,
     status: (d.status as string) ?? null,
     refCount: (d.referenceIds ?? []).length,
+    tsCount: d.timeseriesReferenceCount ?? 0,
+    fileBundleCount: d.fileBundleCount ?? 0,
+    sdCount: d.structuredDataReferenceCount ?? 0,
+    videoCount: d.videoStreamReferenceCount ?? 0,
     childCount: (d.childrenIds ?? []).length,
     incomingCount: (d.incomingIds ?? []).length,
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
@@ -291,6 +315,15 @@ function formatRelative(d: Date): string {
 }
 .do-row {
   cursor: pointer;
+}
+.ref-kind-cell {
+  white-space: nowrap;
+  :deep(.v-badge) {
+    margin-right: 6px;
+  }
+  :deep(.v-badge:last-child) {
+    margin-right: 0;
+  }
 }
 .do-row:hover {
   background-color: rgb(var(--v-theme-focus1));

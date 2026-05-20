@@ -3,6 +3,10 @@ package de.dlr.shepard.context.collection.io;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.collection.entities.DataObject;
+import de.dlr.shepard.context.references.file.entities.FileBundleReference;
+import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
+import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
+import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,6 +37,18 @@ public class DataObjectIO extends AbstractDataObjectIO {
   @Schema(readOnly = true, required = true)
   private long[] incomingIds;
 
+  @Schema(readOnly = true, required = true)
+  private int timeseriesReferenceCount;
+
+  @Schema(readOnly = true, required = true)
+  private int fileBundleCount;
+
+  @Schema(readOnly = true, required = true)
+  private int structuredDataReferenceCount;
+
+  @Schema(readOnly = true, required = true)
+  private int videoStreamReferenceCount;
+
   public DataObjectIO(DataObject dataObject) {
     super(dataObject);
     this.collectionId = dataObject.getCollection().getShepardId();
@@ -42,6 +58,14 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.childrenIds = extractShepardIds(dataObject.getChildren());
     this.parentId = dataObject.getParent() != null ? dataObject.getParent().getShepardId() : null;
     this.incomingIds = extractShepardIds(dataObject.getIncoming());
+    this.timeseriesReferenceCount = (int) dataObject.getReferences().stream()
+        .filter(r -> r instanceof TimeseriesReference).count();
+    this.fileBundleCount = (int) dataObject.getReferences().stream()
+        .filter(r -> r instanceof FileBundleReference).count();
+    this.structuredDataReferenceCount = (int) dataObject.getReferences().stream()
+        .filter(r -> r instanceof StructuredDataReference).count();
+    this.videoStreamReferenceCount = (int) dataObject.getReferences().stream()
+        .filter(r -> r instanceof VideoStreamReference).count();
   }
 
   @Override

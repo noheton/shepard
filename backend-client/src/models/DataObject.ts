@@ -121,6 +121,30 @@ export interface DataObject {
      * @memberof DataObject
      */
     readonly incomingIds: Array<number>;
+    /**
+     * Number of timeseries references attached to this DataObject.
+     * @type {number}
+     * @memberof DataObject
+     */
+    readonly timeseriesReferenceCount?: number;
+    /**
+     * Number of file-bundle references attached to this DataObject.
+     * @type {number}
+     * @memberof DataObject
+     */
+    readonly fileBundleCount?: number;
+    /**
+     * Number of structured-data references attached to this DataObject.
+     * @type {number}
+     * @memberof DataObject
+     */
+    readonly structuredDataReferenceCount?: number;
+    /**
+     * Number of video-stream references attached to this DataObject.
+     * @type {number}
+     * @memberof DataObject
+     */
+    readonly videoStreamReferenceCount?: number;
 }
 
 /**
@@ -169,6 +193,10 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'childrenIds': json['childrenIds'],
         'parentId': json['parentId'],
         'incomingIds': json['incomingIds'],
+        'timeseriesReferenceCount': json['timeseriesReferenceCount'] ?? 0,
+        'fileBundleCount': json['fileBundleCount'] ?? 0,
+        'structuredDataReferenceCount': json['structuredDataReferenceCount'] ?? 0,
+        'videoStreamReferenceCount': json['videoStreamReferenceCount'] ?? 0,
     };
 }
 

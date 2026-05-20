@@ -89,7 +89,7 @@ watch(dataObject, () => {
 
 <template>
   <div style="max-width: 1400px">
-    <v-container class="pa-0 fill-height" fluid max-width="1000px">
+    <v-container class="pa-0 fill-height" fluid>
       <v-row
         v-if="
           !!collection && !!dataObject && !!dataReferences && !!relatedEntities
@@ -119,7 +119,7 @@ watch(dataObject, () => {
           />
         </v-col>
         <v-col cols="12">
-          <v-container class="pa-0" fluid max-width="1000px">
+          <v-container class="pa-0" fluid>
             <v-row no-gutters>
               <TitleAndMetadataDisplay
                 :entity="dataObject"

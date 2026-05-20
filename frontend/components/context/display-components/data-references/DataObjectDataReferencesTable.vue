@@ -170,6 +170,7 @@ const itemsPerPage = 10;
       <SemanticAnnotationList
         :key="value.id"
         :can-delete="isAllowedToEditCollection"
+        :limit="4"
         :annotated="
           new AnnotatedReference(collectionId, dataObjectId, value.id)
         "
