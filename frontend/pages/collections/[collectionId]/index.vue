@@ -3,6 +3,7 @@ import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
+import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
 
 definePageMeta({ layout: "collection" });
 
@@ -16,6 +17,7 @@ const {
 const collectionId = routeParams.value.collectionId;
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
+const { isBookmarked, toggle: toggleBookmark } = useBookmarkedCollections();
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
 
@@ -130,8 +132,17 @@ watch(collection, () => {
             </v-row>
             <v-row
               no-gutters
-              class="justify-end pb-2 ga-2"
+              class="justify-end pb-2 ga-2 align-center"
             >
+              <v-btn
+                icon
+                variant="text"
+                :color="isBookmarked(collection.id!) ? 'amber-darken-2' : undefined"
+                :title="isBookmarked(collection.id!) ? 'Remove bookmark' : 'Bookmark this collection'"
+                @click="toggleBookmark(collection)"
+              >
+                <v-icon>{{ isBookmarked(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+              </v-btn>
               <v-btn
                 prepend-icon="mdi-package-down"
                 variant="tonal"

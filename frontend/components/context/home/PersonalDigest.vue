@@ -4,6 +4,7 @@ import {
   isCleanupCollection,
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
+import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
 
 const router = useRouter();
 
@@ -50,6 +51,10 @@ const {
   error,
   refetch,
 } = useFetchRecentCollections();
+
+// Bookmarks
+const { bookmarks, bookmarksLoading, isBookmarked, toggle: toggleBookmark } =
+  useBookmarkedCollections();
 
 const isEmpty = computed(() => !loading.value && allCollections.value.length === 0 && !error.value);
 
@@ -154,7 +159,7 @@ function relativeTime(date: Date | null | undefined): string {
     </v-alert>
 
     <!-- Empty state (authenticated but no collections) -->
-    <div v-else-if="isEmpty" class="d-flex flex-column align-center py-16">
+    <div v-if="!error && isEmpty" class="d-flex flex-column align-center py-16">
       <v-icon icon="mdi-folder-open-outline" size="72" color="textbody2" class="mb-4" />
       <div class="text-h5 font-weight-medium mb-2">No collections yet</div>
       <div class="text-body-1 text-medium-emphasis mb-6">
@@ -171,8 +176,99 @@ function relativeTime(date: Date | null | undefined): string {
       </v-btn>
     </div>
 
+    <!-- Bookmarked collections section -->
+    <template v-if="bookmarks.length > 0 || bookmarksLoading">
+      <div class="d-flex align-center mb-4 ga-2">
+        <v-icon icon="mdi-star" color="amber-darken-2" size="20" />
+        <div class="text-h6 font-weight-medium">Bookmarked</div>
+      </div>
+      <v-row class="mb-6">
+        <template v-if="bookmarksLoading">
+          <v-col v-for="n in 3" :key="n" cols="12" sm="6" md="4">
+            <v-skeleton-loader type="card" />
+          </v-col>
+        </template>
+        <template v-else>
+          <v-col
+            v-for="collection in bookmarks"
+            :key="collection.id"
+            cols="12"
+            sm="6"
+            md="4"
+          >
+            <v-card
+              :to="`/collections/${collection.id}`"
+              height="100%"
+              elevation="0"
+              variant="outlined"
+              rounded="lg"
+              class="collection-digest-card d-flex flex-column"
+            >
+              <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
+                <div class="collection-name-clamp flex-grow-1">{{ collection.name }}</div>
+                <v-btn
+                  icon
+                  variant="text"
+                  density="compact"
+                  size="small"
+                  color="amber-darken-2"
+                  class="ms-1 flex-shrink-0"
+                  title="Remove bookmark"
+                  @click.stop.prevent="toggleBookmark(collection)"
+                >
+                  <v-icon>mdi-star</v-icon>
+                </v-btn>
+              </v-card-title>
+              <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
+                <div
+                  v-if="collection.description"
+                  class="text-body-2 text-medium-emphasis description-clamp"
+                >
+                  {{ collection.description }}
+                </div>
+                <div v-else class="text-body-2 text-disabled font-italic">
+                  No description
+                </div>
+              </v-card-text>
+              <v-card-actions class="px-4 pb-3 pt-0 d-flex flex-wrap ga-1">
+                <v-chip size="x-small" variant="tonal" prepend-icon="mdi-cube-outline">
+                  {{ collection.dataObjectIds?.length ?? 0 }}
+                  {{ (collection.dataObjectIds?.length ?? 0) === 1 ? "object" : "objects" }}
+                </v-chip>
+                <v-chip
+                  v-if="collection.status && !isCleanupCollection(collection)"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  {{ collection.status }}
+                </v-chip>
+                <v-chip
+                  v-if="isCleanupCollection(collection)"
+                  size="x-small"
+                  variant="tonal"
+                  color="warning"
+                  prepend-icon="mdi-delete-clock-outline"
+                >
+                  Pending cleanup
+                </v-chip>
+                <v-spacer />
+                <v-chip
+                  size="x-small"
+                  variant="text"
+                  class="text-medium-emphasis"
+                  prepend-icon="mdi-clock-outline"
+                >
+                  {{ relativeTime(collection.updatedAt ?? collection.createdAt) }}
+                </v-chip>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </template>
+      </v-row>
+    </template>
+
     <!-- Collection cards grid -->
-    <template v-else>
+    <template v-if="!isEmpty">
       <div class="d-flex align-center justify-space-between mb-4 flex-wrap ga-2">
         <div class="text-h6 font-weight-medium">Recent collections</div>
         <v-btn
@@ -216,8 +312,20 @@ function relativeTime(date: Date | null | undefined): string {
               rounded="lg"
               class="collection-digest-card d-flex flex-column"
             >
-              <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0">
-                <div class="collection-name-clamp">{{ collection.name }}</div>
+              <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
+                <div class="collection-name-clamp flex-grow-1">{{ collection.name }}</div>
+                <v-btn
+                  icon
+                  variant="text"
+                  density="compact"
+                  size="small"
+                  :color="isBookmarked(collection.id!) ? 'amber-darken-2' : undefined"
+                  class="ms-1 flex-shrink-0"
+                  :title="isBookmarked(collection.id!) ? 'Remove bookmark' : 'Bookmark'"
+                  @click.stop.prevent="toggleBookmark(collection)"
+                >
+                  <v-icon>{{ isBookmarked(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+                </v-btn>
               </v-card-title>
 
               <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">

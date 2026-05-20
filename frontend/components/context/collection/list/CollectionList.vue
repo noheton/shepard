@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Collection } from "@dlr-shepard/backend-client";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
+import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
 
 defineProps<{
   itemsPerPage: number;
@@ -11,6 +12,8 @@ defineProps<{
 
 const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
+const { isBookmarked, toggle: toggleBookmark } = useBookmarkedCollections();
+
 const headers = [
   {
     title: "ID",
@@ -46,6 +49,12 @@ const headers = [
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
+  },
+  {
+    title: "",
+    key: "bookmark",
+    width: "5%",
+    sortable: false,
   },
 ];
 
@@ -105,6 +114,19 @@ function onPageChange(page: number) {
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
         <template #[`item.createdAt`]>
           {{ toShortDateString(rowProps.item.createdAt) }}
+        </template>
+        <template #[`item.bookmark`]>
+          <v-btn
+            icon
+            variant="text"
+            density="compact"
+            size="small"
+            :color="isBookmarked(rowProps.item.id!) ? 'amber-darken-2' : undefined"
+            :title="isBookmarked(rowProps.item.id!) ? 'Remove bookmark' : 'Bookmark'"
+            @click.stop="toggleBookmark(rowProps.item)"
+          >
+            <v-icon>{{ isBookmarked(rowProps.item.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+          </v-btn>
         </template>
       </v-data-table-row>
     </template>
