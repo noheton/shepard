@@ -120,6 +120,8 @@ watch(containerAccessor.fileContainer, () => {
       :files="containerAccessor.files.value"
       :is-allowed-to-edit="containerAccessor.isAllowedToEditData.value"
       :loading="containerAccessor.loading.value"
+      :container-app-id="containerAccessor.fileContainer.value?.appId ?? undefined"
+      :container-id="containerId"
       @delete-file="(file: ShepardFile) => containerAccessor.deleteFile(file)"
       @download-file="
         (file: ShepardFile) => containerAccessor.downloadFile(file)

@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import type { ShepardFile } from "@dlr-shepard/backend-client";
 
-defineProps<{
+const props = defineProps<{
   files: ShepardFile[];
   isAllowedToEdit: boolean;
   loading: boolean;
+  containerAppId?: string;
+  containerId: number;
 }>();
 
 const emit = defineEmits<{
@@ -23,10 +25,17 @@ const headers = [
 
 const fileToDelete = ref<ShepardFile | undefined>(undefined);
 const showFileDeleteConfirmDialog = ref<boolean>(false);
+const fileForHistory = ref<ShepardFile | undefined>(undefined);
+const showHistoryDialog = ref(false);
 
 const deleteFile = (file: ShepardFile) => {
   fileToDelete.value = file;
   showFileDeleteConfirmDialog.value = true;
+};
+
+const openHistory = (file: ShepardFile) => {
+  fileForHistory.value = file;
+  showHistoryDialog.value = true;
 };
 </script>
 
@@ -57,6 +66,11 @@ const deleteFile = (file: ShepardFile) => {
             @click="() => emit('download-file', item)"
           />
           <ActionButton
+            v-if="containerAppId"
+            icon="mdi-history"
+            @click="openHistory(item)"
+          />
+          <ActionButton
             v-if="isAllowedToEdit"
             icon="mdi-delete-outline"
             @click="deleteFile(item)"
@@ -68,6 +82,13 @@ const deleteFile = (file: ShepardFile) => {
       v-if="showFileDeleteConfirmDialog && fileToDelete?.filename"
       v-model:show-dialog="showFileDeleteConfirmDialog"
       @confirmed="emit('delete-file', fileToDelete)"
+    />
+    <PayloadVersionHistoryDialog
+      v-if="showHistoryDialog && fileForHistory?.filename && containerAppId"
+      v-model:show-dialog="showHistoryDialog"
+      :container-app-id="containerAppId"
+      :container-id="props.containerId"
+      :file-name="fileForHistory.filename"
     />
   </div>
 </template>
