@@ -18,6 +18,7 @@ import de.dlr.shepard.data.file.entities.PayloadVersion;
 import de.dlr.shepard.data.file.entities.ShepardFile;
 import de.dlr.shepard.data.file.io.FileContainerIO;
 import de.dlr.shepard.data.file.services.FileService.FileCreateResult;
+import de.dlr.shepard.data.file.thumbnail.ThumbnailCache;
 import de.dlr.shepard.storage.FileStorage;
 import de.dlr.shepard.storage.FileStorageRegistry;
 import de.dlr.shepard.storage.StorageException;
@@ -62,6 +63,9 @@ public class FileContainerService extends AbstractContainerService<FileContainer
 
   @Inject
   PayloadVersionDAO payloadVersionDAO;
+
+  @Inject
+  ThumbnailCache thumbnailCache;
 
   /**
    * Creates a FileContainer and stores it in Neo4J
@@ -157,6 +161,11 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     // bulk "drop the entire container" verb is FS1b/FS1e territory
     // (the migration sweep needs per-adapter container teardown too).
     fileService.deleteFileContainer(mongoId);
+
+    // TH1a: remove all cached thumbnails for the deleted container
+    if (fileContainer.getAppId() != null) {
+      thumbnailCache.evictContainer(fileContainer.getAppId());
+    }
   }
 
   /**
@@ -396,6 +405,11 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     List<ShepardFile> newFiles = container.getFiles().stream().filter(f -> !f.getOid().equals(oid)).toList();
     container.setFiles(newFiles);
     fileContainerDAO.createOrUpdate(container);
+
+    // TH1a: remove cached thumbnails for the deleted file
+    if (container.getAppId() != null) {
+      thumbnailCache.evict(container.getAppId(), oid);
+    }
   }
 
   /**
