@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.video.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -70,8 +69,8 @@ class VideoAnnotationRestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(videoStreamReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Write, CALLER)).thenReturn(true);
   }
 
   // ── list ────────────────────────────────────────────────────────────────
@@ -102,7 +101,7 @@ class VideoAnnotationRestTest {
 
   @Test
   void list_returns403WhenNoReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
     assertThat(resource.list(DO_APP_ID, REF_APP_ID, sc).getStatus()).isEqualTo(403);
   }
 
@@ -148,7 +147,7 @@ class VideoAnnotationRestTest {
 
   @Test
   void create_returns403WhenNoWritePermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(eq(DO_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong())).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Write, CALLER)).thenReturn(false);
     var body = new VideoAnnotationIO();
     body.setStartSeconds(0.0);
     body.setLabel("ignition");

@@ -1,34 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  AAS1-plugin — shepard-plugin-aas extracts the Asset Administration Shell
-  feature surface from the backend into a drop-in plugin JAR.
+  VID1b — extracts the video payload kind from the backend into a
+  drop-in plugin JAR per the plugin-first heuristic #1
+  ("New payload kinds → plugin from day one", CLAUDE.md).
 
-  This module produces `shepard-plugin-aas-${revision}.jar` carrying:
+  Phase 1 (this commit): thin manifest only. The VideoStreamReference
+  entity, VideoStreamReferenceV2Rest, VideoAnnotationRest, and
+  VideoProbeService remain in-tree for the migration window. The
+  manifest makes the "video" capability discoverable by PluginRegistry
+  so that shepard-plugin-imagebundle can declare a PluginDependency
+  on it from day one.
 
-    * `de.dlr.shepard.plugins.aas.AasPluginManifest` —
-      implements `de.dlr.shepard.plugin.PluginManifest` so the
-      backend's `PluginRegistry` tracks AAS1-plugin in
-      `GET /v2/admin/plugins`.
-    * `META-INF/services/de.dlr.shepard.plugin.PluginManifest`
-      pointing at the manifest class.
-    * The full AAS code tree (services, DAOs, IO records, REST endpoints)
-      in packages `de.dlr.shepard.plugins.aas.*`.
-    * `aas-idta-templates.yaml` (bundled IDTA Submodel Templates,
-      loaded by `AasIdtaTemplateImportService` via the context classloader).
+  Phase 2 (VID1b full): move all de.dlr.shepard.*.videostreamreference.*
+  and de.dlr.shepard.v2.video.* packages into this module and gate
+  the REST resources behind PluginRegistry.isEnabled("video").
 
-  What stays in backend (not in this plugin):
-    * V46 Neo4j migration — MigrationsRunner Docker path reads only
-      `/deployments/neo4j/migrations/` which is populated from backend
-      resources, not plugin JARs. See aidocs/69 §2 deviation note.
-
-  Build order (same two-pass dance as other plugins):
+  Build order (ADR-0023 two-pass dance):
 
     $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
-    $ cd plugins/aas && mvn -DskipTests install
-    $ cd backend && mvn package           # plugin is on the classpath
+    $ cd plugins/video && mvn -DskipTests install
+    $ cd backend && mvn package
 
-  See docs/install/aas-plugin.md for the operator runbook.
-  See aidocs/plugins/69-aas-plugin-extraction-design.md for the design rationale.
+  See aidocs/34 + aidocs/44 VID1b row.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -36,18 +29,18 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-aas</artifactId>
+  <artifactId>shepard-plugin-video</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — AAS (Asset Administration Shell)</name>
+  <name>shepard plugin — video (VideoStreamReference)</name>
   <description>
-    IDTA AAS v3 integration plugin. Exposes shepard Collections as AAS Shells
-    and DataObjects as Submodel references via /v2/aas/shells. Provides a
-    server self-description endpoint (/v2/aas/.well-known/aas-server), IDTA
-    Submodel Template import (/v2/admin/aas/import-idta-templates), and an
-    outbox-based AAS registry sync (/v2/admin/aas/registrations).
-    See aidocs/52 and aidocs/plugins/69.
+    Video payload kind plugin. Phase 1: manifest-only placeholder so
+    PluginRegistry tracks the "video" capability and
+    shepard-plugin-imagebundle can declare a dependency on it.
+    Phase 2 (VID1b full): moves VideoStreamReference entity + REST
+    endpoints into this module.
+    See aidocs/44 VID1b.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -91,31 +84,12 @@
   </dependencyManagement>
 
   <dependencies>
-    <!--
-      backend as provided — the plugin needs the backend's core types
-      (Collection, DataObject, DataObjectDAO, CollectionDAO, HasAppId,
-      PermissionsService, AuthenticationContext, GenericDAO, Constants,
-      ShepardTemplateDAO, ShepardTemplate, TemplateBodyValidator,
-      the PluginManifest SPI) at compile time. `provided` means the
-      plugin JAR does NOT bundle backend.jar — at runtime the backend
-      image carries its own classes.
-    -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
       <artifactId>backend</artifactId>
       <version>${revision}</version>
       <scope>provided</scope>
       <exclusions>
-        <!--
-          Defence against the build-time circular reference: the
-          backend's pom carries a default-active `with-plugins`
-          profile that pulls every `de.dlr.shepard.plugins:*` JAR
-          back onto its dependency list. When this plugin module
-          compiles against `backend`, Maven would otherwise resolve
-          those transitive references and fail with "Could not find
-          artifact ... shepard-plugin-*". The exclusions keep the
-          plugin's compile classpath self-consistent.
-        -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-unhide</artifactId>
@@ -150,12 +124,17 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-file-s3</artifactId>
+          <artifactId>shepard-plugin-aas</artifactId>
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-aas</artifactId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
         </exclusion>
+        <!--
+          Self-exclusion: prevents the circular reference where backend's
+          with-plugins profile pulls shepard-plugin-video back in, causing
+          "Could not find artifact ...shepard-plugin-video" during plugin build.
+        -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-video</artifactId>
@@ -163,7 +142,6 @@
       </exclusions>
     </dependency>
 
-    <!-- Quarkus runtime types used in plugin source. All provided. -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
@@ -185,33 +163,11 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Jackson YAML — used by AasIdtaTemplateImportService to read aas-idta-templates.yaml. -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Neo4j-OGM — AasRegistration is a @NodeEntity; DAO uses OGM types. -->
-    <dependency>
-      <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-ogm-core</artifactId>
-      <version>5.0.3</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Lombok — IO records and entity use @Data, @Getter, @Setter, etc. -->
+    <!-- Lombok — entity and IO classes use @Data, @NoArgsConstructor, etc. -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>1.18.44</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- MicroProfile config — @ConfigProperty for shepard.aas.* keys. -->
-    <dependency>
-      <groupId>org.eclipse.microprofile.config</groupId>
-      <artifactId>microprofile-config-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -237,7 +193,7 @@
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-aas-${revision}</finalName>
+    <finalName>shepard-plugin-video-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

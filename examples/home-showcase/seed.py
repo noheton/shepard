@@ -28,6 +28,11 @@ from typing import Optional
 # ---------------------------------------------------------------------------
 # Constants
 
+# Plugin dependencies — this seed uses only core endpoints; no plugins required.
+# If future steps need a plugin, add it here and call probe_plugins() at the
+# top of main() (see examples/lumen-showcase/seed.py for the pattern).
+PLUGIN_DEPS: dict[str, str] = {}
+
 COLLECTION_NAME = "Home energy & environment (live)"
 COLLECTION_DESCRIPTION = (
     "Live MQTT-ingested home telemetry — solar inverter, smart-plug energy, "

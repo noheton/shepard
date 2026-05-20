@@ -4,6 +4,7 @@ import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
 import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
+import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 
 definePageMeta({ layout: "collection" });
 
@@ -96,6 +97,15 @@ const collectionAppId = computed<string | null>(() => {
   const raw = (collection.value as unknown as { appId?: string | null }).appId;
   return raw ?? null;
 });
+
+// Gate the Publishing panel on whether the Unhide plugin is active on
+// this instance (INST2 — GET /v2/instance/capabilities, fetched in
+// HeaderBar on login). If the plugin is disabled or not installed the
+// panel is hidden so users don't see a dead "Publish to Helmholtz KG"
+// toggle. The fetch is a singleton so this computed just reads the
+// already-resolved state.
+const { isPluginEnabled } = useInstanceCapabilities();
+const isUnhideEnabled = computed(() => isPluginEnabled("unhide"));
 
 watch(collection, () => {
   useHead({
@@ -332,7 +342,7 @@ watch(collection, () => {
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
-                  v-if="isAllowedToEditCollection && collectionAppId"
+                  v-if="isAllowedToEditCollection && collectionAppId && isUnhideEnabled"
                   title="Publishing"
                 >
                   <div class="pt-2">

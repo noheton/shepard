@@ -14,7 +14,6 @@ import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.context.references.uri.entities.URIReference;
-import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
 import de.dlr.shepard.context.semantic.entities.AnnotatableTimeseries;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
@@ -126,9 +125,6 @@ public class NeoConnector implements IConnector {
           URIReference.class.getPackageName(),
           User.class.getPackageName(),
           Version.class.getPackageName(),
-          // VID1a — video stream references. Without this the OGM session
-          // refuses session.save() with "not a valid entity class".
-          VideoStreamReference.class.getPackageName(),
           // PROV1a — provenance activity rows. Without this provenance
           // recording silently fails (save throws IAE, filter swallows it).
           Activity.class.getPackageName(),

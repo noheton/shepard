@@ -157,6 +157,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-file-s3</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 

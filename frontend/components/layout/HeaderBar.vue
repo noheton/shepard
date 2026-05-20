@@ -164,13 +164,20 @@ import {
   type MyCollectionSearchResult,
 } from "~/composables/context/useCollectionSearch";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
+import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 
 const { status, signOut, signIn, data } = useAuth();
 
 const { identity: instanceIdentity, fetch: fetchIdentity } = useInstanceIdentity();
+const { fetch: fetchCapabilities } = useInstanceCapabilities();
 watch(
   () => data.value?.accessToken,
-  (token) => { if (token) void fetchIdentity(token); },
+  (token) => {
+    if (token) {
+      void fetchIdentity(token);
+      void fetchCapabilities(token);
+    }
+  },
   { immediate: true },
 );
 const { public: publicConfig } = useRuntimeConfig();

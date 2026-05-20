@@ -173,6 +173,66 @@ VAL_ANOMALY_TYPE_FOR_RUN: dict[int, str] = {
 TIMESERIES_CHUNK = 1000
 
 # ---------------------------------------------------------------------------
+# Plugin dependencies
+#
+# Maps a human-readable feature name to the shepherd plugin id that powers it.
+# probe_plugins() queries GET /v2/admin/plugins and prints a preflight table
+# so operators know which features will be skipped on a fresh instance.
+
+PLUGIN_DEPS: dict[str, str] = {
+    "git references":    "git",
+    "git credentials":   "git",
+}
+
+
+def _v2_base_from_host(host: str) -> str:
+    base = host.rstrip("/")
+    if base.endswith("/shepard/api"):
+        return base[: -len("/shepard/api")]
+    if base.endswith("/shepard/api/"):
+        return base[: -len("/shepard/api/")]
+    return base
+
+
+def probe_plugins(host: str, apikey: str) -> set[str]:
+    """Query GET /v2/admin/plugins and return the set of enabled plugin ids.
+
+    Prints a preflight table comparing PLUGIN_DEPS against what's actually
+    enabled so operators see which features will be skipped before the seed
+    runs. Gracefully returns an empty set when the endpoint is unavailable
+    (e.g. older backend build without PM1a).
+    """
+    import urllib.error
+    import urllib.request as _req
+
+    v2_base = _v2_base_from_host(host)
+    url = f"{v2_base}/v2/admin/plugins"
+    try:
+        request = _req.Request(url, headers={"X-API-KEY": apikey})
+        with _req.urlopen(request, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        print(f"[plugin preflight] /v2/admin/plugins returned HTTP {e.code} — skipping plugin checks", flush=True)
+        return set()
+    except Exception as exc:
+        print(f"[plugin preflight] /v2/admin/plugins unavailable ({exc}) — skipping plugin checks", flush=True)
+        return set()
+
+    # PluginListIO wraps a `plugins` list; each entry has `id` and `enabled`.
+    entries = data.get("plugins", data) if isinstance(data, dict) else data
+    enabled: set[str] = {e["id"] for e in entries if e.get("enabled")}
+
+    print("\n[plugin preflight]", flush=True)
+    required_ids = set(PLUGIN_DEPS.values())
+    for plugin_id in sorted(required_ids):
+        features = [f for f, p in PLUGIN_DEPS.items() if p == plugin_id]
+        status = "ENABLED" if plugin_id in enabled else "DISABLED — will skip: " + ", ".join(features)
+        print(f"  {'OK' if plugin_id in enabled else 'WARN'}  {plugin_id}: {status}", flush=True)
+    print(flush=True)
+    return enabled
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 
 
@@ -1189,19 +1249,23 @@ def _v2_lookup_do_app_id(apis: "Apis", do: DataObject) -> str | None:
 def best_effort_git_references(
     apis: Apis,
     targets: list[tuple[DataObject, str, str, str | None]],
+    enabled_plugins: set[str] | None = None,
 ) -> None:
     """Seed Git references showcasing the analysis scripts in this repo.
 
     Each tuple is (data_object, repo_url, path, ref). Idempotent — checks
-    the existing list and skips duplicates. Requires the /v2/data-objects/
-    {appId}/git-references endpoint (PL1d). Skips on 401/404 like other
-    best-effort helpers.
+    the existing list and skips duplicates. Requires the `git` plugin and
+    /v2/data-objects/{appId}/git-references endpoint (PL1d). Skips on
+    401/404 like other best-effort helpers.
 
     The "demo data" the user asked to link is this repository's own
     examples/lumen-showcase/notebooks/ folder, which contains the
     anomaly-analysis notebook + (when added) the SQL channel summary
     script. The repo URL points at noheton/shepard — replace with your
     fork's URL when forking this seed."""
+    if enabled_plugins is not None and "git" not in enabled_plugins:
+        _log("SKIP", "git references", "plugin 'git' disabled — enable via PATCH /v2/admin/plugins/git/enabled")
+        return
     try:
         import urllib.error
         import urllib.request
@@ -1463,6 +1527,7 @@ def best_effort_api_keys(apis: Apis, owning_username: str) -> dict[str, str]:
 def best_effort_git_credential_preseed(
     apis: Apis,
     targets: list[tuple[str, str, str, str | None]],
+    enabled_plugins: set[str] | None = None,
 ) -> None:
     """Preseed git credentials for demo users via the admin endpoint.
 
@@ -1470,10 +1535,13 @@ def best_effort_git_credential_preseed(
     The PAT is not hardcoded — pass via env var GITHUB_PAT or the --github-pat
     argument.  If a credential for the same host already exists it is replaced.
 
-    Requires the /v2/admin/users/{username}/git-credentials endpoint and the
-    shepard.secrets.encryption-key config to be set. Skips gracefully on
-    404/503 (endpoint not deployed or key not configured).
+    Requires the `git` plugin and /v2/admin/users/{username}/git-credentials
+    endpoint. Skips gracefully on 404/503 (endpoint not deployed or key not
+    configured).
     """
+    if enabled_plugins is not None and "git" not in enabled_plugins:
+        _log("SKIP", "git credential preseed", "plugin 'git' disabled — enable via PATCH /v2/admin/plugins/git/enabled")
+        return
     try:
         import urllib.error
         import urllib.request
@@ -1838,6 +1906,7 @@ def main(argv: list[str] | None = None) -> int:
         print("error: data not generated. Run `python data/generate.py` first or pass --regenerate.", file=sys.stderr)
         return 2
     apis = make_apis(args.host, args.apikey)
+    enabled_plugins = probe_plugins(args.host, args.apikey)
 
     if args.reset:
         reset(apis)
@@ -1914,7 +1983,7 @@ def main(argv: list[str] | None = None) -> int:
         # per-channel min/max/mean/stddev across the campaign.
         (runs[6], GIT_DEMO_REPO,
          "examples/lumen-showcase/notebooks/sql-channel-summary.py", GIT_DEMO_REF),
-    ])
+    ], enabled_plugins=enabled_plugins)
 
     # LUMEN hot-fire video — attached to the investigation DataObject so
     # viewers can correlate visual phases (ignition transient, steady-state
@@ -1941,7 +2010,7 @@ def main(argv: list[str] | None = None) -> int:
     # the preseed gracefully SKIPs with HTTP 404 if the node isn't there yet.
     best_effort_git_credential_preseed(apis, [
         ("flo", "github.com", "noheton", args.github_pat),
-    ])
+    ], enabled_plugins=enabled_plugins)
 
     # Versions + api keys (best-effort).
     best_effort_versions(apis, coll)

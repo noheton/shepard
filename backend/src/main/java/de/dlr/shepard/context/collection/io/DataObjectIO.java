@@ -6,7 +6,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
-import de.dlr.shepard.context.references.videostreamreference.model.VideoStreamReference;
+import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -65,7 +65,7 @@ public class DataObjectIO extends AbstractDataObjectIO {
     this.structuredDataReferenceCount = (int) dataObject.getReferences().stream()
         .filter(r -> r instanceof StructuredDataReference).count();
     this.videoStreamReferenceCount = (int) dataObject.getReferences().stream()
-        .filter(r -> r instanceof VideoStreamReference).count();
+        .filter(r -> r instanceof VideoPayload).count();
   }
 
   @Override

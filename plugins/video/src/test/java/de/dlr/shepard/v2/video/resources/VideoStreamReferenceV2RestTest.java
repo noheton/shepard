@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.video.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -84,8 +83,8 @@ class VideoStreamReferenceV2RestTest {
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(videoStreamReferenceService.getDataObjectOgmId(DO_APP_ID)).thenReturn(DO_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(true);
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, 0L)).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Write, CALLER)).thenReturn(true);
     when(videoStreamReferenceDAO.findByAppId(REF_APP_ID)).thenReturn(ref);
   }
 
@@ -119,7 +118,7 @@ class VideoStreamReferenceV2RestTest {
 
   @Test
   void list_returns403WhenNoReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
     Response r = resource.list(DO_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(403);
     verify(videoStreamReferenceService, never()).listByDataObject(anyString());
@@ -151,7 +150,7 @@ class VideoStreamReferenceV2RestTest {
 
   @Test
   void getOne_returns403WhenNoReadPermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Read, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Read, CALLER)).thenReturn(false);
     Response r = resource.getOne(DO_APP_ID, REF_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(403);
   }
@@ -191,7 +190,7 @@ class VideoStreamReferenceV2RestTest {
 
   @Test
   void delete_returns403WhenNoWritePermission() {
-    when(permissionsService.isAccessTypeAllowedForUser(DO_OGM_ID, AccessType.Write, CALLER, 0L)).thenReturn(false);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(DO_APP_ID, AccessType.Write, CALLER)).thenReturn(false);
     Response r = resource.delete(DO_APP_ID, REF_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(403);
     verify(videoStreamReferenceService, never()).delete(any());

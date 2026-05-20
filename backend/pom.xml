@@ -949,6 +949,18 @@
           <artifactId>shepard-plugin-aas</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          VID1b — video payload kind plugin. VideoStreamReference entity,
+          VideoAnnotationRest, VideoStreamReferenceV2Rest, VideoProbeService,
+          and VideoAnnotationDAO live here. quarkus.index-dependency entry
+          in application.properties ensures Quarkus/Arc indexes CDI beans
+          from this JAR.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

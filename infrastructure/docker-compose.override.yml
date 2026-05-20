@@ -84,6 +84,19 @@ services:
       # Required for PATCH /v2/me/git-credentials and the admin preseed
       # endpoint to function. Generate a new key: openssl rand -base64 32
       SHEPARD_SECRETS_ENCRYPTION_KEY: ${SECRETS_ENCRYPTION_KEY}
+      # Plugin opt-in — all plugins default to disabled in application.properties.
+      # Operators must explicitly enable each plugin here (deploy-time) or via
+      # PATCH /v2/admin/plugins/{id}/enabled (runtime). Only plugins wired up on
+      # this instance are listed; add / remove to control the active surface.
+      SHEPARD_PLUGINS_KIP_ENABLED: "true"
+      SHEPARD_PLUGINS_MINTER_LOCAL_ENABLED: "true"
+      SHEPARD_PLUGINS_SPATIAL_ENABLED: "true"
+      SHEPARD_PLUGINS_GIT_ENABLED: "true"
+      SHEPARD_PLUGINS_AAS_ENABLED: "true"
+      # VID1b — enables the video capability declaration so shepard-plugin-imagebundle
+      # dependency resolution succeeds. The VideoStreamReference endpoints are in-tree;
+      # this toggle also enables the /v2/admin/plugins "video" row in the admin UI.
+      SHEPARD_PLUGINS_VIDEO_ENABLED: "true"
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:

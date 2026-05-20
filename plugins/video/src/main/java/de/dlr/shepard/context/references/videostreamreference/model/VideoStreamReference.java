@@ -3,6 +3,7 @@ package de.dlr.shepard.context.references.videostreamreference.model;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
+import de.dlr.shepard.context.references.videostreamreference.VideoPayload;
 import java.util.Objects;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,15 +22,15 @@ import org.neo4j.ogm.annotation.NodeEntity;
  * the video to the TM1 time-reference model on
  * {@link de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference}.
  *
- * <p>Note: This feature lands in-tree for VID1a to lean on the existing
- * FileStorage SPI + permission gate. Plugin extraction is post-VID1-series
- * work (per CLAUDE.md plugin-first rule §"New payload kinds").
+ * <p>VID1b: extracted from backend into {@code shepard-plugin-video}.
+ * Implements {@link VideoPayload} so that {@code DataObjectIO} can count
+ * video references without a direct import of this class.
  */
 @NodeEntity
 @Data
 @ToString(callSuper = true)
 @NoArgsConstructor
-public class VideoStreamReference extends BasicReference {
+public class VideoStreamReference extends BasicReference implements VideoPayload {
 
   /**
    * Opaque storage locator in the format {@code "<providerId>:<locator>"}

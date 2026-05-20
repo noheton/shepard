@@ -29,6 +29,14 @@ COPY --chown=185 target/classes/neo4j/ /deployments/neo4j/
 # operators can drop in vendor plugins post-deploy.
 USER 0
 RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
+# ffmpeg — required by shepard-plugin-video (ffprobe) and shepard-plugin-imagebundle
+# (movie generation). RPM Fusion free provides ffmpeg + libx264 for UBI9 / RHEL9.
+# The EPEL release is required first so dnf can resolve the rpmfusion GPG key.
+RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
+    && dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
+    && dnf install -y ffmpeg \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 USER 185
 COPY --chown=185 plugins-stage/ /deployments/plugins/
 ENV SHEPARD_PLUGINS_DIR=/deployments/plugins
