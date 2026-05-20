@@ -20,14 +20,20 @@
 BACKEND_IMAGE  := shepard-backend-patched:local
 FRONTEND_IMAGE := shepard-frontend:local
 COMPOSE_DIR    := ./infrastructure
-MVN            := ./backend/mvnw
+MVN            := $(CURDIR)/backend/mvnw
 
-.PHONY: build-backend image-backend build-frontend image-frontend \
+.PHONY: build-backend build-plugins image-backend build-frontend image-frontend \
         deploy redeploy-backend redeploy-frontend redeploy check-images \
         integration-test
 
-build-backend:
-	cd backend && $(CURDIR)/backend/mvnw package -Dmaven.test.skip=true -q
+# ADR-0023 two-pass dance: backend install (no plugins) → plugins install → backend package.
+# Required whenever a plugin module changes; safe to run even when only backend changed.
+build-plugins:
+	cd backend && $(MVN) -DnoPlugins -DskipTests -Dquarkus.build.skip=true install -q
+	cd plugins/video && $(MVN) -DskipTests install -q
+
+build-backend: build-plugins
+	cd backend && $(MVN) package -Dmaven.test.skip=true -q
 
 image-backend: build-backend
 	docker build -t $(BACKEND_IMAGE) ./backend

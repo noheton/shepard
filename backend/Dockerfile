@@ -30,13 +30,19 @@ COPY --chown=185 target/classes/neo4j/ /deployments/neo4j/
 USER 0
 RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # ffmpeg — required by shepard-plugin-video (ffprobe) and shepard-plugin-imagebundle
-# (movie generation). RPM Fusion free provides ffmpeg + libx264 for UBI9 / RHEL9.
-# The EPEL release is required first so dnf can resolve the rpmfusion GPG key.
-RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
-    && dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-9.noarch.rpm \
-    && dnf install -y ffmpeg \
-    && dnf clean all \
-    && rm -rf /var/cache/dnf
+# (movie generation). RPM Fusion ffmpeg on UBI9 requires SDL2 which is not in
+# UBI9 repos without a RHEL subscription, so we install GPL-licensed static builds
+# from BtbN (https://github.com/BtbN/ffmpeg-builds) — self-contained, no shared-lib
+# dependencies. Only ffmpeg and ffprobe binaries are kept; the rest is cleaned up.
+# xz is installed temporarily to decompress the .tar.xz archive.
+RUN microdnf install -y xz --nodocs \
+    && mkdir -p /tmp/ffmpeg-dl \
+    && curl -fsSL -L 'https://github.com/BtbN/ffmpeg-builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz' \
+       | tar -xJf - -C /tmp/ffmpeg-dl --strip-components=1 \
+    && install -m 0755 /tmp/ffmpeg-dl/bin/ffmpeg /tmp/ffmpeg-dl/bin/ffprobe /usr/local/bin/ \
+    && rm -rf /tmp/ffmpeg-dl \
+    && microdnf remove -y xz \
+    && microdnf clean all
 USER 185
 COPY --chown=185 plugins-stage/ /deployments/plugins/
 ENV SHEPARD_PLUGINS_DIR=/deployments/plugins
