@@ -32,6 +32,7 @@ function jekyllPathToPage(href: string): string | null {
   if (
     stripped.startsWith("reference/") ||
     stripped.startsWith("help/") ||
+    stripped.startsWith("plugins/") ||
     stripped === "admin" ||
     stripped === "architecture" ||
     stripped === "deploy" ||
@@ -209,7 +210,7 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
       {
         page: "help/publish-to-helmholtz-unhide",
         title: "Publish to Helmholtz Unhide",
-        fetchPath: "/docs/help/publish-to-helmholtz-unhide.md",
+        fetchPath: "/docs/plugins/unhide/quickstart.md",
       },
       {
         page: "help/monitor-collection-activity",
@@ -244,7 +245,7 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
       {
         page: "help/minter-epic-quickstart",
         title: "Mint an ePIC PID",
-        fetchPath: "/docs/help/minter-epic-quickstart.md",
+        fetchPath: "/docs/plugins/minter-epic/quickstart.md",
       },
     ],
   },
@@ -302,16 +303,6 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         fetchPath: "/docs/reference/payload-versioning.md",
       },
       {
-        page: "reference/git-references",
-        title: "Git references",
-        fetchPath: "/docs/reference/git-references.md",
-      },
-      {
-        page: "reference/hdf-container",
-        title: "HDF container",
-        fetchPath: "/docs/reference/hdf-container.md",
-      },
-      {
         page: "reference/user-profile",
         title: "User profile",
         fetchPath: "/docs/reference/user-profile.md",
@@ -322,16 +313,6 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         fetchPath: "/docs/reference/video-stream-references.md",
       },
       {
-        page: "reference/minter-datacite",
-        title: "DataCite minter",
-        fetchPath: "/docs/reference/minter-datacite.md",
-      },
-      {
-        page: "reference/unhide-publish",
-        title: "Unhide publish",
-        fetchPath: "/docs/reference/unhide-publish.md",
-      },
-      {
         page: "reference/admin-cli",
         title: "Admin CLI",
         fetchPath: "/docs/reference/admin-cli.md",
@@ -340,6 +321,86 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
         page: "reference/plugins",
         title: "Plugins",
         fetchPath: "/docs/reference/plugins.md",
+      },
+    ],
+  },
+  {
+    header: "Plugins",
+    pages: [
+      {
+        page: "plugins/aas/reference",
+        title: "AAS (IDTA)",
+        fetchPath: "/docs/plugins/aas/reference.md",
+      },
+      {
+        page: "plugins/aas/quickstart",
+        title: "AAS — quickstart",
+        fetchPath: "/docs/plugins/aas/quickstart.md",
+      },
+      {
+        page: "plugins/aas/install",
+        title: "AAS — install",
+        fetchPath: "/docs/plugins/aas/install.md",
+      },
+      {
+        page: "plugins/git/reference",
+        title: "Git references",
+        fetchPath: "/docs/plugins/git/reference.md",
+      },
+      {
+        page: "plugins/hdf5/reference",
+        title: "HDF container",
+        fetchPath: "/docs/plugins/hdf5/reference.md",
+      },
+      {
+        page: "plugins/unhide/reference",
+        title: "Unhide publish",
+        fetchPath: "/docs/plugins/unhide/reference.md",
+      },
+      {
+        page: "plugins/unhide/quickstart",
+        title: "Unhide — quickstart",
+        fetchPath: "/docs/plugins/unhide/quickstart.md",
+      },
+      {
+        page: "plugins/minter-datacite/reference",
+        title: "DataCite minter",
+        fetchPath: "/docs/plugins/minter-datacite/reference.md",
+      },
+      {
+        page: "plugins/minter-epic/reference",
+        title: "ePIC minter",
+        fetchPath: "/docs/plugins/minter-epic/reference.md",
+      },
+      {
+        page: "plugins/minter-epic/quickstart",
+        title: "ePIC minter — quickstart",
+        fetchPath: "/docs/plugins/minter-epic/quickstart.md",
+      },
+      {
+        page: "plugins/minter-epic/install",
+        title: "ePIC minter — install",
+        fetchPath: "/docs/plugins/minter-epic/install.md",
+      },
+      {
+        page: "plugins/minter-local/reference",
+        title: "Local minter",
+        fetchPath: "/docs/plugins/minter-local/reference.md",
+      },
+      {
+        page: "plugins/kip/reference",
+        title: "KIP resolver",
+        fetchPath: "/docs/plugins/kip/reference.md",
+      },
+      {
+        page: "plugins/spatial/reference",
+        title: "Spatial data (PostGIS)",
+        fetchPath: "/docs/plugins/spatial/reference.md",
+      },
+      {
+        page: "plugins/file-s3/reference",
+        title: "S3 file storage",
+        fetchPath: "/docs/plugins/file-s3/reference.md",
       },
     ],
   },

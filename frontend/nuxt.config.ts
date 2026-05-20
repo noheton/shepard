@@ -62,6 +62,20 @@ function copyDocsSite(rootDir: string) {
 
   copyFiltered(src, dest);
   console.info(`[D1a] docs copied → ${dest}`);
+
+  // Copy plugin docs: plugins/<id>/docs/ → public/docs/plugins/<id>/
+  const pluginsRoot = path.resolve(rootDir, "../plugins");
+  if (fs.existsSync(pluginsRoot)) {
+    for (const entry of fs.readdirSync(pluginsRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const pluginDocsDir = path.join(pluginsRoot, entry.name, "docs");
+      if (!fs.existsSync(pluginDocsDir)) continue;
+      const pluginDestDir = path.join(dest, "plugins", entry.name);
+      fs.mkdirSync(pluginDestDir, { recursive: true });
+      copyFiltered(pluginDocsDir, pluginDestDir);
+    }
+    console.info(`[D1a] plugin docs copied → ${path.join(dest, "plugins")}`);
+  }
 }
 
 function getSessionRefreshInterval(): number {
