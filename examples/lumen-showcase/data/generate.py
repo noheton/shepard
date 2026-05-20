@@ -23,6 +23,8 @@ import argparse
 import csv
 import json
 import os
+import struct
+import zlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -553,6 +555,75 @@ def _write_anomaly_photo_stub(path: Path) -> None:
     path.write_bytes(bytes(body))
 
 
+def _write_png(path: Path, rgb: np.ndarray) -> None:
+    """Write a (H, W, 3) uint8 numpy array as a PNG file (stdlib only)."""
+    h, w = rgb.shape[:2]
+
+    def _chunk(name: bytes, data: bytes) -> bytes:
+        body = name + data
+        return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xFFFFFFFF)
+
+    raw = b"".join(b'\x00' + bytes(rgb[y].tobytes()) for y in range(h))
+    path.write_bytes(
+        b'\x89PNG\r\n\x1a\n'
+        + _chunk(b'IHDR', struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+        + _chunk(b'IDAT', zlib.compress(raw, 6))
+        + _chunk(b'IEND', b'')
+    )
+
+
+def _write_thermal_image(path: Path, run_idx: int, rng: np.random.Generator) -> None:
+    """Generate a false-colour 'thermal profile' PNG for one test run.
+
+    X-axis = time (0-30 s), Y-axis = normalised spatial cross-section.
+    Uses the same thermal-colormap convention as the timeseries plots.
+    TR-004 shows a visible hot-spot during ramp_up to mirror the vib anomaly.
+    Hold days (TR-005, TR-012) get a greyscale 'no-data' pattern."""
+    W, H = 320, 200
+
+    if run_idx in {5, 12}:
+        # Hold day — uniform grey with a 'NO FIRE' crosshatch pattern.
+        grey = np.full((H, W, 3), 48, dtype=np.uint8)
+        for y in range(0, H, 20):
+            grey[y, :] = [80, 80, 80]
+        for x in range(0, W, 20):
+            grey[:, x] = [80, 80, 80]
+        _write_png(path, grey)
+        return
+
+    t = np.linspace(0, 30, W)
+    y_pos = np.linspace(0, 1, H)
+    tt, yy = np.meshgrid(t, y_pos)
+
+    # Phase envelope — mirrors the canonical 7-phase burn shape.
+    phase = np.where(tt < 3, 0.0,
+        np.where(tt < 9,  (tt - 3) / 6.0,
+        np.where(tt < 22, 1.0,
+        np.where(tt < 26, 0.78,
+        np.where(tt < 28, np.maximum(0.0, 0.78 * (1 - (tt - 26) / 2)), 0.0)))))
+
+    # Spatial Gaussian — peak at nominal nozzle centreline (y ≈ 0.5).
+    y_peak = 0.5 + rng.uniform(-0.04, 0.04)
+    spatial = np.exp(-((yy - y_peak) / 0.28) ** 2)
+
+    intensity = phase * spatial + rng.normal(0, 0.025, (H, W))
+
+    # TR-004 anomaly hot-spot: upper-left quadrant during ramp_up at t~8 s.
+    if run_idx == 4:
+        hotspot = ((tt >= 7.5) & (tt <= 9.0)) & ((yy >= 0.62) & (yy <= 0.88))
+        intensity = np.where(hotspot, intensity + rng.uniform(0.35, 0.55, (H, W)), intensity)
+
+    intensity = np.clip(intensity, 0, 1)
+
+    # Thermal colormap: black→deep-blue→red→orange→yellow.
+    r = np.clip(intensity * 3.5 - 1.0, 0, 1)
+    g = np.clip(intensity * 3.5 - 2.2, 0, 1) * 0.65
+    b = np.clip((1 - intensity) * 2.0, 0, 1) * 0.8
+
+    rgb = (np.stack([r, g, b], axis=2) * 255).astype(np.uint8)
+    _write_png(path, rgb)
+
+
 def generate(out_dir: Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "timeseries").mkdir(exist_ok=True)
@@ -610,10 +681,11 @@ def generate(out_dir: Path) -> dict:
                             float(np.sum(val > 8.0)) / SAMPLE_RATE_HZ, 3
                         ),
                     }
-        # Structured run-log + report + CAD stub for every run.
+        # Structured run-log + report + CAD stub + thermal image for every run.
         _write_runlog(out_dir / "structured" / f"tr-{run_idx:03d}-runlog.json", run_idx)
         _write_test_report(out_dir / "files" / f"tr-{run_idx:03d}-test-report.md", run_idx)
         _write_cad_stub(out_dir / "files" / f"tr-{run_idx:03d}-cad-stub.bin", run_idx)
+        _write_thermal_image(out_dir / "files" / f"tr-{run_idx:03d}-thermal.png", run_idx, rng)
         manifest["runs"].append(run_record)
 
     # Schema and the anomaly investigation photo stub.

@@ -689,6 +689,7 @@ def upload_run_files(apis: Apis, coll: Collection, run_do: DataObject, fc: FileC
     files = [
         data_dir / "files" / f"tr-{run_idx:03d}-cad-stub.bin",
         data_dir / "files" / f"tr-{run_idx:03d}-test-report.md",
+        data_dir / "files" / f"tr-{run_idx:03d}-thermal.png",  # false-colour thermal profile PNG
     ]
     oids: list[str] = []
     for path in files:
@@ -1222,6 +1223,29 @@ def _data_object_app_id(do: DataObject, apis: "Apis | None" = None) -> str | Non
     return None
 
 
+def _collection_app_id(coll: Collection, apis: "Apis") -> str | None:
+    """Extract the appId from a Collection, falling back to the raw v1 JSON endpoint.
+
+    The generated client's pydantic model drops unknown fields, so appId is never
+    on the typed model even though the backend sends it. Read the raw JSON instead."""
+    raw = getattr(coll, "_appId", None) or getattr(coll, "appId", None)
+    if raw:
+        return str(raw)
+    extras = getattr(coll, "additional_properties", None) or {}
+    if isinstance(extras, dict) and extras.get("appId"):
+        return str(extras["appId"])
+    try:
+        host = apis.client.configuration.host.rstrip("/")
+        api_key = apis.client.configuration.api_key.get("apikey", "")
+        url = f"{host}/collections/{coll.id}"
+        req = urllib.request.Request(url, headers={"X-API-KEY": api_key, "Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+        return data.get("appId") or None
+    except Exception:
+        return None
+
+
 def _v2_lookup_do_app_id(apis: "Apis", do: DataObject) -> str | None:
     """Fetch appId for a DataObject by hitting the v1 single-object endpoint
     and reading the raw JSON (pydantic drops unknown fields; the raw JSON has
@@ -1345,8 +1369,79 @@ def best_effort_git_references(
             _log("SKIP", f"{do.name}/{path}", f"GitReference create error: {str(exc)[:60]}")
 
 
-def best_effort_template(apis: Apis) -> None:
-    """Seed a 'Rocket Engine Hot-Fire Test Run' ShepardTemplate via the v2 API.
+def best_effort_tag_collection_activities(apis: Apis, coll: Collection) -> None:
+    """Generate provenance Activity records tagged with the collection's appId.
+
+    The ProvenanceCaptureFilter only captures targetAppId when the request path ends
+    in a UUID segment.  Seed operations go through the v1 API (numeric ids), so every
+    activity gets targetAppId=null and the collection sparkline stays at zero.
+
+    Fix: call PATCH /v2/collections/{appId} once per test run (15 calls) so the
+    sparkline shows 15 activity events.  The body is the canonical description
+    (idempotent on the collection state but still generates an Activity each call).
+    Best-effort — skips on 404/401/network error without aborting the seed."""
+    import urllib.error
+
+    coll_app_id = _collection_app_id(coll, apis)
+    if not coll_app_id:
+        _log("SKIP", coll.name, "activity tags (no collection appId — pre-L2d backend?)")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = _v2_base_from_host(host)
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    url = f"{v2_base}/v2/collections/{coll_app_id}"
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/merge-patch+json",
+        "Accept": "application/json",
+    }
+
+    # One PATCH per test run to mirror the campaign structure in the sparkline.
+    run_notes = [
+        "TR-001 commissioning fire — all sensors green.",
+        "TR-002 reference fire — vibration nominal.",
+        "TR-003 reference fire — fuel-pump vibration trending +0.4 g rms.",
+        "TR-004 anomaly detected — fuel turbopump vibration spike at ramp_up t=8 s.",
+        "TR-005 hold day — bearing teardown and replacement.",
+        "TR-006 re-test post bearing replacement — vibration nominal.",
+        "TR-007 confirmation fire — Phase 1 campaign complete.",
+        "TR-008 Phase 2 commissioning — baseline re-established.",
+        "TR-009 mixture ratio sweep — o/f stepped to 3.6.",
+        "TR-010 throttle-deep test — 40% thrust sustained 6 s.",
+        "TR-011 new LOX batch validated — within Phase 1 envelope.",
+        "TR-012 hold day — pre-certification inspection cleared.",
+        "TR-013 pre-certification reference fire — cleared for qualification.",
+        "TR-014 qualification fire 1 — full test matrix, no anomalies.",
+        "TR-015 qualification fire 2 — campaign complete.",
+    ]
+    ok_count = 0
+    for note in run_notes:
+        body = json.dumps({"description": COLLECTION_DESCRIPTION}).encode("utf-8")
+        try:
+            req = urllib.request.Request(url, data=body, headers=headers, method="PATCH")
+            with urllib.request.urlopen(req, timeout=10) as _resp:
+                ok_count += 1
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                _log("SKIP", coll.name, f"activity tags (auth: HTTP {e.code})")
+                return
+            if e.code in (404, 501):
+                _log("SKIP", coll.name, "activity tags (v2 endpoint not deployed)")
+                return
+            # Other HTTP errors — log but keep going for remaining runs.
+        except Exception:
+            pass  # network transient — keep going
+
+    if ok_count > 0:
+        _log("OK", coll.name, f"activity tags ({ok_count}/{len(run_notes)} activities created)", coll_app_id)
+    else:
+        _log("SKIP", coll.name, "activity tags (all calls failed)")
+
+
+def best_effort_template(apis: Apis, coll: Collection) -> None:
+    """Seed a 'Rocket Engine Hot-Fire Test Run' ShepardTemplate and link it as an
+    allowed template on the Lumen collection so the template picker shows on creation.
 
     Requires instance-admin; skips gracefully on 401/403 or if the
     /v2/templates endpoint is not yet deployed."""
@@ -1374,22 +1469,19 @@ def best_effort_template(apis: Apis) -> None:
         "Accept": "application/json",
     }
     template_name = "Rocket Engine Hot-Fire Test Run"
+    template_app_id: str | None = None
 
-    # Check if already present.
+    # Check if already present; capture appId so we can still link it.
     try:
         req = urllib.request.Request(list_url, headers=headers, method="GET")
         with urllib.request.urlopen(req, timeout=5) as resp:
             existing = json.loads(resp.read().decode("utf-8"))
-            if isinstance(existing, list):
-                for t in existing:
-                    if isinstance(t, dict) and t.get("name") == template_name:
-                        _log("SKIP", template_name, "ShepardTemplate", t.get("appId", ""))
-                        return
-            elif isinstance(existing, dict):
-                for t in existing.get("content", existing.get("results", [])):
-                    if isinstance(t, dict) and t.get("name") == template_name:
-                        _log("SKIP", template_name, "ShepardTemplate", t.get("appId", ""))
-                        return
+            rows = existing if isinstance(existing, list) else existing.get("content", existing.get("results", []))
+            for t in rows:
+                if isinstance(t, dict) and t.get("name") == template_name:
+                    template_app_id = t.get("appId")
+                    _log("SKIP", template_name, "ShepardTemplate", template_app_id or "")
+                    break
     except urllib.error.HTTPError as e:
         if e.code in (401, 403):
             _log("SKIP", template_name, f"ShepardTemplate (not admin: HTTP {e.code})")
@@ -1403,33 +1495,53 @@ def best_effort_template(apis: Apis) -> None:
         _log("SKIP", template_name, f"ShepardTemplate list error: {str(exc)[:60]}")
         return
 
-    # Create the template.
-    body = json.dumps({
-        "name": template_name,
-        "kind": "DATAOBJECT_RECIPE",
-        "body": HOTFIRE_TEMPLATE_BODY,
-        "description": (
-            "Standard data structure for a liquid-propellant rocket engine hot-fire test run. "
-            "Attributes cover test ID, campaign, engineer, date, facility, propellant, "
-            "thrust target, and outcome. File slots for test report and CAD snapshot. "
-            "Timeseries and structured-data reference slots for DAQ and run-log binding."
-        ),
-        "tags": ["rocket-engine", "hot-fire", "liquid-propellant", "LUMEN", "test-campaign"],
-    }).encode("utf-8")
-    try:
-        req = urllib.request.Request(create_url, data=body, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            created = json.loads(resp.read().decode("utf-8"))
-            _log("OK", template_name, "ShepardTemplate", created.get("appId", resp.status))
-    except urllib.error.HTTPError as e:
-        if e.code in (401, 403):
-            _log("SKIP", template_name, f"ShepardTemplate create (not admin: HTTP {e.code})")
-        elif e.code in (409,):
-            _log("SKIP", template_name, "ShepardTemplate (already exists)")
-        else:
-            _log("SKIP", template_name, f"ShepardTemplate create HTTP {e.code}")
-    except Exception as exc:  # pragma: no cover
-        _log("SKIP", template_name, f"ShepardTemplate create error: {str(exc)[:60]}")
+    if template_app_id is None:
+        # Create the template.
+        body = json.dumps({
+            "name": template_name,
+            "kind": "DATAOBJECT_RECIPE",
+            "body": HOTFIRE_TEMPLATE_BODY,
+            "description": (
+                "Standard data structure for a liquid-propellant rocket engine hot-fire test run. "
+                "Attributes cover test ID, campaign, engineer, date, facility, propellant, "
+                "thrust target, and outcome. File slots for test report and CAD snapshot. "
+                "Timeseries and structured-data reference slots for DAQ and run-log binding."
+            ),
+            "tags": ["rocket-engine", "hot-fire", "liquid-propellant", "LUMEN", "test-campaign"],
+        }).encode("utf-8")
+        try:
+            req = urllib.request.Request(create_url, data=body, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                created = json.loads(resp.read().decode("utf-8"))
+                template_app_id = created.get("appId")
+                _log("OK", template_name, "ShepardTemplate", template_app_id or resp.status)
+        except urllib.error.HTTPError as e:
+            if e.code in (401, 403):
+                _log("SKIP", template_name, f"ShepardTemplate create (not admin: HTTP {e.code})")
+            elif e.code in (409,):
+                _log("SKIP", template_name, "ShepardTemplate (already exists)")
+            else:
+                _log("SKIP", template_name, f"ShepardTemplate create HTTP {e.code}")
+            return
+        except Exception as exc:  # pragma: no cover
+            _log("SKIP", template_name, f"ShepardTemplate create error: {str(exc)[:60]}")
+            return
+
+    # Link the template as an allowed template on the Lumen collection.
+    # PUT /v2/collections/{appId}/templates/allowed — idempotent full-replace.
+    if template_app_id:
+        coll_app_id = _collection_app_id(coll, apis)
+        if coll_app_id:
+            allowed_url = f"{v2_base}/v2/collections/{coll_app_id}/templates/allowed"
+            link_body = json.dumps({"templateAppIds": [template_app_id]}).encode("utf-8")
+            try:
+                req = urllib.request.Request(allowed_url, data=link_body, headers=headers, method="PUT")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    _log("OK", template_name, "linked as allowed-template on collection", coll_app_id)
+            except urllib.error.HTTPError as e:
+                _log("SKIP", template_name, f"allowed-template link HTTP {e.code}")
+            except Exception as exc:  # pragma: no cover
+                _log("SKIP", template_name, f"allowed-template link error: {str(exc)[:60]}")
 
 
 # ---- collection versions (best-effort; feature-toggled) -------------------
@@ -1964,7 +2076,12 @@ def main(argv: list[str] | None = None) -> int:
 
     # Publications DataObject + turbine template (best-effort).
     best_effort_publications(apis, coll, sc)
-    best_effort_template(apis)
+    best_effort_template(apis, coll)
+
+    # Tag collection-level activities via v2 PATCH so the sparkline is non-empty.
+    # The v1 API paths (numeric ids) produce targetAppId=null in ProvenanceCaptureFilter;
+    # v2 paths with UUID appIds tag correctly. One call per test run = 15 activity events.
+    best_effort_tag_collection_activities(apis, coll)
 
     # ROR preseed already ran at top of main() so it lands even if a
     # later step crashes — no need to repeat here.

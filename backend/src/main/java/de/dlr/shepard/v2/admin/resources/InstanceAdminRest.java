@@ -6,9 +6,12 @@ import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.v2.admin.io.GrantInstanceAdminIO;
 import de.dlr.shepard.v2.admin.io.InstanceAdminGrantIO;
+import de.dlr.shepard.v2.admin.io.NukeRequestIO;
+import de.dlr.shepard.v2.admin.io.NukeResultIO;
 import de.dlr.shepard.v2.admin.io.PermissionAuditEntryIO;
 import de.dlr.shepard.v2.admin.io.PermissionAuditLogEntryIO;
 import de.dlr.shepard.v2.admin.services.InstanceAdminService;
+import de.dlr.shepard.v2.admin.services.NukeService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditLogQueryService;
 import de.dlr.shepard.v2.admin.services.PermissionAuditService;
 import jakarta.annotation.security.RolesAllowed;
@@ -69,6 +72,9 @@ public class InstanceAdminRest {
 
   @Inject
   AuthenticationContext authenticationContext;
+
+  @Inject
+  NukeService nukeService;
 
   /**
    * Manual role-check fallback: in addition to {@code @RolesAllowed},
@@ -225,5 +231,70 @@ public class InstanceAdminRest {
       entityAppId, actor, fromInstant, toInstant, page, size
     );
     return Response.ok(rows).build();
+  }
+
+  /**
+   * Nuclear instance reset — wipes ALL research data while preserving users,
+   * API keys, and instance configuration (ROR, feature toggles, semantic repos, etc.).
+   *
+   * <p>The caller must be an instance-admin AND supply the exact confirmation phrase
+   * {@code "yes drop everything"} to guard against accidental invocation.
+   *
+   * <p>What is deleted:
+   * <ul>
+   *   <li>All Neo4j data nodes (Collections, DataObjects, References, Containers,
+   *       LabJournalEntries, SemanticAnnotations, Versions, Templates, …)</li>
+   *   <li>All MongoDB collections that back file + structured-data containers</li>
+   *   <li>All timeseries channel records from Postgres</li>
+   *   <li>All Activity / provenance records</li>
+   * </ul>
+   *
+   * <p>What is preserved:
+   * <ul>
+   *   <li>User, UserGroup, ApiKey nodes</li>
+   *   <li>InstanceAdminGrant, InstanceRorConfig</li>
+   *   <li>SemanticRepository, OntologyConfig, SemanticConfig</li>
+   *   <li>FeatureToggle, SqlTimeseriesConfig</li>
+   * </ul>
+   *
+   * <p>Intended for dev / demo instances. Do not expose on production without
+   * additional network-level access control.
+   */
+  @POST
+  @Path("/instance/nuke")
+  @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
+  @Tag(name = "Admin")
+  @Operation(
+    summary = "Nuclear instance reset — wipes all research data (confirmation phrase required).",
+    description =
+      "Deletes every Collection, DataObject, Reference, Container, LabJournalEntry, " +
+      "SemanticAnnotation, Activity, and their secondary-store payloads (MongoDB, Postgres). " +
+      "Users, API keys, and instance configuration are preserved.\n\n" +
+      "The caller must be instance-admin AND send `confirmPhrase: \"" + NukeService.CONFIRM_PHRASE + "\"` " +
+      "in the request body to guard against accidental use."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Reset complete — returns deletion counts.",
+    content = @Content(schema = @Schema(implementation = NukeResultIO.class))
+  )
+  @APIResponse(responseCode = "400", description = "Wrong confirmation phrase.")
+  @APIResponse(responseCode = "403", description = "Not an instance-admin.")
+  public Response nuke(
+    @Context SecurityContext securityContext,
+    @RequestBody(
+      required = true,
+      content = @Content(schema = @Schema(implementation = NukeRequestIO.class))
+    ) @Valid NukeRequestIO body
+  ) {
+    requireInstanceAdmin(securityContext);
+    if (!nukeService.confirmPhraseValid(body.getConfirmPhrase())) {
+      return Response.status(Status.BAD_REQUEST)
+        .entity(new ApiError(Status.BAD_REQUEST.getStatusCode(), "BadRequest",
+          "confirmPhrase must be exactly \"" + NukeService.CONFIRM_PHRASE + "\""))
+        .build();
+    }
+    NukeResultIO result = nukeService.nuke();
+    return Response.ok(result).build();
   }
 }
