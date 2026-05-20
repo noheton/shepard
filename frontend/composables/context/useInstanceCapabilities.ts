@@ -1,7 +1,13 @@
 import { ref, type Ref } from "vue";
 
+export interface PluginInfo {
+  id: string;
+  version: string;
+  title: string;
+}
+
 export interface InstanceCapabilities {
-  enabledPlugins: string[];
+  plugins: PluginInfo[];
 }
 
 const _capabilities = ref<InstanceCapabilities | null>(null);
@@ -31,7 +37,7 @@ export function useInstanceCapabilities(): {
   }
 
   function isPluginEnabled(id: string): boolean {
-    return _capabilities.value?.enabledPlugins.includes(id) ?? false;
+    return _capabilities.value?.plugins.some(p => p.id === id) ?? false;
   }
 
   return { capabilities: _capabilities, loaded: _loaded, fetch, isPluginEnabled };

@@ -62,12 +62,13 @@ public class InstanceCapabilitiesRest {
   @APIResponse(responseCode = "401", description = "Authentication required.")
   public Response getCapabilities() {
     List<PluginEntry> entries = registry.list();
-    List<String> enabled = new ArrayList<>(entries.size());
+    List<InstanceCapabilitiesIO.PluginInfo> plugins = new ArrayList<>(entries.size());
     for (PluginEntry entry : entries) {
       if (registry.isEnabled(entry.id())) {
-        enabled.add(entry.id());
+        String title = (entry.title() == null || entry.title().isBlank()) ? entry.id() : entry.title();
+        plugins.add(new InstanceCapabilitiesIO.PluginInfo(entry.id(), entry.version(), title));
       }
     }
-    return Response.ok(new InstanceCapabilitiesIO(enabled)).build();
+    return Response.ok(new InstanceCapabilitiesIO(plugins)).build();
   }
 }
