@@ -68,6 +68,11 @@ public class AnomalyDetectionRest {
   /**
    * Auth gate: returns a non-null error Response when access is denied,
    * or {@code null} when access is granted.
+   *
+   * <p>DataObjects do not have their own {@code :Permissions} node; access is inherited
+   * from the parent Collection. {@link PermissionsService#isAccessAllowedForDataObjectAppId}
+   * performs the one-hop walk Collection←DataObject and gates on the Collection's
+   * Permissions node — same pattern as {@link de.dlr.shepard.v2.video.resources.VideoAnnotationRest}.
    */
   private Response checkAccess(String refAppId, AccessType type, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
@@ -76,7 +81,7 @@ public class AnomalyDetectionRest {
     if (ref == null) return Response.status(Response.Status.NOT_FOUND).build();
     var dataObject = ref.getDataObject();
     if (dataObject == null) return Response.status(Response.Status.NOT_FOUND).build();
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), type, caller, 0L)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObject.getAppId(), type, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

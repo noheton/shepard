@@ -35,8 +35,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Auth: resolves the parent {@link VideoStreamReference} and verifies it
  * belongs to the DataObject named in the URL, then delegates to
- * {@link PermissionsService} on the parent DataObject's OGM id —
- * same pattern as {@link VideoStreamReferenceV2Rest#checkParentAndAccess}.
+ * {@link PermissionsService#isAccessAllowedForDataObjectAppId} — same method
+ * as the list endpoint in {@link VideoStreamReferenceV2Rest}.
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -81,8 +81,7 @@ public class VideoAnnotationRest {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
 
-    long doOgmId = ref.getDataObject().getId();
-    if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller, 0L)) {
+    if (!permissionsService.isAccessAllowedForDataObjectAppId(dataObjectAppId, accessType, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

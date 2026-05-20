@@ -16,6 +16,7 @@ import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeser
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
 import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
 import { useFetchTimeseriesAnnotations } from "~/composables/context/useFetchTimeseriesAnnotations";
+import { channelMatchesSearch, filterChannelsBySelection } from "~/utils/timeseriesChannelFilter";
 
 definePageMeta({ layout: "collection" });
 
@@ -84,10 +85,21 @@ const { timeseriesWithDataPoints: chartPayload, isLoading: chartPayloadLoading }
   useFetchTimeseriesPayload(collectionId, dataObjectId, timeseriesReferenceId);
 const chartPayloadFetched = computed(() => chartPayload.value !== undefined);
 
-// All-channel series for the "Channel Overview" panel — no checkbox selection.
+// Channel Overview series — shows all channels when none are selected;
+// filters to checked channels when ≥1 box is ticked.
 const overviewSeries = computed<TimeseriesSeries[]>(() => {
   if (!chartPayload.value) return [];
-  return chartPayload.value.map((p, idx) => ({
+  const selectedKeys = new Set(
+    timeseriesDataTableItems.value
+      .filter(item => item.isSelected)
+      .map(item => timeseriesKey(item)),
+  );
+  const source = filterChannelsBySelection(
+    chartPayload.value,
+    selectedKeys,
+    p => timeseriesKey(p.timeseries),
+  );
+  return source.map((p, idx) => ({
     key: timeseriesKey(p.timeseries),
     name: channelLabel(p.timeseries),
     color: getColor(idx),
@@ -120,25 +132,14 @@ function channelLabel(ts: Timeseries): string {
     .join(" · ");
 }
 
-// The series passed to TimeseriesChart — filtered to the rows the user
-// ticked, in the order they appear in the table.
-const chartSeries = computed<TimeseriesSeries[]>(() => {
-  if (!chartPayload.value) return [];
-  const selectedKeys = new Set(
-    timeseriesDataTableItems.value
-      .filter(item => item.isSelected)
-      .map(item => timeseriesKey(item)),
-  );
-  if (selectedKeys.size === 0) return [];
-  return chartPayload.value
-    .filter(p => selectedKeys.has(timeseriesKey(p.timeseries)))
-    .map((p, idx) => ({
-      key: timeseriesKey(p.timeseries),
-      name: channelLabel(p.timeseries),
-      color: getColor(idx),
-      data: p.points.map(pt => [pt.timestamp, pt.value] as [number, number]),
-    }));
-});
+// Search text for the channel table.
+const search = ref("");
+
+// Channel table rows filtered by `search`.
+const filteredTableItems = computed(() =>
+  timeseriesDataTableItems.value.filter(item => channelMatchesSearch(item, search.value)),
+);
+
 const headers = [
   {
     title: "Select",
@@ -351,27 +352,28 @@ watch(timeseriesReference, () => {
                 >
                   No data points available.
                 </div>
-                <TimeseriesChart
-                  v-else
-                  :series="overviewSeries"
-                  :x-min="overviewXMin"
-                  :x-max="overviewXMax"
-                  show-legend
-                  height="320px"
-                />
+                <div style="overflow: hidden; min-width: 0;">
+                  <TimeseriesChart
+                    :series="overviewSeries"
+                    :x-min="overviewXMin"
+                    :x-max="overviewXMax"
+                    show-legend
+                    height="320px"
+                  />
+                </div>
               </ExpansionPanelItem>
             </ExpansionPanels>
 
-            <v-row align="center" justify="space-between">
+            <v-row align="center" justify="space-between" class="mt-2">
               <v-col>
-                <div class="pa-4">
+                <div class="text-caption text-medium-emphasis">
                   Interval:
                   {{
                     toShortDateTimeString(
                       parseDateFromNanos(timeseriesReference.start),
                     )
                   }}
-                  -
+                  –
                   {{
                     toShortDateTimeString(
                       parseDateFromNanos(timeseriesReference.end),
@@ -380,12 +382,22 @@ watch(timeseriesReference, () => {
                 </div>
               </v-col>
               <v-col class="text-right" cols="auto">
-                <div class="pa-4 text-medium-emphasis text-body-2">
-                  Tick channels to compare — selected
-                  {{ numberOfSelectedItems }} / {{ MaxSelectableItems }}
+                <div class="text-caption text-medium-emphasis">
+                  Tick to compare — {{ numberOfSelectedItems }} / {{ MaxSelectableItems }} selected
                 </div>
               </v-col>
             </v-row>
+            <v-text-field
+              v-model="search"
+              clearable
+              density="compact"
+              hide-details
+              placeholder="Search channels…"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              class="mb-2 mt-1"
+              style="max-width: 360px"
+            />
             <div style="overflow-x: auto">
             <DataTable
               :items-per-page="itemsPerPage"
@@ -396,7 +408,7 @@ watch(timeseriesReference, () => {
                 class: 'text-textbody1',
               }"
               :headers="headers"
-              :items-for-pagination="timeseriesDataTableItems"
+              :items-for-pagination="filteredTableItems"
             >
               <template #[`item.isSelected`]="{ item }">
                 <v-checkbox
@@ -460,37 +472,21 @@ watch(timeseriesReference, () => {
             </DataTable>
             </div>
 
-            <!-- Inline chart — renders when ≥1 channel is ticked. Replaces
-                 the legacy "Metrics and Plotter" modal so users don't have
-                 to leave the page to see the trace. -->
-            <section
-              v-if="numberOfSelectedItems > 0"
-              class="page-section mt-6"
-            >
+            <!-- Reference-level semantic annotations (tags / labels for this
+                 reference as a whole, distinct from per-channel annotations
+                 in the table and anomaly intervals below). -->
+            <section class="page-section mt-6">
               <div class="page-section-head">
-                <div class="text-h5 text-textbody1">Chart</div>
-                <span class="text-caption text-medium-emphasis">
-                  {{ chartSeries.length }} channel{{ chartSeries.length === 1 ? "" : "s" }}
-                </span>
+                <div class="text-h5 text-textbody1">Semantic Annotations</div>
+                <AddAnnotationButton
+                  v-if="isAllowedToEditCollection"
+                  :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                />
               </div>
-              <div
-                v-if="chartPayloadLoading || !chartPayloadFetched"
-                class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-4"
-              >
-                <v-progress-circular indeterminate size="16" width="2" />
-                Loading payload…
-              </div>
-              <TimeseriesChart
-                v-else-if="chartSeries.length > 0"
-                :series="chartSeries"
-                :x-min="overviewXMin"
-                :x-max="overviewXMax"
-                show-legend
-                height="340px"
+              <SemanticAnnotationList
+                :annotated="new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)"
+                :can-delete="!!isAllowedToEditCollection"
               />
-              <div v-else class="text-medium-emphasis text-body-2 pa-2">
-                No data points available for the selected channels.
-              </div>
             </section>
 
             <!-- TA1a / AI1b — interval & point annotations on this reference.
@@ -609,10 +605,6 @@ watch(timeseriesReference, () => {
 .v-table {
   :deep(.word-wrap-anywhere) {
     word-wrap: anywhere;
-  }
-
-  :deep(tbody) > tr > td {
-    padding: 20px 24px !important;
   }
 }
 </style>

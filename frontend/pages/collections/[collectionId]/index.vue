@@ -234,7 +234,7 @@ watch(collection, () => {
                   New DataObject
                 </v-btn>
               </div>
-              <CollectionDataObjectsPanel :collection-id="collectionId" />
+              <CollectionDataObjectsPanel :collection-id="collectionId" :collection-app-id="collectionAppId" />
               <!-- Re-uses the existing CreateDataObjectDialog which already
                    includes the template picker when allowed templates exist
                    for the Collection — passing `collectionAppId` flips it
@@ -289,6 +289,14 @@ watch(collection, () => {
                     <ActivitySparklineCard
                       :collection-app-id="collectionAppId"
                     />
+                  </div>
+                </ExpansionPanelItem>
+                <ExpansionPanelItem
+                  title="Referenced Containers"
+                  :count="undefined"
+                >
+                  <div class="pt-2 pb-2">
+                    <CollectionContainersPanel :collection-app-id="collectionAppId" />
                   </div>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem title="Dataset Lineage">

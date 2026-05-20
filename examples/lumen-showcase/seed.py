@@ -1658,6 +1658,115 @@ def best_effort_video_reference(
             os.unlink(tmp_path)
 
 
+def best_effort_anomaly_detection(
+    apis: Apis,
+    coll: Collection,
+    anomaly_do: DataObject,
+    tsr: "TimeseriesReference | None",
+) -> None:
+    """Run AI anomaly detection on TR-004's fuel-pump vibration channel.
+
+    Calls POST /v2/timeseries-references/{refAppId}/detect-anomalies with
+    ``createAnnotations=true`` so the backend writes interval annotations
+    marked ``aiGenerated=true``. These appear as highlight bands on the
+    channel chart and as AI-generated annotation cards on the reference page.
+
+    Idempotent: checks for existing AI-generated annotations first; if any are
+    found the call is skipped (re-running the seed won't duplicate them).
+    Skips gracefully when the endpoint is not deployed (HTTP 404/501) or the
+    TSR/appId is not available.
+    """
+    import urllib.error
+    import urllib.request
+
+    if tsr is None:
+        _log("SKIP", "tr-004-sensors", "anomaly detection (TSR not available)")
+        return
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = host
+    if v2_base.endswith("/shepard/api"):
+        v2_base = v2_base[: -len("/shepard/api")]
+    elif v2_base.endswith("/shepard/api/"):
+        v2_base = v2_base[: -len("/shepard/api/")]
+
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    headers_json = {"X-API-KEY": api_key, "Accept": "application/json"}
+
+    # Fetch TSR appId via the v1 JSON endpoint (pydantic drops appId from the
+    # typed model; the raw JSON has it).
+    tsr_app_id: str | None = None
+    try:
+        v1_url = f"{host}/collections/{coll.id}/dataObjects/{anomaly_do.id}/timeseriesReferences/{tsr.id}"
+        req = urllib.request.Request(v1_url, headers=headers_json)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            tsr_app_id = data.get("appId")
+    except Exception as exc:
+        _log("SKIP", "tr-004-sensors", f"anomaly detection (TSR appId lookup failed: {str(exc)[:60]})")
+        return
+
+    if not tsr_app_id:
+        _log("SKIP", "tr-004-sensors", "anomaly detection (TSR has no appId — backend pre-L2a?)")
+        return
+
+    # Idempotency check: skip if any AI-generated annotations already exist.
+    ann_url = f"{v2_base}/v2/timeseries-references/{tsr_app_id}/annotations"
+    try:
+        req = urllib.request.Request(ann_url, headers=headers_json)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            existing = json.loads(resp.read().decode("utf-8"))
+            if isinstance(existing, list) and any(a.get("aiGenerated") for a in existing):
+                _log("SKIP", "tr-004-sensors", "anomaly detection (AI annotations already present)")
+                return
+    except urllib.error.HTTPError as e:
+        if e.code in (404, 501):
+            _log("SKIP", "tr-004-sensors", "anomaly detection (v2 annotations endpoint not deployed)")
+            return
+        if e.code in (401, 403):
+            _log("SKIP", "tr-004-sensors", f"anomaly detection (auth: HTTP {e.code})")
+            return
+    except Exception as exc:
+        _log("SKIP", "tr-004-sensors", f"anomaly detection (annotation list error: {str(exc)[:60]})")
+        return
+
+    # POST detect-anomalies.  Select the vib_fuel_pump channel explicitly —
+    # the reference holds 10 channels so auto-select would fail with 400.
+    detect_url = f"{v2_base}/v2/timeseries-references/{tsr_app_id}/detect-anomalies"
+    body = json.dumps({
+        "symbolicName": "vib_fuel_pump",
+        "field": "vib_fuel_pump",
+        "window": 11,
+        "k": 3.0,
+        "createAnnotations": True,
+    }).encode("utf-8")
+    try:
+        req = urllib.request.Request(
+            detect_url,
+            data=body,
+            headers={**headers_json, "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            n_ann = result.get("annotationsCreated", "?")
+            _log("OK", "tr-004-sensors", f"anomaly detection ({n_ann} AI annotation(s) created)")
+    except urllib.error.HTTPError as e:
+        body_snippet = ""
+        try:
+            body_snippet = e.read().decode("utf-8", errors="replace")[:120]
+        except Exception:
+            pass
+        if e.code in (404, 501):
+            _log("SKIP", "tr-004-sensors", "anomaly detection (detect endpoint not deployed)")
+        elif e.code in (401, 403):
+            _log("SKIP", "tr-004-sensors", f"anomaly detection (auth: HTTP {e.code})")
+        else:
+            _log("SKIP", "tr-004-sensors", f"anomaly detection HTTP {e.code}: {body_snippet}")
+    except Exception as exc:
+        _log("SKIP", "tr-004-sensors", f"anomaly detection error: {str(exc)[:80]}")
+
+
 # ---------------------------------------------------------------------------
 # Top-level entry point
 
@@ -1766,9 +1875,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"warn: semantic repository unavailable ({e}); phase-boundary annotations will be skipped.", file=sys.stderr)
         repo = None
 
+    anomaly_tsr: TimeseriesReference | None = None
     for n in range(1, N_RUNS + 1):
         run_do = runs[n]
         tsr = upload_run_timeseries(apis, coll, run_do, tsc, args.data_dir, n)
+        if n == ANOMALY_RUN:
+            anomaly_tsr = tsr
         if fc is not None:
             upload_run_files(apis, coll, run_do, fc, args.data_dir, n)
         upload_run_structured(apis, coll, run_do, sc, args.data_dir, n)
@@ -1816,6 +1928,12 @@ def main(argv: list[str] | None = None) -> int:
         "https://www.youtube.com/watch?v=WTrfouUTYBg",
         "LUMEN – The Liquid Upper Stage Demonstrator Engine (DLR, 2024)",
     )
+
+    # AI anomaly detection — runs the rolling-median MAD detector on TR-004's
+    # fuel-pump vibration channel and writes the detected intervals as
+    # AI-generated annotations. These appear as highlight bands on the channel
+    # chart and as annotation cards on the timeseries reference page.
+    best_effort_anomaly_detection(apis, coll, runs[ANOMALY_RUN], anomaly_tsr)
 
     # Git credential preseed — DB-only, no Keycloak dependency (same as ORCID).
     # PAT passed via --github-pat or GITHUB_PAT env var; skips when absent.

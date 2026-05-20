@@ -209,10 +209,12 @@ import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObj
 
 const props = defineProps<{
   collectionId: number;
+  collectionAppId?: string | null;
 }>();
 
 const router = useRouter();
-const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId);
+const collectionAppId = computed(() => props.collectionAppId ?? null);
+const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, collectionAppId);
 
 const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"] as const;
 type Status = (typeof STATUSES)[number];
@@ -243,10 +245,10 @@ const rows = computed<Row[]>(() =>
     name: d.name ?? `#${d.id}`,
     status: (d.status as string) ?? null,
     refCount: (d.referenceIds ?? []).length,
-    tsCount: d.timeseriesReferenceCount ?? 0,
-    fileBundleCount: d.fileBundleCount ?? 0,
-    sdCount: d.structuredDataReferenceCount ?? 0,
-    videoCount: d.videoStreamReferenceCount ?? 0,
+    tsCount: d.timeseriesCount ?? 0,
+    fileBundleCount: d.fileCount ?? 0,
+    sdCount: d.structuredDataCount ?? 0,
+    videoCount: 0,
     childCount: (d.childrenIds ?? []).length,
     incomingCount: (d.incomingIds ?? []).length,
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
