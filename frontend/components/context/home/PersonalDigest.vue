@@ -66,6 +66,23 @@ function onCollectionCreated(id: number) {
   router.push(collectionsPath + id);
 }
 
+// Contributor list — deduplicates creator + last editor.
+function contributors(collection: { createdBy: string; updatedBy?: string | null }): string[] {
+  const list = [collection.createdBy];
+  if (collection.updatedBy && collection.updatedBy !== collection.createdBy) {
+    list.push(collection.updatedBy);
+  }
+  return list;
+}
+
+// Deterministic avatar color from username (one of 6 muted Vuetify colours).
+const AVATAR_COLORS = ["blue-grey", "teal", "indigo", "deep-orange", "purple", "brown"];
+function avatarColor(username: string): string {
+  let h = 0;
+  for (let i = 0; i < username.length; i++) h = (h * 31 + username.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]!;
+}
+
 // Relative timestamp helper — plain function, safe to call in templates.
 function relativeTime(date: Date | null | undefined): string {
   if (!date) return "—";
@@ -252,6 +269,17 @@ function relativeTime(date: Date | null | undefined): string {
                   Pending cleanup
                 </v-chip>
                 <v-spacer />
+                <div class="d-flex ga-1 align-center me-1">
+                  <v-avatar
+                    v-for="u in contributors(collection)"
+                    :key="u"
+                    :color="avatarColor(u)"
+                    size="20"
+                    :title="u"
+                  >
+                    <span style="font-size:10px; color:white; font-weight:500">{{ u.charAt(0).toUpperCase() }}</span>
+                  </v-avatar>
+                </div>
                 <v-chip
                   size="x-small"
                   variant="text"
@@ -373,6 +401,19 @@ function relativeTime(date: Date | null | undefined): string {
                 </v-chip>
 
                 <v-spacer />
+
+                <!-- Contributor initials -->
+                <div class="d-flex ga-1 align-center me-1">
+                  <v-avatar
+                    v-for="u in contributors(collection)"
+                    :key="u"
+                    :color="avatarColor(u)"
+                    size="20"
+                    :title="u"
+                  >
+                    <span style="font-size:10px; color:white; font-weight:500">{{ u.charAt(0).toUpperCase() }}</span>
+                  </v-avatar>
+                </div>
 
                 <!-- Last updated relative timestamp -->
                 <v-chip
