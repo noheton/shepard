@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { AboutFragments } from "./aboutMenuItems";
-
-// Wire shape returned by GET /v2/instance/identity (matches the admin GET).
-interface InstanceIdentity {
-  rorId?: string;
-  organizationName?: string;
-  rorUrl?: string;
-}
+import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 
 // Subset of the ROR v2 organisation response we render on the page.
-// ror.org returns far more; we cherry-pick the fields a researcher actually
-// wants to see at a glance.
 interface RorOrganization {
   id?: string;
   names?: { value: string; types?: string[]; lang?: string | null }[];
@@ -26,39 +18,19 @@ interface RorOrganization {
   links?: { type?: string; value?: string }[];
 }
 
-const identity = ref<InstanceIdentity | null>(null);
-const identityLoading = ref(true);
+const { identity, loaded: identityLoaded, fetch: fetchIdentity } = useInstanceIdentity();
+const identityLoading = computed(() => !identityLoaded.value);
+
+const { data: session } = useAuth();
+watch(
+  () => session.value?.accessToken,
+  (token) => { if (token) void fetchIdentity(token); },
+  { immediate: true },
+);
+
 const rorData = ref<RorOrganization | null>(null);
 const rorLoading = ref(false);
 const rorError = ref<string | null>(null);
-
-function v2BaseUrl(): string {
-  const config = useRuntimeConfig().public;
-  const explicit = (config as { backendV2ApiUrl?: string }).backendV2ApiUrl;
-  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
-  return (config.backendApiUrl as string)
-    .replace(/\/shepard\/api\/?$/, "")
-    .replace(/\/$/, "");
-}
-
-async function fetchIdentity() {
-  identityLoading.value = true;
-  try {
-    const { data: session } = useAuth();
-    const accessToken = session.value?.accessToken;
-    if (!accessToken) return;
-    const response = await fetch(`${v2BaseUrl()}/v2/instance/identity`, {
-      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
-    });
-    if (response.ok) {
-      identity.value = (await response.json()) as InstanceIdentity;
-    }
-  } catch (e) {
-    handleError(e as Error, "fetching instance identity");
-  } finally {
-    identityLoading.value = false;
-  }
-}
 
 async function fetchRorData(rorId: string) {
   rorLoading.value = true;
@@ -80,10 +52,8 @@ async function fetchRorData(rorId: string) {
 }
 
 watch(identity, value => {
-  if (value?.rorId) fetchRorData(value.rorId);
+  if (value?.rorId) void fetchRorData(value.rorId);
 });
-
-fetchIdentity();
 
 // Display helpers
 const displayName = computed(() => {
@@ -160,11 +130,11 @@ const location = computed(() => {
         <span class="info-label">ROR ID</span>
         <span>
           <a
-            :href="identity.rorUrl"
+            :href="identity?.rorUrl ?? undefined"
             target="_blank"
             rel="external noopener"
             class="text-primary"
-          >{{ identity.rorUrl }}</a>
+          >{{ identity?.rorUrl }}</a>
         </span>
 
         <template v-if="location">

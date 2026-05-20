@@ -10,6 +10,18 @@
       <v-btn to="/" style="border-bottom: unset">
         <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />
       </v-btn>
+      <!-- Instance organisation name from ROR config (INST1 / task #23).
+           Shown only when the instance-admin has set a rorId + orgName.
+           Falls back gracefully when unconfigured. -->
+      <v-chip
+        v-if="instanceIdentity?.organizationName"
+        size="x-small"
+        variant="tonal"
+        color="primary"
+        class="d-none d-md-inline-flex ml-1"
+        :href="instanceIdentity.rorUrl ?? undefined"
+        :target="instanceIdentity.rorUrl ? '_blank' : undefined"
+      >{{ instanceIdentity.organizationName }}</v-chip>
       <!-- Desktop: inline nav links -->
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
@@ -151,8 +163,16 @@ import {
   useCollectionSearch,
   type MyCollectionSearchResult,
 } from "~/composables/context/useCollectionSearch";
+import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 
 const { status, signOut, signIn, data } = useAuth();
+
+const { identity: instanceIdentity, fetch: fetchIdentity } = useInstanceIdentity();
+watch(
+  () => data.value?.accessToken,
+  (token) => { if (token) void fetchIdentity(token); },
+  { immediate: true },
+);
 const { public: publicConfig } = useRuntimeConfig();
 const router = useRouter();
 
