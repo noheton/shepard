@@ -81,6 +81,20 @@
           <v-list-item :href="apiDocsUrl" target="_blank" title="API Docs" prepend-icon="mdi-api" />
         </v-list>
       </v-menu>
+      <!-- NTF1a: notification bell with unread badge -->
+      <v-btn
+        icon
+        @click="toggleNotificationPanel"
+      >
+        <v-badge
+          :content="unreadCount > 0 ? String(unreadCount) : ''"
+          :model-value="unreadCount > 0"
+          color="error"
+          floating
+        >
+          <v-icon>mdi-bell-outline</v-icon>
+        </v-badge>
+      </v-btn>
       <v-btn
         icon="mdi-account-outline"
         :to="{ path: '/me', hash: '#profile' }"
@@ -109,6 +123,16 @@
       </a>
     </template>
   </v-app-bar>
+
+  <!-- NTF1a: notification panel -->
+  <NotificationPanel
+    v-model="notificationPanelOpen"
+    :notifications="notifications"
+    :unread-count="unreadCount"
+    :is-loading="notificationsLoading"
+    @mark-read="markRead"
+    @dismiss="dismiss"
+  />
 
   <!-- Mobile navigation drawer -->
   <v-navigation-drawer
@@ -165,6 +189,7 @@ import {
 } from "~/composables/context/useCollectionSearch";
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
+import { useFetchNotifications } from "~/composables/context/useFetchNotifications";
 
 const { status, signOut, signIn, data } = useAuth();
 
@@ -182,6 +207,39 @@ watch(
 );
 const { public: publicConfig } = useRuntimeConfig();
 const router = useRouter();
+
+// NTF1a — notification bell + panel
+const {
+  unreadCount,
+  notifications,
+  isLoading: notificationsLoading,
+  load: loadNotifications,
+  markRead,
+  dismiss,
+  startPolling,
+  stopPolling,
+} = useFetchNotifications();
+
+const notificationPanelOpen = ref(false);
+
+function toggleNotificationPanel() {
+  notificationPanelOpen.value = !notificationPanelOpen.value;
+  if (notificationPanelOpen.value) {
+    void loadNotifications();
+  }
+}
+
+// Start polling when authenticated; stop on sign-out
+watch(
+  () => data.value?.accessToken,
+  (token) => {
+    if (token) startPolling();
+    else stopPolling();
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => stopPolling());
 
 // Mobile navigation drawer state
 const mobileDrawerOpen = ref(false);

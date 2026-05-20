@@ -342,6 +342,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | `POST /v2/hdf-containers`, `GET /v2/hdf-containers/{appId}{,/file,/datasets/{path}/value}`, `POST /v2/data-objects/{id}/hdf-references`, `POST /api-keys/{id}/hsds-token` | A5a-e | `aidocs/35` |
 | `POST /v2/sql/timeseries` | P10a+P10b+P10c — ✓ shipped | `aidocs/29` |
 | `GET /v2/admin/instance/ror`, `PATCH /v2/admin/instance/ror` | ROR1 — ✓ shipped | `aidocs/16 ROR1` |
+| `GET /v2/notifications`, `GET /v2/notifications/count`, `PATCH /v2/notifications/{appId}/read`, `DELETE /v2/notifications/{appId}`, `POST /v2/admin/notifications/test` | NTF1a — ✓ shipped (2026-05-20) | — |
 
 This list is **maintained alongside the design docs that propose
 each endpoint**; if you add a new design doc that introduces
