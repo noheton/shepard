@@ -97,6 +97,16 @@ services:
       # dependency resolution succeeds. The VideoStreamReference endpoints are in-tree;
       # this toggle also enables the /v2/admin/plugins "video" row in the admin UI.
       SHEPARD_PLUGINS_VIDEO_ENABLED: "true"
+      # PgBouncer — route main JDBC datasource through the pooler.
+      # prepareThreshold=0 disables server-side prepared statements, which
+      # are incompatible with PgBouncer transaction-pooling mode (the driver
+      # would try to bind a prepared statement on a different backend connection
+      # than it was prepared on). Agroal's client-side statement cache is
+      # unaffected and continues to work.
+      QUARKUS_DATASOURCE_JDBC_URL: "jdbc:postgresql://pgbouncer:5432/${POSTGRES_DB}?prepareThreshold=0"
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
     volumes:
       - bootstrap-token:/opt/shepard-bootstrap
     healthcheck:
@@ -105,6 +115,40 @@ services:
       timeout: 5s
       retries: 18
       start_period: 90s
+
+  # PgBouncer — connection pooler in transaction mode for TimescaleDB.
+  # Sits between the backend and timescaledb; reduces Postgres backend process
+  # count under high-frequency timeseries ingestion and parallel API requests.
+  # Transaction pooling: each backend thread holds a Postgres connection only
+  # for the duration of a single transaction, then releases it to the pool.
+  # Pool sizing: 20 server connections handles ~200 concurrent backend threads
+  # on a typical research workload; raise DEFAULT_POOL_SIZE on heavier instances.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    environment:
+      DB_USER: ${POSTGRES_SHEPARD_USER}
+      DB_PASSWORD: ${POSTGRES_SHEPARD_USER_PW}
+      DB_HOST: timescaledb
+      DB_NAME: ${POSTGRES_DB}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "200"
+      DEFAULT_POOL_SIZE: "20"
+      # Postgres 16 (TimescaleDB 2.24.0-pg16) uses scram-sha-256 by default.
+      AUTH_TYPE: scram-sha-256
+      # Release idle server connections after 10 minutes — prevents stale
+      # connections accumulating when ingestion is bursty.
+      SERVER_IDLE_TIMEOUT: "600"
+    depends_on:
+      - timescaledb
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5432"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - shepard
+    restart: unless-stopped
 
   frontend:
     image: ${SHEPARD_FRONTEND_IMAGE:-shepard-frontend:local}
