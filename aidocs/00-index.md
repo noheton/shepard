@@ -55,6 +55,8 @@ Design notes, analysis docs, and strategy docs for this fork of
 | [`81-spatial-data-binding.md`](data/81-spatial-data-binding.md) | Spatial data binding (SB series) |
 | [`83-pointcloud-and-live-overlay.md`](data/83-pointcloud-and-live-overlay.md) | Point cloud + live overlay (PC1 series) |
 | [`84-live-digital-twin.md`](data/84-live-digital-twin.md) | Live digital twin (DT1 series) |
+| [`85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | Coordinate frame tree (CST1 series) — TF-tree, ICP chaining, Isaac Sim / ROS export |
+| [`86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | Scene drive, data linking, replay sessions, URDF export (DR1 series) |
 
 ---
 

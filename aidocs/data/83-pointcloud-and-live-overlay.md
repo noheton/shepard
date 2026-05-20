@@ -525,18 +525,32 @@ typically 10–50× more accurate than ICP alignment of raw scanned point clouds
 
    ```cypher
    (:DataBinding {
-     displayMode:    "POSE_6D",
-     xChannel:       "x",
-     yChannel:       "y",
-     zChannel:       "z",
-     qxChannel:      "qx",
-     qyChannel:      "qy",
-     qzChannel:      "qz",
-     qwChannel:      "qw",
-     triadScale:     double,   -- visual size of the triad arrows (mm)
-     showTrace:      boolean   -- render the path of the origin as a tube
+     displayMode:         "POSE_6D",
+     xChannel:            "x",
+     yChannel:            "y",
+     zChannel:            "z",
+     qxChannel:           "qx",
+     qyChannel:           "qy",
+     qzChannel:           "qz",
+     qwChannel:           "qw",
+     triadScale:          double,   -- visual size of the triad arrows (mm)
+     showTrace:           boolean,  -- render the path of the origin as a tube
+     traceColourByAppId:  String,   -- optional: appId of a BADGE binding whose value
+                                    --   colours the trace tube (heatmap on the path).
+                                    --   E.g. TCP temperature binding → thermal trail.
+     traceWidth:          double,   -- tube radius in mm (default 3.0)
+     alarmThreshold:      double,   -- optional: BADGE label background turns red above this
+     alarmUnit:           String    -- unit string shown in the CSS2D label (e.g. "°C")
    })
    ```
+
+   **Thermal-trail pattern (MFFD seed demo):** When `traceColourByAppId` is set, the trace
+   tube is heatmap-coloured by the referenced BADGE binding's timeseries value at each trail
+   point's timestamp. The canonical case is TCP temperature during an AFP layup: the trail
+   shows where the robot was and how hot the tool was at every point along the path. The
+   floating CSS2DObject label at the live TCP position shows the current temperature and turns
+   red when `alarmThreshold` is exceeded. No new backend logic — this is a client-side
+   composition of two existing bindings (POSE_6D + BADGE).
 
    Client-side: `THREE.ArrowHelper` × 3 per timestep, updated by the time scrubber.
    `showTrace: true` renders the full TCP path as a `THREE.TubeGeometry` — gives an
