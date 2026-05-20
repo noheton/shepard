@@ -56,6 +56,19 @@ const props = withDefaults(
      * Undefined (default) = show all data.
      */
     visibleWindowMs?: number;
+    /**
+     * Hard lower bound for the X axis in milliseconds (epoch ms).
+     * When set together with xMax, the chart is locked to exactly that time
+     * range — the user can zoom in within the range but cannot scroll beyond
+     * it. Intended for reference views where the chart must show only the
+     * referenced data window. Takes precedence over visibleWindowMs.
+     */
+    xMin?: number;
+    /**
+     * Hard upper bound for the X axis in milliseconds (epoch ms).
+     * See xMin for details.
+     */
+    xMax?: number;
   }>(),
   { height: "360px", showLegend: false, smooth: false, step: false, animationDuration: 0 },
 );
@@ -124,13 +137,15 @@ const chartOption = computed(() => ({
   xAxis: {
     type: "time",
     axisLabel: { fontSize: 11 },
-    // When visibleWindowMs is set (live mode), pin the view to
-    // [latestPoint − window, latestPoint] so the extra anchor data
-    // fetched before the window boundary stays off-screen but still
-    // allows the line to cross the left clip edge without starting mid-air.
-    ...(props.visibleWindowMs != null && dataMaxMs.value > 0
-      ? { min: dataMaxMs.value - props.visibleWindowMs, max: dataMaxMs.value }
-      : {}),
+    // xMin/xMax (reference range lock) take precedence over visibleWindowMs (live mode).
+    // When xMin/xMax are provided, the axis is hard-clamped to the reference
+    // time window. The inside dataZoom is omitted (see below) so the user
+    // cannot scroll/pan beyond those bounds.
+    ...(props.xMin != null && props.xMax != null
+      ? { min: props.xMin, max: props.xMax }
+      : props.visibleWindowMs != null && dataMaxMs.value > 0
+        ? { min: dataMaxMs.value - props.visibleWindowMs, max: dataMaxMs.value }
+        : {}),
   },
   yAxis: {
     type: "value",
@@ -145,11 +160,13 @@ const chartOption = computed(() => ({
     ...(props.step ? { min: 0, max: 1 } : {}),
   },
   dataZoom: [
-    {
-      type: "inside",
-      xAxisIndex: 0,
-      filterMode: "none",
-    },
+    // Omit the inside (scroll/pinch) zoom when the range is locked via
+    // xMin/xMax — the axis hard-clamps to those bounds but inside dataZoom
+    // can still drift the view window into empty space on the sides. The
+    // slider below is sufficient for within-range navigation.
+    ...(props.xMin == null || props.xMax == null
+      ? [{ type: "inside" as const, xAxisIndex: 0, filterMode: "none" as const }]
+      : []),
     {
       type: "slider",
       xAxisIndex: 0,

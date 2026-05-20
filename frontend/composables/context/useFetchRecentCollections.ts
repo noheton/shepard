@@ -1,34 +1,44 @@
-import {
-  BasicCollectionAttributes,
-  SearchApi,
-  type Collection,
-} from "@dlr-shepard/backend-client";
+import { CollectionApi, DataObjectAttributes, type Collection } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
 
+const CLOSED_STATUS = "CLOSED";
+const CLEANUP_STATUS = "PENDING_CLEANUP";
+
+export function isClosedCollection(c: Collection): boolean {
+  return c.status?.toUpperCase() === CLOSED_STATUS;
+}
+
+export function isCleanupCollection(c: Collection): boolean {
+  return c.status?.toUpperCase() === CLEANUP_STATUS;
+}
+
 /**
- * Fetches up to 6 collections accessible to the current user, sorted
- * by most recently updated (updatedAt desc). Used by the personal
- * landing page digest.
+ * Fetches up to 30 collections accessible to the current user, sorted by
+ * most recently updated. Exposes a showClosed toggle so the caller can
+ * include or exclude CLOSED collections in the filtered view.
  */
 export function useFetchRecentCollections() {
-  const collections = ref<Collection[]>([]);
+  const collectionApi = useShepardApi(CollectionApi);
+
+  const allCollections = ref<Collection[]>([]);
   const loading = ref(true);
   const error = ref<string | null>(null);
-
-  const searchApi = useShepardApi(SearchApi);
+  const showClosed = ref(false);
 
   async function fetch() {
+    // Skip SSR — backendApiUrl is empty on the server side; this is
+    // personalised data that requires auth and must load client-side.
+    if (!import.meta.client) return;
     loading.value = true;
     error.value = null;
     try {
-      const response = await searchApi.value.searchCollections({
-        collectionSearchBody: { searchParams: { query: "" } },
+      const results = await collectionApi.value.getAllCollections({
         page: 0,
-        size: 6,
-        orderBy: BasicCollectionAttributes.UpdatedAt,
+        size: 30,
+        orderBy: DataObjectAttributes.UpdatedAt,
         orderDesc: true,
       });
-      collections.value = response.results;
+      allCollections.value = results;
     } catch (e) {
       handleError(e, "fetching recent collections");
       error.value = "Could not load collections.";
@@ -39,5 +49,23 @@ export function useFetchRecentCollections() {
 
   fetch();
 
-  return { collections, loading, error, refetch: fetch };
+  const hasClosedCollections = computed(() =>
+    allCollections.value.some(isClosedCollection),
+  );
+
+  const filteredCollections = computed(() =>
+    showClosed.value
+      ? allCollections.value
+      : allCollections.value.filter(c => !isClosedCollection(c)),
+  );
+
+  return {
+    collections: filteredCollections,
+    allCollections,
+    hasClosedCollections,
+    showClosed,
+    loading,
+    error,
+    refetch: fetch,
+  };
 }

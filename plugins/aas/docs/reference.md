@@ -149,7 +149,7 @@ All keys are deploy-time-only (see install guide for runtime toggle plans).
 
 ## See also
 
-- `docs/help/aas-quickstart.md` — casual-user tasks
-- `docs/install/aas-plugin.md` — operator install guide
+- `plugins/aas/docs/quickstart.md` — casual-user tasks
+- `plugins/aas/docs/install.md` — operator install guide
 - `aidocs/integrations/52-aas-backend-integration.md` — design rationale
 - `aidocs/plugins/69-aas-plugin-extraction-design.md` — extraction design

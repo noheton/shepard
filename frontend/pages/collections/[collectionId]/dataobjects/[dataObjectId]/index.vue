@@ -88,7 +88,7 @@ watch(dataObject, () => {
 </script>
 
 <template>
-  <div style="max-width: 1000px">
+  <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid max-width="1000px">
       <v-row
         v-if="

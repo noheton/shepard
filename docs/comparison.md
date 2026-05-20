@@ -115,7 +115,7 @@ All fork additions live under `/v2/…` or in the UI.
 | OWASP Dependency-Check SCA | — | weekly + on pom.xml touch | ✓ |
 | Trivy container CVE scan | — | on every image push | ✓ |
 | CycloneDX SBOM | — | attached to every GitHub release | ✓ |
-| API-level integration test suite | — | designed | 📐 |
+| API-level integration test suite | — | pytest + httpx; 22 tests; daily CI drift check | ✓ |
 | Deployment smoke test | — | `infrastructure/smoke-test.sh` | ✓ |
 
 ---

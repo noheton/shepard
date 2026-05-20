@@ -5,7 +5,7 @@ calls against a live shepard stack (not mocked), uses the seeded LUMEN showcase
 dataset as the known-state oracle, and integrates into CI for post-deploy
 drift detection.
 
-**Status.** Design. Not yet implemented.
+**Status.** Implemented at `e2e/api/` — 22 test cases across 8 modules, GitHub Actions workflow at `.github/workflows/integration-tests.yml`, `make integration-test` local target.
 
 **Snapshot date.** 2026-05-19.
 

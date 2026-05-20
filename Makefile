@@ -15,6 +15,7 @@
 #   make redeploy-frontend    build-frontend + image-frontend + deploy frontend only
 #   make redeploy             full rebuild and deploy of both services
 #   make check-images         print image timestamps to verify freshness
+#   make integration-test     run API integration tests against localhost:8080
 
 BACKEND_IMAGE  := shepard-backend-patched:local
 FRONTEND_IMAGE := shepard-frontend:local
@@ -22,7 +23,8 @@ COMPOSE_DIR    := ./infrastructure
 MVN            := ./backend/mvnw
 
 .PHONY: build-backend image-backend build-frontend image-frontend \
-        deploy redeploy-backend redeploy-frontend redeploy check-images
+        deploy redeploy-backend redeploy-frontend redeploy check-images \
+        integration-test
 
 build-backend:
 	cd backend && $(CURDIR)/backend/mvnw package -Dmaven.test.skip=true -q
@@ -53,3 +55,10 @@ check-images:
 	@echo "Frontend image: $$(docker images $(FRONTEND_IMAGE) --format '{{.CreatedAt}}')"
 	@echo "Backend  container: $$(docker inspect infrastructure-backend-1  --format '{{.Config.Image}} (started {{.State.StartedAt}})' 2>/dev/null || echo 'not running')"
 	@echo "Frontend container: $$(docker inspect infrastructure-frontend-1 --format '{{.Config.Image}} (started {{.State.StartedAt}})' 2>/dev/null || echo 'not running')"
+
+integration-test:
+	@echo "Running API integration tests against localhost:8080..."
+	cd e2e/api && \
+	  BACKEND_URL=http://localhost:8080/shepard/api \
+	  KC_URL=http://localhost:8082 \
+	  pytest tests/ -v --tb=short

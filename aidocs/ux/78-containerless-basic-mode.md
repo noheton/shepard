@@ -17,6 +17,16 @@ is auto-managed behind the scenes.
 
 This is a frontend concern only. No backend changes are required.
 
+**Advanced mode is a strict superset of basic mode.**
+
+Every feature visible in basic mode must also be visible in advanced mode.
+Advanced mode adds more (container tabs, internal IDs, raw settings,
+unsafe-delete controls) — it does not swap the basic views for different ones.
+Inline content previews (Channel Overview, annotation lists, file previews)
+must remain present in advanced mode alongside the full container detail.
+Nothing basic-mode-only exists. If a feature is useful to a researcher,
+it stays in both modes.
+
 ---
 
 ## Problem
@@ -80,7 +90,12 @@ In basic mode, container-level metadata (appId, stats, settings,
 - Preview widget where available
 
 The container still exists in the graph — it just isn't surfaced.
-Advanced mode shows the full container detail as today.
+
+In advanced mode, these same inline views stay — they are joined by
+the full container tab (links to the container page, delete controls,
+permission management, raw settings). Advanced mode never removes
+anything basic mode shows; it only adds the container-level controls
+alongside the existing inline content.
 
 ### 4. Containerless payloads for templateless DataObjects
 
@@ -102,8 +117,9 @@ existing container rather than creating a second one.
 - Permissions attach to containers as today — nothing changes.
 - The upstream `/shepard/api/...` surface and the `/v2/` REST surface
   are untouched.
-- Advanced mode: unchanged — full container tab, create/delete, settings.
+- Advanced mode: basic mode views stay + full container tab, create/delete, settings added on top.
 - The `basic` preference toggle in `useAdvancedMode.ts` is the only gate.
+- No feature is exclusive to basic mode — if it's useful for a researcher it stays in advanced.
 
 The implementation is purely in the frontend: hide UI chrome, auto-create
 containers on first data deposit, show content inline instead of nested.

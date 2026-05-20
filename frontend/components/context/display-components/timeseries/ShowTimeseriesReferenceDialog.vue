@@ -216,6 +216,9 @@ function toggleMetrics(key: string) {
           <TimeseriesChart
             v-else
             :series="chartSeries"
+            :x-min="timeseriesReference ? timeseriesReference.start / 1e6 : undefined"
+            :x-max="timeseriesReference ? timeseriesReference.end / 1e6 : undefined"
+            show-legend
             height="340px"
           />
         </div>

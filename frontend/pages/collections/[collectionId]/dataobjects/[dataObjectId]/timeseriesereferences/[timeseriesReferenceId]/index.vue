@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {
   ResponseError,
+  SemanticAnnotation,
   Timeseries,
-  TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
 import { TimeseriesReferenceApi } from "@dlr-shepard/backend-client";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
@@ -14,16 +14,19 @@ import {
 import { useFetchTimeseriesReference } from "~/composables/context/useFetchTimeseriesReferences";
 import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeseriesReferencePayload";
 import { useTimeseriesReferenceAnnotations } from "~/composables/context/useTimeseriesReferenceAnnotations";
+import { useFetchTimeseries } from "~/composables/context/useFetchTimeseries";
+import { useFetchTimeseriesAnnotations } from "~/composables/context/useFetchTimeseriesAnnotations";
 
 definePageMeta({ layout: "collection" });
 
 interface TimeseriesDataTableItem extends Timeseries {
   isSelected: boolean;
   // Per-channel summary metrics, fetched lazily after the reference loads.
-  // Surfacing these inline (instead of hiding them behind the Graph & Metrics
-  // dialog) means users see range / mean / count at a scan without clicking.
   metrics?: Partial<Metrics>;
   metricsLoading?: boolean;
+  // Per-channel semantic annotations (labels/phases/anomalies on the channel).
+  annotations?: SemanticAnnotation[];
+  annotationsLoading?: boolean;
 }
 
 const MaxSelectableItems = 7;
@@ -73,35 +76,33 @@ const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
 const showDeleteDialog = ref<boolean>(false);
 
-// Inline chart state — lazily fetched the first time any channel is selected.
-// We don't fetch on page load because the payload can be large; the channel
-// list and metrics are useful on their own without it.
-const chartPayloadLoading = ref<boolean>(false);
-const chartPayload = ref<TimeseriesWithDataPoints[] | undefined>(undefined);
-const chartPayloadFetched = ref<boolean>(false);
-async function ensureChartPayload() {
-  if (chartPayloadFetched.value || chartPayloadLoading.value) return;
-  chartPayloadLoading.value = true;
-  try {
-    const { timeseriesWithDataPoints, isLoading } = useFetchTimeseriesPayload(
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
-    );
-    // Mirror the inner refs into our state. useFetchTimeseriesPayload kicks
-    // off the fetch eagerly when called.
-    chartPayload.value = timeseriesWithDataPoints.value;
-    watch(timeseriesWithDataPoints, v => {
-      chartPayload.value = v;
-      chartPayloadFetched.value = true;
-    });
-    watch(isLoading, v => {
-      chartPayloadLoading.value = v;
-    });
-  } catch (e) {
-    handleError(e as ResponseError, "fetching timeseries payload");
-  }
-}
+// Chart payload — fetched eagerly at setup time so the "Channel Overview"
+// panel is pre-populated. Must live here (not inside onMounted) because
+// useFetchTimeseriesPayload calls useShepardApi → useAuth → inject(), which
+// is only valid in the synchronous setup phase.
+const { timeseriesWithDataPoints: chartPayload, isLoading: chartPayloadLoading } =
+  useFetchTimeseriesPayload(collectionId, dataObjectId, timeseriesReferenceId);
+const chartPayloadFetched = computed(() => chartPayload.value !== undefined);
+
+// All-channel series for the "Channel Overview" panel — no checkbox selection.
+const overviewSeries = computed<TimeseriesSeries[]>(() => {
+  if (!chartPayload.value) return [];
+  return chartPayload.value.map((p, idx) => ({
+    key: timeseriesKey(p.timeseries),
+    name: channelLabel(p.timeseries),
+    color: getColor(idx),
+    data: p.points.map(pt => [pt.timestamp, pt.value] as [number, number]),
+  }));
+});
+
+// Reference time bounds in milliseconds — used to lock the chart to exactly
+// the referenced data window (start/end are nanoseconds in the API).
+const overviewXMin = computed<number | undefined>(() =>
+  timeseriesReference.value ? timeseriesReference.value.start / 1e6 : undefined,
+);
+const overviewXMax = computed<number | undefined>(() =>
+  timeseriesReference.value ? timeseriesReference.value.end / 1e6 : undefined,
+);
 
 const chartColors = [
   "#7ECA8F", "#FCA54D", "#B799DB", "#E56874",
@@ -155,24 +156,45 @@ const headers = [
   { title: "Min", key: "metrics.MIN", sortable: false, align: "end" as const },
   { title: "Max", key: "metrics.MAX", sortable: false, align: "end" as const },
   { title: "Mean", key: "metrics.MEAN", sortable: false, align: "end" as const },
+  { title: "Annotations", key: "annotations", sortable: false },
 ];
 
 async function fetchMetricsForRow(item: TimeseriesDataTableItem) {
   item.metricsLoading = true;
+  item.annotationsLoading = true;
+  const containerId = timeseriesReference.value?.timeseriesContainerId;
   try {
-    const m = await useFetchTimeseriesReferenceMetrics(
-      collectionId,
-      dataObjectId,
-      timeseriesReferenceId,
-      item.measurement,
-      item.device,
-      item.location,
-      item.symbolicName,
-      item.field,
-    );
+    const [m, ts] = await Promise.all([
+      useFetchTimeseriesReferenceMetrics(
+        collectionId,
+        dataObjectId,
+        timeseriesReferenceId,
+        item.measurement,
+        item.device,
+        item.location,
+        item.symbolicName,
+        item.field,
+      ),
+      containerId
+        ? useFetchTimeseries(
+            containerId,
+            item.measurement,
+            item.device,
+            item.location,
+            item.symbolicName,
+            item.field,
+          )
+        : Promise.resolve(undefined),
+    ]);
     if (m) item.metrics = m;
+    if (ts?.id && containerId) {
+      item.annotations = await useFetchTimeseriesAnnotations(containerId, ts.id);
+    } else {
+      item.annotations = [];
+    }
   } finally {
     item.metricsLoading = false;
+    item.annotationsLoading = false;
   }
 }
 
@@ -240,7 +262,6 @@ const onDownload = (name: string) => {
 
 const onSelectedItemChanged = () => {
   numberOfSelectedItems.value = getSelectedTimeseries().length;
-  if (numberOfSelectedItems.value > 0) ensureChartPayload();
 };
 
 const itemsPerPage = 10;
@@ -253,7 +274,7 @@ watch(timeseriesReference, () => {
 </script>
 
 <template>
-  <div style="max-width: 1000px">
+  <div style="max-width: 1400px">
     <v-container fluid class="pa-0 fill-height" max-width="1000px">
       <v-row v-if="!!timeseriesReference && !!collection && !!dataObject">
         <v-col cols="12">
@@ -311,6 +332,36 @@ watch(timeseriesReference, () => {
                 :on-download="onDownload"
               />
             </v-row>
+
+            <!-- Channel Overview — all channels, locked to the reference's
+                 time range. Matches the ExpansionPanelItem pattern used on
+                 the TimeseriesContainer page. -->
+            <ExpansionPanels class="mt-4 mb-2" :default-open="[0]">
+              <ExpansionPanelItem title="Channel Overview">
+                <div
+                  v-if="chartPayloadLoading || !chartPayloadFetched"
+                  class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-4"
+                >
+                  <v-progress-circular indeterminate size="16" width="2" />
+                  Loading…
+                </div>
+                <div
+                  v-else-if="overviewSeries.length === 0"
+                  class="text-medium-emphasis text-body-2 pa-2"
+                >
+                  No data points available.
+                </div>
+                <TimeseriesChart
+                  v-else
+                  :series="overviewSeries"
+                  :x-min="overviewXMin"
+                  :x-max="overviewXMax"
+                  show-legend
+                  height="320px"
+                />
+              </ExpansionPanelItem>
+            </ExpansionPanels>
+
             <v-row align="center" justify="space-between">
               <v-col>
                 <div class="pa-4">
@@ -330,7 +381,7 @@ watch(timeseriesReference, () => {
               </v-col>
               <v-col class="text-right" cols="auto">
                 <div class="pa-4 text-medium-emphasis text-body-2">
-                  Tick channels below to chart — selected
+                  Tick channels to compare — selected
                   {{ numberOfSelectedItems }} / {{ MaxSelectableItems }}
                 </div>
               </v-col>
@@ -379,6 +430,29 @@ watch(timeseriesReference, () => {
                 <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" />
                 <span v-else class="text-medium-emphasis">—</span>
               </template>
+              <template #[`item.annotations`]="{ item }">
+                <v-progress-circular
+                  v-if="item.annotationsLoading"
+                  indeterminate
+                  size="12"
+                  width="2"
+                />
+                <div
+                  v-else-if="item.annotations && item.annotations.length > 0"
+                  class="d-flex flex-wrap ga-1"
+                >
+                  <SemanticAnnotationChip
+                    v-for="ann in item.annotations"
+                    :key="ann.id"
+                    :annotation="ann"
+                    :can-delete="false"
+                    :annotated-type="
+                      new AnnotatedReference(collectionId, dataObjectId, timeseriesReferenceId)
+                    "
+                  />
+                </div>
+                <span v-else class="text-medium-emphasis">—</span>
+              </template>
               <template #bottom>
                 <v-divider :thickness="8" color="divider2" opacity="1" />
                 <v-pagination :total-visible="6" />
@@ -409,6 +483,9 @@ watch(timeseriesReference, () => {
               <TimeseriesChart
                 v-else-if="chartSeries.length > 0"
                 :series="chartSeries"
+                :x-min="overviewXMin"
+                :x-max="overviewXMax"
+                show-legend
                 height="340px"
               />
               <div v-else class="text-medium-emphasis text-body-2 pa-2">

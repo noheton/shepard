@@ -1,0 +1,71 @@
+name: API Integration Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # Daily drift detection at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: "Backend base URL (e.g. https://shepard.box/shepard/api)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  api-integration:
+    name: API integration tests
+    runs-on: ubuntu-latest
+    # Scheduled runs only on main; workflow_dispatch can run from any branch.
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install integration test dependencies
+        working-directory: e2e/api
+        run: |
+          pip install --quiet \
+            --extra-index-url https://gitlab.com/api/v4/projects/59082852/packages/pypi/simple \
+            ".[test]" shepard-client shepard
+
+      - name: Run auth + error-shape tests (no seed required)
+        working-directory: e2e/api
+        env:
+          BACKEND_URL: ${{ inputs.backend_url || vars.SHEPARD_BACKEND_URL || 'https://shepard.box/shepard/api' }}
+          SHEPARD_API_KEY: ${{ secrets.SHEPARD_IT_API_KEY }}
+          KC_URL: ${{ vars.KC_URL || 'https://shepard.box/auth' }}
+          KC_REALM: ${{ vars.KC_REALM || 'shepard-demo' }}
+          KC_CLIENT_ID: ${{ vars.KC_CLIENT_ID || 'frontend-dev' }}
+          KC_ADMIN_USER: ${{ secrets.KC_ADMIN_USER }}
+          KC_ADMIN_PASS: ${{ secrets.KC_ADMIN_PASS }}
+        run: |
+          pytest tests/test_auth.py tests/test_error_shapes.py \
+            -v --tb=short \
+            --junit-xml=../../test-results/integration-noseed.xml
+
+      - name: Run full suite (requires seeded stack)
+        working-directory: e2e/api
+        env:
+          BACKEND_URL: ${{ inputs.backend_url || vars.SHEPARD_BACKEND_URL || 'https://shepard.box/shepard/api' }}
+          SHEPARD_API_KEY: ${{ secrets.SHEPARD_IT_API_KEY }}
+          KC_URL: ${{ vars.KC_URL || 'https://shepard.box/auth' }}
+          KC_REALM: ${{ vars.KC_REALM || 'shepard-demo' }}
+          KC_CLIENT_ID: ${{ vars.KC_CLIENT_ID || 'frontend-dev' }}
+          KC_ADMIN_USER: ${{ secrets.KC_ADMIN_USER }}
+          KC_ADMIN_PASS: ${{ secrets.KC_ADMIN_PASS }}
+        run: |
+          pytest tests/ -v --tb=short -x \
+            --junit-xml=../../test-results/integration.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/integration*.xml

@@ -94,6 +94,15 @@ function formatBytes(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
+/** Format a video annotation time range as "HH:MM:SS → HH:MM:SS UTC" or "(point)" */
+function formatAnnotationRange(ann: { startSeconds: number; endSeconds: number | null }): string {
+  const start = formatDuration(ann.startSeconds);
+  if (ann.endSeconds == null || ann.endSeconds === ann.startSeconds) {
+    return `${start} (point)`;
+  }
+  return `${start}  →  ${formatDuration(ann.endSeconds)}`;
+}
+
 /** Format bitrate in bits/s derived from file size and duration */
 function formatBitrate(
   ref: VideoStreamReferenceIO,
@@ -169,6 +178,63 @@ function formatBitrate(
               <div class="timeline-track" />
             </div>
           </template>
+
+          <!-- Annotation list — interval and point annotations listed as cards,
+               same pattern as the timeseries "Anomalies & intervals" section. -->
+          <div class="annotations-section mt-4">
+            <div class="d-flex align-center ga-2 mb-2">
+              <div class="text-subtitle-2">Annotations &amp; intervals</div>
+              <v-chip
+                v-if="annotationsFor(ref.appId).annotations.value.length > 0"
+                size="x-small"
+                variant="tonal"
+              >
+                {{ annotationsFor(ref.appId).annotations.value.length }}
+              </v-chip>
+            </div>
+
+            <div v-if="annotationsFor(ref.appId).isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
+              <v-progress-circular indeterminate size="14" width="2" />
+              Loading annotations…
+            </div>
+            <div
+              v-else-if="annotationsFor(ref.appId).annotations.value.length === 0"
+              class="text-medium-emphasis text-body-2"
+            >
+              No annotations on this reference yet.
+            </div>
+            <div v-else class="d-flex flex-column ga-2">
+              <div
+                v-for="ann in annotationsFor(ref.appId).annotations.value"
+                :key="ann.appId"
+                class="annotation-card pa-3"
+              >
+                <div class="d-flex align-center ga-2 mb-1">
+                  <v-chip
+                    v-if="ann.aiGenerated"
+                    size="x-small"
+                    variant="tonal"
+                    color="primary"
+                    prepend-icon="mdi-robot-outline"
+                  >AI</v-chip>
+                  <div class="text-body-2 font-weight-medium">{{ ann.label }}</div>
+                  <v-spacer />
+                  <span
+                    v-if="ann.confidence != null"
+                    class="text-caption text-medium-emphasis"
+                  >
+                    confidence {{ Math.round(ann.confidence * 100) }}%
+                  </span>
+                </div>
+                <div class="text-caption text-medium-emphasis text-mono">
+                  {{ formatAnnotationRange(ann) }}
+                </div>
+                <div v-if="ann.description" class="text-body-2 mt-1">
+                  {{ ann.description }}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Metadata chips -->
           <div class="d-flex flex-wrap ga-2 pt-3">
@@ -286,5 +352,17 @@ function formatBitrate(
   &:hover {
     opacity: 1;
   }
+}
+
+.annotation-card {
+  background: rgba(var(--v-border-color), 0.05);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+  border-radius: 4px;
+}
+
+.text-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85em;
 }
 </style>

@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { useFetchRecentCollections } from "~/composables/context/useFetchRecentCollections";
+import {
+  useFetchRecentCollections,
+  isCleanupCollection,
+} from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 
 const router = useRouter();
@@ -38,9 +41,17 @@ const avatarUrl = computed(() =>
 );
 
 // Collections
-const { collections, loading, error, refetch } = useFetchRecentCollections();
+const {
+  collections,
+  allCollections,
+  hasClosedCollections,
+  showClosed,
+  loading,
+  error,
+  refetch,
+} = useFetchRecentCollections();
 
-const isEmpty = computed(() => !loading.value && collections.value.length === 0 && !error.value);
+const isEmpty = computed(() => !loading.value && allCollections.value.length === 0 && !error.value);
 
 // Collection dialog
 const showCreateDialog = ref(false);
@@ -99,9 +110,9 @@ function relativeTime(date: Date | null | undefined): string {
             </div>
             <div class="text-body-2 text-medium-emphasis mt-1">
               <span v-if="!loading">
-                {{ collections.length === 0
+                {{ allCollections.length === 0
                   ? "No collections yet — create your first one below."
-                  : `Showing your ${collections.length} most recently updated collection${collections.length === 1 ? "" : "s"}.` }}
+                  : `${collections.length} collection${collections.length === 1 ? "" : "s"}, sorted by last update.` }}
               </span>
               <v-skeleton-loader v-else type="text" width="280" />
             </div>
@@ -162,7 +173,18 @@ function relativeTime(date: Date | null | undefined): string {
 
     <!-- Collection cards grid -->
     <template v-else>
-      <div class="text-h6 font-weight-medium mb-4">Recent collections</div>
+      <div class="d-flex align-center justify-space-between mb-4 flex-wrap ga-2">
+        <div class="text-h6 font-weight-medium">Recent collections</div>
+        <v-btn
+          v-if="hasClosedCollections"
+          :variant="showClosed ? 'tonal' : 'outlined'"
+          size="small"
+          :prepend-icon="showClosed ? 'mdi-eye' : 'mdi-eye-off-outline'"
+          @click="showClosed = !showClosed"
+        >
+          {{ showClosed ? "Hide closed" : "Show closed" }}
+        </v-btn>
+      </div>
       <v-row>
         <!-- Skeleton loaders while fetching -->
         <template v-if="loading">
@@ -222,13 +244,24 @@ function relativeTime(date: Date | null | undefined): string {
                   {{ collection.dataObjectIds.length === 1 ? "object" : "objects" }}
                 </v-chip>
 
-                <!-- Status chip (if set) -->
+                <!-- Status chip (if set, and not cleanup — cleanup gets its own chip) -->
                 <v-chip
-                  v-if="collection.status"
+                  v-if="collection.status && !isCleanupCollection(collection)"
                   size="x-small"
                   variant="tonal"
                 >
                   {{ collection.status }}
+                </v-chip>
+
+                <!-- Cleanup warning — visible to everyone so admins can spot it -->
+                <v-chip
+                  v-if="isCleanupCollection(collection)"
+                  size="x-small"
+                  variant="tonal"
+                  color="warning"
+                  prepend-icon="mdi-delete-clock-outline"
+                >
+                  Pending cleanup
                 </v-chip>
 
                 <v-spacer />

@@ -103,7 +103,7 @@ watch(collection, () => {
 </script>
 
 <template>
-  <div style="max-width: 1000px">
+  <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
         <v-col cols="12">

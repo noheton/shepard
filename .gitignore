@@ -116,6 +116,7 @@ build/
 
 # Runtime data volumes (Docker bind-mounts — never commit database files)
 mongodb/
+neo4j/
 infrastructure/neo4j/
 timescaledb/
 
