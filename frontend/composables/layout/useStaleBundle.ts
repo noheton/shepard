@@ -17,6 +17,10 @@ const _pendingReload = ref(false);
 const _reloadCountdown = ref(0);
 const RELOAD_DELAY_MS = 3000;
 
+// Auth-expiry path: periodic check found a RefreshTokenError, meaning the
+// user's OIDC session expired while they were idle.
+const _authExpired = ref(false);
+
 // Per-tab dismiss (cleared on banner re-trigger).
 const _dismissed = ref(false);
 
@@ -24,7 +28,7 @@ let _countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 export function useStaleBundle() {
   const show = computed(
-    () => (_versionStale.value || _pendingReload.value) && !_dismissed.value,
+    () => (_versionStale.value || _pendingReload.value || _authExpired.value) && !_dismissed.value,
   );
 
   function setVersions(initial: string, latest: string) {
@@ -40,6 +44,12 @@ export function useStaleBundle() {
       _initial.value = v;
       _latest.value = v;
     }
+  }
+
+  function triggerAuthExpired() {
+    if (_authExpired.value) return; // already flagged; don't override a user's dismiss
+    _authExpired.value = true;
+    _dismissed.value = false;
   }
 
   function triggerChunkReload() {
@@ -78,9 +88,11 @@ export function useStaleBundle() {
     versionStale: _versionStale,
     pendingReload: _pendingReload,
     reloadCountdown: _reloadCountdown,
+    authExpired: _authExpired,
     setVersions,
     initVersion,
     triggerChunkReload,
+    triggerAuthExpired,
     dismiss,
     refresh,
   };
