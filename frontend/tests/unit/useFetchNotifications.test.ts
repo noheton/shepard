@@ -114,7 +114,7 @@ describe("useFetchNotifications", () => {
     await dismiss("n1");
 
     expect(notifications.value).toHaveLength(1);
-    expect(notifications.value[0].appId).toBe("n2");
+    expect(notifications.value[0]!.appId).toBe("n2");
   });
 
   it("load() clears error on successful reload after failure", async () => {
