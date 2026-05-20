@@ -350,8 +350,5 @@ watch(collection, () => {
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  // Match the v-expansion-panel-title left edge so reading flow is consistent
-  // with the collapsibles below.
-  padding-left: 32px;
 }
 </style>
