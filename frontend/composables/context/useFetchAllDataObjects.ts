@@ -1,5 +1,6 @@
 import { DataObjectApi, DataObjectV2Api, type DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "../common/api/useShepardApi";
+import { useV2ShepardApi } from "../common/api/useV2ShepardApi";
 
 /**
  * Fetches all DataObjects for a Collection.
@@ -13,7 +14,7 @@ export function useFetchAllDataObjects(collectionId: number, collectionAppId?: R
   const dataObjects = ref<DataObjectListItemV2[]>([]);
   const loading = ref(false);
 
-  const v2Api = useShepardApi(DataObjectV2Api);
+  const v2Api = useV2ShepardApi(DataObjectV2Api);
   const v1Api = useShepardApi(DataObjectApi);
 
   async function fetchAll() {

@@ -20,11 +20,13 @@ const showAddAnnotationDialog = ref<boolean>(false);
 const showStructuredDataContentViewerDialog = ref<boolean>(false);
 const structuredDataDataTableItems = ref<StructuredDataDataTableItem[]>([]);
 const selectedPayload = ref<string>("");
+const selectedItemName = ref<string>("");
+const isEditMode = ref<boolean>(false);
 
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
-const { structuredDataReference, structuredData } =
+const { structuredDataReference, structuredData, refreshStructuredData } =
   useFetchStructuredDataReference(
     collectionId,
     dataObjectId,
@@ -77,7 +79,20 @@ function deleteStructuredDataReference() {
 
 function onShowStructuredDataContentDialog(structuredDataPayload: string) {
   selectedPayload.value = structuredDataPayload;
+  selectedItemName.value = "";
+  isEditMode.value = false;
   showStructuredDataContentViewerDialog.value = true;
+}
+
+function onEditStructuredDataContent(payload: string, name: string) {
+  selectedPayload.value = payload;
+  selectedItemName.value = name;
+  isEditMode.value = true;
+  showStructuredDataContentViewerDialog.value = true;
+}
+
+async function onStructuredDataSaved() {
+  await refreshStructuredData();
 }
 
 const itemsPerPage = 10;
@@ -195,8 +210,10 @@ watch(structuredDataReference, () => {
                 <template
                   #[`item.actions`]="{
                     value,
+                    item,
                   }: {
                     value: StructuredDataDataTableItem['actions'];
+                    item: StructuredDataDataTableItem;
                   }"
                 >
                   <ActionContainer>
@@ -207,6 +224,17 @@ watch(structuredDataReference, () => {
                         () =>
                           onShowStructuredDataContentDialog(
                             value.showPayload.payload,
+                          )
+                      "
+                    />
+                    <ActionButton
+                      v-if="value.showPayload.enabled && isAllowedToEditCollection"
+                      icon="mdi-pencil-outline"
+                      @click="
+                        () =>
+                          onEditStructuredDataContent(
+                            value.showPayload.payload,
+                            item.name?.structuredDataName ?? '',
                           )
                       "
                     />
@@ -239,6 +267,10 @@ watch(structuredDataReference, () => {
       v-if="showStructuredDataContentViewerDialog"
       v-model:show-dialog="showStructuredDataContentViewerDialog"
       :structured-data-payload="selectedPayload"
+      :is-editable="isEditMode"
+      :structured-data-container-id="structuredDataReference?.structuredDataContainerId"
+      :structured-data-name="selectedItemName"
+      @saved="onStructuredDataSaved"
     />
   </div>
 </template>

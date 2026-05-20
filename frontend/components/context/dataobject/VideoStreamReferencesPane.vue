@@ -15,15 +15,51 @@
  * upgrade VideoPlayer.vue to use it.
  */
 import VideoPlayer from "~/components/common/VideoPlayer.vue";
+import UploadFilesButton from "~/components/container/UploadFilesButton.vue";
 import {
   type VideoStreamReferenceIO,
   useFetchVideoStreamReferences,
 } from "~/composables/context/useFetchVideoStreamReferences";
 import { useFetchVideoAnnotations } from "~/composables/context/useFetchVideoAnnotations";
 
-const props = defineProps<{ dataObjectAppId: string }>();
+const props = defineProps<{
+  dataObjectAppId: string;
+  canUpload?: boolean;
+}>();
 
-const { references, isLoading, fetchError, downloadUrl } =
+const VIDEO_ACCEPT =
+  "video/mp4,video/quicktime,video/webm,video/x-matroska,video/avi,.mp4,.mov,.mkv,.webm,.avi";
+
+function v2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function uploadVideo(file: File): Promise<void> {
+  const { data: session } = useAuth();
+  const accessToken = session.value?.accessToken;
+  if (!accessToken) throw new Error("Not authenticated");
+
+  const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/video-stream-references`;
+  const body = new FormData();
+  body.append("file", file);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Upload failed (HTTP ${res.status}): ${text.slice(0, 200)}`);
+  }
+}
+
+const { references, isLoading, fetchError, refresh, downloadUrl } =
   useFetchVideoStreamReferences(props.dataObjectAppId);
 
 /**
@@ -120,7 +156,15 @@ function formatBitrate(
   <div class="d-flex flex-column ga-4">
     <div class="d-flex align-center justify-space-between">
       <h5 class="text-h5">Video References</h5>
-    </div>
+      <UploadFilesButton
+        v-if="canUpload"
+        :accept="VIDEO_ACCEPT"
+        :multiple="true"
+        button-text="Upload video"
+        dialog-title="Upload video file"
+        :upload-file="uploadVideo"
+        @upload-finished="refresh"
+      /></div>
 
     <v-alert v-if="fetchError" type="error" variant="tonal" density="compact">
       {{ fetchError }}
@@ -313,8 +357,9 @@ function formatBitrate(
     </template>
 
     <div v-else class="text-medium-emphasis">
-      No video references attached yet. Upload a video file (MP4, MOV, MKV, WebM, AVI)
-      via the API to see it here.
+      No video references attached yet.
+      <span v-if="canUpload">Use the upload button above to add a video file (MP4, MOV, MKV, WebM, AVI).</span>
+      <span v-else>Upload a video file (MP4, MOV, MKV, WebM, AVI) to see it here.</span>
     </div>
   </div>
 </template>

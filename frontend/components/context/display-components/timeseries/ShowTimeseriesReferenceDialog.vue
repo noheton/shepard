@@ -3,6 +3,7 @@ import type {
   ResponseError,
   SemanticAnnotation,
   Timeseries,
+  TimeseriesEntity,
   TimeseriesReference,
   TimeseriesWithDataPoints,
 } from "@dlr-shepard/backend-client";
@@ -16,6 +17,7 @@ import type { TimeseriesSeries } from "~/components/common/chart/types";
 type TimeseriesMetrics = {
   metrics?: Metrics;
   annotations: SemanticAnnotation[];
+  timeseriesObj?: TimeseriesEntity;
 };
 
 interface ShowTimeseriesReferenceDialogProps {
@@ -108,7 +110,7 @@ watch(
                 )
               : [];
 
-          return [getTimeseriesKey(ts), { metrics, annotations }] as const;
+          return [getTimeseriesKey(ts), { metrics, annotations, timeseriesObj }] as const;
         }),
       );
       timeseriesMetrics.value = Object.fromEntries(data);
@@ -278,11 +280,9 @@ function toggleMetrics(key: string) {
                 :can-delete="!!isAllowedToEditCollection"
                 :annotation="annotation"
                 :annotated-type="
-                  new AnnotatedReference(
-                    collectionId,
-                    dataObjectId,
-                    props.timeseriesReferenceId,
-                  )
+                  timeseriesMetrics[getTimeseriesKey(ts)]?.timeseriesObj
+                    ? new AnnotatedTimeseries(timeseriesMetrics[getTimeseriesKey(ts)]!.timeseriesObj!)
+                    : new AnnotatedReference(collectionId, dataObjectId, props.timeseriesReferenceId)
                 "
               />
             </div>

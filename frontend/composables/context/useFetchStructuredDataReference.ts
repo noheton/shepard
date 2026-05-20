@@ -130,5 +130,5 @@ export function useFetchStructuredDataReference(
 
   fetchStructuredDataReference();
 
-  return { structuredDataReference, structuredData };
+  return { structuredDataReference, structuredData, refreshStructuredData: fetchStructuredDataReference };
 }

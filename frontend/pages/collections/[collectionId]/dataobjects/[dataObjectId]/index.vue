@@ -264,7 +264,10 @@ watch(dataObject, () => {
                     <v-divider class="my-6" />
                     <GitReferencesPane :data-object-app-id="dataObject.appId" />
                     <v-divider class="my-6" />
-                    <VideoStreamReferencesPane :data-object-app-id="dataObject.appId" />
+                    <VideoStreamReferencesPane
+                      :data-object-app-id="dataObject.appId"
+                      :can-upload="!!isAllowedToEditCollection"
+                    />
                   </template>
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
