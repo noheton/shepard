@@ -135,6 +135,12 @@ services:
       DEFAULT_POOL_SIZE: "20"
       # Postgres 16 (TimescaleDB 2.24.0-pg16) uses scram-sha-256 by default.
       AUTH_TYPE: scram-sha-256
+      # auth_query via a SECURITY DEFINER function so PgBouncer can look up
+      # password hashes without needing superuser access to pg_authid/pg_shadow.
+      # The pgbouncer.get_auth function is created in 00-init-postgres-db.sh
+      # and owned by postgres with EXECUTE granted to the shepard user.
+      AUTH_USER: ${POSTGRES_SHEPARD_USER}
+      AUTH_QUERY: "SELECT username, password FROM pgbouncer.get_auth($1)"
       # Release idle server connections after 10 minutes — prevents stale
       # connections accumulating when ingestion is bursty.
       SERVER_IDLE_TIMEOUT: "600"
