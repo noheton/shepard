@@ -151,6 +151,10 @@
         </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-file-s3</artifactId>
         </exclusion>
       </exclusions>

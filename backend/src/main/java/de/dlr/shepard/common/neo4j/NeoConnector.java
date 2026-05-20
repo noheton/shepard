@@ -1,6 +1,5 @@
 package de.dlr.shepard.common.neo4j;
 
-import de.dlr.shepard.aas.entities.AasRegistration;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.bootstrap.BootstrapState;
 import de.dlr.shepard.auth.permission.model.Permissions;
@@ -133,11 +132,11 @@ public class NeoConnector implements IConnector {
           // PROV1a — provenance activity rows. Without this provenance
           // recording silently fails (save throws IAE, filter swallows it).
           Activity.class.getPackageName(),
-          // Publication, ShepardTemplate, AasRegistration have @NodeEntity
-          // and are persisted via GenericDAO — must be in the scan path.
+          // Publication and ShepardTemplate have @NodeEntity and are persisted
+          // via GenericDAO — must be in the scan path.
+          // AasRegistration moved to shepard-plugin-aas; registered via AasPayloadKind.
           Publication.class.getPackageName(),
-          ShepardTemplate.class.getPackageName(),
-          AasRegistration.class.getPackageName()
+          ShepardTemplate.class.getPackageName()
         ));
         for (PayloadKind kind : ServiceLoader.load(PayloadKind.class)) {
           Log.infof("NeoConnector: registering entity packages from PayloadKind '%s': %s",

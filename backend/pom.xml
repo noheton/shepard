@@ -931,6 +931,24 @@
           <artifactId>shepard-plugin-file-s3</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          AAS1-plugin — Asset Administration Shell integration
+          extracted from the backend into a drop-in plugin per the
+          plugin-first heuristic #2 ("New external integrations →
+          plugin shape", CLAUDE.md). The plugin's CDI beans
+          (AasShellsRest, AasWellKnownRest, AasAdminRest,
+          AasRegistrationAdminRest, AasRegistryOutboxService, etc.)
+          are discovered by Quarkus's build-time CDI scanner when
+          this JAR is on the backend's compile-time classpath.
+          V46 Neo4j migration stays in backend (Docker runner reads
+          /deployments/neo4j/migrations, not plugin JAR resources).
+          See aidocs/plugins/69.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

@@ -310,25 +310,23 @@ review should send it back for the `:*Config` shape.
 
 ## Always: plugins ship their own documentation
 
-Every `shepard-plugin-*` module is **self-documenting**. The plugin
-JAR ships three documentation artefacts, and they are linked from
-shepard's main docs site (per the `aidocs/ops/49-in-app-user-docs.md` two-track structure)
-in the same PR that ships the plugin's first non-trivial release:
+Every `shepard-plugin-*` module is **self-documenting**. Plugin docs
+live **in the plugin module itself** under `plugins/<plugin-id>/docs/`,
+not in the main `docs/` tree. The three artefacts are:
 
-1. **`docs/reference/<plugin-id>.md`** — comprehensive reference page
-   covering every payload kind, endpoint, config key, Neo4j entity,
+1. **`plugins/<plugin-id>/docs/reference.md`** — comprehensive reference
+   page covering every payload kind, endpoint, config key, Neo4j entity,
    and admin CLI command the plugin introduces. This is the page a
    power user or operator reads when something goes wrong at 2 AM.
-2. **`docs/help/<plugin-id>-quickstart.md`** — casual-user task page:
+2. **`plugins/<plugin-id>/docs/quickstart.md`** — casual-user task page:
    "How do I upload a CAD file?", "How do I publish to Databus?",
    etc. Answers in two clicks; no installation knowledge assumed.
-3. **`docs/install/<plugin-id>.md`** — operator installation guide:
+3. **`plugins/<plugin-id>/docs/install.md`** — operator installation guide:
    prerequisites, compose-profile changes, config keys, migration
    steps, healthcheck endpoint, known pitfalls.
 
-The main docs index (`docs/index.md` or equivalent) must link each
-plugin's three pages under a **Plugins** section so a user who opens
-`/help` can discover and install any plugin without needing GitHub.
+The in-app `/help` route (task #46) will auto-discover these from the
+plugin classpath; until that ships, reference them from `docs/reference/plugins.md`.
 
 **Minimum acceptance criteria** for a plugin PR:
 
