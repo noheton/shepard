@@ -3,13 +3,19 @@
     v-model="show"
     :timeout="-1"
     location="bottom right"
-    color="info"
+    :color="pendingReload ? 'warning' : 'info'"
     class="stale-bundle-banner"
     multi-line
   >
     <div class="d-flex align-center">
-      <v-icon class="me-2">mdi-update</v-icon>
-      <div>
+      <v-icon class="me-2">{{ pendingReload ? 'mdi-refresh' : 'mdi-update' }}</v-icon>
+      <div v-if="pendingReload">
+        Reloading shepard in {{ reloadCountdown }}s…
+        <div class="text-caption text-medium-emphasis">
+          A new version was deployed. Your page will refresh automatically.
+        </div>
+      </div>
+      <div v-else>
         A newer version of shepard is available.
         <div class="text-caption text-medium-emphasis">
           You're on {{ initial }}, the server is now {{ latest }}.
@@ -18,7 +24,7 @@
       </div>
     </div>
     <template #actions>
-      <v-btn variant="tonal" color="white" @click="refresh">Refresh</v-btn>
+      <v-btn variant="tonal" color="white" @click="refresh">Refresh now</v-btn>
       <v-btn variant="text" color="white" @click="dismiss">Later</v-btn>
     </template>
   </v-snackbar>
@@ -26,43 +32,34 @@
 
 <script setup lang="ts">
 /**
- * StaleBundleBanner — periodic compare of the backend's reported
- * version against the first version observed at this tab's mount.
- * On mismatch surfaces a Vuetify snackbar with a "Refresh" action.
+ * StaleBundleBanner — shows when a new frontend build is detected,
+ * either via backend-version poll (version path) or via a chunk 404
+ * after a deploy rotated hashes (chunk-reload path).
  *
- * Polling cadence: 5 minutes plus a re-check on `visibilitychange →
- * visible` (the most common staleness vector is "user came back to a
- * tab they had open since yesterday's deploy"). Network blips silently
- * skip — we never want a noisy banner on transient connectivity.
+ * State lives in useStaleBundle() — a module-level composable so
+ * Nuxt plugins can trigger the banner from outside setup().
  *
- * The first observed version is the reference: any subsequent value
- * that differs is "stale". Inlining the logic here (rather than a
- * shared composable under `composables/`) keeps the auto-import
- * surface simple — the banner is the only consumer, no plumbing to
- * solve.
- *
- * Complements the passive `experimental.emitRouteChunkError =
- * "automatic"` in `nuxt.config.ts`: that catches the staleness AFTER
- * a chunk 404s; this catches it BEFORE anything breaks so the user
- * has a chance to refresh on their own schedule.
+ * Poll cadence: 90 s idle + immediate check on tab-focus.
+ * Chunk-reload path: 3 s countdown then hard reload, cancellable.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
+import { useStaleBundle } from "~/composables/layout/useStaleBundle";
 
-const initial = ref<string | null>(null);
-const latest = ref<string | null>(null);
-const stale = ref(false);
-const dismissed = ref(false);
-
-const show = computed({
-  get: () => stale.value && !dismissed.value,
-  set: v => {
-    if (!v) dismissed.value = true;
-  },
-});
+const {
+  show,
+  initial,
+  latest,
+  pendingReload,
+  reloadCountdown,
+  initVersion,
+  setVersions,
+  dismiss,
+  refresh,
+} = useStaleBundle();
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
-async function fetchBackendVersion(): Promise<string | null> {
+async function fetchVersion(): Promise<string | null> {
   try {
     const cfg = useRuntimeConfig();
     const base = cfg.public.backendApiUrl as string;
@@ -79,15 +76,13 @@ async function fetchBackendVersion(): Promise<string | null> {
 }
 
 async function tick() {
-  const v = await fetchBackendVersion();
+  const v = await fetchVersion();
   if (v == null) return;
   if (initial.value === null) {
-    initial.value = v;
-    latest.value = v;
+    initVersion(v);
     return;
   }
-  latest.value = v;
-  stale.value = v !== initial.value;
+  setVersions(initial.value, v);
 }
 
 function onVisibility() {
@@ -97,7 +92,8 @@ function onVisibility() {
 
 onMounted(() => {
   void tick();
-  timer = setInterval(() => void tick(), 5 * 60 * 1000);
+  // 90 s poll — fast enough to catch most deploys before chunk 404s hit.
+  timer = setInterval(() => void tick(), 90_000);
   if (typeof document !== "undefined") {
     document.addEventListener("visibilitychange", onVisibility);
   }
@@ -109,14 +105,6 @@ onBeforeUnmount(() => {
     document.removeEventListener("visibilitychange", onVisibility);
   }
 });
-
-function refresh() {
-  if (typeof window !== "undefined") window.location.reload();
-}
-
-function dismiss() {
-  dismissed.value = true;
-}
 </script>
 
 <style scoped>
