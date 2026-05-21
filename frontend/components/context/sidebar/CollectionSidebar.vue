@@ -310,8 +310,7 @@ const { mobile } = useDisplay();
       </div>
     </div>
 
-    <!-- CC1a: Containers section — collapsible, links to /containers; gated on advancedMode -->
-    <template v-if="advancedMode">
+    <!-- CC1a: Containers section — collapsible, links to /containers; visible in both modes -->
     <v-divider opacity="100" class="text-low-emphasis" thickness="1px" />
     <v-expansion-panels variant="accordion" flat>
       <v-expansion-panel>
@@ -331,7 +330,6 @@ const { mobile } = useDisplay();
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
-    </template>
   </div>
   <CreateDataObjectDialog
     v-if="createDataObjectDialogOpened"

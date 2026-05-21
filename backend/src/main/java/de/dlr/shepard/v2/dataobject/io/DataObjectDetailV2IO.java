@@ -83,27 +83,33 @@ public class DataObjectDetailV2IO extends DataObjectIO {
 
       if (ref instanceof TimeseriesReference tr) {
         if (tr.getTimeseriesContainer() != null) {
+          long cId = tr.getTimeseriesContainer().getId() != null ? tr.getTimeseriesContainer().getId() : -1L;
           timeseries.add(new ContainerRefIO(
             tr.getTimeseriesContainer().getAppId(),
             tr.getTimeseriesContainer().getName(),
+            cId,
             refId,
             refAppId
           ));
         }
       } else if (ref instanceof FileBundleReference fbr) {
         if (fbr.getFileContainer() != null) {
+          long cId = fbr.getFileContainer().getId() != null ? fbr.getFileContainer().getId() : -1L;
           files.add(new ContainerRefIO(
             fbr.getFileContainer().getAppId(),
             fbr.getFileContainer().getName(),
+            cId,
             refId,
             refAppId
           ));
         }
       } else if (ref instanceof StructuredDataReference sdr) {
         if (sdr.getStructuredDataContainer() != null) {
+          long cId = sdr.getStructuredDataContainer().getId() != null ? sdr.getStructuredDataContainer().getId() : -1L;
           structuredData.add(new ContainerRefIO(
             sdr.getStructuredDataContainer().getAppId(),
             sdr.getStructuredDataContainer().getName(),
+            cId,
             refId,
             refAppId
           ));

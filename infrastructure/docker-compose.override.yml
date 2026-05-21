@@ -309,6 +309,28 @@ services:
       - shepard
     restart: "no"
 
+  # ── MCP server (MCP-1a + MCP-1b) ─────────────────────────────────────
+  #
+  # Exposes Shepard to AI agents via the Model Context Protocol (SSE).
+  # Zoraxy virtual directory rule: /mcp → localhost:8811 (strip prefix).
+  # Claude connector SSE URL: https://shepard.nuclide.systems/mcp/sse
+  #
+  # Bring up: docker compose --profile mcp up -d
+  shepard-mcp:
+    image: shepard-plugin-mcp:local
+    environment:
+      SHEPARD_API_BASE: "http://backend:8080"
+      PORT: "8811"
+    ports:
+      - "8811:8811"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - shepard
+    restart: unless-stopped
+    profiles: [mcp]
+
 volumes:
   keycloak-data:
   bootstrap-token:
