@@ -4,7 +4,6 @@
 
 - Docker + Docker Compose (same stack as Shepard)
 - A running Shepard backend (`backend` service healthy)
-- Zoraxy virtual directory rule for `/mcp` → `localhost:8811`
 
 ## 1. Build the image
 
@@ -25,22 +24,15 @@ docker compose --profile mcp up -d
 
 The service will wait for the backend health check before starting.
 
-## 3. Configure Zoraxy
+Caddy automatically routes `/mcp/*` → `shepard-mcp:8811` (prefix stripped) —
+see `infrastructure/proxy/Caddyfile`. No additional proxy configuration needed.
 
-Add a virtual directory rule on the `shepard.nuclide.systems` virtual host:
-
-| Field | Value |
-|---|---|
-| Virtual path | `/mcp` |
-| Target upstream | `localhost:8811` |
-| Strip path prefix | ✓ (Zoraxy "virtual directory" mode) |
-
-After applying the rule, the SSE endpoint is live at:
+After starting, the SSE endpoint is live at:
 ```
 https://shepard.nuclide.systems/mcp/sse
 ```
 
-## 4. Verify
+## 3. Verify
 
 ```bash
 curl -N -H "Authorization: Bearer <your-api-token>" \

@@ -11,5 +11,15 @@
 }
 
 :80 {
-	reverse_proxy frontend:3000
+	# MCP sidecar — strip /mcp prefix before proxying to the FastMCP container.
+	# SSE URL (public): https://shepard.nuclide.systems/mcp/sse
+	# Activate the sidecar first: docker compose --profile mcp up -d
+	handle /mcp/* {
+		uri strip_prefix /mcp
+		reverse_proxy shepard-mcp:8811
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
 }

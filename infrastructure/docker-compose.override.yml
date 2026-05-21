@@ -312,7 +312,7 @@ services:
   # ── MCP server (MCP-1a + MCP-1b) ─────────────────────────────────────
   #
   # Exposes Shepard to AI agents via the Model Context Protocol (SSE).
-  # Zoraxy virtual directory rule: /mcp → localhost:8811 (strip prefix).
+  # Caddy routes /mcp/* → shepard-mcp:8811 (prefix stripped) — see infrastructure/proxy/Caddyfile.
   # Claude connector SSE URL: https://shepard.nuclide.systems/mcp/sse
   #
   # Bring up: docker compose --profile mcp up -d
