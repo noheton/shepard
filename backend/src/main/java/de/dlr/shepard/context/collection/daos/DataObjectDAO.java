@@ -439,6 +439,31 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     ).toList();
   }
 
+  /**
+   * REF-1 fix — fetches typed container refs for a DataObject in one Cypher
+   * round-trip. Avoids the OGM polymorphism issue where depth-1 loading returns
+   * {@code BasicReference} instead of the concrete subtype.
+   *
+   * <p>Returns rows with keys: {@code kind} (ts/file/sd), {@code refId},
+   * {@code refAppId}, {@code containerId}, {@code containerAppId},
+   * {@code containerName}.
+   */
+  public Iterable<Map<String, Object>> findContainersByDataObjectAppId(String appId) {
+    String cypher =
+      "MATCH (do:DataObject {appId: $appId}) " +
+      "OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "  WHERE NOT coalesce(tr.deleted, false) " +
+      "OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
+      "  WHERE NOT coalesce(fr.deleted, false) " +
+      "OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
+      "  WHERE NOT coalesce(sdr.deleted, false) " +
+      "RETURN " +
+      "  tr.shepardId AS tsRefId, tr.appId AS tsRefAppId, id(tc) AS tsContainerId, tc.appId AS tsContainerAppId, tc.name AS tsContainerName, " +
+      "  fr.shepardId AS fileRefId, fr.appId AS fileRefAppId, id(fc) AS fileContainerId, fc.appId AS fileContainerAppId, fc.name AS fileContainerName, " +
+      "  sdr.shepardId AS sdRefId, sdr.appId AS sdRefAppId, id(sc) AS sdContainerId, sc.appId AS sdContainerAppId, sc.name AS sdContainerName";
+    return session.query(cypher, Map.of("appId", appId)).queryResults();
+  }
+
   public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
     if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
 

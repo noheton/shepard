@@ -221,7 +221,9 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    return Response.ok(new DataObjectDetailV2IO(d)).build();
+    DataObjectDetailV2IO io = new DataObjectDetailV2IO(d);
+    io.setContainers(buildContainersFromCypher(dataObjectAppId));
+    return Response.ok(io).build();
   }
 
   @POST
@@ -610,5 +612,55 @@ public class DataObjectV2Rest {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;
+  }
+
+  /**
+   * REF-1 fix — builds the {@link DataObjectDetailV2IO.Containers} from a
+   * direct Cypher query rather than OGM entity traversal. OGM depth-1 loading
+   * returns {@code BasicReference} instances, so {@code instanceof
+   * TimeseriesReference} always fails; this bypass is needed until the OGM
+   * load depth is raised globally.
+   */
+  private DataObjectDetailV2IO.Containers buildContainersFromCypher(String dataObjectAppId) {
+    var timeseries = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
+    var files = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
+    var structuredData = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
+
+    for (Map<String, Object> row : dataObjectDAO.findContainersByDataObjectAppId(dataObjectAppId)) {
+      Object tsRefId = row.get("tsRefId");
+      if (tsRefId instanceof Number tsId) {
+        long containerId = row.get("tsContainerId") instanceof Number n ? n.longValue() : -1L;
+        timeseries.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+          (String) row.get("tsContainerAppId"),
+          (String) row.get("tsContainerName"),
+          containerId,
+          tsId.longValue(),
+          (String) row.get("tsRefAppId")
+        ));
+      }
+      Object fileRefId = row.get("fileRefId");
+      if (fileRefId instanceof Number fileId) {
+        long containerId = row.get("fileContainerId") instanceof Number n ? n.longValue() : -1L;
+        files.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+          (String) row.get("fileContainerAppId"),
+          (String) row.get("fileContainerName"),
+          containerId,
+          fileId.longValue(),
+          (String) row.get("fileRefAppId")
+        ));
+      }
+      Object sdRefId = row.get("sdRefId");
+      if (sdRefId instanceof Number sdId) {
+        long containerId = row.get("sdContainerId") instanceof Number n ? n.longValue() : -1L;
+        structuredData.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+          (String) row.get("sdContainerAppId"),
+          (String) row.get("sdContainerName"),
+          containerId,
+          sdId.longValue(),
+          (String) row.get("sdRefAppId")
+        ));
+      }
+    }
+    return new DataObjectDetailV2IO.Containers(timeseries, files, structuredData);
   }
 }
