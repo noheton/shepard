@@ -276,17 +276,70 @@ resolves the name to an `appId` via a search call before hitting the payload end
 
 ---
 
+## Decided
+
+### D1 — Notebooks + artifacts → Shepard by default (J2e)
+
+When a user finishes a Jupyter session, the `.ipynb` file and any produced
+output artifacts (CSVs, PNGs, model files) are pushed to Shepard as a
+**"Jupyter Analysis" DataObject** by default. This is template-driven: the
+"Jupyter Analysis" template pre-defines the structure (file container for
+the notebook + artifacts, lab journal entry summarising the run, predecessor
+link back to the source DataObject the analysis was opened from).
+
+If `shepard-plugin-git` is active, the notebook is additionally committed to
+the DataObject's git repository (same session, same commit). Artifacts follow
+the same file-reference path as other container uploads.
+
+The J2d upload-back cell becomes the implementation of this default: it runs
+automatically on kernel shutdown unless the user explicitly opts out
+(`SHEPARD_AUTOSAVE=0`). The picker injects the template appId alongside the
+source DataObject appId so the auto-save cell knows which template to use.
+
+**New component:** `J2e` — auto-save on kernel shutdown + "Jupyter Analysis"
+template seed in `__templates`.
+
+### D2 — Collection picker: mine / watched / all
+
+The J2c sidebar picker shows three views, not one:
+
+| View | Query | Requires |
+|---|---|---|
+| **Mine** | `GET /v2/collections?createdBy=me` | `createdBy=me` filter (to implement) |
+| **Watched** | `GET /v2/collections?watched=true` | collection watches feature (WATCH1, shipped) |
+| **All** | `GET /v2/collections` (paginated) | exists today |
+
+Default view on open: **Mine**. Tab strip at top of picker panel switches views.
+The `createdBy=me` filter is a small addition to `CollectionV2Rest`; `watched=true`
+is backed by the existing `CollectionWatcher` relationship.
+
+### D3 — GPU kernel: detect at runtime / boot, not hardcoded
+
+JupyterHub kernel profiles are decided at **Shepard boot time** (or re-evaluated
+on admin config change) rather than baked into the compose file:
+
+- At startup, Shepard checks for GPU availability (NVIDIA SMI presence /
+  CUDA device count via a lightweight probe script in the `jupyter` profile).
+- The result is stored in `:JupyterConfig` (a runtime admin config node,
+  per the standard `:*Config` pattern from `CLAUDE.md`).
+- `GET /v2/admin/jupyter/config` returns `{ "gpuAvailable": true/false,
+  "gpuKernelEnabled": true/false }`.
+- `PATCH /v2/admin/jupyter/config` lets an admin enable/disable the GPU
+  kernel profile at runtime without restart — useful when GPU nodes are
+  added to an existing cluster.
+- JupyterHub's `KernelSpecManager` is configured to read this flag on
+  spawner start; if `gpuKernelEnabled=false`, the GPU profile is hidden
+  from the user's kernel picker.
+
+This follows the same pattern as `aidocs/semantics/65` (ontology runtime
+config) and `aidocs/integrations/67` (Unhide runtime config).
+
+---
+
 ## Open questions / deferred
 
-- **Persistent notebooks**: should notebooks created via the picker be saved
-  back to Shepard (as file references) for reproducibility? (VID1b-analogy)
 - **Collaborative editing**: JupyterHub's default is per-user. Real-time
   multi-user editing requires JupyterLab RTC or a separate nbgrader setup.
-- **GPU kernels**: resource-intensive ML analysis may need a GPU-enabled kernel
-  profile. Deferred to operator configuration.
-- **`mine=true` filter**: a `GET /v2/collections?mine=true` filter doesn't exist
-  yet — currently the picker would show all accessible collections. A
-  `createdBy=me` query parameter is the natural implementation.
 
 ---
 
@@ -295,5 +348,6 @@ resolves the name to an `appId` via a search call before hitting the payload end
 - `aidocs/platform/47-dev-experience-and-plugin-system.md` — plugin SPI
 - `aidocs/integrations/67-unhide-publish-plugin.md` — pattern for compose-profile plugins
 - `aidocs/ux/78-containerless-basic-mode.md` — basic mode framing
+- `aidocs/platform/26-git-integration.md` — shepard-plugin-git (D1 dependency)
 - L2d — appId as primary identifier in `/v2/`
 - `shepard-py` package (to be created; analogous to upstream `shepard-client`)
