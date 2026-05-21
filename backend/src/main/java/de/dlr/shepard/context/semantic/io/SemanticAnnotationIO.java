@@ -43,6 +43,18 @@ public class SemanticAnnotationIO implements HasId, Named {
   @Schema(required = true)
   private long valueRepositoryId;
 
+  /**
+   * QA-1 — optional numeric rendering of the annotation value. Nullable.
+   */
+  @Schema(nullable = true)
+  private Double numericValue;
+
+  /**
+   * QA-1 — IRI of the unit of measurement (e.g. a QUDT unit IRI). Nullable.
+   */
+  @Schema(nullable = true)
+  private String unitIRI;
+
   public SemanticAnnotationIO(SemanticAnnotation ref) {
     this.id = ref.getId();
     this.name = ref.getName();
@@ -52,6 +64,8 @@ public class SemanticAnnotationIO implements HasId, Named {
     this.valueRepositoryId = ref.getValueRepository() != null ? ref.getValueRepository().getId() : -1;
     this.propertyName = ref.getPropertyName();
     this.valueName = ref.getValueName();
+    this.numericValue = ref.getNumericValue();
+    this.unitIRI = ref.getUnitIRI();
   }
 
   @Override

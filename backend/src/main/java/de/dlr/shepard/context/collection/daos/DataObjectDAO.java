@@ -390,6 +390,55 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * @return map keyed by {@code appId}; value is {@code long[3]} where
    *         {@code [0]=tsCount}, {@code [1]=fileCount}, {@code [2]=sdCount}
    */
+  /**
+   * ANC-1 — traverses the {@code has_predecessor} / {@code has_successor}
+   * chain up to {@code depth} hops (clamped server-side to [1, 50]) starting
+   * from the DataObject identified by {@code appId}.
+   *
+   * <p>The Cypher variable-length bounds ({@code *1..N}) cannot be supplied
+   * as query parameters in Neo4j OGM — the driver always treats path-length
+   * bounds as literals. {@code depth} is therefore string-interpolated into
+   * the query after the server-side clamp; {@code $appId} still binds normally.
+   *
+   * @param appId  UUID v7 of the start DataObject
+   * @param depth  maximum hop count; clamped to [1, 50]
+   * @return ordered list of non-deleted DataObjects in the predecessor chain
+   *         (excluding the start node itself); empty when no predecessors exist
+   */
+  public List<DataObject> findPredecessorChain(String appId, int depth) {
+    int safeDepth = Math.max(1, Math.min(depth, 50));
+    String cypher =
+      "MATCH (start:DataObject {appId: $appId, deleted: FALSE})" +
+      "<-[:has_successor*1.." + safeDepth + "]-(pred:DataObject {deleted: FALSE})" +
+      " RETURN DISTINCT pred ORDER BY pred.shepardId";
+    return StreamSupport.stream(
+      session.query(DataObject.class, cypher, Map.of("appId", appId)).spliterator(),
+      false
+    ).toList();
+  }
+
+  /**
+   * ANC-1 — traverses the {@code has_successor} chain up to {@code depth} hops
+   * (clamped server-side to [1, 50]) starting from the DataObject identified by
+   * {@code appId}.
+   *
+   * @param appId  UUID v7 of the start DataObject
+   * @param depth  maximum hop count; clamped to [1, 50]
+   * @return ordered list of non-deleted DataObjects in the successor chain
+   *         (excluding the start node itself); empty when no successors exist
+   */
+  public List<DataObject> findSuccessorChain(String appId, int depth) {
+    int safeDepth = Math.max(1, Math.min(depth, 50));
+    String cypher =
+      "MATCH (start:DataObject {appId: $appId, deleted: FALSE})" +
+      "-[:has_successor*1.." + safeDepth + "]->(succ:DataObject {deleted: FALSE})" +
+      " RETURN DISTINCT succ ORDER BY succ.shepardId";
+    return StreamSupport.stream(
+      session.query(DataObject.class, cypher, Map.of("appId", appId)).spliterator(),
+      false
+    ).toList();
+  }
+
   public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
     if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
 

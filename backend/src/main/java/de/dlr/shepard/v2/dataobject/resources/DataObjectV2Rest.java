@@ -13,7 +13,9 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
+import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -194,8 +196,8 @@ public class DataObjectV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "Full DataObjectIO for the requested DataObject.",
-    content = @Content(schema = @Schema(implementation = DataObjectIO.class))
+    description = "Full DataObject detail for the requested DataObject, including typed container lists and relationship summaries.",
+    content = @Content(schema = @Schema(implementation = DataObjectDetailV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required (no JWT or X-API-KEY).")
   @APIResponse(responseCode = "403", description = "Caller lacks Read permission on the parent Collection.")
@@ -219,7 +221,7 @@ public class DataObjectV2Rest {
     if (gate != null) return gate;
 
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
-    return Response.ok(new DataObjectIO(d)).build();
+    return Response.ok(new DataObjectDetailV2IO(d)).build();
   }
 
   @POST
@@ -385,6 +387,199 @@ public class DataObjectV2Rest {
 
     dataObjectService.deleteDataObject(collectionOgmId, dataObjectOgmId);
     return Response.status(Response.Status.NO_CONTENT).build();
+  }
+
+  // ── ANC-1: ancestry / descendancy sub-endpoints ──────────────────────────
+
+  @GET
+  @Path("/{dataObjectAppId}/predecessors")
+  @Operation(
+    summary = "List direct predecessors of a DataObject.",
+    description =
+      "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
+      "that is a direct predecessor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Auth: Read permission on the parent Collection (inherited)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Direct predecessors (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response predecessors(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Context SecurityContext sc
+  ) {
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    List<DataObjectSummaryIO> result = new ArrayList<>();
+    for (DataObject p : d.getPredecessors()) {
+      if (!p.isDeleted()) result.add(new DataObjectSummaryIO(p));
+    }
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{dataObjectAppId}/successors")
+  @Operation(
+    summary = "List direct successors of a DataObject.",
+    description =
+      "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
+      "that is a direct successor of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Auth: Read permission on the parent Collection (inherited)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Direct successors (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response successors(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Context SecurityContext sc
+  ) {
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    List<DataObjectSummaryIO> result = new ArrayList<>();
+    for (DataObject s : d.getSuccessors()) {
+      if (!s.isDeleted()) result.add(new DataObjectSummaryIO(s));
+    }
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{dataObjectAppId}/children")
+  @Operation(
+    summary = "List direct children of a DataObject.",
+    description =
+      "Returns the compact summary (appId, id, name, status) of each non-deleted DataObject " +
+      "that is a direct child of the DataObject identified by `dataObjectAppId`.\n\n" +
+      "Auth: Read permission on the parent Collection (inherited)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Direct children (may be empty).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response children(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @Context SecurityContext sc
+  ) {
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    Long collectionOgmId = resolveOrNull(collectionAppId);
+    if (collectionOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
+    List<DataObjectSummaryIO> result = new ArrayList<>();
+    for (DataObject c : d.getChildren()) {
+      if (!c.isDeleted()) result.add(new DataObjectSummaryIO(c));
+    }
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{dataObjectAppId}/predecessor-chain")
+  @Operation(
+    summary = "Traverse the predecessor chain up to a given depth.",
+    description =
+      "Traverses the `has_successor` edges backwards from the DataObject identified by " +
+      "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
+      "Returns compact summaries of all reachable non-deleted predecessors, excluding the " +
+      "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Auth: Read permission on the parent Collection (inherited)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Predecessor chain (may be empty when no predecessors exist).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response predecessorChain(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @Context SecurityContext sc
+  ) {
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    List<DataObject> chain = dataObjectDAO.findPredecessorChain(dataObjectAppId, depth);
+    List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
+    for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
+    return Response.ok(result).build();
+  }
+
+  @GET
+  @Path("/{dataObjectAppId}/successor-chain")
+  @Operation(
+    summary = "Traverse the successor chain up to a given depth.",
+    description =
+      "Traverses the `has_successor` edges forwards from the DataObject identified by " +
+      "`dataObjectAppId` up to `depth` hops (default 10, clamped at 50 server-side). " +
+      "Returns compact summaries of all reachable non-deleted successors, excluding the " +
+      "start node itself. Ordering is by shepardId (insert order approximation).\n\n" +
+      "Auth: Read permission on the parent Collection (inherited)."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Successor chain (may be empty when no successors exist).",
+    content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectSummaryIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Read permission.")
+  @APIResponse(responseCode = "404", description = "No DataObject with that appId.")
+  public Response successorChain(
+    @PathParam("collectionAppId") @NotBlank String collectionAppId,
+    @PathParam("dataObjectAppId") @NotBlank String dataObjectAppId,
+    @QueryParam("depth") @DefaultValue("10") @PositiveOrZero int depth,
+    @Context SecurityContext sc
+  ) {
+    Long dataObjectOgmId = resolveOrNull(dataObjectAppId);
+    if (dataObjectOgmId == null) return Response.status(Response.Status.NOT_FOUND).build();
+
+    Response gate = enforceDataObjectAccess(dataObjectAppId, AccessType.Read, sc);
+    if (gate != null) return gate;
+
+    List<DataObject> chain = dataObjectDAO.findSuccessorChain(dataObjectAppId, depth);
+    List<DataObjectSummaryIO> result = new ArrayList<>(chain.size());
+    for (DataObject d : chain) result.add(new DataObjectSummaryIO(d));
+    return Response.ok(result).build();
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

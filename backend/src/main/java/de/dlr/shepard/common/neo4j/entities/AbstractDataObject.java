@@ -23,6 +23,19 @@ public abstract class AbstractDataObject extends VersionableEntity {
   private Map<String, String> attributes;
 
   /**
+   * FAIR-1 — SPDX expression or other license identifier (e.g. "CC-BY-4.0").
+   * Nullable; null means "not yet declared".
+   */
+  private String license;
+
+  /**
+   * FAIR-1 — COAR Access Rights vocabulary term (e.g. "open access",
+   * "embargoed access", "restricted access", "metadata only access").
+   * Nullable; null means "not yet declared".
+   */
+  private String accessRights;
+
+  /**
    * For testing purposes only
    *
    * @param id identifies the entity

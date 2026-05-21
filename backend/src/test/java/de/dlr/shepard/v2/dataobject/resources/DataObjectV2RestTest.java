@@ -2,8 +2,10 @@ package de.dlr.shepard.v2.dataobject.resources;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -22,7 +24,9 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
+import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -329,5 +333,187 @@ class DataObjectV2RestTest {
     Response r = resource.delete(COLL_APP_ID, DO_APP_ID, securityContext);
     assertEquals(204, r.getStatus());
     verify(dataObjectService).deleteDataObject(COLL_OGM_ID, DO_OGM_ID);
+  }
+
+  // ── REF-1: get() returns DataObjectDetailV2IO ─────────────────────────────
+
+  @Test
+  void getReturnsDataObjectDetailV2IO() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.get(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    // Response must be a DataObjectDetailV2IO (subtype of DataObjectIO).
+    assertNotNull(r.getEntity());
+    DataObjectDetailV2IO detail = (DataObjectDetailV2IO) r.getEntity();
+    assertEquals(DO_APP_ID, detail.getAppId());
+    // No references on the stub DataObject → containers all empty.
+    assertNotNull(detail.getContainers());
+    assertNotNull(detail.getContainers().getTimeseries());
+    assertNotNull(detail.getContainers().getFiles());
+    assertNotNull(detail.getContainers().getStructuredData());
+    assertEquals(0, detail.getContainers().getTimeseries().size());
+    assertEquals(0, detail.getContainers().getFiles().size());
+    assertEquals(0, detail.getContainers().getStructuredData().size());
+    // No predecessor/successor/parent/children on stub.
+    assertEquals(0, detail.getPredecessorSummaries().size());
+    assertEquals(0, detail.getSuccessorSummaries().size());
+    assertEquals(0, detail.getChildSummaries().size());
+    assertNull(detail.getParentSummary());
+  }
+
+  // ── ANC-1: predecessors / successors / children ───────────────────────────
+
+  @Test
+  void predecessorsReturns404WhenDataObjectUnknown() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    assertEquals(404, r.getStatus());
+  }
+
+  @Test
+  void predecessorsReturns403WhenNoRead() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+    assertEquals(403, r.getStatus());
+  }
+
+  @Test
+  void predecessorsReturns200WithSummaries() {
+    DataObject pred = makeDataObject(11L, "018f-pred-0011", "pred-run");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getPredecessors().add(pred);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.predecessors(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("018f-pred-0011", body.get(0).getAppId());
+  }
+
+  @Test
+  void successorsReturns200WithSummaries() {
+    DataObject succ = makeDataObject(22L, "018f-succ-0022", "next-run");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getSuccessors().add(succ);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.successors(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("018f-succ-0022", body.get(0).getAppId());
+  }
+
+  @Test
+  void childrenReturns200WithSummaries() {
+    DataObject child = makeDataObject(33L, "018f-child-0033", "sub-run");
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    d.getChildren().add(child);
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getDataObject(COLL_OGM_ID, DO_OGM_ID)).thenReturn(d);
+
+    Response r = resource.children(COLL_APP_ID, DO_APP_ID, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("018f-child-0033", body.get(0).getAppId());
+  }
+
+  // ── ANC-1: predecessor-chain / successor-chain ────────────────────────────
+
+  @Test
+  void predecessorChainReturns404WhenDataObjectUnknown() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.predecessorChain(COLL_APP_ID, DO_APP_ID, 5, securityContext);
+    assertEquals(404, r.getStatus());
+    verify(dataObjectDAO, never()).findPredecessorChain(any(), anyInt());
+  }
+
+  @Test
+  void predecessorChainReturns403WhenNoRead() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(false);
+    Response r = resource.predecessorChain(COLL_APP_ID, DO_APP_ID, 5, securityContext);
+    assertEquals(403, r.getStatus());
+    verify(dataObjectDAO, never()).findPredecessorChain(any(), anyInt());
+  }
+
+  @Test
+  void predecessorChainReturns200WithRows() {
+    DataObject p1 = makeDataObject(10L, "018f-pred-0010", "run-A");
+    DataObject p2 = makeDataObject(9L, "018f-pred-0009", "run-B");
+
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectDAO.findPredecessorChain(eq(DO_APP_ID), eq(5)))
+      .thenReturn(List.of(p1, p2));
+
+    Response r = resource.predecessorChain(COLL_APP_ID, DO_APP_ID, 5, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(2, body.size());
+    assertEquals("018f-pred-0010", body.get(0).getAppId());
+    assertEquals("018f-pred-0009", body.get(1).getAppId());
+  }
+
+  @Test
+  void successorChainReturns200WithRows() {
+    DataObject s1 = makeDataObject(100L, "018f-succ-0100", "run-X");
+
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(DO_APP_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectDAO.findSuccessorChain(eq(DO_APP_ID), eq(10)))
+      .thenReturn(List.of(s1));
+
+    Response r = resource.successorChain(COLL_APP_ID, DO_APP_ID, 10, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectSummaryIO> body = (List<DataObjectSummaryIO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertEquals("018f-succ-0100", body.get(0).getAppId());
+  }
+
+  @Test
+  void successorChainReturns404WhenDataObjectUnknown() {
+    when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
+    Response r = resource.successorChain(COLL_APP_ID, DO_APP_ID, 10, securityContext);
+    assertEquals(404, r.getStatus());
+    verify(dataObjectDAO, never()).findSuccessorChain(any(), anyInt());
   }
 }
