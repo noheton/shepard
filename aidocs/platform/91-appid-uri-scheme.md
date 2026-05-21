@@ -141,14 +141,57 @@ Location: https://shepard.nuclide.systems/v2/collections/019e30b0-0000.../data-o
 
 ## 5. Configuration
 
-One new property seeds the URI base. It is **deploy-time-only** (not runtime-mutable) because changing it mid-flight invalidates all previously issued URIs:
+### 5.1 Deploy-time key (authoritative)
 
 ```properties
 # application.properties
 shepard.instance.base-url=https://shepard.nuclide.systems
 ```
 
-No default. Startup fails with a clear error if not set (the minter cannot produce valid URIs without it). Operators upgrading from upstream must add this key — tracked in `aidocs/34`.
+This key is **deploy-time-only** (not runtime-mutable via `:*Config`) because changing it mid-flight invalidates all previously issued URIs — every `/id/` link ever shared becomes a broken reference.
+
+### 5.2 Auto-detection fallback
+
+If `shepard.instance.base-url` is absent, the backend auto-detects from the first inbound request's HTTP headers:
+
+1. `X-Forwarded-Proto` + `X-Forwarded-Host` (set by Caddy / Nginx / proxy) → `{proto}://{host}`
+2. `Host` header + HTTPS detection via `X-Forwarded-Proto: https` or the connector's `secure` flag
+3. Literal `http://localhost:8080` as last resort
+
+Auto-detected base-url is logged at `WARN` level on first use:
+
+```
+WARN  BaseUrlProvider - shepard.instance.base-url not configured; auto-detected https://shepard.nuclide.systems from proxy headers. Set the key explicitly for stable persistent identifiers.
+```
+
+The value is cached for the JVM lifetime after first detection (effectively deploy-time-stable). It does **not** persist to Neo4j — the `:InstanceConfig` singleton (admin setup wizard, §5.3) is the durable store.
+
+### 5.3 Admin setup wizard integration
+
+`shepard.instance.base-url` is a **first-run wizard step** (setup wizard = task #75):
+
+1. Wizard detects the auto-detected base URL from proxy headers.
+2. Pre-fills the input field with the detected value (e.g. `https://shepard.nuclide.systems`).
+3. Operator confirms or overrides.
+4. Confirmed value is written to `:InstanceConfig.baseUrl` in Neo4j (persistent, survives restart).
+5. On subsequent starts, `:InstanceConfig.baseUrl` wins over both the property file and auto-detection.
+
+**Precedence (highest to lowest):**
+
+| Source | Mutable? | Survives restart? |
+|---|---|---|
+| `:InstanceConfig.baseUrl` (set via wizard or `PATCH /v2/admin/instance/base-url`) | Runtime (wizard or admin REST) | ✓ |
+| `shepard.instance.base-url` in `application.properties` | Deploy-time | ✓ |
+| Auto-detected from proxy headers | Per-JVM | Until restart |
+
+### 5.4 Admin REST surface
+
+```
+GET  /v2/admin/instance/base-url   → { baseUrl, source: "NEO4J" | "PROPERTY" | "AUTO_DETECTED" }
+PATCH /v2/admin/instance/base-url  → { baseUrl }   (instance-admin only; RFC 7396)
+```
+
+`PATCH` updates `:InstanceConfig.baseUrl`. Changing it after URIs have been issued is a **destructive** operation — the endpoint returns a `409` with a confirmation requirement (`?confirm=true`) if previously-issued URIs exist (detected by checking whether any `appId`s have been minted). Documented in the upgrade tracker as a rare but possible operator action.
 
 The server computes the full URI as:
 
