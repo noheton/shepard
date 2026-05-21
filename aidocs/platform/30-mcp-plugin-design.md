@@ -256,10 +256,44 @@ shepard-mcp:
   profiles: [mcp]
 ```
 
+**Proxy rule (Zoraxy):** Add a virtual directory rule on the `shepard.nuclide.systems`
+virtual host:
+
+| Field | Value |
+|---|---|
+| Virtual path | `/mcp` |
+| Target upstream | `localhost:8811` |
+| Strip path prefix | ✓ (Zoraxy "virtual directory" mode) |
+
+Public URL: `https://shepard.nuclide.systems/mcp`
+
+FastMCP SSE endpoint (Claude remote connector): `https://shepard.nuclide.systems/mcp/sse`
+
+The MCP server itself serves at path root `/`; Zoraxy strips the `/mcp` prefix before
+forwarding. No subdomain needed — the plugin lives under the main Shepard URL.
+
 **Auth:** The MCP server receives a bearer token from the caller (e.g. the AI client)
 and forwards it on every Shepard API call. No separate MCP credentials. The tool
 descriptions carry `x-mcp-side-effects: write` hints for tools that mutate state,
 consistent with `aidocs/56`.
+
+**Claude remote connector config (operator adds in claude.ai settings):**
+```json
+{
+  "name": "Shepard",
+  "url": "https://shepard.nuclide.systems/mcp/sse",
+  "authorization_type": "oauth2",
+  "oauth2": {
+    "authorization_url": "https://auth.nuclide.systems/realms/shepard-demo/protocol/openid-connect/auth",
+    "token_url": "https://auth.nuclide.systems/realms/shepard-demo/protocol/openid-connect/token",
+    "client_id": "mcp-client",
+    "scopes": ["openid", "profile", "email"]
+  }
+}
+```
+The `mcp-client` Keycloak client is public (PKCE) — no client secret required for
+the browser-side OIDC flow. The resulting bearer token is the user's Shepard token,
+forwarded transparently to all backend calls.
 
 ---
 
