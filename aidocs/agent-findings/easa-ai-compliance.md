@@ -31,7 +31,7 @@ operational capability design, and organisational process.
 | Dimension | Coverage estimate | Notes |
 |---|---|---|
 | Data management (DM) family | ~75% evidence | DM-13 five MOCs strongest; DM-12 split strategy weak |
-| Development assurance (DA) family | ~60% evidence | MLflow covers training curves + params; gap on DA-09 safety case |
+| Development assurance (DA) family | ~60% evidence | MLflow covers training curves + params; gap on structured safety case artefact |
 | Learning management (LM) family | ~55% evidence | MLflow covers LM-05/LM-06/LM-09; LM-07 bias-variance gap |
 | Safety assessment (SA/ICSA) family | ~15% evidence | Static pre-deployment only; runtime monitoring absent |
 | Explainability (EXP) family | ~20% evidence | Dev explainability via metadata only; operational explainability absent |
@@ -39,7 +39,7 @@ operational capability design, and organisational process.
 | Organisations (ORG) family | ~35% process | Audit log (F3), permission model; gaps on ORG-03/ORG-04 |
 | **Overall (evidence supply)** | **~40% of CP2 objectives partially addressed** | Many objectives require non-tool organisational or model-level work |
 
-The stack's strongest compliance story is **DM-13** (data quality and traceability) — the five MOCs map directly to Shepard features. The clearest headline gap is **runtime inference monitoring** (SA-01-3, EXP-14/15, ICSA-02) — neither Shepard nor ReBAR currently provides ODD-conformity checking during live inference.
+The stack's strongest compliance story is **DM-13** (data quality and traceability) — the five MOCs map directly to Shepard features. The clearest headline gap is **runtime inference monitoring** (SA-01 MOC-3, EXP-14/15, ICSA-02) — neither Shepard nor ReBAR currently provides ODD-conformity checking during live inference.
 
 At **Level 1A** (human assistance, AI acts as tool under full human decision authority) the evidence stack is credible for a Level 1A compliance case with gaps closed by organisational process. At **Level 1B and 2A/2B**, the runtime monitoring and explainability gaps are blocking and require dedicated infrastructure.
 
@@ -53,24 +53,29 @@ Organised by CP2's four trustworthiness building blocks plus the Organisations (
 
 | Objective | Description | Min AL | Applies at |
 |---|---|---|---|
-| CO-01 | Define intended function, operational context, performance criteria | AL1 | All |
-| CO-02 | Characterise operating domain (OD) and operational design domain (ODD) | AL1 | All |
-| CO-03 | Identify OD/ODD parameters and their acceptable ranges | AL1 | All |
-| CO-04 | Document ODD coverage and corner cases | AL2 | 1B+ |
-| SA-01-1 | Perform safety risk assessment of AI application | AL1 | All |
-| SA-01-2 | Identify failure conditions and their severity classifications | AL1 | All |
-| SA-01-3 | Define monitoring capabilities to detect OD/ODD conformity at runtime | AL2 | 1B+ |
-| ET-01 | Human oversight capability per AI level | AL1 | All |
-| ET-02 | Competency gap assessment and mitigation | AL2 | 1B+ |
-| ET-03 | Unfair bias avoidance — training data audit | AL2 | 1B+ |
-| ET-04 | Societal impact assessment | AL3 | 2A+ |
-| ET-05 | Personal data privacy compliance (GDPR alignment) | AL2 | 1B+ |
-| ET-06 | Environmental impact consideration | AL4 | 2B+ |
-| ET-07 | Risk of de-skilling consideration | AL3 | 2A+ |
-| ET-08 | Interaction with AI systems audit | AL3 | 2A+ |
-| IS-01 | Information security risk assessment | AL1 | All |
-| IS-02 | Adversarial robustness assessment | AL2 | 1B+ |
-| IS-03 | Data poisoning risk assessment | AL2 | 1B+ |
+| CO-01 | Identify end users and their interaction with the AI system | AL1 | All |
+| CO-02 | Identify high-level tasks and performance objectives per end user | AL1 | All |
+| CO-03 | Determine AI system boundary and domain-specific system definition | AL1 | All |
+| CO-04 | Define and document the Concept of Operations (ConOps) for the AI system | AL1 | All |
+| CO-05 | Document how end user inputs are collected and incorporated | AL2 | 1B+ |
+| CO-06 | Perform functional analysis of the system | AL2 | 1B+ |
+| SA-01 | Perform safety (support) assessment for all AI-based (sub)systems | AL1 | All |
+| SA-01 MOC-1 | DAL/SWAL allocation and verification | AL1 | All |
+| SA-01 MOC-2 | Performance metrics and safety thresholds | AL1 | All |
+| SA-01 MOC-3 | Monitoring capabilities to detect exposure to data outside OD/ODD | AL2 | 1B+ |
+| SA-01 MOC-4 | Identification and classification of uncertainties | AL2 | 1B+ |
+| ET-01 | Ethics-based trustworthiness assessment | AL1 | All |
+| ET-02 | No risk of creating or reinforcing unfair bias | AL2 | 1B+ |
+| ET-03 | No capability of identifying personal data not required for function | AL2 | 1B+ |
+| ET-04 | Comply with national and EU data protection regulations (GDPR) | AL1 | All |
+| ET-05 | Procedures to avoid creating or perpetuating discrimination | AL2 | 1B+ |
+| ET-06 | Environmental impact analysis | AL3 | 2A+ |
+| ET-07 | Measures to reduce or mitigate environmental impacts | AL3 | 2A+ |
+| ET-08 | Identify new skills needed for users and end users | AL2 | 1B+ |
+| ET-09 | Assessment of risk of de-skilling of users and end users | AL3 | 2A+ |
+| IS-01 | Identify AI security threats for each AI-based subsystem and dataset | AL1 | All |
+| IS-02 | Document mitigation approach to address identified security threats | AL2 | 1B+ |
+| IS-03 | Validate and verify effectiveness of security controls | AL2 | 1B+ |
 
 ### 2.2 Building Block 2 — AI Assurance (Learning Assurance + Development Explainability)
 
@@ -78,114 +83,128 @@ Organised by CP2's four trustworthiness building blocks plus the Organisations (
 
 | Objective | Description | Min AL |
 |---|---|---|
-| DM-01 | Data management plan exists and is maintained | AL1 |
-| DM-02 | Data sources identified and documented | AL1 |
-| DM-03 | Data collection process documented | AL1 |
-| DM-04 | Data labelling process documented and controlled | AL2 |
-| DM-05 | Data pre-processing steps documented | AL2 |
-| DM-06 | Data provenance traced to original source | AL1 |
-| DM-07 | Data schema defined and enforced | AL2 |
-| DM-08 | Data version control applied | AL2 |
-| DM-09 | Data access control enforced | AL1 |
-| DM-10 | Data retention and archival policy defined | AL3 |
-| DM-11 | OOD (out-of-distribution) data handling defined | AL2 |
-| DM-12 | Data split into three independent sets: training / validation / test | AL1 |
+| DM-01 | Define ODD parameters for AI/ML constituent data | AL1 |
+| DM-02 | Capture Data Quality Requirements (DQRs) for all data | AL1 |
+| DM-03 | Capture requirements on data to be pre-processed and transformed | AL1 |
+| DM-04 | Ensure validation of data annotations/labels | AL2 |
+| DM-05 | Ensure validation of correctness and completeness of data | AL1 |
+| DM-06 | Identify data sources and collect data in accordance with DQRs | AL1 |
+| DM-07 | Ensure data quality post-collection and labelling | AL2 |
+| DM-08 | Define data preparation operations (format, feature extraction) | AL2 |
+| DM-09 | Define and document pre-processing operations | AL2 |
+| DM-10 | Define data transformations that affect feature distribution | AL3 |
+| DM-11 | Ensure data effectiveness for stability of learning algorithms | AL2 |
+| DM-12 | Distribute data into three separate and independent sets (train/val/test) | AL1 |
 | DM-13 | Five mandatory quality criteria for each set: | AL1 |
 | DM-13-1 | — Completeness: data set covers the full ODD | AL1 |
 | DM-13-2 | — Representativeness: distribution matches operational distribution | AL1 |
 | DM-13-3 | — Accuracy/correctness: labels and measurements are correct | AL1 |
 | DM-13-4 | — Traceability: each sample traceable to origin and processing steps | AL1 |
 | DM-13-5 | — Independence: training, validation, test sets are non-overlapping | AL1 |
-| DM-14 | Data augmentation strategy documented and validated | AL3 |
-| DM-15 | Synthetic data use documented and bounded | AL3 |
+| DM-14 | Perform data and learning verification step to confirm data quality objectives are met | AL2 |
 
 #### Learning Management (LM)
 
 | Objective | Description | Min AL |
 |---|---|---|
-| LM-01 | ML model architecture selection justified | AL2 |
-| LM-02 | Hyperparameter selection process documented | AL2 |
-| LM-03 | Training environment documented (hardware, framework versions) | AL2 |
-| LM-04 | Training reproducibility demonstrated | AL2 |
-| LM-05 | Training curves (loss/cost) recorded and reviewed | AL2 |
-| LM-06 | Model versioning applied | AL1 |
-| LM-07 | Bias-variance trade-off assessed | AL2 |
-| LM-08 | Generalisation assessment performed | AL1 |
-| LM-09 | Performance evaluated on independent test set | AL1 |
-| LM-10 | Performance thresholds defined pre-training | AL2 |
-| LM-11 | Model update / re-training policy defined | AL2 |
-| LM-12 | Transfer learning justification if applied | AL3 |
+| LM-01 | Describe AI/ML constituents and model architecture | AL2 |
+| LM-02 | Capture requirements pertaining to the learning process | AL2 |
+| LM-03 | Document credit sought from training environment (hardware, frameworks) | AL2 |
+| LM-04 | Provide quantifiable generalisation guarantees | AL1 |
+| LM-05 | Document results of model training (training curves, metrics) | AL2 |
+| LM-06 | Document model optimisation that may affect model performance | AL2 |
+| LM-07 | Account for bias-variance trade-off in model family selection | AL2 |
+| LM-08 | Ensure estimated bias and variance of selected model is acceptable | AL2 |
+| LM-09 | Perform evaluation of trained model performance on validation set | AL1 |
+| LM-10 | Perform requirements-based verification of trained model | AL2 |
+| LM-11 | Provide analysis on stability of learning algorithms | AL2 |
+| LM-12 | Perform and document verification of stability of trained model | AL2 |
+| LM-13 | Perform and document verification of robustness of trained model | AL3 |
+| LM-14 | Verify anticipated generalisation bounds using test data set | AL1 |
 
 #### Implementation (IMP)
 
 | Objective | Description | Min AL |
 |---|---|---|
-| IMP-01 | Deployed model reproducibly matches trained model | AL1 |
-| IMP-02 | Runtime environment documented | AL2 |
-| IMP-03 | Integration test plan and evidence | AL2 |
-| IMP-04 | Deployment pipeline change management | AL2 |
+| IMP-01 | Capture requirements pertaining to model implementation | AL2 |
+| IMP-02 | Document any post-training model transformation (quantisation, conversion) | AL2 |
+| IMP-03 | Plan and execute appropriate development assurance activities for implementation | AL2 |
+| IMP-04 | Verify that any transformation preserves model properties | AL2 |
+| IMP-05 | Document differences between training and inference hardware/software platforms | AL2 |
+| IMP-06 | Perform evaluation of inference engine performance | AL2 |
+| IMP-07 | Verify and document stability of inference engine | AL2 |
+| IMP-08 | Verify and document robustness of inference engine | AL3 |
+| IMP-09 | Perform requirements-based verification of inference engine | AL2 |
 
 #### Development Assurance (DA)
 
 | Objective | Description | Min AL |
 |---|---|---|
-| DA-01 | Development process documented | AL1 |
-| DA-02 | Requirements traceability (requirements → model → tests) | AL2 |
-| DA-03 | Tool qualification for ML-specific tools | AL3 |
-| DA-04 | Configuration management applied | AL2 |
-| DA-05 | Problem reporting and corrective action process | AL2 |
-| DA-06 | Verification evidence documented | AL2 |
-| DA-07 | Software quality plan | AL2 |
-| DA-08 | Independent review of ML artefacts | AL3 |
-| DA-09 | Safety case document (assurance case referencing all evidence) | AL2 |
+| DA-01 | Describe proposed learning assurance process | AL1 |
+| DA-02 | Capture requirements documents covering system, AI/ML and data requirements | AL2 |
+| DA-03 | Describe system and subsystem architecture (serves as reference for requirements traceability) | AL2 |
+| DA-04 | Validate captured requirements | AL2 |
+| DA-05 | Document evidence that all derived requirements generated from system requirements are captured | AL2 |
+| DA-06 | Document evidence of validation of derived requirements | AL2 |
+| DA-07 | Validate (sub)system requirements allocated to AI/ML constituent against system requirements | AL2 |
 
 #### Development Explainability (EXP-01 — EXP-04)
 
+These objectives concern explainability at development time — identifying stakeholder needs and selecting methods.
+
 | Objective | Description | Min AL |
 |---|---|---|
-| EXP-01 | Input feature importance analysis | AL2 |
-| EXP-02 | Model behaviour explanation at development time | AL2 |
-| EXP-03 | Confidence / uncertainty estimation for predictions | AL2 |
-| EXP-04 | Documentation of explainability methods used | AL2 |
+| EXP-01 | Identify stakeholders (other than end users) needing explainability from the AI system | AL2 |
+| EXP-02 | Identify explainability needs for each stakeholder group | AL2 |
+| EXP-03 | Identify and document explainability methods at AI/ML item and system levels | AL2 |
+| EXP-04 | Provide means to record operational data necessary for post-hoc explanation | AL2 |
 
 ### 2.3 Building Block 3 — Human Factors for AI (Operational Explainability + HAT)
 
+Note: CP2 does not define separate "HA-xx" objectives. Human-AI teaming (HAT) requirements are
+expressed through EXP-05 through EXP-17 (operational explainability) and the ORG Provisions.
+
 | Objective | Description | Min AL | Applies at |
 |---|---|---|---|
-| EXP-05 | Human-readable output explanation available | AL2 | 1B+ |
-| EXP-06 | Confidence indication surfaced to operator | AL2 | 1B+ |
-| EXP-07 | Override mechanism available and tested | AL1 | All |
-| EXP-08 | Explanation tailored to operator role | AL3 | 2A+ |
-| EXP-09 | Explanation available within operational latency | AL2 | 1B+ |
-| EXP-10 | Explanation not misleading under distribution shift | AL3 | 2A+ |
-| EXP-11 through EXP-17 | Advanced HAT explainability (collaboration, delegation) | AL4–5 | 2B+ |
-| HA-01 | Human-AI teaming specification | AL3 | 2A+ |
-| HA-02 | Handover / takeover protocol defined | AL3 | 2A+ |
-| HA-03 | Situation awareness maintained | AL3 | 2A+ |
-| HA-04 | De-skilling mitigation strategy | AL4 | 2B+ |
+| EXP-05 | Characterise the need for explainability for each AI output relevant to end user tasks | AL2 | 1B+ |
+| EXP-06 | Present explanations to end users in clear and understandable way | AL2 | 1B+ |
+| EXP-07 | Define relevant explainability so receiver of explanation can contest AI output | AL1 | All |
+| EXP-08 | Define level of abstraction of explanations taking into account end user's knowledge | AL2 | 1B+ |
+| EXP-09 | Allow end users to customise explanations where customisation capability is available | AL3 | 2A+ |
+| EXP-10 | Define timing when explainability will be available (before, during, after decision) | AL2 | 1B+ |
+| EXP-11 | Design AI system to enable end user to express trust calibration / acceptance | AL3 | 2A+ |
+| EXP-12 | Ensure validity of explanations for each relevant output | AL3 | 2A+ |
+| EXP-13 | AI system should deliver indication of degree of confidence in its outputs | AL2 | 1B+ |
+| EXP-14 | AI system inputs should be monitored to be within operational domain (OD) | AL2 | 1B+ |
+| EXP-15 | AI system outputs should be monitored to be within specified performance bounds | AL2 | 1B+ |
+| EXP-16 | Training and instructions for end users should include information about AI limitations | AL2 | 1B+ |
+| EXP-17 | Information about unsafe AI operating conditions should be communicated to end users | AL2 | 1B+ |
 
 ### 2.4 Building Block 4 — AI Safety Risk Mitigation
 
+CP2 defines two ICSA objectives only. ODD drift detection and model degradation are addressed
+through SA-01 MOC-3 and ICSA-02 process provisions, not as separate numbered objectives.
+
 | Objective | Description | Min AL |
 |---|---|---|
-| ICSA-01 | Record operational data for continuous safety assessment | AL2 |
-| ICSA-02 | Continuous safety assessment process from operational data | AL2 |
-| ICSA-03 | ODD drift detection and reporting | AL3 |
-| ICSA-04 | Model degradation detection | AL3 |
-| ICSA-05 | Re-training trigger criteria defined | AL3 |
+| ICSA-01 | Identify data to be recorded for continuous safety assessment | AL2 |
+| ICSA-02 | Use collected data to perform continuous safety assessment | AL2 |
 
 ### 2.5 Organisations (ORG)
 
-| Objective | Description | Min AL |
+Note: CP2 labels these as "Provisions" (not "Objectives") — they are organisational rather than
+technical requirements. Cited here as ORG-01 through ORG-08 per the Provision numbering in CP2.
+
+| Provision | Description | Applicability |
 |---|---|---|
-| ORG-01 | Responsible organisation designated | AL1 |
-| ORG-02 | Competency requirements defined for ML roles | AL2 |
-| ORG-03 | Continuous safety monitoring process owner designated | AL2 |
-| ORG-04 | Audit trail for all decisions affecting ML assurance | AL2 |
-| ORG-05 | Change management process for post-deployment updates | AL2 |
-| ORG-06 | Incident reporting process defined | AL2 |
-| ORG-07 | Training and awareness programme | AL3 |
-| ORG-08 | Ethics review board or equivalent body | AL3 |
+| ORG-01 | Review and adapt processes to introduction of AI | All |
+| ORG-02 | Prepare for AI-specific regulatory framework (Reg. 2022/1645) | All |
+| ORG-03 | Implement data-driven AI continuous safety assessment system | 1B+ |
+| ORG-04 | Ensure safety-related AI systems are auditable | All |
+| ORG-05 | Adapt continuous risk management process to accommodate AI specifics | 1B+ |
+| ORG-06 | Adapt training processes for AI systems | All |
+| ORG-07 | Ensure end users are adequately trained on AI systems they operate | All |
+| ORG-08 | Establish means to continuously assess ethics of AI-based systems | 2A+ |
 
 ---
 
@@ -212,10 +231,10 @@ Organised by CP2's four trustworthiness building blocks plus the Organisations (
 
 | CP2 Objective | Shepard Feature | Status |
 |---|---|---|
-| DA-04 configuration management | Version history (PV1a/PV1b); git integration design (G1, in design) | Partial |
-| DA-05 problem reporting | DataObject status + Predecessor chain for NCR sub-objects (see `aidocs/agent-findings/manufacturing-quality.md`) | Partial |
-| DA-09 safety case | No structured assurance case template; DataObject collection can store the document but with no schema | Gap |
-| IMP-01 model reproducibility | MLflow model registry (ReBAR) + Shepard FileReference for serialised model artefact; `aiGenerated` flag on output | Partial |
+| DA-04 validate requirements | Version history (PV1a/PV1b) + import manifest plan-seal validate step provides requirements validation trail | Partial |
+| DA-05/06 derived requirements evidence | DataObject version chain + import validation commitId records derivation; no formal traceability matrix | Partial |
+| DA-07 AI/ML constituent requirements validation | No structured requirements traceability matrix; DataObject attributes can encode requirements but with no schema | Gap |
+| IMP-01 implementation requirements | MLflow model registry (ReBAR) + Shepard FileReference for serialised model artefact; `aiGenerated` flag on output | Partial |
 
 ### 3.3 LM Family
 
@@ -224,12 +243,14 @@ Organised by CP2's four trustworthiness building blocks plus the Organisations (
 | LM-06 model versioning | `aiGenerated` flag on FileReference/DataObject; PV1a version chain; MLflow (ReBAR) primary | Partial |
 | LM-09 test set evaluation | AI1c `qualityScore` ∈ [0,1] on TimeseriesReference (backend only, no UI yet) | Dev-track |
 
-### 3.4 EXP / Operational explainability
+### 3.4 EXP / Explainability
 
 | CP2 Objective | Shepard Feature | Status |
 |---|---|---|
-| EXP-07 override mechanism | Human is always the decision authority for DataObject status; no AI autopromote | Structurally satisfied |
-| EXP-05/06 confidence surfacing | `aiGenerated` flag visible in DataObject UI; no confidence score surface | Gap |
+| EXP-04 record operational data for explanation | `shepard-plugin-ai` `:AiActivity` node stores `promptHash`, call metadata, and inference I/O (when `storePromptText=true`) | Shipped (design) |
+| EXP-07 contest/override mechanism | Human retains DataObject status authority; no AI auto-promote; `aiGenerated` flag marks but never locks | Structurally satisfied |
+| EXP-13 confidence indication | `aiGenerated` flag visible in DataObject UI; no confidence score surface | Gap |
+| EXP-14/15 input/output monitoring | No runtime ODD-conformity check — see gap 6.1 (inference monitor) | Gap |
 
 ### 3.5 ORG Family
 
@@ -281,7 +302,7 @@ What the **combined Shepard + ReBAR stack** addresses that neither alone does:
 
 ### 6.1 Headline gap — Runtime inference monitoring (BLOCKING for Level 1B+)
 
-**Objectives:** SA-01-3, EXP-14/15, ICSA-02, ICSA-03, ICSA-04
+**Objectives:** SA-01 MOC-3, EXP-14/15, ICSA-01, ICSA-02
 
 **The gap:** CP2 requires that deployed AI systems have monitoring capabilities that
 detect when input data falls outside the OD/ODD, and that continuous safety assessment
@@ -314,32 +335,37 @@ Components:
   ICSA-01 compliance: every inference call recorded as InferenceCallRecord
   ICSA-02 compliance: scheduled drift check DAG (Airflow) reads InferenceCallRecords,
     writes DriftReport DataObject back to Shepard
-  SA-01-3 compliance: ODD_conformity_flag per call + alert on violation
+  SA-01 MOC-3 compliance: ODD_conformity_flag per call + alert on violation
 ```
 
 External tools to wrap: Evidently AI (open-source, MIT, Python, active), NannyML
 (EU-funded, open-source, LGPLv3), Arize AI (commercial, has a free tier).
 Evidently is the lowest-friction option given the ReBAR Python environment.
 
-### 6.2 Development explainability gap (BLOCKING for Level 1B AL2)
+### 6.2 Development explainability gap (BLOCKING for Level 1B)
 
 **Objectives:** EXP-01, EXP-02, EXP-03, EXP-04
 
-**The gap:** CP2 requires feature importance analysis, model behaviour explanation,
-and uncertainty/confidence estimation at development time. MLflow can store these as
-logged artefacts but provides no structure or enforcement.
+**The gap:** CP2 EXP-01/02 require identifying and documenting explainability needs for
+all stakeholder groups. EXP-03 requires identifying and documenting the explainability
+methods applied at AI/ML item and system levels. EXP-04 requires providing the means to
+record operational data for post-hoc explanation. MLflow can store artefacts but provides
+no structured mapping from stakeholder need → method → evidence artefact.
 
 **Minimum closure:** Add `ExplainabilityReport` DataObject kind to `shepard-plugin-ai`:
 
 ```
 ExplainabilityReport:
   attributes:
-    method: "SHAP" | "LIME" | "integrated_gradients" | other
+    stakeholderGroups: string[]      (per EXP-01)
+    explainabilityNeeds: string[]    (per EXP-02, one per stakeholder group)
+    method: "SHAP" | "LIME" | "integrated_gradients" | other   (per EXP-03)
     framework_version: string
     feature_importance_json: MinIO FileReference (JSON)
     global_explanation_plot: MinIO FileReference (PNG/HTML)
     confidence_calibration_plot: MinIO FileReference
   linked via PREDECESSOR_OF to the model DataObject (FileReference)
+  EXP-04 satisfied: inference I/O logged to AiActivity nodes
 ```
 
 SHAP (SHapley Additive exPlanations) is the current best-practice method for tabular
@@ -347,26 +373,30 @@ and timeseries models in manufacturing contexts — compatible with scikit-learn
 XGBoost, and PyTorch (via captum). ReBAR can log SHAP values as MLflow artefacts;
 ShepardWriteOperator can write the structured report to Shepard.
 
-### 6.3 Operational explainability gap (BLOCKING for Level 1B AL2, EXP-05/06)
+### 6.3 Operational explainability gap (BLOCKING for Level 1B, EXP-05/06/13)
 
-**The gap:** The operator-facing UI must surface confidence indication and
-human-readable explanation for each AI prediction. The `aiGenerated` flag marks
-outputs but provides no confidence score or explanation.
+**The gap:** CP2 EXP-05/06 require characterising and presenting explanations to
+end users clearly. EXP-13 requires delivering a confidence/degree-of-certainty
+indication with AI outputs. The `aiGenerated` flag marks outputs but provides no
+confidence score or human-readable explanation of the prediction.
 
 **Minimum closure:**
 - Extend `shepard-plugin-ai` `AiActivity` node to carry `confidenceScore` (float
   0–1), `explanationText` (short natural language), `oddConformityFlag` (bool)
 - Surface these in the DataObject detail view alongside the `aiGenerated` badge
-- At Level 1A this is optional (human reviews anyway); at Level 1B it is AL2 mandatory
+- At Level 1A this is optional (human reviews anyway); at Level 1B it is required per EXP-13
 
-### 6.4 Safety case document structure (DA-09)
+### 6.4 Safety case document structure (DA-01 through DA-07 evidence aggregation)
 
-**The gap:** CP2 requires a structured assurance case (safety case) document that
-references all evidence artefacts. Shepard can store a PDF but provides no schema.
+**The gap:** CP2 DA objectives (DA-01 through DA-07) collectively require that learning
+assurance process documentation, requirements, architecture, and verification evidence
+are captured and traceable. Shepard can store these as DataObjects and PDF files but
+provides no structured assurance-case template that links evidence artefacts to specific
+CP2 objectives.
 
 **Minimum closure:** Define a `SafetyCaseDocument` DataObject kind with required
 attributes: `aiLevel`, `assuranceLevel`, `coverageClaimsJson`, plus a Collection
-convention that groups all evidence DataObjects under a "Assurance Evidence"
+convention that groups all evidence DataObjects under an "Assurance Evidence"
 Collection. The structured `coverageClaimsJson` provides a machine-readable mapping
 from CP2 objective ID to evidence DataObject appId — enabling automated completeness
 checks.
@@ -393,10 +423,12 @@ and `splitRatios`. ShepardProvenanceOperator asserts the three collections have 
 overlapping `FileReference.contentHash` values. This is a verification step, not just
 metadata — it produces a pass/fail evidence DataObject.
 
-### 6.7 Ethics review board tooling (ORG-08, ET-03)
+### 6.7 Ethics review board tooling (ORG-08, ET-01/ET-02)
 
-**The gap:** CP2 requires an ethics review body and unfair bias avoidance. Shepard has
-no workflow routing to an ethics review group.
+**The gap:** CP2 ORG-08 requires establishing means (processes) to continuously assess
+ethics of AI-based systems. ET-01 requires ethics-based trustworthiness assessment.
+ET-02 requires ensuring no unfair bias risk. Shepard has no workflow routing to an
+ethics review gate.
 
 **Minimum closure:** Use the DataObject status machine extended with two new review
 states: `ETHICS_REVIEW` and `ETHICS_APPROVED`. A designated `ethics-reviewer` Keycloak
@@ -421,14 +453,15 @@ Levels). This document uses "AI Level" exclusively for the 1A/1B/2A/2B/3 taxonom
 - LM-03/04/05/06/09: covered by ReBAR/MLflow
 - DA-04/DA-06: partially covered
 - ORG-04 audit trail: covered by F3 + ProvenanceCaptureFilter
-- SA-01-3 runtime monitoring: *not required at Level 1A (monitoring of OD/ODD applies
-  when AI output has direct operational consequence)*
-- EXP-01 through EXP-04 (development explainability): covered by ExplainabilityReport
-  DataObject (gap 6.2 closure)
+- SA-01 MOC-3 runtime monitoring: *reduced obligation at Level 1A — monitoring of OD/ODD is
+  most critical where AI output has direct operational consequence; at Level 1A, the human
+  acts as the OD-conformity check*
+- EXP-01 through EXP-04 (development explainability): partially covered — EXP-04 satisfied
+  by `:AiActivity` logging; EXP-01/02/03 need the `ExplainabilityReport` DataObject (gap 6.2)
 
-**Verdict:** With gap 6.2 (ExplainabilityReport) and gap 6.4 (SafetyCaseDocument)
-closed, the stack is credible for a Level 1A compliance case at AL3–AL4. The remaining
-gaps (runtime monitoring, operational explainability) are not blocking at this level.
+**Verdict (credible with caveats):** With gap 6.2 (ExplainabilityReport) and gap 6.4
+(SafetyCaseDocument) closed, the stack is credible for a Level 1A compliance case at AL3–AL4.
+The remaining gaps (runtime monitoring, operational explainability) are not blocking at this level.
 
 **Concrete Level 1A application:** AI1c channel quality scoring (`qualityScore` on
 TimeseriesReference). The model runs at ingest time under human review of flagged
@@ -441,13 +474,14 @@ channels; no automated rejection. This is a canonical Level 1A use case.
 **Stack coverage at Level 1B:** ~45% of applicable objectives addressed
 
 New requirements at Level 1B:
-- SA-01-3 (runtime ODD monitoring): **gap** — blocks Level 1B
-- EXP-05/EXP-06 (confidence surfacing to operator): **gap** — blocks Level 1B
-- EXP-07 (override): structurally satisfied by human decision authority
-- ET-02 (competency gap): **organisational process gap** — not a tool gap
+- SA-01 MOC-3 (runtime ODD monitoring): **gap** — blocks Level 1B
+- EXP-13 (confidence indication to operator): **gap** — blocks Level 1B
+- EXP-14/15 (input/output monitoring): **gap** — blocks Level 1B
+- EXP-07 (contest/override): structurally satisfied by human decision authority
+- ET-02/ET-08 (competency gap, user skills): **organisational process gap** — not a tool gap
 
-**Verdict:** Not credible without closing gaps 6.1 (inference monitor) and 6.3
-(operational explainability UI). Both are buildable. With those two closed, Level 1B
+**Verdict (not yet credible):** Not credible without closing gaps 6.1 (inference monitor)
+and 6.3 (operational explainability UI). Both are buildable. With those two closed, Level 1B
 is achievable for anomaly detection on MFFD process data.
 
 **Concrete Level 1B application:** Anomaly detection on AFP welding timeseries.
@@ -458,18 +492,21 @@ but the human retains authority.
 
 ### Level 2A/2B — Human-AI teaming (AI has partial/full operational authority sharing)
 
-**CP2 scope:** All of the above at AL1–AL2; plus HA-01 through HA-04; EXP-08
-through EXP-17; ET-03/ET-04/ET-07/ET-08; ICSA-03/04/05.
+**CP2 scope:** All of the above at AL1–AL2; plus EXP-08 through EXP-17 (operational
+explainability depth); ET-04/ET-06/ET-07/ET-09; ORG-08; ICSA-02 (continuous safety
+assessment process is substantially more demanding at this level).
 
 **Stack coverage at Level 2A/2B:** ~25% of applicable objectives addressed
 
 Additional blocking gaps at Level 2A+:
-- HA-01/02/03 (HAT specification, handover, situation awareness): **major new work** —
-  these are operational system design requirements, not data platform features
-- EXP-08/10 (role-tailored explanation, non-misleading under distribution shift):
-  require runtime explanation infrastructure beyond gap 6.3
-- ICSA-03/04 (ODD drift detection, model degradation detection): **gap** — part of
-  the inference monitor plugin but requires statistical process control capability
+- EXP-09/11/12 (customisation, trust calibration, explanation validity): **major new work** —
+  these are operational system design requirements driven by UI/UX design of the AI-facing
+  operator interface, not data platform features
+- EXP-08/10 (abstraction level per user, timing of explanation): require runtime explanation
+  infrastructure beyond gap 6.3
+- ICSA-02 continuous safety assessment (which encompasses ODD drift and model degradation
+  detection as process requirements): **gap** — part of the inference monitor plugin but
+  requires statistical process control capability beyond basic data logging
 
 **Verdict:** Level 2A/2B is out of scope for Shepard+ReBAR in the current design.
 HAT requirements drive the design of the operational system (cockpit, control room,
@@ -484,7 +521,7 @@ Ordered by: closes a blocking compliance gap first, then by effort-to-value rati
 
 ### Priority 1 — `shepard-plugin-inference-monitor` [BLOCKING for Level 1B]
 
-**Closes:** SA-01-3, ICSA-01, ICSA-02, EXP-14/15
+**Closes:** SA-01 MOC-3, ICSA-01, ICSA-02, EXP-14/15
 
 **Effort:** 3–4 sprints (Evidently integration + InferenceCallRecord DataObject kind
 + ODD spec schema + admin config + Airflow DAG template)
@@ -494,13 +531,13 @@ without 5-tuple) must ship first; `shepard-plugin-ai` capability registry must s
 first (STRUCTURED capability used for structured inference calls).
 
 **Acceptance:** A new MFFD AFP anomaly detection inference session logs
-`InferenceCallRecord` DataObjects; the scheduled drift check DAG writes a
-`DatasetDriftReport` DataObject; admin can review ODD conformity per inference call
-from the DataObject detail view.
+`InferenceCallRecord` DataObjects; the scheduled drift check DAG (satisfying ICSA-02)
+writes a `DatasetDriftReport` DataObject; admin can review ODD conformity per inference
+call from the DataObject detail view (satisfying EXP-14/15).
 
-### Priority 2 — ExplainabilityReport DataObject kind + ShepardWriteOperator extension [BLOCKING for Level 1B EXP-01 through EXP-04]
+### Priority 2 — ExplainabilityReport DataObject kind + ShepardWriteOperator extension [BLOCKING for Level 1B]
 
-**Closes:** EXP-01, EXP-02, EXP-03, EXP-04
+**Closes:** EXP-01 (stakeholder identification), EXP-02 (explainability needs per stakeholder), EXP-03 (document explainability methods), and provides artefact evidence for EXP-13 (confidence indication)
 
 **Effort:** 1–2 sprints (DataObject kind definition + import manifest support +
 DataObject detail view extension + ReBAR Airflow step template using SHAP)
@@ -512,9 +549,9 @@ designed). Can ship the DataObject kind without the Airflow integration.
 DataObject with SHAP feature importance JSON and summary plot, linked via
 `PREDECESSOR_OF` to the trained model FileReference.
 
-### Priority 3 — Confidence score + ODD conformity flag in DataObject UI [BLOCKING for Level 1B EXP-05/06]
+### Priority 3 — Confidence score + ODD conformity flag in DataObject UI [BLOCKING for Level 1B]
 
-**Closes:** EXP-05, EXP-06
+**Closes:** EXP-06 (present explanations clearly), EXP-13 (confidence indication in outputs), partial EXP-14/15 (input/output monitoring surface)
 
 **Effort:** 0.5–1 sprint (extend `AiActivity` node + DataObject detail view badge)
 
@@ -524,9 +561,9 @@ extend to carry `confidenceScore`.
 
 **Acceptance:** DataObject detail view shows `[AI-generated] Confidence: 0.87 | ODD: IN` badge.
 
-### Priority 4 — SafetyCaseDocument DataObject kind [required for DA-09 at all levels]
+### Priority 4 — SafetyCaseDocument DataObject kind [required for DA-01 through DA-07 evidence aggregation]
 
-**Closes:** DA-09
+**Closes:** DA-01 through DA-07 (evidence linkage — the assurance case that references all individual DA evidence artefacts)
 
 **Effort:** 0.5 sprint (DataObject kind schema + import manifest support +
 Collection convention documentation)
@@ -551,9 +588,9 @@ non-overlapping content hashes)
 with `PASS` overlap check result; auditor can verify independence from the DataObject
 detail view.
 
-### Priority 6 — Ethics review status states [ORG-08, ET-03]
+### Priority 6 — Ethics review status states [ORG-08, ET-01/ET-02]
 
-**Closes:** ORG-08 (tooling contribution), ET-03 (unfair bias routing)
+**Closes:** ORG-08 (process to continuously assess ethics), ET-01 (ethics-based trustworthiness assessment routing), ET-02 (unfair bias review gate)
 
 **Effort:** 0.5 sprint (status machine extension + `ethics-reviewer` Keycloak role)
 
