@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import httpx
 
+from shepard_mcp import plugin_state
 
 _DEFAULT_BASE = os.environ.get("SHEPARD_API_BASE", "http://localhost:8080")
 
@@ -33,6 +34,11 @@ class ShepardClient:
         self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> "ShepardClient":
+        if not plugin_state.enabled:
+            raise RuntimeError(
+                "The Shepard MCP plugin is currently disabled by the instance administrator. "
+                "Enable it via PATCH /v2/admin/plugins/mcp or the admin plugin panel."
+            )
         self._client = httpx.AsyncClient(
             base_url=self._base,
             headers=self._headers,

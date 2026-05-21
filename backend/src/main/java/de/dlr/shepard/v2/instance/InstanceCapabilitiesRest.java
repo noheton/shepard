@@ -2,7 +2,6 @@ package de.dlr.shepard.v2.instance;
 
 import de.dlr.shepard.plugin.PluginEntry;
 import de.dlr.shepard.plugin.PluginRegistry;
-import io.quarkus.security.Authenticated;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -39,7 +38,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-@Authenticated
 @Tag(name = "Instance identity (INST1)")
 public class InstanceCapabilitiesRest {
 
@@ -59,7 +57,7 @@ public class InstanceCapabilitiesRest {
     description = "Current set of enabled plugin IDs.",
     content = @Content(schema = @Schema(implementation = InstanceCapabilitiesIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "200", description = "Public endpoint — no authentication required.")
   public Response getCapabilities() {
     List<PluginEntry> entries = registry.list();
     List<InstanceCapabilitiesIO.PluginInfo> plugins = new ArrayList<>(entries.size());

@@ -157,6 +157,22 @@ class PublicEndpointRegistryTest {
     assertFalse(isPublic("shepard/api/v2/unhide/feed.jsonld.evil"));
   }
 
+  // MCP-1 — /v2/instance/capabilities is public so the sidecar can poll
+  // its own enabled state without a JWT credential.
+
+  @Test
+  void instanceCapabilitiesIsPublic() {
+    assertTrue(isPublic("shepard/api/v2/instance/capabilities"));
+    assertTrue(isPublic("shepard/api/v2/instance/capabilities/"));
+  }
+
+  @Test
+  void instanceCapabilitiesSubpathIsNotPublic() {
+    // Exact-match only — subpaths and typo neighbours are not public.
+    assertFalse(isPublic("shepard/api/v2/instance/capabilities/evil"));
+    assertFalse(isPublic("shepard/api/v2/instance/capabilitiesx"));
+  }
+
   // helper
 
   private static boolean isPublic(String path) {

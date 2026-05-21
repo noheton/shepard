@@ -67,7 +67,13 @@ public class PublicEndpointRegistry {
     // express a runtime-mutable predicate. When enabled=false the
     // feed returns 503 unhide.feed.disabled before any auth path
     // runs.
-    "/v2/unhide/feed.jsonld"
+    "/v2/unhide/feed.jsonld",
+    // MCP-1 — the sidecar polls this on startup and every 30 s to
+    // learn its own enabled state (checks if "mcp" appears in the
+    // plugins list). Must be reachable without a JWT because the
+    // sidecar has no user credential. Only exposes which plugin ids
+    // are enabled — no entity payload, no PII.
+    "/v2/instance/capabilities"
   );
 
   /**

@@ -315,7 +315,9 @@ services:
   # Caddy routes /mcp/* → shepard-mcp:8811 (prefix stripped) — see infrastructure/proxy/Caddyfile.
   # Claude connector SSE URL: https://shepard.nuclide.systems/mcp/sse
   #
-  # Bring up: docker compose --profile mcp up -d
+  # Always in the default stack (no --profile needed). Admin can disable the
+  # plugin at runtime via PATCH /v2/admin/plugins/mcp — the sidecar polls
+  # /v2/instance/capabilities every 30 s and gates all tool calls accordingly.
   shepard-mcp:
     image: shepard-plugin-mcp:local
     environment:
@@ -329,7 +331,6 @@ services:
     networks:
       - shepard
     restart: unless-stopped
-    profiles: [mcp]
 
 volumes:
   keycloak-data:
