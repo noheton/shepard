@@ -31,6 +31,8 @@ MVN            := $(CURDIR)/backend/mvnw
 build-plugins:
 	cd backend && $(MVN) -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q
 	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
+	cd plugins/ai && $(MVN) -Dmaven.test.skip=true install -q
+	cd plugins/wiki-writer && $(MVN) -Dmaven.test.skip=true install -q
 
 build-backend: build-plugins
 	cd backend && $(MVN) package -Dmaven.test.skip=true -q
