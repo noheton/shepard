@@ -30,9 +30,11 @@ MVN            := $(CURDIR)/backend/mvnw
 # Required whenever a plugin module changes; safe to run even when only backend changed.
 build-plugins:
 	cd backend && $(MVN) -DnoPlugins -Dmaven.test.skip=true -Dquarkus.build.skip=true install -q
-	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
+	# AI and wiki-writer must install before other plugins because backend now depends on them.
+	# Other plugin poms exclude them, but Maven still resolves transitive deps from local repo.
 	cd plugins/ai && $(MVN) -Dmaven.test.skip=true install -q
 	cd plugins/wiki-writer && $(MVN) -Dmaven.test.skip=true install -q
+	cd plugins/video && $(MVN) -Dmaven.test.skip=true install -q
 
 build-backend: build-plugins
 	cd backend && $(MVN) package -Dmaven.test.skip=true -q
