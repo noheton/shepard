@@ -1,4 +1,4 @@
-"""analyze-confluence-export.py — discover what's in a Confluence space export.
+"""analyze-confluence-export.py — discover and optionally fetch missing files.
 
 Run this BEFORE import-confluence.py to understand what will be imported and
 what will be flagged as non-importable (Jira links, NAS paths, chart macros, etc.).
@@ -8,13 +8,26 @@ Does not support XML backup exports (different format — see aidocs/82).
 
 Output: a human-readable discovery report. Use --report to write it to a file.
 
-Pure stdlib. No network calls. Safe to run offline.
+Fetch mode (--fetch-dir):
+  After analysis, attempts to copy every NAS/file-server path found in the pages
+  into a local output directory, using the current Windows session credentials
+  (UNC paths like \\\\server\\share\\file are opened with standard file I/O — no
+  explicit password needed when run from a machine that already has SMB access).
+
+  Results are written to --fetch-log (default: fetch-manifest.json) — a JSON
+  list of {source, dest, sha256, status} records. Duplicate content (same SHA-256)
+  is stored once; subsequent occurrences reference the first copy.
+
+Pure stdlib. No extra dependencies.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
+import shutil
 import sys
 import zipfile
 from collections import Counter, defaultdict
@@ -155,6 +168,8 @@ def analyze(source: Path) -> dict:
     pages_with_macros = 0
     title_depths: Counter = Counter()
 
+    nas_paths_all: set[str] = set()  # full set for fetch mode
+
     for html_name in html_files:
         # Infer page depth from path (e.g. "SomeSpace/parent/child.html" → depth 1)
         depth = html_name.count("/") - 1
@@ -181,8 +196,10 @@ def analyze(source: Path) -> dict:
         for href in parser.links:
             kind = classify_link(href)
             link_type_count[kind] += 1
-            if kind == "nas_or_file_server" and len(nas_paths) < 10:
-                nas_paths.append(href[:200])
+            if kind == "nas_or_file_server":
+                nas_paths_all.add(href)
+                if len(nas_paths) < 10:
+                    nas_paths.append(href[:200])
             if kind == "jira" and len(jira_links) < 10:
                 jira_links.append(href[:200])
             if kind == "external_http":
@@ -224,6 +241,7 @@ def analyze(source: Path) -> dict:
         "pages_with_tables": pages_with_tables,
         "pages_with_macros": pages_with_macros,
         "nas_paths_sample": nas_paths,
+        "nas_paths_all": sorted(nas_paths_all),
         "jira_links_sample": jira_links,
         "external_links_sample": external_links,
         "attachment_count": len(attach_files),
@@ -427,6 +445,283 @@ def render_report(rep: dict) -> str:
     return "\n".join(lines)
 
 
+# ── Fetch missing files ──────────────────────────────────────────────────────
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fetch_missing_files(
+    nas_paths: list[str],
+    output_dir: Path,
+    log_path: Path,
+) -> list[dict]:
+    """Copy each NAS/UNC path into output_dir using the current OS session credentials.
+
+    On Windows this transparently uses the logged-in user's SMB/NTLM token for
+    UNC paths (\\\\server\\share\\...). On Linux with a mounted share the path
+    must be accessible via the filesystem.
+
+    Deduplication: files with identical SHA-256 are stored once; subsequent
+    entries reference the first copy's dest path via ``duplicate_of``.
+
+    Returns a list of manifest records and writes them to log_path (JSON).
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load existing manifest to support resumable runs
+    existing: dict[str, dict] = {}
+    if log_path.exists():
+        try:
+            for entry in json.loads(log_path.read_text(encoding="utf-8")):
+                existing[entry["source"]] = entry
+        except Exception:
+            pass
+
+    seen_hashes: dict[str, str] = {}  # sha256 → dest path (for dedup)
+    for entry in existing.values():
+        if entry.get("sha256") and entry.get("dest") and entry.get("status") == "ok":
+            seen_hashes[entry["sha256"]] = entry["dest"]
+
+    manifest: list[dict] = list(existing.values())
+    already_done = {e["source"] for e in manifest}
+
+    for raw_path in nas_paths:
+        if raw_path in already_done:
+            continue
+
+        record: dict = {"source": raw_path, "dest": None, "sha256": None, "status": None, "error": None}
+
+        # Normalise: on Windows, backslash UNC works natively; convert forward-slash NAS paths
+        try:
+            src = Path(raw_path)
+        except Exception as exc:
+            record["status"] = "error"
+            record["error"] = f"invalid path: {exc}"
+            manifest.append(record)
+            continue
+
+        if not src.exists():
+            record["status"] = "not_found"
+            record["error"] = f"path not accessible: {raw_path}"
+            print(f"  NOT FOUND  {raw_path}", file=sys.stderr)
+            manifest.append(record)
+            continue
+
+        if src.is_dir():
+            record["status"] = "skipped_dir"
+            record["error"] = "source is a directory, not a file"
+            manifest.append(record)
+            continue
+
+        # Compute hash of source
+        try:
+            digest = _sha256(src)
+        except OSError as exc:
+            record["status"] = "error"
+            record["error"] = f"cannot read: {exc}"
+            manifest.append(record)
+            continue
+
+        # Deduplicate by content
+        if digest in seen_hashes:
+            record["sha256"] = digest
+            record["dest"] = seen_hashes[digest]
+            record["status"] = "duplicate"
+            record["error"] = f"duplicate of {seen_hashes[digest]}"
+            manifest.append(record)
+            continue
+
+        # Choose destination filename — sanitise the source path to a flat name
+        safe_name = re.sub(r"[\\/:*?\"<>|]", "_", raw_path).strip("_")[:200]
+        dest = output_dir / safe_name
+        # Avoid collisions on filenames that differ only in non-safe chars
+        counter = 0
+        base = dest
+        while dest.exists():
+            counter += 1
+            dest = base.parent / f"{base.stem}_{counter}{base.suffix}"
+
+        try:
+            shutil.copy2(src, dest)
+        except OSError as exc:
+            record["status"] = "error"
+            record["error"] = f"copy failed: {exc}"
+            manifest.append(record)
+            continue
+
+        record["sha256"] = digest
+        record["dest"] = str(dest)
+        record["status"] = "ok"
+        seen_hashes[digest] = str(dest)
+        print(f"  OK  {raw_path}  →  {dest.name}")
+        manifest.append(record)
+
+    log_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    return manifest
+
+
+def _resolve_path(raw_path: str, search_dirs: list[Path]) -> Path | None:
+    """Try to resolve a NAS path to an accessible file.
+
+    Strategy:
+    1. Try the path verbatim (works on Windows for UNC, or Linux with mount).
+    2. If not found, extract just the filename and search each search_dir
+       recursively for a file with that name (case-insensitive on Windows).
+    3. Return the first match, or None.
+    """
+    try:
+        p = Path(raw_path)
+        if p.exists() and p.is_file():
+            return p
+    except Exception:
+        pass
+
+    # Fall back: search by filename
+    filename = Path(raw_path).name
+    if not filename:
+        return None
+    for sdir in search_dirs:
+        if not sdir.is_dir():
+            continue
+        for candidate in sdir.rglob("*"):
+            if candidate.is_file() and candidate.name.lower() == filename.lower():
+                return candidate
+    return None
+
+
+def _fetch_with_search(
+    nas_paths: list[str],
+    output_dir: Path,
+    log_path: Path,
+    search_dirs: list[Path],
+) -> list[dict]:
+    """Like fetch_missing_files but also searches fallback dirs when a path is not found."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    existing: dict[str, dict] = {}
+    if log_path.exists():
+        try:
+            for entry in json.loads(log_path.read_text(encoding="utf-8")):
+                existing[entry["source"]] = entry
+        except Exception:
+            pass
+
+    seen_hashes: dict[str, str] = {}
+    for entry in existing.values():
+        if entry.get("sha256") and entry.get("dest") and entry.get("status") == "ok":
+            seen_hashes[entry["sha256"]] = entry["dest"]
+
+    manifest: list[dict] = list(existing.values())
+    already_done = {e["source"] for e in manifest}
+
+    for raw_path in nas_paths:
+        if raw_path in already_done:
+            continue
+
+        record: dict = {
+            "source": raw_path, "resolved": None,
+            "dest": None, "sha256": None, "status": None, "error": None,
+        }
+
+        src = _resolve_path(raw_path, search_dirs)
+        if src is None:
+            record["status"] = "not_found"
+            record["error"] = f"not accessible and not found in search dirs"
+            print(f"  NOT FOUND  {raw_path}", file=sys.stderr)
+            manifest.append(record)
+            continue
+
+        record["resolved"] = str(src)
+        if str(src) != raw_path:
+            print(f"  FOUND (via search)  {raw_path}  →  {src}")
+
+        if src.is_dir():
+            record["status"] = "skipped_dir"
+            record["error"] = "source is a directory"
+            manifest.append(record)
+            continue
+
+        try:
+            digest = _sha256(src)
+        except OSError as exc:
+            record["status"] = "error"
+            record["error"] = f"cannot read: {exc}"
+            manifest.append(record)
+            continue
+
+        if digest in seen_hashes:
+            record["sha256"] = digest
+            record["dest"] = seen_hashes[digest]
+            record["status"] = "duplicate"
+            record["error"] = f"duplicate of {seen_hashes[digest]}"
+            manifest.append(record)
+            continue
+
+        safe_name = re.sub(r"[\\/:*?\"<>|]", "_", raw_path).strip("_")[:200]
+        dest = output_dir / safe_name
+        counter = 0
+        base = dest
+        while dest.exists():
+            counter += 1
+            dest = base.parent / f"{base.stem}_{counter}{base.suffix}"
+
+        try:
+            shutil.copy2(src, dest)
+        except OSError as exc:
+            record["status"] = "error"
+            record["error"] = f"copy failed: {exc}"
+            manifest.append(record)
+            continue
+
+        record["sha256"] = digest
+        record["dest"] = str(dest)
+        record["status"] = "ok"
+        seen_hashes[digest] = str(dest)
+        print(f"  OK  {raw_path}  →  {dest.name}")
+        manifest.append(record)
+
+    log_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    return manifest
+
+
+def render_fetch_summary(manifest: list[dict]) -> str:
+    counts: Counter = Counter(e["status"] for e in manifest)
+    total_bytes = 0
+    for e in manifest:
+        if e.get("dest") and e.get("status") == "ok":
+            try:
+                total_bytes += Path(e["dest"]).stat().st_size
+            except OSError:
+                pass
+
+    lines = [
+        "",
+        "---",
+        "",
+        "## Fetch results",
+        "",
+        f"| Status | Count |",
+        f"|---|---|",
+    ]
+    for status, count in sorted(counts.items()):
+        lines.append(f"| `{status}` | {count} |")
+    lines += [
+        f"",
+        f"Total fetched size: {_fmt(total_bytes)}",
+        f"",
+        f"**Not found / inaccessible** ({counts.get('not_found', 0)} paths):",
+    ]
+    for e in manifest:
+        if e["status"] == "not_found":
+            lines.append(f"  - `{e['source']}`")
+    return "\n".join(lines)
+
+
 # ── Main ────────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
@@ -442,11 +737,45 @@ def main(argv: list[str] | None = None) -> int:
         "--report", metavar="PATH",
         help="Write the discovery report to this markdown file",
     )
+    ap.add_argument(
+        "--fetch-dir", metavar="DIR",
+        help="Fetch NAS/file-server paths found in the export into this local directory "
+             "using the current OS session credentials (Windows auth / mounted share). "
+             "Creates the directory if it does not exist.",
+    )
+    ap.add_argument(
+        "--fetch-log", metavar="PATH", default="fetch-manifest.json",
+        help="JSON manifest file recording every fetch attempt (default: fetch-manifest.json). "
+             "Supports resumable runs — already-fetched paths are skipped.",
+    )
+    ap.add_argument(
+        "--fetch-search-dirs", metavar="DIR", nargs="*",
+        help="Additional directories to search when a NAS path is not directly accessible. "
+             "The script will try each search dir as an alternative root for the filename.",
+    )
     args = ap.parse_args(argv)
 
     rep = analyze(Path(args.source))
     report = render_report(rep)
     print(report)
+
+    if args.fetch_dir:
+        nas_paths = rep.get("nas_paths_all", [])
+        if not nas_paths:
+            print("\nNo NAS/file-server paths found — nothing to fetch.", flush=True)
+        else:
+            print(f"\nFetching {len(nas_paths)} NAS/file-server paths into {args.fetch_dir} ...", flush=True)
+            search_dirs = [Path(d) for d in (args.fetch_search_dirs or [])]
+            manifest = _fetch_with_search(
+                nas_paths=nas_paths,
+                output_dir=Path(args.fetch_dir),
+                log_path=Path(args.fetch_log),
+                search_dirs=search_dirs,
+            )
+            fetch_summary = render_fetch_summary(manifest)
+            report += fetch_summary
+            print(fetch_summary, flush=True)
+            print(f"\nFetch manifest written to {args.fetch_log}", flush=True)
 
     if args.report:
         Path(args.report).write_text(report, encoding="utf-8")
