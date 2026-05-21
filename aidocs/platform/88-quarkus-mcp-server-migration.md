@@ -60,10 +60,18 @@ process.
 </dependency>
 ```
 
-The extension registers an SSE endpoint at `/mcp/sse` by default (configurable via
-`quarkus.mcp.server.http.root-path`). The Zoraxy rule that currently forwards
+The extension registers an SSE endpoint at `/mcp/sse` by default **and** a
+Streamable HTTP endpoint at `/mcp` (configurable via
+`quarkus.mcp.server.http.root-path`). Both are served from the same JAR.
+
+**MCP spec 2025-03-26 note:** SSE transport was deprecated in the MCP 2025-03-26
+specification revision in favour of Streamable HTTP. Phase 1 can ship with
+either transport; **Phase 2 Zoraxy target should point at `/mcp` (Streamable HTTP),
+not `/mcp/sse`**, so the public URL becomes `shepard.nuclide.systems/mcp` (no
+trailing `/sse`). The Claude remote connector supports Streamable HTTP. Update §6
+when implementing Phase 2. The Zoraxy rule that currently forwards
 `shepard.nuclide.systems/mcp` → sidecar is unchanged in structure; only the upstream
-target changes (§6).
+target and path change (§6).
 
 Auth is not a new concern: `quarkus-oidc` already secures all `/v2/` paths.
 Configuring `quarkus.http.auth.permission.mcp.paths=/mcp/*` with policy `authenticated`
@@ -330,8 +338,8 @@ tools are in-tree and are indexed at build time.
 
 | Phase | Quarkus path | Zoraxy target | Public URL |
 |---|---|---|---|
-| Phase 1 (parallel) | `/v2/mcp/sse` | `localhost:8811` (sidecar unchanged) | `shepard.nuclide.systems/mcp/sse` |
-| Phase 2–3 (cutover) | `/mcp/sse` | `localhost:8080` (backend) | `shepard.nuclide.systems/mcp/sse` |
+| Phase 1 (parallel) | `/v2/mcp/sse` (SSE) | `localhost:8811` (sidecar unchanged) | `shepard.nuclide.systems/mcp/sse` |
+| Phase 2–3 (cutover) | `/mcp` (Streamable HTTP — preferred) or `/mcp/sse` (SSE — deprecated) | `localhost:8080` (backend) | `shepard.nuclide.systems/mcp` |
 
 Zoraxy virtual directory rule change (Phase 2):
 
