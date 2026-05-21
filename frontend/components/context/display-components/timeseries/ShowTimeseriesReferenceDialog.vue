@@ -190,14 +190,14 @@ function toggleMetrics(key: string) {
   expandedMetrics.value = new Set(expandedMetrics.value);
 }
 const allMetricsExpanded = computed(() =>
-  timeseries.value.length > 0 &&
-  timeseries.value.every(ts => expandedMetrics.value.has(getTimeseriesKey(ts))),
+  props.timeseries.length > 0 &&
+  props.timeseries.every((ts: Timeseries) => expandedMetrics.value.has(getTimeseriesKey(ts))),
 );
 function toggleAllMetrics() {
   if (allMetricsExpanded.value) {
     expandedMetrics.value = new Set();
   } else {
-    expandedMetrics.value = new Set(timeseries.value.map(getTimeseriesKey));
+    expandedMetrics.value = new Set(props.timeseries.map(getTimeseriesKey));
   }
 }
 </script>
