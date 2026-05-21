@@ -116,7 +116,7 @@ GET /id/{type}/{appId}
 |---|---|
 | `303 See Other` | Entity found; `Location` header set |
 | `404 Not Found` | `appId` does not exist or `type` is wrong |
-| `401 Unauthorized` | No valid credentials (same auth as all other endpoints) |
+| `401 Unauthorized` | No valid credentials — auth always required (see §10, decision 1) |
 | `403 Forbidden` | Caller lacks read access to the entity |
 
 **Example:**
@@ -237,6 +237,7 @@ This is the layer that enables OpenAIRE, re3data, and Helmholtz Databus harvesti
 | **F1** — globally unique identifier | UUID v7 (unique but not globally resolvable) | HTTPS URI (globally unique + rooted in DNS authority) |
 | **F4** — registered in searchable resource | Not applicable | URI can be submitted to re3data, OpenAIRE, Databus |
 | **A1** — retrievable by identifier using standard protocol | No (bare UUID has no protocol) | Yes — `GET /id/...` returns 303 to data |
+| **A1.2** — protocol is open, free, universally implementable | n/a | Auth required for now; deferred until publication state ships — revisit then |
 | **I1** — uses formal knowledge representation language | No | JSON-LD `@id` enables RDF graph participation (Phase 2) |
 | **R1.1** — license attached to data | Not changed | URI is the anchor point for license metadata in JSON-LD |
 
@@ -266,10 +267,10 @@ No database migration required. No client breakage.
 
 ---
 
-## 10. Open questions
+## 10. Decisions + deferred questions
 
-1. **Auth on `/id/` for public datasets** — should the redirect work without credentials for DataObjects marked `publicationState: OPEN`? Strawman: yes — unauthenticated `GET /id/...` returns `303` for public entities, `401` for restricted ones. This aligns with FAIR A1.2 (open, free, universally implementable protocol).
+1. **Auth on `/id/`** — **decided: auth always required.** `/id/{type}/{appId}` behaves identically to all other v2 endpoints — valid credentials mandatory, `401` without them. FAIR A1.2 (unauthenticated access for public datasets) is explicitly deferred: when a `publicationState: OPEN` / publication workflow ships, revisit whether the redirect can be unauthenticated for published entities. Until then, no exceptions.
 
-2. **Tombstone on deletion** — if a DataObject is deleted, should `/id/...` return `410 Gone` with a minimal record? (Standard Linked Data practice.) Deferred to Phase 2 but should be in the spec before the endpoint ships.
+2. **Tombstone on deletion** — if a DataObject is deleted, should `/id/...` return `410 Gone` with a minimal record? (Standard Linked Data practice.) Deferred to Phase 2 but should be decided before the endpoint ships.
 
 3. **Container types without collection scope** — timeseries / file / structured containers are always accessed via a parent DataObject in v2. The redirect for these types is currently "redirect to containing DataObject." Should we add direct container endpoints (`/v2/containers/timeseries/{appId}`) as part of this work, or keep them collection-scoped?
