@@ -367,6 +367,11 @@ what actually exists in the codebase and live data, not in hypotheticals.
 - `examples/lumen-showcase/seed.py` — the LUMEN hotfire demo dataset (synthetic): 15 test runs
   (TR-001 → TR-015), TR-004 = anomaly (turbopump vibration spike at t=8s, peak 12g rms),
   TR-005 = hold/repair, TR-006 = post-fix re-test. Rich Predecessor/Successor chain.
+- `examples/mffd-showcase/seed.py` — the MFFD AFP manufacturing demo dataset (synthetic): 12 process-step
+  DataObjects forming a DAG. Q1 AFP anomaly (consolidation force drop + TCP temp spike at ply 5) → NDT FAIL
+  → Rework → NDT recheck PASS. Two parallel tracks (Q1+Q2) merge at Frame Welding then
+  Stringerverbindung → LBR Cleats. Six instrument types: AFP robot, stringer CRW, frame spot, assembly
+  alignment, LBR iiwa force-torque + joints. Designed to receive real ZLP Augsburg data via `--reset`.
 - `examples/home-showcase/seed.py` + `collector.py` — live MQTT home telemetry
 - Working directory: `/opt/shepard`
 - Backend entities: `backend/src/main/java/de/dlr/shepard/` (v1 frozen) and `de.dlr.shepard.v2.*` (fork additions)
