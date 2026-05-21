@@ -149,20 +149,39 @@ public class SemanticSparqlRest {
   @Path("/{repoAppId}/sparql")
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
-    summary = "Execute a read-only SPARQL SELECT or ASK query against a SemanticRepository.",
-    description = "Proxies the query to n10s (INTERNAL) or an external SPARQL endpoint (SPARQL). " +
-    "Only SELECT and ASK are permitted (400 on mutation forms). " +
-    "Authentication required (401). Any authenticated user may query any repository (no per-entity permission check beyond auth). " +
-    "Returns W3C SPARQL Results JSON (application/sparql-results+json). " +
-    "503 when the backend is unreachable; 502 when the backend returns an error."
+    summary = "Execute a read-only SPARQL SELECT or ASK query (GET form).",
+    description =
+      "Accepts a SPARQL query via the `query` URL parameter and proxies it to the backend " +
+      "identified by `repoAppId`, following SPARQL 1.1 Protocol §2.1.2.\n\n" +
+      "Only `SELECT` and `ASK` query forms are permitted. Any mutation form " +
+      "(`CONSTRUCT`, `INSERT`, `DELETE`, `UPDATE`, …) is rejected with 400 before " +
+      "reaching the backend.\n\n" +
+      "Repository-type dispatch:\n" +
+      "  - `INTERNAL` — proxies to the n10s (neosemantics) HTTP SPARQL endpoint on " +
+      "    the Neo4j HTTP port (default `http://localhost:7474`). Configurable via " +
+      "    `shepard.semantic.internal.http-url`.\n" +
+      "  - `SPARQL` — proxies to the external endpoint URL stored on the entity. " +
+      "    The caller's `Authorization` header is stripped before forwarding to " +
+      "    prevent credential leakage.\n" +
+      "  - `JSKOS` / `SKOSMOS` — returns 501; these repository types do not " +
+      "    implement the SPARQL protocol.\n\n" +
+      "Auth: any authenticated shepard user may query any SemanticRepository. " +
+      "There is no per-entity permission check beyond authentication, matching " +
+      "the posture of the v1 SemanticRepository catalogue.\n\n" +
+      "Response: W3C SPARQL Results JSON (`application/sparql-results+json`) passed " +
+      "through verbatim from the backend. Non-200 backend responses are mapped to " +
+      "502 (backend error) or 503 (unreachable)."
   )
-  @APIResponse(responseCode = "200", description = "SPARQL Results JSON (SELECT or ASK).")
-  @APIResponse(responseCode = "400", description = "Empty query, or mutation form (CONSTRUCT / INSERT / DELETE / UPDATE …).")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "404", description = "No SemanticRepository with that appId.")
-  @APIResponse(responseCode = "501", description = "SPARQL not supported for this repository type (JSKOS / SKOSMOS).")
-  @APIResponse(responseCode = "502", description = "Upstream endpoint returned an error.")
-  @APIResponse(responseCode = "503", description = "Upstream endpoint is unreachable.")
+  @APIResponse(
+    responseCode = "200",
+    description = "W3C SPARQL Results JSON (`application/sparql-results+json`) — raw SELECT or ASK result from the backend."
+  )
+  @APIResponse(responseCode = "400", description = "Query is empty, shorter than 1 character, or is a mutation form (CONSTRUCT / INSERT / DELETE / UPDATE …).")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
+  @APIResponse(responseCode = "404", description = "No SemanticRepository with that appId, or the repository is deleted.")
+  @APIResponse(responseCode = "501", description = "Repository type does not support SPARQL (JSKOS or SKOSMOS).")
+  @APIResponse(responseCode = "502", description = "Backend SPARQL endpoint returned a non-200 HTTP status.")
+  @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryGet(
     @PathParam("repoAppId") String repoAppId,
     @QueryParam("query") String query,
@@ -183,15 +202,27 @@ public class SemanticSparqlRest {
   @Produces({ SPARQL_RESULTS_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "Execute a read-only SPARQL SELECT or ASK query (POST form variant).",
-    description = "Same semantics as the GET form. Use when the query is too long for a URL."
+    description =
+      "Identical semantics to the GET variant, but accepts the query as a URL-encoded " +
+      "form body (`Content-Type: application/x-www-form-urlencoded`, field name `query`), " +
+      "following SPARQL 1.1 Protocol §2.1.3.\n\n" +
+      "Use this variant when the SPARQL query is too long to fit in a URL — many " +
+      "HTTP proxies and load balancers reject query strings longer than 2 KB. " +
+      "POST form bodies carry no such limit.\n\n" +
+      "All constraints and error responses are identical to the GET form: only " +
+      "`SELECT` and `ASK` are permitted; auth, repository-type dispatch, and " +
+      "upstream error mapping behave the same way."
   )
-  @APIResponse(responseCode = "200", description = "SPARQL Results JSON.")
-  @APIResponse(responseCode = "400", description = "Empty query, or mutation form.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "404", description = "No SemanticRepository with that appId.")
-  @APIResponse(responseCode = "501", description = "SPARQL not supported for this repository type.")
-  @APIResponse(responseCode = "502", description = "Upstream returned an error.")
-  @APIResponse(responseCode = "503", description = "Upstream is unreachable.")
+  @APIResponse(
+    responseCode = "200",
+    description = "W3C SPARQL Results JSON (`application/sparql-results+json`) — raw SELECT or ASK result from the backend."
+  )
+  @APIResponse(responseCode = "400", description = "Query is empty, missing from the form body, or is a mutation form (CONSTRUCT / INSERT / DELETE / UPDATE …).")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
+  @APIResponse(responseCode = "404", description = "No SemanticRepository with that appId, or the repository is deleted.")
+  @APIResponse(responseCode = "501", description = "Repository type does not support SPARQL (JSKOS or SKOSMOS).")
+  @APIResponse(responseCode = "502", description = "Backend SPARQL endpoint returned a non-200 HTTP status.")
+  @APIResponse(responseCode = "503", description = "Backend SPARQL endpoint could not be reached (connection refused, timeout, or invalid URL).")
   public Response queryPost(
     @PathParam("repoAppId") String repoAppId,
     @FormParam("query") String query,

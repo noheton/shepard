@@ -198,7 +198,7 @@ watch(dataObject, () => {
             </section>
 
             <v-row no-gutters>
-              <ExpansionPanels :default-open="[2]">
+              <ExpansionPanels :default-open="[2, 3]">
                 <ExpansionPanelItem
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                   title="Attributes"

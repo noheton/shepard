@@ -70,6 +70,7 @@ public class CollectionService {
     toCreate.setDescription(collection.getDescription());
     toCreate.setStatus(collection.getStatus());
     toCreate.setName(collection.getName());
+    toCreate.setHeroImageUrl(collection.getHeroImageUrl());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
@@ -206,6 +207,7 @@ public class CollectionService {
     old.setDescription(collection.getDescription());
     old.setStatus(collection.getStatus());
     old.setName(collection.getName());
+    old.setHeroImageUrl(collection.getHeroImageUrl());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());

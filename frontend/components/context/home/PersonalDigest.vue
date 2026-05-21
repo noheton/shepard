@@ -4,7 +4,7 @@ import {
   isCleanupCollection,
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
-import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
+import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 
 const router = useRouter();
 
@@ -52,9 +52,9 @@ const {
   refetch,
 } = useFetchRecentCollections();
 
-// Bookmarks
-const { bookmarks, bookmarksLoading, isBookmarked, toggle: toggleBookmark } =
-  useBookmarkedCollections();
+// Watched collections
+const { watched, watchedLoading, isWatched, toggle: toggleWatched } =
+  useWatchedCollections();
 
 const isEmpty = computed(() => !loading.value && allCollections.value.length === 0 && !error.value);
 
@@ -193,21 +193,21 @@ function relativeTime(date: Date | null | undefined): string {
       </v-btn>
     </div>
 
-    <!-- Bookmarked collections section -->
-    <template v-if="bookmarks.length > 0 || bookmarksLoading">
+    <!-- Watched collections section -->
+    <template v-if="watched.length > 0 || watchedLoading">
       <div class="d-flex align-center mb-4 ga-2">
         <v-icon icon="mdi-star" color="amber-darken-2" size="20" />
-        <div class="text-h6 font-weight-medium">Bookmarked</div>
+        <div class="text-h6 font-weight-medium">Watched</div>
       </div>
       <v-row class="mb-6">
-        <template v-if="bookmarksLoading">
+        <template v-if="watchedLoading">
           <v-col v-for="n in 3" :key="n" cols="12" sm="6" md="4">
             <v-skeleton-loader type="card" />
           </v-col>
         </template>
         <template v-else>
           <v-col
-            v-for="collection in bookmarks"
+            v-for="collection in watched"
             :key="collection.id"
             cols="12"
             sm="6"
@@ -230,8 +230,8 @@ function relativeTime(date: Date | null | undefined): string {
                   size="small"
                   color="amber-darken-2"
                   class="ms-1 flex-shrink-0"
-                  title="Remove bookmark"
-                  @click.stop.prevent="toggleBookmark(collection)"
+                  title="Remove from watched"
+                  @click.stop.prevent="toggleWatched(collection)"
                 >
                   <v-icon>mdi-star</v-icon>
                 </v-btn>
@@ -347,12 +347,12 @@ function relativeTime(date: Date | null | undefined): string {
                   variant="text"
                   density="compact"
                   size="small"
-                  :color="isBookmarked(collection.id!) ? 'amber-darken-2' : undefined"
+                  :color="isWatched(collection.id!) ? 'amber-darken-2' : undefined"
                   class="ms-1 flex-shrink-0"
-                  :title="isBookmarked(collection.id!) ? 'Remove bookmark' : 'Bookmark'"
-                  @click.stop.prevent="toggleBookmark(collection)"
+                  :title="isWatched(collection.id!) ? 'Remove from watched' : 'Add to watched'"
+                  @click.stop.prevent="toggleWatched(collection)"
                 >
-                  <v-icon>{{ isBookmarked(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+                  <v-icon>{{ isWatched(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
                 </v-btn>
               </v-card-title>
 

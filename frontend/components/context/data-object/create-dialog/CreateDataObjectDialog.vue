@@ -6,6 +6,7 @@ import {
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import type { DataObjectToCreate } from "./dataObjectToCreate";
 
 interface CreateDataObjectDialogProps {
@@ -23,6 +24,8 @@ const emit = defineEmits(["data-object-created"]);
 const router = useRouter();
 
 // ── Template picker ──────────────────────────────────────────────────────────
+
+const { advancedMode } = useAdvancedMode();
 
 type Mode = "picker" | "form";
 const mode = ref<Mode>("form");
@@ -124,6 +127,7 @@ async function createDataObject() {
     :templates="allowedTemplates"
     :loading="isLoadingTemplates"
     :is-instantiating="isInstantiating"
+    :de-emphasise-blank="!advancedMode && allowedTemplates.length > 0"
     @select="onTemplateSelected"
     @start-blank="mode = 'form'"
   />

@@ -17,6 +17,7 @@ import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.version.services.VersionService;
+import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -55,6 +56,9 @@ public class DataObjectService {
 
   @Inject
   AuthenticationContext authenticationContext;
+
+  @Inject
+  CollectionWatcherService collectionWatcherService;
 
   /**
    * Creates a DataObject
@@ -98,6 +102,19 @@ public class DataObjectService {
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
     versionService.attachToVersionOfVersionableEntityAndReturnVersion(collectionShepardId, created.getShepardId());
+
+    // CW1: notify collection watchers — best-effort, does not block creation.
+    // Only notify for top-level DataObjects (no parent) to avoid flooding on
+    // hierarchical ingestion workflows.
+    if (toCreate.getParent() == null && collection.getAppId() != null) {
+      collectionWatcherService.notifyWatchersOfNewDataObject(
+        collection.getAppId(),
+        collection.getName(),
+        created.getName(),
+        collection.getId()
+      );
+    }
+
     return created;
   }
 

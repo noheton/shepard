@@ -167,19 +167,33 @@ public class SemanticTermSearchRest {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   @Operation(
-    summary = "Search ontology terms loaded into the INTERNAL semantic repository.",
-    description = "Searches :Resource nodes (n10s RDF data) by rdfs:label / skos:prefLabel / skos:altLabel / URI. " +
-    "Returns a ranked list of TermSuggestion objects for use in the annotation-picker autocomplete. " +
-    "Authentication required (401). Minimum query length 2 characters. Limit capped at 50. " +
-    "Returns an empty array when no ontology data is loaded — never an error."
+    summary = "Search ontology terms in the INTERNAL semantic repository.",
+    description =
+      "Searches `:Resource` nodes imported by n10s (neosemantics) and returns matching " +
+      "term suggestions for use in the annotation-picker autocomplete. Each suggestion " +
+      "carries `uri` (the RDF URI), `label` (preferred human-readable label), and " +
+      "`description` (definition or comment, may be null).\n\n" +
+      "Query strategy: when the `resource_labels` fulltext index exists (created by " +
+      "migration `V44__Add_fulltext_index_Resource_labels.cypher`), the endpoint uses " +
+      "`db.index.fulltext.queryNodes` for fast prefix matching. If the index is absent " +
+      "it falls back to a case-insensitive `CONTAINS` scan across label, synonym, and " +
+      "notation properties. If no `:Resource` nodes exist at all (ontologies not seeded), " +
+      "both paths return an empty array without error.\n\n" +
+      "Parameters:\n" +
+      "  - `q` (required) — the search string. Must be at least 2 characters. " +
+      "    Short strings return 400 rather than scanning the full ontology.\n" +
+      "  - `limit` (optional, default 20) — maximum number of results to return. " +
+      "    Capped at 50 server-side regardless of the supplied value.\n\n" +
+      "Auth: any authenticated shepard user. There is no per-entity permission check " +
+      "beyond authentication — the ontology catalogue is visible to all logged-in users."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Matching term suggestions (may be empty when no data is loaded).",
+    description = "List of matching TermSuggestion objects (may be empty if no ontology data is loaded or no terms match). Each item has `uri`, `label`, and optionally `description`.",
     content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = TermSuggestionIO.class))
   )
-  @APIResponse(responseCode = "400", description = "Query parameter missing or shorter than 2 characters.")
-  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "400", description = "Query parameter `q` is missing, blank, or shorter than 2 characters.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
   public Response search(
     @QueryParam("q") String q,
     @QueryParam("limit") @DefaultValue("20") int limit,

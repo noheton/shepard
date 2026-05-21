@@ -3,7 +3,8 @@ import { CollectionApi } from "@dlr-shepard/backend-client";
 import PublishButton from "~/components/context/publish/PublishButton.vue";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { collectionsPath } from "~/utils/constants";
-import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
+import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
+import { useCollectionWatch } from "~/composables/context/useCollectionWatch";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 
 definePageMeta({ layout: "collection" });
@@ -18,7 +19,7 @@ const {
 const collectionId = routeParams.value.collectionId;
 const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
-const { isBookmarked, toggle: toggleBookmark } = useBookmarkedCollections();
+const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
 
@@ -118,6 +119,19 @@ watch(collection, () => {
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
+        <!-- Feature B: Hero banner — only rendered when heroImageUrl is set. -->
+        <v-col v-if="collection.heroImageUrl" cols="12" class="pa-0">
+          <v-img
+            :src="collection.heroImageUrl"
+            height="220"
+            cover
+            class="collection-hero-banner"
+          >
+            <template #error>
+              <!-- Graceful 404 handling: simply show nothing when the image fails. -->
+            </template>
+          </v-img>
+        </v-col>
         <v-col cols="12">
           <Breadcrumbs
             :items="[
@@ -144,14 +158,19 @@ watch(collection, () => {
               no-gutters
               class="justify-end pb-2 ga-2 align-center"
             >
+              <!-- CW1: Bell button — subscribe to notifications for new DataObjects. -->
+              <CollectionWatchButton
+                v-if="collectionAppId"
+                :collection-app-id="collectionAppId"
+              />
               <v-btn
                 icon
                 variant="text"
-                :color="isBookmarked(collection.id!) ? 'amber-darken-2' : undefined"
-                :title="isBookmarked(collection.id!) ? 'Remove bookmark' : 'Bookmark this collection'"
-                @click="toggleBookmark(collection)"
+                :color="isWatched(collection.id!) ? 'amber-darken-2' : undefined"
+                :title="isWatched(collection.id!) ? 'Remove from watched' : 'Add to watched'"
+                @click="toggleWatched(collection)"
               >
-                <v-icon>{{ isBookmarked(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+                <v-icon>{{ isWatched(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
               </v-btn>
               <v-btn
                 prepend-icon="mdi-package-down"
@@ -260,7 +279,7 @@ watch(collection, () => {
             <!-- Deeper-dive content stays in collapsibles. Snapshots and
                  Publishing are dev/admin tooling — hidden in basic mode. -->
             <v-row no-gutters>
-              <ExpansionPanels>
+              <ExpansionPanels :default-open="[0]">
                 <ExpansionPanelItem
                   :count="Object.keys(collection.attributes ?? {}).length"
                   title="Attributes"
@@ -367,6 +386,10 @@ watch(collection, () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
+}
+.collection-hero-banner {
+  border-radius: 4px;
   margin-bottom: 8px;
 }
 </style>

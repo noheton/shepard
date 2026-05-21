@@ -11,4 +11,5 @@ export type UpdatedCollection = UpdateCollectionRequest["collection"] & {
   attributes: { [key: string]: string };
   description: string;
   status?: string | null;
+  heroImageUrl?: string | null;
 };

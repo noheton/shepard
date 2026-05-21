@@ -10,6 +10,7 @@ export enum AdminFragments {
   INSTANCE_ROR = "instance-ror",
   STORAGE_OVERVIEW = "storage-overview",
   PERMISSION_AUDIT_LOG = "permission-audit-log",
+  UNHIDE = "unhide",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -57,5 +58,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Permission Audit Log",
     fragment: AdminFragments.PERMISSION_AUDIT_LOG,
     icon: "mdi-shield-account-outline",
+  },
+  {
+    name: "Unhide",
+    fragment: AdminFragments.UNHIDE,
+    icon: "mdi-web-sync",
   },
 ];

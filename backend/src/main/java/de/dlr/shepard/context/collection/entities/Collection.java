@@ -22,6 +22,22 @@ import org.neo4j.ogm.annotation.Relationship.Direction;
 @NoArgsConstructor
 public class Collection extends AbstractDataObject implements HasPermissions {
 
+  /**
+   * Optional hero/banner image URL displayed at the top of the Collection
+   * detail page. Nullable — when null, no banner is shown.
+   *
+   * <p>Additive nullable field; no Neo4j migration is needed. Existing
+   * {@code :Collection} nodes without this property are read as {@code null}
+   * by Spring Data Neo4j OGM. See migration note
+   * {@code V54__NOOP_heroImageUrl_additive.cypher}.
+   *
+   * <p>URL-only for now (no server-side upload). Validation of reachability
+   * is intentionally deferred to the frontend {@code <v-img>} error slot.
+   * Exposed only on the {@code /v2/} surface — the legacy
+   * {@code /shepard/api/} endpoints are unaffected.
+   */
+  private String heroImageUrl;
+
   @Relationship(type = Constants.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();
 

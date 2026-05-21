@@ -363,6 +363,44 @@ public class TimeseriesDataPointRepository {
     return query;
   }
 
+  /**
+   * Returns the latest data point strictly before {@code timeNano}, or empty when none exists.
+   * Used by the live-window endpoint to find the left-flanking point for boundary interpolation.
+   */
+  @SuppressWarnings("unchecked")
+  public Optional<TimeseriesDataPoint> findLatestBefore(int timeseriesId, DataPointValueType valueType, long timeNano) {
+    String col = getColumnName(valueType);
+    String sql = "SELECT time, " + col +
+      " FROM timeseries_data_points" +
+      " WHERE timeseries_id = :tsId AND time < :t" +
+      " ORDER BY time DESC LIMIT 1";
+    List<TimeseriesDataPoint> rows = entityManager
+      .createNativeQuery(sql, TimeseriesDataPoint.class)
+      .setParameter("tsId", timeseriesId)
+      .setParameter("t", timeNano)
+      .getResultList();
+    return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+  }
+
+  /**
+   * Returns the earliest data point strictly after {@code timeNano}, or empty when none exists.
+   * Used by the live-window endpoint to find the right-flanking point for boundary interpolation.
+   */
+  @SuppressWarnings("unchecked")
+  public Optional<TimeseriesDataPoint> findEarliestAfter(int timeseriesId, DataPointValueType valueType, long timeNano) {
+    String col = getColumnName(valueType);
+    String sql = "SELECT time, " + col +
+      " FROM timeseries_data_points" +
+      " WHERE timeseries_id = :tsId AND time > :t" +
+      " ORDER BY time ASC LIMIT 1";
+    List<TimeseriesDataPoint> rows = entityManager
+      .createNativeQuery(sql, TimeseriesDataPoint.class)
+      .setParameter("tsId", timeseriesId)
+      .setParameter("t", timeNano)
+      .getResultList();
+    return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+  }
+
   private String getColumnName(DataPointValueType valueType) {
     return switch (valueType) {
       case Double -> "double_value";

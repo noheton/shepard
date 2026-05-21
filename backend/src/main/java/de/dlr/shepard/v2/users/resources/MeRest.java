@@ -7,9 +7,12 @@ import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.auth.users.validation.OrcidValidator;
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.v2.collectionwatchers.daos.CollectionWatcherDAO;
+import de.dlr.shepard.v2.users.io.MeIO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -45,6 +48,38 @@ public class MeRest {
 
   @Inject
   UserDAO userDAO;
+
+  @Inject
+  CollectionWatcherDAO collectionWatcherDAO;
+
+  // ─── GET /v2/users/me ──────────────────────────────────────────────────────
+
+  /**
+   * CW1 — Return the caller's enriched profile, including {@code watchedCollectionCount}.
+   */
+  @GET
+  @Operation(
+    summary = "Return the caller's enriched v2 profile.",
+    description = "Includes all upstream User fields plus v2 additions: " +
+    "`watchedCollectionCount` (CW1) — number of collections the caller is watching."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Caller's v2 profile.",
+    content = @Content(schema = @Schema(implementation = MeIO.class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response getMe(@Context SecurityContext securityContext) {
+    if (securityContext.getUserPrincipal() == null) {
+      return Response.status(Response.Status.UNAUTHORIZED).build();
+    }
+    User current = userService.getCurrentUser();
+    UserIO userIO = new UserIO(current);
+    int watchedCount = collectionWatcherDAO.findByUsername(current.getUsername()).size();
+    return Response.ok(MeIO.from(userIO, watchedCount)).build();
+  }
+
+  // ─── PATCH /v2/users/me ────────────────────────────────────────────────────
 
   @PATCH
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })

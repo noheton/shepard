@@ -6,11 +6,11 @@
  * real Vue reactive primitives as globals and stub the Nuxt-specific
  * composables with minimal implementations that individual tests can override.
  */
-import { ref, computed, reactive, watch, watchEffect, nextTick } from "vue";
+import { ref, computed, reactive, watch, watchEffect, nextTick, isRef } from "vue";
 import { vi } from "vitest";
 
 // Vue reactive primitives
-Object.assign(globalThis, { ref, computed, reactive, watch, watchEffect, nextTick });
+Object.assign(globalThis, { ref, computed, reactive, watch, watchEffect, nextTick, isRef });
 
 // Nuxt built-ins — default stubs, overridden per test as needed
 Object.assign(globalThis, {

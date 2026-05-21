@@ -1,10 +1,9 @@
 <template>
   <div>
-    <!-- Search + status filter row. Always-visible above the table so the
-         "where is X" question has an entry point at first glance. -->
+    <!-- Search + status filter row -->
     <div class="d-flex flex-wrap align-center ga-2 pb-3">
       <v-text-field
-        v-model="filterText"
+        v-model="searchInput"
         density="compact"
         variant="outlined"
         hide-details
@@ -12,63 +11,35 @@
         placeholder="Search by name…"
         prepend-inner-icon="mdi-magnify"
         style="max-width: 320px"
+        @update:model-value="onSearchChange"
       />
-      <v-chip-group v-model="statusFilter" mandatory selected-class="v-chip--variant-flat">
-        <v-chip value="all" size="small" variant="tonal">All ({{ totalCount }})</v-chip>
+      <v-chip-group v-model="statusFilter" selected-class="v-chip--variant-flat">
+        <v-chip value="" size="small" variant="tonal">All</v-chip>
         <v-chip
           v-for="s in STATUSES"
           :key="s"
           :value="s"
           size="small"
           variant="tonal"
-          :disabled="statusCounts[s] === 0"
-        >
-          {{ s }} ({{ statusCounts[s] }})
-        </v-chip>
+        >{{ s }}</v-chip>
       </v-chip-group>
-      <v-spacer />
-      <v-chip
-        v-if="hasRefsFilter"
-        closable
-        size="small"
-        color="primary"
-        variant="tonal"
-        @click:close="hasRefsFilter = false"
-      >
-        Only DataObjects with references
-      </v-chip>
-      <v-btn
-        v-else
-        variant="text"
-        size="small"
-        prepend-icon="mdi-filter-outline"
-        @click="hasRefsFilter = true"
-      >
-        Only with refs
-      </v-btn>
     </div>
 
-    <EmptyListIcon
-      v-if="!loading && filteredItems.length === 0"
-      :label="filterText || statusFilter !== 'all' || hasRefsFilter ? 'No DataObjects match the filters' : 'No DataObjects yet'"
-    />
+    <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate />
 
-    <v-progress-linear v-else-if="loading && filteredItems.length === 0" indeterminate />
+    <EmptyListIcon
+      v-else-if="!loading && pagedItems.length === 0"
+      :label="searchInput || statusFilter ? 'No DataObjects match the filters' : 'No DataObjects yet'"
+    />
 
     <v-table v-else density="compact" class="do-panel-table">
       <thead>
         <tr>
           <th>Name</th>
           <th style="width: 1%; white-space: nowrap">Status</th>
-          <th style="width: 1%; white-space: nowrap" :title="'References attached to this DataObject'">
-            Refs
-          </th>
-          <th style="width: 1%; white-space: nowrap" :title="'Direct children DataObjects'">
-            Children
-          </th>
-          <th style="width: 1%; white-space: nowrap" :title="'Incoming DataObjectReferences (other DOs pointing at this one)'">
-            Incoming
-          </th>
+          <th style="width: 1%; white-space: nowrap" title="References attached to this DataObject">Refs</th>
+          <th style="width: 1%; white-space: nowrap" title="Direct children DataObjects">Children</th>
+          <th style="width: 1%; white-space: nowrap" title="Incoming DataObjectReferences">Incoming</th>
           <th style="width: 1%; white-space: nowrap">Created</th>
         </tr>
       </thead>
@@ -80,21 +51,12 @@
           @click="navigateTo(row.id)"
         >
           <td>
-            <a
-              href="#"
-              class="reference-link"
-              @click.prevent="navigateTo(row.id)"
-            >
+            <a href="#" class="reference-link" @click.prevent="navigateTo(row.id)">
               {{ row.name }}
             </a>
           </td>
           <td>
-            <v-chip
-              v-if="row.status"
-              :color="statusColor(row.status)"
-              size="x-small"
-              variant="flat"
-            >
+            <v-chip v-if="row.status" :color="statusColor(row.status)" size="x-small" variant="flat">
               {{ row.status }}
             </v-chip>
             <span v-else class="text-medium-emphasis">—</span>
@@ -104,62 +66,28 @@
               <v-icon size="small" color="rgba(0,0,0,0.25)">mdi-link-variant-off</v-icon>
             </span>
             <template v-else>
-              <v-badge
-                v-if="row.tsCount > 0"
-                :content="row.tsCount"
-                color="primary"
-                inline
-                title="Timeseries references"
-              >
+              <v-badge v-if="row.tsCount > 0" :content="row.tsCount" color="primary" inline title="Timeseries">
                 <v-icon size="small">mdi-chart-line</v-icon>
               </v-badge>
-              <v-badge
-                v-if="row.fileBundleCount > 0"
-                :content="row.fileBundleCount"
-                color="secondary"
-                inline
-                title="File-bundle references"
-              >
+              <v-badge v-if="row.fileBundleCount > 0" :content="row.fileBundleCount" color="secondary" inline title="Files">
                 <v-icon size="small">mdi-file-multiple-outline</v-icon>
               </v-badge>
-              <v-badge
-                v-if="row.sdCount > 0"
-                :content="row.sdCount"
-                color="info"
-                inline
-                title="Structured-data references"
-              >
+              <v-badge v-if="row.sdCount > 0" :content="row.sdCount" color="info" inline title="Structured data">
                 <v-icon size="small">mdi-code-json</v-icon>
               </v-badge>
-              <v-badge
-                v-if="row.videoCount > 0"
-                :content="row.videoCount"
-                color="warning"
-                inline
-                title="Video-stream references"
-              >
+              <v-badge v-if="row.videoCount > 0" :content="row.videoCount" color="warning" inline title="Video">
                 <v-icon size="small">mdi-video-outline</v-icon>
               </v-badge>
             </template>
           </td>
           <td class="text-no-wrap">
-            <v-badge
-              v-if="row.childCount > 0"
-              :content="row.childCount"
-              color="secondary"
-              inline
-            >
+            <v-badge v-if="row.childCount > 0" :content="row.childCount" color="secondary" inline>
               <v-icon size="small">mdi-file-tree</v-icon>
             </v-badge>
             <span v-else class="text-medium-emphasis">—</span>
           </td>
           <td class="text-no-wrap">
-            <v-badge
-              v-if="row.incomingCount > 0"
-              :content="row.incomingCount"
-              color="info"
-              inline
-            >
+            <v-badge v-if="row.incomingCount > 0" :content="row.incomingCount" color="info" inline>
               <v-icon size="small">mdi-import</v-icon>
             </v-badge>
             <span v-else class="text-medium-emphasis">—</span>
@@ -171,41 +99,32 @@
       </tbody>
     </v-table>
 
-    <div
-      v-if="filteredItems.length > pageSize"
-      class="d-flex justify-center pt-3"
-    >
-      <v-pagination
-        v-model="page"
-        :length="Math.ceil(filteredItems.length / pageSize)"
-        :total-visible="6"
-        density="comfortable"
-      />
+    <!-- Prev / Next — no total count available yet from the backend -->
+    <div v-if="page > 0 || hasMore" class="d-flex align-center justify-center ga-2 pt-3">
+      <v-btn
+        variant="text"
+        size="small"
+        prepend-icon="mdi-chevron-left"
+        :disabled="page === 0 || loading"
+        @click="page--"
+      >Prev</v-btn>
+      <span class="text-body-2 text-medium-emphasis">Page {{ page + 1 }}</span>
+      <v-btn
+        variant="text"
+        size="small"
+        append-icon="mdi-chevron-right"
+        :disabled="!hasMore || loading"
+        @click="page++"
+      >Next</v-btn>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-/**
- * CollectionDataObjectsPanel — flat, searchable, paginated DataObjects
- * list on the Collection page. The first slice of #24 ("Collection-
- * scale navigation aids"): user reported that in foreign collections,
- * finding "where is X" is tedious because the sidebar tree alone
- * doesn't scale and there's no per-Collection search.
- *
- * Phase 1 (this slice) — name search, status filter chips, "only with
- * refs" toggle, paginated table sorted by name. Click any row to drill
- * into the DataObject detail page.
- *
- * Phase 2 (deferred) — reference-kind filter chips (videos only, TS
- * only, …). The current DataObjectIO carries only a flat
- * `referenceIds` array without kind discrimination, so kind-filter
- * needs either a new /v2/ endpoint that joins ref-kind counts, or
- * a client-side N+1 fetch (bad at scale). Left for a follow-up.
- */
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
+import { usePagedDataObjects } from "~/composables/context/usePagedDataObjects";
+import { useTimeoutFn } from "@vueuse/core";
 
 const props = defineProps<{
   collectionId: number;
@@ -214,16 +133,35 @@ const props = defineProps<{
 
 const router = useRouter();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
-const { dataObjects, loading } = useFetchAllDataObjects(props.collectionId, collectionAppId);
 
 const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"] as const;
 type Status = (typeof STATUSES)[number];
 
-const filterText = ref("");
-const statusFilter = ref<"all" | Status>("all");
-const hasRefsFilter = ref(false);
-const page = ref(1);
-const pageSize = 25;
+const searchInput = ref("");
+const serverName = ref("");
+const statusFilter = ref<Status | "">("");
+const page = ref(0);
+
+// Debounce: avoid a server call on every keystroke
+const { start: scheduleSearch } = useTimeoutFn(() => {
+  serverName.value = searchInput.value;
+  page.value = 0;
+}, 300, { immediate: false });
+
+function onSearchChange() {
+  scheduleSearch();
+}
+
+// Reset page when status filter changes (client-side, no server round-trip needed)
+watch(statusFilter, () => { page.value = 0; });
+
+const { items: rawItems, loading, hasMore } = usePagedDataObjects({
+  collectionId: props.collectionId,
+  collectionAppId,
+  name: serverName,
+  page,
+  pageSize: 25,
+});
 
 interface Row {
   id: number;
@@ -240,7 +178,7 @@ interface Row {
 }
 
 const rows = computed<Row[]>(() =>
-  dataObjects.value.map(d => ({
+  rawItems.value.map(d => ({
     id: d.id,
     name: d.name ?? `#${d.id}`,
     status: (d.status as string) ?? null,
@@ -255,33 +193,9 @@ const rows = computed<Row[]>(() =>
   })),
 );
 
-const totalCount = computed(() => rows.value.length);
-
-const statusCounts = computed<Record<Status, number>>(() => {
-  const counts: Record<Status, number> = {
-    DRAFT: 0, IN_REVIEW: 0, READY: 0, PUBLISHED: 0, ARCHIVED: 0,
-  };
-  for (const r of rows.value) {
-    if (r.status && r.status in counts) counts[r.status as Status]++;
-  }
-  return counts;
-});
-
-const filteredItems = computed<Row[]>(() => {
-  const term = filterText.value.trim().toLowerCase();
-  return rows.value
-    .filter(r => {
-      if (term && !r.name.toLowerCase().includes(term)) return false;
-      if (statusFilter.value !== "all" && r.status !== statusFilter.value) return false;
-      if (hasRefsFilter.value && r.refCount === 0) return false;
-      return true;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-});
-
 const pagedItems = computed<Row[]>(() => {
-  const start = (page.value - 1) * pageSize;
-  return filteredItems.value.slice(start, start + pageSize);
+  if (!statusFilter.value) return rows.value;
+  return rows.value.filter(r => r.status === statusFilter.value);
 });
 
 function navigateTo(dataObjectId: number) {
@@ -289,15 +203,7 @@ function navigateTo(dataObjectId: number) {
 }
 
 function statusColor(status: string): string {
-  return (
-    {
-      DRAFT: "grey",
-      IN_REVIEW: "warning",
-      READY: "info",
-      PUBLISHED: "success",
-      ARCHIVED: "default",
-    } as Record<string, string>
-  )[status] ?? "grey";
+  return ({ DRAFT: "grey", IN_REVIEW: "warning", READY: "info", PUBLISHED: "success", ARCHIVED: "default" } as Record<string, string>)[status] ?? "grey";
 }
 
 function formatRelative(d: Date): string {
@@ -318,17 +224,13 @@ function formatRelative(d: Date): string {
 .do-row {
   cursor: pointer;
 }
-.ref-kind-cell {
-  white-space: nowrap;
-  :deep(.v-badge) {
-    margin-right: 6px;
-  }
-  :deep(.v-badge:last-child) {
-    margin-right: 0;
-  }
-}
 .do-row:hover {
   background-color: rgb(var(--v-theme-focus1));
+}
+.ref-kind-cell {
+  white-space: nowrap;
+  :deep(.v-badge) { margin-right: 6px; }
+  :deep(.v-badge:last-child) { margin-right: 0; }
 }
 .reference-link {
   color: rgb(var(--v-theme-primary));

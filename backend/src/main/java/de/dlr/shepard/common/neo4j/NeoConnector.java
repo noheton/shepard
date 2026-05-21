@@ -27,6 +27,8 @@ import de.dlr.shepard.spi.payload.PayloadKind;
 import de.dlr.shepard.template.entities.ShepardTemplate;
 import de.dlr.shepard.v2.admin.ror.entities.InstanceRorConfig;
 import de.dlr.shepard.v2.admin.sqltimeseries.entities.SqlTimeseriesConfig;
+import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
+import de.dlr.shepard.v2.importer.entities.ImportPlan;
 import de.dlr.shepard.v2.timeseries.model.TimeseriesAnnotation;
 import de.dlr.shepard.v2.timeseriescontainer.entities.TimeseriesContainerChartView;
 import de.dlr.shepard.v2.watches.entities.Watch;
@@ -113,6 +115,10 @@ public class NeoConnector implements IConnector {
           TimeseriesContainerChartView.class.getPackageName(),
           // WATCH1 — Collection -> Container watch links
           Watch.class.getPackageName(),
+          // CW1 — User watches Collection (subscription for DataObject notifications)
+          CollectionWatcher.class.getPackageName(),
+          // IMP1 — ImportPlan node for dry-run import validation (plan-seal pattern).
+          ImportPlan.class.getPackageName(),
           // ROR1 — instance-level Research Organization Registry config singleton.
           // Without this register call the OGM session can't load
           // :InstanceRorConfig nodes and admin PATCH calls 500 with

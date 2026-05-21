@@ -23,6 +23,7 @@
         :target="instanceIdentity.rorUrl ? '_blank' : undefined"
       >{{ instanceIdentity.organizationName }}</v-chip>
       <!-- Desktop: inline nav links -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
       <v-btn
@@ -142,6 +143,7 @@
     temporary
   >
     <v-list nav>
+      <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
       <v-list-item

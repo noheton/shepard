@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Collection } from "@dlr-shepard/backend-client";
 import { useCollectionListQueryParams } from "./useCollectionListQueryParams";
-import { useBookmarkedCollections } from "~/composables/context/useBookmarkedCollections";
+import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
 
 defineProps<{
   itemsPerPage: number;
@@ -12,7 +12,7 @@ defineProps<{
 
 const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
-const { isBookmarked, toggle: toggleBookmark } = useBookmarkedCollections();
+const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 
 const headers = [
   {
@@ -52,7 +52,7 @@ const headers = [
   },
   {
     title: "",
-    key: "bookmark",
+    key: "watched",
     width: "5%",
     sortable: false,
   },
@@ -115,17 +115,17 @@ function onPageChange(page: number) {
         <template #[`item.createdAt`]>
           {{ toShortDateString(rowProps.item.createdAt) }}
         </template>
-        <template #[`item.bookmark`]>
+        <template #[`item.watched`]>
           <v-btn
             icon
             variant="text"
             density="compact"
             size="small"
-            :color="isBookmarked(rowProps.item.id!) ? 'amber-darken-2' : undefined"
-            :title="isBookmarked(rowProps.item.id!) ? 'Remove bookmark' : 'Bookmark'"
-            @click.stop="toggleBookmark(rowProps.item)"
+            :color="isWatched(rowProps.item.id!) ? 'amber-darken-2' : undefined"
+            :title="isWatched(rowProps.item.id!) ? 'Remove from watched' : 'Add to watched'"
+            @click.stop="toggleWatched(rowProps.item)"
           >
-            <v-icon>{{ isBookmarked(rowProps.item.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+            <v-icon>{{ isWatched(rowProps.item.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
           </v-btn>
         </template>
       </v-data-table-row>

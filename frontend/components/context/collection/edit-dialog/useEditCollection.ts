@@ -16,6 +16,7 @@ export function useEditCollection(
     attributes: collection.attributes ?? {},
     description: collection.description ?? "",
     status: collection.status ?? null,
+    heroImageUrl: collection.heroImageUrl ?? null,
   });
   const updatedPermissions = ref<UpdatedPermissions>(undefined);
 

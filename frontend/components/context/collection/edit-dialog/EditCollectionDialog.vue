@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Collection } from "@dlr-shepard/backend-client";
 import { useEditCollection } from "./useEditCollection";
+import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 
 interface CollectionEditDialogProps {
   collection: Collection;
@@ -21,6 +22,8 @@ const { updatedCollection, updatedPermissions, saveChanges } =
     isValid,
     props.isAllowedToEditPermissions,
   );
+
+const { advancedMode } = useAdvancedMode();
 
 const form = useTemplateRef("form");
 watch(updatedCollection, () => form.value?.validate(), { deep: true });
@@ -46,6 +49,23 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
           <v-col>
             <DescriptionInput
               v-model:description="updatedCollection.description"
+            />
+          </v-col>
+        </v-row>
+        <!-- Hero image URL — advanced mode only (not shown in basic mode).
+             Advanced mode is a strict superset: this field is not shown in
+             basic mode, but when the user enables advanced mode they see
+             everything basic shows plus this field. -->
+        <v-row v-if="advancedMode">
+          <v-col>
+            <v-text-field
+              v-model="updatedCollection.heroImageUrl"
+              label="Hero image URL"
+              hint="Optional wide banner displayed above the Collection title. Enter a public image URL (JPEG, PNG, …). Leave blank to show no banner."
+              persistent-hint
+              clearable
+              density="compact"
+              prepend-inner-icon="mdi-image-outline"
             />
           </v-col>
         </v-row>

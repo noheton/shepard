@@ -93,11 +93,19 @@ export interface Collection {
      */
     readonly incomingIds: Array<number>;
     /**
-     * 
+     *
      * @type {number}
      * @memberof Collection
      */
     defaultFileContainerId?: number | null;
+    /**
+     * Optional hero/banner image URL displayed at the top of the Collection
+     * detail page. When null or absent, no banner is shown. URL-only (no
+     * server-side upload). Exposed only on the /v2/ surface.
+     * @type {string}
+     * @memberof Collection
+     */
+    heroImageUrl?: string | null;
 }
 
 /**
@@ -138,6 +146,7 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'dataObjectIds': json['dataObjectIds'],
         'incomingIds': json['incomingIds'],
         'defaultFileContainerId': json['defaultFileContainerId'] == null ? undefined : json['defaultFileContainerId'],
+        'heroImageUrl': json['heroImageUrl'] == null ? undefined : json['heroImageUrl'],
     };
 }
 
@@ -152,6 +161,7 @@ export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'crea
         'status': value['status'],
         'attributes': value['attributes'],
         'defaultFileContainerId': value['defaultFileContainerId'],
+        'heroImageUrl': value['heroImageUrl'],
     };
 }
 

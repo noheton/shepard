@@ -242,6 +242,97 @@ class CollectionV2RestTest {
     assertEquals("new description", io.getDescription());
   }
 
+  // ── heroImageUrl (Feature B) ───────────────────────────────────────────────
+
+  @Test
+  void createWithHeroImageUrlPersistsIt() {
+    CollectionIO body = new CollectionIO();
+    body.setName("with hero");
+    body.setHeroImageUrl("https://example.com/banner.jpg");
+
+    Collection created = new Collection();
+    created.setShepardId(77L);
+    created.setAppId("018f9c5a-7777-7000-a000-000000000077");
+    created.setName("with hero");
+    created.setHeroImageUrl("https://example.com/banner.jpg");
+    when(collectionService.createCollection(body)).thenReturn(created);
+
+    Response r = resource.create(body);
+
+    assertEquals(201, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    assertEquals("https://example.com/banner.jpg", io.getHeroImageUrl());
+  }
+
+  @Test
+  void patchWithNullHeroImageUrlClearsIt() {
+    Collection existing = new Collection();
+    existing.setShepardId(COLL_OGM_ID);
+    existing.setAppId(COLL_APP_ID);
+    existing.setName("demo");
+    existing.setHeroImageUrl("https://example.com/old-banner.jpg");
+
+    Collection updated = new Collection();
+    updated.setShepardId(COLL_OGM_ID);
+    updated.setAppId(COLL_APP_ID);
+    updated.setName("demo");
+    updated.setHeroImageUrl(null);
+
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.putNull("heroImageUrl");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+      .thenReturn(true);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLL_OGM_ID)).thenReturn(existing);
+    when(collectionService.updateCollectionByShepardId(eq(COLL_OGM_ID), any())).thenReturn(updated);
+
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    assertNotNull(io);
+    // Returned IO mirrors the updated entity — heroImageUrl is null (cleared).
+    assertEquals(null, io.getHeroImageUrl());
+  }
+
+  @Test
+  void patchWithoutHeroImageUrlLeavesItUnchanged() {
+    String originalUrl = "https://example.com/banner.jpg";
+
+    Collection existing = new Collection();
+    existing.setShepardId(COLL_OGM_ID);
+    existing.setAppId(COLL_APP_ID);
+    existing.setName("demo");
+    existing.setHeroImageUrl(originalUrl);
+
+    // Patch body only touches description — heroImageUrl is absent.
+    // RFC 7396: absent fields are left unchanged; Jackson's readerForUpdating
+    // preserves the field value from the existing CollectionIO.
+    Collection afterUpdate = new Collection();
+    afterUpdate.setShepardId(COLL_OGM_ID);
+    afterUpdate.setAppId(COLL_APP_ID);
+    afterUpdate.setName("demo");
+    afterUpdate.setDescription("new desc");
+    afterUpdate.setHeroImageUrl(originalUrl);
+
+    ObjectNode body = JsonNodeFactory.instance.objectNode();
+    body.put("description", "new desc");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+      .thenReturn(true);
+    when(collectionService.getCollectionWithDataObjectsAndIncomingReferences(COLL_OGM_ID)).thenReturn(existing);
+    when(collectionService.updateCollectionByShepardId(eq(COLL_OGM_ID), any())).thenReturn(afterUpdate);
+
+    Response r = resource.patch(COLL_APP_ID, body, securityContext);
+
+    assertEquals(200, r.getStatus());
+    CollectionIO io = (CollectionIO) r.getEntity();
+    // The returned IO (mapped from afterUpdate) still carries the original URL.
+    assertEquals(originalUrl, io.getHeroImageUrl());
+  }
+
   // ── delete ────────────────────────────────────────────────────────────────
 
   @Test

@@ -7,6 +7,7 @@ defineProps<{
   templates: ShepardTemplateIO[];
   loading: boolean;
   isInstantiating?: boolean;
+  deEmphasiseBlank?: boolean;
 }>();
 
 const showDialog = defineModel<boolean>("showDialog", {
@@ -94,12 +95,13 @@ const { mobile } = useDisplay();
         <div class="d-flex px-6 pb-4 w-100 align-center">
           <v-btn
             variant="text"
-            color="primary"
+            :color="deEmphasiseBlank ? undefined : 'primary'"
+            :size="deEmphasiseBlank ? 'small' : undefined"
             prepend-icon="mdi-file-outline"
             :disabled="isInstantiating"
             @click="emit('start-blank')"
           >
-            Start from blank
+            {{ deEmphasiseBlank ? "Skip template / create blank" : "Start from blank" }}
           </v-btn>
           <v-spacer />
           <v-btn

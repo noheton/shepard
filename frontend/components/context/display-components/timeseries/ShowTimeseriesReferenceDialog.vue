@@ -189,6 +189,17 @@ function toggleMetrics(key: string) {
   else expandedMetrics.value.add(key);
   expandedMetrics.value = new Set(expandedMetrics.value);
 }
+const allMetricsExpanded = computed(() =>
+  timeseries.value.length > 0 &&
+  timeseries.value.every(ts => expandedMetrics.value.has(getTimeseriesKey(ts))),
+);
+function toggleAllMetrics() {
+  if (allMetricsExpanded.value) {
+    expandedMetrics.value = new Set();
+  } else {
+    expandedMetrics.value = new Set(timeseries.value.map(getTimeseriesKey));
+  }
+}
 </script>
 
 <template>
@@ -226,7 +237,18 @@ function toggleMetrics(key: string) {
         </div>
 
         <!-- channel list ─────────────────────────────────────────────────── -->
-        <div class="text-subtitle-1 mb-2">Channels</div>
+        <div class="d-flex align-center mb-2">
+          <span class="text-subtitle-1">Channels</span>
+          <v-spacer />
+          <v-btn
+            v-if="timeseries.length > 0"
+            density="compact"
+            variant="text"
+            size="small"
+            :append-icon="allMetricsExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            @click="toggleAllMetrics"
+          >{{ allMetricsExpanded ? 'Collapse all' : 'Expand all' }}</v-btn>
+        </div>
         <div
           v-for="(ts, idx) in timeseries"
           :key="getTimeseriesKey(ts)"

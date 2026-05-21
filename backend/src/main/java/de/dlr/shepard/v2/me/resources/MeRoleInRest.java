@@ -53,18 +53,30 @@ public class MeRoleInRest {
 
   @GET
   @Operation(
-    summary = "Caller's role in a Collection — for the header role-in-context chip.",
-    description = "Returns booleans for {read, write, manage, isInstanceAdmin}. The role-in-context UI " +
-    "chip renders the highest-effective role (Owner / Editor / Reader) plus an Instance-Admin chip " +
-    "alongside when applicable. See `aidocs/51 §9.4`."
+    summary = "Caller's effective role in a Collection.",
+    description =
+      "Returns the caller's effective capabilities on the Collection identified by " +
+      "`collectionAppId` as four booleans: `read`, `write`, `manage`, and `isInstanceAdmin`.\n\n" +
+      "The booleans are additive: `manage` implies `write`, and `write` implies `read`. " +
+      "A caller with the Owner or Manager role gets `manage=true`; a Writer gets " +
+      "`write=true`; a Reader gets only `read=true`. Instance admins get " +
+      "`isInstanceAdmin=true` regardless of their Collection-level role. The UI renders " +
+      "the highest effective role as a chip (Owner / Editor / Reader) and shows a separate " +
+      "Instance-Admin chip when applicable.\n\n" +
+      "Existence-protection pattern: a 403 is returned when the Collection exists but the " +
+      "caller has no roles and is not an instance admin, so a caller without access cannot " +
+      "distinguish 'does not exist' from 'exists but forbidden' — 404 is reserved for " +
+      "Collections that genuinely have no matching `appId`.\n\n" +
+      "Auth: any authenticated user. The endpoint is intentionally unauthenticated-user " +
+      "hostile — 401 is returned before any Collection lookup."
   )
   @APIResponse(
     responseCode = "200",
-    description = "Caller has at least one role (or is an instance admin).",
+    description = "Caller has at least one effective role or is an instance admin. Body is a MeRoleInIO with fields `collectionAppId`, `read`, `write`, `manage`, `isInstanceAdmin`.",
     content = @Content(schema = @Schema(implementation = MeRoleInIO.class))
   )
-  @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller has no roles on the Collection and is not an instance admin.")
+  @APIResponse(responseCode = "401", description = "Authentication required (no JWT and no X-API-KEY).")
+  @APIResponse(responseCode = "403", description = "Collection exists but the caller has no roles on it and is not an instance admin.")
   @APIResponse(responseCode = "404", description = "No Collection with the supplied appId.")
   public Response roleIn(@PathParam("collectionAppId") String collectionAppId, @Context SecurityContext securityContext) {
     String caller = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : null;

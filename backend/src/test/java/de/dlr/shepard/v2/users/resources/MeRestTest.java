@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,8 +12,12 @@ import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.io.UserIO;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.v2.collectionwatchers.daos.CollectionWatcherDAO;
+import de.dlr.shepard.v2.collectionwatchers.entities.CollectionWatcher;
+import de.dlr.shepard.v2.users.io.MeIO;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,6 +37,9 @@ class MeRestTest {
   UserDAO userDAO;
 
   @Mock
+  CollectionWatcherDAO collectionWatcherDAO;
+
+  @Mock
   SecurityContext securityContext;
 
   @Mock
@@ -45,10 +53,54 @@ class MeRestTest {
     resource = new MeRest();
     resource.userService = userService;
     resource.userDAO = userDAO;
+    resource.collectionWatcherDAO = collectionWatcherDAO;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(userService.getCurrentUser()).thenReturn(new User(CALLER, "Alice", "Anderson", "alice@example.org"));
     when(userDAO.createOrUpdate(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(collectionWatcherDAO.findByUsername(anyString())).thenReturn(List.of());
+  }
+
+  // ── CW1: GET /v2/users/me ────────────────────────────────────────────
+
+  @Test
+  void getMe_returns401WhenUnauthenticated() {
+    when(securityContext.getUserPrincipal()).thenReturn(null);
+    var r = resource.getMe(securityContext);
+    assertEquals(401, r.getStatus());
+  }
+
+  @Test
+  void getMe_returns200WithZeroWatchCount() {
+    when(collectionWatcherDAO.findByUsername(CALLER)).thenReturn(List.of());
+    var r = resource.getMe(securityContext);
+    assertEquals(200, r.getStatus());
+    var body = (MeIO) r.getEntity();
+    assertEquals(CALLER, body.username());
+    assertEquals(0, body.watchedCollectionCount());
+  }
+
+  @Test
+  void getMe_returnsCorrectWatchCount() {
+    var w1 = new CollectionWatcher();
+    var w2 = new CollectionWatcher();
+    when(collectionWatcherDAO.findByUsername(CALLER)).thenReturn(List.of(w1, w2));
+    var r = resource.getMe(securityContext);
+    assertEquals(200, r.getStatus());
+    var body = (MeIO) r.getEntity();
+    assertEquals(2, body.watchedCollectionCount());
+  }
+
+  @Test
+  void getMe_populatesUserFields() {
+    var user = new User(CALLER, "Alice", "Anderson", "alice@example.org");
+    user.setOrcid(VALID_ORCID);
+    when(userService.getCurrentUser()).thenReturn(user);
+    var r = resource.getMe(securityContext);
+    assertEquals(200, r.getStatus());
+    var body = (MeIO) r.getEntity();
+    assertEquals("Alice", body.firstName());
+    assertEquals(VALID_ORCID, body.orcid());
   }
 
   @Test
