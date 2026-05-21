@@ -426,6 +426,7 @@ namespace; core enforces the shape.
 | **`shepard` Python convenience client** (P16 Phase 1) — `clients/python/shepard/`; collapses the 14-line prelude to 3 lines; `Client` + 13 domain proxy attributes (`collections`, `timeseries`, `files`, …) forwarding all generated `*Api` methods; `ShepardError` hierarchy (400/401/403/404/409/422/5xx); `iter_pages` + `.iter()`/`.list()` pagination wrappers; `to_pandas` / `to_excel` / `ro_crate` workflow helpers (pandas/openpyxl optional extras); 65 unit tests; no live server required | none | **✓ ↑ (Phase 1 shipped)** — Phase 3 (TypeScript) + Phase 4 (P10 retarget) queued | `aidocs/ops/27` / `aidocs/16` P16 |
 | `shepard-frontend` | upstream-only | `aidocs/33` analysis covers UX improvements; W11–W2 design ranked | `aidocs/33` |
 | `shepard-dataship` (publication pipeline) | upstream-only | parked under `aidocs/16` X1 | `aidocs/16` X1 |
+| **`shepard-plugin-mcp`** — FastMCP 3.x SSE sidecar; 15 tools covering collections, DataObjects, provenance chains, annotations, timeseries channels + stats, structured data, files; stateless (caller JWT forwarded); LTTB downsampling; `docker compose --profile mcp up -d`; exposed via Zoraxy virtual directory `/mcp` → `localhost:8811`; SSE URL `https://shepard.nuclide.systems/mcp/sse`; e2e pytest suite in `tests/test_e2e.py` | none | **✓ shipped (MCP-1a + MCP-1b)** — backend connectivity tests pass from host; MCP SSE transport tests run inside container | **✓ ↑** (MCP-1) | `aidocs/platform/30-mcp-plugin-design.md` + `plugins/shepard-plugin-mcp/docs/` + `aidocs/34` MCP-1 |
 
 ---
 
