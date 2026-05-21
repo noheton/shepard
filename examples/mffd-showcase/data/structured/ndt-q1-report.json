@@ -1,0 +1,20 @@
+{
+  "panel": "Q1",
+  "inspection_date": "2024-07-16T09:00:00Z",
+  "inspector": "C. Wagner",
+  "method": "Active Thermography",
+  "equipment": "FLIR X6900sc (IR-CAM-02)",
+  "result": "FAIL",
+  "defects": [
+    {
+      "id": "DEF-001",
+      "type": "delamination",
+      "rib_station": 7,
+      "area_cm2": 45.2,
+      "depth_mm": 0.4,
+      "acceptance_limit_cm2": 20.0,
+      "disposition": "rework required"
+    }
+  ],
+  "notes": "Delamination DEF-001 at rib station 7 exceeds acceptance limit (45.2 cm\u00b2 > 20 cm\u00b2).  AFP process log shows consolidation force drop at t = 280\u2013320 s (ply 5).  Root cause: transient head-temperature excursion during reel change."
+}

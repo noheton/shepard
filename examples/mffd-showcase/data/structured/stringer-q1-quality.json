@@ -1,0 +1,72 @@
+{
+  "panel": "Q1",
+  "weld_date": "2024-07-19",
+  "operator": "R. Hoffmann",
+  "result": "PASS",
+  "stringers": [
+    {
+      "stringer_id": "STR-Q1-01",
+      "weld_result": "PASS",
+      "peak_temp_C": 336.6,
+      "avg_force_N": 513.8,
+      "pull_test_N": 2871.7,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-02",
+      "weld_result": "PASS",
+      "peak_temp_C": 335.5,
+      "avg_force_N": 506.9,
+      "pull_test_N": 2895.1,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-03",
+      "weld_result": "PASS",
+      "peak_temp_C": 336.4,
+      "avg_force_N": 520.7,
+      "pull_test_N": 2725.6,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-04",
+      "weld_result": "PASS",
+      "peak_temp_C": 331.8,
+      "avg_force_N": 512.4,
+      "pull_test_N": 2885.4,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-05",
+      "weld_result": "PASS",
+      "peak_temp_C": 334.7,
+      "avg_force_N": 521.5,
+      "pull_test_N": 2788.7,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-06",
+      "weld_result": "PASS",
+      "peak_temp_C": 328.4,
+      "avg_force_N": 516.1,
+      "pull_test_N": 2712.8,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-07",
+      "weld_result": "PASS",
+      "peak_temp_C": 337.4,
+      "avg_force_N": 517.6,
+      "pull_test_N": 2851.6,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-Q1-08",
+      "weld_result": "PASS",
+      "peak_temp_C": 330.3,
+      "avg_force_N": 524.4,
+      "pull_test_N": 2878.6,
+      "spec_min_pull_test_N": 2500
+    }
+  ]
+}

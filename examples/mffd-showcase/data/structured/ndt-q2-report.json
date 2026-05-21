@@ -1,0 +1,10 @@
+{
+  "panel": "Q2",
+  "inspection_date": "2024-07-16T13:30:00Z",
+  "inspector": "C. Wagner",
+  "method": "Active Thermography",
+  "equipment": "FLIR X6900sc (IR-CAM-02)",
+  "result": "PASS",
+  "defects": [],
+  "notes": "No defects above 20 cm\u00b2 threshold detected.  Q2 cleared for stringer welding."
+}

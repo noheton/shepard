@@ -1,0 +1,11 @@
+{
+  "panel": "Q1",
+  "inspection_date": "2024-07-18T11:00:00Z",
+  "inspector": "C. Wagner",
+  "method": "Active Thermography",
+  "equipment": "FLIR X6900sc (IR-CAM-02)",
+  "result": "PASS",
+  "rework_reference": "REWORK-Q1-001",
+  "defects": [],
+  "notes": "Re-inspection after rework REWORK-Q1-001.  No defects above threshold at rib station 7 or adjacent areas.  Q1 cleared for stringer welding."
+}
