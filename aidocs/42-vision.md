@@ -434,10 +434,17 @@ Mid-horizon:
   pure Java, no ML library, LLM-independent; configurable rolling
   window (default 51) and Z-score threshold k (default 6.0);
   optional `createAnnotations=true` persists one `TimeseriesAnnotation`
-  per contiguous anomaly run. Queued: semantic-annotation
-  suggestion; lab-journal authoring assist; auto-summarisation;
-  natural-language search. All AI inference BYOK / admin-fallback
-  gated.
+  per contiguous anomaly run. **AI1a shipped** — `shepard-plugin-ai`
+  LlmProvider SPI: connects any OpenAI-compatible endpoint per
+  capability slot (TEXT / FAST_TEXT / …); admin-configurable at
+  runtime via `PATCH /v2/admin/ai/capabilities/{capability}`; writes
+  `:AiActivity` provenance on every call; prompt injection defence
+  built in. **WW1 shipped** — `shepard-plugin-wiki-writer`: one click
+  generates a Markdown lab-journal entry for any DataObject from its
+  metadata + Collection context. Queued: semantic-annotation
+  suggestion; auto-summarisation; natural-language search; snap
+  dashboards (AI1e — the killer feature). All AI inference
+  BYOK / admin-fallback gated.
 - **S3-compatible file storage** (`aidocs/45`, FS series). The
   **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
   + the in-core GridFS default adapter, with `shepard.storage.provider`

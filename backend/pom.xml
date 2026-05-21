@@ -961,6 +961,32 @@
           <artifactId>shepard-plugin-video</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          AI1 — LLM provider plugin. Implements the `LlmProvider` SPI
+          for OpenAI-compatible endpoints. Exposes
+          `/v2/admin/ai/capabilities` for per-capability runtime config
+          (endpointUrl, model, apiKey, enabled). Writes `:AiActivity`
+          provenance nodes on every call. v0: TEXT capability only,
+          OPENAI_COMPAT transport only.
+          See aidocs/platform/86-ai-plugin-design.md.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+          <version>${revision}</version>
+        </dependency>
+        <!--
+          WW1 — Wiki-writer plugin. Reads LlmProvider (TEXT capability) via CDI
+          Instance injection; generates Markdown LabJournalEntry for a DataObject
+          from its Collection metadata. Endpoint:
+          POST /v2/collections/{appId}/data-objects/{appId}/wiki-write.
+          Soft-depends on shepard-plugin-ai — activates but returns 503 when absent.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>
