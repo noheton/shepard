@@ -7,6 +7,8 @@ import {
   type ShepardFile,
 } from "@dlr-shepard/backend-client";
 import { FileContainerAccessor } from "~/composables/container/FileContainerAccessor";
+import { useFileUploadProgress } from "~/composables/container/useFileUploadProgress";
+import { UploadAbortError } from "~/composables/container/xhrUpload";
 import { CollectionAccessor } from "~/composables/context/CollectionAccessor";
 import { useCreateFileContainer } from "~/composables/data/useCreateFileContainer";
 import { useCreateFileReference } from "~/composables/references/useCreateFileReference";
@@ -63,6 +65,17 @@ const isCreatingNewFileContainer = ref<boolean>(false);
 const uploading = ref<boolean>(false);
 const successCount = ref<number>(0);
 const { mobile } = useDisplay();
+
+// Task #135 — per-batch progress state shared with the FileUploadProgressPanel.
+const progress = useFileUploadProgress();
+const isAnyFileActive = computed(() =>
+  progress.items.value.some(
+    it =>
+      it.status === "uploading" ||
+      it.status === "indeterminate" ||
+      it.status === "pending",
+  ),
+);
 const isUploadButtonDisabled = computed(() => {
   return (
     files.value === undefined ||
@@ -139,30 +152,67 @@ async function updateDefaultFileContainer() {
   }
 }
 
-async function uploadFile(file: File): Promise<ShepardFile> {
+async function uploadFileWithProgress(
+  file: File,
+  index: number,
+  signal: AbortSignal,
+): Promise<ShepardFile> {
   if (!fileContainerId.value) {
     throw new Error("File container needs to be set!");
   }
   if (!containerAccessor) {
     containerAccessor = new FileContainerAccessor(fileContainerId.value);
   }
-  const uploadedShepardFile = await containerAccessor.uploadFile(file);
-  successCount.value += 1;
-  return uploadedShepardFile;
+  progress.markStarted(index);
+  try {
+    const uploadedShepardFile = await containerAccessor.uploadFile(file, {
+      onProgress: ev => {
+        progress.reportProgress(index, ev.bytesUploaded, ev.bytesTotal);
+      },
+      signal,
+    });
+    progress.markDone(index);
+    successCount.value += 1;
+    return uploadedShepardFile;
+  } catch (e) {
+    if (e instanceof UploadAbortError || signal.aborted) {
+      progress.markCancelled(index);
+    } else {
+      progress.markError(index, (e as Error).message ?? "Upload failed");
+    }
+    throw e;
+  }
 }
 
 async function handleFileUpload(): Promise<ShepardFile[]> {
   if (files.value.length === 0) throw new Error("No files selected!");
+  const signal = progress.startBatch(files.value);
   let uploadedFiles: ShepardFile[] = [];
   try {
-    uploadedFiles = await Promise.all(files.value.map(uploadFile));
-    emitSuccess(`${successCount.value} file(s) uploaded successfully.`);
-  } catch {
-    const numberOfFiles = (files.value as Array<File>).length;
-    handleError(
-      `Error: only ${successCount.value} of ${numberOfFiles} files uploaded successfully.`,
-      "uploading files",
+    const results = await Promise.allSettled(
+      files.value.map((f, i) => uploadFileWithProgress(f, i, signal)),
     );
+    uploadedFiles = results
+      .filter(
+        (r): r is PromiseFulfilledResult<ShepardFile> => r.status === "fulfilled",
+      )
+      .map(r => r.value);
+    const failures = results.length - uploadedFiles.length;
+    if (signal.aborted) {
+      handleError(
+        `Upload cancelled — ${uploadedFiles.length} of ${results.length} files completed before cancel.`,
+        "uploading files",
+      );
+    } else if (failures === 0) {
+      emitSuccess(`${successCount.value} file(s) uploaded successfully.`);
+    } else {
+      handleError(
+        `Only ${uploadedFiles.length} of ${results.length} files uploaded successfully.`,
+        "uploading files",
+      );
+    }
+  } finally {
+    progress.finishBatch();
   }
   return uploadedFiles;
 }
@@ -247,6 +297,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
           </v-alert>
 
           <v-file-upload
+            v-if="!uploading"
             v-model:model-value="files"
             :accept="accept"
             :multiple="true"
@@ -258,7 +309,16 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
             title="Drag and drop files here (or click to browse)"
           />
 
-          <div class="d-flex flex-column ga-1">
+          <!-- Task #135 — progress panel during upload -->
+          <FileUploadProgressPanel
+            v-if="uploading"
+            :items="progress.items.value"
+            :aggregate="progress.aggregate.value"
+            :can-cancel="isAnyFileActive"
+            @cancel="progress.cancel()"
+          />
+
+          <div v-if="!uploading" class="d-flex flex-column ga-1">
             <div class="d-flex justify-space-between align-center">
               <span class="text-textbody text-subtitle-2">
                 Storage Location
@@ -308,7 +368,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
             />
           </div>
 
-          <div v-if="createReference" class="d-flex flex-column ga-2">
+          <div v-if="createReference && !uploading" class="d-flex flex-column ga-2">
             <div class="d-flex ga-2 align-center">
               <span class="text-textbody text-subtitle-2">Reference Name</span>
               <Tooltip>
@@ -322,7 +382,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
             <SimpleInput v-model:input-string="newReferenceName" label="Name" />
           </div>
 
-          <div class="mt-6">
+          <div v-if="!uploading" class="mt-6">
             <span>* Required fields</span>
           </div>
         </div>
@@ -336,11 +396,13 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
               <v-btn
                 color="treeview"
                 variant="flat"
+                :disabled="uploading"
                 @click="showDialog = false"
               >
-                Cancel
+                Close
               </v-btn>
               <v-btn
+                v-if="!uploading"
                 :disabled="isUploadButtonDisabled"
                 class="ml-4"
                 color="primary"

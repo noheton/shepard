@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { XhrUploadOptions } from "~/composables/container/xhrUpload";
+
 export interface UploadFilesButtonProps {
   accept?: string;
   buttonText?: string;
@@ -6,7 +8,13 @@ export interface UploadFilesButtonProps {
   filter?: (files: File[]) => File[];
   maxWidth?: number;
   multiple?: boolean;
-  uploadFile: (file: File) => Promise<void>;
+  /**
+   * Task #135 — `options` (containing `onProgress`/`signal`) is optional so
+   * callers that don't care about progress keep working unchanged.  Callers
+   * that DO care forward the options to `FileContainerAccessor.uploadFile`
+   * (or their own XHR-based upload) to surface progress + cancel.
+   */
+  uploadFile: (file: File, options?: XhrUploadOptions) => Promise<void>;
 }
 
 const emits = defineEmits(["upload-finished"]);

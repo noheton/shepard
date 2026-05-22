@@ -9,6 +9,8 @@ import {
 import { useShepardApi } from "../common/api/useShepardApi";
 import { ContainerAccessor } from "../shepardObjectAccessor";
 import { safeDeleteContainer } from "./safeDeleteContainer";
+import type { XhrUploadOptions } from "./xhrUpload";
+import { xhrUploadMultipart, xhrUploadPresignedPut } from "./xhrUpload";
 
 // Sentinel: backend returned 503 — no S3 adapter active; caller falls back to legacy upload.
 class PresignedUnavailable extends Error {
@@ -108,11 +110,27 @@ export class FileContainerAccessor extends ContainerAccessor {
     }
   }
 
-  async uploadFile(file: File): Promise<ShepardFile> {
+  /**
+   * Upload a file with optional progress + cancel.
+   *
+   * Task #135 — when `options.onProgress` or `options.signal` is provided, the
+   * upload bypasses the generated `createFile` client (which uses `fetch`,
+   * and `fetch` cannot report request-body progress) and instead uses
+   * `XMLHttpRequest` directly.  Wire shape stays identical:
+   *  - Legacy:    POST <basePath>/fileContainers/{id}/payload — multipart with `file` field.
+   *  - Presigned: PUT  <signed-url> — raw bytes (signature in URL).
+   *
+   * When no `options` are passed, the behaviour falls back to the generated
+   * client so existing callers stay unchanged.
+   */
+  async uploadFile(
+    file: File,
+    options?: XhrUploadOptions,
+  ): Promise<ShepardFile> {
     const appId = this.fileContainer.value?.appId;
     if (appId) {
       try {
-        const result = await this.uploadFilePresigned(appId, file);
+        const result = await this.uploadFilePresigned(appId, file, options);
         this.fetchFiles();
         return result;
       } catch (e) {
@@ -123,10 +141,43 @@ export class FileContainerAccessor extends ContainerAccessor {
         // 503 — no S3 adapter active, fall through to legacy upload
       }
     }
+    if (options) {
+      try {
+        const result = await this.uploadFileLegacyXhr(file, options);
+        return result;
+      } finally {
+        this.fetchFiles();
+      }
+    }
     return this.api.value
       .createFile({ fileContainerId: this.id, file })
       .then(shepardFile => Promise.resolve(shepardFile))
       .finally(() => this.fetchFiles());
+  }
+
+  // Legacy multipart upload via XHR — mirrors `FileContainerApi.createFileRaw`
+  // exactly (same path under `basePath`, same `file` form field, same Bearer
+  // header).  Browser sets `Content-Type: multipart/form-data; boundary=…`
+  // automatically when given a `FormData` body — don't set it manually.
+  private async uploadFileLegacyXhr(
+    file: File,
+    options: XhrUploadOptions,
+  ): Promise<ShepardFile> {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    if (!accessToken) throw new Error("Not authenticated");
+    const base = (useRuntimeConfig().public.backendApiUrl as string).replace(
+      /\/$/,
+      "",
+    );
+    const url = `${base}/fileContainers/${encodeURIComponent(String(this.id))}/payload`;
+    return xhrUploadMultipart<ShepardFile>({
+      url,
+      fieldName: "file",
+      file,
+      authorization: `Bearer ${accessToken}`,
+      options,
+    });
   }
 
   // FS1f — three-step presigned upload: get URL → PUT to S3 → commit.
@@ -134,6 +185,7 @@ export class FileContainerAccessor extends ContainerAccessor {
   private async uploadFilePresigned(
     containerAppId: string,
     file: File,
+    options?: XhrUploadOptions,
   ): Promise<ShepardFile> {
     const { data: session } = useAuth();
     const accessToken = session.value?.accessToken;
@@ -153,6 +205,7 @@ export class FileContainerAccessor extends ContainerAccessor {
         method: "POST",
         headers: authJson,
         body: JSON.stringify({ fileName: file.name }),
+        signal: options?.signal,
       },
     );
     if (urlResp.status === 503) throw new PresignedUnavailable();
@@ -163,14 +216,14 @@ export class FileContainerAccessor extends ContainerAccessor {
       oid: string;
     };
 
-    // Step 2 — PUT bytes directly to S3 (no auth headers; signature in URL).
-    const putResp = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type || "application/octet-stream" },
+    // Step 2 — PUT bytes directly to S3.  This is the byte-bearing leg —
+    // route it through XHR so we can observe upload progress + cancel.
+    await xhrUploadPresignedPut({
+      url: uploadUrl,
+      file,
+      contentType: file.type || "application/octet-stream",
+      options,
     });
-    if (!putResp.ok)
-      throw new Error(`S3 PUT failed (HTTP ${putResp.status})`);
 
     // Step 3 — register the file in shepard.
     const commitResp = await fetch(
@@ -184,6 +237,7 @@ export class FileContainerAccessor extends ContainerAccessor {
           contentType: file.type || null,
           fileSize: file.size,
         }),
+        signal: options?.signal,
       },
     );
     if (!commitResp.ok)
