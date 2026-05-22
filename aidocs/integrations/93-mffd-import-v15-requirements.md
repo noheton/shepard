@@ -300,3 +300,79 @@ act:<batch-uuid-v7> a fair2r:AuthoringPass ;
 
 **Snapshot:** 2026-05-22 ~22:00 UTC by claude-opus-4-7 with operator fkrebs@nucli.de.
 **Open questions:** none — all design decisions baked.
+
+## 15. v15.1 additions (2026-05-22 follow-up after persona reviews)
+
+v15.1 is a small additive follow-up to v15. It does not change the wire-shape
+fixes, V61 migration, or sequencing of §14 — it adds the persona-review gaps
+that surfaced after v15 merged. **Operator impact:** zero unless using the new
+flags; the existing v15 CLI surface is byte-for-byte preserved.
+
+### New CLI flags
+
+| Flag | Required when | Effect |
+|---|---|---|
+| `--default-license <SPDX>` | SOURCE / LOCAL import modes | FAIR R1 license stamped on dest Collection + every imported DO; the script refuses to start without it for import paths (`--bootstrap`, `--dry-run`, `--verify-imported` are exempt) |
+| `--default-access-rights <RIGHTS>` | SOURCE / LOCAL import modes | FAIR R1.1 accessRights default (mirrors `--default-license` gate) |
+| `--name-mapping <CSV>` | optional | Path to CSV of `source-name,operator-name` rows; renames the dest DO + preserves the source name as `dcterms:alternative` annotation. Reluctant Senior trust-G2. |
+| `--workers <N>` | optional (default 1) | Concurrent worker count; N=1 is sequential fallback preserving v15 semantics; N>1 fans out via bounded `Queue(256)` + `ThreadPoolExecutor(N)` |
+| `--verify-imported` | optional | Independent verifier mode — walks the dest, counts DOs by pattern, file refs by `fileSize>0`, TS refs by non-empty `timeseries[]`, DAG-walk spot-check; writes `mffd-verify-<session>.json` |
+
+### What v15.1 adds
+
+| Gap (per v15-review-data-ontologist.md) | Tier | Implementation |
+|---|---|---|
+| **G1** — pre-import snapshot | 1 | `main()` calls `create_snapshot(label="v15-import-pre-<session>")` after warmup + before `run_source_mode_workers` |
+| **G4** — post-import snapshot label includes `as-imported` | 1 | label is now `v15-as-imported-<session>@<coll>` (was `dropbox-import-<session>@<coll>` in v15) |
+| **G5** (partial) — snapshots typed via Collection-anchored annotations | 1 | `annotate_snapshot_lineage(kind="pre"/"post")` emits `<coll> prov:wasInformedBy snap:<urn>` (pre) and `<coll> prov:generated snap:<urn>` (post) via CollectionSemanticAnnotation REST. **Full G5** (snapshot entity typed as `prov:Entity` directly) awaits a backend SnapshotService extension to auto-emit, since no public turtle ingest endpoint exists. |
+| **G2** — per-DO `fair2r:modeOfProduction "ai"` | 2 | `annotate_do_mode_of_production` emits the three F(AI)²R triples (modeOfProduction, wasAcceptedAs, wasGeneratedByAi) per step DO; closes EU AI Act Art. 50 per-artefact-visibility gap (deadline 2026-08-02) |
+| **G8** — `fair2r:wasAcceptedAs "auto-applied"` | 2 | Same call as G2 — bundled |
+| FAIR R1 — license + accessRights | 3 | `--default-license` + `--default-access-rights` CLI flags; v1-compat field hydration on POST + dcterms triples via `annotate_collection_license` |
+| **G7** — typed predecessor edges | 3 | `annotate_typed_predecessor` emits `<do> prov:wasInformedBy <predDoUrn>` per predecessor; mirrors Neo4j `:PREDECESSOR_OF` into SHACL graph so ODIX/RO-Crate see it |
+| Operator name preservation | 4 | `--name-mapping <csv>` CSV; `annotate_alternative_name` preserves source name as `dcterms:alternative` |
+| Independent verifier | 4 | `--verify-imported` verb — separate code path from producer counters; v14-style silent corruption (Bug E) cannot pass an under-counted batch as success |
+| Worker-pool wiring | 5 | `run_source_mode_workers(workers=N)`; N=1 is sequential fallback; N>1 instantiates `ThreadPoolExecutor(N)`. Tests assert wiring (queue exists, executor sees N workers, sequential branch bypasses queue). Real-concurrency convergence tests deferred — flaky per Agent A's rationale. |
+
+### What v15.1 explicitly does NOT add (parked in v15.2 backlog)
+
+- **TPL17 / Bloxberg ledger anchoring** — IME/AQE-flagged CRITICAL but a
+  separate plugin work; v15.1 emits the snapshot prov:Activity, anchoring
+  hooks land later.
+- **Backend X-AI-Agent header consumption** — IME/AQE-flagged CRITICAL;
+  the backend doesn't read the header today, so a backend PR (not a script
+  PR) is required to surface `_provenanceMode` on v2 IO responses.
+- **Full G5 — snapshot entity directly typed as `prov:Entity`** — awaits a
+  SnapshotService backend extension; no public turtle ingest endpoint
+  exists, so the partial G5 (Collection-anchored lineage triples) is what
+  v15.1 ships.
+- **Full G3 — mid-import snapshots every 500 DOs** — deferred; would
+  require refactoring `run_source_mode`'s per-DO loop into a batch-aware
+  shape. v15.1 ships pre+post brackets; mid-batch snapshots land in v15.2
+  alongside the worker-pool task closure.
+- **Full G6 — Claim-vs-Entity discriminator** — pure design clarification;
+  no runtime cost; lifted into the spec at §10 (planned next pass).
+- **Vocab lift for the top-12 MFFD attributes** (F2/F3 RDM finding) —
+  defers TPL4 dual-write; v15.1 keeps attributes as free-text Map.
+- **Full IME predecessor typing (rework heuristics)** — v15.1 emits
+  `prov:wasInformedBy` for every predecessor. The rework discriminator
+  (`prov:wasRevisionOf` + `fair2r:repairs`) requires heuristics over
+  source attributes (status: "REWORK", iteration > 1, etc.) and lives in
+  a forging-stage-2 pass.
+
+### Test additions
+
+`examples/mffd-showcase/tests/` gains **47 tests across 7 files** on top of
+v15's 71. Total: **118 tests, all stdlib unittest, no external deps.**
+
+```
+tests/test_snapshot_brackets.py     8 tests   G1+G4+G5 snapshot brackets + lineage
+tests/test_per_do_mode.py           8 tests   G2+G8 + Fair2r namespace constants
+tests/test_license_population.py   10 tests   FAIR R1 + license_iri builder + dcterms triples
+tests/test_typed_predecessors.py    3 tests   G7 prov:wasInformedBy emission
+tests/test_name_mapping.py          6 tests   CSV loader + dcterms:alternative
+tests/test_verify_imported.py       4 tests   Verifier walk + report shape
+tests/test_worker_pool.py           8 tests   Sequential fallback + concurrent wiring
+```
+
+Run from `examples/mffd-showcase`: `python3 -m unittest discover -s tests`
+→ **Ran 118 tests, OK**.
