@@ -13,6 +13,49 @@ vision.
 
 ---
 
+## Data forging — the working metaphor
+
+The way you actually use shepard is by **forging** your dataset over
+time. Each meaningful change is bracketed by snapshots:
+
+```
+   snapshot (t0)  →  mutate  →  snapshot (t1)  →  mutate  →  snapshot (t2)  →  …
+   (raw import)      (annotate,  (as-imported)   (refine,    (as-curated)     (publishable)
+                      lift,                       analyse,
+                      classify)                   correct)
+```
+
+Every snapshot is a **named, durable, queryable state**. Every
+mutation is a **typed PROV-O Activity** carrying who did it, when, on
+what input, with which tool (including the AI agent's identity per
+[F(AI)²R](semantics/95-shacl-templates-and-individuals.md#part-15)).
+The snapshot chain IS the provenance — not a side document, not a
+backup tape, not a lab-journal entry. The graph itself.
+
+This matters because real research data is never finished in one
+shot. You import raw measurements; later you discover an anomaly and
+re-classify; later still a collaborator adds annotations from a
+different domain; eventually you publish a curated subset. With
+folder structures + spreadsheets, every one of those mutations
+erases the prior state. With shepard, you keep the chain — and the
+auditor / co-author / future-you can walk it.
+
+The AI-collaboration story is the same shape: when an AI agent runs
+a forging pass (auto-annotation, semantic analysis, anomaly flag),
+the resulting state is marked **🤖 AI-only** at the artefact level.
+A human can promote individual claims through a verification ladder
+(unverified → ai-confirmed → human-confirmed) — the snapshot AFTER
+the promotion carries the new state, the one BEFORE preserves the
+unverified one. EU AI Act Article 50 compliance falls out of this
+naturally: every AI-touched artefact is queryable, every claim is
+back-referenced to the Activity that produced it, every verification
+state is visible.
+
+See `examples/mffd-showcase/` for the worked example: the MFFD
+upper-fuselage demonstrator data is forged from a raw cube3 import
+through ODIX semantic analysis to a published EASA-shaped evidence
+pack, with every pass captured.
+
 ## In one paragraph
 
 shepard is a **research-data platform** for the kinds of mixed,
@@ -21,9 +64,12 @@ timeseries, CAD files, lab-journal notes, photos, geometry,
 structured run-logs, semantic annotations — all under one
 permission-aware, exportable umbrella. You put your campaign in,
 your collaborators see what they're allowed to see, and when it's
-time to publish you get a citable RO-Crate ZIP back. It is not a
-files-and-folders share, and it is not a database; it is the
-**data context** layer in between.
+time to publish you get a citable RO-Crate ZIP back. The forging
+metaphor above is how you work inside shepard; the platform is what
+makes the snapshot chain queryable, the typed activities durable,
+and the AI provenance auditable. It is not a files-and-folders
+share, and it is not a database; it is the **data context** layer
+in between.
 
 ## Who it's for
 
