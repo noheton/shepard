@@ -1,11 +1,16 @@
-# shepard Ecosystem — Tools, Integration, Improvements
+# shepard-process-wizard + shepard-timeseries-collector integration design
 
-**Scope.** Inventory of the shepard ecosystem beyond this backend +
-frontend repo, plus integration recommendations for **shepard-process-wizard**
-(SPW) and improvement suggestions for **shepard-timeseries-collector**
-(sTC). Includes a recommendation for **bringing process design and
-runtime into shepard core** as part of the templates feature
-(`aidocs/39`).
+**Scope.** Integration recommendations for **shepard-process-wizard** (SPW) and
+improvement suggestions for **shepard-timeseries-collector** (sTC). Includes a
+recommendation for **bringing process design and runtime into shepard core** as
+part of the templates feature (`aidocs/workflows/39-templates-design.md`).
+
+For the broader ecosystem inventory (all repos, plugins, standards, etc.) see
+the canonical ledger at [`aidocs/40-ecosystem.md`](../40-ecosystem.md). This
+file was renamed from `aidocs/integrations/40-ecosystem.md` on 2026-05-22 per
+the SSOT consolidation manifest — both files used the same numeric prefix and
+addressed overlapping topics. Inventory content lives in `40-ecosystem`;
+SPW+sTC integration design lives here.
 
 **Status.** Concept design. Coordinates with the upstream maintainers
 of SPW / sTC are required for §2 / §3 changes.
