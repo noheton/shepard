@@ -428,4 +428,122 @@ public class TestNeo4jMigrations {
     assertEquals(1, constraintCount.intValue(),
       "V22 must create the appId_unique_FileGroup constraint");
   }
+
+  /**
+   * V61 registers the eight v15-import provenance predicates plus
+   * two prov:Role named individuals as n10s :Resource nodes so
+   * SemanticAnnotation IRI lookups against them resolve cleanly.
+   *
+   * <p>This test asserts:
+   * <ul>
+   *   <li>All 10 expected IRIs are present after running V61.</li>
+   *   <li>Each carries the {@code shepard__addedBy = 'V61__v15_prov_predicates'}
+   *       provenance tag (the rollback's safety net).</li>
+   *   <li>Predicate nodes carry the {@code :Property} label; role nodes
+   *       carry the {@code :NamedIndividual} label.</li>
+   *   <li>Re-running V61 is a no-op (count stays 10).</li>
+   * </ul>
+   *
+   * <p>See {@code backend/src/main/resources/neo4j/migrations/V61__v15_prov_predicates.cypher}
+   * and {@code aidocs/agent-findings/data-ontologist-prov-o-v15.md §"New shepard:
+   * predicates proposed"} for the full table.
+   */
+  @Test
+  public void testV61_v15ProvPredicates() {
+    runMigrations("V61");
+
+    // The 10 IRIs V61 must register, split into predicates + roles.
+    String[] expectedPredicates = {
+      "http://semantics.dlr.de/shepard-upper#targetCollection",
+      "http://semantics.dlr.de/shepard-upper#filesUploaded",
+      "http://semantics.dlr.de/shepard-upper#timeseriesImported",
+      "http://semantics.dlr.de/shepard-upper#structuredPayloads",
+      "http://semantics.dlr.de/shepard-upper#batchSequence",
+      "http://semantics.dlr.de/shepard-upper#throughputBytesPerSec",
+      "http://semantics.dlr.de/shepard-upper#retryCount",
+      "http://semantics.dlr.de/shepard-upper#sourceInstance",
+    };
+    String[] expectedRoles = {
+      "http://semantics.dlr.de/shepard-upper#role-executor",
+      "http://semantics.dlr.de/shepard-upper#role-operator",
+    };
+
+    // Assertion 1: every predicate exists with the right labels + provenance tag.
+    for (String iri : expectedPredicates) {
+      var count = (Number) session
+        .query(
+          "MATCH (r:Resource:Property {uri: $iri}) " +
+          "WHERE r.shepard__addedBy = 'V61__v15_prov_predicates' " +
+          "RETURN count(r) AS c",
+          Map.of("iri", iri)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V61 must register :Property Resource node for " + iri);
+    }
+
+    // Assertion 2: every role individual exists with the right labels.
+    for (String iri : expectedRoles) {
+      var count = (Number) session
+        .query(
+          "MATCH (r:Resource:NamedIndividual {uri: $iri}) " +
+          "WHERE r.shepard__addedBy = 'V61__v15_prov_predicates' " +
+          "RETURN count(r) AS c",
+          Map.of("iri", iri)
+        )
+        .iterator()
+        .next()
+        .get("c");
+      assertEquals(1, count.intValue(),
+        "V61 must register :NamedIndividual Resource node for " + iri);
+    }
+
+    // Assertion 3: total count across the V61-provenance-tagged set is exactly 10.
+    var total = (Number) session
+      .query(
+        "MATCH (r:Resource) " +
+        "WHERE r.shepard__addedBy = 'V61__v15_prov_predicates' " +
+        "RETURN count(r) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(10, total.intValue(),
+      "V61 must register exactly 10 Resource nodes (8 predicates + 2 roles)");
+
+    // Assertion 4: idempotency — re-running V61 produces no duplicates.
+    runMigrations("V61");
+    var totalAfterRerun = (Number) session
+      .query(
+        "MATCH (r:Resource) " +
+        "WHERE r.shepard__addedBy = 'V61__v15_prov_predicates' " +
+        "RETURN count(r) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(10, totalAfterRerun.intValue(),
+      "V61 re-run must remain idempotent — no duplicate :Resource nodes");
+
+    // Assertion 5: every node carries a non-empty English label
+    // (the InternalSemanticConnector.getTerm shape downstream consumers rely on).
+    var withLabel = (Number) session
+      .query(
+        "MATCH (r:Resource) " +
+        "WHERE r.shepard__addedBy = 'V61__v15_prov_predicates' " +
+        "  AND r.`rdfs__label@en` IS NOT NULL " +
+        "  AND r.`rdfs__label@en` <> '' " +
+        "RETURN count(r) AS c",
+        Map.of()
+      )
+      .iterator()
+      .next()
+      .get("c");
+    assertEquals(10, withLabel.intValue(),
+      "Every V61-registered Resource must carry a non-empty rdfs__label@en");
+  }
 }
