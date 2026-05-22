@@ -45,7 +45,7 @@ nav:
     url: /system-requirements
 
 # Snapshot date — bump when content is refreshed.
-snapshot_date: 2026-05-07
+snapshot_date: 2026-05-22
 
 exclude:
   - README.md

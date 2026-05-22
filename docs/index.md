@@ -68,7 +68,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 <div class="facts">
   <div><div class="num">21</div><div class="lbl">Java version (backend)</div></div>
   <div><div class="num">3.27.x</div><div class="lbl">Quarkus version</div></div>
-  <div><div class="num">4</div><div class="lbl">Persistence stores</div></div>
+  <div><div class="num">5</div><div class="lbl">Persistence substrates</div></div>
   <div><div class="num">FAIR</div><div class="lbl">RDM posture</div></div>
 </div>
 
@@ -77,7 +77,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 | API surface | Two shelves: upstream-compatible `/shepard/api/...` (frozen for byte-for-byte parity with shepard 5.2.0) + this fork's additive `/v2/...` development surface. OpenAPI 3.0 at `/shepard/doc/openapi.json`, Swagger UI at `/shepard/doc/swagger-ui/` |
 | Backend | Quarkus 3.27.x on Java 21 |
 | Frontend | Nuxt 3 + Vue 3 + Vuetify 3 (separate Docker image) |
-| Persistence | Neo4j 5.24 + MongoDB 8.0 + Postgres+TimescaleDB; optional Postgres+PostGIS |
+| Persistence | Neo4j 5.24 (metadata) + MongoDB 8.0 (files / structured) + Postgres+TimescaleDB (timeseries) + S3-compatible object store via [`shepard-plugin-file-s3`](/reference/file-storage/) (Garage by default); optional Postgres+PostGIS |
 | Auth | External OIDC (Keycloak typical) + secondary `X-API-KEY` header |
 | Deployment | docker-compose, on-premises (no cloud assumed) |
 
@@ -85,28 +85,73 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 
 Recent capabilities not in upstream shepard 5.2.0:
 
+- **S3-compatible file storage with presigned uploads.** The
+  [`shepard-plugin-file-s3`](/reference/file-storage/) adapter is
+  live (FS1b–FS1g): browser-direct presigned upload, presigned
+  download, presigned RO-Crate export, and a
+  [GridFS → S3 migration runbook](/ops/migrate-gridfs-to-s3/) for
+  in-place adapter swap. Garage is the default self-hosted endpoint;
+  [Garage activation runbook](/ops/garage-activation-runbook/).
+  GridFS stays first-class supported — not a deprecation path.
+- **Plugins declare their sidecars (PM1f).** Activating a plugin
+  that needs an external service (S3 backend, Kafka, Redis, …) no
+  longer means hand-editing a compose override — the plugin's
+  manifest carries the sidecar shape and an operator-side renderer
+  pastes the compose snippet. See [Sidecars SPI](/reference/sidecars/).
+- **Cross-instance import with full provenance** — the
+  [`mffd-import-v15`](/reference/import/) reference script pulls
+  Collections from a remote shepard (or local directory), uploads
+  via the presigned-URL flow, writes PROV-O activities on every
+  transfer, and survives JWT expiry + redeploy + operator
+  interrupt without losing state.
+- **View recipes + process recipes (TPL2a).** Two new
+  `TemplateKind`s drive the upcoming `POST /v2/shapes/render`
+  endpoint — same recipe drives a TresJS / Three.js component
+  today, an Isaac Sim scene tomorrow. See
+  [View recipes](/reference/view-recipes/).
+- **MCP server, native + JVM-side.** `/v2/mcp/sse` exposes an
+  8-tool surface (collections, dataobjects, timeseries channels,
+  files, structured-data, annotations) for Claude and other MCP
+  clients. OIDC + API-key auth; LTTB downsampling on
+  `get_channel_data`. Discoverable from the `/me#mcp` profile pane.
+- **AI plugin + wiki-writer.** The
+  [`shepard-plugin-ai`](https://github.com/noheton/shepard/tree/main/plugins/ai)
+  module exposes an `LlmProvider` SPI for OpenAI-compatible
+  endpoints with per-capability slots (TEXT / FAST_TEXT / IMAGE_GEN
+  / VISION / EMBEDDING / STRUCTURED), prompt-injection defence, and
+  `:AiActivity` provenance on every call. `shepard-plugin-wiki-writer`
+  generates a Markdown lab-journal entry for any DataObject from
+  its metadata + Collection context with one click.
 - **Semantic annotations on every primitive.** Collections, DataObjects,
-  References, Timeseries channels, **and now Containers themselves** —
+  References, Timeseries channels, **and Containers themselves** —
   see the [container annotations reference](/reference/container-annotations/).
   An n10s-backed [internal semantic repository](/reference/semantic-repositories/)
-  ships with eleven pre-seeded ontologies so casual users have resolvable
+  ships with eleven pre-seeded ontologies (PROV-O, Dublin Core,
+  schema.org, FOAF, QUDT, OM-2, W3C Time, GeoSPARQL, OBO Relation
+  Ontology, NFDI4Ing metadata4ing) so casual users have resolvable
   IRIs out of the box.
-- **Server-enforced safe-delete on containers.** `DELETE /v2/{kind}-containers/{id}`
-  refuses with 409 + `{referenceCount, sampleDataObjectAppIds}` when the
-  container still has active references; opt in to orphaning with
-  `?force=true`. See [container safe-delete](/reference/container-safe-delete/).
-- **AI anomaly detection** on timeseries references — pure-Java
-  rolling-median MAD, no LLM required. Invoke from the UI or
-  `POST /v2/timeseries-references/{refAppId}/detect-anomalies?createAnnotations=true`.
-- **Curated SQL over HTTP** for bulk timeseries reads
-  (`POST /v2/sql/timeseries`) with row + duration caps and
-  CSV / JSON / NDJSON output.
 - **Per-instance organisation identity** via ROR — admins set the
   instance's ROR id once; the About → Organization pane fetches live
   details from ror.org.
+- **HMC Kernel Information Profile publication** — one-click
+  Publish button on any Collection or DataObject mints a PID
+  (local default; DataCite DOI via the
+  `shepard-plugin-minter-datacite` plugin); resolver at
+  `/v2/.well-known/kip/{pid-suffix}`. See
+  [Publish and PIDs](/reference/publish-and-pids/).
+- **Helmholtz Unhide publish feed** —
+  `shepard-plugin-unhide` exposes `GET /v2/unhide/feed.jsonld`
+  (schema.org + metadata4ing JSON-LD) for the HKG / Unhide
+  harvester. Runtime-configurable.
 - **Plugin extensibility** — drop `shepard-plugin-*.jar` files into
   `/deployments/plugins/`, restart; bundled plugins cover Helmholtz
-  Unhide publish, KIP minting, DataCite, S3 file storage, HDF5,
-  Git references, spatial data.
+  Unhide publish, KIP / local + DataCite minters, S3 file storage,
+  video, AI provider, wiki-writer. See [Plugins](/reference/plugins/).
+- **v1 deprecation control plane.** The
+  `shepard-plugin-v1-compat` plugin ships a `:LegacyV1Config`
+  singleton + admin REST + frontend banner so operators can decide
+  *when* to disable the upstream `/shepard/api/...` surface —
+  the fork imposes no global sunset timeline. See
+  [v1 deprecation](/reference/v1-deprecation/).
 
 Snapshot date: {{ site.snapshot_date }}.

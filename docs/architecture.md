@@ -23,11 +23,14 @@ flowchart LR
   caddy --> backend[Quarkus 3 backend - Java 21]
   frontend --> backend
   backend --> neo4j[(Neo4j 5.24<br/>metadata graph)]
-  backend --> mongo[(MongoDB 8.0<br/>files and structured)]
+  backend --> mongo[(MongoDB 8.0<br/>structured docs<br/>+ GridFS fallback)]
   backend --> ts[(Postgres + TimescaleDB<br/>timeseries)]
+  backend --> s3[(S3-compatible<br/>file payloads<br/>Garage default)]
   backend -. optional .- gis[(Postgres + PostGIS<br/>spatial)]
-  backend -. SPARQL .- semantic[Semantic repos<br/>e.g. Ontobee]
+  backend -. SPARQL .- semantic[Semantic repos<br/>internal n10s or external]
   backend -. webhooks .- subs[Subscribers]
+  frontend -. presigned PUT/GET .- s3
+  plugins[shepard-plugin-*.jar<br/>drop-in] --> backend
   oidc[OIDC IdP - Keycloak typical] --> caddy
   prom[Prometheus] --> backend
 </div>
@@ -45,12 +48,20 @@ flowchart LR
 | Store | Role | Reason |
 |---|---|---|
 | Neo4j 5.24 | Metadata graph | The Collection / DataObject / Reference / Container relationships are inherently graph-shaped; parent/child + predecessor/successor traversals are first-class. |
-| MongoDB 8.0 | Files, structured documents | Variable-shaped JSON payloads and binary files do not benefit from a relational schema; MongoDB's document model is the natural fit. |
+| MongoDB 8.0 | Structured documents, GridFS fallback for file payloads | Variable-shaped JSON payloads have no benefit from a relational schema; MongoDB's document model is the natural fit. GridFS remains a first-class file backend for small / air-gapped deployments. |
 | Postgres + TimescaleDB | Timeseries | Hypertables, time-bucket aggregation, and SQL-compatible ingestion outperformed InfluxDB for the workload (ADR-010 / ADR-011). |
+| S3-compatible (Garage default) | File payloads at scale | The [`shepard-plugin-file-s3`](/reference/file-storage/) adapter (FS1b) supports any S3-compatible endpoint — Garage, Cloudflare R2, Backblaze B2, AWS S3, Ceph RGW. Garage is the reference self-hosted choice (ADR-0024). Presigned URLs unblock browser-direct uploads + RO-Crate ZIP delivery. |
 | Postgres + PostGIS (optional) | Spatial data | Bounding-box queries returned in 380 ms versus 59 s on alternative stacks (ADR-014 / ADR-017). Behind the `shepard.spatial-data.enabled` feature flag. |
 
 ADR rationale: see `architecture/src/09_architecture_decisions/008-...`,
-`010-...`, `011-...`, `014-...`, `017-...`.
+`010-...`, `011-...`, `014-...`, `017-...`, and ADR-0024 for the
+Garage / S3-default decision.
+
+The file-storage adapter is **swappable at deploy time**:
+`shepard.storage.provider=gridfs` (default, in-Mongo) or `s3` (any
+S3 endpoint). See the
+[GridFS → S3 migration runbook](/ops/migrate-gridfs-to-s3/) for the
+in-place upgrade path.
 
 ## Entity model
 
@@ -95,6 +106,36 @@ backend and the same Neo4j graph:
 `aidocs/25` formalises this split (L2 chain). Operators upgrading
 from upstream see zero breakage on `/shepard/api/` and choose when
 to start consuming `/v2/`.
+
+## Plugin SPI
+
+shepard's value grows from extension — new payload kinds, new
+external integrations, new identifier providers, new file storage
+backends — all without forking core. The
+[`PluginManifest`](/reference/plugins/) SPI (PM1a) loads
+`shepard-plugin-*.jar` files from `/deployments/plugins/` at
+startup via Java `ServiceLoader`.
+
+Plugins can declare:
+
+- REST resources mounted on the `/v2/` surface,
+- Neo4j entities / Flyway migrations / CDI beans,
+- their own SPDX licence + version / shepard-compatibility range
+  (PM1b enforces the range; PM1b2 verifies JAR signatures when
+  `shepard.plugins.signing.required=true`),
+- runtime overrides persisted to `:PluginRuntimeOverride` (PM1e —
+  flips survive restart),
+- their own `shepard-admin` CLI subcommands (PM1d), and
+- **infrastructure sidecars** they need to function
+  ([Sidecars SPI](/reference/sidecars/), PM1f).
+
+Bundled plugins include `unhide` (Helmholtz Unhide publish),
+`kip` + `minter-local` + `minter-datacite` (PID minting),
+`file-s3` (S3 file storage), `video` (video payloads),
+`ai` + `wiki-writer` (LLM integration), `importer` (cross-instance
+import), and `v1-compat` (the upstream-frozen surface's control
+plane). The full list is at
+[Plugins reference](/reference/plugins/).
 
 ## Auth model
 
