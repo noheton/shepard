@@ -37,13 +37,36 @@ log "Backend ready."
 # ---- mint admin token + api key ------------------------------------------
 
 log "Obtaining Keycloak access token for ${ADMIN_USER} ..."
-KC_RESPONSE=$(curl -sf -X POST \
+# NOTE: do not use `curl -f` here — it suppresses the response body on 4xx and
+# leaves the operator with a bare exit-22 to chase. We capture both body and
+# status explicitly so an admin-password drift (the realm JSON says
+# admin-demo but the live Keycloak user was rotated) is diagnosable from the
+# container log in one read. Recovery: re-import the realm JSON
+# (`docker compose stop keycloak && docker volume rm
+# infrastructure_keycloak-data && docker compose up -d keycloak`), or reset
+# the password via master admin (`POST /admin/realms/${REALM}/users/<id>/
+# reset-password` with the bootstrap admin token).
+KC_BODY_FILE=$(mktemp)
+KC_HTTP=$(curl -sS -o "${KC_BODY_FILE}" -w "%{http_code}" -X POST \
   "${KC}/realms/${REALM}/protocol/openid-connect/token" \
   -d "grant_type=password" \
   -d "client_id=${CLIENT_ID}" \
   -d "username=${ADMIN_USER}" \
   -d "password=${ADMIN_PASS}" \
   -d "scope=openid")
+if [ "${KC_HTTP}" != "200" ]; then
+  log "Keycloak token request failed: HTTP ${KC_HTTP}"
+  log "Response body: $(cat "${KC_BODY_FILE}")"
+  log "Endpoint: ${KC}/realms/${REALM}/protocol/openid-connect/token"
+  log "client_id=${CLIENT_ID} username=${ADMIN_USER} (password hidden)"
+  log "Likely cause: the live Keycloak user '${ADMIN_USER}' password drifted from"
+  log "the realm seed (infrastructure/keycloak/shepard-demo-realm.json). Reset via"
+  log "the master admin or re-import the realm JSON."
+  rm -f "${KC_BODY_FILE}"
+  exit 1
+fi
+KC_RESPONSE=$(cat "${KC_BODY_FILE}")
+rm -f "${KC_BODY_FILE}"
 ACCESS_TOKEN=$(python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])" <<< "${KC_RESPONSE}")
 
 ADMIN_SUB=$(python3 -c "
