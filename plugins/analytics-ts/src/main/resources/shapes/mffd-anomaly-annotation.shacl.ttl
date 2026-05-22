@@ -1,0 +1,127 @@
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix prov:   <http://www.w3.org/ns/prov#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix shep:   <https://shepard.example.org/ontology/> .
+@prefix fair2r: <https://noheton.github.io/f-ai-r/v0/> .
+@prefix mffd:   <https://shepard.example.org/mffd/> .
+
+# AT1 — SHACL shape for typed anomaly annotations produced by the
+# analytics-ts plugin. Ships as documentation in the plugin resources;
+# AnomalyDetectionService PR-6 either persists via the SHACL substrate
+# (if the parallel SHACL non-TS agent's substrate is in main) or to
+# the existing :TimeseriesAnnotation graph with a TODO citation back
+# to this file.
+#
+# Coordination note: the f(ai)²r vocabulary tier is owned by the
+# parallel SHACL non-TS agent. The `fair2r:StatisticalPass` term used
+# here is a proposed sibling to `fair2r:AuthoringPass` — same
+# `prov:Activity` shape, relaxed required fields. If the parallel
+# agent renames the term (e.g. to `fair2r:DetectorPass`), this file
+# changes at merge time. The naming convention is the agent's call;
+# the shape topology (Claim node + sibling-Activity provenance) is
+# locked.
+
+mffd:TimeseriesAnomalyAnnotationShape
+    a sh:NodeShape ;
+    rdfs:label "Timeseries anomaly annotation (AT1)" ;
+    rdfs:comment "A claim that a timeseries interval contains an anomaly, produced by a statistical or ML detector." ;
+    sh:targetClass mffd:TimeseriesAnomalyAnnotation ;
+    sh:property [
+        sh:path shep:startNs ;
+        sh:datatype xsd:long ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "Epoch-nanos of the first anomalous data point in the run." ;
+    ] ;
+    sh:property [
+        sh:path shep:endNs ;
+        sh:datatype xsd:long ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "Epoch-nanos of the last anomalous data point in the run." ;
+    ] ;
+    sh:property [
+        sh:path shep:peakValue ;
+        sh:datatype xsd:double ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "Measurement value at the interval's max |Z-score|." ;
+    ] ;
+    sh:property [
+        sh:path shep:maxZScore ;
+        sh:datatype xsd:double ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "Largest |Z-score| observed within the run." ;
+    ] ;
+    sh:property [
+        sh:path shep:confidence ;
+        sh:datatype xsd:double ;
+        sh:minInclusive 0.0 ;
+        sh:maxInclusive 1.0 ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "min(1.0, maxZScore / (2 * k)) — monotonic, interpretable." ;
+    ] ;
+    sh:property [
+        sh:path prov:wasGeneratedBy ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class fair2r:StatisticalPass ;
+        sh:description "The detection activity that produced this claim. Sibling-Activity provenance — a fair2r:StatisticalPass (relaxed required fields vs. AuthoringPass): detectorId, parametersUsed, librarySource. No promptHash / modelId." ;
+    ] .
+
+# Proposed extension to the f(ai)²r vocabulary — sibling to
+# fair2r:AuthoringPass for non-LLM detection activities.
+fair2r:StatisticalPass
+    a rdfs:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Statistical detection pass" ;
+    rdfs:comment """
+A statistical detection activity. Sibling to fair2r:AuthoringPass, with
+relaxed required fields: no promptHash, no LLM-style modelId. Carries
+detectorId (e.g. 'mad-v1'), parametersUsed (JSON), and librarySource
+(SPDX / Maven coordinates of the implementing library).
+
+Used by shepard-plugin-analytics-ts to capture provenance for every
+anomaly detection run.
+""" .
+
+fair2r:StatisticalPassShape
+    a sh:NodeShape ;
+    sh:targetClass fair2r:StatisticalPass ;
+    sh:property [
+        sh:path fair2r:detectorId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "Stable detector id (TimeseriesAnalytics.id())." ;
+    ] ;
+    sh:property [
+        sh:path fair2r:parametersUsed ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:description "JSON-encoded parameter set actually applied (e.g. {\"window\":51,\"k\":6.0})." ;
+    ] ;
+    sh:property [
+        sh:path fair2r:librarySource ;
+        sh:datatype xsd:string ;
+        sh:minCount 0 ;
+        sh:maxCount 1 ;
+        sh:description "SPDX or Maven-coordinate identifier of the library that implements the detector. For AT1 mad-v1: 'de.dlr.shepard.plugins:shepard-plugin-analytics-ts:1.0.0-SNAPSHOT'." ;
+    ] ;
+    sh:property [
+        sh:path prov:startedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path prov:endedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
