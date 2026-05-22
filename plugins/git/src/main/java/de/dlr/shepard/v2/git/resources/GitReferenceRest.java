@@ -42,6 +42,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
 /**
  * {@code /v2/data-objects/{appId}/git-references} REST surface for
@@ -60,6 +61,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @RequestScoped
 @Tag(name = "Git references (v2)")
 public class GitReferenceRest {
+
+  private static final Logger LOG = Logger.getLogger(GitReferenceRest.class);
 
   @Inject
   GitReferenceDAO gitReferenceDAO;
@@ -121,6 +124,7 @@ public class GitReferenceRest {
     @Context SecurityContext securityContext
   ) {
     if (body == null || body.getRepoUrl() == null || body.getRepoUrl().isBlank()) {
+      LOG.warnf("createGitReference rejected: repoUrl is missing/blank for dataObject=%s", dataObjectAppId);
       return Response.status(Response.Status.BAD_REQUEST).entity("repoUrl is required and must be non-blank").build();
     }
     var gate = checkAccess(dataObjectAppId, AccessType.Write, securityContext);
@@ -130,12 +134,14 @@ public class GitReferenceRest {
     try {
       parent = dataObjectDAO.findByNeo4jId(entityIdResolver.resolveLong(dataObjectAppId));
     } catch (NotFoundException nfe) {
+      LOG.warnf("createGitReference: DataObject not found dataObjectAppId=%s", dataObjectAppId);
       return Response.status(Response.Status.NOT_FOUND).build();
     }
     if (parent == null) return Response.status(Response.Status.NOT_FOUND).build();
 
     GitReference gr = new GitReference(body.getRepoUrl(), body.getRef(), body.getPath());
     GitReferenceMode mode = body.getMode() == null ? GitReferenceMode.LOOSE_LINK : body.getMode();
+    LOG.debugf("createGitReference: dataObject=%s repoUrl=%s ref=%s mode=%s", dataObjectAppId, body.getRepoUrl(), body.getRef(), mode);
     // TRACKED_ARTIFACT requires both ref and path so the adapter has
     // enough to fetch a single file. LOOSE_LINK has no such requirement.
     if (mode == GitReferenceMode.TRACKED_ARTIFACT) {
@@ -159,6 +165,7 @@ public class GitReferenceRest {
     }
     gr.setDataObject(parent);
     GitReference saved = gitReferenceDAO.createOrUpdate(gr);
+    LOG.infof("createGitReference: created appId=%s for dataObject=%s repoUrl=%s mode=%s", saved.getAppId(), dataObjectAppId, body.getRepoUrl(), mode);
     return Response.status(Response.Status.CREATED).entity(new GitReferenceIO(saved)).build();
   }
 
@@ -430,6 +437,7 @@ public class GitReferenceRest {
     }
     Optional<String> patOpt = gitCredentialService.findPatForHost(callerUsername, parsed.host());
     if (patOpt.isEmpty()) {
+      LOG.warnf("applyPinnedSnapshot: no git credential for user=%s host=%s repoUrl=%s", callerUsername, parsed.host(), gr.getRepoUrl());
       return Response.status(Response.Status.BAD_REQUEST)
         .entity(
           "PINNED_SNAPSHOT: no git credential found for host " + parsed.host() +
@@ -441,6 +449,7 @@ public class GitReferenceRest {
     try {
       sha = adapterOpt.get().resolveRef(gr.getRepoUrl(), ref, patOpt.get());
     } catch (GitAdapterException e) {
+      LOG.warnf("applyPinnedSnapshot: adapter failed to resolve ref=%s repoUrl=%s error=%s", ref, gr.getRepoUrl(), e.getMessage());
       return Response.status(502)
         .entity("PINNED_SNAPSHOT: unable to resolve ref to SHA: " + e.getMessage()).build();
     }

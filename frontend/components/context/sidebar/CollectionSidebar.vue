@@ -175,7 +175,7 @@ const { mobile } = useDisplay();
 
 <template>
   <div
-    :style="mobile ? 'position: relative; width: 100%; height: 100%' : 'position: sticky; top: 0; width: 100%; max-width: inherit'"
+    :style="mobile ? 'position: relative; width: 100%; height: 100%' : 'position: sticky; top: 0; z-index: 1; width: 100%; max-width: inherit'"
     class="bg-treeview elevation-4 sidebar-container"
   >
     <CollectionSidebarHeader
@@ -366,7 +366,8 @@ const { mobile } = useDisplay();
   overflow: auto;
   scrollbar-width: thin;
 
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
 
   :deep(.v-list) {
     min-width: 100%;

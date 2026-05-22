@@ -13,6 +13,18 @@ const emit = defineEmits<{
 
 const onSearch = () =>
   emit("search-term-updated", searchText.value ? searchText.value : undefined);
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+const onInput = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(onSearch, 300);
+};
+
+const onClear = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  searchText.value = null;
+  emit("search-term-updated", undefined);
+};
 </script>
 
 <template>
@@ -26,12 +38,10 @@ const onSearch = () =>
     :placeholder="placeholder"
     variant="outlined"
     width="599px"
+    @input="onInput"
     @keydown.enter="onSearch"
-    @click:clear="onSearch"
+    @click:clear="onClear"
   >
-    <template #append-inner>
-      <v-btn variant="flat" color="primary" text="Search" @click="onSearch" />
-    </template>
     <template #prepend-inner>
       <v-icon icon="mdi-magnify" size="x-small" />
     </template>

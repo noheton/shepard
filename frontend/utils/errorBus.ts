@@ -45,10 +45,21 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
 
   const result = await error.response.body?.getReader().read();
   if (result?.value) {
-    const errorString = new TextDecoder().decode(result.value);
-
-    if (isJsonString(errorString) && isErrorType(JSON.parse(errorString))) {
-      errorObject = JSON.parse(errorString);
+    const errorString = new TextDecoder().decode(result.value).trim();
+    if (isJsonString(errorString)) {
+      const parsed = JSON.parse(errorString);
+      if (isErrorType(parsed)) {
+        errorObject = parsed;
+      } else if (typeof parsed?.message === "string") {
+        errorObject.message = parsed.message;
+      } else if (typeof parsed?.error === "string") {
+        errorObject.message = parsed.error;
+      } else if (typeof parsed?.detail === "string") {
+        errorObject.message = parsed.detail;
+      }
+    } else if (errorString.length > 0 && errorString.length < 2000) {
+      // Plain-text error body (e.g. "repoUrl is required and must be non-blank")
+      errorObject.message = errorString.replace(/^"|"$/g, "");
     }
   }
   return errorObject;
