@@ -323,5 +323,5 @@ all display modes and can land in parallel with any of the above.
 - `aidocs/workflows/30-provenance-and-lineage-design.md` — Provenance and lineage design
   (OpenLineage / PROV-O complement to semantic relationships)
 - `aidocs/82` — ZLP Augsburg Stakeholder Brief (the concrete user of this design)
-- `aidocs/integrations/40-ecosystem.md §3` — shepard-timeseries-collector (sTC, the live SSE source
+- `aidocs/workflows/40-spw-stc-integration-design.md §3` — shepard-timeseries-collector (sTC, the live SSE source
   for real-time DataBinding updates)

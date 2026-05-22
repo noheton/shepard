@@ -91,7 +91,7 @@ Design notes, analysis docs, and strategy docs for this fork of
 
 | File | Topic |
 |---|---|
-| [`40-ecosystem.md`](integrations/40-ecosystem.md) | Ecosystem overview + process wizard |
+| [`40-ecosystem.md`](workflows/40-spw-stc-integration-design.md) | Ecosystem overview + process wizard |
 | [`52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | Asset Administration Shell (AAS) integration (AAS1) |
 | [`60-shepard-edge.md`](integrations/60-shepard-edge.md) | Shepard Edge — offline / edge deployment |
 | [`61-shepard-mount-as-network-drive.md`](integrations/61-shepard-mount-as-network-drive.md) | Network-drive mount via FUSE / WebDAV |

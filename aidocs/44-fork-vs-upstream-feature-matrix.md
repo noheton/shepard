@@ -401,7 +401,7 @@ namespace; core enforces the shape.
 |---|---|---|---|---|
 | GitHub Pages docs site (Jekyll under `docs/`) | none | shipped at https://noheton.github.io/shepard/ | **✓ ↑** | `docs/` |
 | Live researcher-facing vision doc | none | shipped (`aidocs/42-vision.md`, Live status) | **✓ ↑** | `aidocs/42` |
-| Live ecosystem doc (SPW + sTC + others) | none | shipped (`aidocs/integrations/40-ecosystem.md`) | **✓ ↑** | `aidocs/40` |
+| Live ecosystem doc (SPW + sTC + others) | none | shipped (`aidocs/workflows/40-spw-stc-integration-design.md`) | **✓ ↑** | `aidocs/40` |
 | Upstream upgrade-path tracker (admin-facing) | n/a | shipped (`aidocs/34-upstream-upgrade-path.md`, Live) | **✓ ↑** | `aidocs/34` |
 | **This** fork-vs-upstream feature matrix (contributor-facing) | n/a | this doc | **✓ ↑** | this doc |
 | LUMEN-inspired showcase seed + analysis notebook (expanded to 25 channels × 15 runs; 2 hold days; 4 new signal profiles: valve, tank, gimbal, combustion) | none | shipped (PR #1001; expanded in CI2 commit — `N_RUNS=15`, 25 channels, `examples/lumen-showcase/data/generate.py`) | **✓ ↑** | PR #1001 + CI2 |
