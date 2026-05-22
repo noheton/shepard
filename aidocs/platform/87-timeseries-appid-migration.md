@@ -1,9 +1,53 @@
 # 87 — Timeseries appId Migration (TS-ID)
 
-**Status:** Design · not yet in-flight  
-**Audience:** Contributors, frontend developers, script authors  
-**Depends on:** L2d (appId-first v2 surface, shipped), P-series (SQL timeseries, shipped)  
+**Status:** Design · in-flight (substrate correction landed 2026-05-22)
+**Audience:** Contributors, frontend developers, script authors
+**Depends on:** L2d (appId-first v2 surface, shipped), P-series (SQL timeseries, shipped)
 **Blast radius:** ⚠ HIGH — touches every timeseries endpoint, all frontend channel selectors, backend client, existing TimeseriesReferences
+
+---
+
+## CHANGELOG
+
+### 2026-05-22 — Substrate correction: shepardId lives in Timescale, not Neo4j
+
+The original §3 TS-IDa step assumed timeseries channels were modeled as
+`:Timeseries` nodes in Neo4j. **That node never existed in this codebase.**
+The Timeseries surface (containers, channels, datapoints) is implemented
+entirely in PostgreSQL/Timescale (`backend/src/main/resources/db/migration/`
++ `de.dlr.shepard.data.timeseries.*`). The Neo4j layer holds
+`:TimeseriesContainer` and `:TimeseriesReference` only — not the channel
+metadata itself.
+
+**Corrected substrate:** the existing `timeseries` Postgres table (created
+by `V1.0.0__setup_timeseries_tables.sql`) IS the per-channel metadata
+table. Its 6-tuple uniqueness invariant
+(`container_id, measurement, field, device, location, symbolic_name`)
+already encodes channel identity. The migration adds a single
+`shepard_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()` column,
+backfilled on existing rows. Resolution from `shepardId` to the 5-tuple
+is a JDBC lookup against this column — no Neo4j round-trip.
+
+§3 TS-IDa as originally written is **superseded** by Flyway migration
+`V1.11.0__add_shepard_id_to_timeseries.sql` + `TsChannelResolver` JDBC
+service. The Neo4j-side migration (`V56__timeseries_appid_backfill.cypher`
+described in §3) is **not needed** and was never written.
+
+The user-facing naming also flips at this point: while the
+Java-internal getter stays `getAppId()` (deep rename deferred to task
+#123), the **wire/IO surface** on `/v2/` adopts `shepardId` everywhere —
+query params, path params, JSON field names (additive — `appId` stays on
+`/v2/` too for one release cycle, with `shepardId` as the canonical alias
+that emits the same value).
+
+`/shepard/api/...` (the frozen upstream v5 surface) continues to emit
+`appId` byte-for-byte; `shepardId` does NOT appear on the v1 wire. v1
+wire fidelity is proven by `V1WireFidelityTest` (pinned-JSON serializer
+assertions per IO class).
+
+This brings PR-9 (SHACL placeholder bind) into scope as a single resolver
+binding — the SHACL substrate's `mffd:hasTraceChannelPlaceholder` gets
+finalised to a `shepard:shepardId` lookup against the `timeseries` row.
 
 ---
 

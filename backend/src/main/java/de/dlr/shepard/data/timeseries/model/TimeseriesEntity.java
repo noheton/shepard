@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.UUID;
 
 @Entity
 @Table(name = "timeseries")
@@ -40,6 +41,23 @@ public class TimeseriesEntity {
   @Enumerated(EnumType.STRING)
   @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)
   private DataPointValueType valueType;
+
+  /**
+   * Single-field channel identity introduced by the TS-ID migration
+   * (PR-1 — supersedes the {@code :Timeseries} Neo4j node design in
+   * aidocs/platform/87 §3 TS-IDa, which never existed). Set by the
+   * Postgres column default ({@code gen_random_uuid()}) on insert when
+   * the application doesn't supply one. Resolution from {@code shepardId}
+   * to the 5-tuple is the job of
+   * {@code de.dlr.shepard.data.timeseries.repositories.TsChannelResolver}.
+   *
+   * <p>Wire-surface naming: the {@code /v2/} API exposes this as
+   * {@code shepardId} (additive — {@code appId} is unrelated; this is a
+   * Postgres row, not a Neo4j node). The {@code /shepard/api/} v5 surface
+   * does NOT expose this field — wire fidelity is non-negotiable.
+   */
+  @Column(name = "shepard_id", columnDefinition = "UUID", nullable = false, unique = true, updatable = false)
+  private UUID shepardId;
 
   public TimeseriesEntity() {}
 
@@ -103,6 +121,19 @@ public class TimeseriesEntity {
 
   public DataPointValueType getValueType() {
     return valueType;
+  }
+
+  /**
+   * Single-field channel identity. May be null on freshly-constructed
+   * in-memory instances before the row is persisted (the Postgres
+   * default fills it in on insert). Persisted rows always have a value.
+   */
+  public UUID getShepardId() {
+    return shepardId;
+  }
+
+  public void setShepardId(UUID shepardId) {
+    this.shepardId = shepardId;
   }
 
   @JsonIgnore
