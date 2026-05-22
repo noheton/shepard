@@ -104,7 +104,7 @@ public class LabJournalHistoryRest {
     // Permission check via parent DataObject
     var dataObject = entry.getDataObject();
     if (dataObject == null) return Response.status(Response.Status.NOT_FOUND).build();
-    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Read, caller, 0L)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(dataObject.getId(), AccessType.Read, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 

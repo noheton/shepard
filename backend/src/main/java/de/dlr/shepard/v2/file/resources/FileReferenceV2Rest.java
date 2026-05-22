@@ -144,7 +144,7 @@ public class FileReferenceV2Rest {
     if (parentOgmId == null) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
-    if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller, 0L)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(parentOgmId, AccessType.Write, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
 
@@ -444,7 +444,7 @@ public class FileReferenceV2Rest {
       // (gates on the DO's own perms, which fail closed; the operator can
       // run the L2b backfill to populate appIds and unblock this path).
       long doOgmId = ref.getDataObject().getId();
-      if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller, 0L)) {
+      if (!permissionsService.isAccessTypeAllowedForUser(doOgmId, accessType, caller)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       return null;

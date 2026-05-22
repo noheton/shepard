@@ -478,7 +478,7 @@ public class FileBundleReferenceRest {
     String doAppId = bundle.getDataObject().getAppId();
     if (doAppId == null) {
       long dataObjectOgmId = bundle.getDataObject().getId();
-      if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller, 0L)) {
+      if (!permissionsService.isAccessTypeAllowedForUser(dataObjectOgmId, accessType, caller)) {
         return Response.status(Response.Status.FORBIDDEN).build();
       }
       return null;
