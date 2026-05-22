@@ -14,11 +14,19 @@ const router = useRouter();
 const { queryParams } = useCollectionListQueryParams();
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 
+// LIC1: defensive accessor — the generated `Collection` client model may not
+// yet expose `accessRights`, but the wire payload carries it. Keeping the
+// cast out of template prevents the Vue compiler from misparsing `as unknown`
+// in v-if attribute strings.
+function rowAccessRights(item: Collection): string | null {
+  return (item as unknown as { accessRights?: string | null }).accessRights ?? null;
+}
+
 const headers = [
   {
     title: "ID",
     key: "id",
-    width: "10%",
+    width: "8%",
     cellProps: {
       class: "text-body-1",
     },
@@ -26,15 +34,26 @@ const headers = [
   {
     title: "Name",
     key: "name",
-    width: "40%",
+    width: "32%",
     cellProps: {
       class: "text-subtitle-2 word-wrap-anywhere",
+    },
+  },
+  // LIC1: surface accessRights at list level so an auditor can scan a page of
+  // collections and immediately see open vs. restricted vs. closed.
+  {
+    title: "Access",
+    key: "accessRights",
+    width: "12%",
+    sortable: false,
+    cellProps: {
+      class: "text-body-2",
     },
   },
   {
     title: "Created by",
     key: "createdBy",
-    width: "20%",
+    width: "18%",
     cellProps: {
       class: "text-body-1 word-wrap-anywhere",
     },
@@ -42,7 +61,7 @@ const headers = [
   {
     title: "Created at",
     key: "createdAt",
-    width: "20%",
+    width: "18%",
     sort: (a: Date, b: Date) => {
       return a.valueOf() - b.valueOf();
     },
@@ -111,6 +130,13 @@ function onPageChange(page: number) {
       >
         <template #[`item.id`]>{{ rowProps.item.id }}</template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
+        <template #[`item.accessRights`]>
+          <AccessRightsChip
+            v-if="rowAccessRights(rowProps.item)"
+            :access-rights="rowAccessRights(rowProps.item)!"
+          />
+          <span v-else class="text-disabled">—</span>
+        </template>
         <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
         <template #[`item.createdAt`]>
           {{ toShortDateString(rowProps.item.createdAt) }}

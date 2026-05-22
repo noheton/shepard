@@ -99,6 +99,21 @@ const collectionAppId = computed<string | null>(() => {
   return raw ?? null;
 });
 
+// LIC1 (FAIR-1): same defensive-read pattern as collectionAppId. The
+// generated `Collection` client model may not yet expose these fields, but
+// the wire payload carries them once the backend ships them.
+const collectionLicense = computed<string | null>(() => {
+  if (!collection.value) return null;
+  const raw = (collection.value as unknown as { license?: string | null }).license;
+  return raw ?? null;
+});
+const collectionAccessRights = computed<string | null>(() => {
+  if (!collection.value) return null;
+  const raw = (collection.value as unknown as { accessRights?: string | null })
+    .accessRights;
+  return raw ?? null;
+});
+
 // Gate the Publishing panel on whether the Unhide plugin is active on
 // this instance (INST2 — GET /v2/instance/capabilities, fetched in
 // HeaderBar on login). If the plugin is disabled or not installed the
@@ -152,6 +167,24 @@ watch(collection, () => {
               <TitleAndMetadataDisplay
                 :entity="collection"
                 id-label="Collection ID"
+              />
+            </v-row>
+            <!-- LIC1: FAIR metadata strip — license + accessRights. Shown only
+                 when at least one is set; null means undeclared and we
+                 deliberately don't show "—" here (the edit dialog is the
+                 affordance to set them). -->
+            <v-row
+              v-if="collectionLicense || collectionAccessRights"
+              no-gutters
+              class="pb-3 ga-2 align-center"
+            >
+              <LicenseChip
+                v-if="collectionLicense"
+                :license="collectionLicense"
+              />
+              <AccessRightsChip
+                v-if="collectionAccessRights"
+                :access-rights="collectionAccessRights"
               />
             </v-row>
             <v-row

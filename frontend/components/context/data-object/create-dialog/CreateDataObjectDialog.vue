@@ -80,6 +80,9 @@ const dataObjectToCreate = ref<DataObjectToCreate>({
   parentId: props.parentId ?? null,
   attributes: {},
   predecessorIds: [],
+  // LIC1 (FAIR-1): null = "not yet declared" — user can set in step 2.
+  license: null,
+  accessRights: null,
 });
 
 const isValid = ref<boolean>(true);
@@ -190,6 +193,16 @@ async function createDataObject() {
         <v-row>
           <v-col class="pt-9 pb-1">
             <div class="text-subtitle-1">Attributes</div>
+          </v-col>
+        </v-row>
+        <!-- LIC1 (FAIR-1): license + accessRights. Step 2 alongside the other
+             FAIR metadata fields. -->
+        <v-row class="mt-1">
+          <v-col cols="12" md="6" class="pb-0">
+            <LicenseInput v-model:license="dataObjectToCreate.license" />
+          </v-col>
+          <v-col cols="12" md="6" class="pb-0">
+            <AccessRightsInput v-model:access-rights="dataObjectToCreate.accessRights" />
           </v-col>
         </v-row>
         <v-row class="mt-1">
