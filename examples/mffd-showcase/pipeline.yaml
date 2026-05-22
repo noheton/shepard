@@ -1,0 +1,174 @@
+# MFFD Bridge Welding — semantic process analysis pipeline
+#
+# Worked example for `shepard-plugin-pipelines` (aidocs/97).
+# Wraps the existing `scripts/odix-analysis.py` + the
+# `ontology/mffd-process.ttl` as a Shepard-native, shape-typed,
+# DAG-orchestrated pipeline. Submission target: the planned
+# shepard-plugin-pipelines REST endpoint:
+#
+#     POST /v2/pipelines    Content-Type: application/yaml
+#
+# Until that endpoint ships (TPL18a), this file is documentation-only —
+# but the format is the binding contract.
+
+name: mffd-bridge-welding-analysis
+version: 1.0.0
+description: |
+  Walks the MFFD framewelding process-parameter export through the
+  ODIX semantic-analysis loop. Surfaces process-drift warnings + cross-
+  parameter correlations. Emits a Regulatory Evidence Pack (BagIt +
+  RO-Crate + PROV-O) anchored to Bloxberg on completion.
+
+authors:
+  - name: Florian Krebs
+    orcid: 0000-0001-6033-801X
+    affiliation: DLR ZLP Augsburg
+
+# Top-level licence applies to all generated artefacts unless overridden.
+licence: CC-BY-4.0
+
+# ─── Inputs ─────────────────────────────────────────────────────────────
+# All inputs resolve against the live Shepard instance. The plugin
+# rejects submission if any input cannot be found at submit time.
+
+inputs:
+  framewelding_collection:
+    kind: shepard:Collection
+    appId: 019e4a4f-2a13-7fcc-bd56-4604f281077b   # MFFD-Augsburg-2026
+    description: The MFFD upper-fuselage demonstrator Collection
+
+  process_ontology:
+    kind: shepard:Ontology
+    iri: http://semantics.dlr.de/mffd-process
+    version: 1.0.0
+    description: |
+      MFFD process ontology (BridgeWelding parameters + constraints +
+      defect chains). Loaded into the SemanticRepository via the V##
+      bootstrap migration; referenced here by IRI.
+
+# ─── Tasks ──────────────────────────────────────────────────────────────
+# Each task runs in its own container; inputs are mounted into the
+# sandbox, outputs land back in Shepard with auto-stats applied.
+
+tasks:
+
+  - id: import-bson
+    image: shepard/runner-python:3.12@sha256:<pinned>
+    script: scripts/import-bson.py
+    description: |
+      Walk the raw framewelding export, parse the BSON-style JSON
+      process-parameter docs, write each as one shepard:StructuredData
+      document under a single container. The TimeseriesContainer is
+      NOT written here — the [Data] INI curves are a separate task.
+    inputs:
+      collection: framewelding_collection
+    outputs:
+      sd_docs:
+        kind: shepard:StructuredDataContainer
+        shape: mffd:ProcessParameterShape    # validates on write
+        description: 268 non-empty docs from 3,371 SD references
+
+  - id: odix-analysis
+    image: shepard/runner-python:3.12@sha256:<pinned>
+    script: scripts/odix-analysis.py
+    description: |
+      Run the ODIX-pattern constraint analysis on every parameter
+      doc. Classifies each value as ok / warning / alarm against the
+      ontology-declared bounds. Computes cross-parameter Pearson
+      correlations as bonus signal. Emits anomalies + report.
+    inputs:
+      docs: import-bson.sd_docs
+      ontology: process_ontology
+    outputs:
+      anomalies:
+        kind: shepard:StructuredDataContainer
+        shape: mffd:AnomalyShape
+      report:
+        kind: shepard:FileBundle
+        formats: [text/markdown]
+        description: SHOWCASE_ANALYSIS.md
+    depends_on: [import-bson]
+
+  - id: rep-export
+    image: shepard/runner-python:3.12@sha256:<pinned>
+    script: scripts/rep-export.py
+    description: |
+      Bundle the ontology, the anomalies, the report, the input
+      Collection reference, and the F(AI)²R Activity log into a
+      Regulatory Evidence Pack (TPL14 — BagIt + RO-Crate + PROV-O).
+    inputs:
+      anomalies: odix-analysis.anomalies
+      report: odix-analysis.report
+      ontology: process_ontology
+      source_collection: framewelding_collection
+    outputs:
+      evidence_pack:
+        kind: shepard:FileBundle
+        shape: shepard:RegulatoryEvidencePackShape   # TPL14 shape
+        formats: [application/x-bag-it]
+        description: |
+          Self-contained audit-bundle satisfying EASA Concept Paper
+          Issue 02 DM-family + DA-family objectives + EU Machinery
+          Regulation 2023/1230 Annex V technical-file requirements.
+    depends_on: [odix-analysis]
+    on_complete:
+      # TPL17 — anchor the REP's SHA-256 to Bloxberg
+      anchor_ledger:
+        primary: bloxberg
+        cross_anchor: opentimestamps   # high-stakes belt-and-braces
+
+# ─── Auto-stats ─────────────────────────────────────────────────────────
+# Per task per output, the plugin computes the standard battery of
+# stats as typed annotations (no per-task config needed). Listed here
+# for documentation only — they are computed by the runner, not the
+# manifest.
+
+auto_stats:
+  - sha_256
+  - byte_size
+  - mime_type
+  - schema_fingerprint     # against the declared shape
+  - timeseries_statistics  # min/max/mean/stdev/anomaly-count (if applicable)
+  - cross_channel_correlations  # the +1.000 finding from real data
+  - fair4ml_completeness   # if output is a model — N/A here
+
+# ─── Notifications ──────────────────────────────────────────────────────
+# Per NTF1 plugin family — in-app dropdown, optional email + Matrix.
+
+notify:
+  on_complete:
+    - user
+  on_failure:
+    - user
+    - admin
+  channels:
+    in_app: true
+    email: true
+    matrix: optional   # depends on shepard-plugin-matrix presence
+
+# ─── Regulatory framing ─────────────────────────────────────────────────
+# When the pipeline completes, the REP is structured to satisfy:
+
+regulatory_evidence_pack:
+  target: rep-export.evidence_pack
+  satisfies:
+    - authority: EASA-Concept-Paper-Issue-02
+      objectives: [DM-01, DM-02, DM-04, DM-05, DM-06, DA-04, DA-07, EXP-08, EXP-09]
+    - authority: EU-Machinery-Regulation-2023-1230
+      annexes: [Annex-V, Annex-VI]
+      articles: [Article-17]    # 10y retention
+    - authority: EU-AI-Act-2024-1689
+      articles: [Article-50]    # transparency / machine-readable marking
+  ledger_anchored: true         # via TPL17
+  retention_years: 10           # EU 2023/1230 Article 17(2)
+
+# ─── Provenance ─────────────────────────────────────────────────────────
+# Every task execution generates a fair2r:AuthoringPass Activity (per
+# TPL9). The plugin emits these automatically — declared here only so
+# an operator can see the contract.
+
+provenance_capture:
+  activity_class: fair2r:AuthoringPass    # for write-side tasks
+  agent_individual: agent:shepard-runner-python-3.12
+  verification_state_initial: verif:unverified
+  human_promoter: required-before-publish    # ladder rung

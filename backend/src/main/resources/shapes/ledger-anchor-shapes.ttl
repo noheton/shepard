@@ -1,0 +1,98 @@
+# ledger-anchor-shapes.ttl — Distributed-ledger anchor (TPL17).
+#
+# A LedgerAnchor records the hash of an audit-relevant artefact (REP,
+# Activity, F(AI)²R AuditPass, …) plus the ledger txid that proves
+# the hash existed at a given time. Tamper-evident, GDPR-safe (only
+# the hash goes on-chain).
+#
+# Reference: aidocs/semantics/95 Part 16 (Part 14f).
+# Default ledger: Bloxberg (academic, free for DLR membership).
+# Cross-anchor: OpenTimestamps + Bitcoin for highest-stakes artefacts.
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class declaration (mirrors aidocs/95 §16 axiom block) ────────────
+
+shepard:LedgerAnchor a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Distributed-ledger anchor"@en ;
+    rdfs:comment "Tamper-evident proof of existence at time T for an audit-relevant entity. Stores only a SHA-256 hash on-chain."@en .
+
+# ─── shepard:LedgerAnchorShape ─────────────────────────────────────────
+
+shepard:LedgerAnchorShape a sh:NodeShape ;
+    sh:targetClass shepard:LedgerAnchor ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Ledger anchor shape"@en ;
+    rdfs:comment "Constraint set for a distributed-ledger anchor record. Verifying party recomputes hash, queries ledger, confirms timestamp (aidocs/95 §16)."@en ;
+
+    sh:property [
+        sh:path    shepard:hashSha256 ;
+        sh:datatype xsd:hexBinary ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[0-9a-fA-F]{64}$" ;
+        sh:name    "SHA-256 hash"@en ;
+        sh:order   10 ;
+        sh:message "hashSha256 must be 64 hexadecimal characters."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:ledgerName ;
+        sh:datatype xsd:string ;
+        sh:in      ( "bloxberg" "opentimestamps" "ethereum"
+                     "polygon" "hyperledger" "bitcoin" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Ledger name"@en ;
+        sh:order   20 ;
+        sh:message "ledgerName must be one of bloxberg / opentimestamps / ethereum / polygon / hyperledger / bitcoin."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:ledgerTxId ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 8 ;
+        sh:name    "Ledger transaction ID"@en ;
+        sh:order   30 ;
+        sh:message "ledgerTxId is mandatory; without it the anchor is unverifiable."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:anchoredAt ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Anchored at"@en ;
+        sh:order   40 ;
+        sh:message "anchoredAt must record the wall-clock timestamp at submission."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:anchors ;
+        sh:class   prov:Entity ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Anchored entity"@en ;
+        sh:order   50 ;
+        sh:message "An anchor must reference the prov:Entity whose hash it commits."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:hashAlgorithm ;
+        sh:datatype xsd:string ;
+        sh:in      ( "SHA-256" "SHA-512" "SHA3-256" "BLAKE2b" ) ;
+        sh:maxCount 1 ;
+        sh:name    "Hash algorithm"@en ;
+        sh:order   60 ;
+        sh:message "Default SHA-256; alternative algorithms allowed for post-quantum re-anchoring (TPL17f)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:verifiedAt ;
+        sh:datatype xsd:dateTime ;
+        sh:name    "Verified at"@en ;
+        sh:order   70
+    ] .

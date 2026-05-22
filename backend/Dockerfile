@@ -37,7 +37,7 @@ RUN mkdir -p /deployments/plugins && chown 185:0 /deployments/plugins
 # xz is installed temporarily to decompress the .tar.xz archive.
 RUN microdnf install -y xz --nodocs \
     && mkdir -p /tmp/ffmpeg-dl \
-    && curl -fsSL -L 'https://github.com/BtbN/ffmpeg-builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz' \
+    && curl -fsSL -L 'https://github.com/BtbN/ffmpeg-builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz' \
        | tar -xJf - -C /tmp/ffmpeg-dl --strip-components=1 \
     && install -m 0755 /tmp/ffmpeg-dl/bin/ffmpeg /tmp/ffmpeg-dl/bin/ffprobe /usr/local/bin/ \
     && rm -rf /tmp/ffmpeg-dl \

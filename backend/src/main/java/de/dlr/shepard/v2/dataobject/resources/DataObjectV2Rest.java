@@ -172,7 +172,9 @@ public class DataObjectV2Rest {
       long[] c = d.getAppId() != null ? counts.getOrDefault(d.getAppId(), new long[] { 0, 0, 0 }) : new long[] { 0, 0, 0 };
       result.add(new DataObjectListItemV2IO(d, c[0], c[1], c[2]));
     }
-    return Response.ok(result).build();
+    return Response.ok(result)
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @GET
@@ -223,7 +225,9 @@ public class DataObjectV2Rest {
     DataObject d = dataObjectService.getDataObject(collectionOgmId, dataObjectOgmId);
     DataObjectDetailV2IO io = new DataObjectDetailV2IO(d);
     io.setContainers(buildContainersFromCypher(dataObjectAppId));
-    return Response.ok(io).build();
+    return Response.ok(io)
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @POST
@@ -429,7 +433,9 @@ public class DataObjectV2Rest {
     for (DataObject p : d.getPredecessors()) {
       if (!p.isDeleted()) result.add(new DataObjectSummaryIO(p));
     }
-    return Response.ok(result).build();
+    return Response.ok(result)
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @GET

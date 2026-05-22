@@ -1,0 +1,199 @@
+# mini-shapes.ttl — Reusable cross-domain mini-shape library.
+#
+# These are the small composable shapes referenced by domain shapes
+# via sh:node (inline composition) or sh:class (pick existing).
+# Per aidocs/semantics/95 Part 5 — the Lego pieces that let a
+# domain shape stay short.
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix iao:     <http://purl.obolibrary.org/obo/IAO_> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class declarations ────────────────────────────────────────────────
+
+shepard:NCR a owl:Class ;
+    rdfs:subClassOf iao:DocumentPart ;
+    rdfs:label "Non-Conformance Report"@en ;
+    rdfs:comment "EN 9100-style non-conformance record (finding + severity + corrective action)."@en .
+
+shepard:SignOff a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Sign-off"@en ;
+    rdfs:comment "Approval Activity binding an Agent, a timestamp, and an approval document IRI."@en .
+
+shepard:VerificationActivity a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Verification activity"@en ;
+    rdfs:comment "A rung on the F(AI)²R verification ladder cast as an Activity (so it captures who/when/how)."@en .
+
+# ─── shepard:NCRShape ──────────────────────────────────────────────────
+
+shepard:NCRShape a sh:NodeShape ;
+    sh:targetClass shepard:NCR ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "NCR mini-shape"@en ;
+    rdfs:comment "Non-Conformance Report — finding, severity, root cause, corrective action. Per EN 9100 §8.7."@en ;
+
+    sh:property [
+        sh:path    shepard:ncrIdentifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^NCR-[A-Z0-9-]+$" ;
+        sh:name    "NCR identifier"@en ;
+        sh:order   10 ;
+        sh:message "NCR identifier must match pattern NCR-XXXXX."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:findingText ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 10 ;
+        sh:name    "Finding"@en ;
+        sh:order   20 ;
+        sh:message "Describe the non-conformance finding in prose."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:severity ;
+        sh:datatype xsd:string ;
+        sh:in      ( "MINOR" "MAJOR" "CRITICAL" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Severity"@en ;
+        sh:order   30 ;
+        sh:message "Severity must be MINOR / MAJOR / CRITICAL."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:rootCause ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Root cause"@en ;
+        sh:order   40
+    ] ;
+    sh:property [
+        sh:path    shepard:correctiveAction ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Corrective action"@en ;
+        sh:order   50
+    ] ;
+    sh:property [
+        sh:path    shepard:ncrStatus ;
+        sh:datatype xsd:string ;
+        sh:in      ( "OPEN" "IN_PROGRESS" "CLOSED" "REJECTED" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "NCR status"@en ;
+        sh:order   60
+    ] ;
+    sh:property [
+        sh:path    shepard:raisedAgainst ;
+        sh:class   shepard:DataObject ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Raised against (DataObject)"@en ;
+        sh:order   70 ;
+        sh:message "Every NCR must reference the DataObject(s) it pertains to."@en
+    ] .
+
+# ─── shepard:SignOffShape ──────────────────────────────────────────────
+
+shepard:SignOffShape a sh:NodeShape ;
+    sh:targetClass shepard:SignOff ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Sign-off mini-shape"@en ;
+    rdfs:comment "Approval record — Agent + timestamp + approval document IRI. Used by DQR, REP, NCR closure."@en ;
+
+    sh:property [
+        sh:path    prov:wasAssociatedWith ;
+        sh:class   prov:Agent ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Signing agent"@en ;
+        sh:order   10 ;
+        sh:message "A sign-off requires exactly one signing Agent."@en
+    ] ;
+    sh:property [
+        sh:path    prov:endedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Sign-off timestamp"@en ;
+        sh:order   20 ;
+        sh:message "Sign-off timestamp is mandatory (audit invariant)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:approvalDocument ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Approval document IRI"@en ;
+        sh:order   30 ;
+        sh:message "Every sign-off must reference the approval document IRI it records."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:role ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Role / authority"@en ;
+        sh:order   40
+    ] .
+
+# ─── shepard:VerificationActivityShape ─────────────────────────────────
+
+shepard:VerificationActivityShape a sh:NodeShape ;
+    sh:targetClass shepard:VerificationActivity ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Verification activity mini-shape"@en ;
+    rdfs:comment "A verification step climbing the F(AI)²R verification ladder. Each promotion (e.g. ai-confirmed → human-confirmed) creates one of these (aidocs/95 §15)."@en ;
+
+    sh:property [
+        sh:path    prov:wasAssociatedWith ;
+        sh:class   prov:Agent ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Verifying agent"@en ;
+        sh:order   10
+    ] ;
+    sh:property [
+        sh:path    prov:endedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Verified at"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    shepard:verifiedClaim ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Verified claim"@en ;
+        sh:order   30 ;
+        sh:message "A verification activity must reference the claim(s) it verified."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:newVerificationState ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "New verification state"@en ;
+        sh:order   40 ;
+        sh:message "The verification must record the rung climbed to."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:verificationMethod ;
+        sh:datatype xsd:string ;
+        sh:in      ( "manual-review" "literature-citation"
+                     "independent-replication" "ai-cross-check"
+                     "ledger-anchor" ) ;
+        sh:maxCount 1 ;
+        sh:name    "Verification method"@en ;
+        sh:order   50
+    ] .

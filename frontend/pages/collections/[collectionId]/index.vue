@@ -166,11 +166,11 @@ watch(collection, () => {
               <v-btn
                 icon
                 variant="text"
-                :color="isWatched(collection.id!) ? 'amber-darken-2' : undefined"
+                :color="isWatched(collection.id!) ? 'primary' : undefined"
                 :title="isWatched(collection.id!) ? 'Remove from watched' : 'Add to watched'"
                 @click="toggleWatched(collection)"
               >
-                <v-icon>{{ isWatched(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+                <v-icon>{{ isWatched(collection.id!) ? 'mdi-binoculars' : 'mdi-binoculars-outline' }}</v-icon>
               </v-btn>
               <v-btn
                 prepend-icon="mdi-package-down"

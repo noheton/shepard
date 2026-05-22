@@ -298,6 +298,32 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * Load a DataObject deeper than the default {@code DEPTH_ENTITY=1} so that
+   * the references' typed container relationships (e.g.
+   * {@code TimeseriesReference -> TimeseriesContainer}) are populated. The
+   * default load only fetches the references themselves, leaving each
+   * reference's {@code container} pointer null — which is why the v2 detail
+   * IO's {@code containers.timeseries[]} list comes back empty. MCP callers
+   * (e.g. {@code get_data_object}) need that pointer to discover container
+   * appIds for the next agent hop, so they call this variant explicitly.
+   *
+   * @param shepardId the DataObject's OGM long id
+   * @param depth     OGM load depth (passing 2 picks up the container hop;
+   *                  do not raise indiscriminately — Neo4j-OGM expands every
+   *                  relationship at the given depth and the cost compounds)
+   * @return the DataObject loaded to {@code depth}, or null if not found
+   */
+  public DataObject findByShepardIdAtDepth(long shepardId, int depth) {
+    String appId = resolveAppIdOrEmpty(shepardId);
+    String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
+    var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
+    DataObject dataObject = StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+    if (dataObject == null) return null;
+    // Re-load at the requested depth so the relationships chain through.
+    return session.load(DataObject.class, dataObject.getId(), depth);
+  }
+
+  /**
    * Delete dataObject and all related references
    *
    * @param shepardId identifies the dataObject

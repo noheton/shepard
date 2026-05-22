@@ -309,28 +309,15 @@ services:
       - shepard
     restart: "no"
 
-  # ── MCP server (MCP-1a + MCP-1b) ─────────────────────────────────────
+  # ── MCP server ────────────────────────────────────────────────────────
   #
-  # Exposes Shepard to AI agents via the Model Context Protocol (SSE).
-  # Caddy routes /mcp/* → shepard-mcp:8811 (prefix stripped) — see infrastructure/proxy/Caddyfile.
-  # Claude connector SSE URL: https://shepard.nuclide.systems/mcp/sse
-  #
-  # Always in the default stack (no --profile needed). Admin can disable the
-  # plugin at runtime via PATCH /v2/admin/plugins/mcp — the sidecar polls
-  # /v2/instance/capabilities every 30 s and gates all tool calls accordingly.
-  shepard-mcp:
-    image: shepard-plugin-mcp:local
-    environment:
-      SHEPARD_API_BASE: "http://backend:8080"
-      PORT: "8811"
-    ports:
-      - "8811:8811"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - shepard
-    restart: unless-stopped
+  # Sunset 2026-05-21: the Python FastMCP sidecar (shepard-plugin-mcp,
+  # container shepard-mcp on :8811) has been retired. Native Quarkus
+  # MCP lives in the backend itself at /v2/mcp/sse + /v2/mcp — see
+  # McpAuthFilter + CollectionMcpTools / TimeseriesMcpTools /
+  # ContentMcpTools. No sidecar container, no separate compose service.
+  # The legacy /mcp/* Caddy route has been removed as part of the same
+  # sunset.
 
 volumes:
   keycloak-data:

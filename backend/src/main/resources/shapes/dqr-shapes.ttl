@@ -1,0 +1,122 @@
+# dqr-shapes.ttl — Data Quality Requirement record (TPL10).
+#
+# A DQR is a first-class artefact that pairs a dataset with the
+# quality conditions it must satisfy, the validation method used, and
+# a sign-off Activity. It is the structural unit that satisfies
+# EASA AI Concept Paper Issue 02 objectives DM-02, DM-04, DM-05,
+# DM-07 (data management completeness) and DA-04 (data verification
+# evidence).
+#
+# Reference: aidocs/agent-findings/easa-data-management-learning-assurance.md
+# Architecture: aidocs/semantics/95 (Part 1 templates + Part 4 individuals).
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix iao:     <http://purl.obolibrary.org/obo/IAO_> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class declaration ────────────────────────────────────────────────
+
+shepard:DQR a owl:Class ;
+    rdfs:subClassOf iao:Plan ;
+    rdfs:label "Data Quality Requirement"@en ;
+    rdfs:comment "A binding statement of the quality conditions a dataset must satisfy, together with its validation method and recorded outcome. Satisfies EASA DM-02/04/05/07 and DA-04."@en .
+
+shepard:DQRValidationMethod a owl:Class ;
+    rdfs:label "DQR validation method"@en .
+
+# ─── shepard:DQRShape ──────────────────────────────────────────────────
+
+shepard:DQRShape a sh:NodeShape ;
+    sh:targetClass shepard:DQR ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "DQR shape"@en ;
+    rdfs:comment "First-class Data Quality Requirement. Satisfies EASA AI Concept Paper Issue 02 objectives DM-02, DM-04, DM-05, DM-07, DA-04 (see aidocs/agent-findings/easa-data-management-learning-assurance.md)."@en ;
+
+    sh:property [
+        sh:path    shepard:dqrIdentifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^DQR-[A-Z0-9-]+$" ;
+        sh:name    "DQR identifier"@en ;
+        sh:order   10 ;
+        sh:message "DQR identifier must match pattern DQR-XXXXX (project-scoped)."@en
+    ] ;
+    sh:property [
+        sh:path    dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:name    "Title"@en ;
+        sh:order   20 ;
+        sh:message "A DQR requires a short human-readable title."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:requirementText ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 10 ;
+        sh:name    "Requirement text"@en ;
+        sh:order   30 ;
+        sh:message "The requirement text must spell out the quality condition in prose."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:targetDataset ;
+        sh:class   shepard:DataObject ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Target dataset"@en ;
+        sh:order   40 ;
+        sh:message "Every DQR must point at the DataObject(s) it applies to (EASA DM-04)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:validationMethod ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Validation method"@en ;
+        sh:order   50 ;
+        sh:message "Describe the method (statistical test, SHACL shape, manual review, …) used to validate this DQR (EASA DA-04)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:validationResult ;
+        sh:datatype xsd:string ;
+        sh:in      ( "pass" "fail" "inconclusive" "pending" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Validation result"@en ;
+        sh:order   60 ;
+        sh:message "Validation result must be one of pass / fail / inconclusive / pending."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:validatedAt ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name    "Validated at"@en ;
+        sh:order   70
+    ] ;
+    sh:property [
+        sh:path    shepard:signOffActivity ;
+        sh:class   prov:Activity ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Sign-off Activity"@en ;
+        sh:order   80 ;
+        sh:message "A DQR must reference the Activity recording sign-off (EASA DM-07)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:easaObjective ;
+        sh:datatype xsd:string ;
+        sh:in      ( "DM-01" "DM-02" "DM-03" "DM-04" "DM-05" "DM-06" "DM-07"
+                     "DA-01" "DA-02" "DA-03" "DA-04" "DA-05" ) ;
+        sh:name    "EASA objective satisfied"@en ;
+        sh:order   90
+    ] .

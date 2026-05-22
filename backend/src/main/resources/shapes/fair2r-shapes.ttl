@@ -1,0 +1,226 @@
+# fair2r-shapes.ttl — F(AI)²R AI provenance shapes (TPL9).
+#
+# Implements the F(AI)²R community proposal — FAIR for AI-Assisted
+# Research — by treating every AI-driven write to Shepard as a typed
+# prov:Activity carrying agent, prompt, and verification metadata.
+#
+# Per aidocs/semantics/95 Part 15 (Part 14e). The no-parentless-claim
+# invariant — every fair2r:Claim MUST have prov:wasGeneratedBy →
+# Activity — is the structural fix for "I don't remember which AI
+# wrote this annotation."
+#
+# Vendor namespace: https://noheton.org/f-ai-r/ns# (MIT/CC-BY-4.0,
+# vendored from github.com/noheton/f-ai-r/blob/main/doc/provenance.ttl
+# at TPL9a load time).
+
+@prefix fair2r:  <https://noheton.org/f-ai-r/ns#> .
+@prefix verif:   <https://noheton.org/f-ai-r/ns/verif#> .
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class alignment (vendored skeleton; full TTL via TPL9a) ───────────
+
+fair2r:AIAgent           rdfs:subClassOf prov:SoftwareAgent .
+fair2r:HumanResearcher   rdfs:subClassOf prov:Person .
+fair2r:AuthoringPass     rdfs:subClassOf prov:Activity .
+fair2r:AuditPass         rdfs:subClassOf prov:Activity .
+fair2r:Claim             rdfs:subClassOf prov:Entity .
+fair2r:Prompt            rdfs:subClassOf prov:Plan .
+fair2r:Transcript        rdfs:subClassOf prov:Entity .
+
+# ─── fair2r:AIAgentShape ───────────────────────────────────────────────
+
+fair2r:AIAgentShape a sh:NodeShape ;
+    sh:targetClass fair2r:AIAgent ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "AI agent shape"@en ;
+    rdfs:comment "An LLM/agent system identified by the X-AI-Agent header (aidocs/95 §15)."@en ;
+
+    sh:property [
+        sh:path    rdfs:label ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name    "Human-readable model name"@en ;
+        sh:order   10 ;
+        sh:message "An AIAgent requires a label naming the model (e.g. 'Claude Opus 4.7')."@en
+    ] ;
+    sh:property [
+        sh:path    fair2r:modelFamily ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Model family"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    fair2r:modelVersion ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Model version"@en ;
+        sh:order   30 ;
+        sh:message "Pin the model version so audits can reproduce."@en
+    ] .
+
+# ─── fair2r:PromptShape ────────────────────────────────────────────────
+
+fair2r:PromptShape a sh:NodeShape ;
+    sh:targetClass fair2r:Prompt ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Prompt shape"@en ;
+    rdfs:comment "Content-addressed prompt fingerprint; full text optional per visibility config."@en ;
+
+    sh:property [
+        sh:path    fair2r:promptHash ;
+        sh:datatype xsd:hexBinary ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[0-9a-fA-F]{64}$" ;
+        sh:name    "Prompt SHA-256"@en ;
+        sh:order   10 ;
+        sh:message "promptHash must be 64 hexadecimal characters (SHA-256)."@en
+    ] ;
+    sh:property [
+        sh:path    fair2r:promptContent ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Prompt content (optional)"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    fair2r:systemPrompt ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "System prompt"@en ;
+        sh:order   30
+    ] .
+
+# ─── fair2r:AuthoringPassShape ─────────────────────────────────────────
+
+fair2r:AuthoringPassShape a sh:NodeShape ;
+    sh:targetClass fair2r:AuthoringPass ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Authoring pass shape"@en ;
+    rdfs:comment "Every AI-driven write activity. Captured by PROV1a + the X-AI-Agent header path (aidocs/95 §15)."@en ;
+
+    sh:property [
+        sh:path    prov:startedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Started at"@en ;
+        sh:order   10 ;
+        sh:message "An AuthoringPass requires a startedAtTime timestamp."@en
+    ] ;
+    sh:property [
+        sh:path    prov:wasAssociatedWith ;
+        sh:class   fair2r:AIAgent ;
+        sh:minCount 1 ;
+        sh:name    "AI agent"@en ;
+        sh:order   20 ;
+        sh:message "An AuthoringPass requires at least one associated AIAgent."@en
+    ] ;
+    sh:property [
+        sh:path    prov:used ;
+        sh:class   fair2r:Prompt ;
+        sh:minCount 1 ;
+        sh:name    "Prompt used"@en ;
+        sh:order   30 ;
+        sh:message "An AuthoringPass requires the driving Prompt."@en
+    ] ;
+    sh:property [
+        sh:path    prov:generated ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Generated entity"@en ;
+        sh:order   40 ;
+        sh:message "An AuthoringPass must generate at least one entity (claim, annotation, DataObject)."@en
+    ] .
+
+# ─── fair2r:AuditPassShape ─────────────────────────────────────────────
+
+fair2r:AuditPassShape a sh:NodeShape ;
+    sh:targetClass fair2r:AuditPass ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Audit pass shape"@en ;
+    rdfs:comment "An AI-driven verify / read activity (read-only inspection by an AI agent)."@en ;
+
+    sh:property [
+        sh:path    prov:startedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Started at"@en ;
+        sh:order   10
+    ] ;
+    sh:property [
+        sh:path    prov:wasAssociatedWith ;
+        sh:class   fair2r:AIAgent ;
+        sh:minCount 1 ;
+        sh:name    "AI agent"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    fair2r:auditedEntity ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Audited entity"@en ;
+        sh:order   30 ;
+        sh:message "An AuditPass must reference at least one entity it audited."@en
+    ] ;
+    sh:property [
+        sh:path    fair2r:auditOutcome ;
+        sh:datatype xsd:string ;
+        sh:in      ( "confirmed" "contradicted" "inconclusive" ) ;
+        sh:maxCount 1 ;
+        sh:name    "Audit outcome"@en ;
+        sh:order   40
+    ] .
+
+# ─── fair2r:ClaimShape — no-parentless-claim invariant ─────────────────
+
+fair2r:ClaimShape a sh:NodeShape ;
+    sh:targetClass fair2r:Claim ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Claim shape"@en ;
+    rdfs:comment "F(AI)²R's strongest invariant — every Claim carries prov:wasGeneratedBy → Activity. Submission of an unannotated claim fails validation at the gateway (aidocs/95 §15)."@en ;
+
+    sh:property [
+        sh:path    prov:wasGeneratedBy ;
+        sh:class   prov:Activity ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Generated by Activity"@en ;
+        sh:order   10 ;
+        sh:message "No-parentless-claim invariant: every Claim must reference the Activity that produced it."@en
+    ] ;
+    sh:property [
+        sh:path    fair2r:verificationState ;
+        sh:nodeKind sh:IRI ;
+        sh:in      ( verif:unverified verif:needs-research verif:lit-retrieved
+                     verif:ai-confirmed verif:human-confirmed
+                     verif:source-vendored verif:lit-read verif:ledger-anchored ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Verification state"@en ;
+        sh:order   20 ;
+        sh:message "verificationState must be a rung on the F(AI)²R verification ladder."@en
+    ] ;
+    sh:property [
+        sh:path    fair2r:claimText ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name    "Claim text"@en ;
+        sh:order   30
+    ] ;
+    sh:property [
+        sh:path    fair2r:contradicts ;
+        sh:class   fair2r:Claim ;
+        sh:name    "Contradicts (other claims)"@en ;
+        sh:order   40
+    ] .

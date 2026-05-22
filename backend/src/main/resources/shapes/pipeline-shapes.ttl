@@ -1,0 +1,188 @@
+# pipeline-shapes.ttl — Shepard-pipelines (TPL18).
+#
+# Pipeline / Task shapes describing a reproducible compute graph
+# whose inputs and outputs are first-class Shepard entities. A
+# PipelineRun is itself a prov:Activity that wasInformedBy its
+# upstream PipelineRuns; each Task is a child prov:Activity.
+#
+# Architecture: aidocs/semantics/95 §15 implementation slices
+# (TPL18 — Shepard-pipelines).
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class declarations ────────────────────────────────────────────────
+
+shepard:PipelineRun a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Pipeline run"@en ;
+    rdfs:comment "One execution of a named, versioned compute pipeline."@en .
+
+shepard:Task a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Pipeline task"@en ;
+    rdfs:comment "A single step inside a PipelineRun, addressable, dependency-tracked."@en .
+
+# ─── shepard:PipelineRunShape ──────────────────────────────────────────
+
+shepard:PipelineRunShape a sh:NodeShape ;
+    sh:targetClass shepard:PipelineRun ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Pipeline run shape"@en ;
+    rdfs:comment "Constraint set for a reproducible Shepard pipeline execution. The pipeline manifest is stored as a StructuredData document and pinned by its appId."@en ;
+
+    sh:property [
+        sh:path    dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Pipeline name"@en ;
+        sh:order   10
+    ] ;
+    sh:property [
+        sh:path    shepard:pipelineVersion ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[0-9]+\\.[0-9]+\\.[0-9]+(-[A-Za-z0-9.-]+)?$" ;
+        sh:name    "Pipeline version (semver)"@en ;
+        sh:order   20 ;
+        sh:message "pipelineVersion must follow semantic versioning."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:manifest ;
+        sh:class   shepard:StructuredDataContainer ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Manifest (StructuredData)"@en ;
+        sh:order   30 ;
+        sh:message "Every PipelineRun must reference a manifest stored as StructuredData (reproducibility)."@en
+    ] ;
+    sh:property [
+        sh:path    prov:used ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Inputs"@en ;
+        sh:order   40 ;
+        sh:message "Inputs are IRIs; can be Shepard refs (DataObject / Container) or external HTTPS URLs."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:hasTask ;
+        sh:class   shepard:Task ;
+        sh:minCount 1 ;
+        sh:name    "Tasks"@en ;
+        sh:order   50 ;
+        sh:message "A PipelineRun must contain at least one Task."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:overallStatus ;
+        sh:datatype xsd:string ;
+        sh:in      ( "PENDING" "RUNNING" "SUCCEEDED" "FAILED"
+                     "CANCELLED" "PARTIAL" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Overall status"@en ;
+        sh:order   60 ;
+        sh:message "overallStatus must be one of the pipeline lifecycle values."@en
+    ] ;
+    sh:property [
+        sh:path    prov:startedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name    "Started at"@en ;
+        sh:order   70
+    ] ;
+    sh:property [
+        sh:path    prov:endedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name    "Ended at"@en ;
+        sh:order   80
+    ] .
+
+# ─── shepard:TaskShape ─────────────────────────────────────────────────
+
+shepard:TaskShape a sh:NodeShape ;
+    sh:targetClass shepard:Task ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Pipeline task shape"@en ;
+    rdfs:comment "One step inside a PipelineRun. Container image OR inline script — at least one of the two is required (sh:or)."@en ;
+
+    sh:property [
+        sh:path    shepard:taskIdentifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^[a-z0-9][a-z0-9_-]*$" ;
+        sh:name    "Task identifier"@en ;
+        sh:order   10 ;
+        sh:message "taskIdentifier must be lower-case alphanumeric with hyphens / underscores."@en
+    ] ;
+    sh:or (
+        [ sh:property [ sh:path shepard:containerImage ;
+                        sh:datatype xsd:string ; sh:minCount 1 ] ]
+        [ sh:property [ sh:path shepard:script ;
+                        sh:datatype xsd:string ; sh:minCount 1 ] ]
+    ) ;
+    sh:property [
+        sh:path    shepard:containerImage ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Container image"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    shepard:script ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name    "Inline script"@en ;
+        sh:order   30
+    ] ;
+    sh:property [
+        sh:path    shepard:taskStatus ;
+        sh:datatype xsd:string ;
+        sh:in      ( "PENDING" "RUNNING" "SUCCEEDED" "FAILED"
+                     "SKIPPED" "CANCELLED" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Task status"@en ;
+        sh:order   40
+    ] ;
+    sh:property [
+        sh:path    prov:startedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name    "Started at"@en ;
+        sh:order   50
+    ] ;
+    sh:property [
+        sh:path    prov:endedAtTime ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+        sh:name    "Ended at"@en ;
+        sh:order   60
+    ] ;
+    sh:property [
+        sh:path    prov:used ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Task inputs"@en ;
+        sh:order   70
+    ] ;
+    sh:property [
+        sh:path    prov:generated ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Task outputs"@en ;
+        sh:order   80
+    ] ;
+    sh:property [
+        sh:path    shepard:dependsOn ;
+        sh:class   shepard:Task ;
+        sh:name    "Depends on (other tasks)"@en ;
+        sh:order   90 ;
+        sh:message "dependsOn must reference Tasks within the same PipelineRun."@en
+    ] .

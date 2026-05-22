@@ -118,34 +118,47 @@ async function fetchChannel(ch: TimeseriesEntity): Promise<Array<[number, number
   const startNs = liveMode.value
     ? nowNs - (liveWindowSec.value * 2 * 1_000_000_000)
     : 0;
-  // Bucket size: ~120 buckets on the window (smooth-spline-able
-  // density without 1-px-per-bucket sparseness). Bucket sized against
-  // the visible window, not the fetch span — the extra leading points
-  // get the same bucket and slot in cleanly.
+
+  // Two downsampling strategies, picked per mode:
+  //   Live mode → uniform time-buckets + Mean. Uniform spacing is what
+  //     the smooth-line / step renderer expects for predictable refresh.
+  //   Static mode → LTTB (Largest-Triangle-Three-Buckets). Shape-preserving:
+  //     short peaks (anomalies, transients) survive aggressive compression
+  //     where the Mean bucket would average them into invisibility.
+  // The Static-mode LTTB path is overridable via the "Full" toggle for
+  // users who want every raw sample.
   const TARGET_BUCKETS = 120;
-  // Allow sub-1s buckets in live mode so short windows (1 min at 100ms refresh)
-  // still resolve 120 distinct buckets rather than collapsing to 60 × 1s.
   const bucketNs = liveMode.value
     ? Math.max(200_000_000, Math.floor((liveWindowSec.value * 1_000_000_000) / TARGET_BUCKETS))
     : 1_000_000_000;
+
+  const useLttb = !liveMode.value && useStaticDownsample.value;
+  const baseReq = {
+    timeseriesContainerId: props.containerId,
+    measurement: ch.measurement ?? "",
+    device: ch.device ?? "",
+    location: ch.location ?? "",
+    symbolicName: ch.symbolicName ?? "",
+    field: ch.field ?? "",
+    start: startNs,
+    end: nowNs,
+  };
   try {
-    const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
-      timeseriesContainerId: props.containerId,
-      measurement: ch.measurement ?? "",
-      device: ch.device ?? "",
-      location: ch.location ?? "",
-      symbolicName: ch.symbolicName ?? "",
-      field: ch.field ?? "",
-      start: startNs,
-      end: nowNs,
-      _function: AggregateFunction.Mean,
-      groupBy: bucketNs,
-    });
+    const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries(
+      useLttb
+        ? { ...baseReq, downsample: "lttb", maxPoints: STATIC_MAX_POINTS }
+        : { ...baseReq, _function: AggregateFunction.Mean, groupBy: bucketNs },
+    );
     return (result.points ?? []).map(p => [p.timestamp, p.value] as [number, number]);
   } catch {
     return [];
   }
 }
+
+// Static-mode downsampling state — true by default for chart performance,
+// flipped off by the "Full" switch when the user wants every raw sample.
+const useStaticDownsample = ref(true);
+const STATIC_MAX_POINTS = 2000;
 
 async function fetchAll(silent = false) {
   if (!props.measurements.length) return;
@@ -355,6 +368,35 @@ onBeforeUnmount(() => {
         >
           Showing first {{ MAX_CHANNELS }} of {{ measurements.length }} channels
         </div>
+      </div>
+      <!-- Static-mode-only downsample indicator + toggle. Hidden in live
+           mode where uniform time-bucket Mean is the right strategy. -->
+      <div
+        v-if="!liveMode && series.length"
+        class="d-flex align-center justify-end mb-1 mr-2"
+        style="gap: 8px"
+      >
+        <v-chip
+          v-if="useStaticDownsample"
+          size="x-small"
+          color="primary"
+          variant="tonal"
+          prepend-icon="mdi-chart-bell-curve"
+          title="Visual peaks preserved (Largest-Triangle-Three-Buckets). Toggle 'Full' for every sample."
+        >
+          Downsampled (LTTB)
+        </v-chip>
+        <v-switch
+          v-model="useStaticDownsample"
+          :true-value="false"
+          :false-value="true"
+          density="compact"
+          hide-details
+          color="primary"
+          label="Full"
+          title="Fetch every raw sample (heavier, slower, identical visual shape)"
+          @update:model-value="() => fetchAll()"
+        />
       </div>
       <div
         v-if="!series.length"

@@ -1,6 +1,6 @@
 {
   "generator": "mffd-showcase/data/generate.py",
-  "generated_at": "2026-05-21T11:12:02.739242+00:00",
+  "generated_at": "2026-05-21T11:32:41.413321+00:00",
   "rng_seed": 2024,
   "note": "Synthetic data.  NOT real DLR MFFD data.",
   "files": [
@@ -10,6 +10,7 @@
     "files/rework-q1-protocol.md",
     "files/welding-protocol.md",
     "generate.py",
+    "manifest.json",
     "structured/ndt-q1-recheck.json",
     "structured/ndt-q1-report.json",
     "structured/ndt-q2-report.json",

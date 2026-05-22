@@ -1,0 +1,276 @@
+# MFFD Process Ontology — domain layer for the MFFD-Augsburg-2026 showcase
+#
+# Pattern lifted from ODIX (infusion-analysis) — each ProcessParameter
+# carries a Constraint (acceptable range) and a causesDefect chain.
+# When timeseries / process-parameter data lands in Shepard with
+# annotations pointing here, ODIX-style constraint analysis runs
+# directly — out-of-range → anomaly → typed defect candidate.
+#
+# Aligned per aidocs/semantics/96-upper-ontology-alignment.md:
+#   mffd:ProcessStep ⊑ mffd:ManufacturingActivity ⊑ shepard:Activity
+#                    ⊑ prov:Activity ⊑ bfo:Occurrent
+#
+# Units throughout via QUDT (the V49-seeded unit ontology).
+
+@prefix mffd:    <http://semantics.dlr.de/mffd-process#> .
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix iof:     <https://www.industrialontologies.org/ontology/core/Core/> .
+@prefix bfo:     <http://purl.obolibrary.org/obo/BFO_> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+@prefix unit:    <http://qudt.org/vocab/unit/> .
+@prefix om:      <http://www.ontology-of-units-of-measure.org/resource/om-2/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+
+# ─── 1. Top-level activities ─────────────────────────────────────────────
+
+mffd:ManufacturingActivity a owl:Class ;
+    rdfs:subClassOf shepard:Activity ;
+    rdfs:label "MFFD manufacturing activity"@en ;
+    rdfs:comment "An activity in the MFFD upper-fuselage demonstrator process chain. Specialises shepard:Activity which extends prov:Activity / bfo:Occurrent."@en .
+
+mffd:ProcessStep a owl:Class ;
+    rdfs:subClassOf mffd:ManufacturingActivity ;
+    rdfs:label "Process step"@en ;
+    rdfs:comment "One numbered step in the MFFD seven-step process chain."@en .
+
+# The seven steps — each a subclass of ProcessStep, ordered via :stepNumber
+
+mffd:TapeLayup a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Tape Layup"@en ;
+    rdfs:label "Tapeablage"@de ;
+    mffd:technique mffd:AFP ;
+    mffd:stepNumber 1 ;
+    rdfs:comment "Automated Fiber Placement deposition of CF/LMPAEK tape onto the layup tool."@en .
+
+mffd:SkinInspection a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Skin Inspection"@en ;
+    rdfs:label "Hautinspektion"@de ;
+    mffd:technique mffd:Thermography ;
+    mffd:stepNumber 2 ;
+    rdfs:comment "Thermographic inspection of the laid-up skin (Chris's work-cell)."@en .
+
+mffd:StringerWelding a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Stringer Welding"@en ;
+    mffd:technique mffd:UltrasonicWelding ;
+    mffd:stepNumber 3 .
+
+mffd:SpotWelding a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Spot Welding"@en ;
+    rdfs:label "Punktschweißen"@de ;
+    mffd:technique mffd:UltrasonicWelding ;
+    mffd:stepNumber 4 .
+
+mffd:BridgeWelding a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Bridge Welding"@en ;
+    rdfs:label "Brückenschweißen"@de ;
+    mffd:technique mffd:ResistanceWelding ;
+    mffd:stepNumber 5 ;
+    rdfs:comment "Resistance-welding of the bridge / frame connection. Operates per-Frame, per-AF (Anchor Feature), per-ProcessData. Five weld-control sub-channels: CM (Clamp Module), W1+W2 (Weld heads), WC (Weld Counter)."@en .
+
+mffd:StringerConnection a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Stringer Connection"@en ;
+    rdfs:label "Stringerverbindung"@de ;
+    mffd:technique mffd:ResistanceWelding ;
+    mffd:stepNumber 6 .
+
+mffd:CleatsWithLBR a owl:Class ;
+    rdfs:subClassOf mffd:ProcessStep ;
+    rdfs:label "Cleats with LBR"@en ;
+    mffd:technique mffd:LBRClamping ;
+    mffd:stepNumber 7 ;
+    rdfs:comment "KUKA LBR (Leichtbauroboter / cobot) assisted cleat positioning. The moment this step starts using learned collision avoidance, EU Machinery Regulation 2023/1230 Annex I Part A applies."@en .
+
+# Techniques (used as :technique values on the steps above)
+mffd:AFP                 a owl:Class ; rdfs:label "Automated Fiber Placement"@en .
+mffd:Thermography        a owl:Class ; rdfs:label "Thermography"@en .
+mffd:UltrasonicWelding   a owl:Class ; rdfs:label "Ultrasonic welding"@en .
+mffd:ResistanceWelding   a owl:Class ; rdfs:label "Resistance welding"@en .
+mffd:LBRClamping         a owl:Class ; rdfs:label "Cobot-assisted clamping (KUKA LBR)"@en .
+
+# ─── 2. Equipment ────────────────────────────────────────────────────────
+
+mffd:Equipment a owl:Class ;
+    rdfs:subClassOf iof:Equipment ;
+    rdfs:label "MFFD equipment"@en .
+
+mffd:KukaR20            a owl:Class ; rdfs:subClassOf mffd:Equipment ; rdfs:label "KUKA R20 industrial arm"@en .
+mffd:KukaLBR            a owl:Class ; rdfs:subClassOf mffd:Equipment ; rdfs:label "KUKA LBR (Leichtbauroboter / cobot)"@en .
+mffd:TapePlacementHead  a owl:Class ; rdfs:subClassOf mffd:Equipment ; rdfs:label "AFP tape placement head (TPS)"@en .
+mffd:UltrasonicWelder   a owl:Class ; rdfs:subClassOf mffd:Equipment ; rdfs:label "Ultrasonic welder"@en .
+mffd:ResistanceWelder   a owl:Class ; rdfs:subClassOf mffd:Equipment ; rdfs:label "Resistance welder"@en .
+
+# ─── 3. Process parameters — the constraint-bearing classes ──────────────
+
+mffd:ProcessParameter a owl:Class ;
+    rdfs:subClassOf iof:ProcessParameter ;
+    rdfs:label "MFFD process parameter"@en ;
+    rdfs:comment "A measurable property of the process. Carries a Constraint (acceptable range) and a causesDefect chain."@en .
+
+mffd:Constraint a owl:Class ;
+    rdfs:label "Process-parameter constraint"@en ;
+    rdfs:comment "min/max acceptable range. Pattern lifted from ODIX :Constraint."@en .
+
+mffd:minValue        a owl:DatatypeProperty ; rdfs:domain mffd:Constraint ; rdfs:range xsd:float ;
+    rdfs:comment "Hard alarm threshold (lower) — out-of-spec, raises a defect candidate."@en .
+mffd:maxValue        a owl:DatatypeProperty ; rdfs:domain mffd:Constraint ; rdfs:range xsd:float ;
+    rdfs:comment "Hard alarm threshold (upper)."@en .
+mffd:warningMinValue a owl:DatatypeProperty ; rdfs:domain mffd:Constraint ; rdfs:range xsd:float ;
+    rdfs:comment "Warning threshold (lower) — within spec but flags process drift."@en .
+mffd:warningMaxValue a owl:DatatypeProperty ; rdfs:domain mffd:Constraint ; rdfs:range xsd:float ;
+    rdfs:comment "Warning threshold (upper)."@en .
+mffd:nominalValue    a owl:DatatypeProperty ; rdfs:domain mffd:Constraint ; rdfs:range xsd:float ;
+    rdfs:comment "Process design nominal."@en .
+
+mffd:hasConstraint a owl:ObjectProperty ;
+    rdfs:domain mffd:ProcessParameter ; rdfs:range mffd:Constraint .
+
+mffd:hasUnit a owl:ObjectProperty ;
+    rdfs:domain mffd:ProcessParameter ; rdfs:range qudt:Unit .
+
+mffd:causesDefect a owl:ObjectProperty ;
+    rdfs:domain mffd:ProcessParameter ; rdfs:range mffd:Defect ;
+    rdfs:comment "An out-of-constraint reading of this parameter raises this defect as a candidate."@en .
+
+# ─── 4. Bridge-welding parameters — the 16-channel weld controller ───────
+
+# Each parameter constraint reflects observed framewelding nominals
+# in the MFFD raw-data zip (sampled empirically 2026-05-21).
+
+# Clamp Module (CM) — closes the welding bridge onto the frame
+mffd:CM_I a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Clamp Module current"@en ;
+    mffd:hasUnit unit:A ;
+    mffd:hasConstraint [ mffd:nominalValue 5.0 ; mffd:minValue 4.5 ; mffd:maxValue 5.5 ] ;
+    mffd:causesDefect mffd:ClampingMisalignment .
+
+mffd:CM_t a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Clamp Module time"@en ;
+    mffd:hasUnit unit:SEC ;
+    mffd:hasConstraint [ mffd:nominalValue 5.0 ; mffd:minValue 4.5 ; mffd:maxValue 5.5 ] ;
+    mffd:causesDefect mffd:InsufficientClampHold .
+
+mffd:CM_p a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Clamp Module pressure"@en ;
+    mffd:hasUnit unit:BAR ;
+    mffd:hasConstraint [ mffd:nominalValue 4.0 ; mffd:minValue 3.0 ; mffd:maxValue 5.0 ;
+                         mffd:warningMinValue 3.8 ; mffd:warningMaxValue 4.6 ] ;
+    mffd:causesDefect mffd:WeldMisalignment, mffd:PoorClamping .
+
+# Weld head 1 (W1) — primary resistance weld
+mffd:W1_I a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 1 current"@en ;
+    mffd:hasUnit unit:A ;
+    mffd:hasConstraint [ mffd:nominalValue 17.5 ; mffd:minValue 15.0 ; mffd:maxValue 20.0 ] ;
+    mffd:causesDefect mffd:ColdLap, mffd:Underweld, mffd:BurnThrough .
+
+mffd:W1_U a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 1 voltage"@en ;
+    mffd:hasUnit unit:V ;
+    mffd:hasConstraint [ mffd:nominalValue 22.0 ; mffd:minValue 18.0 ; mffd:maxValue 28.0 ;
+                         mffd:warningMinValue 20.0 ; mffd:warningMaxValue 24.0 ] ;
+    mffd:causesDefect mffd:ColdLap, mffd:BurnThrough .
+
+mffd:W1_t a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 1 time"@en ;
+    mffd:hasUnit unit:SEC ;
+    mffd:hasConstraint [ mffd:nominalValue 65.0 ; mffd:minValue 60.0 ; mffd:maxValue 70.0 ] ;
+    mffd:causesDefect mffd:InsufficientBonding, mffd:BurnThrough .
+
+mffd:W1_p a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 1 pressure"@en ;
+    mffd:hasUnit unit:BAR ;
+    mffd:hasConstraint [ mffd:nominalValue 0.40 ; mffd:minValue 0.25 ; mffd:maxValue 0.55 ;
+                         mffd:warningMinValue 0.35 ; mffd:warningMaxValue 0.45 ] ;
+    mffd:causesDefect mffd:Porosity, mffd:SqueezeOut .
+
+# Weld head 2 (W2) — secondary
+mffd:W2_I a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 2 current"@en ;
+    mffd:hasUnit unit:A ;
+    mffd:hasConstraint [ mffd:nominalValue 8.0 ; mffd:minValue 7.0 ; mffd:maxValue 9.0 ] ;
+    mffd:causesDefect mffd:Underweld .
+
+mffd:W2_U a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 2 voltage"@en ;
+    mffd:hasUnit unit:V ;
+    mffd:hasConstraint [ mffd:nominalValue 13.5 ; mffd:minValue 11.0 ; mffd:maxValue 16.0 ;
+                         mffd:warningMinValue 12.5 ; mffd:warningMaxValue 14.5 ] ;
+    mffd:causesDefect mffd:ColdLap .
+
+mffd:W2_t a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 2 time"@en ;
+    mffd:hasUnit unit:SEC ;
+    mffd:hasConstraint [ mffd:nominalValue 120.0 ; mffd:minValue 115.0 ; mffd:maxValue 125.0 ] ;
+    mffd:causesDefect mffd:InsufficientBonding .
+
+mffd:W2_p a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld head 2 pressure"@en ;
+    mffd:hasUnit unit:BAR ;
+    mffd:hasConstraint [ mffd:nominalValue 4.0 ; mffd:minValue 3.0 ; mffd:maxValue 5.0 ] ;
+    mffd:causesDefect mffd:Porosity, mffd:SqueezeOut .
+
+# Weld Counter (WC) — control + monitoring
+mffd:WC_I a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld Counter current"@en ;
+    mffd:hasUnit unit:A ;
+    mffd:hasConstraint [ mffd:nominalValue 5.0 ; mffd:minValue 4.5 ; mffd:maxValue 5.5 ] ;
+    mffd:causesDefect mffd:ControllerDrift .
+
+mffd:WC_t a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Weld Counter time"@en ;
+    mffd:hasUnit unit:SEC ;
+    mffd:hasConstraint [ mffd:nominalValue 120.0 ; mffd:minValue 115.0 ; mffd:maxValue 125.0 ] ;
+    mffd:causesDefect mffd:ControllerDrift .
+
+# Frame / bridge position (geometric)
+mffd:BridgePosition a owl:Class ; rdfs:subClassOf mffd:ProcessParameter ;
+    rdfs:label "Bridge position along fuselage"@en ;
+    mffd:hasUnit unit:MilliM ;
+    mffd:hasConstraint [ mffd:minValue 0.0 ; mffd:maxValue 25000.0 ] ;
+    mffd:causesDefect mffd:FixtureError .
+
+# ─── 5. Defect catalogue ─────────────────────────────────────────────────
+
+mffd:Defect a owl:Class ;
+    rdfs:label "Manufacturing defect"@en ;
+    rdfs:comment "A possible adverse outcome on the welded structure, raised as a candidate when an upstream ProcessParameter is out of constraint."@en .
+
+mffd:ColdLap              a mffd:Defect ; rdfs:label "Cold lap (Kaltschweißung)"@en ;
+    rdfs:comment "Insufficient heat input → bond formed but with reduced strength. Common cause: weld voltage / current too low, weld time too short."@en .
+mffd:Underweld            a mffd:Defect ; rdfs:label "Underweld"@en ;
+    rdfs:comment "Incomplete fusion. Common cause: current too low."@en .
+mffd:BurnThrough          a mffd:Defect ; rdfs:label "Burn-through / matrix degradation"@en ;
+    rdfs:comment "Excessive heat — typical for thermoplastic CFRP, the LMPAEK matrix degrades. Common cause: current or voltage too high, weld time too long."@en .
+mffd:InsufficientBonding  a mffd:Defect ; rdfs:label "Insufficient bonding"@en .
+mffd:Porosity             a mffd:Defect ; rdfs:label "Porosity / void formation"@en .
+mffd:SqueezeOut           a mffd:Defect ; rdfs:label "Resin squeeze-out"@en .
+mffd:WeldMisalignment     a mffd:Defect ; rdfs:label "Weld misalignment"@en .
+mffd:PoorClamping         a mffd:Defect ; rdfs:label "Poor clamping"@en .
+mffd:ClampingMisalignment a mffd:Defect ; rdfs:label "Clamping misalignment"@en .
+mffd:InsufficientClampHold a mffd:Defect ; rdfs:label "Insufficient clamp hold-time"@en .
+mffd:ControllerDrift      a mffd:Defect ; rdfs:label "Controller drift"@en .
+mffd:FixtureError         a mffd:Defect ; rdfs:label "Fixture / bridge-position error"@en .
+
+# ─── 6. Properties on activities & specifications ────────────────────────
+
+mffd:stepNumber  a owl:DatatypeProperty ; rdfs:range xsd:integer .
+mffd:technique   a owl:ObjectProperty .
+mffd:operator    a owl:ObjectProperty ; rdfs:range shepard:User .
+mffd:hasFrame    a owl:DatatypeProperty ; rdfs:range xsd:integer .
+mffd:hasAnchorFeature a owl:DatatypeProperty ; rdfs:range xsd:string .
+
+# Inverse / convenience: link a process-execution instance to its parameters
+mffd:hadProcessParameter a owl:ObjectProperty ;
+    rdfs:domain mffd:ProcessStep ; rdfs:range mffd:ProcessParameter ;
+    rdfs:subPropertyOf prov:used .

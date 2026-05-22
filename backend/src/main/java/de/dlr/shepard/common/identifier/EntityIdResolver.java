@@ -4,7 +4,9 @@ import de.dlr.shepard.common.neo4j.NeoConnector;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
@@ -123,6 +125,65 @@ public class EntityIdResolver {
     appIdByOgmId.put(ogmId, appId);
     ogmIdByAppId.put(appId, ogmId);
     return ogmId;
+  }
+
+  /**
+   * Resolve an appId AND inspect the Neo4j labels carried by the matched node.
+   * Lets a caller assert that an appId points at the expected entity kind
+   * (e.g. a {@code TimeseriesContainer}) before handing it to a type-specific
+   * service. Returns both the OGM Long and the label list so the caller can
+   * compose a useful error message when the type doesn't match.
+   *
+   * <p>Used by the MCP tools so that pasting the wrong appId (e.g. a
+   * StructuredDataContainer's appId into a timeseries tool) yields a clear
+   * "Expected TimeseriesContainer, got StructuredDataContainer" message
+   * rather than a downstream NPE / JSON-RPC -32603 internal error.
+   *
+   * @throws NotFoundException if no node has the given appId
+   */
+  public LabeledResolution resolveWithLabels(String appId) {
+    if (appId == null) {
+      throw new NotFoundException("appId must not be null");
+    }
+    Session session = session();
+    if (session == null) {
+      throw new NotFoundException("Neo4j session not available; cannot resolve appId=" + appId);
+    }
+    String query = "MATCH (e {appId: $appId}) RETURN id(e) AS ogmId, labels(e) AS labels LIMIT 1";
+    Result result = session.query(query, Map.of("appId", appId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) {
+      throw new NotFoundException("No entity with appId " + appId);
+    }
+    var row = iter.next();
+    Object ogmIdObj = row.get("ogmId");
+    if (ogmIdObj == null) {
+      throw new NotFoundException("Entity with appId " + appId + " has null id");
+    }
+    long ogmId = ((Number) ogmIdObj).longValue();
+    List<String> labels = new ArrayList<>();
+    Object labelsObj = row.get("labels");
+    if (labelsObj instanceof Iterable<?> it) {
+      for (Object l : it) if (l != null) labels.add(l.toString());
+    } else if (labelsObj instanceof Object[] arr) {
+      for (Object l : arr) if (l != null) labels.add(l.toString());
+    }
+    appIdByOgmId.put(ogmId, appId);
+    ogmIdByAppId.put(appId, ogmId);
+    return new LabeledResolution(ogmId, labels);
+  }
+
+  /** Pair returned by {@link #resolveWithLabels(String)}. */
+  public record LabeledResolution(long ogmId, List<String> labels) {
+    /** True if the node carries the expected Neo4j label. */
+    public boolean hasLabel(String expectedLabel) {
+      return labels != null && labels.contains(expectedLabel);
+    }
+
+    /** Comma-separated label list for diagnostics. Empty string if no labels. */
+    public String labelsString() {
+      return labels == null || labels.isEmpty() ? "" : String.join(",", labels);
+    }
   }
 
   /**

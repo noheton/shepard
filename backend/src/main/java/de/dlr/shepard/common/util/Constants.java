@@ -214,6 +214,10 @@ public class Constants {
   public static final String GROUP_BY = "group_by";
   public static final String FILLOPTION = "fill_option";
   public static final String CSVFORMAT = "csv_format";
+  /** Optional downsampling strategy applied AFTER the DB query. Today: "lttb" or absent. */
+  public static final String DOWNSAMPLE = "downsample";
+  /** Maximum point count for downsampled responses. Hard cap at 5000 server-side. */
+  public static final String MAX_POINTS = "max_points";
 
   // Search
   public static final String OP_PROPERTY = "property";

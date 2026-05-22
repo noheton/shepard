@@ -165,7 +165,9 @@ public class CollectionV2Rest {
     for (var c : collections) {
       result.add(new CollectionIO(c));
     }
-    return Response.ok(result).build();
+    return Response.ok(result)
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @GET
@@ -205,7 +207,9 @@ public class CollectionV2Rest {
     if (gate != null) return gate;
 
     Collection c = collectionService.getCollectionWithDataObjectsAndIncomingReferences(ogmId);
-    return Response.ok(new CollectionIO(c)).build();
+    return Response.ok(new CollectionIO(c))
+      .header("Cache-Control", "max-age=300, must-revalidate")
+      .build();
   }
 
   @POST

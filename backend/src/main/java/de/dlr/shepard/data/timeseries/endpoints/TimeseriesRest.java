@@ -22,6 +22,7 @@ import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesCsvService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesNdjsonService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
+import de.dlr.shepard.data.timeseries.util.Lttb;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -380,6 +381,21 @@ public class TimeseriesRest {
   @Parameter(name = Constants.FUNCTION)
   @Parameter(name = Constants.GROUP_BY)
   @Parameter(name = Constants.FILLOPTION)
+  @Parameter(
+    name = Constants.DOWNSAMPLE,
+    description =
+      "Optional post-query downsampling strategy. " +
+      "Today the only supported value is 'lttb' (Largest-Triangle-Three-Buckets) " +
+      "which preserves visual peaks and is well suited to chart preview / " +
+      "anomaly inspection. Default is no downsampling (full payload returned)."
+  )
+  @Parameter(
+    name = Constants.MAX_POINTS,
+    description =
+      "Target maximum point count when 'downsample=lttb' is set. " +
+      "Capped server-side at 5000. " +
+      "Ignored when 'downsample' is absent."
+  )
   public Response getTimeseries(
     @PathParam(Constants.TIMESERIES_CONTAINER_ID) @NotNull @PositiveOrZero Long timeseriesContainerId,
     @QueryParam(Constants.MEASUREMENT) @NotBlank String measurement,
@@ -391,7 +407,9 @@ public class TimeseriesRest {
     @QueryParam(Constants.END) @NotNull @PositiveOrZero Long end,
     @QueryParam(Constants.FUNCTION) AggregateFunction function,
     @QueryParam(Constants.GROUP_BY) Long groupBy,
-    @QueryParam(Constants.FILLOPTION) FillOption fillOption
+    @QueryParam(Constants.FILLOPTION) FillOption fillOption,
+    @QueryParam(Constants.DOWNSAMPLE) String downsample,
+    @QueryParam(Constants.MAX_POINTS) Integer maxPoints
   ) throws Exception {
     var timeseries = new Timeseries(measurement, device, location, symbolicName, field);
     TimeseriesDataPointsQueryParams queryParams = new TimeseriesDataPointsQueryParams(
@@ -402,8 +420,25 @@ public class TimeseriesRest {
       function
     );
     var timeseriesData = timeseriesService.getDataPointsByTimeseries(timeseriesContainerId, timeseries, queryParams);
+    // Optional downsampling: opt-in, default off. Today only LTTB; the
+    // switch lets us add other strategies later (peak-pick, MinMax-LTTB,
+    // ASAP) without changing the wire shape.
+    if (downsample != null && "lttb".equalsIgnoreCase(downsample.trim()) && timeseriesData != null) {
+      int target = clampMaxPoints(maxPoints);
+      timeseriesData = Lttb.downsample(timeseriesData, target);
+    }
     TimeseriesWithDataPoints timeseriesWithData = new TimeseriesWithDataPoints(timeseries, timeseriesData);
     return Response.ok(timeseriesWithData).build();
+  }
+
+  /** Default target when {@code max_points} is absent; same default the MCP tool uses. */
+  private static final int DOWNSAMPLE_DEFAULT_POINTS = 2000;
+  /** Hard ceiling so a single request can't return more than this even with downsampling. */
+  private static final int DOWNSAMPLE_MAX_POINTS = 5000;
+
+  private static int clampMaxPoints(Integer requested) {
+    if (requested == null) return DOWNSAMPLE_DEFAULT_POINTS;
+    return Math.min(Math.max(requested, 1), DOWNSAMPLE_MAX_POINTS);
   }
 
   @GET

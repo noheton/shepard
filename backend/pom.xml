@@ -319,6 +319,13 @@
       <artifactId>jsoup</artifactId>
       <version>1.22.1</version>
     </dependency>
+    <!-- MCP Phase 1 — native Quarkus MCP endpoint at /v2/mcp/sse (aidocs/88). -->
+    <!-- Version 1.9.1 is built against Quarkus 3.27.x (matches our BOM). -->
+    <dependency>
+      <groupId>io.quarkiverse.mcp</groupId>
+      <artifactId>quarkus-mcp-server-http</artifactId>
+      <version>1.9.1</version>
+    </dependency>
     <dependency>
       <!-- ArchUnit for the V2 namespace fence (P4 / aidocs/47 §2). -->
       <groupId>com.tngtech.archunit</groupId>

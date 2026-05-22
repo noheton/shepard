@@ -124,6 +124,14 @@ export interface GetTimeseriesRequest {
     _function?: AggregateFunction;
     groupBy?: number;
     fillOption?: FillOption;
+    /**
+     * Optional post-query downsampling. Today only 'lttb'.
+     * Hand-added — added to TimeseriesRest.java; full client regen is blocked
+     * by pre-existing duplicate operationIds in the OpenAPI spec.
+     */
+    downsample?: string;
+    /** Target max point count when downsample is set. Capped server-side at 5000. */
+    maxPoints?: number;
 }
 
 export interface GetTimeseriesAvailableRequest {
@@ -891,6 +899,17 @@ export class TimeseriesContainerApi extends runtime.BaseAPI {
 
         if (requestParameters['fillOption'] != null) {
             queryParameters['fill_option'] = requestParameters['fillOption'];
+        }
+
+        // Downsampling (LTTB) — opt-in, server defaults off. Hand-patched into
+        // the generated client; a full client regen is blocked by pre-existing
+        // duplicate operationIds elsewhere in /v2/. Until the spec is cleaned,
+        // every future client regen needs to re-apply this stanza.
+        if (requestParameters['downsample'] != null) {
+            queryParameters['downsample'] = requestParameters['downsample'];
+        }
+        if (requestParameters['maxPoints'] != null) {
+            queryParameters['max_points'] = requestParameters['maxPoints'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

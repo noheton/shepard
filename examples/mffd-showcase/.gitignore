@@ -1,0 +1,15 @@
+# MFFD raw industrial data drop from ZLP Augsburg. NEVER enters the repo —
+# this is multi-GB DLR-internal manufacturing data (AFP, NDT, welding, LBR),
+# not seed-able synthetic content. `examples/mffd-showcase/seed.py` already
+# generates a synthetic surrogate that IS committed.
+#
+# Pattern covers:
+#   raw-data/      — the directory itself
+#   raw-data/*     — anything directly inside
+#   raw-data/**    — anything at any nesting depth
+# Force-add overrides are intentionally NOT provided — if a file from here
+# ever needs to be tracked it should be moved to a separate, sanitised
+# location with explicit IP review.
+raw-data/
+raw-data/*
+raw-data/**

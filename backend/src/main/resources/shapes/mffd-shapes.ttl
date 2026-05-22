@@ -1,0 +1,370 @@
+# mffd-shapes.ttl — MFFD worked-example shapes.
+#
+# Demonstrates the full composition pattern from aidocs/95 Part 5:
+# campaign → ProcessStep (abstract) → BridgeWelding (specialisation
+# with weld-parameter slots) → CalibrationCertificate / NDTGate
+# (mini-shapes referenced by sh:node).
+#
+# Numeric bounds on weld parameters are lifted directly from
+# examples/mffd-showcase/ontology/mffd-process.ttl §4 (CM/W1/W2/WC).
+# The shapes here translate the mffd:Constraint nominal/min/max
+# triples into SHACL sh:minInclusive / sh:maxInclusive — what the
+# TPL1c form renderer reads to produce a numeric input with bounds.
+
+@prefix mffd:    <http://semantics.dlr.de/mffd-process#> .
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix qudt:    <http://qudt.org/schema/qudt/> .
+@prefix unit:    <http://qudt.org/vocab/unit/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── New classes (campaign + supporting artefacts) ─────────────────────
+
+mffd:MFFDCampaign a owl:Class ;
+    rdfs:subClassOf shepard:Collection ;
+    rdfs:label "MFFD campaign"@en ;
+    rdfs:comment "A single MFFD upper-fuselage manufacturing campaign — collects the seven process-step DataObjects."@en .
+
+mffd:CalibrationCertificate a owl:Class ;
+    rdfs:subClassOf shepard:DataObject ;
+    rdfs:label "Calibration certificate"@en ;
+    rdfs:comment "Equipment calibration record (EN 9100 §7.1.5)."@en .
+
+mffd:NDTGate a owl:Class ;
+    rdfs:subClassOf shepard:DataObject ;
+    rdfs:label "NDT gate"@en ;
+    rdfs:comment "Non-destructive-test gate outcome at the end of a process step."@en .
+
+# ─── mffd:MFFDCampaignShape ────────────────────────────────────────────
+
+mffd:MFFDCampaignShape a sh:NodeShape ;
+    sh:targetClass mffd:MFFDCampaign ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "MFFD campaign shape"@en ;
+    rdfs:comment "A campaign is a Collection holding exactly seven ProcessSteps. One click in the Template gallery creates the full seven-step scaffold (aidocs/95 §15 M1)."@en ;
+    sh:and ( shepard:CollectionShape ) ;
+
+    sh:property [
+        sh:path    mffd:campaignNumber ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^MFFD-[0-9]{4}-[0-9]{3}$" ;
+        sh:name    "Campaign number"@en ;
+        sh:order   10 ;
+        sh:message "Campaign number must match pattern MFFD-YYYY-NNN."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:hasProcessStep ;
+        sh:node    mffd:ProcessStepShape ;
+        sh:minCount 7 ;
+        sh:maxCount 7 ;
+        sh:name    "Process steps (seven)"@en ;
+        sh:order   20 ;
+        sh:message "An MFFD campaign requires exactly seven ProcessStep children (Tape Layup → Cleats with LBR)."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:frameNumber ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 32 ;
+        sh:maxCount 1 ;
+        sh:name    "Frame number"@en ;
+        sh:order   30
+    ] .
+
+# ─── mffd:ProcessStepShape (abstract) ──────────────────────────────────
+
+mffd:ProcessStepShape a sh:NodeShape ;
+    sh:targetClass mffd:ProcessStep ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Process step shape (abstract)"@en ;
+    rdfs:comment "Abstract shape — concrete steps (BridgeWelding, TapeLayup, …) extend it via sh:and with additional parameter slots."@en ;
+    sh:and ( shepard:DataObjectShape ) ;
+
+    sh:property [
+        sh:path    mffd:technique ;
+        sh:nodeKind sh:IRI ;
+        sh:in      ( mffd:AFP mffd:Thermography mffd:UltrasonicWelding
+                     mffd:ResistanceWelding mffd:LBRClamping ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Technique"@en ;
+        sh:order   10 ;
+        sh:message "Technique must be one of the MFFD process techniques."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:operator ;
+        sh:class   shepard:User ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Operator"@en ;
+        sh:order   20 ;
+        sh:message "Every process step must record the responsible operator (EN 9100 traceability)."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:hasCalibrationCert ;
+        sh:class   mffd:CalibrationCertificate ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:name    "Calibration certificate(s)"@en ;
+        sh:order   30 ;
+        sh:message "Every process step must reference at least one calibration certificate covering the equipment used."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:hasNDTGate ;
+        sh:node    mffd:NDTGateShape ;
+        sh:maxCount 1 ;
+        sh:name    "NDT gate result"@en ;
+        sh:order   40
+    ] ;
+    sh:property [
+        sh:path    mffd:hasFrame ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 32 ;
+        sh:maxCount 1 ;
+        sh:name    "Frame number"@en ;
+        sh:order   50
+    ] .
+
+# ─── mffd:BridgeWeldingShape (specialisation) ──────────────────────────
+#
+# Numeric bounds mirror the mffd:Constraint declarations in
+# mffd-process.ttl §4 (CM_I, W1_I, …). The form renderer surfaces
+# them as numeric inputs with the QUDT unit pill from mffd:hasUnit.
+
+mffd:BridgeWeldingShape a sh:NodeShape ;
+    sh:targetClass mffd:BridgeWelding ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Bridge welding shape"@en ;
+    rdfs:comment "Resistance-welding of the bridge / frame connection. Adds the 16-channel weld-controller parameter slots on top of ProcessStepShape."@en ;
+    sh:and ( mffd:ProcessStepShape ) ;
+
+    sh:property [
+        sh:path    mffd:CM_I ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 4.5 ;
+        sh:maxInclusive 5.5 ;
+        sh:maxCount 1 ;
+        sh:name    "Clamp Module current (A)"@en ;
+        sh:order   100 ;
+        sh:message "CM current out of spec (4.5–5.5 A); may cause ClampingMisalignment."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:CM_p ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 3.0 ;
+        sh:maxInclusive 5.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Clamp Module pressure (bar)"@en ;
+        sh:order   110 ;
+        sh:message "CM pressure out of spec (3.0–5.0 bar); may cause WeldMisalignment / PoorClamping."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:W1_I ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 15.0 ;
+        sh:maxInclusive 20.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 1 current (A)"@en ;
+        sh:order   120 ;
+        sh:message "W1 current out of spec (15–20 A); may cause ColdLap, Underweld or BurnThrough."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:W1_U ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 18.0 ;
+        sh:maxInclusive 28.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 1 voltage (V)"@en ;
+        sh:order   130 ;
+        sh:message "W1 voltage out of spec (18–28 V); may cause ColdLap or BurnThrough."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:W1_t ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 60.0 ;
+        sh:maxInclusive 70.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 1 time (s)"@en ;
+        sh:order   140 ;
+        sh:message "W1 time out of spec (60–70 s); may cause InsufficientBonding or BurnThrough."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:W1_p ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 0.25 ;
+        sh:maxInclusive 0.55 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 1 pressure (bar)"@en ;
+        sh:order   150 ;
+        sh:message "W1 pressure out of spec (0.25–0.55 bar); may cause Porosity or SqueezeOut."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:W2_I ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 7.0 ;
+        sh:maxInclusive 9.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 2 current (A)"@en ;
+        sh:order   160
+    ] ;
+    sh:property [
+        sh:path    mffd:W2_U ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 11.0 ;
+        sh:maxInclusive 16.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld head 2 voltage (V)"@en ;
+        sh:order   170
+    ] ;
+    sh:property [
+        sh:path    mffd:WC_I ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 4.5 ;
+        sh:maxInclusive 5.5 ;
+        sh:maxCount 1 ;
+        sh:name    "Weld Counter current (A)"@en ;
+        sh:order   180
+    ] ;
+    sh:property [
+        sh:path    mffd:BridgePosition ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 0.0 ;
+        sh:maxInclusive 25000.0 ;
+        sh:maxCount 1 ;
+        sh:name    "Bridge position (mm)"@en ;
+        sh:order   190 ;
+        sh:message "Bridge position out of envelope (0–25 000 mm fuselage range)."@en
+    ] .
+
+# ─── mffd:CalibrationCertificateShape ──────────────────────────────────
+
+mffd:CalibrationCertificateShape a sh:NodeShape ;
+    sh:targetClass mffd:CalibrationCertificate ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "Calibration certificate mini-shape"@en ;
+    rdfs:comment "Equipment calibration record (EN 9100 §7.1.5). Reused across all seven ProcessSteps of a campaign via the autocomplete + ‘pick existing’ behaviour of sh:class."@en ;
+
+    sh:property [
+        sh:path    mffd:certIdentifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^CAL-[0-9]{4}-[0-9]{4}$" ;
+        sh:name    "Certificate identifier"@en ;
+        sh:order   10 ;
+        sh:message "Certificate identifier must match pattern CAL-YYYY-NNNN."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:calibratedEquipment ;
+        sh:class   mffd:Equipment ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Calibrated equipment"@en ;
+        sh:order   20 ;
+        sh:message "A calibration certificate must reference exactly one equipment instance."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:calibratedOn ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Calibrated on"@en ;
+        sh:order   30
+    ] ;
+    sh:property [
+        sh:path    mffd:validUntil ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Valid until"@en ;
+        sh:order   40 ;
+        sh:message "A calibration certificate must declare a validity end date."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:calibrationLab ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Calibration lab"@en ;
+        sh:order   50
+    ] ;
+    sh:property [
+        sh:path    mffd:certificateDocument ;
+        sh:class   shepard:FileContainer ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "Certificate PDF"@en ;
+        sh:order   60
+    ] .
+
+# ─── mffd:NDTGateShape ─────────────────────────────────────────────────
+
+mffd:NDTGateShape a sh:NodeShape ;
+    sh:targetClass mffd:NDTGate ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "NDT gate mini-shape"@en ;
+    rdfs:comment "Non-destructive-test gate at the end of a process step. PASS unblocks the successor; FAIL routes to NCR + rework loop."@en ;
+
+    sh:property [
+        sh:path    mffd:ndtResult ;
+        sh:datatype xsd:string ;
+        sh:in      ( "PASS" "FAIL" "CONDITIONAL" "PENDING" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "NDT result"@en ;
+        sh:order   10 ;
+        sh:message "NDT result must be PASS / FAIL / CONDITIONAL / PENDING."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:ndtMethod ;
+        sh:datatype xsd:string ;
+        sh:in      ( "ultrasound" "thermography" "x-ray-CT"
+                     "visual" "tap-test" "shearography" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "NDT method"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    mffd:inspector ;
+        sh:class   shepard:User ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Inspector"@en ;
+        sh:order   30 ;
+        sh:message "An NDT gate must record the inspector (EN 9100 traceability)."@en
+    ] ;
+    sh:property [
+        sh:path    mffd:inspectedAt ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Inspected at"@en ;
+        sh:order   40
+    ] ;
+    sh:property [
+        sh:path    mffd:ndtReport ;
+        sh:class   shepard:FileContainer ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:name    "NDT report file"@en ;
+        sh:order   50
+    ] ;
+    sh:property [
+        sh:path    mffd:raisedNCR ;
+        sh:class   shepard:NCR ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Raised NCR (if FAIL)"@en ;
+        sh:order   60 ;
+        sh:message "If ndtResult = FAIL, raisedNCR should reference the NCR that captures the non-conformance."@en
+    ] .

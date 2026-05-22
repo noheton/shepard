@@ -1,0 +1,170 @@
+# rep-shapes.ttl — Regulatory Evidence Pack (TPL14).
+#
+# A REP bundles every artefact a notified body / certification
+# authority asks for, together with the provenance edges that prove
+# the artefacts were produced in compliance with EASA AI Concept
+# Paper Issue 02 (Learning Assurance W-shape) and EU 2023/1230
+# (Machinery Regulation, technical-file retention).
+#
+# Reference: aidocs/agent-findings/easa-data-management-learning-assurance.md
+#            aidocs/agent-findings/eu-machinery-regulation-2023-1230.md
+# Architecture: aidocs/semantics/95 Part 14 (TPL14 — REP export shape).
+
+@prefix shepard: <http://semantics.dlr.de/shepard-upper#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+@prefix iao:     <http://purl.obolibrary.org/obo/IAO_> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Class declaration ────────────────────────────────────────────────
+
+shepard:RegulatoryEvidencePack a owl:Class ;
+    rdfs:subClassOf iao:DataSet ;
+    rdfs:label "Regulatory Evidence Pack"@en ;
+    rdfs:comment "Bundled, exportable, ledger-anchorable evidence package for a notified-body submission. Bundles LAP + ODD + DQRs + train/val/test refs + independence proof + validation Activity + sign-off."@en .
+
+shepard:LearningAssurancePlan a owl:Class ;
+    rdfs:subClassOf iao:Plan ;
+    rdfs:label "Learning Assurance Plan"@en ;
+    rdfs:comment "The EASA W-shape LAP document."@en .
+
+shepard:OperationalDesignDomain a owl:Class ;
+    rdfs:subClassOf iao:Plan ;
+    rdfs:label "Operational Design Domain"@en ;
+    rdfs:comment "Boundaries within which the AI system is qualified to operate."@en .
+
+# ─── shepard:RegulatoryEvidencePackShape ──────────────────────────────
+
+shepard:RegulatoryEvidencePackShape a sh:NodeShape ;
+    sh:targetClass shepard:RegulatoryEvidencePack ;
+    dcterms:hasVersion "1.0.0" ;
+    rdfs:label "REP shape"@en ;
+    rdfs:comment "Exportable regulatory evidence pack. Default export format is BagIt+RO-Crate+PROV-O so the receiver can re-validate offline. Aligns to EASA Issue 02 LA-* objectives + EU 2023/1230 Annex IV technical-file content."@en ;
+
+    sh:property [
+        sh:path    shepard:repIdentifier ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:pattern "^REP-[A-Z0-9-]+$" ;
+        sh:name    "REP identifier"@en ;
+        sh:order   10 ;
+        sh:message "REP identifier must match pattern REP-XXXXX."@en
+    ] ;
+    sh:property [
+        sh:path    dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Title"@en ;
+        sh:order   20
+    ] ;
+    sh:property [
+        sh:path    shepard:hasLearningAssurancePlan ;
+        sh:class   shepard:LearningAssurancePlan ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Learning Assurance Plan"@en ;
+        sh:order   30 ;
+        sh:message "A REP requires exactly one Learning Assurance Plan reference (EASA LA-01)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:hasOperationalDesignDomain ;
+        sh:class   shepard:OperationalDesignDomain ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Operational Design Domain spec"@en ;
+        sh:order   40 ;
+        sh:message "A REP requires exactly one ODD specification (EASA LA-03)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:hasDQR ;
+        sh:class   shepard:DQR ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Data Quality Requirements"@en ;
+        sh:order   50 ;
+        sh:message "A REP must bundle at least one Data Quality Requirement (EASA DM-02)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:trainingDataset ;
+        sh:class   shepard:DataObject ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Training dataset reference"@en ;
+        sh:order   60 ;
+        sh:message "A REP must reference the training dataset (EASA DM-05)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:validationDataset ;
+        sh:class   shepard:DataObject ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Validation dataset reference"@en ;
+        sh:order   70 ;
+        sh:message "A REP must reference the validation dataset (EASA DM-05)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:testDataset ;
+        sh:class   shepard:DataObject ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Test dataset reference"@en ;
+        sh:order   80 ;
+        sh:message "A REP must reference the held-out test dataset (EASA DM-05 + DA-04)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:independenceProof ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Independence proof (Cypher result)"@en ;
+        sh:order   90 ;
+        sh:message "A REP must embed the Cypher query result proving train/val/test independence (EASA DM-06)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:validationActivity ;
+        sh:class   prov:Activity ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Validation Activity"@en ;
+        sh:order   100 ;
+        sh:message "A REP must reference the Activity that performed validation (EASA DA-04)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:signOffActivity ;
+        sh:class   prov:Activity ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:name    "Sign-off Activity"@en ;
+        sh:order   110 ;
+        sh:message "A REP requires at least one sign-off Activity from an accountable role (EASA LA-12)."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:exportFormat ;
+        sh:datatype xsd:string ;
+        sh:in      ( "bag-it+ro-crate+prov-o"
+                     "bag-it+ro-crate"
+                     "ro-crate"
+                     "zip+manifest" ) ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Export format"@en ;
+        sh:order   120 ;
+        sh:message "exportFormat must be one of the supported bundle formats."@en
+    ] ;
+    sh:property [
+        sh:path    shepard:retainUntil ;
+        sh:datatype xsd:dateTime ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name    "Retain until"@en ;
+        sh:order   130 ;
+        sh:message "Retention end date is mandatory; EU 2023/1230 Art. 17(2) sets a 10-year floor for technical files."@en
+    ] .

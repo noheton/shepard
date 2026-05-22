@@ -121,11 +121,11 @@ function onPageChange(page: number) {
             variant="text"
             density="compact"
             size="small"
-            :color="isWatched(rowProps.item.id!) ? 'amber-darken-2' : undefined"
+            :color="isWatched(rowProps.item.id!) ? 'primary' : undefined"
             :title="isWatched(rowProps.item.id!) ? 'Remove from watched' : 'Add to watched'"
             @click.stop="toggleWatched(rowProps.item)"
           >
-            <v-icon>{{ isWatched(rowProps.item.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+            <v-icon>{{ isWatched(rowProps.item.id!) ? 'mdi-binoculars' : 'mdi-binoculars-outline' }}</v-icon>
           </v-btn>
         </template>
       </v-data-table-row>

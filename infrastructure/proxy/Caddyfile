@@ -11,12 +11,20 @@
 }
 
 :80 {
-	# MCP sidecar — strip /mcp prefix before proxying to the FastMCP container.
-	# SSE URL: https://shepard.nuclide.systems/mcp/sse
-	# The sidecar is always in the default compose stack (no --profile needed).
-	handle /mcp/* {
-		uri strip_prefix /mcp
-		reverse_proxy shepard-mcp:8811
+	# Native Quarkus MCP server (MCP-2) — same backend that serves /shepard/api/*.
+	# SSE URL:           https://shepard.nuclide.systems/v2/mcp/sse
+	# Streamable HTTP:   https://shepard.nuclide.systems/v2/mcp
+	# Auth is enforced inside the backend by McpAuthFilter (Bearer or API key),
+	# so we do not need any extra hand-off here — just forward verbatim with
+	# the long timeouts that an SSE connection needs.
+	handle /v2/mcp* {
+		reverse_proxy backend:8080 {
+			flush_interval -1
+			transport http {
+				read_timeout 24h
+				write_timeout 24h
+			}
+		}
 	}
 
 	handle {

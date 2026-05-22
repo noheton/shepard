@@ -196,7 +196,7 @@ function relativeTime(date: Date | null | undefined): string {
     <!-- Watched collections section -->
     <template v-if="watched.length > 0 || watchedLoading">
       <div class="d-flex align-center mb-4 ga-2">
-        <v-icon icon="mdi-star" color="amber-darken-2" size="20" />
+        <v-icon icon="mdi-binoculars" color="primary" size="20" />
         <div class="text-h6 font-weight-medium">Watched</div>
       </div>
       <v-row class="mb-6">
@@ -228,12 +228,12 @@ function relativeTime(date: Date | null | undefined): string {
                   variant="text"
                   density="compact"
                   size="small"
-                  color="amber-darken-2"
+                  color="primary"
                   class="ms-1 flex-shrink-0"
                   title="Remove from watched"
                   @click.stop.prevent="toggleWatched(collection)"
                 >
-                  <v-icon>mdi-star</v-icon>
+                  <v-icon>mdi-binoculars</v-icon>
                 </v-btn>
               </v-card-title>
               <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
@@ -347,12 +347,12 @@ function relativeTime(date: Date | null | undefined): string {
                   variant="text"
                   density="compact"
                   size="small"
-                  :color="isWatched(collection.id!) ? 'amber-darken-2' : undefined"
+                  :color="isWatched(collection.id!) ? 'primary' : undefined"
                   class="ms-1 flex-shrink-0"
                   :title="isWatched(collection.id!) ? 'Remove from watched' : 'Add to watched'"
                   @click.stop.prevent="toggleWatched(collection)"
                 >
-                  <v-icon>{{ isWatched(collection.id!) ? 'mdi-star' : 'mdi-star-outline' }}</v-icon>
+                  <v-icon>{{ isWatched(collection.id!) ? 'mdi-binoculars' : 'mdi-binoculars-outline' }}</v-icon>
                 </v-btn>
               </v-card-title>
 

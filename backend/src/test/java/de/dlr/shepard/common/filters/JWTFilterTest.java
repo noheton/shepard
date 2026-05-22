@@ -14,6 +14,7 @@ import de.dlr.shepard.auth.security.ApiKeyLastSeenCache;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.security.JWTSecurityContext;
+import de.dlr.shepard.auth.security.JwtTokenAuthService;
 import de.dlr.shepard.auth.security.RolesList;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.common.util.PKIHelper;
@@ -45,7 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 
-@QuarkusComponentTest
+@QuarkusComponentTest({ JwtTokenAuthService.class, de.dlr.shepard.auth.security.ApiKeyAuthService.class })
 @TestConfigProperty(
   key = "oidc.public",
   value = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiAxFyffvM0oiga3h2E7XpHtJvu1vTodrn9Y426FOv80YJcMwPkaI5tXY5hnLjgOwsVNSBv9wAhLL4bUfP+TVhdg4dijD2H/3FamheQaPmduimytzQjlHIIfFuZidH12ZyUrOWfDxiHiRFQ3Dd8dlS7MbIsWt/qBIg16ZZazTJTiaSyP/qH305x9iRjrtGRmvE2VMOdc5EhujFMJnQWWgwOnv2C9U9KIchkPCz+TAL4kKJ79BUi4b0+jxL5Cbgyt0bMo27Zx0zQjU7f0ynFIllqZ6new3Q8HYbr4AIkca4pMjfKWrTHkrQBL2cEXHLIHt86C17goKteToqDjphkwImwIDAQAB"
@@ -357,14 +358,13 @@ public class JWTFilterTest extends BaseTestCase {
       .signWith(privateKey)
       .compact();
 
-    JWTPrincipal principal = new JWTPrincipal("account", "testcase", "Bob", keyId.toString(), java.util.Collections.emptyList());
-    JWTSecurityContext securityContext = new JWTSecurityContext(context.getSecurityContext(), principal);
-
     when(context.getHeaderString("Authorization")).thenReturn("Bearer " + jws);
     filter.filter(context);
     verify(context, never()).abortWith(any());
     verify(context).setSecurityContext(scCaptor.capture());
-    assertEquals(securityContext.getUserPrincipal(), scCaptor.getValue().getUserPrincipal());
+    var captured = (JWTPrincipal) scCaptor.getValue().getUserPrincipal();
+    assertEquals("Bob", captured.getUsername());
+    assertEquals(keyId.toString(), captured.getKeyId());
   }
 
   @Test
@@ -820,12 +820,12 @@ public class JWTFilterTest extends BaseTestCase {
   public void parseClaimPath_splits() {
     org.junit.jupiter.api.Assertions.assertArrayEquals(
       new String[] { "realm_access", "roles" },
-      JWTFilter.parseClaimPath("realm_access.roles")
+      de.dlr.shepard.auth.security.JwtTokenAuthService.parseClaimPath("realm_access.roles")
     );
-    org.junit.jupiter.api.Assertions.assertArrayEquals(new String[0], JWTFilter.parseClaimPath(""));
+    org.junit.jupiter.api.Assertions.assertArrayEquals(new String[0], de.dlr.shepard.auth.security.JwtTokenAuthService.parseClaimPath(""));
     org.junit.jupiter.api.Assertions.assertArrayEquals(
       new String[] { "groups" },
-      JWTFilter.parseClaimPath(" groups ")
+      de.dlr.shepard.auth.security.JwtTokenAuthService.parseClaimPath(" groups ")
     );
   }
 }

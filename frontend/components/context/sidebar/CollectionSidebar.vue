@@ -175,7 +175,7 @@ const { mobile } = useDisplay();
 
 <template>
   <div
-    :style="mobile ? 'position: relative; width: 100%; height: 100%' : 'position: fixed; width: 100%; max-width: inherit'"
+    :style="mobile ? 'position: relative; width: 100%; height: 100%' : 'position: sticky; top: 0; width: 100%; max-width: inherit'"
     class="bg-treeview elevation-4 sidebar-container"
   >
     <CollectionSidebarHeader
