@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Visualization plugin survey — addendum: CAD + FEM
 
 **Date:** 2026-05-22

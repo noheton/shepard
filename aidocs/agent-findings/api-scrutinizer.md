@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # API Scrutinizer — Shepard /v2/ Findings
 
 **Audited:** 2026-05-21  

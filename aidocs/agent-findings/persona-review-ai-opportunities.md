@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona Review — Analytics & AI Opportunities Specialist
 
 **Reviewer.** Applied ML engineer / data scientist, evaluating

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # v15 import — review from the reluctant senior researcher
 
 *28 years at DLR. 40 TB on NFS. 600-row Excel master sheet. Has never trusted an

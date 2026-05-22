@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # aidocs/70 — Competitor landscape & feature ideas for shepard
 
 **Date:** 2026-05-16  

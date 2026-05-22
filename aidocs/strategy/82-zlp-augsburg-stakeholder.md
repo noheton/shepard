@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # aidocs/82 — shepard: Stakeholder brief for DLR ZLP Augsburg
 
 **Date:** 2026-05-16

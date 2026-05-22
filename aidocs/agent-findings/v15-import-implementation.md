@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # v15 MFFD-import — implementation report
 
 **Author:** claude-opus-4-7 on behalf of fkrebs@nucli.de

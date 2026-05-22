@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # Templates as a First-Class Entity — Design
 
 **Status.** Concept design.

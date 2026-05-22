@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Shepard performance baseline — 2026-05-21
 
 **Instance.** https://shepard.nuclide.systems (frontend),

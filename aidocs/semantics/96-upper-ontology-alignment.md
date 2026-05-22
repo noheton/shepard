@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O)
 
 **Status.** Design — companion to `aidocs/semantics/95-shacl-templates-and-individuals.md` Part 7.

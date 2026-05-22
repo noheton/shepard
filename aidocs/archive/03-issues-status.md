@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Issues Status — shepard (GitLab open items)
 
 Snapshot date: 2026-05-04. Source: GitLab (authoritative). 166 open issues, 23 open MRs.

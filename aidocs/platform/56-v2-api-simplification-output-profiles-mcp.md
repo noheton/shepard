@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI
 
 **Status.** Concept design.

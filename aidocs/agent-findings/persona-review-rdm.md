@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona review — Research Data Manager (FAIR Steward)
 
 **Reviewer persona.** Lead Research Data Manager / FAIR Data Steward, evaluating Shepard's planned

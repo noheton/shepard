@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # Internal Semantic Repository via Neosemantics — Design
 
 **Scope.** Evaluate using **neosemantics (`n10s`)** — Neo4j's RDF

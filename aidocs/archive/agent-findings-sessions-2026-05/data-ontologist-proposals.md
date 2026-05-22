@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Data Ontologist — Feature Proposals
 **Author:** Principal Aerospace Domain Engineer and Data Ontologist
 **Date:** 2026-05-21

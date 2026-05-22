@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # Instance-Admin Role — Design (A0 + C3 + F8)
 
 **Scope.** Implement shepard's **instance-admin role** — the

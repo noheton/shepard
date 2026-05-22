@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # 17 — Startup Wait / Retry Audit
 
 Snapshot date: 2026-05-05. Follow-up from `16-dispatcher-backlog.md`

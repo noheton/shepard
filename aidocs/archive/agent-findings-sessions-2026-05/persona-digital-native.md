@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Persona: Digital Native Researcher — Findings
 
 **Persona:** 28-year-old postdoc. GitHub for everything. All analysis in Jupyter. Uses Claude and ChatGPT daily. FAIR believer. First thing on arrival: check if there's an API.

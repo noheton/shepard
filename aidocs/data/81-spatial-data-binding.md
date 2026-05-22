@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/81 — Spatial Data Binding: Linking Geometry to Measurements
 
 **Date:** 2026-05-16

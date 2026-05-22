@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # 106 — Requirements traceability — research direction
 
 **Status:** Research direction. No implementation commitment.

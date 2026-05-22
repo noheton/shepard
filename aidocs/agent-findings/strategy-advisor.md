@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Shepard — Strategic Advisor Findings
 **Date:** 2026-05-21  
 **Author:** Strategic Executive Advisor (AI agent)  

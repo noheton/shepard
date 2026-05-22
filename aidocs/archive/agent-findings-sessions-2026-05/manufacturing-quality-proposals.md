@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Manufacturing & Quality Engineering — Feature Proposals
 **Author:** Industrial Manufacturing & Quality Engineer agent  
 **Date:** 2026-05-21  

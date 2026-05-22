@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/77 — Databus + MOSS federation layer for shepard
 
 **Date:** 2026-05-16

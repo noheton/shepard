@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 64 — Provenance architecture (what's shipped + where it's going)
 
 **Status.** Live reference, kept current with the PROV1 series.

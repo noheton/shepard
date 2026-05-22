@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # Spatial-data performance evaluation (PostGIS reassessment)
 
 **Status.** Design note, no implementation in scope. Captured 2026-05-19

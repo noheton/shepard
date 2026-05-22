@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Reconciliation — GitHub mirror vs GitLab authoritative
 
 Snapshot date: 2026-05-04. GitLab is authoritative.

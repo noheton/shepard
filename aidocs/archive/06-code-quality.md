@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Code Quality — shepard
 
 Snapshot date: 2026-05-04. Scope: `/home/user/shepard` at branch `claude/cleanup-github-mirror-f2bsP`.

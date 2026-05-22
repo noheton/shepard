@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/83 — Point Cloud Integration and Live Overlay Modalities
 
 **Date:** 2026-05-16

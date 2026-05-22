@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # aidocs — Index
 
 Design notes, analysis docs, and strategy docs for this fork of

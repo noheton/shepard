@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Cluster Map — shepard
 
 Snapshot date: 2026-05-04. Synthesized from Wave 1-3 outputs.

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Visualization plugin survey
 
 **Date:** 2026-05-22

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # API annoyances — running log
 
 Running log of friction encountered while using the shepard REST API

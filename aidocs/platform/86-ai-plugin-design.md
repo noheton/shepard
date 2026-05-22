@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # `shepard-plugin-ai` — AI Platform Design
 
 **Status:** 📐 Designed — 2026-05-20  

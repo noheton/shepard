@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # API-Level Integration Test Suite — Design
 
 **Scope.** Define a pytest-based integration test suite that runs real HTTP

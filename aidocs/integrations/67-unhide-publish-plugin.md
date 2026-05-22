@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration)
 
 **Status.** Design — ready for slice planning.

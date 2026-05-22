@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # GridFS → S3 — Evaluation
 
 **Scope.** Evaluate migrating shepard's primary file storage from

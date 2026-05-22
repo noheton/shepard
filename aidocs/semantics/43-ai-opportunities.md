@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # AI Opportunities — Traditional ML + LLM Integration
 
 **Scope.** Survey of where AI fits inside shepard, split between

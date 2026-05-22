@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Quarkus MCP, Kadi4Mat, and RDM Ecosystem Gaps — Findings
 
 **Date:** 2026-05-21  

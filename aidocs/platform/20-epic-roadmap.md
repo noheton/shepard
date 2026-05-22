@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Epic Roadmap — shepard
 
 Snapshot date: 2026-05-05.

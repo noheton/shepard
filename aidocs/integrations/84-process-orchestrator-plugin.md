@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 84 — shepard-plugin-process-orchestrator
 
 **Status:** Design

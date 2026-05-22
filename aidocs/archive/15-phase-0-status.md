@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Phase 0 — Housekeeping Status
 
 Snapshot date: 2026-05-04. Records progress on Phase 0 of

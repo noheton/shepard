@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Applied ML & Data Science — Shepard Platform Findings
 
 **Role:** Applied ML Engineer and Data Science Specialist  

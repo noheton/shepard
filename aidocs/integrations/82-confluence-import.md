@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 82 — Confluence Data Center Space Export → Shepard Import
 
 **Status:** design

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # API Scrutinizer — review of the `/v2/views` + view-shapes proposal
 
 **Audited.** 2026-05-22. Regenerating a review lost to worktree cleanup.

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # First Issues — shepard
 
 Snapshot date: 2026-05-04. Ranked entry-points for new contributors. Excludes security findings (handled separately in `07-security-issues.md` and Phase 1 of `11-implementation-plan.md`).

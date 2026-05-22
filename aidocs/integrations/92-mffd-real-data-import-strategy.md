@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 92 — MFFD real-data import strategy
 
 **Status:** design draft 2026-05-21 · superseded by an actual `import-mffd.py`

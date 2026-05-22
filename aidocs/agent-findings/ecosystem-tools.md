@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Ecosystem Tools — Findings
 
 *Written: 2026-05-21. Based on source inspection of five uploaded repositories and one PPTX.*

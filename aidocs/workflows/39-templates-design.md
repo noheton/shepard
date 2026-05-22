@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Templates — Implementation Design
 
 **Scope.** Implementation design for the Templates feature. Reconciles

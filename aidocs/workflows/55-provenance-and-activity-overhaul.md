@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # Provenance and Activity Overhaul — Design
 
 **Scope.** Pivot the long-implicit "activity log" idea into a

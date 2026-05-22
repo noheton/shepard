@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # k6 Per-Endpoint SLO Matrix + `/v2/` Coverage
 
 **Scope.** Define per-endpoint SLO targets, concrete k6 script extensions

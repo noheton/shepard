@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Persona Debate Round — Reluctant Senior vs. Digital Native
 
 **Moderator**: Structural debate between two independently-authored persona findings.

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Strategy Advisor — Cross-Agent Debate
 **Date:** 2026-05-21
 **Author:** Strategy Aligner & Executive Advisor (Phase 2)

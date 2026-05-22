@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 97 — Shepard-pipelines: modern REBAR, Shepard-native
 
 **Status.** Design — companion to `aidocs/40-ecosystem.md` § "Planned

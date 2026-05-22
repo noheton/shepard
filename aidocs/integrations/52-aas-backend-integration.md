@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # AAS Backend Integration — Design
 
 **Scope.** Evaluate whether and how shepard can act as a **backend

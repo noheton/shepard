@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # GH Pages docs refresh — pre-push survey + fix log
 
 **Snapshot.** 2026-05-22.

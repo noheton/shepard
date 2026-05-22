@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Reluctant Senior Researcher — Persona Findings
 
 **Persona**: Senior aerospace researcher, DLR, 28 years tenure.

@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 87 — Collection / Container Duality: Design Discussion
 
 **Status.** Living design doc — initial draft 2026-05-17.

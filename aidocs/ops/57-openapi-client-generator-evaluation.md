@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # OpenAPI Client Generator Evaluation — `/v2/` Codegen
 
 **Status.** Concept design.

@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 19 — Critical Architectural Feedback
 
 Snapshot date: 2026-05-05. Ground-truthed against

@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Case Study: One Month of AI-Assisted Fork Development
 **Project:** Shepard Research Data Management Platform (DLR fork)  
 **Period:** ~2026-05-04 to 2026-05-19  

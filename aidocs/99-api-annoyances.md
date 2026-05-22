@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 99 — Shepard API annoyances (structural clunkiness)
 
 **Status.** Living document — append-only.

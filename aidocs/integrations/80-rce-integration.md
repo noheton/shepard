@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/80 — RCE Integration: Data Distribution with Provenance Tracking (`shepard-plugin-rce`)
 
 **Date:** 2026-05-16

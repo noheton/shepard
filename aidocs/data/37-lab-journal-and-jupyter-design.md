@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Lab Journal Reassessment + Jupyter Feasibility — Design
 
 **Scope.** Reassess shepard's `LabJournalEntry` surface and design

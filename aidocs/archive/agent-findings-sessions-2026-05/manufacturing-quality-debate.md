@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Manufacturing & Quality Engineering — Cross-Agent Debate
 **Author:** Industrial Manufacturing & Quality Engineer  
 **Date:** 2026-05-21  

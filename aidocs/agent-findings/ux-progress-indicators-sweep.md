@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # UX progress indicators — Playwright-driven sweep (task #136)
 
 **Audit mode:** live Playwright runs against `https://shepard.nuclide.systems`

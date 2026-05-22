@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # shepard-process-wizard + shepard-timeseries-collector integration design
 
 **Scope.** Integration recommendations for **shepard-process-wizard** (SPW) and

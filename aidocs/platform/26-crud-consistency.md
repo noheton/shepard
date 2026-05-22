@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 26. REST API CRUD Consistency Inventory
 
 **Date:** 2026-05-05  

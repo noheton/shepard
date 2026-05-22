@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Pagination — Inventory & Sized Rollout Plan
 
 **Scope.** A research artefact closing out backlog item **L6** ("Output

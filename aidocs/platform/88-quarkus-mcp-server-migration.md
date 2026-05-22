@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 88 — Native Quarkus MCP Server: Replacing the Python Sidecar
 
 **Status:** Design  

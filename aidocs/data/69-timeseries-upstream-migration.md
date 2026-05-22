@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Timeseries Schema — Migration from Upstream
 
 **Audience:** Operators upgrading from upstream `gitlab.com/dlr-shepard/shepard 5.2.0`

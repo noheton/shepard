@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 82 — Basic vs Advanced Mode Feature Matrix
 
 **Status:** live reference (update whenever a gate is added or removed)

@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # `shepard-plugin-v1-compat` — design for extracting the
 # upstream-v5.2.0 byte-compatible `/shepard/api/...` surface
 

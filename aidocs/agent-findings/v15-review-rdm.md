@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # v15 import review — RDM / FAIR Data Steward lens
 
 **Reviewer.** Claude (RDM/FAIR role per CLAUDE.md Role 5) on behalf of fkrebs@nucli.de.

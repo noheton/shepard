@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Cleanup Plan — shepard
 
 Executive summary. Snapshot date: 2026-05-04. Detail in the other `/aidocs/` documents.

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # UX Auditor — Feature Proposals
 
 **Author:** Core Tech & UX Auditor (synthesis from all peer agent findings)

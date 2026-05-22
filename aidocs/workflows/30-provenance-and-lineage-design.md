@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # Provenance and Data Lineage — Design Exploration
 
 **Snapshot date.** 2026-05-07.

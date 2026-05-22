@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Shepard FAIR Compliance Evaluation
 **Role:** Lead Research Data Manager (RDM) & FAIR Data Steward
 **Date:** 2026-05-21

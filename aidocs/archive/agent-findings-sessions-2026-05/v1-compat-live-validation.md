@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # V1COMPAT.0 Phase 1 — live validation findings
 
 **Date.** 2026-05-22

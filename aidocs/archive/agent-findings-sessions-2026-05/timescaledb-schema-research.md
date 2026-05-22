@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # TimescaleDB schema research — is the schema the MFFD ingest bottleneck?
 
 **Date:** 2026-05-22

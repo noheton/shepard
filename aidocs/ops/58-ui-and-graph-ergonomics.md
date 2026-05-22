@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # UI & Graph Ergonomics — Design Cluster
 
 **Status.** Concept design — cluster doc covering eight related asks.

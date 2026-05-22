@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # shepard Mount as a Network Drive — Concept Design
 
 **Status.** Concept design.

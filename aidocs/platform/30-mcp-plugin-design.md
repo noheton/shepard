@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint
 
 **Status:** Design  

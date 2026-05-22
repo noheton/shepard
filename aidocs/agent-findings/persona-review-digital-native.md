@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona Review: Digital Native Researcher (2026-05-22)
 
 **Persona:** 28yo postdoc. GitHub + Jupyter + Claude. Excel is legacy. First arrival question: "is there an API?"

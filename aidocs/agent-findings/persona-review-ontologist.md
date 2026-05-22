@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona review — Data & Process Ontologist on the SHACL trio
 
 **Reviewer.** Data & Process Ontologist persona (CLAUDE.md Role 2).

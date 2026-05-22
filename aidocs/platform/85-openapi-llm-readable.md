@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # OpenAPI documentation standard — LLM-readable
 
 **Status.** Active standard for every new endpoint and every endpoint

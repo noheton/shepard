@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # v15 review — Data & Process Ontologist lens
 
 **Reviewer:** Data & Process Ontologist agent (CLAUDE.md Role 2)

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # MFFD-Dropbox (collection 515365) cleanup — 2026-05-22
 
 Cleanup pass to remove partial state from prior failed/aborted v14 import attempts on `shepard-api.nuclide.systems` before the v15 reimport.

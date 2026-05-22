@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # home-showcase — MQTT → shepard collector + demo (HOME1)
 
 **Scope.** Design for a second demo seed alongside the existing LUMEN

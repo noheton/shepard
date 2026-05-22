@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Git Integration — Design
 
 **Scope.** Concept design for tracking artifacts in external git

@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 76 — uPlot Timeseries Chart
 
 **Status.** Design — initial draft 2026-05-19.

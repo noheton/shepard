@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Admin CLI — Candidate-Function Draft
 
 **Scope.** Forward-looking design note for the shepard administrator

@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/79 — CPACS Annotator (shepard-plugin-cpacs)
 
 **Date:** 2026-05-16

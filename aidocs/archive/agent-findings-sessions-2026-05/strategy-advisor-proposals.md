@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Strategy Advisor — Feature Proposals
 **Date:** 2026-05-21  
 **Synthesized from:** All six peer agent findings (UX, Ontology, API, Manufacturing, RDM, AI)  

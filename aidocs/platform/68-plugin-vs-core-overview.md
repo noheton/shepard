@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # 68 — Plugin-vs-core architecture overview
 
 **Status.** Discussion draft.

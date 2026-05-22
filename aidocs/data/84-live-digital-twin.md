@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/84 — Live Digital Twin: Moving Objects, Production Cell Scene, and State Streaming
 
 **Date:** 2026-05-16

@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/85 — Coordinate Frame Tree (CST1)
 
 **Date:** 2026-05-20

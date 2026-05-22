@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # aidocs/76 — shepard: Known users, citations, and ecosystem
 
 **Date:** 2026-05-16

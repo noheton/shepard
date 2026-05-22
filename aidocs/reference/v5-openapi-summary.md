@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth)
 
 The **authoritative wire contract** for everything that lives under

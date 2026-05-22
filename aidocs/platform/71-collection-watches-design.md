@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # Collection `:watches` Container — Design (WATCH1)
 
 **Scope.** Forward-looking design for a new graph relationship that

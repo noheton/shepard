@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # EASA AI Concept Paper Issue 2 — Compliance Gap Analysis
 ## Shepard + ReBAR Coverage Assessment
 

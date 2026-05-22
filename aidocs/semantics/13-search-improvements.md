@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Search — Improvements & Unification Proposal
 
 **Scope.** Forward-looking design note for the search surface in shepard.

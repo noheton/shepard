@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 33 — Frontend / UI Workflow Analysis + Suggestions
 
 Snapshot 2026-05-07. Read against the code in `frontend/` (Nuxt 3

@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 28. Paradigms-and-Clients Synthesis — The Integrated Proposal
 
 **Snapshot date:** 2026-05-05.

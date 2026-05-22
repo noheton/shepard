@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # EU Machinery Regulation 2023/1230 — Shepard implications
 
 *Author: regulatory analyst (Claude agent), 2026-05-21.

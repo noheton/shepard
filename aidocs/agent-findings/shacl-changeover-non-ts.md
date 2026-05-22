@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # SHACL changeover (non-TS scope) — implementation log
 
 **Status.** Foundation slice landed on a worktree branch. PR-1 + PR-3

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # EASA Data Management + Learning Assurance — deep dive (Shepard scope)
 
 *Author: regulatory analyst (Claude agent), 2026-05-21.

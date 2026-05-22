@@ -1,3 +1,8 @@
+---
+stage: tests-implemented
+last-stage-change: 2026-05-23
+---
+
 # 93 — MFFD real-data import (v15) requirements
 
 **Status:** Requirements locked 2026-05-22 · ready for v15 implementation

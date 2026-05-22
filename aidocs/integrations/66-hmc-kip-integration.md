@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 66 — HMC Kernel Information Profile integration
 
 **Status.** Design — ready for slice planning.

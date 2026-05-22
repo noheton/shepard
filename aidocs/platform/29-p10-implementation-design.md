@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # P10 — `POST /sql/timeseries` Implementation Design
 
 **Snapshot date.** 2026-05-05.

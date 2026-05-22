@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Ready to Close on GitHub — shepard
 
 Snapshot date: 2026-05-04. GitLab is authoritative. The GitHub issue mirror is in sync at the issue level (zero state mismatches), so most "closure" candidates here are about closing the underlying GitLab item, which the mirror will reflect; or about historical / mirror-artifact GH issues that can be safely left closed.

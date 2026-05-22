@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Dependency Report — shepard
 
 Audit date: 2026-05-04. Manifests inspected:

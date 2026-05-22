@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Semantic Annotations — Improvements & Knowledge-Graph Path
 
 **Scope.** Forward-looking design note for shepard's semantic-annotation

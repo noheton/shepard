@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Quarkus Extension Ecosystem — Opportunities for Shepard
 
 **Date:** 2026-05-21  

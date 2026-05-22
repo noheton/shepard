@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # API Scrutinizer — Phase 2 Debate
 **Author:** API Scrutinizer agent (cross-peer synthesis and verdict)
 **Date:** 2026-05-21

@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main`
 
 **Snapshot date.** 2026-05-16.

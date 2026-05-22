@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Ecosystem Advocate — Feature Proposals
 
 _Lens: external adoption, demo experience, competitive differentiation, conference presence, upstream strategy._

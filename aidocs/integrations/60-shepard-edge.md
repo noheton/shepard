@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # shepard Edge — Concept Design
 
 **Status.** Concept design.

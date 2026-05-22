@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # TimescaleDB Data Model Tuning — Recommendations
 
 **Status:** Design doc — V1.8.0 schema fixes landed; this covers what comes next.

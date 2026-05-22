@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # PROV-O fragment design for v15 MFFD batch import
 
 **Audience:** v15 author (Claude Opus 4.7 acting on behalf of fkrebs@nucli.de).

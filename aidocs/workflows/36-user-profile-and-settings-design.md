@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # User Profile & Settings — Design
 
 **Scope.** Implementation design for a user-profile feature

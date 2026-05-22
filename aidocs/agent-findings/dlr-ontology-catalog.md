@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # DLR Ontology & Model Initiative Catalogue
 
 **Author:** Ecosystem Advocate (specialised agent)

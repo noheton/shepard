@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # API Critique — Usability, Redundancies, Paradigms, Client Generation
 
 **Snapshot date:** 2026-05-05.

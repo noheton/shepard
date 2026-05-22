@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 100 — Shepard UI annoyances (live captured)
 
 **Status.** Living document — append-only. Twin to `aidocs/99-api-annoyances.md`.

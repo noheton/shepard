@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # AI & Analytics Feature Proposals
 **Author:** Analytics & AI Opportunities Specialist (cross-peer synthesis)
 **Date:** 2026-05-21

@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # TimescaleDB Timeseries Integration — Performance Analysis & Mitigations
 
 **Scope.** End-to-end review of the timeseries write and read paths against

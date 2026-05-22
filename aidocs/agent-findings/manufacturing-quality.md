@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Manufacturing Quality Readiness Assessment
 **Role:** Lead IME / AQE — DLR Augsburg MFFD Programme
 **Date:** 2026-05-21

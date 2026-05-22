@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 40 — Shepard ecosystem
 
 **Status.** Living document. Updated whenever a repo enters or leaves

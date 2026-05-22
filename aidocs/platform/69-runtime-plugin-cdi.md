@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 69 — Runtime plugin CDI integration (deferred PM1b3)
 
 **Status.** Design draft.

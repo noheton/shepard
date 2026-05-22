@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design
 
 **Status.** Design, not implementation. Phase 1 sibling to

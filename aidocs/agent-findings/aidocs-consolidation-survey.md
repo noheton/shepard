@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # aidocs consolidation survey — single source of truth enforcement
 
 **Date:** 2026-05-22  

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE)
 
 > **SUPERSEDED by `aidocs/platform/103-v1-compat-plugin-extraction.md`

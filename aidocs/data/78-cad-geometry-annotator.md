@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`)
 
 **Date:** 2026-05-16

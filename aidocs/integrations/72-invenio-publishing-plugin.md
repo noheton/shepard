@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/72 — InvenioRDM publishing plugin (`shepard-plugin-invenio`)
 
 **Date:** 2026-05-16

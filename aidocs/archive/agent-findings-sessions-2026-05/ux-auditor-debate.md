@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # UX Auditor Debate — Core Tech & UX Lens
 ## Phase 2: Multi-Agent Cross-Proposal Debate
 

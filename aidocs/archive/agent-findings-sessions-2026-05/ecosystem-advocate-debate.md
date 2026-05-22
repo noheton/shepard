@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Ecosystem Advocate Debate
 **Author:** Industrial Ecosystem Advocate (cross-agent debate, Phase 2)
 **Date:** 2026-05-21

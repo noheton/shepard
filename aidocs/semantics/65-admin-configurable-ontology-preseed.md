@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 65 — Admin-configurable ontology pre-seeding (with custom-bundle support)
 
 **Status.** Design — ready to implement.

@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 86 — UI Change Log
 
 **Purpose.** Living changelog for user-visible frontend changes in this fork.

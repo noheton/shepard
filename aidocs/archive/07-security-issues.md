@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Security Issues — shepard
 
 Audit date: 2026-05-04. Scope: backend Java, scripts Python, frontend, infrastructure config.

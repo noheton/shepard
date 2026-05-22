@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 85 — UI Overhaul: Critique, Opportunities, and Roadmap
 
 **Status.** Living design doc — initial draft 2026-05-17.

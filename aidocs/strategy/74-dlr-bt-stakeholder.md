@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # aidocs/74 — shepard: Stakeholder brief for DLR-BT (Stuttgart)
 
 **Date:** 2026-05-16

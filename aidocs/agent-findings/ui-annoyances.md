@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # UI annoyances — running log
 
 Companion to `api-annoyances.md`. Friction encountered while using the

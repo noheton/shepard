@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Ecosystem Advocate — Findings
 
 **Role:** Industrial Ecosystem Advocate and Content Strategist

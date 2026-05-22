@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # UX Auditor — Discovery Report
 
 **Auditor:** UX/Performance agent  

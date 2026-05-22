@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Dev Experience + Storage-Backend Plugin System — Design
 
 **Scope.** Two coupled concerns landed in the same design doc because

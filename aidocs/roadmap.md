@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Shepard Fork — Roadmap
 
 **Last updated:** 2026-05-17  

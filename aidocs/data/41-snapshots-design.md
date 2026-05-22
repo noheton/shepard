@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Snapshots — Design (versioning, reloaded)
 
 **Scope.** Make snapshots a first-class concept in shepard's

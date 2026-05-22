@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Implementation Plan — shepard
 
 Snapshot date: 2026-05-04. Phased plan derived from Wave 1-3 outputs and Wave 4 synthesis.

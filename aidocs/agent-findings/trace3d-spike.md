@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Trace3D view — spike: library shortlist + view-shape input contract
 
 **Origin:** user idea (2026-05-22, session 33f9b6cd). MFFD AFP TCP thermal-trail

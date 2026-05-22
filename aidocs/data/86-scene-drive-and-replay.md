@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series)
 
 **Date:** 2026-05-20

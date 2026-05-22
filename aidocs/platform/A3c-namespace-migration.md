@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # A3c: infrastructure-vs-feature toggle namespace split
 
 ## What changed

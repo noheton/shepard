@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # API Scrutinizer — v14 → v15 import-script review
 
 Source: `examples/mffd-showcase/scripts/mffd-dropbox-import.py` (v14)

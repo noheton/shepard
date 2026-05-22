@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 31 — RO-Crate Export Optimisation
 
 **Snapshot date:** 2026-05-07.

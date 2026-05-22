@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Research Data Manager — Cross-Agent Debate
 **Author:** Research Data Manager & FAIR Data Steward  
 **Date:** 2026-05-21  

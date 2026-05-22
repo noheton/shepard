@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # In-App User Docs — Design
 
 **Scope.** Make user documentation **directly accessible inside

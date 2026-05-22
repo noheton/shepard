@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # 98 — Shapes, views, and the MFFD process model
 
 *Synthesis date: 2026-05-22.*

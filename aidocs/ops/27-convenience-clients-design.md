@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Convenience Clients — `shepard-py` and `shepard-ts` (P16)
 
 **Snapshot date.** 2026-05-05.

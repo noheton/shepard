@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Database anti-pattern audit — Neo4j + Postgres/Hibernate + MongoDB/GridFS + PostGIS + Garage S3
 
 **Date:** 2026-05-22

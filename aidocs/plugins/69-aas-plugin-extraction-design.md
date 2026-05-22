@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # AAS → plugin extraction — Design (AAS1-plugin)
 
 **Scope.** Forward-looking design note for extracting the Asset

@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # PM1f — `PluginManifest.sidecars()` SPI extension + file-s3 Garage declaration
 
 **Agent:** Claude Opus 4.7 (1M context), worktree-agent-a8c8f1e554ea66981

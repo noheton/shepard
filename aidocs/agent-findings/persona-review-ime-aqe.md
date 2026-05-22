@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona review — Industrial Manufacturing & Quality Engineer (IME/AQE) on the SHACL trio
 
 **Reviewer.** Industrial Manufacturing & Quality Engineer persona (CLAUDE.md

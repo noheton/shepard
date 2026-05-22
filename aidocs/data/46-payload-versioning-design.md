@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # Payload Versioning — Design
 
 **Scope.** Extend shepard's versioning surface from **graph entities**

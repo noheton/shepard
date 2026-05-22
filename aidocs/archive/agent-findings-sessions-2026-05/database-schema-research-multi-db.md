@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Database schema research — multi-substrate sweep (Neo4j + Postgres + MongoDB + PostGIS + Garage)
 
 **Date:** 2026-05-22

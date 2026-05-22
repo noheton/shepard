@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # v15 review — IME + AQE lens
 
 *Reviewer: Industrial Manufacturing Engineer + Aerospace Quality Engineer

@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze
 
 **Date:** 2026-05-16

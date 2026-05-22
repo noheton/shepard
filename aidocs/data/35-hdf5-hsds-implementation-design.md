@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # HDF5 / HSDS Implementation Design (E7 → A5 series)
 
 **Scope.** Implementation-level design for backlog series **A5** ("HDF5

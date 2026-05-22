@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Neo4j ID Migration — Design (L2)
 
 **Scope.** Forward-looking design note for backlog item **L2** (`aidocs/16-dispatcher-backlog.md`, originating from `aidocs/input/input_raw.md:90` and `:715-717`): retire Neo4j's deprecated `id()` function from every Cypher query and every cross-store / API surface, in favour of an **application-generated stable identifier** (`appId`). This is the load-bearing prerequisite for Templates (**L3**) and removes the largest residual blocker on the search (`aidocs/13`) and semantic-annotation (`aidocs/14`) work.

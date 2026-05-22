@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Industrial Robotics + ZLP-Domain Ontology Audit (Shepard scope)
 
 **Author:** Industrial Robotics Ontology Researcher (specialised agent)

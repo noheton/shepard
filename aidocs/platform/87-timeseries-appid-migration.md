@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 87 — Timeseries appId Migration (TS-ID)
 
 **Status:** Design · in-flight (substrate correction landed 2026-05-22)

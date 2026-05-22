@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # TH1 — File Thumbnail SPI
 
 Inline thumbnail generation for FileContainer payloads.

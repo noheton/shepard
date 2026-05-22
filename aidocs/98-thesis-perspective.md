@@ -1,3 +1,8 @@
+---
+stage: idea
+last-stage-change: 2026-05-23
+---
+
 # 98 — Shepard as a thesis at a German university (perspective + viability)
 
 **Status.** Personal-perspective doc — not a public claim.

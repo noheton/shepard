@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Analytics & AI Opportunities Specialist — Phase 2 Debate
 
 **Role:** Analytics & AI Opportunities Specialist (Role 8)

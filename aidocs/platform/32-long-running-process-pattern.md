@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # Long-Running Process Pattern — Async Jobs
 
 **Scope.** Forward-looking design note proposing a single shared pattern for

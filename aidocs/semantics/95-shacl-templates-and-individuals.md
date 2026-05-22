@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 95 — SHACL templates, named individuals, and ontology-driven UI
 
 **Status.** Design — ready to implement.

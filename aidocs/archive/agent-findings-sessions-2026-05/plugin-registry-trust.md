@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Plugin Registry Trust Mechanisms — Convenience-First Survey
 
 **Scope**: v1 build-time registry inclusion. DLR publishes

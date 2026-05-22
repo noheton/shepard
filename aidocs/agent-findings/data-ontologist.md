@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Data Ontologist — Discovery Findings
 **Role:** Principal Aerospace Domain Engineer and Data Ontologist
 **Date:** 2026-05-21

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # Proposal 1: KIP1e — License Field on All Entities (Core, foundational)
 
 **Problem it solves.**

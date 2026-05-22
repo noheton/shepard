@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # Experiment Orchestration — Design
 
 **Scope.** A system that **drives a manufacturing-style experiment

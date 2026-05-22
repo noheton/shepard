@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # Performance testing + auto-tuning — design
 
 **Status.** Concept design (k6 smoke shipped in PERF1; stress +

@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # 41 — Synergy sweep: collapse-where-generalisation-helps
 
 **Status.** Strategic synthesis — post-design-explosion.

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # MFFD Paper 198366 — Comprehensive Extraction
 
 **Source:** https://elib.dlr.de/198366/1/610241.pdf  

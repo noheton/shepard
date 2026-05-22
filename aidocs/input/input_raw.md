@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 Read all of this first then pritirizem plan and dispatch accordingly:
 regular commits for status updates.
 

@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 83 — ReBAR / Airflow Integration
 
 **Status:** design

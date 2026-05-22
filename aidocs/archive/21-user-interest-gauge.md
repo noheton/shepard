@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # User / Scientific Interest Gauge — HDF5, Tabular Storage, KG Interfaces
 
 **Snapshot date:** 2026-05-05.

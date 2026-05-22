@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Garage activation runbook — findings & gotchas
 
 **Runbook:** `docs/ops/garage-activation-runbook.md`

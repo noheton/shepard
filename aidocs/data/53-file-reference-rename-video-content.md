@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-23
+---
+
 # FileReference Rename + Video Payload Kind — Design
 
 **Scope.** Two coupled concerns that the user briefed together

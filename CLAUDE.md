@@ -104,6 +104,27 @@ optionally a commit-hash citation in the row's notes.
 Both update on the same PR; they project different views of the
 same change.
 
+## Always: tag every aidocs doc with a lifecycle stage
+
+Every `aidocs/**/*.md` carries a YAML front-matter `stage:` field. The
+canonical taxonomy is [`aidocs/00-doc-stages.md`](aidocs/00-doc-stages.md);
+the grouped index is [`aidocs/01-doc-stage-index.md`](aidocs/01-doc-stage-index.md)
+(auto-generated). Tokens, in pipeline order: `fragment` → `concept` →
+`idea` → `feature-defined` → `audited-by-personas` →
+`feedback-implemented` → `tests-implemented` → `deployed`.
+`upgrade-vX:vY` overlays any main stage. `decommissioned` is terminal.
+
+When a doc crosses a boundary (audit passes, feedback ships, deploy
+happens), bump `stage:` AND `last-stage-change:` AND regenerate the
+index in the same commit:
+
+```bash
+python3 scripts/regenerate-doc-stage-index.py
+```
+
+A new aidocs/*.md without a `stage:` field is incomplete. CI may add
+a `--check` gate (see DOC-STAGE2 in `aidocs/16-dispatcher-backlog.md`).
+
 ## Always: keep test coverage at the recommended floor
 
 Backend coverage gate: **≥ 60% line / ≥ 60% branch** measured via

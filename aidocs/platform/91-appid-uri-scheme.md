@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 91 — appId URI Scheme: HTTPS Persistent Identifiers
 
 **Status:** Designed  

@@ -1,3 +1,8 @@
+---
+stage: decommissioned
+last-stage-change: 2026-05-23
+---
+
 # AI-in-Science policy alignment — does Shepard's AI design match the prevailing authoritative consensus?
 
 **Snapshot date.** 2026-05-22.

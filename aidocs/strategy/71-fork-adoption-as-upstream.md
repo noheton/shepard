@@ -1,3 +1,8 @@
+---
+stage: fragment
+last-stage-change: 2026-05-23
+---
+
 # aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit
 
 **Date:** 2026-05-16  

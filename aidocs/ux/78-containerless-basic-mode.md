@@ -1,3 +1,8 @@
+---
+stage: feature-defined
+last-stage-change: 2026-05-23
+---
+
 # 78 — Container-hiding Basic Mode
 
 **Status:** design (task #51, task #42)

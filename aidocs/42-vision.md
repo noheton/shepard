@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # shepard — Vision (for researchers)
 
 **Status.** **Live.** Kept current as features land. The doc you'd
