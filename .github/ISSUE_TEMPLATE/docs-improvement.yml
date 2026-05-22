@@ -1,0 +1,61 @@
+name: 📚 Docs improvement
+description: Documentation is unclear, wrong, missing, or stale.
+title: "docs: <what's unclear>"
+labels:
+  - "type:docs"
+  - "status:queued"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for flagging a docs issue. shepard's docs are deliberately
+        split into:
+
+        - **`docs/help/`** — casual task pages (front-door for newcomers)
+        - **`docs/reference/`** — per-feature reference pages
+        - **`aidocs/`** — design notes, strategy, internal-facing rationale
+        - **`plugins/<id>/docs/`** — per-plugin reference / quickstart / install
+
+        Per CLAUDE.md `§"Always: keep user-facing docs in step with
+        shipped features"`, drift between docs and code is a structural
+        bug — please flag it.
+
+  - type: input
+    id: doc-path
+    attributes:
+      label: Which doc?
+      description: Path or URL of the doc that's wrong / unclear / missing.
+      placeholder: "docs/reference/timeseries.md or aidocs/42-vision.md §3"
+    validations:
+      required: true
+
+  - type: textarea
+    id: unclear
+    attributes:
+      label: What's unclear, wrong, or missing?
+      description: >
+        Quote the specific passage if it exists, or describe the gap if
+        it's a missing doc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix
+      description: >
+        If you have a concrete improvement in mind, paste it here. A PR
+        is even better — see CONTRIBUTING.md.
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Who is the audience?
+      multiple: true
+      options:
+        - End user (researcher / data steward)
+        - Operator / admin (deploys + runs shepard)
+        - Plugin author / external contributor
+        - Internal contributor (DLR + AI co-pilot)
+        - API consumer (Python / Java / MCP client)
+        - Funding body / strategic reader

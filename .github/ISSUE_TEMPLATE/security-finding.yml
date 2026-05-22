@@ -1,0 +1,54 @@
+name: 🔐 Security finding — DO NOT FILE PUBLICLY
+description: This template is a stub. Real security findings go via a private channel.
+title: "DO NOT USE — see private disclosure path"
+labels:
+  - "type:docs"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ⚠️ Stop — do not file security findings as public issues.
+
+        Security findings (authentication bypass, data leakage, RCE,
+        privilege escalation, signed-URL TTL leakage, etc.) **must
+        NOT** be filed as public GitHub Issues. A public issue means
+        every reader of the repo learns about the vulnerability before
+        any operator has a chance to patch.
+
+        ### Where to send a security finding
+
+        Email the maintainer privately at **fkrebs@nucli.de** with:
+
+        - A clear description of the issue
+        - Reproduction steps (with concrete request bodies + headers if
+          relevant — per `feedback_no_redactions.md`, real values beat
+          placeholders for reproducibility)
+        - The impact you observed (what an attacker could do)
+        - Your suggested fix or mitigation, if you have one
+        - Whether you'd like to be credited in the eventual advisory
+
+        Acknowledgement target: 72 hours. Patch + advisory target depends
+        on severity (CVSS).
+
+        ### What happens next
+
+        Once a fix lands, an advisory is published via the **GitHub
+        Security Advisories** mechanism on the repo. You'll be invited
+        as a collaborator on the draft advisory if you wanted credit.
+
+        ### Why we don't use a public template
+
+        Filling out a public form already leaks the existence of a
+        vulnerability before it's patched. The right shape for security
+        triage is a private one-on-one channel; GitHub Issues are the
+        wrong tool.
+
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Acknowledgement
+      options:
+        - label: >
+            I understand I should NOT submit this form, and will email
+            fkrebs@nucli.de instead.
+          required: true

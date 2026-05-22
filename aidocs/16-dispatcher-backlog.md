@@ -896,3 +896,20 @@ Skew: 5 CRITICAL, 49 MAJOR, 17 MINOR, 14 NICE-to-have. Highest-priority item to 
 | CC1e | Container list "linked from" breadcrumb column. | S | queued | MAJOR | `aidocs/ops/87-collection-container-duality.md:232` | Pairs with CC1d. |
 | CC2 | NTF1 notification: subscribe to Container, notify when new data arrives. | M | queued | MAJOR | `aidocs/ops/87-collection-container-duality.md:233` | NTF1 channel design dep. |
 | CC3 | `/templates` route with customized collection-creation forms (mandatory fields + collector config). | M | queued | MAJOR | `aidocs/ops/87-collection-container-duality.md:234` | UI2a templates-browser dep. |
+### GH-INFRA — 2026-05-23 (GitHub features integration)
+
+Full survey: `aidocs/strategy/83-github-features-leverage.md`. The
+guiding rule (also pinned in `feedback_github_features.md`): default is
+"don't add a new GitHub feature unless solo-dev cost is near zero AND
+external-contributor / security-posture value is high"; `aidocs/16`
+stays SSOT — Issues are NOT a backlog mirror.
+
+Decision matrix per feature lives in the survey doc above.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| GH-INFRA1 | Templates + CODEOWNERS + Dependabot + canonical labels + release-notes scaffolding + PR template mirroring CLAUDE.md "Always:" rules + CONTRIBUTING.md "Filing issues" / "PR discipline" sections + the survey doc + this row. Pure config-as-code; no API calls; no live changes to the GitHub repo until merged + the operator actions below are taken. | M | done | Shipped 2026-05-23 on the worktree branch in one commit. Files: `.github/release.yml`, `.github/workflows/release-notes.yml`, `.github/workflows/sync-labels.yml`, `.github/ISSUE_TEMPLATE/{config,bug-report,feature-request,docs-improvement,security-finding}.yml`, `.github/pull_request_template.md`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/labels.yml`, `docs/ops/cut-a-release.md`, `docs/ops/github-projects-board-setup.md`, `aidocs/strategy/83-github-features-leverage.md`, CONTRIBUTING.md additions. |
+| GH-INFRA2 | Manually create the Projects v2 board following `docs/ops/github-projects-board-setup.md`. Operator-only; no code. Sets up columns (Backlog / In Progress / In Review / Blocked / Done), custom fields (Severity / Area / Effort / Stage / Aidocs ID), auto-add-to-project rule, and 5 saved views. | S | queued | Manual one-time setup. Picking up after GH-INFRA1 merges to main. |
+| GH-INFRA3 | Cut `v6.0.0-rc.1` once the MFFD real-data import lands and aidocs/34 has the corresponding row. First release that uses `.github/workflows/release-notes.yml`. | S | queued | Gated on MFFD import landing. Follows `docs/ops/cut-a-release.md`. |
+| GH-INFRA4 | aidocs/16 ↔ GitHub Issues sync tooling. **Gated on external-contribution velocity** — don't build until 5+ external contributors are filing issues per month. The duplicate-bookkeeping cost only pays back when there's real bilateral flow. | M | blocked | Blocking condition: external-contributor velocity threshold not yet met. Re-evaluate quarterly. |
+| GH-INFRA5 | GitHub Environments for `nuclide.systems` and `DLR boxes` with required-reviewer deploy gates. Replaces the implicit "I just ran `make redeploy` in tmux" deploy step with a Github-tracked, audit-trailed deploy. | M | queued | Lower priority than GH-INFRA2/3. Pairs with the deploy-after-feature rule from `feedback_deploy_after_visible_features.md`. |

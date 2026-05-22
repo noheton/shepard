@@ -1,0 +1,331 @@
+# Dependabot configuration — weekly Monday scans across every ecosystem
+# this repo carries, with minor + patch updates grouped into one PR per
+# ecosystem (to keep review overhead solo-dev manageable) and major
+# version bumps surfaced as their own PRs (so they can't sneak through
+# inside a "9 minor updates" PR).
+#
+# Per `CLAUDE.md §"Always: keep the security gates green"`, Dependabot
+# is one of the six security gates; it pairs with OWASP Dependency-Check
+# (`.github/workflows/security.yml`) which scans transitively for known
+# CVEs and gates at CVSS ≥ 7.0.
+#
+# Per `feedback_github_features.md`, Dependabot is one of the few new
+# GitHub features we're opting into because the solo-dev cost is near
+# zero and the external-contributor / security-posture value is high.
+
+version: 2
+updates:
+  # ───────────────────────────── BACKEND ──────────────────────────────
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - "area:backend"
+    groups:
+      backend-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  # ───────────────────────────── FRONTEND ─────────────────────────────
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - "area:frontend"
+    groups:
+      frontend-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  # ─────────────────── PYTHON CLIENT (clients/python/shepard) ─────────
+  - package-ecosystem: pip
+    directory: /clients/python/shepard
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - "area:clients"
+
+  # ─────────────────── PYTHON TOOLING (scripts/, poetry.lock) ─────────
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - "area:infra"
+
+  # ─────────────────────── GITHUB ACTIONS VERSIONS ────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - "area:infra"
+    groups:
+      actions-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  # ───────────────────────────── PLUGINS ──────────────────────────────
+  # One entry per plugin module — Dependabot doesn't support globs.
+  # Adding a new plugin means adding its row here. Plugins share the
+  # same Maven dependency tree as the backend (Jersey, RESTEasy,
+  # SmallRye, etc.), so most updates ride along with the backend's
+  # PRs; this catches plugin-only dependencies (e.g. AAS4J, pyOCC,
+  # video-encoding shims).
+
+  - package-ecosystem: maven
+    directory: /plugins/aas
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/ai
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/analytics-ts
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/file-s3
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/git
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/hdf5
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/importer
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/kip
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/minter-datacite
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/minter-epic
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/minter-local
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/spatial
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/unhide
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/v1-compat
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/video
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /plugins/wiki-writer
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - "area:plugins"
+    groups:
+      plugin-minor-and-patch:
+        applies-to: version-updates
+        update-types: [minor, patch]

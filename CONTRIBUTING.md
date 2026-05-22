@@ -202,6 +202,42 @@ Note that for the integration tests to work completely we need to set the enviro
 
 ## How Can I Contribute?
 
+### Filing issues (this fork — `github.com/noheton/shepard`)
+
+> The section below ("Issue Boards and Labels", "Architecture Proposals",
+> "Bug Reports", "Feature Request") describes the **upstream** project's
+> GitLab process. This subsection describes how this fork handles issues
+> on GitHub. Both surfaces exist; pick the right one based on whether
+> your issue is about upstream shepard or about a fork-specific feature.
+
+This fork accepts issues on GitHub under five templates:
+
+- **🐛 Bug report** — something is broken. Includes version + surface +
+  reproduction. Auto-labels `type:bug` + `status:queued`.
+- **✨ Feature request** — proposing a new capability. Includes a
+  plugin-first heuristic dropdown that mirrors CLAUDE.md `§"Always:
+  think plugin-first for new features"`. Auto-labels `type:feature` +
+  `status:queued`.
+- **📚 Docs improvement** — a doc is wrong / unclear / missing.
+  Auto-labels `type:docs` + `status:queued`.
+- **🔐 Security finding** — STUB ONLY. Real security findings go via
+  private email to `fkrebs@nucli.de`, not via a public issue. The
+  template just enforces this.
+- **Blank issues are disabled.** The dropdown also surfaces links to
+  `aidocs/16-dispatcher-backlog.md` (the backlog SSOT) and upstream
+  Mattermost (for questions).
+
+**The full backlog SSOT is [`aidocs/16-dispatcher-backlog.md`](aidocs/16-dispatcher-backlog.md),
+not GitHub Issues.** Internal feature requests and backlog rows live
+there. GitHub Issues are for things that need an external-visible
+surface: bug reports, externally-driven feature requests, doc gaps,
+and the currently-active backlog slices that an external contributor
+could potentially claim. This avoids double-bookkeeping a 100-row
+ledger across two stores.
+
+See [`aidocs/strategy/83-github-features-leverage.md`](aidocs/strategy/83-github-features-leverage.md)
+for the full GitHub-features decision matrix.
+
 ### Issue Boards and Labels
 
 We use issue [labels](https://docs.gitlab.com/ee/user/project/labels.html) and [boards](https://docs.gitlab.com/ee/user/project/issue_board.html) to manage ongoing issues. The templates for issues and merge requests usually take care of setting the necessary labels, so you don't have to do that. Everything else is managed by our maintainers.
@@ -245,6 +281,46 @@ Once you have created an initial prototype of your contribution, commit your cha
 After your first commit, you can add as many additional commits as you like. After your contribution is accepted, your changes will be squashed into one commit anyway.
 
 While you are working on your contribution, others may merge their merge request. To keep up with current developments, it is a good idea to occasionally [rebase](https://docs.gitlab.com/ee/topics/git/git_rebase.html#git-rebase) your branch to the current `develop` branch.
+
+## PR discipline (this fork)
+
+When opening a PR against `github.com/noheton/shepard`, the
+[`.github/pull_request_template.md`](.github/pull_request_template.md)
+checklist mirrors the "Always:" rules from
+[`CLAUDE.md`](CLAUDE.md). The short version:
+
+1. **Title follows Conventional Commits** with the `aidocs/16` row ID
+   as the scope: `feat(VIS-T1): ...`, `fix(IMPORT-W2): ...`. The
+   auto-categorisation in [`.github/release.yml`](.github/release.yml)
+   relies on this.
+2. **Upgrade-path ledger** (`aidocs/34-upstream-upgrade-path.md`) gets
+   a row if anything an upstream admin would notice has changed
+   (config keys, endpoints, schemas, defaults, dependencies, breaking
+   behaviour).
+3. **Vision** (`aidocs/42-vision.md`) gets updated if this is
+   user-visible (new payload kind, top-level concept, etc.).
+4. **Feature matrix** (`aidocs/44-fork-vs-upstream-feature-matrix.md`)
+   gets the relevant status-symbol flip.
+5. **Tests in the same PR.** Backend coverage floor: ≥ 60% line + 60%
+   branch; new code targets ≥ 70% line. Frontend: Vitest test per
+   feature.
+6. **Security gates green** — SpotBugs + findsecbugs, CodeQL, OWASP
+   Dependency-Check, Trivy, gitleaks, dependency-review. Any new
+   finding either gets fixed or gets a suppression with justification
+   in the same PR.
+7. **Plugin-first heuristic considered** for new features. New payload
+   kinds + external integrations default to `plugins/<id>/`. If it
+   lands in-tree, the linked design doc says why.
+8. **Operator runtime knob** as `:*Config` Neo4j entity + admin REST +
+   CLI parity if introducing a feature flag / retention window / cap
+   (per the A3b / N1c2 / UH1a pattern).
+9. **Plugin docs trio** (`plugins/<id>/docs/{reference,quickstart,install}.md`)
+   if this is plugin code.
+10. **User-facing docs** in `docs/reference/<feature>.md` if
+    user-visible.
+
+The full rules live in [`CLAUDE.md`](CLAUDE.md). The PR template is
+your forcing function.
 
 ## Code Review Checklist
 

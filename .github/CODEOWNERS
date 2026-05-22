@@ -1,0 +1,19 @@
+# CODEOWNERS — auto-assigns reviewers for every PR.
+#
+# Belts-and-braces during the solo + AI development phase: every PR
+# routes to @noheton for review. As the contributor base grows, this
+# file gets per-area entries (e.g. `frontend/ @noheton @some-contributor`).
+#
+# Syntax: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+*       @noheton
+
+# (Extension points — uncomment and add owners as the team grows)
+# /backend/                 @noheton
+# /frontend/                @noheton
+# /plugins/                 @noheton
+# /aidocs/                  @noheton
+# /docs/                    @noheton
+# /.github/                 @noheton
+# /infrastructure-local/    @noheton

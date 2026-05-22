@@ -1,0 +1,235 @@
+# Canonical label set for this fork.
+#
+# Synced to the GitHub Issues label set by
+# `.github/workflows/sync-labels.yml` whenever this file changes on
+# `main`. Source of truth: this file. Don't edit labels via the GitHub
+# web UI — they'll be overwritten on next sync.
+#
+# Format: consumed by `EndBug/label-sync@v2`. See
+# https://github.com/EndBug/label-sync#label-format
+#
+# Naming convention: `<axis>:<value>` for orthogonal facets so they
+# combine cleanly. A typical issue might carry
+# `type:bug` + `severity:major` + `area:backend` + `stage:audited-by-personas`.
+
+# ───────────────────────────── SEVERITY ─────────────────────────────
+# Mirrors the severity vocabulary in `aidocs/16-dispatcher-backlog.md`.
+
+- name: "severity:critical"
+  color: "b60205"
+  description: "Production blocker, data loss, security breach, or unrecoverable failure."
+
+- name: "severity:major"
+  color: "d93f0b"
+  description: "Significant impact; a workaround exists but the workaround is bad."
+
+- name: "severity:minor"
+  color: "fbca04"
+  description: "Annoyance or polish; everything works."
+
+- name: "severity:nice-to-have"
+  color: "c2e0c6"
+  description: "Quality-of-life improvement; can wait."
+
+# ────────────────────────────── AREA ────────────────────────────────
+# Where in the codebase the issue lives. Multi-area issues carry
+# multiple labels.
+
+- name: "area:backend"
+  color: "1d76db"
+  description: "Java backend (de.dlr.shepard.*)."
+
+- name: "area:frontend"
+  color: "0e8a16"
+  description: "Nuxt 3 + Vuetify 3 frontend."
+
+- name: "area:plugins"
+  color: "5319e7"
+  description: "Plugin SPI or any shepard-plugin-* module."
+
+- name: "area:infra"
+  color: "0052cc"
+  description: "Infrastructure: Docker, k8s, CI/CD, deploy."
+
+- name: "area:docs"
+  color: "006b75"
+  description: "User-facing docs (docs/) or design docs (aidocs/)."
+
+- name: "area:semantics"
+  color: "8b5cf6"
+  description: "Ontology, SHACL, semantic annotations, SPARQL surface."
+
+- name: "area:mcp"
+  color: "f9d0c4"
+  description: "MCP gateway, MCP tools, AI-agent surface."
+
+- name: "area:vis"
+  color: "fef2c0"
+  description: "Visualization plugin family (vis-trace3d, vis-vector, vis-volume, vis-cad, vis-fem)."
+
+- name: "area:ai"
+  color: "ff77a8"
+  description: "shepard-plugin-ai, AI inference, embeddings, anomaly detection."
+
+- name: "area:security"
+  color: "ee0701"
+  description: "Auth, permissions, security gates, CVE response."
+
+- name: "area:clients"
+  color: "bfd4f2"
+  description: "Generated clients (Python, Java, Kiota)."
+
+- name: "area:dependencies"
+  color: "0366d6"
+  description: "Dependency updates (paired with `dependencies`)."
+
+# ────────────────────────────── TYPE ────────────────────────────────
+
+- name: "type:bug"
+  color: "d73a4a"
+  description: "Something broken that should work."
+
+- name: "type:feature"
+  color: "a2eeef"
+  description: "New capability."
+
+- name: "type:docs"
+  color: "0075ca"
+  description: "Documentation-only change."
+
+- name: "type:refactor"
+  color: "fbca04"
+  description: "Internal cleanup, no behaviour change."
+
+- name: "type:test"
+  color: "c5def5"
+  description: "Tests only."
+
+- name: "type:chore"
+  color: "cfd3d7"
+  description: "Tooling, infra, build, dependency busywork."
+
+- name: "type:breaking"
+  color: "b60205"
+  description: "Admin-visible breakage; pair with an `aidocs/34` row marked BREAKING."
+
+# ───────────────────────────── STATUS ───────────────────────────────
+# Drives the Projects v2 board column placement. See
+# `docs/ops/github-projects-board-setup.md`.
+
+- name: "status:queued"
+  color: "ededed"
+  description: "Triaged, not yet picked up. Default for new issues."
+
+- name: "status:in-progress"
+  color: "0e8a16"
+  description: "Actively being worked on."
+
+- name: "status:in-review"
+  color: "5319e7"
+  description: "PR open, awaiting review."
+
+- name: "status:blocked"
+  color: "b60205"
+  description: "Blocked on an external dependency or another open task."
+
+- name: "status:done"
+  color: "1d76db"
+  description: "Shipped + merged. Issue stays open only long enough to confirm."
+
+# ────────────────────────── DOC STAGE ───────────────────────────────
+# Mirrors the doc-stage taxonomy from `aidocs/00-doc-stages.md`
+# (gated on agent #171). Stages flow:
+#   fragment → concept → idea → feature-defined →
+#   audited-by-personas → feedback-implemented →
+#   tests-implemented → deployed → decommissioned
+# Applied to issues so the Projects v2 board can filter by maturity.
+
+- name: "stage:fragment"
+  color: "ededed"
+  description: "Raw idea, untriaged."
+
+- name: "stage:concept"
+  color: "ededed"
+  description: "Concept sketch."
+
+- name: "stage:idea"
+  color: "f9d0c4"
+  description: "Idea with rough shape; needs design."
+
+- name: "stage:feature-defined"
+  color: "c2e0c6"
+  description: "Design doc landed; ready for build."
+
+- name: "stage:audited-by-personas"
+  color: "bfd4f2"
+  description: "Persona-agent audit completed (see CLAUDE.md specialized roles)."
+
+- name: "stage:feedback-implemented"
+  color: "bfd4f2"
+  description: "Audit feedback incorporated."
+
+- name: "stage:tests-implemented"
+  color: "0e8a16"
+  description: "Tests landed; coverage gate green."
+
+- name: "stage:deployed"
+  color: "1d76db"
+  description: "Live on shepard.nuclide.systems or DLR boxes."
+
+- name: "stage:decommissioned"
+  color: "cfd3d7"
+  description: "Sunset; no longer supported."
+
+# ────────────────────────── EFFORT ──────────────────────────────────
+# Matches `aidocs/16-dispatcher-backlog.md` sizing.
+
+- name: "effort:S"
+  color: "c2e0c6"
+  description: "Small — under a day."
+
+- name: "effort:M"
+  color: "fef2c0"
+  description: "Medium — 1–3 days."
+
+- name: "effort:L"
+  color: "fbca04"
+  description: "Large — 1–2 sprints."
+
+- name: "effort:XL"
+  color: "d93f0b"
+  description: "Extra-large — multi-sprint, design doc required."
+
+# ────────────────────────── SPECIAL ─────────────────────────────────
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependency bump (Dependabot auto-applies this label)."
+
+- name: "breaking"
+  color: "b60205"
+  description: "Breaking change. Pair with `type:breaking`."
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Approachable for a first-time contributor."
+
+- name: "help wanted"
+  color: "008672"
+  description: "Maintainer welcomes external help on this."
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "Already filed elsewhere."
+
+- name: "invalid"
+  color: "cfd3d7"
+  description: "Not actionable as filed."
+
+- name: "wontfix"
+  color: "cfd3d7"
+  description: "Decided against; reason in the comment thread."
+
+- name: "security"
+  color: "ee0701"
+  description: "Security-relevant (also tag `area:security`)."

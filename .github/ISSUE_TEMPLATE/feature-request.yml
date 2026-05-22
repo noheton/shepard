@@ -1,0 +1,100 @@
+name: ✨ Feature request
+description: Propose a new capability or enhancement.
+title: "feat: <one-line summary>"
+labels:
+  - "type:feature"
+  - "status:queued"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a feature. Before filing, please skim the
+        live design + planning docs:
+
+        - [`aidocs/42-vision.md`](../blob/main/aidocs/42-vision.md) —
+          what shepard is for
+        - [`aidocs/44-fork-vs-upstream-feature-matrix.md`](../blob/main/aidocs/44-fork-vs-upstream-feature-matrix.md) —
+          what's shipped vs. designed vs. queued
+        - [`aidocs/16-dispatcher-backlog.md`](../blob/main/aidocs/16-dispatcher-backlog.md) —
+          the canonical backlog SSOT
+
+        If the feature is already designed or queued in aidocs/16, you
+        don't need to file an issue — just nudge the maintainer. This
+        template is for **new** ideas not already on the radar.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What's not working today, or what user need isn't covered?
+        Concrete scenarios beat abstract requirements.
+      placeholder: |
+        As a [persona], I want to [goal], because [why].
+        Today I have to [workaround], which is painful because [reason].
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: >
+        How you'd like this to work. API shape, UI sketch, or example
+        usage is great. It doesn't have to be the final design — the
+        maintainer + AI co-pilot will refine it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >
+        Other approaches you ruled out, and why. (If you didn't consider
+        any, that's fine — say so.)
+
+  - type: dropdown
+    id: plugin-first
+    attributes:
+      label: Plugin-first heuristic
+      description: |
+        CLAUDE.md `§"Always: think plugin-first for new features"` —
+        new features default to "should this be a plugin?". Categories:
+
+        1. **New payload kinds** → plugin from day one
+        2. **New external integrations** → plugin shape
+        3. **Cross-cutting infra** → in-tree interface + plugin impl
+        4. **Domain features touching existing kinds** → in-tree default
+           but prefer the plugin if there's a clean seam
+
+        Exceptions (in-tree by necessity): auth / permissions, identity
+        primitives (`appId`, `Collection`, `DataObject` core graph), the
+        SPI registry itself.
+
+        Which category does your feature fit?
+      options:
+        - 1 — New payload kind → plugin
+        - 2 — New external integration → plugin
+        - 3 — Cross-cutting infrastructure → interface + plugin impl
+        - 4 — Domain feature touching existing kinds → in-tree
+        - Exception — security / identity / SPI registry (in-tree)
+        - Not sure — please advise
+
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: How would we know this worked?
+      description: >
+        Acceptance criteria, demo scenario, or "the LUMEN/MFFD showcase
+        would now demonstrate X".
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and aidocs/16 backlog and didn't find this.
+          required: true
+        - label: I read aidocs/42 vision and confirm this fits shepard's scope.
+          required: false

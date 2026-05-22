@@ -1,0 +1,42 @@
+# Syncs the GitHub Issues label set from `.github/labels.yml`.
+#
+# Source of truth is the YAML file. This workflow runs only when the
+# YAML file itself changes on `main`; otherwise label drift is allowed
+# (e.g. an operator labelling an issue ad-hoc doesn't trigger a sync).
+#
+# Per `feedback_github_features.md`, automating label management is a
+# zero-overhead win: review the YAML diff in a PR, merge to main, and
+# the labels are updated. No manual web-UI clicking.
+
+name: Sync labels
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/labels.yml"
+      - ".github/workflows/sync-labels.yml"
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  sync:
+    name: Sync labels from labels.yml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync labels
+        uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          # `delete-other-labels: false` — be conservative on the first
+          # run; an operator may have ad-hoc labels we don't want to
+          # nuke. Flip to `true` once we've audited the live label set
+          # against this YAML.
+          delete-other-labels: false
+          dry-run: false

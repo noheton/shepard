@@ -1,0 +1,111 @@
+name: 🐛 Bug report
+description: Something in shepard isn't behaving the way it should.
+title: "bug: <one-line summary>"
+labels:
+  - "type:bug"
+  - "status:queued"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug report. The more concrete you are about
+        what you saw vs. what you expected, the faster this gets fixed.
+
+        If this is a **security** issue (auth bypass, data leak, RCE,
+        etc.), DO NOT file it here — use the Security finding template
+        instead, which routes to a private channel.
+
+  - type: input
+    id: version
+    attributes:
+      label: shepard version
+      description: >
+        From the API (`GET /v2/system/info`) or the footer of the UI.
+        For local dev builds, the git short SHA is fine.
+      placeholder: "e.g. v6.0.0-rc.1 or g1a2b3c4d"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface?
+      description: Where did you hit the bug?
+      multiple: true
+      options:
+        - Backend REST (/v2/...)
+        - Backend REST (legacy /shepard/api/...)
+        - Frontend UI
+        - Python client
+        - Java client
+        - MCP gateway
+        - CLI (`shepard-admin`)
+        - Importer / migration script
+        - A specific plugin (note which one in the description)
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: >
+        Minimal steps to reproduce. Curl commands, screenshots, or short
+        scripts are all welcome. Per `feedback_no_redactions.md`, include
+        real values (collection IDs, dataobject appIds, etc.) — not
+        placeholders — to make this reproducible.
+      placeholder: |
+        1. POST /v2/collections with body {...}
+        2. GET /v2/collections/<id>/dataobjects?page=2
+        3. Response is 500 instead of 200
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+      description: HTTP status, error body, stack trace, UI screenshot, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs (optional)
+      description: >
+        Backend log lines around the failure. Trim aggressively —
+        50 lines of context is plenty.
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (optional)
+      description: >
+        Deployment shape, Neo4j / Postgres versions, container image tag,
+        anything non-default.
+      placeholder: |
+        - Deployment: docker compose / k8s / dev box
+        - Image tag: ghcr.io/noheton/shepard-backend-patched:...
+        - Neo4j: 5.x
+        - Postgres + TimescaleDB version:
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues and didn't find this.
+          required: true
+        - label: This is not a security issue (those go via the Security finding template).
+          required: true

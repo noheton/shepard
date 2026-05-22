@@ -1,0 +1,58 @@
+# Generates the body of a GitHub Release when a `v*.*.*` tag is pushed.
+#
+# Releases stay operator-triggered: this workflow does NOT cut a release on
+# main push. The operator runs `gh release create vX.Y.Z` (see
+# `docs/ops/cut-a-release.md`) which creates the tag; this workflow then
+# walks commits since the previous tag, groups them by Conventional Commits
+# scope (categorisation rules live in `.github/release.yml`), and attaches
+# the rendered notes to the release.
+#
+# Why split this out from a release-on-push pattern: solo-dev + AI workflow
+# means release timing is a judgement call (post-MFFD landing,
+# post-substrate-split, etc.), not a side-effect of merging to main.
+
+name: Release notes
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Generate release notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for tag walk)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine previous tag
+        id: prev-tag
+        run: |
+          # Walk back from the just-pushed tag; if there's no predecessor
+          # (first release), the action below falls back to the repo root.
+          current="${GITHUB_REF_NAME}"
+          previous=$(git tag --sort=-v:refname | grep -v "^${current}$" | head -1 || true)
+          echo "previous=${previous}" >> "$GITHUB_OUTPUT"
+          echo "current=${current}" >> "$GITHUB_OUTPUT"
+          echo "Previous tag: ${previous:-<none>}"
+          echo "Current tag:  ${current}"
+
+      - name: Create release with auto-generated notes
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          # `generate_release_notes: true` makes GitHub render the same
+          # categorisation rules from `.github/release.yml` — single source
+          # of truth for the section layout.
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          # Operator can edit the rendered body after this workflow runs;
+          # the auto-generation is a starting point, not the final word.

@@ -1,0 +1,32 @@
+# Disables the "open a blank issue" affordance and points users at the
+# right place for each kind of request.
+#
+# The backlog SSOT (`aidocs/16-dispatcher-backlog.md`) holds 100+ rows of
+# active and queued work. Creating GitHub Issues for those would duplicate
+# the ledger and rot one of the two copies; instead, backlog requests go
+# via the aidocs/16 path (PR or direct edit). GitHub Issues are reserved
+# for: bug reports, externally-driven feature requests, doc improvements,
+# and security findings (the last one via private channel, not Issues).
+
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🗒️  Backlog item or design proposal
+    url: https://github.com/noheton/shepard/blob/main/aidocs/16-dispatcher-backlog.md
+    about: >
+      Internal backlog items, design proposals, and "we should do X" requests
+      live in `aidocs/16-dispatcher-backlog.md` (the SSOT). Open a PR adding a
+      row there rather than filing an issue — keeps one ledger, not two.
+
+  - name: 📘 Documentation and design notes
+    url: https://github.com/noheton/shepard/tree/main/aidocs
+    about: >
+      Browse `aidocs/` for design docs, strategy, and roadmap. The vision
+      lives in `aidocs/42-vision.md`; the upgrade path from upstream lives
+      in `aidocs/34-upstream-upgrade-path.md`.
+
+  - name: 💬 Question or chat
+    url: https://mattermost.hzdr.de/signup_user_complete/?id=f5ycfi3nmigixxaerhpdg6q66y
+    about: >
+      Questions get faster answers on the upstream shepard Mattermost
+      channel than as an issue.

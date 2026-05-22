@@ -1,0 +1,81 @@
+# Auto-categorisation of PR titles into GitHub Release notes sections.
+#
+# Categorisation rests on the Conventional Commits convention documented in
+# `CLAUDE.md` (see "Specialized agent roles" → commit-message style, and the
+# example commits like `docs(ai-policy): ...`, `feat(make): ...`). PR titles
+# follow the same convention; the scope inside the parens is the
+# `aidocs/16-dispatcher-backlog.md` row ID (e.g. `feat(VIS-T1): ...`).
+#
+# Categories listed in the order they should appear in release notes.
+# Anything unmatched lands under "Other Changes" — that's a signal the PR
+# title didn't follow the Conventional Commits convention and is worth
+# fixing in retrospect.
+#
+# This file is consumed by GitHub's native "Generate release notes" feature
+# (used by both the manual `gh release create --generate-notes` flow and the
+# `softprops/action-gh-release` action invoked from
+# `.github/workflows/release-notes.yml`).
+
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+      - status:queued
+    authors:
+      - dependabot
+      - dependabot[bot]
+
+  categories:
+    - title: "🚨 Breaking Changes"
+      labels:
+        - breaking
+        - "type:breaking"
+
+    - title: "✨ Features"
+      labels:
+        - "type:feature"
+      # Also match PRs whose title starts with `feat(`/`feat:` without a label.
+      # GitHub's release-notes generator already matches Conventional Commits
+      # scopes via the title prefix when the `labels` list is empty; the label
+      # here is the explicit, deterministic path.
+
+    - title: "🐛 Bug Fixes"
+      labels:
+        - "type:bug"
+
+    - title: "📚 Documentation"
+      labels:
+        - "type:docs"
+
+    - title: "♻️ Refactoring"
+      labels:
+        - "type:refactor"
+
+    - title: "🔌 Plugins"
+      labels:
+        - "area:plugins"
+
+    - title: "🔐 Security"
+      labels:
+        - "area:security"
+        - security
+
+    - title: "🧪 Tests"
+      labels:
+        - "type:test"
+
+    - title: "⚙️ Chores & Infrastructure"
+      labels:
+        - "type:chore"
+        - "area:infra"
+
+    - title: "📦 Dependencies"
+      labels:
+        - dependencies
+        - "area:dependencies"
+
+    - title: "Other Changes"
+      labels:
+        - "*"
