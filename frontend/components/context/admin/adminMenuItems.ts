@@ -11,6 +11,7 @@ export enum AdminFragments {
   STORAGE_OVERVIEW = "storage-overview",
   PERMISSION_AUDIT_LOG = "permission-audit-log",
   UNHIDE = "unhide",
+  LEGACY_V1 = "legacy-v1",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -63,5 +64,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Unhide",
     fragment: AdminFragments.UNHIDE,
     icon: "mdi-web-sync",
+  },
+  {
+    name: "Legacy v1",
+    fragment: AdminFragments.LEGACY_V1,
+    icon: "mdi-history",
   },
 ];

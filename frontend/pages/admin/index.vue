@@ -10,6 +10,7 @@ import AdminStoragePane from "~/components/context/admin/AdminStoragePane.vue";
 import PluginsAdminPane from "~/components/context/admin/PluginsAdminPane.vue";
 import PermissionAuditLogPane from "~/components/context/admin/PermissionAuditLogPane.vue";
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
+import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
 
 useHead({
   title: "Admin | shepard",
@@ -59,5 +60,6 @@ const { routeFragment } = useRouteFragment();
       v-if="routeFragment === AdminFragments.PERMISSION_AUDIT_LOG"
     />
     <UnhideAdminPane v-if="routeFragment === AdminFragments.UNHIDE" />
+    <AdminLegacyV1Pane v-if="routeFragment === AdminFragments.LEGACY_V1" />
   </PaneLayout>
 </template>

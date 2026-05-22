@@ -9,5 +9,12 @@
     <StaleBundleBanner />
     <!-- Warns the user 5 minutes before their OIDC access token expires. -->
     <SessionExpiryWarning />
+    <!-- V1COMPAT.0 — banner when any response this session has flowed
+         through the /shepard/api/... legacy surface (the
+         X-Shepard-Legacy: true header set by LegacyV1DeprecationFilter).
+         Dormant until a v1 hit happens. Informative tone, dismissible
+         per session. Nuxt auto-import resolves the component by its
+         bare name via the pathPrefix: false config in nuxt.config.ts. -->
+    <V1DeprecationBanner />
   </v-app>
 </template>
