@@ -1,27 +1,38 @@
 #!/usr/bin/env bash
 # run-mffd-import.sh
 #
-# Fetch the MFFD dropbox import script from Shepard and run it.
-# Keeps real data off the git repo — data lives on disk at DATA_DIR,
-# the script lives in Shepard (ImportScripts DataObject).
+# Fetches mffd-dropbox-import.py from the ImportScripts DataObject in the
+# MFFD-Dropbox collection on Shepard, then runs it via uv.
 #
-# Requirements: curl, jq, uv  (pip install uv or brew install uv)
+# Real data never touches the git repo — data lives on disk at DATA_DIR,
+# the versioned script lives inside Shepard itself (provenance artifact).
 #
-# Usage (DLR intranet — Shepard-issued JWT token goes in SHEPARD_API_KEY):
-#   export SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de
-#   export SHEPARD_API_KEY=eyJhbGciOiJSUzI1...   ← paste the JWT here
+# Requirements: curl, jq, uv
+#
+# ── Quick start ───────────────────────────────────────────────────────────────
+#
+# Step 0 — bootstrap once (run from anywhere with access to nuclide.systems):
+#
+#   SHEPARD_URL=https://shepard.nuclide.systems \
+#   SHEPARD_API_KEY=<nuclide-key> \
+#   uv run python mffd-dropbox-import.py --bootstrap
+#
+# Step 1 — full cross-instance import (run from DLR network):
+#
+#   export SHEPARD_URL=https://shepard.nuclide.systems
+#   export SHEPARD_API_KEY=<nuclide-key>
+#   export SOURCE_SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de
+#   export SOURCE_SHEPARD_API_KEY=eyJhbGciOiJSUzI1NiJ9...   ← DLR intranet JWT
+#   export SOURCE_TAPELAYING_COLL_ID=48297
+#   export SOURCE_BRIDGEWELDING_COLL_ID=163811
 #   export SESSION_ID=2026-05-22-Q1
 #   export DATA_DIR=/data/mffd/session-q1
 #   bash run-mffd-import.sh [--dry-run]
 #
-# Usage (nuclide.systems — same SHEPARD_API_KEY works, or use SHEPARD_BEARER_TOKEN
-# for OIDC-issued tokens from Keycloak).
-#
-# First-time bootstrap (before the script is in Shepard):
-#   Skip the fetch step and run the local script directly:
-#     uv run python mffd-dropbox-import.py
-#   The script will upload itself to the ImportScripts DataObject automatically.
-#   From the second run on, use this shell script.
+# Auth notes:
+#   SHEPARD_API_KEY    Shepard-issued JWT  → sent as X-API-KEY header
+#   SHEPARD_BEARER_TOKEN  Keycloak OIDC token → sent as Authorization: Bearer
+#   SOURCE_SHEPARD_API_KEY  DLR intranet Shepard JWT (always X-API-KEY format)
 
 set -euo pipefail
 
@@ -30,7 +41,7 @@ COLLECTION_NAME="${COLLECTION_NAME:-MFFD-Dropbox}"
 SCRIPT_NAME="mffd-dropbox-import.py"
 DATAOBJECT_NAME="ImportScripts"
 
-# ── Auth header ──────────────────────────────────────────────────────────────
+# ── Auth header (for destination Shepard = nuclide.systems) ──────────────────
 if [[ -n "${SHEPARD_BEARER_TOKEN:-}" ]]; then
   AUTH_HEADER="Authorization: Bearer ${SHEPARD_BEARER_TOKEN}"
 elif [[ -n "${SHEPARD_API_KEY:-}" ]]; then
@@ -47,14 +58,17 @@ shepard_get() {
 
 echo "[fetch] Locating ${SCRIPT_NAME} in ${SHEPARD_URL} ..."
 
-# 1. Find the collection
+# 1. Find the MFFD-Dropbox collection
 COLL_ID=$(
   shepard_get "${SHEPARD_URL}/shepard/api/collections?name=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('${COLLECTION_NAME}'))")" \
   | jq --arg name "${COLLECTION_NAME}" '.[] | select(.name==$name) | .id' \
   | head -1
 )
 if [[ -z "${COLL_ID}" ]]; then
-  echo "ERROR: Collection '${COLLECTION_NAME}' not found — run the script locally first (bootstrap)." >&2
+  echo "ERROR: Collection '${COLLECTION_NAME}' not found." >&2
+  echo "       Run bootstrap first:" >&2
+  echo "         SHEPARD_URL=${SHEPARD_URL} SHEPARD_API_KEY=<key> \\" >&2
+  echo "         uv run python mffd-dropbox-import.py --bootstrap" >&2
   exit 1
 fi
 echo "  collection id: ${COLL_ID}"
@@ -66,7 +80,9 @@ DO_ID=$(
   | head -1
 )
 if [[ -z "${DO_ID}" ]]; then
-  echo "ERROR: DataObject '${DATAOBJECT_NAME}' not found in collection — run the script locally first (bootstrap)." >&2
+  echo "ERROR: DataObject '${DATAOBJECT_NAME}' not found in '${COLLECTION_NAME}'." >&2
+  echo "       Re-run bootstrap to create it:" >&2
+  echo "         uv run python mffd-dropbox-import.py --bootstrap" >&2
   exit 1
 fi
 echo "  dataobject id: ${DO_ID}"
@@ -78,10 +94,12 @@ FILE_ID=$(
   | head -1
 )
 if [[ -z "${FILE_ID}" ]]; then
-  echo "ERROR: File '${SCRIPT_NAME}' not found in ImportScripts — run the script locally first (bootstrap)." >&2
+  echo "ERROR: '${SCRIPT_NAME}' not found in ImportScripts." >&2
+  echo "       The script is self-uploaded during bootstrap — re-run it:" >&2
+  echo "         uv run python mffd-dropbox-import.py --bootstrap" >&2
   exit 1
 fi
-echo "  file ref id: ${FILE_ID}"
+echo "  file ref id:   ${FILE_ID}"
 
 # 4. Download the script
 echo "[fetch] Downloading ${SCRIPT_NAME} ..."
@@ -92,6 +110,6 @@ shepard_get \
 
 echo "[fetch] ${SCRIPT_NAME} ready ($(wc -c < "${SCRIPT_NAME}") bytes)"
 
-# ── Run ──────────────────────────────────────────────────────────────────────
+# ── Run ───────────────────────────────────────────────────────────────────────
 echo "[run] uv run python ${SCRIPT_NAME} $*"
 exec uv run python "${SCRIPT_NAME}" "$@"
