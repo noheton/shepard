@@ -643,6 +643,16 @@ Consolidates sync into the MCP gateway plugin (`shepard-plugin-mcp`) and gives o
 | MCPGW-SYNC2 | Config UI for sync: list of services + their sync state + add/remove buttons. Lives under `/admin/mcp/sync` (instance-admin only) and `/me/mcp` (per-user subscriptions). | M | queued | Mirrors A3b1 admin-tile layout. Reuse the `:McpConfig` singleton if one exists (or stand one up per the A3b/N1c2/UH1a pattern). |
 | MCPGW-SYNC3 | "Additional services on lobe require explicit confirmation" — when LobeChat / Claude Desktop / any client requests a new service binding via the MCP `tools/discover` flow, the gateway holds the request in a `pending-approval` state. An operator clicks **Confirm once** on the GUI (per-client, one-time) and the service is then exposed thereafter. | M | queued | Anti-abuse posture: a compromised LobeChat instance cannot silently expand the surface area it can reach. One confirmation per client, persisted in a `:McpClientApproval` Neo4j node. Audit-logged via PROV1a. |
 
+### IMPORT-W — 2026-05-22 (smart warmup with fail-fast diagnostics)
+
+User directives 2026-05-22: *"script should be smart and have a warmaup / probing phase everything works (write access to v5 is enabled for testing)"* + *"unexpected replies lead to abort and actionable diagnostic report"*. Spec source: `backend/src/test/resources/fixtures/v5/openapi-5.4.0.json` (v5.4.0, 282 KB, 90 paths). See `feedback_warmup_fail_fast_diagnostic.md` in agent memory.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| IMPORT-W1 | v15.2 — smart warmup phase that exercises read + write + wire-shape sanity against source + destination. Probes every payload kind the run will touch (file, TS, structured, semantic annotation), writes throwaway probes, reads them back, deletes them, and cross-checks response shape against `fixtures/v5/openapi-5.4.0.json` for the source side. v5 source has write access enabled for testing per user 2026-05-22. | M | queued | Replaces v15.1's `warmup_source()` (read-only against `/shepard/api/collections`). |
+| IMPORT-W2 | Unexpected-reply abort + structured diagnostic report. On any non-2xx or wire-shape drift during warmup or main loop: stop, emit a structured diagnostic block (verb + url + expected schema + got + where to look + what to try next), exit with a distinct integer per failure class (auth=2, source-unreachable=3, garage-down=4, operator-interrupt=5, wire-shape-drift=6, write-permission-denied=7). Caller scripts and the Makefile can react. | S | queued | Builds on the diagnostic-script-to-upload pattern (`feedback_diagnostic_artefact.md`). |
+| IMPORT-W3 | OpenAPI-driven wire-shape comparator helper (Python) — `tools/openapi_shape_check.py`: given `(spec_path, endpoint, method, response_body)` returns `(ok, missing_fields, extra_fields, type_mismatches)`. Used by IMPORT-W1 warmup + by `V1WireFidelityIT` Java side via a parallel implementation. | S | queued | One source of truth (the spec); two consumers (script warmup + JVM tests). |
+
 ### TRACE — 2026-05-22 (requirements traceability)
 
 Three options ranked by time-to-ship in `aidocs/platform/106-requirements-traceability.md`. Option A is being prototyped now; B + C are queued here for future contributors.
