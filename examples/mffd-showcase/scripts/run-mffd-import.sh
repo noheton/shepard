@@ -58,20 +58,26 @@ shepard_get() {
 
 echo "[fetch] Locating ${SCRIPT_NAME} in ${SHEPARD_URL} ..."
 
-# 1. Find the MFFD-Dropbox collection
-COLL_ID=$(
-  shepard_get "${SHEPARD_URL}/shepard/api/collections?name=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('${COLLECTION_NAME}'))")" \
-  | jq --arg name "${COLLECTION_NAME}" '.[] | select(.name==$name) | .id' \
-  | head -1
-)
-if [[ -z "${COLL_ID}" ]]; then
-  echo "ERROR: Collection '${COLLECTION_NAME}' not found." >&2
-  echo "       Run bootstrap first:" >&2
-  echo "         SHEPARD_URL=${SHEPARD_URL} SHEPARD_API_KEY=<key> \\" >&2
-  echo "         uv run python mffd-dropbox-import.py --bootstrap" >&2
-  exit 1
+# 1. Find the MFFD-Dropbox collection (by ID if set, otherwise by name)
+if [[ -n "${COLLECTION_ID:-}" ]]; then
+  COLL_ID="${COLLECTION_ID}"
+  echo "  collection id: ${COLL_ID} (from COLLECTION_ID env var)"
+else
+  COLL_ID=$(
+    shepard_get "${SHEPARD_URL}/shepard/api/collections?name=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('${COLLECTION_NAME}'))")" \
+    | jq --arg name "${COLLECTION_NAME}" '.[] | select(.name==$name) | .id' \
+    | head -1
+  )
+  if [[ -z "${COLL_ID}" ]]; then
+    echo "ERROR: Collection '${COLLECTION_NAME}' not found." >&2
+    echo "       Run bootstrap first:" >&2
+    echo "         SHEPARD_URL=${SHEPARD_URL} SHEPARD_API_KEY=<key> \\" >&2
+    echo "         uv run python mffd-dropbox-import.py --bootstrap" >&2
+    echo "       Or set COLLECTION_ID=<id> to bypass the name lookup." >&2
+    exit 1
+  fi
+  echo "  collection id: ${COLL_ID}"
 fi
-echo "  collection id: ${COLL_ID}"
 
 # 2. Find the ImportScripts DataObject
 DO_ID=$(

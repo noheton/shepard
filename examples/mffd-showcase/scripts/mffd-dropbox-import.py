@@ -333,6 +333,24 @@ class ShepardClient:
             return COLLECTION_NAME
         return r.json().get("name") or COLLECTION_NAME
 
+    def set_collection_public(self, coll_id: int) -> bool:
+        """Set permissionType=Public so all instance users can read+write."""
+        url = f"{self._base}/shepard/api/collections/{coll_id}/permissions"
+        r = self._get(url)
+        if r is None:
+            return False
+        perms = r.json()
+        perms["permissionType"] = "Public"
+        try:
+            r2 = self._s.put(url, json=perms, timeout=30)
+            if r2.ok:
+                print(f"  [perms] collection {coll_id} → Public (all instance users can access)")
+                return True
+            self._log_err("PUT", url, r2)
+        except Exception as exc:
+            print(f"  [net] PUT permissions {coll_id}: {exc}")
+        return False
+
     def find_data_object(self, coll_id: int, name: str) -> dict | None:
         r = self._get(
             f"{self._base}/shepard/api/collections/{coll_id}/dataObjects",
@@ -657,6 +675,7 @@ def ensure_dest_collection(client: ShepardClient) -> tuple[int, str | None]:
             print("  FAILED — aborting")
             sys.exit(1)
         print(f"  created (id={coll['id']})")
+        client.set_collection_public(coll["id"])
     coll_id: int = coll["id"]
     coll_app_id: str | None = coll.get("appId") or client.get_collection_app_id(coll_id)
     return coll_id, coll_app_id
@@ -736,6 +755,10 @@ def run_bootstrap(client: ShepardClient) -> None:
     coll_id: int = coll["id"]
     coll_app_id: str | None = coll.get("appId") or client.get_collection_app_id(coll_id)
     coll_name: str = coll.get("name") or COLLECTION_NAME
+
+    # Make the collection visible+writable to all instance users so team members
+    # (e.g. flo) can find it by name and upload data without needing explicit grants.
+    client.set_collection_public(coll_id)
 
     # 2. Skeleton DataObjects — placeholders for real data that arrives via source mode
     session_attrs: dict[str, str] = {
