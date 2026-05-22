@@ -5,62 +5,80 @@
 #!/usr/bin/env python3
 """mffd-dropbox-import.py — MFFD manufacturing process data ingest with provenance.
 
-⚠️  TIMESTAMP WARNING
-─────────────────────
-Reimporting from source Shepard collections causes ALL timestamps (DataObject
-creationDate, file upload time) to reflect the IMPORT time, NOT the original
-measurement or recording time.  The original source timestamps are preserved as
-explicit attributes (source_created, source_modified) but Shepard's own
-timestamp fields will be wrong.  This is a known limitation of the v1 copy path.
+Agentic Data Management workflow
+──────────────────────────────────
+This script implements a human+Claude-in-the-loop import:
+  1. Bootstrap (run once on nuclide.systems from this repo):
+       creates the destination collection + skeleton DataObjects + uploads this
+       script as a provenance artifact + initial snapshot capturing t=0 state.
+  2. Shell fetch (on DLR machine):
+       run-mffd-import.sh downloads this script from the ImportScripts DataObject
+       in the collection, then runs it.
+  3. Warmup probe:
+       uploads one payload per reference type; Claude reviews with the operator
+       in chat; Claude then calls PATCH /collections/{id} to set import_ready.
+  4. Full import:
+       traverses source collections on DLR intranet (48297 tapelaying,
+       163811 bridge/frame welding), downloads every DataObject + file, re-uploads
+       to the destination collection. All progress is checkpointed.
+  5. Post-import snapshot:
+       snapshot label includes current collection name so future renames are tracked.
 
-Two modes
-─────────
-  SOURCE MODE  (preferred)   — traverse source Shepard collections by ID,
-                               download every DataObject + file, re-upload to
-                               the MFFD-Dropbox collection.
+⚠  TIMESTAMP NOTE
+──────────────────
+File upload timestamps and DataObject creationDate reflect the IMPORT time,
+not the original measurement time. Source timestamps are preserved as
+source_created / source_modified attributes on each migrated DataObject.
 
-    Set SOURCE_TAPELAYING_COLL_ID and/or SOURCE_BRIDGEWELDING_COLL_ID.
+Three modes
+───────────
+  --bootstrap    Create destination collection + self-upload + t=0 snapshot.
+                 Run this ONCE on nuclide.systems before the DLR import.
 
-  LOCAL MODE   (fallback)    — read files from DATA_DIR subdirs (tapelaying/,
-                               bridgewelding/).
+  SOURCE MODE    Traverse source Shepard collections (set SOURCE_* vars), pull
+  (default)      all DataObjects + files, re-upload to destination collection.
+                 Use SOURCE_SHEPARD_URL / SOURCE_SHEPARD_API_KEY for cross-instance.
 
-Both modes create the same provenance chain:
-    TapeLaying-{session} → BridgeWelding-{session}
-    WikiDump-{session}   (standalone placeholder)
-    ImportScripts        (this script — self-uploaded)
+  LOCAL MODE     Read files from DATA_DIR subdirs. Fallback when no SOURCE vars set.
 
 Usage
 ─────
-  # Source mode (DLR intranet, Shepard-issued JWT):
-  SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de \\
-  SHEPARD_API_KEY=eyJhbGciOiJSUzI1NiJ9... \\
+  # Step 1 — bootstrap (run once on nuclide.systems):
+  SHEPARD_URL=https://shepard.nuclide.systems \\
+  SHEPARD_API_KEY=<nuclide-key> \\
+  uv run python mffd-dropbox-import.py --bootstrap
+
+  # Step 2 — full cross-instance import (run on DLR network):
+  SHEPARD_URL=https://shepard.nuclide.systems \\
+  SHEPARD_API_KEY=<nuclide-key> \\
+  SOURCE_SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de \\
+  SOURCE_SHEPARD_API_KEY=eyJhbGciOiJSUzI1NiJ9... \\
   SOURCE_TAPELAYING_COLL_ID=48297 \\
   SOURCE_BRIDGEWELDING_COLL_ID=163811 \\
   SESSION_ID=2026-05-22-Q1 \\
   uv run python mffd-dropbox-import.py
 
-  # Local mode:
-  SHEPARD_URL=https://shepard.nuclide.systems \\
-  SHEPARD_API_KEY=<key> \\
-  DATA_DIR=/path/to/mffd-data \\
-  SESSION_ID=2026-05-22-Q1 \\
-  uv run python mffd-dropbox-import.py
+  # Or: fetch via shell helper (after bootstrap):
+  bash run-mffd-import.sh
 
   # Dry-run:
   uv run python mffd-dropbox-import.py --dry-run
 
 Environment variables
 ─────────────────────
-  SHEPARD_URL                   Default: https://shepard.nuclide.systems
-  SHEPARD_API_KEY               X-API-KEY header (Shepard-issued JWTs go here too)
-  SHEPARD_BEARER_TOKEN          Authorization: Bearer (OIDC/Keycloak tokens)
-  SOURCE_TAPELAYING_COLL_ID     Source collection ID for tape-laying DataObjects
-  SOURCE_BRIDGEWELDING_COLL_ID  Source collection ID for bridge/frame welding
+  SHEPARD_URL                   Destination instance.  Default: https://shepard.nuclide.systems
+  SHEPARD_API_KEY               Destination auth — X-API-KEY (Shepard JWTs go here)
+  SHEPARD_BEARER_TOKEN          Destination auth — Authorization: Bearer (Keycloak)
+  SOURCE_SHEPARD_URL            Source instance for cross-instance pull.  Default: SHEPARD_URL
+  SOURCE_SHEPARD_API_KEY        Source auth (JWT from DLR intranet instance)
+  SOURCE_TAPELAYING_COLL_ID     Source collection ID for tape-laying  (48297 on DLR)
+  SOURCE_BRIDGEWELDING_COLL_ID  Source collection ID for bridge welding (163811 on DLR)
   SESSION_ID                    Run identifier.  Default: today YYYY-MM-DD
-  DATA_DIR                      Local dir for LOCAL MODE.  Default: .
-  COLLECTION_NAME               Destination collection.  Default: MFFD-Dropbox
-  LOG_DIR                       Log file directory.  Default: script directory
+  DATA_DIR                      Root dir for LOCAL MODE.  Default: .
+  COLLECTION_NAME               Destination collection name.  Default: MFFD-Dropbox
+  LOG_DIR                       Log + state file directory.  Default: script directory
   PAGE_SIZE                     DataObjects per page when traversing.  Default: 50
+  OPERATOR                      Your name/email for provenance attrs.  Default: (empty)
 """
 
 from __future__ import annotations
@@ -106,6 +124,11 @@ SOURCE_BRIDGEWELDING_COLL_ID: int | None = (
 )
 
 IMPORT_TIME = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+# Cross-instance source (set SOURCE_* vars for DLR intranet pull)
+SOURCE_SHEPARD_URL = os.environ.get("SOURCE_SHEPARD_URL", SHEPARD_URL)
+SOURCE_SHEPARD_API_KEY = os.environ.get("SOURCE_SHEPARD_API_KEY", SHEPARD_API_KEY)
+OPERATOR = os.environ.get("OPERATOR", "")
 
 
 # ── Tee logging ───────────────────────────────────────────────────────────────
@@ -303,6 +326,12 @@ class ShepardClient:
         if r is None:
             return None
         return r.json().get("appId")
+
+    def get_collection_name(self, collection_id: int) -> str:
+        r = self._get(f"{self._base}/shepard/api/collections/{collection_id}")
+        if r is None:
+            return COLLECTION_NAME
+        return r.json().get("name") or COLLECTION_NAME
 
     def find_data_object(self, coll_id: int, name: str) -> dict | None:
         r = self._get(
@@ -653,15 +682,175 @@ def ensure_dest_do(
     return do
 
 
+# ── Bootstrap (one-time collection setup) ─────────────────────────────────────
+
+def run_bootstrap(client: ShepardClient) -> None:
+    """
+    One-time setup: create the destination collection with rich provenance attrs,
+    skeleton DataObjects, self-upload the script, and capture a t=0 snapshot.
+
+    Run this ONCE from nuclide.systems before the DLR intranet import.
+    After bootstrap the ImportScripts DataObject holds this script — from that
+    point on use run-mffd-import.sh to fetch + run.
+    """
+    print("\n=== Bootstrap ===")
+    print(f"  destination: {SHEPARD_URL}")
+    print(f"  collection : {COLLECTION_NAME!r}")
+    if OPERATOR:
+        print(f"  operator   : {OPERATOR}")
+
+    # 1. Find or create the collection with rich provenance attrs
+    print(f"\n[collection] {COLLECTION_NAME!r}")
+    coll = client.find_collection(COLLECTION_NAME)
+    if coll:
+        print(f"  already exists (id={coll['id']}) — will add skeleton DOs + script + snapshot")
+    else:
+        print("  creating ...")
+        attrs: dict[str, str] = {
+            "domain": "MFFD",
+            "session": SESSION_ID,
+            "type": "dropbox",
+            "source_instance": SOURCE_SHEPARD_URL,
+            "source_tapelaying_coll_id": str(SOURCE_TAPELAYING_COLL_ID) if SOURCE_TAPELAYING_COLL_ID else "48297",
+            "source_bridgewelding_coll_id": str(SOURCE_BRIDGEWELDING_COLL_ID) if SOURCE_BRIDGEWELDING_COLL_ID else "163811",
+            "import_tool": "mffd-dropbox-import.py",
+            "bootstrapped_at": IMPORT_TIME,
+        }
+        if OPERATOR:
+            attrs["operator"] = OPERATOR
+        coll = client.create_collection(
+            COLLECTION_NAME,
+            description=(
+                f"MFFD manufacturing dropbox — real process data from DLR Augsburg ZLP.\n"
+                f"Session {SESSION_ID}.  Bootstrapped at {IMPORT_TIME}.\n"
+                f"Source: {SOURCE_SHEPARD_URL}\n"
+                f"Created by mffd-dropbox-import.py --bootstrap."
+            ),
+            attrs=attrs,
+        )
+        if coll is None:
+            print("  FAILED — aborting bootstrap")
+            sys.exit(1)
+        print(f"  created (id={coll['id']}, appId={coll.get('appId')})")
+
+    coll_id: int = coll["id"]
+    coll_app_id: str | None = coll.get("appId") or client.get_collection_app_id(coll_id)
+    coll_name: str = coll.get("name") or COLLECTION_NAME
+
+    # 2. Skeleton DataObjects — placeholders for real data that arrives via source mode
+    session_attrs: dict[str, str] = {
+        "session": SESSION_ID,
+        "campaign": "MFFD",
+        "bootstrapped_at": IMPORT_TIME,
+    }
+    if OPERATOR:
+        session_attrs["operator"] = OPERATOR
+
+    src_tl = SOURCE_TAPELAYING_COLL_ID or 48297
+    src_bw = SOURCE_BRIDGEWELDING_COLL_ID or 163811
+
+    print(f"\n[skeleton] TapeLaying-skeleton")
+    tl = ensure_dest_do(
+        client, coll_id,
+        "TapeLaying-skeleton",
+        description=(
+            f"Placeholder for MFFD tape-laying process data.\n"
+            f"Real data will be imported from source collection {src_tl} on DLR intranet "
+            f"({SOURCE_SHEPARD_URL})."
+        ),
+        attrs={**session_attrs, "process_step": "tapelaying", "status": "skeleton",
+               "source_collection_id": str(src_tl), "source_instance": SOURCE_SHEPARD_URL},
+    )
+
+    print(f"\n[skeleton] BridgeWelding-skeleton")
+    bw = ensure_dest_do(
+        client, coll_id,
+        "BridgeWelding-skeleton",
+        description=(
+            f"Placeholder for MFFD bridge/frame welding process data.\n"
+            f"Real data will be imported from source collection {src_bw} on DLR intranet "
+            f"({SOURCE_SHEPARD_URL}).\n"
+            f"Process chain predecessor: TapeLaying-skeleton."
+        ),
+        attrs={**session_attrs, "process_step": "bridgewelding", "status": "skeleton",
+               "source_collection_id": str(src_bw), "source_instance": SOURCE_SHEPARD_URL},
+        predecessor_id=tl["id"] if tl else None,
+    )
+
+    print(f"\n[skeleton] WikiDump-{SESSION_ID}")
+    ensure_dest_do(
+        client, coll_id,
+        f"WikiDump-{SESSION_ID}",
+        description=(
+            f"Wiki export placeholder — session {SESSION_ID}.\n"
+            f"Upload one zip file manually via the UI."
+        ),
+        attrs={**session_attrs, "process_step": "wikidump",
+               "note": "upload manually — one zip file"},
+    )
+
+    # 3. ImportScripts + self-upload (script lives here for reproducibility)
+    print(f"\n[importscripts]")
+    isc = ensure_dest_do(
+        client, coll_id,
+        "ImportScripts",
+        description=(
+            "Ingest scripts — provenance artifact.\n"
+            "Fetch mffd-dropbox-import.py from here via run-mffd-import.sh to reproduce this run."
+        ),
+        attrs={"type": "toolbox", "note": "self-uploaded by mffd-dropbox-import.py"},
+    )
+    if isc:
+        client.upload_self(coll_id, isc["id"], isc.get("appId") or "")
+        client.verify_references(coll_id, isc["id"], "ImportScripts")
+
+    # 4. t=0 snapshot — label records collection name at this moment
+    print(f"\n[snapshot] t=0 ...")
+    if coll_app_id:
+        label = f"bootstrap-t0@{coll_name}"
+        snap = client.create_snapshot(coll_app_id, label)
+        if snap:
+            print(f"  created: {snap.get('label')}  (appId={snap.get('appId')})")
+            print(f"  label captures collection name '{coll_name}' — renames tracked via snapshot history")
+        else:
+            print("  WARNING: snapshot creation failed (non-fatal)")
+    else:
+        print("  WARNING: no collection appId — snapshot skipped")
+
+    print(f"\n=== Bootstrap done ===")
+    print(f"  Collection '{coll_name}'  id={coll_id}")
+    print(f"  Script uploaded to ImportScripts DataObject.")
+    print()
+    print("  Next step — run from DLR network:")
+    print(f"    export SHEPARD_URL={SHEPARD_URL}")
+    print(f"    export SHEPARD_API_KEY=<nuclide-key>")
+    print(f"    export SOURCE_SHEPARD_URL={SOURCE_SHEPARD_URL}")
+    print(f"    export SOURCE_SHEPARD_API_KEY=<dlr-intranet-jwt>")
+    print(f"    export SOURCE_TAPELAYING_COLL_ID={src_tl}")
+    print(f"    export SOURCE_BRIDGEWELDING_COLL_ID={src_bw}")
+    print(f"    export SESSION_ID={SESSION_ID}")
+    print(f"    bash run-mffd-import.sh")
+
+
 # ── SOURCE MODE ───────────────────────────────────────────────────────────────
 
-def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | None = None) -> dict[str, int]:
+def run_source_mode(
+    dest_client: ShepardClient,
+    coll_id: int,
+    state: ImportState | None = None,
+    source_client: ShepardClient | None = None,
+) -> dict[str, int]:
     """
     Traverse source Shepard collections, downloading DataObjects and files,
     re-uploading into the destination collection.
 
+    Pass source_client for cross-instance pull (DLR intranet → nuclide.systems).
+    If source_client is None, dest_client is used for source operations too.
+
     Returns mapping of step_key → dest_do_id for predecessor wiring.
     """
+    _src = source_client or dest_client  # source operations use separate client when cross-instance
+
     # ⚠️  Prominent timestamp warning
     print()
     print("  ┌─────────────────────────────────────────────────────────────────┐")
@@ -672,6 +861,10 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
     print("  │  attributes on every migrated DataObject.                        │")
     print("  └─────────────────────────────────────────────────────────────────┘")
     print()
+
+    if source_client is not None:
+        print(f"  [cross-instance] source : {_src._base}")
+        print(f"  [cross-instance] dest   : {dest_client._base}")
 
     do_ids: dict[str, int] = {}   # step_key → dest do_id
 
@@ -686,7 +879,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
             continue
 
         print(f"\n[{step_key}] source collection {src_coll_id}")
-        total_dos = client.count_data_objects(src_coll_id)
+        total_dos = _src.count_data_objects(src_coll_id)
         print(f"  {total_dos} DataObject(s) to migrate")
 
         # Group DataObject: one dest DO per step, aggregate all source DOs into it
@@ -705,7 +898,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
         }
 
         dest_do = ensure_dest_do(
-            client,
+            dest_client,
             coll_id,
             dest_do_name,
             description=(
@@ -724,7 +917,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
         dest_app_id: str = dest_do.get("appId") or ""
 
         # Verify refs before migration
-        client.verify_references(coll_id, dest_do["id"], dest_do_name)
+        dest_client.verify_references(coll_id, dest_do["id"], dest_do_name)
 
         # Walk source DOs with progress bar
         files_uploaded = 0
@@ -737,11 +930,11 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
             unit="DO",
             file=sys.stderr,
         ) as do_bar:
-            for src_do in client.iter_data_objects(src_coll_id):
+            for src_do in _src.iter_data_objects(src_coll_id):
                 do_bar.set_postfix_str(src_do.name[:30])
                 do_bar.write(f"  ↳ {src_do.name}  ({len(src_do.file_refs)} file(s))")
 
-                existing_names = client.list_file_refs(coll_id, dest_do["id"])
+                existing_names = dest_client.list_file_refs(coll_id, dest_do["id"])
 
                 with tempfile.TemporaryDirectory() as tmpdir:
                     tmp = Path(tmpdir)
@@ -764,7 +957,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
                             continue
 
                         tmp_file = tmp / fref.name
-                        ok = client.download_file_ref(
+                        ok = _src.download_file_ref(
                             src_coll_id, src_do.do_id, fref.fref_id, tmp_file, fref.size
                         )
                         if not ok:
@@ -772,7 +965,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
                             files_failed += 1
                             continue
 
-                        ok = client.upload_file(
+                        ok = dest_client.upload_file(
                             dest_app_id, tmp_file, dest_name, coll_id, dest_do["id"]
                         )
                         if ok:
@@ -787,7 +980,7 @@ def run_source_mode(client: ShepardClient, coll_id: int, state: ImportState | No
                 do_bar.update(1)
 
         print(f"  → uploaded={files_uploaded}  skipped={files_skipped}  failed={files_failed}")
-        client.verify_references(coll_id, dest_do["id"], dest_do_name)
+        dest_client.verify_references(coll_id, dest_do["id"], dest_do_name)
 
     return do_ids
 
@@ -1101,34 +1294,61 @@ def main() -> None:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
+    ap.add_argument(
+        "--bootstrap",
+        action="store_true",
+        help=(
+            "One-time setup: create destination collection with provenance attrs, "
+            "skeleton DataObjects, self-upload this script, t=0 snapshot. "
+            "Run once on nuclide.systems BEFORE the DLR intranet import."
+        ),
+    )
     ap.add_argument("--dry-run", action="store_true", help="Print plan, make no API calls.")
     args = ap.parse_args()
 
     source_mode = SOURCE_TAPELAYING_COLL_ID is not None or SOURCE_BRIDGEWELDING_COLL_ID is not None
-    mode_label = "SOURCE" if source_mode else "LOCAL"
+    cross_instance = SOURCE_SHEPARD_URL != SHEPARD_URL
+    if args.bootstrap:
+        mode_label = "BOOTSTRAP"
+    elif source_mode:
+        mode_label = "SOURCE"
+    else:
+        mode_label = "LOCAL"
 
     if args.dry_run:
         print(f"[config] mode                        = {mode_label}")
         print(f"[config] SHEPARD_URL                 = {SHEPARD_URL}")
         print(f"[config] COLLECTION_NAME             = {COLLECTION_NAME!r}")
         print(f"[config] SESSION_ID                  = {SESSION_ID!r}")
-        if source_mode:
-            print(f"[config] SOURCE_TAPELAYING_COLL_ID   = {SOURCE_TAPELAYING_COLL_ID}")
-            print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID}")
+        if OPERATOR:
+            print(f"[config] OPERATOR                     = {OPERATOR}")
+        if source_mode or args.bootstrap:
+            print(f"[config] SOURCE_SHEPARD_URL          = {SOURCE_SHEPARD_URL}")
+            print(f"[config] SOURCE_TAPELAYING_COLL_ID   = {SOURCE_TAPELAYING_COLL_ID or 48297}")
+            print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID or 163811}")
         else:
             print(f"[config] DATA_DIR                    = {DATA_DIR.resolve()}")
         print()
-        print("=== DRY RUN — no API calls ===")
-        print("Would create:")
-        print(f"  Collection:              {COLLECTION_NAME!r}")
-        print(f"  Tapelaying-{SESSION_ID}  ← root of chain")
-        print(f"  Bridgewelding-{SESSION_ID} ← predecessor: Tapelaying")
-        print(f"  WikiDump-{SESSION_ID}    ← standalone placeholder")
-        print(f"  ImportScripts            ← self-upload")
-        if source_mode:
-            print(f"\nSource collections:")
-            print(f"  tapelaying    → id {SOURCE_TAPELAYING_COLL_ID}")
-            print(f"  bridgewelding → id {SOURCE_BRIDGEWELDING_COLL_ID}")
+        print(f"=== DRY RUN ({mode_label}) — no API calls ===")
+        if args.bootstrap:
+            print("Would create:")
+            print(f"  Collection:              {COLLECTION_NAME!r} (with provenance attrs)")
+            print(f"  TapeLaying-skeleton      ← process chain root")
+            print(f"  BridgeWelding-skeleton   ← predecessor: TapeLaying-skeleton")
+            print(f"  WikiDump-{SESSION_ID}    ← placeholder (one zip upload)")
+            print(f"  ImportScripts            ← self-upload of this script")
+            print(f"  snapshot: bootstrap-t0@{COLLECTION_NAME}")
+        else:
+            print("Would create:")
+            print(f"  Collection:              {COLLECTION_NAME!r}")
+            print(f"  Tapelaying-{SESSION_ID}  ← root of chain")
+            print(f"  Bridgewelding-{SESSION_ID} ← predecessor: Tapelaying")
+            print(f"  WikiDump-{SESSION_ID}    ← standalone placeholder")
+            print(f"  ImportScripts            ← self-upload")
+            if source_mode:
+                print(f"\nSource collections:")
+                print(f"  tapelaying    → id {SOURCE_TAPELAYING_COLL_ID}  ({SOURCE_SHEPARD_URL})")
+                print(f"  bridgewelding → id {SOURCE_BRIDGEWELDING_COLL_ID}")
         return
 
     if not SHEPARD_API_KEY and not SHEPARD_BEARER_TOKEN:
@@ -1139,10 +1359,6 @@ def main() -> None:
     log_path  = LOG_DIR / f"mffd-import-{SESSION_ID}.log"
     state_path = LOG_DIR / f"mffd-import-{SESSION_ID}.state.json"
     lock_path  = LOG_DIR / ".mffd-import.lock"
-
-    # Acquire deployment lock before touching any infrastructure
-    lock = DeployLock(lock_path)
-    lock.acquire()
 
     tee = Tee(log_path)
     sys.stdout = tee  # type: ignore[assignment]
@@ -1156,33 +1372,63 @@ def main() -> None:
     print(f"[config] auth                        = {auth_mode}")
     print(f"[config] log file                    = {log_path}")
     print(f"[config] state file                  = {state_path}")
+    if OPERATOR:
+        print(f"[config] OPERATOR                    = {OPERATOR}")
+    if source_mode or args.bootstrap:
+        print(f"[config] SOURCE_SHEPARD_URL          = {SOURCE_SHEPARD_URL}")
+        if cross_instance:
+            print(f"[config] cross-instance              = YES")
     if source_mode:
         print(f"[config] SOURCE_TAPELAYING_COLL_ID   = {SOURCE_TAPELAYING_COLL_ID}")
         print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID}")
 
-    state = ImportState(state_path)
-    client = ShepardClient(SHEPARD_URL, SHEPARD_API_KEY, SHEPARD_BEARER_TOKEN)
+    dest_client = ShepardClient(SHEPARD_URL, SHEPARD_API_KEY, SHEPARD_BEARER_TOKEN)
+
+    if not dest_client.warmup():
+        tee.close()
+        sys.stdout = tee._stdout  # type: ignore[attr-defined]
+        sys.exit(1)
+
+    # ── Bootstrap mode (no lock — idempotent, no large upload) ────────────────
+    if args.bootstrap:
+        try:
+            run_bootstrap(dest_client)
+        finally:
+            tee.close()
+            sys.stdout = tee._stdout  # type: ignore[attr-defined]
+            print(f"\nLog written to: {log_path}")
+        return
+
+    # ── Import mode (SOURCE or LOCAL) — acquire lock around full upload ────────
+    lock = DeployLock(lock_path)
+    lock.acquire()
 
     try:
-        if not client.warmup():
-            sys.exit(1)
+        state = ImportState(state_path)
 
-        coll_id, coll_app_id = ensure_dest_collection(client)
+        coll_id, coll_app_id = ensure_dest_collection(dest_client)
 
         # Warmup probe + human/Claude review gate
-        warmup_probe_and_gate(client, coll_id, state)
+        warmup_probe_and_gate(dest_client, coll_id, state)
 
         if source_mode:
-            run_source_mode(client, coll_id, state)
+            src_client = (
+                ShepardClient(SOURCE_SHEPARD_URL, SOURCE_SHEPARD_API_KEY, "")
+                if cross_instance
+                else None
+            )
+            run_source_mode(dest_client, coll_id, state, source_client=src_client)
         else:
-            run_local_mode(client, coll_id, state)
+            run_local_mode(dest_client, coll_id, state)
 
-        ensure_standalones(client, coll_id)
+        ensure_standalones(dest_client, coll_id)
 
+        # Snapshot: fetch current collection name so renames are captured in label
         print("\n[snapshot] creating ...")
         if coll_app_id:
-            label = f"dropbox-import-{SESSION_ID}"
-            snap = client.create_snapshot(coll_app_id, label)
+            current_name = dest_client.get_collection_name(coll_id)
+            label = f"dropbox-import-{SESSION_ID}@{current_name}"
+            snap = dest_client.create_snapshot(coll_app_id, label)
             if snap:
                 print(f"  snapshot: {snap.get('label')}  appId={snap.get('appId')}")
             else:
