@@ -483,3 +483,33 @@ the migration epic.
   — reference for `@Scheduled` worker shape.
 - `backend/src/main/java/de/dlr/shepard/context/export/ExportService.java`
   — the R2 caller that gets the first adoption.
+
+---
+
+## 13. Changelog — concrete instances
+
+- **2026-05-22 — IMP1a/PR-2 ships the first concrete instance** of
+  this JobService design as the `importer_run` Postgres table in
+  `shepard-plugin-importer`
+  (`plugins/importer/src/main/resources/db/migration/V1.11.1__add_importer_run_table.sql`).
+  The column set deliberately mirrors §3's kernel
+  (`status`, `created_at`, `started_at`, `last_progress_at`,
+  `finished_at`, `progress_total`, `progress_done`,
+  `progress_message`, `error_class`, `error_message`,
+  `result_url`, `result_metadata`, `request_payload`,
+  `cancel_requested`) so a future generic
+  `de.dlr.shepard.common.jobs.Job` entity can adopt this table by
+  renaming the backing class without touching SQL or wire shape.
+  The importer-specific extras (`source_kind`, `source_config`,
+  `target_collection_app_id`) stay co-located on the plugin's
+  `ImporterRun` subclass — they don't belong in the generic
+  kernel. The plugin's `ImporterRunService` mirrors §4's
+  `JobService` interface method-for-method
+  (`submit`, `markStarted`, `recordProgress`, `markSucceeded`,
+  `markFailed`, `markCancelled`, `requestCancellation`, `getRun`,
+  `getRunForAdmin`, `listMyRuns`). PR-4 of the IMP1 series wires
+  the scheduler + REST surface. When the generic JobService
+  graduation pass lands (J1 in §11), the importer's `ImporterRun`
+  becomes a subclass of `Job` or a `Job`-bearing record; the SQL
+  migration stays as-is (the kernel-column set was already
+  designed for this).

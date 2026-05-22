@@ -169,6 +169,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-ai</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
