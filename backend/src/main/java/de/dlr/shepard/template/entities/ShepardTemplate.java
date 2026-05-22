@@ -60,10 +60,22 @@ public class ShepardTemplate implements HasId, HasAppId {
   private String name;
 
   /**
-   * One of {@code DATAOBJECT_RECIPE} / {@code COLLECTION_RECIPE} /
-   * {@code EXPERIMENT_RECIPE} (per {@code aidocs/50}) — open-ended;
-   * future template kinds plug in here. Free-form to allow plugins
-   * to register their own.
+   * Recipe kind. Recognised values:
+   * <ul>
+   *   <li>{@code DATAOBJECT_RECIPE} — single DataObject blueprint</li>
+   *   <li>{@code COLLECTION_RECIPE} — Collection + skeleton blueprint</li>
+   *   <li>{@code EXPERIMENT_RECIPE} — experiment / phase chain</li>
+   *   <li>{@code AAS_SUBMODEL_TEMPLATE} — Asset Administration Shell submodel</li>
+   *   <li>{@code PROCESS_RECIPE} — manufacturing / process-chain blueprint
+   *       (e.g. MFFD AFP → bridge welding). See {@code aidocs/semantics/98 §1.1}.</li>
+   *   <li>{@code VIEW_RECIPE} — shape-driven projection; the first concrete
+   *       SSOT consumer is Trace3D. Consumed by {@code GET /v2/templates?kind=view}
+   *       + {@code POST /v2/shapes/render}. See {@code aidocs/semantics/98 §1.1}
+   *       and the meta-shape at
+   *       {@code backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl}.</li>
+   * </ul>
+   * Free-form to allow plugins to register their own kinds. Validation
+   * happens in {@link de.dlr.shepard.template.services.TemplateBodyValidator}.
    */
   @Property("templateKind")
   private String templateKind;

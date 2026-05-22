@@ -45,6 +45,12 @@ public class TemplateBodyValidator {
       case "DATAOBJECT_RECIPE" -> Set.of("dataObject", "dataobjects");
       case "EXPERIMENT_RECIPE" -> Set.of("experiment", "steps", "phases");
       case "AAS_SUBMODEL_TEMPLATE" -> Set.of("submodel", "submodelElements");
+      // Substrate-split chain (aidocs/semantics/98 §1.1):
+      // PROCESS_RECIPE — manufacturing/process-chain blueprint (e.g. MFFD AFP layup → bridge welding).
+      // VIEW_RECIPE — shape-driven projection recipe used by GET /v2/templates?kind=view
+      //               + POST /v2/shapes/render. First concrete consumer: Trace3D (X/Y/Z + scalar).
+      case "PROCESS_RECIPE" -> Set.of("process", "steps", "stages");
+      case "VIEW_RECIPE" -> Set.of("view", "shape", "renderer");
       default -> Set.of(); // permissive for unknown kinds
     };
   }

@@ -1,0 +1,120 @@
+# view-recipe-meta.shacl.ttl — SHACL meta-shape for VIEW_RECIPE templates.
+#
+# Defines the structural contract every VIEW_RECIPE must satisfy. Plugins
+# (shepard-plugin-trace3d, future viewers) supply concrete recipe shapes that
+# `sh:node` this meta-shape and add their own channel/binding declarations.
+#
+# Consumed by:
+#   • POST /v2/shapes/render — validates the requested view recipe + projects
+#     the focus DataObject's channels through the recipe's bindings.
+#   • GET /v2/templates?kind=view — catalogue surface.
+#
+# Cross-refs:
+#   aidocs/semantics/95 §1 (shapes as templates), §2 (shapes as views)
+#   aidocs/semantics/98 §1.1 (TemplateKind: PROCESS_RECIPE, VIEW_RECIPE)
+#   aidocs/semantics/98 §1.2 (POST /v2/shapes/render contract)
+#   aidocs/agent-findings/trace3d-spike.md (TresJS library choice)
+
+@prefix shepard:   <http://semantics.dlr.de/shepard-upper#> .
+@prefix shepard-ui:<http://semantics.dlr.de/shepard-ui#> .
+@prefix dcterms:   <http://purl.org/dc/terms/> .
+@prefix qudt:      <http://qudt.org/schema/qudt/> .
+@prefix sh:        <http://www.w3.org/ns/shacl#> .
+@prefix owl:       <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
+
+# ─── Top-level VIEW_RECIPE class ──────────────────────────────────────
+
+shepard-ui:ViewRecipe a owl:Class ;
+    rdfs:label "View recipe"@en ;
+    rdfs:comment "A reusable shape-driven projection. Consumed by POST /v2/shapes/render to produce a renderer-agnostic view payload for a focus DataObject."@en ;
+    rdfs:subClassOf shepard:Template .
+
+shepard-ui:ViewRecipeShape a sh:NodeShape ;
+    sh:targetClass shepard-ui:ViewRecipe ;
+
+    # Identity
+    sh:property [
+        sh:path     dcterms:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name     "View title" ;
+        sh:order    1 ;
+    ] ;
+    sh:property [
+        sh:path     dcterms:description ;
+        sh:datatype xsd:string ;
+        sh:name     "Description" ;
+        sh:order    2 ;
+    ] ;
+
+    # Renderer hint (informational — actual choice is per-plugin)
+    sh:property [
+        sh:path     shepard-ui:renderer ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:in       ( "tresjs" "echarts" "echarts-gl" "plotly" "babylon" "isaac-usd" "custom" ) ;
+        sh:name     "Renderer hint" ;
+        sh:description "Which frontend renderer this recipe targets. Swap-safe — the wire payload is renderer-agnostic; only the component differs." ;
+        sh:order    3 ;
+    ] ;
+
+    # Channel bindings — what TS channels this view consumes
+    sh:property [
+        sh:path     shepard-ui:hasChannelBinding ;
+        sh:node     shepard-ui:ChannelBindingShape ;
+        sh:minCount 1 ;
+        sh:name     "Channel bindings" ;
+        sh:description "One binding per channel role the view needs. Each binding declares: role (e.g. x, y, z, color), required datatype, expected unit, source TS reference path." ;
+        sh:order    10 ;
+    ] .
+
+# ─── ChannelBinding — one slot in the recipe ──────────────────────────
+
+shepard-ui:ChannelBinding a owl:Class ;
+    rdfs:label "Channel binding"@en ;
+    rdfs:comment "Binds one role of the view (e.g. 'x', 'colorScale') to one TS channel slot on the focus DataObject."@en .
+
+shepard-ui:ChannelBindingShape a sh:NodeShape ;
+    sh:targetClass shepard-ui:ChannelBinding ;
+
+    sh:property [
+        sh:path     shepard-ui:role ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name     "Role" ;
+        sh:description "Renderer-facing role name (x, y, z, time, color, size, ...). Conventions per renderer family." ;
+        sh:order    1 ;
+    ] ;
+    sh:property [
+        sh:path     shepard-ui:channelSelector ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name     "Channel selector" ;
+        sh:description "Selector against the focus DO's TS bag. Today: 5-tuple JSON {measurement, device, location, symbolicName, field} OR future shepardId post-TS-ID migration (aidocs/platform/87)." ;
+        sh:order    2 ;
+    ] ;
+    sh:property [
+        sh:path     qudt:unit ;
+        sh:nodeKind sh:IRI ;
+        sh:name     "Expected unit" ;
+        sh:description "Optional. If present, the renderer can assert unit-compatibility against the resolved channel and surface a warning when they mismatch." ;
+        sh:order    3 ;
+    ] ;
+    sh:property [
+        sh:path     shepard-ui:required ;
+        sh:datatype xsd:boolean ;
+        sh:name     "Required" ;
+        sh:description "If true, the recipe refuses to render when the channel is missing on the focus DO. If false, the renderer degrades gracefully (omits the dimension)." ;
+        sh:order    4 ;
+    ] .
+
+# ─── Worked example: Trace3D recipe (X/Y/Z + scalar color) ────────────
+#
+# This is the meta-shape's first concrete instance. Plugins extend this
+# pattern; the recipe itself ships in shepard-plugin-trace3d.
+#
+# A MFFD-specific instance binds: x=tcp_x, y=tcp_y, z=tcp_z, color=tcp_temperature
+# from the AFP robot TS channels. See plugins/trace3d/shapes/trace3d-recipe.shacl.ttl
+# (added in a follow-up commit when the plugin scaffold lands).

@@ -421,6 +421,7 @@ namespace; core enforces the shape.
 | KUKA RSI telemetry routing into shepard TimeseriesReferences | n/a | TBD | 📐 (queued, EXP1i) | `aidocs/50 §4.2` |
 | Operator UI for live experiment monitoring + restart controls | none | TBD | 📐 (queued, EXP1j) | `aidocs/50 §3.3` |
 | Recipe storage as `templateKind = "EXPERIMENT_RECIPE"` in `__templates` (T1) | n/a | TBD | 📐 (queued, EXP1k) | `aidocs/50 §3.2` |
+| **TemplateKind extension: `PROCESS_RECIPE` + `VIEW_RECIPE`** — TPL2 surface; `PROCESS_RECIPE` for manufacturing/process-chain blueprints; `VIEW_RECIPE` for shape-driven projections consumed by `POST /v2/shapes/render`. First concrete `VIEW_RECIPE` consumer: Trace3D (X/Y/Z + scalar → color-mapped 3D path). Shipped: allow-list extension in `TemplateBodyValidator` + meta-shape at `backend/src/main/resources/shapes/view-recipe-meta.shacl.ttl` (defines `shepard-ui:ViewRecipe`, `shepard-ui:ChannelBinding` with role + selector + qudt:unit + required). The plugin instance + `POST /v2/shapes/render` endpoint queued in follow-up commits on the same branch. | n/a | **🚧 (TPL2a in flight, allow-list + meta-shape)** | `aidocs/semantics/98 §1.1` |
 
 ## 17. Companion ecosystem
 

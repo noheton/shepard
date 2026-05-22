@@ -65,6 +65,24 @@ class TemplateBodyValidatorTest {
   }
 
   @Test
+  void processRecipeAcceptsAnyOfThreeKeys() {
+    assertTrue(validator.collectErrors("{\"process\": {}}", "PROCESS_RECIPE").isEmpty());
+    assertTrue(validator.collectErrors("{\"steps\": []}", "PROCESS_RECIPE").isEmpty());
+    assertTrue(validator.collectErrors("{\"stages\": []}", "PROCESS_RECIPE").isEmpty());
+    assertFalse(validator.collectErrors("{\"collection\": {}}", "PROCESS_RECIPE").isEmpty());
+  }
+
+  @Test
+  void viewRecipeAcceptsAnyOfThreeKeys() {
+    // VIEW_RECIPE — shape-driven projection (aidocs/semantics/98 §1.1).
+    // First concrete consumer: Trace3D (X/Y/Z + scalar → color-mapped 3D path).
+    assertTrue(validator.collectErrors("{\"view\": {\"kind\":\"trace3d\"}}", "VIEW_RECIPE").isEmpty());
+    assertTrue(validator.collectErrors("{\"shape\": \"trace3d\"}", "VIEW_RECIPE").isEmpty());
+    assertTrue(validator.collectErrors("{\"renderer\": \"tresjs\"}", "VIEW_RECIPE").isEmpty());
+    assertFalse(validator.collectErrors("{\"collection\": {}}", "VIEW_RECIPE").isEmpty());
+  }
+
+  @Test
   void unknownTemplateKindPermissive() {
     // Permissive: any well-formed JSON object passes when the kind is unknown.
     assertTrue(validator.collectErrors("{}", "FUTURE_KIND_42").isEmpty());
