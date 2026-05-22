@@ -739,6 +739,168 @@ class ShepardClient:
 
         return False
 
+    # ── Dest: presigned-URL upload flow (NEW in v15, per aidocs/93 §6) ───────────
+
+    # Exit codes documented at top of file; this is the one we use for the
+    # pre-flight branch when Garage is not active.
+    EXIT_GARAGE_INACTIVE = 4
+
+    def garage_preflight(self, file_container_app_id: str) -> tuple[bool, str]:
+        """Pre-flight probe for the Garage S3 backend (aidocs/93 §9 + §13).
+
+        Behaviour:
+          - POSTs /v2/file-containers/{app_id}/upload-url with a sentinel filename
+          - 200/201 → Garage is active; return (True, "").
+          - 503 with body indicating "gridfs" → backend is still on the
+            legacy GridFS provider; return (False, "<runbook>") and the caller
+            should sys.exit(EXIT_GARAGE_INACTIVE).
+          - 404 → endpoint missing entirely; return False with a "v2 surface
+            not available" message.
+          - anything else → return False with the raw response snippet.
+
+        Returns (ok, reason). When ok is True the upload-url endpoint is alive
+        and the operator can proceed; when False, `reason` is printable runbook
+        text the caller should display before exiting.
+        """
+        url = f"{self._base}/v2/file-containers/{file_container_app_id}/upload-url"
+        try:
+            r = self._s.post(url, json={"fileName": ".shepard-preflight"}, timeout=15)
+        except Exception as exc:
+            return False, f"network error probing Garage upload-url: {exc}"
+        if r.status_code in (200, 201):
+            return True, ""
+        body_snip = (r.text or "")[:400] if hasattr(r, "text") else ""
+        if r.status_code == 404:
+            return False, (
+                "v2 file-container upload-url endpoint not found (HTTP 404).\n"
+                "  This dest is missing the FS1b/c/d presigned-URL surface.\n"
+                "  Either upgrade the dest backend to >= the FS1b release, or\n"
+                "  fall back to the v14 multipart flow (slower; not supported in v15).\n"
+            )
+        if r.status_code == 503 or "gridfs" in body_snip.lower():
+            return False, (
+                "Garage S3 backend not active on dest — pre-flight probe returned 503/gridfs.\n"
+                "  Operator runbook:\n"
+                "    1. Enable shepard-plugin-file-s3 via:\n"
+                "         GET  /v2/admin/plugins                    → check 'file-s3' status\n"
+                "         POST /v2/admin/plugins/file-s3/enable\n"
+                "    2. Activate the Garage sidecar — see\n"
+                "         scripts/activate-plugin-sidecars.sh   (or the inline shape in\n"
+                "         aidocs/integrations/93 §9). For an existing nuclide deploy:\n"
+                "           docker compose -f infrastructure/compose.shepard.yml \\\n"
+                "                          -f infrastructure/compose.garage.yml up -d\n"
+                "           docker exec garage /garage layout assign $(docker exec garage /garage node id -q | cut -d@ -f1) -z dc1 -c 1G\n"
+                "           docker exec garage /garage layout apply --version 1\n"
+                "           docker exec garage /garage bucket create shepard-files\n"
+                "           KEY=$(docker exec garage /garage key new --name shepard-backend)\n"
+                "         (capture KEY_ID + SECRET_KEY into SHEPARD_FILES_S3_ACCESS_KEY_ID / _SECRET_ACCESS_KEY)\n"
+                "    3. Switch the runtime provider to s3:\n"
+                "         PATCH /v2/admin/file-storage/config  body={\"providerId\":\"s3\"}\n"
+                "    4. Restart the backend.\n"
+                "    5. Re-run v15 — the state file resumes from where this run paused.\n"
+                f"  (raw probe response: HTTP {r.status_code}; body: {body_snip!r})"
+            )
+        return False, f"unexpected pre-flight response: HTTP {r.status_code}; body: {body_snip!r}"
+
+    def upload_url_request(self, file_container_app_id: str, file_name: str
+                           ) -> tuple[str, str] | None:
+        """Step 1 of the presigned flow: ask the backend for a Garage PUT URL.
+
+        Returns (upload_url, oid) on success, None on failure.
+        Backend response shape (per FS1d): {uploadUrl, oid, expiresAt}.
+        """
+        url = f"{self._base}/v2/file-containers/{file_container_app_id}/upload-url"
+        r = self._post(url, {"fileName": file_name})
+        if r is None:
+            return None
+        try:
+            body = r.json()
+        except (ValueError, AttributeError):
+            return None
+        upload_url = body.get("uploadUrl")
+        oid = body.get("oid")
+        if not upload_url or not oid:
+            print(f"  [presigned] backend returned malformed upload-url response: {body}")
+            return None
+        return str(upload_url), str(oid)
+
+    def upload_url_put(self, upload_url: str, payload: bytes,
+                       content_type: str = "application/octet-stream") -> bool:
+        """Step 2: PUT the bytes directly to Garage. Backend never sees them.
+
+        Uses a bare requests call — no Authorization header on the presigned
+        URL (the signature carries the auth context).
+        """
+        try:
+            r = requests.put(
+                upload_url, data=payload, timeout=600,
+                headers={"Content-Type": content_type},
+            )
+        except Exception as exc:
+            print(f"  [presigned-put] network error: {exc}")
+            return False
+        if 200 <= r.status_code < 300:
+            return True
+        print(f"  [presigned-put] HTTP {r.status_code}: {r.text[:300]}")
+        return False
+
+    def upload_url_commit(self, file_container_app_id: str,
+                          oid: str, file_name: str) -> dict | None:
+        """Step 3: tell the backend the Garage upload landed.
+
+        Returns the committed ShepardFile representation on success.
+        """
+        url = f"{self._base}/v2/file-containers/{file_container_app_id}/upload-url/commit"
+        r = self._post(url, {"oid": oid, "fileName": file_name})
+        if r is None:
+            return None
+        try:
+            return r.json()
+        except (ValueError, AttributeError):
+            return None
+
+    def presigned_upload(self, file_container_app_id: str, path: Path,
+                         display: str | None = None) -> str | None:
+        """Convenience: 3-step presigned upload of a local file. Returns oid on success.
+
+        Reads the entire file into memory — appropriate for the per-step
+        payloads in v15 (typical ZIP archive ≤ a few GB; the 5.5 GB tapelaying
+        file may need a streaming PUT, future work).
+        """
+        display = display or path.name
+        size = path.stat().st_size
+        step1 = self.upload_url_request(file_container_app_id, display)
+        if step1 is None:
+            return None
+        upload_url, oid = step1
+        # Stream the bytes directly — for the v15 demo we accept memory cost.
+        with path.open("rb") as fh:
+            payload = fh.read()
+        print(f"  [presigned] PUT {_human(size)} → Garage (oid={oid})")
+        if not self.upload_url_put(upload_url, payload):
+            return None
+        committed = self.upload_url_commit(file_container_app_id, oid, display)
+        if committed is None:
+            return None
+        return oid
+
+    def link_file_via_oid(self, coll_id: int, do_id: int,
+                         file_container_id: int, name: str,
+                         oid: str) -> int | None:
+        """Step 4 of the presigned flow: create the v5-compat FileReference
+        pointing at the freshly-committed ShepardFile."""
+        url = (
+            f"{self._base}/shepard/api/collections/{coll_id}"
+            f"/dataObjects/{do_id}/fileReferences"
+        )
+        body = {
+            "name": name,
+            "fileOids": [oid],
+            "fileContainerId": file_container_id,
+        }
+        r = self._post(url, body)
+        return r.json().get("id") if r else None
+
     # ── Dest: timeseries container + import ──────────────────────────────────────
 
     def create_ts_container(self, name: str) -> int | None:
