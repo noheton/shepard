@@ -12,4 +12,9 @@ export type UpdatedCollection = UpdateCollectionRequest["collection"] & {
   description: string;
   status?: string | null;
   heroImageUrl?: string | null;
+  // LIC1 (FAIR-1): SPDX license id (free-text). Null = undeclared.
+  license?: string | null;
+  // LIC1 (FAIR-1): controlled accessRights enum.
+  // OPEN | RESTRICTED | CLOSED | EMBARGOED, or null = undeclared.
+  accessRights?: string | null;
 };

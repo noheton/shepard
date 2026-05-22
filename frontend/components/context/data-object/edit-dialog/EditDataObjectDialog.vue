@@ -68,6 +68,16 @@ watch(updatedDataObject, () => form.value?.validate(), { deep: true });
             />
           </v-col>
         </v-row>
+        <!-- LIC1 (FAIR-1): license + accessRights. Shown in both basic and
+             advanced mode — FAIR-mandatory for funder review. -->
+        <v-row>
+          <v-col cols="12" md="6" class="pb-0">
+            <LicenseInput v-model:license="updatedDataObject.license" />
+          </v-col>
+          <v-col cols="12" md="6" class="pb-0">
+            <AccessRightsInput v-model:access-rights="updatedDataObject.accessRights" />
+          </v-col>
+        </v-row>
         <v-row>
           <v-col class="pt-1">
             <MandatoryFieldHint />

@@ -53,6 +53,10 @@ const collectionToCreate = ref<CollectionToCreate>({
   name: "",
   description: "",
   attributes: {},
+  // LIC1 (FAIR-1): default both license and accessRights to null
+  // (= "not yet declared"). User can pick / leave blank in step 2.
+  license: null,
+  accessRights: null,
 });
 const permissionType = ref<PermissionType>(PermissionType.Private);
 
@@ -168,6 +172,18 @@ async function saveChanges() {
         <v-row>
           <v-col class="pt-9 pb-1">
             <div class="text-subtitle-1">Additional Information</div>
+          </v-col>
+        </v-row>
+        <!-- LIC1 (FAIR-1): license + accessRights. Step 2 (Additional
+             Information) is the right home — required for FAIR funder review
+             but not blocking creation, so users can leave blank and fill in
+             later via the edit dialog. -->
+        <v-row class="mt-1">
+          <v-col cols="12" md="6" class="pb-0">
+            <LicenseInput v-model:license="collectionToCreate.license" />
+          </v-col>
+          <v-col cols="12" md="6" class="pb-0">
+            <AccessRightsInput v-model:access-rights="collectionToCreate.accessRights" />
           </v-col>
         </v-row>
         <v-row class="mt-1">
