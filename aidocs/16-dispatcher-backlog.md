@@ -631,6 +631,18 @@ the existing `aidocs/43` AI1 umbrella.
 | CC1b | "Referenced by" expansion panel on each container detail page (File, Timeseries, Structured Data) — **wired with real data** | **done** (`01ef6296`) | Three new `GET /v2/{file,timeseries,structured-data}-containers/{id}/linked-data-objects` endpoints (numeric OGM id). DAOs query `DataObject -[:has_reference]->()-[:has_payload]-> Container` with `RETURN DISTINCT do`. Services gate behind `getContainer(id)` read-permission check. Frontend panels replaced with real v-list (spinner + empty state). 6 new DAO unit tests. See `aidocs/ops/87-collection-container-duality.md §4.5`. |
 | CC1c | Default file-container name pre-filled as `"<Collection name> — file store"` + first-time info banner in the upload dialog | **shipped** | `frontend/components/context/data-object/upload-data/DataObjectFileUploadDialog.vue`. Watch on `isCreatingNewFileContainer` fills `newFileContainerName` when toggled on (only fills if blank, preserving user edits). `v-alert` (info, tonal) always shown explaining container / experiment separation. See `aidocs/ops/87-collection-container-duality.md §4.2 + §4.4`. |
 
+### MCPGW — 2026-05-22 (MCP gateway as sync SSOT)
+
+User directive 2026-05-22: *"move syncservice into mcpgateway … config ui? complete sync — mcpgateway explicit source of truth. additional services on lobe require explicit confirmation (one time on gui)"*.
+
+Consolidates sync into the MCP gateway plugin (`shepard-plugin-mcp`) and gives operators an explicit confirmation gate when client-side LLM hosts (LobeChat, Claude Desktop, etc.) request to add new shepard-backed services.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| MCPGW-SYNC1 | Move existing SyncService into `shepard-plugin-mcp`; the MCP gateway becomes the explicit source of truth for what's syncable + what each client has subscribed to. Remove the separate SyncService deployment surface. | M | queued | Cross-cutting refactor — SyncService likely currently lives outside the plugin module. Need to enumerate which collections/containers it sync-watches today + map to the MCP gateway's resource model. Depends on shepard-plugin-mcp being the canonical surface (MCP1d already shipped per task #30). |
+| MCPGW-SYNC2 | Config UI for sync: list of services + their sync state + add/remove buttons. Lives under `/admin/mcp/sync` (instance-admin only) and `/me/mcp` (per-user subscriptions). | M | queued | Mirrors A3b1 admin-tile layout. Reuse the `:McpConfig` singleton if one exists (or stand one up per the A3b/N1c2/UH1a pattern). |
+| MCPGW-SYNC3 | "Additional services on lobe require explicit confirmation" — when LobeChat / Claude Desktop / any client requests a new service binding via the MCP `tools/discover` flow, the gateway holds the request in a `pending-approval` state. An operator clicks **Confirm once** on the GUI (per-client, one-time) and the service is then exposed thereafter. | M | queued | Anti-abuse posture: a compromised LobeChat instance cannot silently expand the surface area it can reach. One confirmation per client, persisted in a `:McpClientApproval` Neo4j node. Audit-logged via PROV1a. |
+
 ### TRACE — 2026-05-22 (requirements traceability)
 
 Three options ranked by time-to-ship in `aidocs/platform/106-requirements-traceability.md`. Option A is being prototyped now; B + C are queued here for future contributors.

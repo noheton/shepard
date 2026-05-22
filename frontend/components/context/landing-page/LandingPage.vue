@@ -1,8 +1,43 @@
 <script setup lang="ts">
 import { useTheme } from "vuetify";
+import { useAnimate, fadeUp, popIn, playStagger } from "~/composables/useAnimate";
 
 const theme = useTheme();
 const isDarkMode = computed(() => theme.global.current.value.dark);
+
+const { play, prefersReducedMotion } = useAnimate();
+
+const heroRef = ref<HTMLElement | null>(null);
+const ctaCardsWrapper = ref<HTMLElement | null>(null);
+const howStepsWrapper = ref<HTMLElement | null>(null);
+const docsCardRef = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  // Stagger: hero in first, then CTA cards, then "how it works" steps, then docs card.
+  void play(heroRef.value, fadeUp, { duration: 620 });
+
+  const ctaCards = Array.from(
+    ctaCardsWrapper.value?.querySelectorAll<HTMLElement>("[data-anim='cta-card']") ?? [],
+  );
+  void playStagger(ctaCards, popIn, {
+    duration: 520,
+    delay: 220,
+    stagger: 110,
+    reducedMotion: prefersReducedMotion.value,
+  });
+
+  const howSteps = Array.from(
+    howStepsWrapper.value?.querySelectorAll<HTMLElement>("[data-anim='how-step']") ?? [],
+  );
+  void playStagger(howSteps, fadeUp, {
+    duration: 540,
+    delay: 480,
+    stagger: 140,
+    reducedMotion: prefersReducedMotion.value,
+  });
+
+  void play(docsCardRef.value, fadeUp, { duration: 540, delay: 920 });
+});
 
 // Quarkus Swagger UI lives on the backend, not the frontend domain.
 // Build the URL from backendApiUrl (e.g. https://shepard-api.example/shepard/api
@@ -41,7 +76,7 @@ const dataObjectIconSrc = computed(() =>
 <template>
   <div>
     <!-- Hero -->
-    <v-container fluid class="bg-divider2 py-10">
+    <v-container ref="heroRef" fluid class="bg-divider2 py-10 anim-hidden">
       <v-col cols="12" class="d-flex flex-column align-center justify-center">
         <v-img
           src="../../../assets/shepard_logo.svg"
@@ -72,9 +107,9 @@ const dataObjectIconSrc = computed(() =>
     </v-container>
 
     <!-- Primary CTAs -->
-    <v-container class="py-12">
+    <v-container ref="ctaCardsWrapper" class="py-12">
       <v-row justify="center" class="ga-6">
-        <v-col cols="12" sm="auto">
+        <v-col cols="12" sm="auto" data-anim="cta-card" class="anim-hidden">
           <LandingPageCard
             title="Collections"
             icon-type="collection"
@@ -84,7 +119,7 @@ const dataObjectIconSrc = computed(() =>
             button-link="/collections"
           />
         </v-col>
-        <v-col cols="12" sm="auto">
+        <v-col cols="12" sm="auto" data-anim="cta-card" class="anim-hidden">
           <LandingPageCard
             title="Containers"
             icon-type="container"
@@ -98,7 +133,7 @@ const dataObjectIconSrc = computed(() =>
     </v-container>
 
     <!-- How it works — 3-column overview -->
-    <v-container fluid class="bg-divider2 py-12">
+    <v-container ref="howStepsWrapper" fluid class="bg-divider2 py-12">
       <v-row justify="center" class="mb-6">
         <div class="text-h4 text-semibold">How it works</div>
       </v-row>
@@ -107,7 +142,8 @@ const dataObjectIconSrc = computed(() =>
           cols="12"
           sm="4"
           md="3"
-          class="d-flex flex-column align-center text-center px-8"
+          class="d-flex flex-column align-center text-center px-8 anim-hidden"
+          data-anim="how-step"
         >
           <v-img
             :src="containerIconSrc"
@@ -128,7 +164,8 @@ const dataObjectIconSrc = computed(() =>
           cols="12"
           sm="4"
           md="3"
-          class="d-flex flex-column align-center text-center px-8"
+          class="d-flex flex-column align-center text-center px-8 anim-hidden"
+          data-anim="how-step"
         >
           <v-img
             :src="dataObjectIconSrc"
@@ -149,7 +186,8 @@ const dataObjectIconSrc = computed(() =>
           cols="12"
           sm="4"
           md="3"
-          class="d-flex flex-column align-center text-center px-8"
+          class="d-flex flex-column align-center text-center px-8 anim-hidden"
+          data-anim="how-step"
         >
           <v-img
             :src="collectionIconSrc"
@@ -171,8 +209,9 @@ const dataObjectIconSrc = computed(() =>
 
     <!-- Documentation card -->
     <v-container
+      ref="docsCardRef"
       fluid
-      class="d-flex justify-center align-center bg-canvas py-12"
+      class="d-flex justify-center align-center bg-canvas py-12 anim-hidden"
       max-width="815"
     >
       <v-card color="canvas">
@@ -215,6 +254,20 @@ const dataObjectIconSrc = computed(() =>
   opacity: 0.9;
   transition: opacity 0.15s ease;
   &:hover {
+    opacity: 1;
+  }
+}
+
+// Pre-animation hidden state. WAAPI fills `both` so the final state is
+// retained after the animation; this rule covers the period before
+// useAnimate() runs (FOUC guard) AND the reduced-motion case where the
+// animation is skipped — in that case we explicitly reveal via @media.
+.anim-hidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-hidden {
     opacity: 1;
   }
 }
