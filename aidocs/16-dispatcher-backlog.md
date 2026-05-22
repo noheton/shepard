@@ -700,6 +700,41 @@ Items where the Claude harness / tooling friction blocks otherwise-cheap work. C
 |---|---|---|---|---|
 | TOOL-SM1 | `SendMessage` tool not available in this session — can't send addenda to an in-flight Agent. Result: addenda land in memory + backlog and have to be picked up either organically by the agent or via a follow-on agent. | S (config) | queued | Listed under both `ToolSearch` deferred catalogue and `Agent` tool docs in the prompt, but `select:SendMessage` returns "No matching deferred tools found". Likely a workspace-level toggle. Fix: enable the tool in the harness config so live in-flight agents can be steered with addenda. Surfaced 2026-05-22 when ultrasonic-imaging arrived mid vis-research agent. |
 
+### IMPORT-FIX — 2026-05-23 (v15.3 surgical fixes + v15.4 keypress diagnostics)
+
+User directives 2026-05-23: *"the script should not perform the snapshot at the end ... the human will"* · *"if you need that inital snapshot bake it in collection / object creation"* · *"script could send debug info automatically on keypress"* · *"is a decicive action by human"* · *"verify against v5 surface — fileReference only contain oids which have to resolved again to get the payload"*.
+
+Cross-references: `project_snapshot_boundaries.md` (snapshots = human decisions); `feedback_diagnostic_artefact.md` (one-shell-script-one-upload); `project_v5_legacy_source.md` (in-tree v5.4.0 spec is the wire-shape ground truth).
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| IMPORT-NS1 | Remove the 3 script-side `create_snapshot` call sites in `mffd-import-v15.py` (L2231 bootstrap-t0, L3512 pre-import G1, L3550 post-import G4). Keep the `create_snapshot` method — humans may still call it via curl/UI. Replace each removed call with `print("Reminder: snapshot is a human decision. Fire when ready.")`. | S | queued | Per the user's snapshot-policy. Closes the false-positive "import crashed" reading from 2026-05-23 log lines 49-50 + 271-272. |
+| IMPORT-NS2 | Backend feature — atomic baseline-snapshot-on-create for Collection + DataObject (`?createBaselineSnapshot=true` query flag emits one t=0 snapshot in the same transaction as the create). | M | queued | Replaces the bootstrap t=0 snapshot pattern; lets the backend own the boundary atomic-with-create. |
+| IMPORT-SR1 | Fix `get_or_create_semantic_repo` defaults in `mffd-import-v15.py` (L1287-1308). Backend requires non-blank `endpoint` for ALL repo types (INTERNAL too). Replace conditional `if endpoint: body[...]=...` with unconditional `body["endpoint"] = endpoint or f"urn:shepard:repo:{name}"`. | S | queued | Surfaces from 2026-05-23 log lines 70-72 + 203-205 + 273-274. Ships in v15.3 alongside IMPORT-NS1. |
+| IMPORT-DBG1 | **Keypress-driven debug surface in `mffd-import-v15.py`.** Background thread reads stdin non-blocking via `select`; keys: `?`/`h` help, `s` status, `d` full diagnostic (last 3 HTTP req+resp + state-file + env, literal creds per `feedback_no_redactions.md`), `l` tail log, `D` dump-to-file per `feedback_diagnostic_artefact.md`, `p` pause/resume, `q` graceful quit. | M | queued | v15.4. Separate from v15.3 so each round is small + cleanly bisectable. |
+| IMPORT-Q7-VERIFY | One-curl probe on cube: `wc -c` the response of `GET .../fileReferences/{frid}/payload/{oid}` against a known source OID. > 0 → script bug. == 0 → source-data-state bug (task #145 Q7 confirmed). | XS | queued | Cube-side only (host boundary). |
+
+### TERM1 — 2026-05-23 (project terminology from wiki data)
+
+User directive 2026-05-23: *"create project terminology from wiki data"*. The Confluence WikiDump-2026-05-22 zip on MFFD-Dropbox (id 576531) contains the existing project's prose vocabulary — track names, station identifiers, abbreviations (TPS, FSD, AFP, NDT, …), domain terms. Extract this into a controlled glossary that the semantic-annotation layer + AI plugin can reference.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| TERM1 | Extract a glossary from `WikiDump-2026-05-22.zip` — parse Confluence HTML/storage-format → identify defined-term patterns (bold first-mention, headings, table-of-acronyms) → emit `docs/reference/project-terminology.md` + a Turtle file at `aidocs/semantics/<NN>-mffd-glossary.ttl` (SKOS:Concept per term). | M | queued | "Mai be needs ai" (user, 2026-05-23) — heuristic extraction first, AI-assisted disambiguation pass second. Probably needs the AI plugin (`shepard-plugin-ai`) shaped right before this is cheap. Pairs with M4I-c (m4i DataObject shape) — every glossary term becomes a candidate annotation predicate. |
+| TERM2 | Backend SKOS:Concept loader — accept Turtle files at admin endpoint; surface concepts in the semantic-annotation autocomplete. | M | queued | Mirrors the existing N1c2 ontology bundle loader (per `aidocs/semantics/95`). |
+| TERM3 | Frontend autocomplete UI for glossary-aware annotation entry — when an operator types "TPS" the dropdown suggests "Thermal Protection System (TPS)". | S | queued | Frontend slice; lands after TERM2's backend surface. |
+
+### IOT1 — 2026-05-23 (map IoT data to proper ontologies)
+
+User directive 2026-05-23: *"map iot to proper ontologies"*. The home-showcase MQTT collector + future industrial IoT integrations (OPC UA on the cube + MFFD shop floor sensors + LUMEN engine DAQ) all produce telemetry that's currently typed at the wire level (channel name) but not semantically (what KIND of sensor, what KIND of measurement). Map onto established IoT vocabularies.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| IOT1 | Add IoT-anchor ontology bundles to the N1c2 preseed manifest: **W3C SOSA/SSN** (Semantic Sensor Network — `sosa:Sensor`, `sosa:Observation`, `sosa:Platform`, `sosa:FeatureOfInterest`, `sosa:ObservableProperty`), **W3C iot-lite**, **QUDT** (units of measurement, already partly used via m4i). | M | queued | Cite `aidocs/semantics/95 §SHACL` + `feedback_ontology_first.md`. SHA-256-pinned TTL stubs + canonical URL + fetchOnSeed flag (same N1e/N1c pattern as the m4i bundle). |
+| IOT2 | Shape recipe `IoTObservationShape` — every imported timeseries channel maps to one `sosa:Sensor` + a chain of `sosa:Observation`s. Channel name → `sosa:observes` → `sosa:ObservableProperty`. Captures the home-showcase MQTT topology + the MFFD AFP telemetry. | M | queued | Pairs with M4I-c (m4i DataObject shape) — the IoT layer is the timeseries-axis projection of the same semantic discipline. |
+| IOT3 | `shepard-plugin-iot-bridge` — declarative bridge from MQTT / OPC UA / Modbus / Kafka topics into `sosa:Observation` writes. Plugin-first per CLAUDE.md heuristic. Sidecars declared per PM1f (mosquitto, opcua-asyncio, etc.). | L | queued | Extends home-showcase collector pattern. Operator config: topic → channel + sensor-IRI mapping. Probably the largest of these. |
+| IOT4 | AI-assisted IoT-channel-to-ontology mapper (paired with shepard-plugin-ai). Given a list of channel names, propose `sosa:Sensor` typings + `sosa:ObservableProperty` mappings; human accepts/rejects per `project_ai_human_collab_provenance.md` acceptance ladder. | M | queued | User noted "mai be needs ai ... dont know" — AI-assisted, NOT AI-decided. Mode: 🤝 collaborative. |
+
 ### IMPORT-W — 2026-05-22 (smart warmup with fail-fast diagnostics)
 
 User directives 2026-05-22: *"script should be smart and have a warmaup / probing phase everything works (write access to v5 is enabled for testing)"* + *"unexpected replies lead to abort and actionable diagnostic report"*. Spec source: `backend/src/test/resources/fixtures/v5/openapi-5.4.0.json` (v5.4.0, 282 KB, 90 paths). See `feedback_warmup_fail_fast_diagnostic.md` in agent memory.
