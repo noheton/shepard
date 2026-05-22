@@ -795,3 +795,40 @@ markdown trio of docs.
 - [deck.gl (MIT, vis.gl)](https://github.com/visgl/deck.gl)
 - [Kadi4Mat plugin system (pluggy)](https://kadi4mat.readthedocs.io/en/latest/development/plugins.html) — competing RDM reference
 - [Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html) / [STLLoader](https://threejs.org/docs/pages/STLLoader.html) — built-in mesh loaders
+
+---
+
+## Addendum 2026-05-22: CAD + FEM
+
+User surfaced two additional categories after this survey landed:
+
+- **Category 5 — CAD data** (STEP / IGES / JT / Parasolid / native
+  CAD CATIA / NX / Creo, with STL / glTF as derived viewing
+  formats). Use cases: MFFD as-designed geometry, AAS submodel
+  `Nameplate`+`Geometry`, CPACS airframe.
+- **Category 6 — FEM result files** (Abaqus `.odb`, Ansys `.rst`,
+  Nastran `.op2`, Code_Aster `.med`, OpenRadioss `.h3d`).
+  Use cases: MFFD structural analysis of welded joints, fuselage
+  stress, autoclave-free CFRP cure-deformation.
+
+Full coverage (candidate matrix, lead pick, VIEW_RECIPE shape,
+plugin sketch, MFFD acceptance test, sidecar rationale) in:
+
+- **[`aidocs/agent-findings/vis-plugin-survey-addendum-cad-fem.md`](./vis-plugin-survey-addendum-cad-fem.md)**
+
+**Updated total: 7 categories, 5 plugins + 2 sidecars.**
+The two new plugins are `shepard-plugin-vis-cad` and
+`shepard-plugin-vis-fem`; the new sidecars are
+`step-to-gltf-converter` (optional, for CAD > 50 MB) and
+`fem-converter` (required, for proprietary FEM binaries). Lead
+picks: **`occt-import-js` + Three.js** for CAD (with
+`Online3DViewer` iframe as the everything-format fallback);
+**VTK.js v35 + Python sidecar (`pyNastran` / `meshio` /
+`odb2vtk` / vendor SDKs)** for FEM, with PyVista + Trame as the
+server-side rendering escape hatch.
+
+Backlog rows added: **VIS-C1** (CAD) and **VIS-F1** (FEM) under
+the existing `### VIS — 2026-05-22 (visualization plugin family)`
+section in `aidocs/16-dispatcher-backlog.md`. New pick-up order:
+VIS-S1 → VIS-T1 → VIS-V1 → VIS-X1 → **VIS-C1 → VIS-F1** →
+VIS-S2 → VIS-S3 (stretch).
