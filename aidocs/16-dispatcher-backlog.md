@@ -643,6 +643,14 @@ Consolidates sync into the MCP gateway plugin (`shepard-plugin-mcp`) and gives o
 | MCPGW-SYNC2 | Config UI for sync: list of services + their sync state + add/remove buttons. Lives under `/admin/mcp/sync` (instance-admin only) and `/me/mcp` (per-user subscriptions). | M | queued | Mirrors A3b1 admin-tile layout. Reuse the `:McpConfig` singleton if one exists (or stand one up per the A3b/N1c2/UH1a pattern). |
 | MCPGW-SYNC3 | "Additional services on lobe require explicit confirmation" — when LobeChat / Claude Desktop / any client requests a new service binding via the MCP `tools/discover` flow, the gateway holds the request in a `pending-approval` state. An operator clicks **Confirm once** on the GUI (per-client, one-time) and the service is then exposed thereafter. | M | queued | Anti-abuse posture: a compromised LobeChat instance cannot silently expand the surface area it can reach. One confirmation per client, persisted in a `:McpClientApproval` Neo4j node. Audit-logged via PROV1a. |
 
+### TOOL — 2026-05-22 (harness / tooling gaps)
+
+Items where the Claude harness / tooling friction blocks otherwise-cheap work. Captured per `feedback_capture_api_ui_annoyances.md` (the spirit applies to dev tooling too).
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| TOOL-SM1 | `SendMessage` tool not available in this session — can't send addenda to an in-flight Agent. Result: addenda land in memory + backlog and have to be picked up either organically by the agent or via a follow-on agent. | S (config) | queued | Listed under both `ToolSearch` deferred catalogue and `Agent` tool docs in the prompt, but `select:SendMessage` returns "No matching deferred tools found". Likely a workspace-level toggle. Fix: enable the tool in the harness config so live in-flight agents can be steered with addenda. Surfaced 2026-05-22 when ultrasonic-imaging arrived mid vis-research agent. |
+
 ### IMPORT-W — 2026-05-22 (smart warmup with fail-fast diagnostics)
 
 User directives 2026-05-22: *"script should be smart and have a warmaup / probing phase everything works (write access to v5 is enabled for testing)"* + *"unexpected replies lead to abort and actionable diagnostic report"*. Spec source: `backend/src/test/resources/fixtures/v5/openapi-5.4.0.json` (v5.4.0, 282 KB, 90 paths). See `feedback_warmup_fail_fast_diagnostic.md` in agent memory.
