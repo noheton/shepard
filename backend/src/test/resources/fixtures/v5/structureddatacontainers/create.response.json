@@ -1,0 +1,12 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "StructuredDataContainerWireFixture",
+  "oid" : "<<ANY-STRING>>",
+  "revision" : 0,
+  "type" : "STRUCTUREDDATA",
+  "updatedAt" : null,
+  "updatedBy" : null
+}

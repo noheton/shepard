@@ -1,0 +1,11 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "TimeseriesContainerWireFixture",
+  "revision" : 0,
+  "type" : "TIMESERIES",
+  "updatedAt" : null,
+  "updatedBy" : null
+}

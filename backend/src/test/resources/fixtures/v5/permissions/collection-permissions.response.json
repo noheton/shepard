@@ -1,0 +1,10 @@
+{
+  "entityId" : "<<ANY-LONG>>",
+  "manager" : "<<ANY-STRING[]>>",
+  "owner" : "<<ANY-STRING>>",
+  "permissionType" : "<<ANY-STRING>>",
+  "reader" : "<<ANY-STRING[]>>",
+  "readerGroupIds" : "<<ANY-LONG[]>>",
+  "writer" : "<<ANY-STRING[]>>",
+  "writerGroupIds" : "<<ANY-LONG[]>>"
+}
