@@ -352,8 +352,15 @@ services:
       - garage_meta:/var/lib/garage/meta
       - ./garage.toml:/etc/garage.toml:ro
     healthcheck:
-      # Garage v1.0+ serves /health on the ADMIN port (3903), NOT the S3 API port.
-      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3903/health"]
+      # dxflrs/garage:v1.0.1 is a distroless image — no wget, curl, sh, or
+      # ls in PATH (verified: `docker exec shepard-garage ls` itself fails
+      # with "executable file not found"). The previous `wget` probe was
+      # always reported as `unhealthy` because the binary doesn't exist.
+      # The `/garage` CLI is the only executable the image ships; `garage
+      # status` connects over RPC (3901) and exits 0 when the local node
+      # is in the HEALTHY NODES set, which is exactly the liveness signal
+      # we want.
+      test: ["CMD", "/garage", "status"]
       interval: 30s
       timeout: 10s
       retries: 3
