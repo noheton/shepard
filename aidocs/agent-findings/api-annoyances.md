@@ -50,6 +50,14 @@ backlog rows under `aidocs/16` API-critique section. See
 - **workaround:** memorise the split (durable note in `project_mffd_api_keys.md`)
 - **fix:** align both at the next major version. Standardise on camelCase across all v2 surfaces; deprecate the snake_case param with a `Deprecation` header.
 
+### `POST /v2/file-containers/{appId}/upload-url` returns docker-internal hostname
+
+- **verb + path:** `POST /v2/file-containers/{appId}/upload-url`
+- **expected:** an `uploadUrl` reachable by external callers — the cube box that runs the import script is OUTSIDE the docker network on this host
+- **got:** `uploadUrl: "http://garage:3900/shepard-files/..."` — the `garage` hostname only resolves inside the `shepard` docker network. From the host the port maps to `127.0.0.1:3900`; from anywhere else (cube, browser, internet) the host is unreachable. Even rewriting the URL to `127.0.0.1` after the fact fails with HTTP 400 because the AWS SigV4 signature includes the `host` header.
+- **workaround:** none from outside the docker network. The cube cannot use the presigned-URL flow as-is. Falling back to `git pull` on cube to get the script in place.
+- **fix:** the backend must generate URLs the client can actually reach. Two paths: (a) introduce `SHEPARD_FILES_S3_PUBLIC_ENDPOINT` env var so the operator declares "presign for this external hostname" (e.g. `https://shepard-s3.nuclide.systems`) — backend uses it when constructing the URL; or (b) reverse-proxy `garage:3900` through Zoraxy/Caddy with a publicly-resolvable hostname and use that in `SHEPARD_FILES_S3_ENDPOINT`. Blocks IMPORT-W1's write-probes against the destination from any external client. Surfaced 2026-05-22 while uploading v15.1 to nuclide.
+
 ### `X-Total-Count` + `X-Total-Pages` headers ABSENT on paged list endpoints
 
 - **verb + path:** all v2 list endpoints
