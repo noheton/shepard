@@ -436,10 +436,36 @@ class ShepardClient:
 
     # ── low-level ────────────────────────────────────────────────────────────
 
+    # Retry transient errors (Cloudflare 5xx, network blips). Capped backoff.
+    _RETRY_STATUSES = {502, 503, 504, 520, 521, 522, 523, 524}
+
+    def _request_with_retry(self, method: str, url: str, max_attempts: int = 5, **kw):
+        last_exc: Exception | None = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                r = self.h.request(method, url, **kw)
+                if r.status_code in self._RETRY_STATUSES and attempt < max_attempts:
+                    backoff = min(2 ** attempt, 30)
+                    print(f"  [retry] {method} {url.split('?')[0]} http={r.status_code} attempt={attempt} sleep={backoff}s")
+                    time.sleep(backoff)
+                    continue
+                return r
+            except Exception as exc:
+                last_exc = exc
+                if attempt < max_attempts:
+                    backoff = min(2 ** attempt, 30)
+                    print(f"  [retry] {method} {url.split('?')[0]} exc={exc!r} attempt={attempt} sleep={backoff}s")
+                    time.sleep(backoff)
+                    continue
+                raise
+        if last_exc:
+            raise last_exc
+        return None
+
     def _get(self, url: str, params: dict | None = None, quiet: bool = False):
         try:
-            r = self.h.get(url, params=params)
-            if not r.is_success and not quiet:
+            r = self._request_with_retry("GET", url, params=params)
+            if r is not None and not r.is_success and not quiet:
                 print(f"  [http {r.status_code}] GET {url.split('?')[0]}: {r.text[:300]}")
             return r
         except Exception as exc:
@@ -449,8 +475,8 @@ class ShepardClient:
 
     def _post(self, url: str, body: dict):
         try:
-            r = self.h.post(url, json=body)
-            if not r.is_success:
+            r = self._request_with_retry("POST", url, json=body)
+            if r is not None and not r.is_success:
                 print(f"  [http {r.status_code}] POST {url}: {r.text[:300]}")
             return r
         except Exception as exc:
@@ -459,8 +485,8 @@ class ShepardClient:
 
     def _put(self, url: str, body: dict):
         try:
-            r = self.h.put(url, json=body)
-            if not r.is_success:
+            r = self._request_with_retry("PUT", url, json=body)
+            if r is not None and not r.is_success:
                 print(f"  [http {r.status_code}] PUT {url}: {r.text[:300]}")
             return r
         except Exception as exc:
