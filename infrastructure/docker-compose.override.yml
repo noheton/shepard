@@ -50,16 +50,29 @@ services:
       SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PATH: "none"
       SHEPARD_PLUGINS_SIGNING_TRUSTSTORE_PASSWORD: "none"
       SHEPARD_PLUGINS_SIGNING_TRUST_ANCHORS: "none"
-      # FS1b / FS1e2 — S3 storage and migration auto-sweep are disabled on
-      # the demo instance. Quarkus 3.27 rejects empty-string defaultValue on
-      # @ConfigProperty, so these placeholders satisfy validation without
-      # enabling the feature (shepard.storage.provider stays "local").
-      SHEPARD_FILES_S3_ENDPOINT: "none"
-      SHEPARD_FILES_S3_ACCESS_KEY_ID: "none"
-      SHEPARD_FILES_S3_SECRET_ACCESS_KEY: "none"
-      SHEPARD_FILES_S3_BUCKET: "none"
+      # FS1d — Garage S3 sidecar ACTIVATED 2026-05-22 per task #122 + the
+      # runbook at docs/ops/garage-activation-runbook.md. Garage container
+      # `shepard-garage` runs in this compose stack; backend reaches it via
+      # the `shepard` docker network at hostname `garage:3900`. Credentials
+      # below come from `docker exec shepard-garage /garage key create
+      # shepard-backend` (shown ONCE at creation time; rotate via key-rotate
+      # if compromised).
+      SHEPARD_STORAGE_PROVIDER: "s3"
+      SHEPARD_FILES_S3_ENDPOINT: "http://garage:3900"
+      SHEPARD_FILES_S3_REGION: "garage-region"
+      SHEPARD_FILES_S3_BUCKET: "shepard-files"
+      SHEPARD_FILES_S3_PATH_STYLE_ACCESS: "true"
+      SHEPARD_FILES_S3_ACCESS_KEY_ID: "GK6f1eb80a3f7237cda3cf5830"
+      SHEPARD_FILES_S3_SECRET_ACCESS_KEY: "a01a7b7b0d5a694aa8817b7657835b688ee4bf422fdf3df3a4c8b8137bf1e5f5"
       SHEPARD_MIGRATION_AUTO_SWEEP_SOURCE: "none"
       SHEPARD_MIGRATION_AUTO_SWEEP_TARGET: "none"
+      # SHACL-1 — audit-chain HMAC instance secret. Quarkus 3.27 rejects
+      # empty-string @ConfigProperty defaults; this placeholder satisfies
+      # validation. When set, it seeds :InstanceConfig on first start; the
+      # service falls back to SecureRandom if it's blank, but Quarkus won't
+      # let blank pass validation. Production deployments should override
+      # with a stable, archived secret (see docs/reference/audit-trail.md).
+      SHEPARD_AUDIT_INSTANCE_SECRET: "demo-instance-secret-placeholder-do-not-use-in-prod"
       # V1.7.0 (int_to_bigint) was applied manually to the DB but never
       # recorded in flyway_schema_history — set out-of-order so Flyway
       # applies it and registers it. Safe to keep permanently; subsequent
@@ -319,6 +332,32 @@ services:
   # The legacy /mcp/* Caddy route has been removed as part of the same
   # sunset.
 
+
+  # ── Garage S3 sidecar (FS1d activation, task #122) ─────────────────────
+  # Plugin-declared sidecar shape lands in task #143 follow-up; for now
+  # this is the manual compose path per docs/ops/garage-activation-runbook.md.
+  garage:
+    image: dxflrs/garage:v1.0.1
+    container_name: shepard-garage
+    restart: unless-stopped
+    networks:
+      - shepard
+    ports:
+      # Loopback only — guardrail. Backend reaches Garage via docker network.
+      - "127.0.0.1:3900:3900"   # S3 API
+      - "127.0.0.1:3902:3902"   # web (static-bucket serving)
+      - "127.0.0.1:3903:3903"   # admin / /health / /metrics
+    volumes:
+      - garage_data:/var/lib/garage/data
+      - garage_meta:/var/lib/garage/meta
+      - ./garage.toml:/etc/garage.toml:ro
+    healthcheck:
+      # Garage v1.0+ serves /health on the ADMIN port (3903), NOT the S3 API port.
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3903/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 volumes:
   keycloak-data:
   bootstrap-token:
@@ -327,3 +366,6 @@ volumes:
   # so an operator can answer "did yesterday's seed land?" without
   # depending on docker logs (which clears on container recreate).
   seeder-logs:
+  garage_data:
+  garage_meta:
+
