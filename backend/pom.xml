@@ -68,6 +68,14 @@
     <apache.commons.version>3.20.0</apache.commons.version>
     <neo4j-cypher-dsl.version>2025.2.4</neo4j-cypher-dsl.version>
     <uuid-creator.version>6.1.1</uuid-creator.version>
+    <!-- Jena SHACL validator (Apache-2.0). Pulled in for the
+         non-TS SHACL changeover scope (aidocs/98 + 100 + 101). The
+         in-process validator reads candidate RDF + shape graphs as
+         Jena Models, runs sh:NodeShape validation, returns a JSON
+         validation report. n10s remains the on-disk store; Jena is
+         strictly the validation engine. See
+         aidocs/semantics/48 §3 + aidocs/95 §11. -->
+    <jena.version>5.4.0</jena.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -271,6 +279,26 @@
       <groupId>com.github.f4b6a3</groupId>
       <artifactId>uuid-creator</artifactId>
       <version>${uuid-creator.version}</version>
+    </dependency>
+    <dependency>
+      <!-- Apache Jena SHACL validator (Apache-2.0). Used in-process
+           by the v2/shapes/validate endpoint (PR-1 / PR-4 of the
+           SHACL changeover, aidocs/98 + aidocs/95 §11). Read-only
+           validation: candidate data + shape graphs go in, a
+           validation report comes back. No second service is run. -->
+      <groupId>org.apache.jena</groupId>
+      <artifactId>jena-shacl</artifactId>
+      <version>${jena.version}</version>
+      <exclusions>
+        <!-- Jena drags in slf4j-jdk14; Quarkus uses jboss-logmanager
+             through io.quarkus.logging.Log. Excluding here keeps the
+             single-binding contract and avoids the slf4j multi-binding
+             WARN at startup. -->
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-jdk14</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

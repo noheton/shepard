@@ -27,6 +27,15 @@ public class ProvenanceService {
   @Inject
   ActivityDAO activityDAO;
 
+  /**
+   * Stamps the HMAC audit-chain fields immediately before persistence
+   * (PR-3 of the SHACL changeover). Best-effort — see
+   * {@link HmacChainService#stamp} for the never-block-the-write
+   * contract.
+   */
+  @Inject
+  HmacChainService hmacChainService;
+
   @ConfigProperty(name = "shepard.provenance.enabled", defaultValue = "true")
   boolean enabled;
 
@@ -81,6 +90,8 @@ public class ProvenanceService {
       a.setStartedAtMillis(startedAtMillis);
       a.setEndedAtMillis(endedAtMillis);
       a.setOriginInstance(originInstance);
+      // PR-3 audit-chain stamp — best-effort, never blocks the write.
+      hmacChainService.stamp(a);
       return activityDAO.createOrUpdate(a);
     } catch (RuntimeException e) {
       // Provenance is observability; never block the request on it.

@@ -23,6 +23,9 @@ class ProvenanceServiceTest {
   @Mock
   ActivityDAO activityDAO;
 
+  @Mock
+  HmacChainService hmacChainService;
+
   ProvenanceService service;
 
   @BeforeEach
@@ -30,6 +33,10 @@ class ProvenanceServiceTest {
     MockitoAnnotations.openMocks(this);
     service = new ProvenanceService();
     service.activityDAO = activityDAO;
+    // PR-3 wiring — supply a no-op chain mock so existing assertions
+    // about field values stay intact (the mock's default void return
+    // is exactly the no-op we want here).
+    service.hmacChainService = hmacChainService;
     service.enabled = true;
     service.originInstance = "test-instance";
     when(activityDAO.createOrUpdate(any(Activity.class))).thenAnswer(invocation -> invocation.getArgument(0));

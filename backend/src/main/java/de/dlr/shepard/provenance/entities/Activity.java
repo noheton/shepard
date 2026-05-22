@@ -131,6 +131,43 @@ public class Activity implements HasId, HasAppId {
   @Property("originInstance")
   private String originInstance;
 
+  /**
+   * HMAC-SHA256(instance_secret_v_n, prevHmac ‖ activityCanonical),
+   * hex-encoded. The {@code n} is captured in {@link #secretVersion}
+   * so verifiers can pick the right key on rotation.
+   *
+   * <p>Set by the audit-chain service in
+   * {@code de.dlr.shepard.provenance.services.HmacChainService} on
+   * each write. {@code null} for activities recorded before the
+   * audit chain was wired (V59 migration backfills nothing — older
+   * rows simply lack the chain, which is correct: they predate the
+   * trust boundary).
+   *
+   * <p>See {@code aidocs/semantics/98-mffd-process-shapes.md
+   * §Changelog v2-3} (the shape-level surface of the same primitive)
+   * and the task brief's "HMAC `instance_secret` model" section.
+   */
+  @Property("auditHmac")
+  private String auditHmac;
+
+  /**
+   * Previous activity's {@link #auditHmac} — the chain pointer. The
+   * verifier walks {@code prev → prev.prev → ...} to confirm the chain
+   * hasn't been altered. {@code null} on the first activity in the
+   * chain (genesis row) or on rows that predate the chain.
+   */
+  @Property("auditPrevHmac")
+  private String auditPrevHmac;
+
+  /**
+   * Which {@code :InstanceConfig.secretVersion} signed this row.
+   * Lets a verifier pick the right key when the operator has rotated
+   * the {@code instance_secret} since this row was written. {@code
+   * null} for pre-chain rows.
+   */
+  @Property("secretVersion")
+  private Integer secretVersion;
+
   public Activity(
     String actionKind,
     String targetKind,
