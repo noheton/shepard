@@ -370,6 +370,22 @@ Stale plugin docs are treated the same as stale `aidocs/42` vision
 sections — a PR that changes a plugin's surface without updating the
 plugin's docs pages fails review.
 
+## Always: file Issues + cut releases per `aidocs/strategy/85`
+
+Project-management discipline lives in
+[`aidocs/strategy/85-github-project-management-policies.md`](aidocs/strategy/85-github-project-management-policies.md).
+The shape: `aidocs/16` is the SSOT backlog; GitHub Issues are the
+narrow 4-gate subset (external-pickup / security / repro-bug / agent
+in-flight); branch names follow `<aidocs-id>-<short-slug>`; commits
+use Conventional-Commits scope = aidocs/16 row ID; releases cut on
+coherent-feature-set boundary with the §5 pre-flight checklist (aidocs/34
+row landed, model-inventory delta, doc-stage index clean, traceability
+index clean, security gates green, SBOM attached). The end-state test:
+`scripts/trace-feature.sh <ID>` resolves a feature across nine
+surfaces — if any one returns empty for a shipped feature,
+traceability is broken; fix the missing surface before shipping
+anything else.
+
 ## Specialized agent roles
 
 Reusable prompt scaffolds for specialized review and design tasks. Copy the

@@ -913,3 +913,36 @@ Decision matrix per feature lives in the survey doc above.
 | GH-INFRA3 | Cut `v6.0.0-rc.1` once the MFFD real-data import lands and aidocs/34 has the corresponding row. First release that uses `.github/workflows/release-notes.yml`. | S | queued | Gated on MFFD import landing. Follows `docs/ops/cut-a-release.md`. |
 | GH-INFRA4 | aidocs/16 ↔ GitHub Issues sync tooling. **Gated on external-contribution velocity** — don't build until 5+ external contributors are filing issues per month. The duplicate-bookkeeping cost only pays back when there's real bilateral flow. | M | blocked | Blocking condition: external-contributor velocity threshold not yet met. Re-evaluate quarterly. |
 | GH-INFRA5 | GitHub Environments for `nuclide.systems` and `DLR boxes` with required-reviewer deploy gates. Replaces the implicit "I just ran `make redeploy` in tmux" deploy step with a Github-tracked, audit-trailed deploy. | M | queued | Lower priority than GH-INFRA2/3. Pairs with the deploy-after-feature rule from `feedback_deploy_after_visible_features.md`. |
+
+### GH-PM — 2026-05-23 (GitHub project-management policies)
+
+Full policy: `aidocs/strategy/85-github-project-management-policies.md`.
+The shape: `aidocs/16` is the SSOT backlog; GitHub Issues are the narrow
+4-gate subset (external-pickup / security / repro-bug / agent in-flight);
+sync direction is one-way (aidocs/16 → Issue); the unified state machine
+maps doc front-matter ↔ aidocs/16 Status ↔ GH `status:*` / `stage:*`
+labels ↔ Projects v2 columns byte-for-byte (see `aidocs/00-doc-stages.md`).
+Releases cut on coherent-feature-set boundary with the §5 pre-flight
+checklist. The end-state test is `scripts/trace-feature.sh <ID>` — nine
+surfaces resolved per feature.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| GH-PM1 | The policy doc itself + `scripts/trace-feature.sh` helper + CLAUDE.md "Always: file Issues + cut releases per `aidocs/strategy/85`" amendment + this aidocs/16 section + the `feedback_github_pm_policies.md` memory rule. Sets out the unified state machine, the 4-gate Issues filter, branch + commit + PR + milestone + release + label conventions, the §14 traceability query, and the §15 anti-patterns. | S | done | Shipped 2026-05-23 on the worktree branch in one commit. Files: `aidocs/strategy/85-github-project-management-policies.md`, `scripts/trace-feature.sh`, `CLAUDE.md` (one new "Always:" section), `aidocs/16-dispatcher-backlog.md` (this section), `/root/.claude/projects/-opt-shepard/memory/feedback_github_pm_policies.md`, MEMORY.md index entry. Validated end-to-end against `FS1b` — all nine surfaces resolved. |
+| GH-PM2 | Wire `scripts/build-traceability-index.py` (TRACE-A) into `.github/workflows/pages.yml` so the rendered `docs/reference/traceability.md` updates on every push to `main` and ships on the GitHub Pages site. Operator-visible traceability — anyone can answer "what shipped under FS1b?" from a public URL. | S | queued | Gated on TRACE-A landing on `main` + `.github/workflows/pages.yml` being audit-trail-ready. Single-file workflow edit + one `python3` invocation. |
+| GH-PM3 | Pre-commit hook (`.git/hooks/commit-msg` template under `scripts/hooks/`) that validates PR / commit message titles against the Conventional-Commits + aidocs/16 row-ID convention from §7. Rejects `feat(fs1b): …` (lowercase ID), `feat(FS1B): …` (wrong case), `feat: …` (no scope), and `feat(unknown-id): …` (ID not in aidocs/16). Opt-in (operator runs `make install-hooks`); recommended via CONTRIBUTING.md. | M | queued | After GH-PM2. The strict-uppercase rule is in §7 anti-pattern #4; the hook turns the soft rule into a hard gate locally before CI catches it. |
+| GH-PM4 | Nightly drift check: cron-driven `gh issue list --search "in:title <ID-pattern>"` ↔ `aidocs/16` status diff. Surfaces orphan Issues (open with aidocs/16 row marked `done`) and orphan rows (`in-progress` with no Issue when one is expected per §3). Pure read-only; produces a daily report in `aidocs/agent-findings/issue-drift-<date>.md`. Gated on **external-contribution velocity** picking up (same gate as GH-INFRA4) — at solo-dev cadence the drift surface is empty and the cron noise isn't worth it. | M | blocked | Blocking condition: external-contributor velocity threshold not yet met. Re-evaluate quarterly alongside GH-INFRA4. |
+
+### OBS — 2026-05-23 (recursive self-observability)
+
+The principle is documented in `feedback_shepard_measures_itself.md`:
+Shepard's own ingest-rate metrics live INSIDE Shepard's TimeseriesContainer
+substrate, not in a parallel observability stack. The MFFD-Dropbox import
+session was the first concrete instance — the chart updates by the same
+TS chart UI a researcher already uses.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| OBS-MFFD1 | `scripts/mffd-import-stats-collector.py` polls `/v2/collections/{appId}/data-objects` every 5 min, walks per-DO refs for file/TS/SD counters, runs `docker exec shepard-garage /garage bucket info shepard-files` for the object-store size, and POSTs 11 channels per tick to `TimeseriesContainer` 590324 linked to `DataObject` 590344 in the MFFD-Dropbox collection. Bootstrap is idempotent; the `TimeseriesReference` is lazily created after the first tick materialises channels (the v5 `Bug A` minItems:1 constraint, learned from v15.2). Ships a systemd timer pair (`infrastructure/systemd/mffd-import-stats-collector.{service,timer}`) so operators can replace the ad-hoc background process. Plottable via the existing TS chart UI — no new frontend code. | S | done | Shipped 2026-05-23 (this commit). Files: `scripts/mffd-import-stats-collector.py`, `infrastructure/systemd/mffd-import-stats-collector.{service,timer}`, `docs/help/observing-an-import.md`, this row, `aidocs/data/00-model-inventory.md §8` row, `feedback_shepard_measures_itself.md`. Verified: first tick at 23:07:24Z wrote 11/11 channels (`DO=8, files=0, garage=160300 B`); second tick at 23:08:19Z saw `TSrefs=1, channels=11` confirming the lazy reference creation. |
+| OBS-MFFD2 | Generalise the collector to ANY import job: lift the MFFD-specific name-pattern table into a per-collection config + accept any collection-appId. Land as `scripts/import-stats-collector.py` (drop the `mffd-` prefix) plus an admin UI for picking which collections to instrument. | M | queued | Promotes the recursive-observability pattern to a first-class tool. Pairs with the `OBS-MFFD3` admin dashboard. |
+| OBS-MFFD3 | Dashboard view summarising all in-flight imports: list every `ImportStats-*` DataObject across all collections + a `dos_total` sparkline + a delta-since-last-tick. Plugs into the existing Collections list or lands as `/v2/admin/imports`. | M | queued | "What's actually being ingested right now?" admin view. Dep on `OBS-MFFD2`. Pairs with the `GH-INFRA3` release gate. |
