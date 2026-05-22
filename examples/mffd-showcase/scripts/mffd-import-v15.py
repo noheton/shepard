@@ -128,6 +128,19 @@ except ImportError:
     print("ERROR: uv run python mffd-dropbox-import.py  (or: pip install requests tqdm)", file=sys.stderr)
     sys.exit(1)
 
+# v15.2 — smart warmup module (IMPORT-W1/W2/W3). Kept in a sibling file
+# so the 2700-line monolith stays merge-friendly. Import is best-effort:
+# if the module is missing we fall back to legacy warmup transparently.
+try:
+    from _smart_warmup import (  # type: ignore[import-not-found]
+        SmartWarmup,
+        WarmupAborted,
+        WarmupReport,
+    )
+    _SMART_WARMUP_AVAILABLE = True
+except ImportError:
+    _SMART_WARMUP_AVAILABLE = False
+
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 SHEPARD_URL = os.environ.get("SHEPARD_URL", "https://shepard.nuclide.systems").rstrip("/")
@@ -3260,6 +3273,29 @@ def main() -> None:
             "--default-license (read-only)."
         ),
     )
+    # v15.2 IMPORT-W1/W2/W3 — smart warmup with fail-fast diagnostics.
+    # See examples/mffd-showcase/scripts/_smart_warmup.py for full design.
+    ap.add_argument(
+        "--smart-warmup",
+        dest="smart_warmup",
+        action="store_true",
+        default=True,
+        help=(
+            "v15.2 IMPORT-W1/W2/W3: probe auth + read + write + wire-shape "
+            "+ Garage on both sides before the main loop. Throwaway probe "
+            "DOs are deleted on every exit. Fail-fast with structured "
+            "diagnostic + distinct exit code per failure class "
+            "(auth=2, source-unreachable=3, garage-down=4, "
+            "operator-interrupt=5, wire-shape-drift=6, "
+            "write-permission-denied=7). DEFAULT: on."
+        ),
+    )
+    ap.add_argument(
+        "--legacy-warmup",
+        dest="smart_warmup",
+        action="store_false",
+        help="Opt back to v15.1's single read-only warmup (no write probes, no spec diff).",
+    )
     args = ap.parse_args()
     global MAX_DOS_PER_STEP
     MAX_DOS_PER_STEP = args.max_dos
@@ -3358,6 +3394,47 @@ def main() -> None:
         print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID}")
 
     dest_client = ShepardClient(SHEPARD_URL, SHEPARD_API_KEY, SHEPARD_BEARER_TOKEN)
+
+    # v15.2 IMPORT-W1/W2/W3 — smart warmup runs BEFORE the legacy warmup.
+    # On success it stamps a flag so the later warmup_probe_and_gate() can
+    # short-circuit. On failure it prints the structured diagnostic and
+    # exits with the per-failure-class code.
+    smart_warmup_ran = False
+    if args.smart_warmup and _SMART_WARMUP_AVAILABLE and not args.bootstrap and not args.verify_imported:
+        src_for_warmup = None
+        if source_mode and cross_instance:
+            src_for_warmup = ShepardClient(
+                SOURCE_SHEPARD_URL, SOURCE_SHEPARD_API_KEY, ""
+            )
+        try:
+            warmup = SmartWarmup(
+                source_client=src_for_warmup,
+                dest_client=dest_client,
+                session_id=SESSION_ID,
+                source_collection_id=SOURCE_TAPELAYING_COLL_ID,
+                # Probe Garage only when we already know the dest collection
+                # appId. The dest coll appId is resolved later by
+                # ensure_dest_collection(); for first-run we skip garage.
+                dest_collection_app_id=None,
+                # Source write probes follow the user's 2026-05-22 directive
+                # (write access enabled on v5 source for testing).
+                write_to_source=src_for_warmup is not None,
+                write_to_dest=False,  # dest coll not yet created at this point
+                probe_garage=False,
+            )
+            report = warmup.run()
+            print(report.to_text())
+            print(
+                f"[smart-warmup] coverage: {report.endpoints_with_spec}"
+                f"/{report.endpoints_probed} probed endpoints matched a "
+                f"schema in fixtures/v5/openapi-5.4.0.json"
+            )
+            smart_warmup_ran = True
+        except WarmupAborted as exc:
+            print(exc.report.to_text(), file=sys.stderr)
+            tee.close()
+            sys.stdout = tee._stdout  # type: ignore[attr-defined]
+            sys.exit(exc.exit_code)
 
     if not dest_client.warmup():
         tee.close()
