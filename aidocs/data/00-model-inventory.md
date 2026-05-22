@@ -190,6 +190,7 @@ this section is the inventory snapshot's pointer.
 | 2026-05-23 | `26bd7292` | **Bibliography** — Pages-only, no inventory delta. |
 | 2026-05-23 | `6cffbaef` | **GH-INFRA1** — `.github/*` only, no inventory delta. |
 | 2026-05-23 | `f34bbf8b` | **ORIGIN-MYTH** — Pages-only, no inventory delta. |
+| 2026-05-23 | (this commit) | **OBS-MFFD1** — `scripts/mffd-import-stats-collector.py` + systemd unit pair + `docs/help/observing-an-import.md`. **No schema change**: writes to existing `TimeseriesContainer` 590324 + `DataObject` 590344 inside the live MFFD-Dropbox collection. Recursive self-observability: Shepard's own ingest counters live in Shepard's own TS substrate. |
 
 **Honest summary of this session's inventory impact:** **zero new
 Neo4j labels, zero new Postgres tables, zero new Mongo collections,

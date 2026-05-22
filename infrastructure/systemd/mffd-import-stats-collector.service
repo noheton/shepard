@@ -1,0 +1,48 @@
+[Unit]
+Description=Shepard MFFD import stats collector (one tick)
+Documentation=https://github.com/dlr-shepard/shepard/blob/main/docs/help/observing-an-import.md
+Documentation=https://github.com/dlr-shepard/shepard/blob/main/aidocs/16-dispatcher-backlog.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+# OBS-MFFD1 — Shepard measures itself. The collector POSTs per-payload-kind
+# counters into a Shepard TimeseriesContainer; the recurrence is driven by
+# the sibling .timer unit (default *:0/5, i.e. every 5 minutes).
+
+[Service]
+Type=oneshot
+
+# Operator MUST drop a credentials file at /etc/shepard/mffd-stats-collector.env:
+#   SHEPARD_URL=https://shepard-api.nuclide.systems
+#   SHEPARD_API_KEY=...
+#   COLL_APP_ID=019e4e56-ca63-76f3-9bf0-6681f7fe6d56
+#   STATS_TS_CONTAINER_ID=...    # printed by --bootstrap
+#   STATS_DO_ID=...              # printed by --bootstrap
+# Mode 0600, owned by the user this service runs as.
+EnvironmentFile=/etc/shepard/mffd-stats-collector.env
+
+WorkingDirectory=/opt/shepard
+# `uv` lives in the operator's home by default; adjust if shepard runs under a
+# different user. `uv run` reads the PEP-723 inline header from the script and
+# resolves its (single) dependency `requests` into a per-script cached venv.
+ExecStart=/root/.local/bin/uv run /opt/shepard/scripts/mffd-import-stats-collector.py --one-tick
+
+# Tight execution window: one tick should never need more than ~2 min, but the
+# DataObject pagination + per-ref enrichment scales with collection size, so we
+# leave headroom.
+TimeoutStartSec=180s
+
+# Sane process hygiene; the collector talks only to the network + docker exec
+# and writes nothing on disk besides its stdout (captured by journald).
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# docker exec needs access to /var/run/docker.sock; binding it explicitly keeps
+# everything else read-only.
+BindReadOnlyPaths=/var/run/docker.sock
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

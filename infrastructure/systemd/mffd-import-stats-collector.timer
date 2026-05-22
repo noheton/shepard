@@ -1,0 +1,20 @@
+[Unit]
+Description=Shepard MFFD import stats collector — fires every 5 minutes
+Documentation=https://github.com/dlr-shepard/shepard/blob/main/docs/help/observing-an-import.md
+
+# OBS-MFFD1 — Activated via `systemctl enable --now
+#   mffd-import-stats-collector.timer` once the operator has prepared
+# /etc/shepard/mffd-stats-collector.env (see the sibling .service unit).
+
+[Timer]
+OnCalendar=*:0/5
+# Run a tick immediately on boot/enable so the time series gets a fresh point
+# without waiting up to 5 minutes for the next calendar tick.
+OnBootSec=30s
+# If the host was off when a scheduled tick was due, run once at start.
+Persistent=true
+AccuracySec=10s
+Unit=mffd-import-stats-collector.service
+
+[Install]
+WantedBy=timers.target
