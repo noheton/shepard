@@ -11,29 +11,35 @@ A single-script (Python + uv) cross-instance importer that lifts the **real MFFD
 
 **Out of scope:** synthetic seed data, on-disk export replay, anything LUMEN-side.
 
-## 1. Source — LOCAL on-disk export (correction 2026-05-22)
+## 1. Source — LIVE DLR cube3 API (corrected 2026-05-22 — third pass)
 
-The real cube3 export already lives on the dev box at:
+**Important pivot:** the local on-disk export at `examples/mffd-showcase/raw-data/mffd-data/` is **shape reference only — incomplete dataset**:
+
+- File payloads: present (~5.5 GB tapelaying)
+- TS payloads: **all 4627 `ts-*.csv` files are 0 bytes** (exporter v1.2 wrote placeholders only)
+- Structured payloads: present
+- Metadata + lineage: present
+
+Without TS payloads we cannot do Trace3D thermal-trail rendering, ODIX channel analysis, or any other showcase demonstration that requires actual channel data. **The on-disk drop is useful for understanding the export shape; it is NOT the dataset for the real import.**
+
+**Real source remains the LIVE DLR cube3 API:**
+
+- **Tapelaying:** `https://backend.bt-au-cube3.intra.dlr.de/shepard/api/collections/48297` — 5012 DataObjects (28 PlyGroup + 77 Ply + 3985 Track + scaffold), 23,328 file refs, 4627 TS refs (with payloads accessible via `/export`)
+- **Bridgewelding:** `https://backend.bt-au-cube3.intra.dlr.de/shepard/api/collections/163811` — 3371 DOs, structured data refs (StepMetaProcessStep, StepMetaProcessExecution)
+- **Network:** DLR intranet only — script runs on cube@bt-au-cube-mig (the bridge host that reaches both DLR intranet AND nuclide.systems)
+- **Auth:** kreb_fl JWT (14h TTL; v15 detects 401 and pauses for re-mint without losing progress) + Flo Researcher JWT (long-lived dest auth)
+
+**TS payload access via live API:**
 
 ```
-examples/mffd-showcase/raw-data/mffd-data/    (~15 GB unzipped; gitignored)
-  mffd-tapelaying/    — 5012 DOs (28 PlyGroup + 77 Ply + 3985 Track + scaffold)
-                        23,328 file refs (with payloads)
-                        4627 TS refs (json metadata + ts-*.csv placeholders)
-                        0 structured refs
-  mffd-framewelding/  — 3371 DOs (24 Frame → ~22 AF → 1–7 ProcessData)
-                        file refs (with payloads)
-                        structured refs (StepMetaProcessStep, StepMetaProcessExecution)
-                        0 TS refs
-  mffd-confluence-space-export/ — 116 wiki pages + 980 attachments
-  cell/               — workcell models
+GET /timeseriesReferences/{refId}/export?csv_format=COLUMN  → real CSV bytes (NOT WIDE — v5.4.0 enum is {ROW, COLUMN})
 ```
 
-**No live DLR-intranet dependency at import time.** Source is local disk. v15 runs from the dev box (which has both the export AND nuclide reachability) — no cube relay needed.
+v15's Bug H fix (`COLUMN` not `WIDE`) is what unlocks live TS access. The metadata-only fallback is no longer needed because the real source has the data.
 
-**Auth:** only the dest JWT (Flo Researcher, long-lived). No source JWT.
-
-**Known gap — empty TS payloads:** all 4627 `ts-*.csv` files in `mffd-tapelaying/references/` are **0 bytes** (verified 2026-05-22). The cube3 exporter v1.2 wrote placeholder CSVs but no point data. A re-export with TS payloads enabled is required for full-fidelity TS work (Trace3D thermal-trail rendering, ODIX channel analysis). **v15 handles this gracefully:** TS metadata (`ts-*.json` channel descriptors) is imported and creates dest TS refs with non-empty `timeseries[]` arrays, but the dest container has no point data until a re-export lands.
+**Labor split for v15:**
+- **You (cube@bt-au-cube-mig)** run v15 — only host with both DLR intranet + nuclide reachability
+- **Me (dev box)** prepares dest (Garage activation, container creation, sanity probes) and patches v15 itself
 
 ## 2. Dest — nuclide.systems with Garage S3
 
@@ -114,25 +120,23 @@ v14: `POST /v2/files` multipart → backend reads body → writes via active sto
 
 Step 2 is where the 5.5 GB tapelaying file payload + future TS-derived files go. **Backend memory stays cool.**
 
-## 7. TS upload — local-disk read + backend proxy (substrate unchanged)
+## 7. TS upload — live cube3 pull + corrected wire shapes
 
-v15: read from local export + corrected wire shapes. **CSV payloads currently 0 bytes**; v15 imports the metadata regardless and registers the channels per `ts-*.json` descriptor. When a re-export with payloads arrives, re-running v15 picks up the CSV content and imports without re-creating containers (state-file resume).
+v15: live pull from cube3 + Bug-H-corrected csv_format:
 
 ```
-1. Read ts-<srcRefId>.csv from local disk            (0 bytes today; full payload after re-export)
-   Read ts-<srcRefId>.json (channel metadata)
-2. POST /shepard/api/timeseriesContainers  body={name}            → {id} (no type field — readOnly)
-3. If CSV non-empty:
-     POST /shepard/api/timeseriesContainers/{id}/import  multipart   → 200 (CSV parsed → COPY to hypertable via PgBouncer)
+1. GET https://backend.bt-au-cube3.intra.dlr.de/shepard/api/collections/{srcColl}/dataObjects/{srcDo}/timeseriesReferences/{srcRef}/export?csv_format=COLUMN
+   → CSV bytes (the actual channel data, NOT a 0-byte placeholder)
+2. POST /shepard/api/timeseriesContainers  body={name}            → {id} (no type field — readOnly per Bug L)
+3. POST /shepard/api/timeseriesContainers/{id}/import  multipart   → 200 (CSV parsed → COPY to hypertable via PgBouncer)
 4. GET .../timeseriesContainers/{id}/timeseries                   → [{measurement,device,location,symbolicName,field}, ...]
-   (empty if CSV was empty; pre-populate from ts-*.json metadata to keep TimeseriesReference creation viable)
 5. POST /shepard/api/collections/{c}/dataObjects/{do}/timeseriesReferences
-        body={name, timeseriesContainerId, timeseries:[...channels from metadata]} → 201 TimeseriesReference
+        body={name, timeseriesContainerId, timeseries:[...listed channels]} → 201 TimeseriesReference
 ```
 
-Concurrency: PgBouncer absorbs 4 parallel COPY operations when data is present.
+Concurrency: PgBouncer absorbs 4 parallel COPY operations on dest. Source-side: max 4 parallel GETs against cube3 to avoid hammering DLR's instance.
 
-**Trace3D acceptance note:** with empty TS payloads, Trace3D can render only the channel-metadata aspect (channel list, units, expected ranges) — not actual paths. The full thermal-trail demo waits on the re-export. This is a data-availability gap, not a system gap.
+**Trace3D acceptance:** with real TS data flowing, the thermal-trail demo works end-to-end. No data-availability gap once import completes.
 
 ## 8. Structured data upload — wrapper-aware
 
@@ -247,11 +251,11 @@ act:<batch-uuid-v7> a fair2r:AuthoringPass ;
 ✓ DAG topology preserved (every predecessorIds[] link verified — full chain reachable
   via predecessor walk from any leaf back to its PlyGroup root or Frame root)
 ✓ 23,328 file refs on dest with non-zero fileSize each
-✓ 4627 TS refs on dest with non-empty timeseries[] channel arrays (populated from ts-*.json metadata; point data lands when re-export arrives)
+✓ 4627 TS refs on dest with non-empty timeseries[] channel arrays AND non-zero hypertable row count (real point data pulled live from cube3)
 ✓ Structured data refs (count from cube3 source) on dest with payloads matching by SHA-256
 ✓ TS channels present include the AFP robot TCP X/Y/Z + tcp_temperature + consolidation_force
-  per ts-*.json metadata on each tapelaying Track DO (renderer prerequisite for Trace3D — point data
-  awaits cube3 re-export)
+  on each tapelaying Track DO with actual point data (renderer prerequisite for Trace3D — full
+  thermal-trail demo works end-to-end)
 ✓ ImportScripts DO carries v15 script + log file + state file as FileReferences
 ✓ Collection.attributes.import_progress shows "8383/8383" + import_eta cleared at completion
 ✓ At least one fair2r:AuthoringPass Activity per batch visible in /v2/provenance/activities?targetAppId=...
@@ -263,29 +267,34 @@ act:<batch-uuid-v7> a fair2r:AuthoringPass ;
 ## 14. Sequencing — final
 
 ```
-[1. YOU — deploy-side]
+[1. YOU — deploy-side, nuclide]
    Garage activation via baked-in pre-flight (§9):
      • v15's pre-flight probes /v2/file-containers/{x}/upload-url
      • If 503 "gridfs", print the runbook + exit cleanly
      • Operator runs runbook, restarts backend
      • Re-runs v15; pre-flight passes, import proceeds
 
-[2. ME — worktree]
+[2. ME — worktree, dev box]
    Patch the 8 wire-shape bugs (D, G, H, L, E, B, C, I)
    Implement 4-worker pool + resilient retry + redeploy-resilient long-wait
-   Implement presigned-URL upload flow for files
+   Implement presigned-URL upload flow for files (against Garage container)
    Implement X-AI-Agent header + semanticAnnotation batch writeback
    Implement ETA attribute + log re-upload threads
    Add Cypher migration V61 for new shepard: predicates (task #159)
+   Upload v15 to ImportScripts DO on nuclide (so cube can fetch it)
 
-[3. YOU — cube]
-   Re-download v15 (curl from ImportScripts DO + md5 check)
-   Run v15; pre-flight either passes or prints Garage activation runbook
-   On JWT expiry: re-mint kreb_fl JWT, SIGCONT the script (resumes from state)
+[3. YOU — cube@bt-au-cube-mig]
+   Re-mint kreb_fl JWT (14h TTL) if last one expired
+   Fetch v15 from nuclide ImportScripts DO (curl with -f and md5 check)
+   Run v15 with both source + dest JWTs
+   On JWT expiry: re-mint, SIGCONT the script (resumes from state file)
+   On JWT validity: bytes flow direct cube3 → cube → nuclide Garage
 
-[4. ME — verify]
-   Acceptance criteria §13
+[4. ME — verify, dev box]
+   Acceptance criteria §13 against nuclide via REST + cypher-shell + psql probes
 ```
+
+**Why cube and not dev box:** the dev box reaches nuclide but NOT DLR intranet (cube3). The cube reaches both. The on-disk drop at `examples/mffd-showcase/raw-data/` on the dev box is shape-reference only (no TS payloads); the real TS data lives in cube3's live API.
 
 ---
 
