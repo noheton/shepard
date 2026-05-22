@@ -1,0 +1,18 @@
+# Real MFFD manufacturing data MUST NOT enter the git repo.
+# All production data lives on disk at DATA_DIR (set at runtime).
+# Only synthetic seed data in generate.py is tracked.
+
+tapelaying/
+bridgewelding/
+wikidump/
+*.zip
+*.h5
+*.hdf5
+*.csv
+*.parquet
+*.mat
+*.dat
+*.bin
+*.bag
+*.mcap
+mffd-import-*.log
