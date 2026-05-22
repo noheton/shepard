@@ -16,8 +16,11 @@
 >   and are not stable. Compose / config / schema details may shift
 >   between commits.
 > - **Upstream-API compatibility:** the `/shepard/api/...` surface stays
->   byte-frozen against upstream 5.2.0, so a client built against
->   upstream keeps working. New endpoints land under `/v2/...` only.
+>   byte-frozen against upstream — the spec source we track in-tree is
+>   `backend/src/test/resources/fixtures/v5/openapi-5.4.0.json` (the
+>   upstream 5.4.0 snapshot; 5.2.0 contracts are a subset). A client
+>   built against upstream keeps working. New endpoints land under
+>   `/v2/...` only.
 >
 > Do not run this fork in production unless you understand the above
 > trade-offs. See [`aidocs/34-upstream-upgrade-path.md`](aidocs/34-upstream-upgrade-path.md)
