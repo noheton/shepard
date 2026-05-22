@@ -1038,6 +1038,23 @@
           <artifactId>shepard-plugin-importer</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          AT1 — timeseries-analytics plugin extracting the in-tree AI1b
+          rolling-median MAD anomaly detector behind the
+          `TimeseriesAnalytics` SPI (`de.dlr.shepard.spi.analytics`).
+          Plugin's `MADDetector` `@ApplicationScoped` bean is discovered
+          by Quarkus's build-time CDI scanner via the
+          quarkus.index-dependency.shepard-plugin-analytics-ts.* entries
+          in application.properties. AnalyticsRegistry picks the bean
+          up on @Observes StartupEvent. Same with-plugins-profile
+          shape as every other shepard-plugin-* module (ADR-0023).
+          See plugins/analytics-ts/docs/reference.md.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

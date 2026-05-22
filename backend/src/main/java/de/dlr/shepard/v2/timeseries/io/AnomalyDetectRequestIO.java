@@ -72,6 +72,33 @@ public class AnomalyDetectRequestIO {
   @Schema(description = "Field tag — selects which series in the reference to score.")
   private String field;
 
+  // ── detector selector (AT1) ─────────────────────────────────────────────
+
+  /**
+   * AT1 — optional detector identifier. Resolves to a registered
+   * {@code de.dlr.shepard.spi.analytics.TimeseriesAnalytics} bean via
+   * {@code AnalyticsRegistry}. When null or omitted, the request runs
+   * against the default detector {@code "mad-v1"} (the rolling-median
+   * MAD detector that historically backed this endpoint as the only
+   * implementation).
+   *
+   * <p>Adding new detectors is additive — they drop into the registry
+   * via {@code shepard-plugin-analytics-ts} (or a sibling plugin) and
+   * become reachable through this field without breaking existing
+   * callers.
+   *
+   * <p>Wire-stability invariant: a request that omits this field is
+   * byte-identical (in response shape and content) to one before the
+   * AT1 extraction — see {@code AnomalyDetectionWireStabilityTest}
+   * for the recorded-fixture proof.
+   */
+  @Schema(
+    description = "Detector identifier (AT1). Default 'mad-v1' (the rolling-median MAD detector). " +
+      "Future detectors register via shepard-plugin-analytics-ts and become reachable through this field.",
+    defaultValue = "mad-v1"
+  )
+  private String detectorId;
+
   // ── effective defaults ───────────────────────────────────────────────────
 
   /** Returns the configured window, defaulting to 51. */
@@ -82,5 +109,14 @@ public class AnomalyDetectRequestIO {
   /** Returns the configured threshold k, defaulting to 6.0. */
   public double effectiveK() {
     return k != null ? k : 6.0;
+  }
+
+  /**
+   * AT1 — resolves the detector id, defaulting to {@code "mad-v1"} when
+   * omitted. Used by the dispatcher to look up via
+   * {@code AnalyticsRegistry}.
+   */
+  public String effectiveDetectorId() {
+    return (detectorId == null || detectorId.isBlank()) ? "mad-v1" : detectorId;
   }
 }
