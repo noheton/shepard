@@ -1,5 +1,6 @@
 package de.dlr.shepard.auth.users.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.auth.apikey.entities.ApiKey;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.DisplayNameResolver;
@@ -39,7 +40,12 @@ public class UserIO {
    * Nullable; null until the user sets one via `PATCH /v2/users/me`.
    * Format: 16 digits split into 4 groups of 4 separated by hyphens;
    * final character may be `X` for the check digit (ISO 7064 mod 11-2).
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when
+   * null so {@code /shepard/api/users/...} matches upstream byte-for-byte
+   * for users who haven't opted in. See {@code CLAUDE.md §"API-version policy"}.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(nullable = true, example = "0000-0002-1825-0097")
   private String orcid;
 
@@ -48,7 +54,12 @@ public class UserIO {
    * unset until set via `PATCH /v2/users/me`. Distinguishable from
    * `effectiveDisplayName` (read-only computed) so clients can tell
    * "the user picked this" from "the system derived this".
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when
+   * null so {@code /shepard/api/users/...} matches upstream byte-for-byte
+   * for users who haven't set a display-name override.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(nullable = true, description = "User-chosen display-name override.")
   private String displayName;
 

@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.references.timeseriesreference.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.references.basicreference.io.BasicReferenceIO;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
 import de.dlr.shepard.data.timeseries.model.Timeseries;
@@ -41,14 +42,22 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
    * the standard search shape: e.g. {@code {"property":"qualityScore",
    * "operator":"lt", "value":"0.5"}} finds suspect runs. See
    * {@code aidocs/43 §3.2}.
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when
+   * null so {@code /shepard/api/...} responses match upstream byte-for-
+   * byte for un-scored references.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(description = "Background-computed quality score in [0.0, 1.0]. null = not yet scored. Read-only.")
   private Double qualityScore;
 
   /**
    * AI1c — millisecond epoch of the last quality-score computation.
    * Read-only; surfaced so clients can detect a stale score.
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(description = "Epoch millis of the last quality-score run. null = never scored. Read-only.")
   private Long lastScoredAt;
 
@@ -57,20 +66,29 @@ public class TimeseriesReferenceIO extends BasicReferenceIO {
    * "WALL_CLOCK": sample timestamps are already UTC nanoseconds (default).
    * "EXPERIMENT_RELATIVE": sample timestamps are relative to t=0; convert via wallClockOffset.
    * Null on pre-TM1a rows — treat as "WALL_CLOCK".
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(description = "TM1: timestamp semantics. WALL_CLOCK (default) or EXPERIMENT_RELATIVE. null = legacy row, treat as WALL_CLOCK.")
   private String timeReference;
 
   /**
    * TM1 — nanoseconds epoch (UTC) of the DAQ's t=0.
    * Only meaningful when timeReference == "EXPERIMENT_RELATIVE".
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(description = "TM1: UTC nanoseconds of experiment t=0. Only meaningful when timeReference=EXPERIMENT_RELATIVE.")
   private Long wallClockOffset;
 
   /**
    * TM1 — free-text provenance tag for how wallClockOffset was determined.
+   *
+   * <p>Fork addition (no upstream 5.2.0 key). Omitted from v1 wire when null.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(description = "TM1: provenance of wallClockOffset (e.g. manual, ffprobe, SA_sync, NTP_marker).")
   private String wallClockOffsetSource;
 

@@ -1,12 +1,10 @@
 {
   "apiKeyIds" : "<<ANY-STRING[]>>",
   "appId" : "<<ANY-STRING>>",
-  "displayName" : null,
   "effectiveDisplayName" : "<<ANY-STRING>>",
   "email" : null,
   "firstName" : null,
   "lastName" : null,
-  "orcid" : null,
   "subscriptionIds" : "<<ANY-LONG[]>>",
   "username" : "<<ANY-STRING>>"
 }

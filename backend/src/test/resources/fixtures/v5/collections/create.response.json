@@ -9,7 +9,6 @@
   "dataObjectIds" : [ ],
   "defaultFileContainerId" : null,
   "description" : "My Description",
-  "heroImageUrl" : null,
   "id" : "<<ANY-LONG>>",
   "incomingIds" : [ ],
   "name" : "CollectionWireFixture",

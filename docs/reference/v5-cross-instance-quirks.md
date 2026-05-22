@@ -34,11 +34,11 @@ working. A strict-schema client (rare) may need its schema relaxed.
 |------------------|----------------------------------------------------------|------------------|-------------|
 | `appId`          | every `BasicEntityIO` subclass                           | L2a (mint UUID)  | `aidocs/34` L2a |
 | `revision`       | every `VersionableEntity` subclass (`Collection`, `DataObject`, `*Reference`) | V2a (write counter) | `aidocs/34` V2a |
-| `heroImageUrl`   | `CollectionIO` (advertised as `/v2/`-only; **leaks to `/shepard/api/`** because the field has no `@JsonInclude(NON_NULL)`) | Feature B | `aidocs/34` Feature B — known leak, additive |
+| `heroImageUrl`   | `CollectionIO` — `@JsonInclude(NON_NULL)`, absent when unset (task #131; pre-fix the field leaked to `/shepard/api/` as `"heroImageUrl": null`) | Feature B | `aidocs/34` Feature B — fixed in task #131 |
 | `license`, `accessRights` | every `AbstractDataObjectIO` subclass (`Collection`, `DataObject`) — `@JsonInclude(NON_NULL)`, absent when unset | FAIR-1 | `aidocs/34` FAIR-1 |
 | `status`         | every `AbstractDataObjectIO` subclass — `@JsonInclude(NON_NULL)`, absent when unset | UX status field | (pre-snapshot) |
-| `orcid`, `displayName`, `effectiveDisplayName`, `appId` | `UserIO` | U1a / U1b | `aidocs/34` U1a, U1b |
-| `qualityScore`, `lastScoredAt`, `timeReference`, `wallClockOffset`, `wallClockOffsetSource` | `TimeseriesReferenceIO` | AI1c + TM1 | `aidocs/34` AI1c, TM1 |
+| `orcid`, `displayName` | `UserIO` — `@JsonInclude(NON_NULL)`, absent when unset (task #131 v5 wire-fidelity audit). `effectiveDisplayName` is always populated (fallback chain); `appId` is always minted on user creation. | U1a / U1b | `aidocs/34` U1a, U1b, #131 |
+| `qualityScore`, `lastScoredAt`, `timeReference`, `wallClockOffset`, `wallClockOffsetSource` | `TimeseriesReferenceIO` — all `@JsonInclude(NON_NULL)`, absent when unset (task #131 v5 wire-fidelity audit) | AI1c + TM1 | `aidocs/34` AI1c, TM1, #131 |
 
 ## Subtractive / renamed / re-typed fields
 

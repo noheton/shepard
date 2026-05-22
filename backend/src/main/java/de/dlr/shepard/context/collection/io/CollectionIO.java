@@ -1,5 +1,6 @@
 package de.dlr.shepard.context.collection.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.common.neo4j.io.AbstractDataObjectIO;
 import de.dlr.shepard.common.util.HasId;
 import de.dlr.shepard.context.collection.entities.Collection;
@@ -32,8 +33,19 @@ public class CollectionIO extends AbstractDataObjectIO {
    * detail page. When null, no banner is shown. URL-only (no server-side
    * upload); the frontend handles 404s gracefully via the {@code <v-img>}
    * error slot. Settable on POST and PATCH (RFC 7396: null clears it,
-   * absent leaves it unchanged). Exposed only on the {@code /v2/} surface.
+   * absent leaves it unchanged).
+   *
+   * <p>Originally advertised as {@code /v2/}-only, but because
+   * {@link CollectionIO} is shared with the v1 {@code /shepard/api/collections}
+   * surface and Jackson serialises a null Java field as JSON {@code null}
+   * by default, the field was leaking onto the v1 wire as
+   * {@code "heroImageUrl": null}. That violates the byte-fidelity
+   * compat policy in {@code CLAUDE.md §"API-version policy"} (upstream
+   * 5.2.0 has no such key). The {@link JsonInclude} annotation below
+   * omits the key entirely when null, restoring byte-fidelity on v1
+   * while keeping it visible on v2 when set.
    */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(nullable = true)
   private String heroImageUrl;
 
