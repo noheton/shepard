@@ -148,6 +148,27 @@ jobs:
         working-directory: plugins/file-s3
         run: mvn -B test
 
+      - name: Guard against untracked class-level @Disabled
+        # Every class-level @Disabled in backend tests must cite a tracker
+        # ticket (#NNN, task NN, GH-NN, or an explicit aidocs/ pointer) so
+        # the disabled state has a planned exit. Method-level @Disabled is
+        # not gated. See aidocs/34 → SHACL-1 / MCP-2 entry for the
+        # originating breakage that motivated this guard.
+        run: |
+          set -e
+          violations=$(grep -rEn '^@Disabled\(' backend/src/test/java \
+            | grep -vE '#[0-9]+|task[- ]?[0-9]+|GH-[0-9]+|aidocs/' \
+            || true)
+          if [ -n "$violations" ]; then
+            echo "ERROR: class-level @Disabled without ticket reference:"
+            echo "$violations"
+            echo
+            echo "Add a tracker citation (e.g. @Disabled(\"#123 …\") or"
+            echo "@Disabled(\"task 80 follow-up — aidocs/34 SHACL-1\"))"
+            echo "or fix the test."
+            exit 1
+          fi
+
       - name: Backend unit tests + JaCoCo coverage gate
         working-directory: backend
         run: |

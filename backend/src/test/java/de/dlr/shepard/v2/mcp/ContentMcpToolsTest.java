@@ -18,26 +18,30 @@ import de.dlr.shepard.data.file.services.FileContainerService;
 import de.dlr.shepard.data.structureddata.entities.StructuredData;
 import de.dlr.shepard.data.structureddata.entities.StructuredDataContainer;
 import de.dlr.shepard.data.structureddata.services.StructuredDataContainerService;
+import io.quarkiverse.mcp.server.McpException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-// Pre-existing test (not authored in this PR) — out of sync with
-// ContentMcpTools after a prior refactor that removed
-// `entityIdResolver` and `objectMapper` fields. Tracked as separate
-// follow-up; @Disabled here to unblock test-compile for the SHACL
-// changeover work (which has nothing to do with this class).
-@Disabled("Out of sync with main class — see PR notes; not a SHACL-PR concern.")
+/**
+ * Tests for {@link ContentMcpTools}. Post task #80 (MCP type-checking +
+ * clean errors, MCP-2 entry in aidocs/34) appId resolution lives in
+ * {@link McpToolSupport#resolveOfType(String, String, String)} and tools
+ * type-check container appIds before dispatching to the service. This
+ * test mirrors {@link TimeseriesMcpToolsTest}: a real {@code support}
+ * wired with mocks, and label-aware resolver stubs for every happy path.
+ */
 class ContentMcpToolsTest {
 
-  static final String CONTAINER_APP_ID = "018f9c5a-7e26-7000-a000-000000000040";
-  static final String DO_APP_ID = "018f9c5a-7e26-7000-a000-000000000050";
-  static final long DO_OGM_ID = 99L;
+  static final String FILE_CONTAINER_APP_ID = "018f9c5a-7e26-7000-a000-000000000040";
+  static final String SD_CONTAINER_APP_ID   = "018f9c5a-7e26-7000-a000-000000000041";
+  static final String DO_APP_ID             = "018f9c5a-7e26-7000-a000-000000000050";
+  static final long   CONTAINER_OGM_ID      = 77L;
+  static final long   DO_OGM_ID             = 99L;
 
   @Mock FileContainerService fileContainerService;
   @Mock StructuredDataContainerService structuredDataContainerService;
@@ -46,25 +50,54 @@ class ContentMcpToolsTest {
   @Mock McpContextBridge contextBridge;
 
   ContentMcpTools tools;
+  McpToolSupport support;
 
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+    support = new McpToolSupport();
+    support.entityIdResolver = entityIdResolver;
+    support.objectMapper = new ObjectMapper();
+
     tools = new ContentMcpTools();
     tools.fileContainerService = fileContainerService;
     tools.structuredDataContainerService = structuredDataContainerService;
     tools.semanticAnnotationService = semanticAnnotationService;
-    // entityIdResolver + objectMapper removed from main class —
-    // class is @Disabled, but these lines must still compile.
     tools.contextBridge = contextBridge;
+    tools.support = support;
+
+    // Default: resolver returns the matching label per appId. Tests that
+    // care about the wrong-label / not-found path override these.
+    when(entityIdResolver.resolveWithLabels(FILE_CONTAINER_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(CONTAINER_OGM_ID, List.of("FileContainer")));
+    when(entityIdResolver.resolveWithLabels(SD_CONTAINER_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(CONTAINER_OGM_ID, List.of("StructuredDataContainer")));
+    when(entityIdResolver.resolveWithLabels(DO_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(DO_OGM_ID, List.of("DataObject")));
   }
 
   // ── list_files ────────────────────────────────────────────────────────────
 
   @Test
-  void listFilesThrowsNotFoundWhenContainerMissing() {
-    when(fileContainerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(null);
-    assertThrows(NotFoundException.class, () -> tools.listFiles(CONTAINER_APP_ID));
+  void listFilesThrowsWhenContainerMissing() {
+    // Type-check passes (resolver returns FileContainer label), but the
+    // service returns null — tool raises -32602 with an explicit message.
+    when(fileContainerService.getContainerByAppId(FILE_CONTAINER_APP_ID)).thenReturn(null);
+
+    McpException ex = assertThrows(McpException.class, () -> tools.listFiles(FILE_CONTAINER_APP_ID));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    assertTrue(ex.getMessage().contains(FILE_CONTAINER_APP_ID));
+  }
+
+  @Test
+  void listFilesRejectsWrongContainerType() {
+    when(entityIdResolver.resolveWithLabels(FILE_CONTAINER_APP_ID))
+      .thenReturn(new EntityIdResolver.LabeledResolution(CONTAINER_OGM_ID, List.of("StructuredDataContainer")));
+
+    McpException ex = assertThrows(McpException.class, () -> tools.listFiles(FILE_CONTAINER_APP_ID));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
+    assertTrue(ex.getMessage().contains("FileContainer"));
+    assertTrue(ex.getMessage().contains("StructuredDataContainer"));
   }
 
   @Test
@@ -79,9 +112,9 @@ class ContentMcpToolsTest {
     f.setProviderId("local");
     f.setCreatedAt(new Date(0L));
     container.setFiles(List.of(f));
-    when(fileContainerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(container);
+    when(fileContainerService.getContainerByAppId(FILE_CONTAINER_APP_ID)).thenReturn(container);
 
-    String json = tools.listFiles(CONTAINER_APP_ID);
+    String json = tools.listFiles(FILE_CONTAINER_APP_ID);
     var root = new ObjectMapper().readTree(json);
 
     assertTrue(root.isArray());
@@ -96,9 +129,9 @@ class ContentMcpToolsTest {
   @Test
   void listFilesReturnsEmptyArrayForEmptyContainer() throws Exception {
     FileContainer container = new FileContainer();
-    when(fileContainerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(container);
+    when(fileContainerService.getContainerByAppId(FILE_CONTAINER_APP_ID)).thenReturn(container);
 
-    String json = tools.listFiles(CONTAINER_APP_ID);
+    String json = tools.listFiles(FILE_CONTAINER_APP_ID);
     var root = new ObjectMapper().readTree(json);
     assertTrue(root.isArray());
     assertEquals(0, root.size());
@@ -112,9 +145,9 @@ class ContentMcpToolsTest {
     StructuredData sd = new StructuredData("oid-2", new Date(0L), "test-matrix");
     sd.setAppId("sd-app-id");
     container.setStructuredDatas(List.of(sd));
-    when(structuredDataContainerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(container);
+    when(structuredDataContainerService.getContainerByAppId(SD_CONTAINER_APP_ID)).thenReturn(container);
 
-    String json = tools.listStructuredData(CONTAINER_APP_ID);
+    String json = tools.listStructuredData(SD_CONTAINER_APP_ID);
     var root = new ObjectMapper().readTree(json);
 
     assertEquals(1, root.size());
@@ -126,8 +159,10 @@ class ContentMcpToolsTest {
 
   @Test
   void listStructuredDataThrowsWhenContainerMissing() {
-    when(structuredDataContainerService.getContainerByAppId(CONTAINER_APP_ID)).thenReturn(null);
-    assertThrows(NotFoundException.class, () -> tools.listStructuredData(CONTAINER_APP_ID));
+    when(structuredDataContainerService.getContainerByAppId(SD_CONTAINER_APP_ID)).thenReturn(null);
+
+    McpException ex = assertThrows(McpException.class, () -> tools.listStructuredData(SD_CONTAINER_APP_ID));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
   }
 
   // ── list_annotations ──────────────────────────────────────────────────────
@@ -146,7 +181,6 @@ class ContentMcpToolsTest {
     repo.setName("internal");
     ann.setPropertyRepository(repo);
 
-    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(semanticAnnotationService.getAllAnnotationsByShepardId(DO_OGM_ID)).thenReturn(List.of(ann));
 
     String json = tools.listAnnotations(DO_APP_ID);
@@ -168,7 +202,6 @@ class ContentMcpToolsTest {
     ann.setNumericValue(25.0);
     ann.setUnitIRI("http://qudt.org/vocab/unit/KN");
 
-    when(entityIdResolver.resolveLong(DO_APP_ID)).thenReturn(DO_OGM_ID);
     when(semanticAnnotationService.getAllAnnotationsByShepardId(anyLong())).thenReturn(List.of(ann));
 
     String json = tools.listAnnotations(DO_APP_ID);
@@ -180,8 +213,10 @@ class ContentMcpToolsTest {
   }
 
   @Test
-  void listAnnotationsThrowsNotFoundWhenDataObjectUnknown() {
-    when(entityIdResolver.resolveLong(DO_APP_ID)).thenThrow(new NotFoundException());
-    assertThrows(NotFoundException.class, () -> tools.listAnnotations(DO_APP_ID));
+  void listAnnotationsThrowsInvalidParamsWhenDataObjectUnknown() {
+    when(entityIdResolver.resolveWithLabels(DO_APP_ID)).thenThrow(new NotFoundException());
+
+    McpException ex = assertThrows(McpException.class, () -> tools.listAnnotations(DO_APP_ID));
+    assertEquals(-32602, ex.getJsonRpcErrorCode());
   }
 }
