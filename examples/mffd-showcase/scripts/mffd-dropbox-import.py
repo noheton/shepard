@@ -88,6 +88,7 @@ import datetime
 import os
 import sys
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
@@ -597,44 +598,110 @@ class ShepardClient:
 
     # ── Low-level ─────────────────────────────────────────────────────────────
 
-    def _get(self, url: str, params: dict | None = None) -> Response | None:
-        try:
-            r = self._s.get(url, params=params, timeout=30)
-            if not r.ok:
-                self._log_err("GET", url, r)
+    # Retry-able status codes: gateway-down / upstream-error class.
+    # Excludes 500 (genuine server bug — fail fast so we see it).
+    _RETRY_STATUSES = frozenset({502, 503, 504, 520, 521, 522, 523, 524})
+
+    def _request_with_retry(
+        self,
+        method: str,
+        url: str,
+        *,
+        timeout: int = 60,
+        deadline_s: float = 900.0,  # 15 min — covers a Quarkus reboot + Flyway migrate
+        **kwargs: Any,
+    ) -> Response | None:
+        """HTTP call that survives a destination-Shepard redeploy.
+
+        Retries forever (until deadline_s) on:
+          * urllib3/requests transient errors (ConnectionError, Timeout,
+            ChunkedEncodingError, ReadTimeout)
+          * Gateway/upstream-error responses (502, 503, 504, 520-524)
+
+        Non-retryable codes (200-499, 500) are returned as-is — the caller's
+        existing `if not r.ok` branch logs them. We deliberately don't retry
+        500 because that's a real server bug, not a deploy blip.
+
+        Prints `[reconnect] backend unreachable...` once on entering the
+        retry loop, then `[reconnect] backend back ✓` on first success.
+        """
+        backoff = 2.0
+        max_backoff = 60.0
+        deadline = time.monotonic() + deadline_s
+        waiting = False
+        attempt = 0
+
+        while True:
+            attempt += 1
+            last_label: str = ""
+            try:
+                r = self._s.request(method, url, timeout=timeout, **kwargs)
+                if r.status_code not in self._RETRY_STATUSES:
+                    if waiting:
+                        print(
+                            f"  [reconnect] backend back ✓ (HTTP {r.status_code}, "
+                            f"after {attempt} attempts)",
+                            flush=True,
+                        )
+                    return r
+                last_label = f"HTTP {r.status_code}"
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.ChunkedEncodingError,
+            ) as exc:
+                last_label = exc.__class__.__name__
+
+            if not waiting:
+                print(
+                    f"  [reconnect] backend unreachable ({last_label}); "
+                    f"waiting up to {deadline_s:.0f}s for it to come back…",
+                    flush=True,
+                )
+                waiting = True
+
+            if time.monotonic() >= deadline:
+                print(
+                    f"  [reconnect] giving up on {method} {url.split('?')[0]} "
+                    f"after {attempt} attempts ({deadline_s:.0f}s deadline)",
+                    flush=True,
+                )
                 return None
-            return r
-        except Exception as exc:
-            print(f"  [net] GET {url}: {exc}")
+
+            time.sleep(backoff)
+            backoff = min(backoff * 1.5, max_backoff)
+
+    def _get(self, url: str, params: dict | None = None) -> Response | None:
+        r = self._request_with_retry("GET", url, params=params, timeout=30)
+        if r is None:
             return None
+        if not r.ok:
+            self._log_err("GET", url, r)
+            return None
+        return r
 
     def _get_raw(self, url: str) -> Response | None:
-        try:
-            return self._s.get(url, timeout=10)
-        except Exception:
-            return None
+        # Short deadline + low timeout: this is the warmup probe, we want
+        # fast failure if the dest is genuinely down at startup.
+        return self._request_with_retry("GET", url, timeout=10, deadline_s=30.0)
 
     def _post(self, url: str, body: dict) -> Response | None:
-        try:
-            r = self._s.post(url, json=body, timeout=60)
-            if not r.ok:
-                self._log_err("POST", url, r)
-                return None
-            return r
-        except Exception as exc:
-            print(f"  [net] POST {url}: {exc}")
+        r = self._request_with_retry("POST", url, json=body, timeout=60)
+        if r is None:
             return None
+        if not r.ok:
+            self._log_err("POST", url, r)
+            return None
+        return r
 
     def _put(self, url: str, body: dict) -> Response | None:
-        try:
-            r = self._s.put(url, json=body, timeout=30)
-            if not r.ok:
-                self._log_err("PUT", url, r)
-                return None
-            return r
-        except Exception as exc:
-            print(f"  [net] PUT {url}: {exc}")
+        r = self._request_with_retry("PUT", url, json=body, timeout=30)
+        if r is None:
             return None
+        if not r.ok:
+            self._log_err("PUT", url, r)
+            return None
+        return r
 
     @staticmethod
     def _log_err(method: str, url: str, r: Response) -> None:
