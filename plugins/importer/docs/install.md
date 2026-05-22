@@ -2,7 +2,7 @@
 
 **Status (PR-2).** Scaffold + persistence layer. The plugin
 module is in the default-active `with-plugins` Maven profile and
-ships its own Flyway migration (`V1.11.0`) creating the
+ships its own Flyway migration (`V1.11.1`) creating the
 `importer_run` Postgres table on first start. No user-callable
 REST surface yet — PR-3..6 wire the adapter, scheduler, REST, CLI
 and frontend.
@@ -11,7 +11,7 @@ and frontend.
 
 - shepard ≥ 6.0.0-SNAPSHOT (PR-1..PR-2 lands during this development line).
 - Postgres + Flyway already in the backend image (PR-2 ships
-  the `V1.11.0__add_importer_run_table.sql` migration).
+  the `V1.11.1__add_importer_run_table.sql` migration).
 - `${SHEPARD_INSTANCE_SECRET}` env var set (PR-3 will use this to
   derive an AES-GCM key for encrypting source credentials at rest).
 

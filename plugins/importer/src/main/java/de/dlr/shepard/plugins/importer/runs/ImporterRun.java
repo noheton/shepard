@@ -41,7 +41,7 @@ import java.util.UUID;
  * graduation pass.
  *
  * <p>The migration shipping this table is
- * {@code V1.11.0__add_importer_run_table.sql} in this module's
+ * {@code V1.11.1__add_importer_run_table.sql} in this module's
  * {@code src/main/resources/db/migration/}. Quarkus Flyway picks
  * up the file from the plugin JAR's classpath because the
  * backend's {@code quarkus.flyway.locations} includes

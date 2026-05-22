@@ -3,7 +3,7 @@
 **Status (PR-2).** Scaffold + persistence layer. The plugin is
 registered with the backend's `PluginRegistry`, the
 `importer_run` Postgres table exists (created on first start via
-the plugin's Flyway migration `V1.11.0`), and the
+the plugin's Flyway migration `V1.11.1`), and the
 `ImporterRunService` write-surface mirrors the generic JobService
 shape from `aidocs/platform/32 §4`. **No REST surface, no
 scheduler, no source adapter yet** — PR-3 ships `DLRv5Source`,

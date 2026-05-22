@@ -491,7 +491,7 @@ the migration epic.
 - **2026-05-22 — IMP1a/PR-2 ships the first concrete instance** of
   this JobService design as the `importer_run` Postgres table in
   `shepard-plugin-importer`
-  (`plugins/importer/src/main/resources/db/migration/V1.11.0__add_importer_run_table.sql`).
+  (`plugins/importer/src/main/resources/db/migration/V1.11.1__add_importer_run_table.sql`).
   The column set deliberately mirrors §3's kernel
   (`status`, `created_at`, `started_at`, `last_progress_at`,
   `finished_at`, `progress_total`, `progress_done`,

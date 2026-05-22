@@ -30,7 +30,7 @@ import java.util.UUID;
  *
  * <p>Heavy reads (LIMIT page-size) only — we never load the whole
  * table. The compound indexes shipped in
- * {@code V1.11.0__add_importer_run_table.sql} keep these queries
+ * {@code V1.11.1__add_importer_run_table.sql} keep these queries
  * cheap at MFFD scale (hundreds of runs/day, low millions/year
  * worst case).
  */
