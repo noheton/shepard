@@ -631,6 +631,16 @@ the existing `aidocs/43` AI1 umbrella.
 | CC1b | "Referenced by" expansion panel on each container detail page (File, Timeseries, Structured Data) — **wired with real data** | **done** (`01ef6296`) | Three new `GET /v2/{file,timeseries,structured-data}-containers/{id}/linked-data-objects` endpoints (numeric OGM id). DAOs query `DataObject -[:has_reference]->()-[:has_payload]-> Container` with `RETURN DISTINCT do`. Services gate behind `getContainer(id)` read-permission check. Frontend panels replaced with real v-list (spinner + empty state). 6 new DAO unit tests. See `aidocs/ops/87-collection-container-duality.md §4.5`. |
 | CC1c | Default file-container name pre-filled as `"<Collection name> — file store"` + first-time info banner in the upload dialog | **shipped** | `frontend/components/context/data-object/upload-data/DataObjectFileUploadDialog.vue`. Watch on `isCreatingNewFileContainer` fills `newFileContainerName` when toggled on (only fills if blank, preserving user edits). `v-alert` (info, tonal) always shown explaining container / experiment separation. See `aidocs/ops/87-collection-container-duality.md §4.2 + §4.4`. |
 
+### TRACE — 2026-05-22 (requirements traceability)
+
+Three options ranked by time-to-ship in `aidocs/platform/106-requirements-traceability.md`. Option A is being prototyped now; B + C are queued here for future contributors.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| TRACE-A | `scripts/build-traceability-index.py` — post-hoc requirement→commit→file index. Parses Conventional Commits scope IDs (FS1b, KIP1d, …) from `git log` and emits `docs/traceability.md` table + `docs/traceability.json`. Wire into a nightly GitHub Action. File-granularity only. | S (1 day) | in-progress | Picked as the now-step from `aidocs/platform/106`. Zero new code in the backend; pure git+CI scripting. Acceptance: running the script against `main` produces a table listing every Conventional-Commits scope and the file set it last touched. |
+| TRACE-B | `@Requirement("FS1b")` Java annotation + `apt`/`javac` plugin that extracts annotated symbols to `docs/traceability-source.json` at build time. Joined with TRACE-A's git index → method-level granularity. | M (1 sprint) | queued | Depends on TRACE-A landing first (so the join target exists). No design doc yet; the shape is sketched in `aidocs/platform/106 §3 Option B`. Risk: annotation churn during refactors — keep the annotation optional, never `@Required`. |
+| TRACE-C | SHACL shapes carry `shepard:requirementId` triples; the traceability index is a SPARQL query against the shape graph. Gated on SHACL substrate (task #127). | L (1–2 weeks, post-substrate) | blocked | Cleanest of the three but requires the SHACL substrate to land first. Captured here so the dependency is visible. |
+
 ### P1 — 2026-05-16 (parallel DB connectivity)
 
 | ID | Slice | Status | Notes |
