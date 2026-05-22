@@ -468,7 +468,17 @@
         <configuration>
           <skipTests>${skipUTs}</skipTests>
           <excludes>
-            <exclude>**/integrationtests/*.java</exclude>
+            <!-- Recursive glob: integration tests live under
+                 `**/integrationtests/**` (including subpackages like
+                 `wirefidelity/`) and extend `BaseTestCaseIT`, which
+                 needs a live Keycloak / Postgres / Neo4j / Mongo / Timescale
+                 stack. The trailing `**/*.java` (vs. plain `*.java`) is
+                 load-bearing: without it, surefire pulls in IT classes
+                 from subdirectories (e.g. `*V5WireFidelityIT.java`) and
+                 they fail in the unit-test phase on
+                 `getNewUserWithApiKey` because Keycloak isn't running.
+                 Routes them correctly to the failsafe phase. -->
+            <exclude>**/integrationtests/**/*.java</exclude>
             <!-- @QuarkusTest classes that boot the full Quarkus app
                  and need Postgres / Neo4j / Mongo via Flyway-migrate-
                  at-start. They belong in the integration-test job
