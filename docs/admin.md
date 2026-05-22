@@ -388,3 +388,9 @@ upgrade.
 lives in `infrastructure/proxy/Caddyfile`; static SSL material in
 `infrastructure/proxy/ssl`. Local-development variants are under
 `infrastructure-local/` (Keycloak + a developer-friendly compose file).
+
+## Further reading
+
+Standards and regulations referenced from this admin guide (ISO/IEC 42001,
+EU AI Act, EU Machinery Regulation, Helmholtz FAIR requirements, …) are
+indexed in the [bibliography]({{ '/bibliography' | relative_url }}).

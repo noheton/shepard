@@ -43,6 +43,8 @@ nav:
     url: /admin
   - title: System requirements
     url: /system-requirements
+  - title: Bibliography
+    url: /bibliography
 
 # Snapshot date — bump when content is refreshed.
 snapshot_date: 2026-05-22

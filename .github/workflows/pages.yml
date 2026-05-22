@@ -16,6 +16,7 @@ on:
       - main
     paths:
       - "docs/**"
+      - "scripts/bib2yml.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -42,6 +43,14 @@ jobs:
           # if it is still set to "Deploy from a branch" (or unset). Avoids
           # the manual Settings -> Pages toggle on first deploy.
           enablement: true
+
+      - name: Regenerate bibliography YAML from BibTeX
+        # The canonical bibliography lives in docs/_data/references.bib.
+        # docs/_data/references.yml is the auto-generated mirror that Jekyll
+        # actually renders on /bibliography. Regenerate it on every Pages
+        # build so a maintainer who edits the .bib without running the script
+        # locally still gets a consistent site. Stdlib-only — no extra setup.
+        run: python3 scripts/bib2yml.py
 
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1

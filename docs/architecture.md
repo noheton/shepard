@@ -172,3 +172,7 @@ into another shepard instance or process it with the wider RO-Crate toolchain.
 This site does not duplicate the canonical Arc42 docs in `architecture/src/`.
 For decision rationale and module decomposition, read those AsciiDoc sources
 (or the rendered docToolchain output) directly.
+
+The standards and ontologies referenced on this page (PROV-O, SHACL, SOSA/SSN,
+RO-Crate, DataCite, EMMO/CHAMEO, metadata4ing, …) are pinned with stable
+citations in the [bibliography]({{ '/bibliography' | relative_url }}).

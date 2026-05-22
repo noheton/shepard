@@ -1,44 +1,111 @@
-# This CITATION.cff file was generated with cffinit.
-# Visit https://bit.ly/cffinit to generate yours today!
+# Citation File Format v1.2.0 — https://citation-file-format.github.io/
+#
+# Powers GitHub's "Cite this repository" UI button on the noheton/shepard
+# repo. Cite this fork when reporting work that depends on the additive
+# /v2 surface, plugin SPI, MCP server, AI plugin, or any of the
+# fork-specific features. For the upstream shepard project, see
+# the `references` section below or cite the upstream repository
+# directly at gitlab.com/dlr-shepard/shepard.
 
 cff-version: 1.2.0
-title: shepard
-message: A storage for heterogeneous product and research data
+title: "shepard — Storage for HEterogeneous Product And Research Data (noheton fork)"
+message: >-
+  If you use this fork's additive /v2 surface, plugin SPI, MCP server,
+  AI plugin, or Helmholtz Unhide publish path, please cite it as below.
+  For citations of the upstream shepard codebase, prefer the upstream
+  CITATION.cff at gitlab.com/dlr-shepard/shepard.
 type: software
+abstract: >-
+  A multi-database research-data platform from DLR's Center for Lightweight
+  Production Technology in Augsburg. Exposes a single REST API over Neo4j
+  (metadata graph), MongoDB (structured / files), Postgres+TimescaleDB
+  (timeseries), and S3-compatible object storage (Garage by default).
+  This fork adds an additive /v2 surface, a plugin SPI (PayloadKind /
+  PayloadStorage / LlmProvider / Minter / Sidecar), an MCP server for Claude
+  and other MCP clients, an AI plugin with PROV-O capture, Helmholtz Unhide
+  publish, view recipes, and a v1 deprecation control plane. Preserves
+  byte-for-byte compatibility with upstream shepard 5.2.0 on /shepard/api/*.
+
+# Authors of this fork — extend, do not remove, the upstream author list.
+# Order: fork maintainer first, then upstream contributors in the order
+# they appear in the upstream CITATION.cff (commit-history order).
 authors:
+  - family-names: Krebs
+    given-names: Florian
+    email: fkrebs@nucli.de
+    affiliation: "DLR Center for Lightweight Production Technology (ZLP Augsburg)"
+    orcid: "https://orcid.org/0000-0001-6033-801X"
   - orcid: "https://orcid.org/0000-0001-6285-3242"
     family-names: Haase
     given-names: Tobias
     email: Tobias.Haase@dlr.de
+    affiliation: "DLR Center for Lightweight Production Technology (ZLP Augsburg)"
   - orcid: "https://orcid.org/0000-0001-7909-1942"
     family-names: Glück
     given-names: Roland
     email: Roland.Glueck@dlr.de
+    affiliation: "DLR Center for Lightweight Production Technology (ZLP Augsburg)"
   - orcid: "https://orcid.org/0000-0003-1181-7211"
     family-names: Kaufmann
     given-names: Patrick
     email: Patrick.Kaufmann@dlr.de
-  - orcid: "https://orcid.org/0000-0001-6033-801X"
-    family-names: Krebs
-    given-names: Florian
-    email: Florian.Krebs@dlr.de
+    affiliation: "DLR Center for Lightweight Production Technology (ZLP Augsburg)"
   - family-names: Willmeroth
     given-names: Mark
     email: Mark.Willmeroth@premium-aerotec.com
+    affiliation: "Premium AEROTEC"
+
 identifiers:
   - type: doi
     value: 10.5281/zenodo.5091603
-repository-code: "https://gitlab.com/dlr-shepard/shepard"
-url: >-
-  https://www.dlr.de/zlp/en/desktopdefault.aspx/tabid-18285/29082_read-76551/#/gallery/37839
-abstract: >-
-  shepard is a multi-database storage system for highly
-  heterogenous research data. It provides a consistent API
-  to deposit or access any type of supported data.
+    description: "Upstream shepard Zenodo DOI (inherited from gitlab.com/dlr-shepard/shepard)."
+
+repository-code: "https://github.com/noheton/shepard"
+url: "https://noheton.github.io/shepard/"
+license: Apache-2.0
+version: "5.4.0-noheton"
+
 keywords:
   - data management
   - research data
   - process data
   - digital twin
-license: Apache-2.0
-version: 1.0.0
+  - FAIR data
+  - aerospace
+  - manufacturing
+  - timeseries
+  - neo4j
+  - mongodb
+  - timescaledb
+  - quarkus
+  - mcp
+  - provenance
+  - prov-o
+  - helmholtz unhide
+  - plugin spi
+
+references:
+  - type: software
+    title: "shepard (upstream)"
+    authors:
+      - family-names: Haase
+        given-names: Tobias
+        email: Tobias.Haase@dlr.de
+      - family-names: Glück
+        given-names: Roland
+        email: Roland.Glueck@dlr.de
+      - family-names: Kaufmann
+        given-names: Patrick
+        email: Patrick.Kaufmann@dlr.de
+      - family-names: Krebs
+        given-names: Florian
+        email: Florian.Krebs@dlr.de
+      - family-names: Willmeroth
+        given-names: Mark
+        email: Mark.Willmeroth@premium-aerotec.com
+    repository-code: "https://gitlab.com/dlr-shepard/shepard"
+    version: "5.4.0"
+    notes: >-
+      Upstream codebase. This fork preserves byte-for-byte compatibility on
+      the upstream /shepard/api/* surface (see docs/architecture.md
+      "API-version policy").

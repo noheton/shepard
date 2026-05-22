@@ -155,3 +155,8 @@ Recent capabilities not in upstream shepard 5.2.0:
   [v1 deprecation](/reference/v1-deprecation/).
 
 Snapshot date: {{ site.snapshot_date }}.
+
+---
+
+Cite our work or look up the standards behind these design decisions in
+the [bibliography]({{ '/bibliography' | relative_url }}).
