@@ -1,0 +1,256 @@
+[
+  {
+    "ts": "2026-05-22T13:45:25.479Z",
+    "flow": "F00-login",
+    "totalMs": 2956,
+    "submitToAppMs": 791,
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 2,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 2,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 7,
+      "vOverlay": 0
+    },
+    "note": "OIDC bounce: from form-submit to home-page-ready. Look for a spinner during the round-trip in screenshot 02-kc-form -> 03-logged-in."
+  },
+  {
+    "ts": "2026-05-22T13:45:31.434Z",
+    "flow": "F01-collection-load-mffd",
+    "collectionId": 515365,
+    "totalMs": 5308,
+    "tableReadyMs": 49,
+    "aria500": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 3,
+      "vProgressCircular": 1,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "aria2500": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 3,
+      "vProgressCircular": 1,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "ariaFinal": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 3,
+      "vProgressCircular": 1,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "apiCallCount": 11,
+    "apiTotalBytes": 65045,
+    "slowestApi": [
+      {
+        "url": "https://shepard-api.nuclide.systems/shepard/api/collections/515365",
+        "size": 59869,
+        "ms": 2836
+      },
+      {
+        "url": "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+        "size": 2,
+        "ms": 290
+      },
+      {
+        "url": "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+        "size": 2,
+        "ms": 281
+      },
+      {
+        "url": "https://shepard-api.nuclide.systems/v2/instance/identity",
+        "size": 133,
+        "ms": 205
+      },
+      {
+        "url": "https://shepard-api.nuclide.systems/v2/instance/capabilities",
+        "size": 450,
+        "ms": 199
+      }
+    ]
+  },
+  {
+    "ts": "2026-05-22T13:45:41.236Z",
+    "flow": "F02-sidebar-expand",
+    "beforeAria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 4,
+      "ariaLive": 4,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "afterAria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 4,
+      "ariaLive": 4,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "expandLatencyMs": 379
+  },
+  {
+    "ts": "2026-05-22T13:45:41.236Z",
+    "flow": "F02-sidebar-tree",
+    "sidebarCount": 4,
+    "itemCount": 12,
+    "expandableCount": 17
+  },
+  {
+    "ts": "2026-05-22T13:46:15.349Z",
+    "flow": "F03-lineage-small",
+    "clickedToReadyMs": -1,
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 46,
+      "ariaLive": 46,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:26.068Z",
+    "flow": "F03-lineage-large",
+    "clickedToReadyMs": -1,
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 4,
+      "ariaLive": 4,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:29.190Z",
+    "flow": "F04-do-detail",
+    "totalMs": 2565,
+    "contentReadyMs": 48,
+    "aria500": {
+      "ariaBusy": 0,
+      "roleProgressbar": 3,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 3,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "ariaFinal": {
+      "ariaBusy": 0,
+      "roleProgressbar": 3,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 3,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:34.817Z",
+    "flow": "F05-ts-chart",
+    "clickedToChartMs": 27,
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 1,
+      "ariaLive": 1,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:47.065Z",
+    "flow": "F06-search-debounce",
+    "midTypeAria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 4,
+      "ariaLive": 4,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "finalAria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 4,
+      "roleStatus": 4,
+      "ariaLive": 4,
+      "vProgressLinear": 4,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:50.747Z",
+    "flow": "F07-nav-collections-index",
+    "transitionMs": 1775,
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 2,
+      "roleStatus": 1,
+      "ariaLive": 2,
+      "vProgressLinear": 2,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    },
+    "ariaFinal": {
+      "ariaBusy": 0,
+      "roleProgressbar": 2,
+      "roleStatus": 1,
+      "ariaLive": 2,
+      "vProgressLinear": 2,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:47:52.931Z",
+    "flow": "F07-nav-ts-index",
+    "aria": {
+      "ariaBusy": 0,
+      "roleProgressbar": 0,
+      "roleStatus": 0,
+      "ariaLive": 0,
+      "vProgressLinear": 0,
+      "vProgressCircular": 0,
+      "vSkeletonLoader": 0,
+      "vOverlay": 0
+    }
+  },
+  {
+    "ts": "2026-05-22T13:48:03.984Z",
+    "flow": "F08-viewport-variants",
+    "note": "captured 1920+1440 of worst offenders"
+  }
+]

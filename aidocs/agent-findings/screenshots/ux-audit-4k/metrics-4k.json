@@ -1,0 +1,141 @@
+{
+  "vw": 3840,
+  "vh": 2160,
+  "main": {
+    "x": 0,
+    "y": 0,
+    "width": 3840,
+    "height": 4239.6875,
+    "top": 0,
+    "right": 3840,
+    "bottom": 4239.6875,
+    "left": 0
+  },
+  "sidebar": {
+    "x": 3840,
+    "y": 64,
+    "width": 400,
+    "height": 2096,
+    "top": 64,
+    "right": 4240,
+    "bottom": 2160,
+    "left": 3840
+  },
+  "titles": [
+    {
+      "text": "Containers",
+      "rect": {
+        "x": 0,
+        "y": 2112,
+        "width": 240,
+        "height": 48,
+        "top": 2112,
+        "right": 240,
+        "bottom": 2160,
+        "left": 0
+      }
+    },
+    {
+      "text": "Attributes (1) Add/Edit",
+      "rect": {
+        "x": 12,
+        "y": 3735.75,
+        "width": 1400,
+        "height": 32,
+        "top": 3735.75,
+        "right": 1412,
+        "bottom": 3767.75,
+        "left": 12
+      }
+    },
+    {
+      "text": "Lab Journal",
+      "rect": {
+        "x": 12,
+        "y": 3843.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 3843.6875,
+        "right": 1412,
+        "bottom": 3875.6875,
+        "left": 12
+      }
+    },
+    {
+      "text": "Activity",
+      "rect": {
+        "x": 12,
+        "y": 3907.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 3907.6875,
+        "right": 1412,
+        "bottom": 3939.6875,
+        "left": 12
+      }
+    },
+    {
+      "text": "Referenced Containers",
+      "rect": {
+        "x": 12,
+        "y": 3971.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 3971.6875,
+        "right": 1412,
+        "bottom": 4003.6875,
+        "left": 12
+      }
+    },
+    {
+      "text": "Dataset Lineage",
+      "rect": {
+        "x": 12,
+        "y": 4035.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 4035.6875,
+        "right": 1412,
+        "bottom": 4067.6875,
+        "left": 12
+      }
+    },
+    {
+      "text": "Watched containers",
+      "rect": {
+        "x": 12,
+        "y": 4099.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 4099.6875,
+        "right": 1412,
+        "bottom": 4131.6875,
+        "left": 12
+      }
+    },
+    {
+      "text": "Snapshots",
+      "rect": {
+        "x": 12,
+        "y": 4163.6875,
+        "width": 1400,
+        "height": 32,
+        "top": 4163.6875,
+        "right": 1412,
+        "bottom": 4195.6875,
+        "left": 12
+      }
+    }
+  ],
+  "description": {
+    "x": 12,
+    "y": 2419.8125,
+    "width": 1400,
+    "height": 137.9375,
+    "top": 2419.8125,
+    "right": 1412,
+    "bottom": 2557.75,
+    "left": 12
+  },
+  "bodyScrollHeight": 4240
+}
