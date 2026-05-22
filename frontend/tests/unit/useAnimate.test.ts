@@ -56,7 +56,9 @@ describe("useAnimate", () => {
     const { play } = useAnimate();
     await play(el as unknown as Element, fadeUp, { duration: 500, delay: 100 });
     expect(mockAnimate).toHaveBeenCalledTimes(1);
-    const [keyframes, options] = mockAnimate.mock.calls[0];
+    const call = mockAnimate.mock.calls[0]!;
+    const keyframes = call[0];
+    const options = call[1] as KeyframeAnimationOptions;
     expect(keyframes).toEqual(fadeUp);
     expect(options.duration).toBe(500);
     expect(options.delay).toBe(100);
@@ -68,7 +70,7 @@ describe("useAnimate", () => {
     const { el, mockAnimate } = makeElement();
     const { play } = useAnimate();
     await play(el as unknown as Element, popIn, 320);
-    expect(mockAnimate.mock.calls[0][1].duration).toBe(320);
+    expect((mockAnimate.mock.calls[0]![1] as KeyframeAnimationOptions).duration).toBe(320);
   });
 
   it("is a no-op when the element is null/undefined", async () => {
@@ -116,9 +118,9 @@ describe("playStagger", () => {
       duration: 400,
     });
     expect(calls).toHaveLength(3);
-    expect(calls[0].delay).toBe(50);
-    expect(calls[1].delay).toBe(150);
-    expect(calls[2].delay).toBe(250);
+    expect(calls[0]!.delay).toBe(50);
+    expect(calls[1]!.delay).toBe(150);
+    expect(calls[2]!.delay).toBe(250);
     expect(calls.every((c) => c.duration === 400)).toBe(true);
   });
 
