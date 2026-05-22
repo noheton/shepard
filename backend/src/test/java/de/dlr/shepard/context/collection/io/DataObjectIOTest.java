@@ -1,8 +1,10 @@
 package de.dlr.shepard.context.collection.io;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -89,5 +91,73 @@ public class DataObjectIOTest {
 
     var converted = new DataObjectIO(obj);
     assertNull(converted.getParentId());
+  }
+
+  // ── LIC1 (FAIR-1): license + accessRights wire contract ──────────────
+  //
+  // Same wire-fidelity rationale as CollectionIOTest: these fields are fork
+  // additions absent from upstream v5.2.0. They must be omitted from the JSON
+  // body when null and round-trip when set.
+
+  @Test
+  public void license_isOmittedFromJson_whenNull() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).doesNotContain("license");
+  }
+
+  @Test
+  public void accessRights_isOmittedFromJson_whenNull() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).doesNotContain("accessRights");
+  }
+
+  @Test
+  public void license_isSerialised_whenSet() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    io.setLicense("MIT");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).contains("\"license\":\"MIT\"");
+  }
+
+  @Test
+  public void accessRights_isSerialised_whenSet() throws Exception {
+    var io = new DataObjectIO();
+    io.setName("do");
+    io.setAccessRights("CLOSED");
+    String json = new ObjectMapper().writeValueAsString(io);
+    assertThat(json).contains("\"accessRights\":\"CLOSED\"");
+  }
+
+  @Test
+  public void licenseAndAccessRights_roundTripThroughJson() throws Exception {
+    var mapper = new ObjectMapper();
+    var io = new DataObjectIO();
+    io.setName("do");
+    io.setLicense("ODbL-1.0");
+    io.setAccessRights("EMBARGOED");
+    String json = mapper.writeValueAsString(io);
+    var deserialised = mapper.readValue(json, DataObjectIO.class);
+    assertEquals("ODbL-1.0", deserialised.getLicense());
+    assertEquals("EMBARGOED", deserialised.getAccessRights());
+  }
+
+  @Test
+  public void conversion_carriesLicenseAndAccessRightsFromEntity() {
+    var col = new Collection(2L);
+    col.setShepardId(432L);
+    var obj = new DataObject(1L);
+    obj.setShepardId(99L);
+    obj.setCollection(col);
+    obj.setLicense("Apache-2.0");
+    obj.setAccessRights("OPEN");
+
+    var converted = new DataObjectIO(obj);
+    assertEquals("Apache-2.0", converted.getLicense());
+    assertEquals("OPEN", converted.getAccessRights());
   }
 }

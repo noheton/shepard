@@ -23,15 +23,19 @@ public abstract class AbstractDataObject extends VersionableEntity {
   private Map<String, String> attributes;
 
   /**
-   * FAIR-1 — SPDX expression or other license identifier (e.g. "CC-BY-4.0").
-   * Nullable; null means "not yet declared".
+   * FAIR-1 (LIC1) — SPDX license identifier expression (e.g. {@code "CC-BY-4.0"},
+   * {@code "MIT"}, {@code "Apache-2.0"}, {@code "ODbL-1.0"}) or {@code "PROPRIETARY"}.
+   * Nullable; null means "not yet declared". See
+   * {@code V57__NOOP_AbstractDataObject_fair_fields.cypher} — additive schema-free
+   * property.
    */
   private String license;
 
   /**
-   * FAIR-1 — COAR Access Rights vocabulary term (e.g. "open access",
-   * "embargoed access", "restricted access", "metadata only access").
-   * Nullable; null means "not yet declared".
+   * FAIR-1 (LIC1) — Access-rights enum stored as a String: one of {@code OPEN},
+   * {@code RESTRICTED}, {@code CLOSED}, or {@code EMBARGOED}. Nullable; null means
+   * "not yet declared". Enforcement is currently client-side via the v-select; the
+   * server stays permissive for additive forward compatibility.
    */
   private String accessRights;
 

@@ -26,20 +26,34 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
   private String status;
 
   /**
-   * FAIR-1 — SPDX expression or other license identifier (e.g. "CC-BY-4.0").
-   * Nullable; null means "not yet declared".
+   * FAIR-1 (LIC1) — SPDX license identifier expression (e.g. {@code "CC-BY-4.0"},
+   * {@code "MIT"}, {@code "Apache-2.0"}, {@code "ODbL-1.0"}) or {@code "PROPRIETARY"}
+   * for non-SPDX in-house terms. Nullable; null means "not yet declared".
+   *
+   * <p>Backed by {@code dcterms:license} in the canonical export-shape mapping
+   * (see {@code aidocs/semantics/98 §4.1}). Surfaced on both {@code /shepard/api/}
+   * and {@code /v2/} surfaces: because of {@code @JsonInclude(NON_NULL)} the field
+   * is absent from the wire when null, so upstream v5.2.0 clients see no change in
+   * the v1 wire shape until an operator/researcher sets a value.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
   @Schema(nullable = true)
   private String license;
 
   /**
-   * FAIR-1 — COAR Access Rights vocabulary term (e.g. "open access",
-   * "embargoed access", "restricted access", "metadata only access").
-   * Nullable; null means "not yet declared".
+   * FAIR-1 (LIC1) — Access-rights enum: one of {@code OPEN}, {@code RESTRICTED},
+   * {@code CLOSED}, or {@code EMBARGOED}. Nullable; null means "not yet declared".
+   *
+   * <p>Backed by {@code dcat:accessRights} in the canonical export-shape mapping
+   * (see {@code aidocs/semantics/98 §4.1}). The enum is enforced client-side via
+   * a v-select; the server stays permissive (plain String) for additive forward
+   * compatibility — adding values requires no migration. Server-side
+   * Bean-Validation can be tightened in a follow-up if needed.
+   *
+   * <p>Same wire-compat property as {@link #license}: absent when null.
    */
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  @Schema(nullable = true)
+  @Schema(nullable = true, enumeration = {"OPEN", "RESTRICTED", "CLOSED", "EMBARGOED"})
   private String accessRights;
 
   protected AbstractDataObjectIO(AbstractDataObject dataObject) {
