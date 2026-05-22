@@ -75,7 +75,7 @@
          validation report. n10s remains the on-disk store; Jena is
          strictly the validation engine. See
          aidocs/semantics/48 §3 + aidocs/95 §11. -->
-    <jena.version>5.4.0</jena.version>
+    <jena.version>6.1.0</jena.version>
   </properties>
   <dependencyManagement>
     <dependencies>
