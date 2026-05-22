@@ -7,14 +7,15 @@
 #
 # Requirements: curl, jq, uv  (pip install uv or brew install uv)
 #
-# Usage:
+# Usage (DLR intranet — Shepard-issued JWT token goes in SHEPARD_API_KEY):
 #   export SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de
-#   export SHEPARD_BEARER_TOKEN=eyJhbGciOiJSUzI1...
+#   export SHEPARD_API_KEY=eyJhbGciOiJSUzI1...   ← paste the JWT here
 #   export SESSION_ID=2026-05-22-Q1
 #   export DATA_DIR=/data/mffd/session-q1
 #   bash run-mffd-import.sh [--dry-run]
 #
-# For nuclide.systems use SHEPARD_API_KEY instead of SHEPARD_BEARER_TOKEN.
+# Usage (nuclide.systems — same SHEPARD_API_KEY works, or use SHEPARD_BEARER_TOKEN
+# for OIDC-issued tokens from Keycloak).
 #
 # First-time bootstrap (before the script is in Shepard):
 #   Skip the fetch step and run the local script directly:
