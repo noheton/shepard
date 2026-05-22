@@ -1,10 +1,13 @@
 # shepard-plugin-importer — Reference
 
-**Status (PR-1).** Scaffold only. The plugin is registered with the
-backend's `PluginRegistry` and is visible in `GET /v2/admin/plugins`,
-but ships **no REST surface, no DAO, no source adapter** yet. PR-2
-adds the `importer_run` Postgres table + `JobService`-shaped service;
-PR-3 ships the first source adapter (`DLRv5Source`).
+**Status (PR-2).** Scaffold + persistence layer. The plugin is
+registered with the backend's `PluginRegistry`, the
+`importer_run` Postgres table exists (created on first start via
+the plugin's Flyway migration `V1.11.0`), and the
+`ImporterRunService` write-surface mirrors the generic JobService
+shape from `aidocs/platform/32 §4`. **No REST surface, no
+scheduler, no source adapter yet** — PR-3 ships `DLRv5Source`,
+PR-4 wires the `@Scheduled` worker + REST + reaper + GC.
 
 ## What this plugin does (target shape)
 

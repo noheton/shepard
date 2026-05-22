@@ -165,6 +165,46 @@
       <scope>provided</scope>
     </dependency>
 
+    <!--
+      PR-2 — Hibernate ORM Panache for the `importer_run` entity +
+      repository. Provided by the backend image. The plugin's
+      @Entity classes are picked up by Quarkus's build-time JPA
+      scanner via the
+      `quarkus.index-dependency.shepard-plugin-importer.*` keys
+      in `application.properties`.
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-orm-panache</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!--
+      Transactional + persistence APIs the entity / service / DAO
+      compile against. Quarkus ships these via the backend image.
+    -->
+    <dependency>
+      <groupId>jakarta.transaction</groupId>
+      <artifactId>jakarta.transaction-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!--
+      uuid-creator — UUID v7 minted at submit time so the caller
+      knows the run id before the row commits. Same lib the
+      backend's AppIdGenerator uses (transitively visible via
+      the `provided` backend dep, declared here for IDE clarity).
+    -->
+    <dependency>
+      <groupId>com.github.f4b6a3</groupId>
+      <artifactId>uuid-creator</artifactId>
+      <version>6.1.1</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- ====== test scope ====== -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
