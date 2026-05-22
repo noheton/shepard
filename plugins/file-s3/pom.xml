@@ -158,6 +158,10 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-video</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 

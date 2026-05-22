@@ -961,6 +961,22 @@
           <artifactId>shepard-plugin-video</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          IMP1a — shepard-plugin-importer scaffold. PR-1 ships the
+          PluginManifest only; PR-2 will land the `importer_run`
+          Postgres table + the JobService-shaped DAO/service; PR-3
+          ships `DLRv5Source` extracted from
+          `examples/mffd-showcase/scripts/mffd-dropbox-import.py`
+          v12's `ShepardClient`. The plugin is the future home of
+          the agentic data-management pipeline (memory:
+          `project_importer_plugin`).
+          See `aidocs/16` IMP1a + `aidocs/44` Importer row.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

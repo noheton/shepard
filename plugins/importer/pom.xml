@@ -1,27 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  VID1b — extracts the video payload kind from the backend into a
-  drop-in plugin JAR per the plugin-first heuristic #1
-  ("New payload kinds → plugin from day one", CLAUDE.md).
+  IMP1a — shepard-plugin-importer scaffold (PR-1).
 
-  Phase 1 (this commit): thin manifest only. The VideoStreamReference
-  entity, VideoStreamReferenceV2Rest, VideoAnnotationRest, and
-  VideoProbeService remain in-tree for the migration window. The
-  manifest makes the "video" capability discoverable by PluginRegistry
-  so that shepard-plugin-imagebundle can declare a PluginDependency
-  on it from day one.
+  This module produces `shepard-plugin-importer-${revision}.jar` —
+  the future home of the agentic data-management pipeline: a
+  library of importers that pull data from a remote DLR shepard
+  source instance (and later: git, S3, local dropbox, …) into the
+  local shepard instance running this plugin.
 
-  Phase 2 (VID1b full): move all de.dlr.shepard.*.videostreamreference.*
-  and de.dlr.shepard.v2.video.* packages into this module and gate
-  the REST resources behind PluginRegistry.isEnabled("video").
+  Phase 1 (this PR) ships ONLY the manifest + build wiring; no
+  REST surface, no DAO, no source adapter. PR-2 adds the
+  `importer_run` Postgres table + `JobService`-shaped DAO/service;
+  PR-3 extracts the `DLRv5Source` from
+  `examples/mffd-showcase/scripts/mffd-dropbox-import.py`
+  v12's `ShepardClient` (lines 239-1170); PR-4 wires the REST
+  surface; PR-5 adds the CLI; PR-6 the frontend; PR-7 the
+  end-to-end integration test.
 
-  Build order (ADR-0023 two-pass dance):
+  Build order (PM1a phase 3, ADR-0023):
 
     $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
-    $ cd plugins/video && mvn -DskipTests install
+    $ cd plugins/importer && mvn -DskipTests install
     $ cd backend && mvn package
 
-  See aidocs/34 + aidocs/44 VID1b row.
+  The `provided` scope on the backend dep + the
+  `<exclusion>shepard-plugin-importer</exclusion>` blocks across
+  every sibling plugin pom keep the with-plugins-default build
+  acyclic.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -29,18 +34,16 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.dlr.shepard.plugins</groupId>
-  <artifactId>shepard-plugin-video</artifactId>
+  <artifactId>shepard-plugin-importer</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
 
-  <name>shepard plugin — video (VideoStreamReference)</name>
+  <name>shepard plugin — Importer (agentic data-management pipeline)</name>
   <description>
-    Video payload kind plugin. Phase 1: manifest-only placeholder so
-    PluginRegistry tracks the "video" capability and
-    shepard-plugin-imagebundle can declare a dependency on it.
-    Phase 2 (VID1b full): moves VideoStreamReference entity + REST
-    endpoints into this module.
-    See aidocs/44 VID1b.
+    Library of importers that pull data from remote sources into
+    the local shepard instance. PR-1 ships the manifest + build
+    wiring only; the orchestrator, source adapters, REST surface,
+    CLI and frontend land in PR-2..PR-7.
   </description>
   <url>https://github.com/noheton/shepard</url>
 
@@ -84,12 +87,30 @@
   </dependencyManagement>
 
   <dependencies>
+    <!--
+      Backend — provides `PluginManifest`, `PluginContext`, the
+      Hibernate ORM Panache types we'll lean on in PR-2 for the
+      `importer_run` Postgres entity. `provided` scope: the JAR
+      doesn't bundle backend.jar; at runtime the plugin's classes
+      sit on the backend's classpath via the `with-plugins`
+      profile in `backend/pom.xml`.
+
+      The `<exclusions>` block defends against the build-time
+      circular reference where the backend's `with-plugins`
+      profile pulls every `de.dlr.shepard.plugins:*` JAR back onto
+      its dependency list — including this one. The self-exclusion
+      keeps the plugin's compile classpath consistent.
+    -->
     <dependency>
       <groupId>de.dlr.shepard</groupId>
       <artifactId>backend</artifactId>
       <version>${revision}</version>
       <scope>provided</scope>
       <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-unhide</artifactId>
@@ -130,48 +151,17 @@
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-file-s3</artifactId>
         </exclusion>
-        <!--
-          Self-exclusion: prevents the circular reference where backend's
-          with-plugins profile pulls shepard-plugin-video back in, causing
-          "Could not find artifact ...shepard-plugin-video" during plugin build.
-        -->
         <exclusion>
           <groupId>de.dlr.shepard.plugins</groupId>
           <artifactId>shepard-plugin-video</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>de.dlr.shepard.plugins</groupId>
-          <artifactId>shepard-plugin-importer</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
 
+    <!-- Quarkus runtime types used in the manifest (logging). -->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-jackson</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-smallrye-openapi</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Lombok — entity and IO classes use @Data, @NoArgsConstructor, etc. -->
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>1.18.44</version>
       <scope>provided</scope>
     </dependency>
 
@@ -197,7 +187,7 @@
   </dependencies>
 
   <build>
-    <finalName>shepard-plugin-video-${revision}</finalName>
+    <finalName>shepard-plugin-importer-${revision}</finalName>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -206,13 +196,6 @@
           <compilerArgs>
             <arg>-parameters</arg>
           </compilerArgs>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>org.projectlombok</groupId>
-              <artifactId>lombok</artifactId>
-              <version>1.18.44</version>
-            </path>
-          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>
