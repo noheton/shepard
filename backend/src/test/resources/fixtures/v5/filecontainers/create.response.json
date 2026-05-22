@@ -1,0 +1,12 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "FileContainerWireFixture",
+  "oid" : "<<ANY-STRING>>",
+  "revision" : 0,
+  "type" : "FILE",
+  "updatedAt" : null,
+  "updatedBy" : null
+}

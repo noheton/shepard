@@ -1,0 +1,14 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "dataObjectId" : "<<ANY-LONG>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "StructuredDataReferenceWireFixture",
+  "revision" : 1,
+  "structuredDataContainerId" : "<<ANY-LONG>>",
+  "structuredDataOids" : "<<ANY-STRING[]>>",
+  "type" : "StructuredDataReference",
+  "updatedAt" : null,
+  "updatedBy" : null
+}

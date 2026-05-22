@@ -1,0 +1,19 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "attributes" : {
+    "a" : "1",
+    "b" : "2"
+  },
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "dataObjectIds" : "<<ANY-LONG[]>>",
+  "defaultFileContainerId" : "<<NULL-OR-STRING>>",
+  "description" : "My Description",
+  "heroImageUrl" : null,
+  "id" : "<<ANY-LONG>>",
+  "incomingIds" : "<<ANY-LONG[]>>",
+  "name" : "CollectionWireFixture",
+  "revision" : 1,
+  "updatedAt" : null,
+  "updatedBy" : null
+}

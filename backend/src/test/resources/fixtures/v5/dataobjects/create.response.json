@@ -1,0 +1,23 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "attributes" : { },
+  "childrenIds" : [ ],
+  "collectionId" : "<<ANY-LONG>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "description" : null,
+  "fileBundleCount" : 0,
+  "id" : "<<ANY-LONG>>",
+  "incomingIds" : [ ],
+  "name" : "DataObjectWireFixture",
+  "parentId" : null,
+  "predecessorIds" : [ ],
+  "referenceIds" : [ ],
+  "revision" : 1,
+  "structuredDataReferenceCount" : 0,
+  "successorIds" : [ ],
+  "timeseriesReferenceCount" : 0,
+  "updatedAt" : null,
+  "updatedBy" : null,
+  "videoStreamReferenceCount" : 0
+}
