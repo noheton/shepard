@@ -183,9 +183,18 @@ class Tee:
 
 @dataclass
 class FileRef:
+    """One file payload identified by (fref_id, oid).
+
+    Bug F fix: a single FileReference may carry multiple `fileOids[]`
+    (multi-file bundles). v14 ignored this — only the ref node was
+    iterated, never its OID list, silently dropping bundled payloads.
+    v15 emits one FileRef per (ref_id, oid) pair so downstream loops
+    iterate every payload.
+    """
     fref_id: int
     name: str
     size: int = 0
+    oid: str = ""
 
 
 @dataclass
@@ -325,6 +334,11 @@ class ShepardClient:
                 break
 
     def _fetch_file_refs(self, coll_id: int, do_id: int) -> list[FileRef]:
+        """Bug D + F fix: iterate every `fileOids[]` entry, not just the
+        reference node. A multi-file FileReference produces one FileRef
+        per OID; downstream code addresses each payload via its OID path
+        `/fileReferences/{id}/payload/{oid}`.
+        """
         r = self._get(
             f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}/fileReferences"
         )
@@ -332,11 +346,25 @@ class ShepardClient:
             return []
         refs = []
         for item in r.json():
-            refs.append(FileRef(
-                fref_id=item["id"],
-                name=item.get("name") or item.get("fileName") or f"file-{item['id']}",
-                size=item.get("size") or item.get("fileSize") or 0,
-            ))
+            base_name = item.get("name") or item.get("fileName") or f"file-{item['id']}"
+            base_size = item.get("size") or item.get("fileSize") or 0
+            oids = item.get("fileOids") or []
+            if not oids:
+                # Some legacy refs may carry a single payload accessible at
+                # /fileReferences/{id}/payload (no OID); keep one placeholder
+                # entry so downstream code can hit the v1-style endpoint.
+                refs.append(FileRef(
+                    fref_id=item["id"], name=base_name, size=base_size, oid=""
+                ))
+                continue
+            # Multi-OID expansion — one FileRef per payload, preserving the
+            # ref node's id for the link-back step.
+            for idx, oid in enumerate(oids):
+                # Disambiguate display name when a bundle contains >1 file.
+                name = base_name if len(oids) == 1 else f"{base_name}.{idx}"
+                refs.append(FileRef(
+                    fref_id=item["id"], name=name, size=base_size, oid=str(oid)
+                ))
         return refs
 
     def _fetch_ts_refs(self, coll_id: int, do_id: int) -> list[TsRef]:
@@ -396,8 +424,19 @@ class ShepardClient:
             return None
         return content
 
-    def download_structured(self, coll_id: int, do_id: int, ref_id: int) -> dict | list | None:
-        """Download structured data payload (JSON) from the source instance."""
+    def download_structured(self, coll_id: int, do_id: int, ref_id: int) -> list | None:
+        """Bug E fix: GET .../payload returns `StructuredDataPayload[]` — an
+        ARRAY of wrappers each carrying `{structuredData, payload}` where
+        `payload` is the JSON-encoded inner content (a STRING).
+
+        v14 did `r.json()` and returned the raw wrapper without decoding
+        the inner string — when later re-uploaded, the wrapper-of-wrapper
+        round-trip silently corrupted the data.
+
+        v15 returns a list of (name, decoded-payload) tuples ready for
+        re-upload via upload_structured_payload.
+        """
+        import json as _json
         url = (
             f"{self._base}/shepard/api/collections/{coll_id}"
             f"/dataObjects/{do_id}/structuredDataReferences/{ref_id}/payload"
@@ -406,9 +445,34 @@ class ShepardClient:
         if r is None:
             return None
         try:
-            return r.json()
-        except Exception:
+            raw = r.json()
+        except (ValueError, AttributeError):
             return None
+        if not isinstance(raw, list):
+            # Defensive: a non-array response means a wire-shape regression
+            # on the source side. Treat single-wrapper as a 1-element array.
+            raw = [raw] if raw else []
+        out: list[dict] = []
+        for wrapper in raw:
+            if not isinstance(wrapper, dict):
+                continue
+            inner_str = wrapper.get("payload")
+            sd_meta = wrapper.get("structuredData") or {}
+            inner_name = sd_meta.get("name") or "payload"
+            if not isinstance(inner_str, str):
+                # Bug E hardening: if the source already returned an object,
+                # accept it directly — keeps behaviour resilient against a
+                # later v6 wire shape that drops the string encoding.
+                if isinstance(inner_str, (dict, list)):
+                    out.append({"name": inner_name, "payload": inner_str})
+                continue
+            try:
+                decoded = _json.loads(inner_str)
+            except (ValueError, TypeError):
+                # Couldn't decode — keep the raw string so it round-trips.
+                decoded = inner_str
+            out.append({"name": inner_name, "payload": decoded})
+        return out
 
     def count_data_objects(self, coll_id: int) -> int:
         r = self._get(
@@ -426,11 +490,22 @@ class ShepardClient:
         fref_id: int,
         dest: Path,
         size_hint: int = 0,
+        oid: str = "",
     ) -> bool:
-        url = (
-            f"{self._base}/shepard/api/collections/{coll_id}"
-            f"/dataObjects/{do_id}/fileReferences/{fref_id}/payload"
-        )
+        """Bug D fix: when `oid` is set, address the specific payload
+        within the FileReference bundle. v1-compat fallback (legacy
+        single-payload refs without OIDs) keeps the bare /payload URL.
+        """
+        if oid:
+            url = (
+                f"{self._base}/shepard/api/collections/{coll_id}"
+                f"/dataObjects/{do_id}/fileReferences/{fref_id}/payload/{oid}"
+            )
+        else:
+            url = (
+                f"{self._base}/shepard/api/collections/{coll_id}"
+                f"/dataObjects/{do_id}/fileReferences/{fref_id}/payload"
+            )
         try:
             r = self._s.get(url, stream=True, timeout=600)
             if not r.ok:
@@ -522,30 +597,56 @@ class ShepardClient:
         description: str = "",
         attrs: dict | None = None,
         predecessor_id: int | None = None,
+        predecessor_ids: list[int] | None = None,
     ) -> dict | None:
+        """Bug I fix: set `predecessorIds` inside the DataObject body at POST.
+
+        v14 POST'd the DO, then did `PUT /collections/{c}/dataObjects/{d}/predecessors/{predId}`
+        — that path does NOT exist in DLR v5.4.0. Every "predecessor link FAILED"
+        warning in v14's log was this phantom endpoint.
+
+        DLR v5.4.0 DataObject schema has writable `predecessorIds: array<int64>`.
+        v15 puts the link in the create body — single round-trip, no phantom call.
+        """
         body: dict[str, Any] = {"name": name}
         if description:
             body["description"] = description
         if attrs:
             body["attributes"] = attrs
+        # Accept either a single id or a list — caller convenience.
+        pred_list: list[int] = list(predecessor_ids) if predecessor_ids else []
+        if predecessor_id is not None:
+            pred_list.append(int(predecessor_id))
+        if pred_list:
+            body["predecessorIds"] = pred_list
         r = self._post(f"{self._base}/shepard/api/collections/{coll_id}/dataObjects", body)
         if r is None:
             return None
-        do = r.json()
-        if predecessor_id is not None:
-            self._link_predecessor(coll_id, do["id"], predecessor_id)
-        return do
+        return r.json()
 
-    def _link_predecessor(self, coll_id: int, do_id: int, pred_id: int) -> None:
-        url = (
-            f"{self._base}/shepard/api/collections/{coll_id}"
-            f"/dataObjects/{do_id}/predecessors/{pred_id}"
+    def set_predecessors(self, coll_id: int, do_id: int, pred_ids: list[int]) -> bool:
+        """Bug I fix: post-creation predecessor wiring via PUT on the DataObject body.
+
+        Use this when predecessors aren't known at create time (e.g. cross-step
+        wiring after both steps' DataObjects exist). Fetches the current DO,
+        sets predecessorIds, strips readOnly fields, then PUTs. Idempotent
+        when called with the same ids.
+        """
+        r = self._get(
+            f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
         )
-        r = self._put(url, {})
-        if r is not None:
-            print(f"  [prov] predecessor {pred_id} → {do_id}")
-        else:
-            print(f"  [warn] predecessor link FAILED: {pred_id} → {do_id}")
+        if r is None:
+            return False
+        body = r.json()
+        body["predecessorIds"] = list(pred_ids)
+        # Strip readOnly fields the server rejects on PUT (per v5.4.0 schema).
+        for k in (
+            "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "collectionId",
+            "referenceIds", "successorIds", "childrenIds", "parentId", "incomingIds",
+        ):
+            body.pop(k, None)
+        url = f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+        return self._put(url, body) is not None
 
     def verify_references(self, coll_id: int, do_id: int, do_name: str) -> None:
         base = f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
@@ -653,13 +754,74 @@ class ShepardClient:
         )
         return r.json().get("id") if r else None
 
-    def link_ts_to_do(self, coll_id: int, do_id: int, container_id: int, name: str) -> int | None:
-        """Create a timeseriesReference from a DO to an existing container. Returns ref id."""
+    def list_ts_channels(self, container_id: int) -> list[dict]:
+        """Bug A + G fix: discover the 5-tuple channel set after CSV import.
+
+        Returns: list of {measurement, device, location, symbolicName, field}
+        from GET /timeseriesContainers/{id}/timeseries. Empty list if the
+        container has no channels (a 0-byte placeholder import would yield this).
+        """
+        r = self._get(f"{self._base}/shepard/api/timeseriesContainers/{container_id}/timeseries")
+        if r is None:
+            return []
+        out: list[dict] = []
+        for ch in r.json():
+            try:
+                out.append({
+                    "measurement":  ch["measurement"],
+                    "device":       ch["device"],
+                    "location":     ch["location"],
+                    "symbolicName": ch["symbolicName"],
+                    "field":        ch["field"],
+                })
+            except (KeyError, TypeError):
+                # Skip malformed channel rows — log but don't fail the linkage.
+                print(f"  [ts-channels] skipping malformed channel: {ch}")
+        return out
+
+    def link_ts_to_do(
+        self,
+        coll_id: int,
+        do_id: int,
+        container_id: int,
+        name: str,
+        timeseries: list[dict] | None = None,
+        start_ms: int = 0,
+        end_ms: int = 0,
+    ) -> int | None:
+        """Bug A + G fix: create a TimeseriesReference AFTER the container has channels.
+
+        DLR v5.4.0 TimeseriesReference REQUIRES non-empty `timeseries[]`
+        (minItems:1). Calling this before import_ts_csv → list_ts_channels
+        guarantees a 400.
+
+        Args:
+            timeseries: list of {measurement, device, location, symbolicName, field}
+                        from list_ts_channels(container_id). Must be non-empty.
+            start_ms, end_ms: time range (epoch ms). When zero, a wide bracket
+                              [0, 2**62] is used — let the server constrain via the
+                              hypertable.
+
+        Returns the new reference id, or None if linkage fails.
+        """
+        if timeseries is None or not timeseries:
+            print(f"  [ts-link] refusing to link {name!r} — container has no channels (Bug G fix)")
+            return None
+        if end_ms == 0:
+            # Wide-bracket fallback; OGM accepts any positive long.
+            end_ms = (1 << 62)
+        body = {
+            "name": name,
+            "timeseriesContainerId": container_id,
+            "start": int(start_ms),
+            "end":   int(end_ms),
+            "timeseries": timeseries,  # Bug A fix: required, minItems:1
+        }
         url = (
             f"{self._base}/shepard/api/collections/{coll_id}"
             f"/dataObjects/{do_id}/timeseriesReferences"
         )
-        r = self._post(url, {"name": name, "timeseriesContainerId": container_id})
+        r = self._post(url, body)
         return r.json().get("id") if r else None
 
     def import_ts_csv(self, container_id: int, csv_bytes: bytes, filename: str = "export.csv") -> bool:
@@ -690,26 +852,62 @@ class ShepardClient:
         return r.json().get("id") if r else None
 
     def link_structured_to_do(
-        self, coll_id: int, do_id: int, container_id: int, name: str
+        self, coll_id: int, do_id: int, container_id: int, name: str,
+        oids: list[str] | None = None,
     ) -> bool:
-        """Create a structuredDataReference from a DO to an existing container."""
+        """Bug C fix: StructuredDataReference REQUIRES non-empty
+        `structuredDataOids[]` (minItems:1). v14 omitted this field → 400.
+
+        Order of operations is now:
+          1. POST /structuredDataContainers      → container_id
+          2. POST /structuredDataContainers/{id}/payload (per payload) → oid
+          3. link_structured_to_do(..., oids=[oid1, oid2, ...])
+        """
+        if not oids:
+            print(f"  [sd-link] refusing to link {name!r} — no oids (Bug C fix)")
+            return False
         url = (
             f"{self._base}/shepard/api/collections/{coll_id}"
             f"/dataObjects/{do_id}/structuredDataReferences"
         )
-        r = self._post(url, {"name": name, "structuredDataContainerId": container_id})
+        body = {
+            "name": name,
+            "structuredDataContainerId": container_id,
+            "structuredDataOids": list(oids),   # required, minItems:1
+        }
+        r = self._post(url, body)
         return r is not None
 
-    def upload_structured_payload(self, container_id: int, payload: dict | list) -> bool:
-        """Upload JSON payload to a structured data container on the dest instance."""
+    def upload_structured_payload(
+        self, container_id: int, payload: dict | list, name: str = "payload"
+    ) -> str | None:
+        """Bug B + D fix: POST (not PUT) the wrapper `StructuredDataPayload` shape.
+
+        v14: `PUT /structuredDataContainers/{id}/payload  body=<raw json>`
+              The path accepts GET + POST only (no PUT); body shape is also
+              wrong — DLR v5.4.0 wants {structuredData:{name}, payload:string}
+              where payload is the JSON-encoded inner content.
+
+        v15: `POST /structuredDataContainers/{id}/payload  body=wrapper`
+              Returns the oid on success — captured for the structuredDataOids[]
+              field on the StructuredDataReference (Bug C).
+        """
+        import json as _json
         url = f"{self._base}/shepard/api/structuredDataContainers/{container_id}/payload"
-        r = self._request_with_retry("PUT", url, json=payload, timeout=60)
+        body = {
+            "structuredData": {"name": name},
+            "payload": _json.dumps(payload),   # Bug D: required STRING (minLength:2)
+        }
+        r = self._request_with_retry("POST", url, json=body, timeout=60)
         if r is None:
-            return False
-        if r.ok:
-            return True
-        self._log_err("PUT (structured)", url, r)
-        return False
+            return None
+        if not r.ok:
+            self._log_err("POST (structured)", url, r)
+            return None
+        try:
+            return r.json().get("oid")
+        except (ValueError, AttributeError):
+            return None
 
     def upload_self(self, coll_id: int, do_id: int, do_app_id: str) -> None:
         script_path = Path(__file__)
