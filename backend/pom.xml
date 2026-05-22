@@ -1065,6 +1065,23 @@
           <artifactId>shepard-plugin-analytics-ts</artifactId>
           <version>${revision}</version>
         </dependency>
+        <!--
+          V1COMPAT.0 Phase 1 — `shepard-plugin-v1-compat` marker
+          plugin. Ships the `:LegacyV1Config` singleton, the
+          `/v2/admin/legacy/v1/{config,stats}` admin surface, and
+          the `LegacyV1GateFilter` + `LegacyV1DeprecationFilter`
+          pair on the `/shepard/api/...` request path. Default
+          state: enabled — every byte of every v1 response stays
+          identical to upstream shepard 5.2.0. Phase 2
+          (aidocs/platform/103) moves the v1 REST classes
+          themselves into this JAR; Phase 1 moves zero code.
+          See aidocs/platform/103a-v1-compat-marker-plugin.md.
+        -->
+        <dependency>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+          <version>${revision}</version>
+        </dependency>
       </dependencies>
     </profile>
   </profiles>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  V1COMPAT.0 Phase 1 — shepard-plugin-v1-compat marker plugin per
+  aidocs/platform/103a. Phase 1 ships the control plane for the
+  legacy v1 surface (the upstream-frozen /shepard/api/* paths):
+
+    * `:LegacyV1Config` Neo4j singleton — `{enabled: bool}` only,
+      A3b pattern (mirrors :SemanticConfig, :UnhideConfig).
+    * `/v2/admin/legacy/v1/config` GET + PATCH — admin runtime knob.
+    * `/v2/admin/legacy/v1/stats` GET — in-memory hit counters per
+      endpoint + per principal.
+    * `LegacyV1GateFilter` — when `:LegacyV1Config.enabled=false`,
+      returns 410 Gone + RFC 7807 problem-detail body. Runs before
+      JWTFilter (Priority < AUTHENTICATION) so anonymous v1 callers
+      see 410, not 401.
+    * `LegacyV1DeprecationFilter` — counter increment + first-hit
+      WARN per (path-pattern × principal) per session + audit event
+      on write (POST/PUT/PATCH/DELETE). Runs after JWTFilter
+      (Priority > AUTHENTICATION) so the principal sub is available.
+
+  Default state when shipping (singleton.enabled=true): every byte
+  of every /shepard/api/* response is identical to today, plus
+  three additive response headers: `Deprecation: true` +
+  `Link: </v2/...>; rel="successor-version"` (RFC 8594) and
+  `X-Shepard-Legacy: true` (fork-specific marker the frontend
+  banner keys on). The fork-marker is additive and harmless to
+  third-party tooling.
+
+  Phase 2 (aidocs/platform/103) moves the 29 v1 REST classes and
+  shared IOs into this plugin JAR. Phase 1 moves zero code.
+
+  Build order (same two-pass dance as other plugins):
+
+    $ cd backend && mvn -DnoPlugins -DskipTests -Dquarkus.build.skip=true install
+    $ cd plugins/v1-compat && mvn -DskipTests install
+    $ cd backend && mvn package
+
+  See `aidocs/platform/103a-v1-compat-marker-plugin.md` for the
+  design rationale, the 5 clarification leans, and the PR sequence.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-v1-compat</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — v1 compat marker (V1COMPAT.0 Phase 1)</name>
+  <description>
+    Phase 1 marker plugin for the v1 compat surface. Ships the
+    `:LegacyV1Config` singleton, the `/v2/admin/legacy/v1/*` admin
+    surface, and request filters that emit RFC 8594 deprecation
+    headers + RFC 7807 410 Gone bodies when the runtime toggle is
+    flipped off. Phase 1 moves no v1 code; Phase 2 (aidocs/103) does.
+    See aidocs/platform/103a-v1-compat-marker-plugin.md.
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>6.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      Backend as `provided`: the plugin needs the backend's core
+      types (HasAppId, GenericDAO, Constants, RequestPathHelper,
+      PluginManifest SPI, ApiError shape) at compile time. The
+      `provided` scope keeps the plugin JAR small (backend.jar isn't
+      bundled) — at runtime the backend image carries its own
+      classes. The exclusions defend against the build-time circular
+      reference described in plugins/unhide/pom.xml.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatial</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-ai</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-importer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-wiki-writer</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-v1-compat</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Quarkus runtime — REST, CDI, validation. -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Neo4j-OGM — :LegacyV1Config is a @NodeEntity. -->
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-ogm-core</artifactId>
+      <version>5.0.3</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Lombok — entity + IO record convenience. -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.44</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-v1-compat-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+          <!--
+            JDK 25 requires Lombok declared on the annotationProcessorPaths
+            (not just on the dependency list) for the compiler to honour
+            @Getter / @Setter / @ToString / @NoArgsConstructor. Same shape
+            as plugins/aas, plugins/video, plugins/git.
+          -->
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.44</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,5 +1,14 @@
 # V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE)
 
+> **SUPERSEDED by `aidocs/platform/103-v1-compat-plugin-extraction.md`
+> (Phase 2) + `aidocs/platform/103a-v1-compat-marker-plugin.md`
+> (Phase 1)** — 2026-05-22. The two-phase plugin route in #103 / #103a
+> reaches the same end-state by a cleaner path. #68's package-rename
+> proposal becomes one possible implementation tactic inside #103
+> Phase 2 if useful, not its own design. Retained here for historical
+> reference and for the upstream-policy discussion that motivated the
+> v1/v2 split; do not implement against this document.
+
 **Scope.** Forward-looking design note for backlog item **V2BASE**:
 flip this fork's API surface posture. Today the upstream
 `/shepard/api/...` paths are the implementation and the `/v2/...` shelf

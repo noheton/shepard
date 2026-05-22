@@ -138,7 +138,15 @@ public class NeoConnector implements IConnector {
           // via GenericDAO — must be in the scan path.
           // AasRegistration moved to shepard-plugin-aas; registered via AasPayloadKind.
           Publication.class.getPackageName(),
-          ShepardTemplate.class.getPackageName()
+          ShepardTemplate.class.getPackageName(),
+          // V1COMPAT.0 — :LegacyV1Config singleton lives in
+          // plugins/v1-compat. Referenced as a string literal (rather
+          // than `.class.getPackageName()`) so the backend's compile
+          // classpath stays plugin-clean — same shape as the other
+          // plugin singletons would be, but those rely on classpath-
+          // wide scanning today. Adding the explicit string keeps the
+          // scan deterministic when this plugin's JAR is present.
+          "de.dlr.shepard.plugins.v1compat.entities"
         ));
         for (PayloadKind kind : ServiceLoader.load(PayloadKind.class)) {
           Log.infof("NeoConnector: registering entity packages from PayloadKind '%s': %s",
