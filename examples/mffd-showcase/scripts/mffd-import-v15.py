@@ -160,6 +160,41 @@ SOURCE_SHEPARD_API_KEY = os.environ.get("SOURCE_SHEPARD_API_KEY", SHEPARD_API_KE
 OPERATOR = os.environ.get("OPERATOR", "")
 
 
+# ── V61-registered shepard: predicate IRIs (single source of truth) ──────────
+#
+# These ten IRIs are minted by V61__v15_prov_predicates.cypher as :Resource
+# nodes so the dest's SemanticAnnotation IRI lookup resolves them. A typo
+# here = silent 404 on the SemanticAnnotation POST (n10s returns empty for
+# unknown IRIs). Keep the strings byte-identical with the Cypher MERGEs.
+
+class Predicates:
+    """The 8 shepard: predicates V61 registered for v15 batch writeback."""
+    NS = "http://semantics.dlr.de/shepard-upper#"
+    TARGET_COLLECTION       = NS + "targetCollection"
+    FILES_UPLOADED          = NS + "filesUploaded"
+    TIMESERIES_IMPORTED     = NS + "timeseriesImported"
+    STRUCTURED_PAYLOADS     = NS + "structuredPayloads"
+    BATCH_SEQUENCE          = NS + "batchSequence"
+    THROUGHPUT_BYTES_PER_SEC = NS + "throughputBytesPerSec"
+    RETRY_COUNT             = NS + "retryCount"
+    SOURCE_INSTANCE         = NS + "sourceInstance"
+    ROLE_EXECUTOR           = NS + "role-executor"
+    ROLE_OPERATOR           = NS + "role-operator"
+
+
+class PROV:
+    """PROV-O predicates used by the v15 batch writeback (per the
+    PROV-O bundle preseeded in OntologySeedService)."""
+    NS = "http://www.w3.org/ns/prov#"
+    WAS_DERIVED_FROM   = NS + "wasDerivedFrom"
+    WAS_GENERATED_BY   = NS + "wasGeneratedBy"
+    WAS_INFORMED_BY    = NS + "wasInformedBy"
+    WAS_ATTRIBUTED_TO  = NS + "wasAttributedTo"
+    USED               = NS + "used"
+    STARTED_AT_TIME    = NS + "startedAtTime"
+    ENDED_AT_TIME      = NS + "endedAtTime"
+
+
 # ── Tee logging ───────────────────────────────────────────────────────────────
 
 class Tee:
@@ -900,6 +935,176 @@ class ShepardClient:
         }
         r = self._post(url, body)
         return r.json().get("id") if r else None
+
+    # ── Semantic annotation + ETA publisher (per aidocs/93 §10 + §11) ────────────
+
+    def get_or_create_semantic_repo(self, name: str, type_: str = "INTERNAL",
+                                    endpoint: str = "") -> int | None:
+        """Idempotent: find existing semantic repository by name, else create.
+
+        The PROV-O bundle ships preseeded by OntologySeedService into the
+        built-in INTERNAL repo (one row with type='INTERNAL'). v15 also
+        creates a per-session 'mffd-migration-<SESSION_ID>' repo for the
+        opaque source-DO URNs it emits as valueIRI values.
+        """
+        r = self._get(f"{self._base}/shepard/api/semanticRepositories")
+        if r is not None:
+            try:
+                for repo in r.json():
+                    if repo.get("name") == name:
+                        return repo.get("id")
+            except (ValueError, AttributeError):
+                pass
+        body: dict[str, Any] = {"name": name, "type": type_}
+        if endpoint:
+            body["endpoint"] = endpoint
+        r = self._post(f"{self._base}/shepard/api/semanticRepositories", body)
+        return r.json().get("id") if r else None
+
+    def add_semantic_annotation(
+        self, coll_id: int, do_id: int,
+        property_iri: str, value_iri: str,
+        property_repo_id: int, value_repo_id: int,
+        numeric_value: float | None = None,
+        unit_iri: str | None = None,
+    ) -> bool:
+        """Emit one (subject=DO, predicate=propertyIRI, object=valueIRI) triple
+        via the typed-triple SemanticAnnotation API (per aidocs/93 §10).
+
+        Each call is a single per-DO POST — batched at higher levels by
+        the prov writer thread (one batch every 100 DOs OR 5 min).
+        """
+        url = (f"{self._base}/shepard/api/collections/{coll_id}"
+               f"/dataObjects/{do_id}/semanticAnnotations")
+        body: dict[str, Any] = {
+            "propertyIRI": property_iri,
+            "valueIRI":    value_iri,
+            "propertyRepositoryId": property_repo_id,
+            "valueRepositoryId":    value_repo_id,
+        }
+        if numeric_value is not None:
+            body["numericValue"] = numeric_value
+        if unit_iri:
+            body["unitIRI"] = unit_iri
+        return self._post(url, body) is not None
+
+    def emit_prov_for_migration(
+        self, coll_id: int, dest_do_id: int,
+        src_coll_id: int, src_do_id: int,
+        session_id: str,
+        prov_repo_id: int, migration_repo_id: int,
+        pred_do_id: int | None = None,
+    ) -> int:
+        """Emit per-DO PROV-O annotations: wasDerivedFrom, wasGeneratedBy,
+        optionally wasInformedBy. Returns the number of annotations created.
+        """
+        src_uri  = f"urn:shepard:src:{src_coll_id}:dataObject:{src_do_id}"
+        sess_uri = f"urn:shepard:import:session:{session_id}"
+        n = 0
+        if self.add_semantic_annotation(
+            coll_id, dest_do_id,
+            PROV.WAS_DERIVED_FROM, src_uri,
+            prov_repo_id, migration_repo_id,
+        ):
+            n += 1
+        if self.add_semantic_annotation(
+            coll_id, dest_do_id,
+            PROV.WAS_GENERATED_BY, sess_uri,
+            prov_repo_id, migration_repo_id,
+        ):
+            n += 1
+        if pred_do_id is not None:
+            pred_uri = f"urn:shepard:dataObject:{pred_do_id}"
+            if self.add_semantic_annotation(
+                coll_id, dest_do_id,
+                PROV.WAS_INFORMED_BY, pred_uri,
+                prov_repo_id, migration_repo_id,
+            ):
+                n += 1
+        return n
+
+    def emit_batch_summary(
+        self,
+        coll_id: int,
+        anchor_do_id: int,
+        prov_repo_id: int,
+        migration_repo_id: int,
+        *,
+        batch_seq: int,
+        files_uploaded: int,
+        timeseries_imported: int,
+        structured_payloads: int,
+        throughput_bps: float,
+        retry_count: int,
+        source_instance: str,
+        target_collection_app_id: str,
+    ) -> int:
+        """Emit one batch's summary annotations against an anchor DO
+        (typically the ImportScripts DO carrying the import session).
+
+        Returns count of successfully-emitted annotations (out of 8).
+        Uses the V61-registered shepard: predicates.
+        """
+        target_iri = (
+            f"https://shepard.nuclide.systems/id/collection/{target_collection_app_id}"
+        )
+        emits = [
+            (Predicates.TARGET_COLLECTION,     target_iri,        None,            None),
+            (Predicates.BATCH_SEQUENCE,        f"urn:batch:{batch_seq}",
+             float(batch_seq), None),
+            (Predicates.FILES_UPLOADED,        f"urn:count:{files_uploaded}",
+             float(files_uploaded), None),
+            (Predicates.TIMESERIES_IMPORTED,   f"urn:count:{timeseries_imported}",
+             float(timeseries_imported), None),
+            (Predicates.STRUCTURED_PAYLOADS,   f"urn:count:{structured_payloads}",
+             float(structured_payloads), None),
+            (Predicates.THROUGHPUT_BYTES_PER_SEC, f"urn:throughput:{throughput_bps:.0f}",
+             float(throughput_bps), "http://qudt.org/vocab/unit/BYTE-PER-SEC"),
+            (Predicates.RETRY_COUNT,           f"urn:count:{retry_count}",
+             float(retry_count), None),
+            (Predicates.SOURCE_INSTANCE,       f"urn:source:{source_instance}",
+             None, None),
+        ]
+        n = 0
+        for prop_iri, val_iri, num, unit in emits:
+            if self.add_semantic_annotation(
+                coll_id, anchor_do_id,
+                prop_iri, val_iri,
+                prov_repo_id, migration_repo_id,
+                numeric_value=num, unit_iri=unit,
+            ):
+                n += 1
+        return n
+
+    def patch_collection_attributes(self, coll_id: int, attrs: dict[str, str]) -> bool:
+        """PATCH the collection's attributes map (used by the ETA publisher
+        per aidocs/93 §11).
+
+        Note: DLR v5.4.0 PATCH /collections/{id} accepts a merge-patch with
+        an `attributes` field. The shape mirrors POST/PUT — partial updates
+        preserved server-side.
+        """
+        url = f"{self._base}/shepard/api/collections/{coll_id}"
+        body = {"attributes": {k: str(v) for k, v in attrs.items()}}
+        try:
+            r = self._s.patch(url, json=body, timeout=30)
+            if hasattr(r, 'ok') and r.ok:
+                return True
+            # Fall back to PUT for backends without PATCH support; first
+            # GET the collection to preserve other fields, then PUT.
+            r_get = self._get(url)
+            if r_get is None:
+                return False
+            full = r_get.json()
+            merged = dict(full.get("attributes") or {})
+            merged.update({k: str(v) for k, v in attrs.items()})
+            full["attributes"] = merged
+            for k in ("id", "createdAt", "createdBy", "updatedAt", "updatedBy"):
+                full.pop(k, None)
+            return self._put(url, full) is not None
+        except Exception as exc:
+            print(f"  [eta-publisher] {exc}")
+            return False
 
     # ── Dest: timeseries container + import ──────────────────────────────────────
 
