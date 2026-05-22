@@ -114,6 +114,16 @@ class PluginManifestTest {
     assertThat(new BareManifest().dependencies()).isEmpty();
   }
 
+  /**
+   * PM1f — the new {@code sidecars()} default method returns an
+   * empty list. This is the non-breaking contract: every plugin
+   * shipped before PM1f keeps compiling without override.
+   */
+  @Test
+  void bareManifest_sidecarsDefaultsToEmptyList() {
+    assertThat(new BareManifest().sidecars()).isEmpty();
+  }
+
   @Test
   void richManifest_returnsOverriddenValues() {
     RichManifest m = new RichManifest();

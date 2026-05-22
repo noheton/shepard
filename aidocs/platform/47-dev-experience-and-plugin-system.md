@@ -278,6 +278,113 @@ Generates a complete plugin Maven module with:
 **That's the dev-experience leverage.** Adding a new payload kind
 goes from "rummage through 12 places" to "fill in `MyformatStorage`."
 
+### 2.6 Sidecar declarations (PM1f)
+
+A plugin frequently needs an **external sidecar service** to function
+— a Garage instance for `shepard-plugin-file-s3`, an HSDS server for
+`shepard-plugin-hdf-hsds`, a Kafka broker for an event-stream
+adapter, a Redis cache for a session-pinning plugin. The default
+posture before PM1f was: the plugin's docs tell the operator what to
+stand up, and the operator hand-edits `docker-compose.override.yml`
+or their k8s manifests.
+
+This is the structural fix per memory
+`feedback_plugins_declare_sidecars.md`: **plugins declare their
+sidecars; the deploy assembles compose; hand-edited compose
+overrides are forbidden.** An operator activating a plugin should
+never have to know which external service it needs — the plugin's
+manifest carries that shape, and an operator-side bootstrap renders
+the compose snippet they paste into their deployment.
+
+#### The SPI shape
+
+`PluginManifest` grows a single default method:
+
+```java
+default List<SidecarSpec> sidecars() {
+    return List.of();
+}
+```
+
+`SidecarSpec` is an immutable record describing one container the
+plugin needs to function:
+
+```java
+record SidecarSpec(
+    String id,                              // "garage", "kafka", "redis"
+    String image,                           // "dxflrs/garage:v1.0.1" — explicit tag, no `latest`
+    List<PortSpec> ports,                   // (3900, "s3-api"), (3902, "web-admin")
+    List<VolumeSpec> volumes,               // ("garage_data", "/var/lib/garage")
+    Map<String, String> env,                // sidecar env vars; templating supported
+    HealthcheckSpec healthcheck,            // (cmd, interval, timeout, retries)
+    List<String> postInit,                  // shell commands run after container is healthy
+    Map<String, String> backendEnvBinding   // env vars to inject into the shepard backend
+);
+```
+
+Three templating forms pass through verbatim — the operator-side
+bootstrap holds resolution responsibility:
+
+| Placeholder | Resolved to |
+|---|---|
+| `{{generate:hex:N}}` | N random hex chars; persisted to a secrets file on first activation, reused thereafter |
+| `{{sidecar.host}}` | The compose service name of the sidecar (`shepard-<id>`) |
+| `{{from:postInit.N.field}}` | The `field` captured from the N-th post-init shell command's structured output |
+
+The placeholders are intentionally string-shaped — the declaration
+is portable across compose, kubernetes, nomad, and plain systemd;
+the operator-side renderer picks whatever shape fits the target.
+
+#### The renderer (SidecarsAssembler)
+
+`SidecarsAssembler.assembleComposeSnippet(List<SidecarSpec>)`
+returns a YAML 1.2 / docker-compose-v3 string that an operator can
+append to their `docker-compose.override.yml`. The output is
+deterministic + byte-stable across runs so the snippet diffs
+cleanly across plugin-version upgrades.
+
+#### The operator-side bootstrap-reader
+
+A small script (initial home: baked into the v15 MFFD import
+pre-flight per `aidocs/integrations/93 §9`; eventual home:
+`scripts/activate-plugin-sidecars.sh`) calls
+`GET /v2/admin/plugins`, reads each plugin's sidecar declarations
+via the manifest's `sidecars()` method, runs them through
+`SidecarsAssembler`, and either prints the snippet for the
+operator to paste, or applies it directly (kubernetes apply,
+docker compose up, etc.).
+
+The "bake into the script" posture per user 2026-05-22 is
+deliberate: the operator gets one-paste deploy guidance pinned to
+the exact plugin version they're running, with no separate
+tooling install. Future plugins follow the same shape — declare
+your sidecar, the script tells the operator how to stand it up.
+
+#### The worked example: file-s3 + Garage
+
+`FileS3PluginManifest.sidecars()` returns a `List.of()` with the
+single Garage spec per `aidocs/integrations/93 §9`. The renderer
+turns it into a compose snippet with the right `services:`,
+`volumes:`, `healthcheck:`, and `# backend-env:` comments. The
+operator runs the 5 post-init commands once, replaces the
+templating placeholders with the captured values, injects the
+`SHEPARD_FILES_S3_*` env into the backend service, and restarts.
+
+#### Constraints on plugin-declared sidecars
+
+- **Explicit image tags only.** No `latest`. The plugin's manifest
+  is the version pin per ADR-0020.
+- **Named volumes, not bind mounts.** Plugins must not declare
+  host paths — that's a deploy-time concern the renderer decides.
+- **Templating placeholders, not literal secrets.** A plugin that
+  ships a literal credential in `env` fails review.
+- **No multi-container "compose-of-compose" shapes.** One sidecar
+  per `SidecarSpec`; a plugin needing two (e.g. Kafka + Zookeeper)
+  declares two entries in its list. The operator-side renderer
+  composes them; the plugin doesn't.
+- **No host-network or privileged modes.** The operator-side
+  renderer enforces these are absent at render time.
+
 ---
 
 ## 3. Migration of existing feature flags as plugins

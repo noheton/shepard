@@ -160,6 +160,44 @@ public interface PluginManifest {
   }
 
   /**
+   * Infrastructure sidecars this plugin needs to function — an S3
+   * backend for the file-payload kind, a Kafka broker for an event
+   * adapter, a Redis cache for a session-pinning plugin, etc.
+   *
+   * <p>The principle (memory {@code feedback_plugins_declare_sidecars.md}):
+   * <strong>plugins declare their sidecars; the deploy assembles
+   * compose; hand-edited compose overrides are forbidden.</strong> An
+   * operator activating a plugin should never have to know which
+   * external service it needs — the plugin's manifest carries that
+   * shape, and an operator-side bootstrap (see
+   * {@link SidecarsAssembler}) renders the compose-snippet they paste
+   * into their deployment.
+   *
+   * <p>The default returns an empty list — plugins that are pure
+   * code (no external service dependency) need no override. The
+   * first concrete consumer is {@code FileS3PluginManifest}
+   * declaring its Garage backend; see
+   * {@code aidocs/integrations/93-mffd-import-v15-requirements.md §9}
+   * for the worked example.
+   *
+   * <p>The declaration is portable across compose / kubernetes /
+   * nomad — placeholders in env values
+   * ({@code {{generate:hex:64}}}, {@code {{sidecar.host}}},
+   * {@code {{from:postInit.N.field}}}) are resolved by the
+   * operator-side renderer, not by core.
+   *
+   * <p>PM1f addition. Existing plugins keep compiling without
+   * change because the method is a default returning
+   * {@code List.of()}.
+   *
+   * @see SidecarSpec
+   * @see SidecarsAssembler
+   */
+  default List<SidecarSpec> sidecars() {
+    return List.of();
+  }
+
+  /**
    * Lifecycle hook invoked after the JAR's classes are loaded and
    * the plugin's {@code shepard.plugins.<id>.enabled} toggle has been
    * read (and is {@code true}). The plugin uses {@code ctx} to wire
