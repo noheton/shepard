@@ -4,42 +4,45 @@ The shepard showcase for the **MFFD upper fuselage demonstrator** manufactured
 at ZLP Augsburg (DLR) using CF/LMPAEK thermoplastic CFRP — without autoclave.
 The MFFD won the **JEC World Innovation Award 2025 (Aerospace — Parts)**.
 
-This showcase ingests the **real DLR cube3 export** from on-disk drop:
+This showcase imports the **real DLR cube3 data** via LIVE API pull. The local on-disk
+export at `raw-data/mffd-data/` is **shape reference only — incomplete**.
 
-```
-examples/mffd-showcase/raw-data/mffd-data/    ← real cube3 export (gitignored, ~15 GB)
-  ├── mffd-tapelaying/         — 5012 DataObjects (PlyGroup → Ply → Track)
-  ├── mffd-framewelding/       — 3371 DataObjects (Frame → AF → Execution → ProcessData)
-  ├── mffd-confluence-space-export/  — 116 wiki pages + 980 attachments
-  └── cell/                    — workcell models
-```
+## Two artefacts, two purposes
 
-Each subtree carries:
+| Artefact | Path | Purpose |
+|---|---|---|
+| **Live cube3 source** | `backend.bt-au-cube3.intra.dlr.de` (DLR intranet) | The actual dataset for the import. Real TS payloads accessible via `/export?csv_format=COLUMN`. |
+| **On-disk drop (shape reference)** | `examples/mffd-showcase/raw-data/mffd-data/` (~15 GB, gitignored) | Snapshot of the export structure for reading offline. **TS payloads are 0-byte placeholders** — the exporter v1.2 didn't include them. NOT the import source. Useful for: understanding the layout, checking metadata shapes, validating the script offline. |
+
+## Live cube3 source — what's there
+
+| Collection | DataObjects | File refs | Structured refs | TS refs |
+|---|---|---|---|---|
+| `48297` (mffd-tapelaying) | 5012 (28 PlyGroup + 77 Ply + 3985 Track + scaffold) | 23,328 | 0 | 4627 (with real payloads via `/export`) |
+| `163811` (mffd-bridgewelding) | 3371 (24 Frame, ~22 AF/Frame, 1–7 ProcessData/AF) | counts in references/ | StepMetaProcessStep + StepMetaProcessExecution | 0 |
+
+## Why the on-disk drop is not the import source
+
+The cube3 exporter v1.2 skipped TS payloads — `raw-data/mffd-data/mffd-tapelaying/references/`
+has 4627 × 0-byte `ts-*.csv` files. Without TS payloads no Trace3D thermal-trail rendering,
+no ODIX channel analysis, no real showcase demonstration. The live cube3 API DOES have the
+TS payloads, accessed per-ref via `GET /timeseriesReferences/{id}/export?csv_format=COLUMN`
+(v15 Bug H fix — v14 used `WIDE` which is invalid on the v5.4.0 source enum). v15 pulls live
+from cube3 during the import.
+
+## Export shape (for reference)
 
 ```
 <process>/
   data-objects/   do-<old-id>.json metadata
   references/
-    file-<id>.json + file-<id>/<oid>   FileReferences (with payloads)
+    file-<id>.json + file-<id>/<oid>   FileReferences (with payloads on cube3 + disk)
     sd-<id>.json   + sd-<id>/<oid>.json StructuredDataReferences
-    ts-<id>.csv    + ts-<id>.json       TimeseriesReferences  (⚠ csv currently empty per export)
+    ts-<id>.csv    + ts-<id>.json       TimeseriesReferences  (csv 0-byte on disk; live on cube3)
   annotations.json
   lab-journal/    (empty — exporter ran with skip_lab_journals)
   manifest.json
 ```
-
-## Data shape on disk
-
-| Subtree | DataObjects | File refs | Structured refs | TS refs | TS payloads |
-|---|---|---|---|---|---|
-| mffd-tapelaying | 5012 (28 PlyGroup + 77 Ply + 3985 Track + scaffold) | 23,328 | 0 | 4627 (json meta) | **0 bytes each — exporter wrote placeholders only** |
-| mffd-framewelding | 3371 (24 Frame → ~22 AF/Frame → 1–7 ProcessData/AF) | counts in references/ | yes (StepMetaProcessStep, StepMetaProcessExecution) | 0 | n/a |
-
-**Known gap — empty TS payloads:** the cube3 exporter version 1.2 wrote TS placeholder
-files (4627 × 0-byte CSVs in tapelaying) but no actual point data. A re-export with TS
-payloads enabled is needed for full-fidelity TS work (Trace3D thermal-trail rendering,
-ODIX channel analysis). Metadata + lineage + files + structured data are intact and
-can be imported now.
 
 ## Sister docs
 
@@ -54,9 +57,10 @@ can be imported now.
 
 ## Usage
 
-The current import path is **on-disk export → nuclide.systems** via v15 (in progress;
-spec in `aidocs/integrations/93`). v14 lives at `scripts/mffd-dropbox-import.py` and is
-being superseded.
+The current import path is **live cube3 → nuclide.systems** via v15 (in progress;
+spec in `aidocs/integrations/93`). v15 runs from cube@bt-au-cube-mig (the only host
+with both DLR intranet + nuclide reachability). v14 lives at `scripts/mffd-dropbox-import.py`
+and is being superseded.
 
 For the v15 sequence: see `aidocs/integrations/93 §14` (Sequencing).
 
