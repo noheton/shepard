@@ -125,6 +125,17 @@ These work the same way across every primitive:
   chip next to the entity name; editable via the description
   edit dialog. The field is omitted from JSON when null so
   upstream API clients are unaffected.
+- **License + access rights** *(LIC1 / FAIR-1 shipped)*. Every
+  Collection and DataObject carries an optional `license` (SPDX
+  identifier expression, e.g. `CC-BY-4.0`, `MIT`, `Apache-2.0`,
+  `PROPRIETARY`) and an optional `accessRights` enum
+  (`OPEN` / `RESTRICTED` / `CLOSED` / `EMBARGOED`). Both are
+  surfaced in the UI as colour-coded chips on the detail pages
+  and as a dedicated column on the Collection list — an auditor
+  can scan a page and see open-vs-restricted at a glance. Both
+  fields are omitted from JSON when null so upstream API clients
+  are unaffected. Closes FAIR R1.1 + A1.2; the deferred `embargo_until`
+  date field and PID-strategy slice will follow.
 - **Permissions.** Every entity has owner / readers / writers /
   managers. PUBLIC is one toggle away. Group-based permissions
   designed (`aidocs/24` F2) but not yet shipped.
