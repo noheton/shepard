@@ -3,7 +3,12 @@
 # dependencies = ["requests", "tqdm"]
 # ///
 #!/usr/bin/env python3
-"""mffd-dropbox-import.py — MFFD manufacturing process data ingest with provenance.
+"""mffd-dropbox-import.py v14 — MFFD manufacturing process data ingest with provenance.
+
+v14: full three-payload migration — files + timeseries (WIDE CSV export→import) +
+     structured data (JSON download→re-upload). Shared TS container per step with
+     idempotent state tracking. All prior retry/resume/lock/gate logic preserved.
+
 
 Agentic Data Management workflow
 ──────────────────────────────────
@@ -162,6 +167,20 @@ class FileRef:
 
 
 @dataclass
+class TsRef:
+    ref_id: int
+    name: str
+    container_id: int
+
+
+@dataclass
+class StructuredRef:
+    ref_id: int
+    name: str
+    container_id: int
+
+
+@dataclass
 class SourceDO:
     """A DataObject discovered in a source collection."""
     do_id: int
@@ -169,6 +188,8 @@ class SourceDO:
     description: str
     attributes: dict[str, str]
     file_refs: list[FileRef] = field(default_factory=list)
+    ts_refs: list[TsRef] = field(default_factory=list)
+    structured_refs: list[StructuredRef] = field(default_factory=list)
     created: str = ""
     modified: str = ""
 
@@ -191,9 +212,16 @@ class ShepardClient:
 
     def warmup(self) -> bool:
         print("\n=== Warmup ===")
-        user_r = self._get(f"{self._base}/shepard/api/users/currentUser")
+        # Prefer /v2/users/me (fork's clean identity endpoint).
+        # Upstream's /shepard/api/users/currentUser doesn't exist on this fork's
+        # post-v1-compat builds — the v1 surface treats `currentUser` as a literal
+        # username and 404s. /v2/users/me returns the same shape.
+        user_r = self._get(f"{self._base}/v2/users/me")
         if user_r is None:
-            print("  [FAIL] Cannot reach /users/currentUser — check SHEPARD_URL + auth")
+            # Fall back to upstream v1 in case we're running against vanilla shepard.
+            user_r = self._get(f"{self._base}/shepard/api/users/currentUser")
+        if user_r is None:
+            print("  [FAIL] Cannot reach /v2/users/me or /shepard/api/users/currentUser — check SHEPARD_URL + auth")
             return False
         user = user_r.json()
         username = user.get("username") or user.get("name") or user.get("sub") or "(unknown)"
@@ -230,13 +258,18 @@ class ShepardClient:
             if not items:
                 break
             for item in items:
-                file_refs = self._fetch_file_refs(coll_id, item["id"])
+                do_id = item["id"]
+                file_refs = self._fetch_file_refs(coll_id, do_id)
+                ts_refs = self._fetch_ts_refs(coll_id, do_id)
+                structured_refs = self._fetch_structured_refs(coll_id, do_id)
                 yield SourceDO(
-                    do_id=item["id"],
-                    name=item.get("name", f"DO-{item['id']}"),
+                    do_id=do_id,
+                    name=item.get("name", f"DO-{do_id}"),
                     description=item.get("description") or "",
                     attributes={k: str(v) for k, v in (item.get("attributes") or {}).items()},
                     file_refs=file_refs,
+                    ts_refs=ts_refs,
+                    structured_refs=structured_refs,
                     created=item.get("creationDate") or item.get("createdAt") or "",
                     modified=item.get("modificationDate") or item.get("updatedAt") or "",
                 )
@@ -259,6 +292,63 @@ class ShepardClient:
                 size=item.get("size") or item.get("fileSize") or 0,
             ))
         return refs
+
+    def _fetch_ts_refs(self, coll_id: int, do_id: int) -> list[TsRef]:
+        r = self._get(
+            f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}/timeseriesReferences"
+        )
+        if r is None:
+            return []
+        refs = []
+        for item in r.json():
+            refs.append(TsRef(
+                ref_id=item["id"],
+                name=item.get("name") or f"ts-{item['id']}",
+                container_id=item.get("timeseriesContainerId") or 0,
+            ))
+        return refs
+
+    def _fetch_structured_refs(self, coll_id: int, do_id: int) -> list[StructuredRef]:
+        r = self._get(
+            f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}/structuredDataReferences"
+        )
+        if r is None:
+            return []
+        refs = []
+        for item in r.json():
+            refs.append(StructuredRef(
+                ref_id=item["id"],
+                name=item.get("name") or f"structured-{item['id']}",
+                container_id=item.get("structuredDataContainerId") or 0,
+            ))
+        return refs
+
+    def export_ts(self, coll_id: int, do_id: int, ref_id: int) -> bytes | None:
+        """Export a timeseries reference as WIDE CSV from the source instance."""
+        url = (
+            f"{self._base}/shepard/api/collections/{coll_id}"
+            f"/dataObjects/{do_id}/timeseriesReferences/{ref_id}/export"
+        )
+        r = self._request_with_retry("GET", url, params={"csv_format": "WIDE"}, timeout=300)
+        if r is None or not r.ok:
+            if r:
+                self._log_err("GET (ts-export)", url, r)
+            return None
+        return r.content
+
+    def download_structured(self, coll_id: int, do_id: int, ref_id: int) -> dict | list | None:
+        """Download structured data payload (JSON) from the source instance."""
+        url = (
+            f"{self._base}/shepard/api/collections/{coll_id}"
+            f"/dataObjects/{do_id}/structuredDataReferences/{ref_id}/payload"
+        )
+        r = self._get(url)
+        if r is None:
+            return None
+        try:
+            return r.json()
+        except Exception:
+            return None
 
     def count_data_objects(self, coll_id: int) -> int:
         r = self._get(
@@ -486,6 +576,74 @@ class ShepardClient:
             except Exception as exc:
                 print(f"  [net] v1 upload {path.name}: {exc}")
 
+        return False
+
+    # ── Dest: timeseries container + import ──────────────────────────────────────
+
+    def create_ts_container(self, name: str) -> int | None:
+        """Create a new timeseries container on the dest instance. Returns OGM id."""
+        r = self._post(
+            f"{self._base}/shepard/api/timeseriesContainers",
+            {"name": name, "type": "TIMESERIES"},
+        )
+        return r.json().get("id") if r else None
+
+    def link_ts_to_do(self, coll_id: int, do_id: int, container_id: int, name: str) -> int | None:
+        """Create a timeseriesReference from a DO to an existing container. Returns ref id."""
+        url = (
+            f"{self._base}/shepard/api/collections/{coll_id}"
+            f"/dataObjects/{do_id}/timeseriesReferences"
+        )
+        r = self._post(url, {"name": name, "timeseriesContainerId": container_id})
+        return r.json().get("id") if r else None
+
+    def import_ts_csv(self, container_id: int, csv_bytes: bytes, filename: str = "export.csv") -> bool:
+        """Import a CSV blob into a timeseries container on the dest instance."""
+        import io
+        url = f"{self._base}/shepard/api/timeseriesContainers/{container_id}/import"
+        try:
+            r = self._request_with_retry(
+                "POST", url,
+                files={"file": (filename, io.BytesIO(csv_bytes), "text/csv")},
+                timeout=600,
+            )
+            if r is None:
+                return False
+            if r.ok:
+                return True
+            self._log_err("POST (ts-import)", url, r)
+            return False
+        except Exception as exc:
+            print(f"  [net] import_ts_csv: {exc}")
+            return False
+
+    # ── Dest: structured data container ──────────────────────────────────────────
+
+    def create_structured_container(self, name: str) -> int | None:
+        """Create a structured data container on the dest instance. Returns OGM id."""
+        r = self._post(f"{self._base}/shepard/api/structuredDataContainers", {"name": name})
+        return r.json().get("id") if r else None
+
+    def link_structured_to_do(
+        self, coll_id: int, do_id: int, container_id: int, name: str
+    ) -> bool:
+        """Create a structuredDataReference from a DO to an existing container."""
+        url = (
+            f"{self._base}/shepard/api/collections/{coll_id}"
+            f"/dataObjects/{do_id}/structuredDataReferences"
+        )
+        r = self._post(url, {"name": name, "structuredDataContainerId": container_id})
+        return r is not None
+
+    def upload_structured_payload(self, container_id: int, payload: dict | list) -> bool:
+        """Upload JSON payload to a structured data container on the dest instance."""
+        url = f"{self._base}/shepard/api/structuredDataContainers/{container_id}/payload"
+        r = self._request_with_retry("PUT", url, json=payload, timeout=60)
+        if r is None:
+            return False
+        if r.ok:
+            return True
+        self._log_err("PUT (structured)", url, r)
         return False
 
     def upload_self(self, coll_id: int, do_id: int, do_app_id: str) -> None:
@@ -932,17 +1090,25 @@ def run_source_mode(
     source_client: ShepardClient | None = None,
 ) -> dict[str, int]:
     """
-    Traverse source Shepard collections, downloading DataObjects and files,
-    re-uploading into the destination collection.
+    Traverse source Shepard collections, migrating all three payload types
+    (files, timeseries, structured data) into the destination collection.
+
+    Strategy:
+    - One dest DO per step (tapelaying / bridgewelding) as the step container.
+    - Files: each source file → dest DO (prefixed with source DO name).
+    - Timeseries: one shared TS container per step; each source DO's TS refs are
+      exported as WIDE CSV and imported into the shared container; the dest step
+      DO gets one timeseriesReference to the shared container.
+    - Structured data: each source DO's structured refs are downloaded as JSON
+      and re-uploaded into a new dest structured container linked to the step DO.
 
     Pass source_client for cross-instance pull (DLR intranet → nuclide.systems).
     If source_client is None, dest_client is used for source operations too.
 
     Returns mapping of step_key → dest_do_id for predecessor wiring.
     """
-    _src = source_client or dest_client  # source operations use separate client when cross-instance
+    _src = source_client or dest_client
 
-    # ⚠️  Prominent timestamp warning
     print()
     print("  ┌─────────────────────────────────────────────────────────────────┐")
     print("  │  ⚠  TIMESTAMP CAVEAT                                            │")
@@ -957,7 +1123,7 @@ def run_source_mode(
         print(f"  [cross-instance] source : {_src._base}")
         print(f"  [cross-instance] dest   : {dest_client._base}")
 
-    do_ids: dict[str, int] = {}   # step_key → dest do_id
+    do_ids: dict[str, int] = {}
 
     source_map = [
         ("tapelaying",    SOURCE_TAPELAYING_COLL_ID,    None),
@@ -973,7 +1139,6 @@ def run_source_mode(
         total_dos = _src.count_data_objects(src_coll_id)
         print(f"  {total_dos} DataObject(s) to migrate")
 
-        # Group DataObject: one dest DO per step, aggregate all source DOs into it
         dest_do_name = f"{step_key.capitalize()}-{SESSION_ID}"
         pred_id = do_ids.get(pred_key) if pred_key else None
 
@@ -983,9 +1148,7 @@ def run_source_mode(
             "process_step": step_key,
             "source_collection_id": str(src_coll_id),
             "import_time": IMPORT_TIME,
-            "timestamp_note": (
-                "file timestamps reflect import time not measurement time"
-            ),
+            "timestamp_note": "file timestamps reflect import time not measurement time",
         }
 
         dest_do = ensure_dest_do(
@@ -1006,14 +1169,34 @@ def run_source_mode(
 
         do_ids[step_key] = dest_do["id"]
         dest_app_id: str = dest_do.get("appId") or ""
+        dest_do_id: int = dest_do["id"]
 
-        # Verify refs before migration
-        dest_client.verify_references(coll_id, dest_do["id"], dest_do_name)
+        dest_client.verify_references(coll_id, dest_do_id, dest_do_name)
 
-        # Walk source DOs with progress bar
+        # ── Shared TS container for this step ─────────────────────────────────
+        ts_container_id: int | None = state.get_ts_container(step_key) if state else None
+        if ts_container_id is None:
+            ts_container_name = f"MFFD-{step_key}-ts-{SESSION_ID}"
+            print(f"  [ts] creating shared TS container {ts_container_name!r}")
+            ts_container_id = dest_client.create_ts_container(ts_container_name)
+            if ts_container_id:
+                print(f"  [ts] container id={ts_container_id}")
+                if state:
+                    state.set_ts_container(step_key, ts_container_id)
+                # Link the step DO to the shared TS container
+                dest_client.link_ts_to_do(coll_id, dest_do_id, ts_container_id, ts_container_name)
+            else:
+                print(f"  [ts] WARNING: could not create TS container — timeseries will be skipped")
+
+        # ── Walk source DOs ────────────────────────────────────────────────────
         files_uploaded = 0
         files_skipped = 0
         files_failed = 0
+        ts_imported = 0
+        ts_skipped = 0
+        ts_failed = 0
+        structured_imported = 0
+        structured_failed = 0
 
         with tqdm(
             total=total_dos,
@@ -1026,25 +1209,30 @@ def run_source_mode(
                     do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
                     break
                 do_bar.set_postfix_str(src_do.name[:30])
-                do_bar.write(f"  ↳ {src_do.name}  ({len(src_do.file_refs)} file(s))")
 
-                existing_names = dest_client.list_file_refs(coll_id, dest_do["id"])
+                payload_summary = (
+                    f"{len(src_do.file_refs)}f"
+                    f" {len(src_do.ts_refs)}ts"
+                    f" {len(src_do.structured_refs)}sd"
+                )
+                do_bar.write(f"  ↳ {src_do.name}  ({payload_summary})")
 
+                existing_names = dest_client.list_file_refs(coll_id, dest_do_id)
+
+                # ── Files ──────────────────────────────────────────────────────
                 with tempfile.TemporaryDirectory() as tmpdir:
                     tmp = Path(tmpdir)
                     for fref in src_do.file_refs:
                         dest_name = f"{src_do.name}/{fref.name}"
                         state_key = f"{step_key}/{dest_name}"
 
-                        # State file says done → skip without even hitting API
                         if state is not None and state.is_file_done(state_key):
-                            do_bar.write(f"    [resume-skip] {dest_name}")
+                            do_bar.write(f"    [skip-file] {dest_name}")
                             files_skipped += 1
                             continue
 
-                        # API idempotency check
                         if dest_name in existing_names or fref.name in existing_names:
-                            do_bar.write(f"    [skip] {fref.name}")
+                            do_bar.write(f"    [skip-file] {fref.name}")
                             files_skipped += 1
                             if state is not None:
                                 state.mark_file_done(state_key)
@@ -1055,26 +1243,95 @@ def run_source_mode(
                             src_coll_id, src_do.do_id, fref.fref_id, tmp_file, fref.size
                         )
                         if not ok:
-                            do_bar.write(f"    [error] download {fref.name}")
+                            do_bar.write(f"    [error-file] download {fref.name}")
                             files_failed += 1
                             continue
 
                         ok = dest_client.upload_file(
-                            dest_app_id, tmp_file, dest_name, coll_id, dest_do["id"]
+                            dest_app_id, tmp_file, dest_name, coll_id, dest_do_id
                         )
                         if ok:
-                            do_bar.write(f"    [ok] {dest_name}  ({_human(fref.size)})")
+                            do_bar.write(f"    [ok-file] {dest_name}  ({_human(fref.size)})")
                             files_uploaded += 1
                             if state is not None:
                                 state.mark_file_done(state_key)
                         else:
-                            do_bar.write(f"    [error] upload {dest_name}")
+                            do_bar.write(f"    [error-file] upload {dest_name}")
                             files_failed += 1
+
+                # ── Timeseries ─────────────────────────────────────────────────
+                if ts_container_id is not None:
+                    for ts_ref in src_do.ts_refs:
+                        state_key = f"ts/{step_key}/{src_do.do_id}/{ts_ref.ref_id}"
+                        if state is not None and state.is_ts_done(state_key):
+                            do_bar.write(f"    [skip-ts] {ts_ref.name}")
+                            ts_skipped += 1
+                            continue
+
+                        do_bar.write(f"    [ts] exporting {ts_ref.name!r} from source ref {ts_ref.ref_id}")
+                        csv_bytes = _src.export_ts(src_coll_id, src_do.do_id, ts_ref.ref_id)
+                        if csv_bytes is None:
+                            do_bar.write(f"    [error-ts] export failed for {ts_ref.name}")
+                            ts_failed += 1
+                            continue
+
+                        do_bar.write(f"    [ts] importing {len(csv_bytes):,} bytes → container {ts_container_id}")
+                        ok = dest_client.import_ts_csv(
+                            ts_container_id,
+                            csv_bytes,
+                            filename=f"{step_key}-{src_do.do_id}-{ts_ref.ref_id}.csv",
+                        )
+                        if ok:
+                            ts_imported += 1
+                            if state is not None:
+                                state.mark_ts_done(state_key)
+                        else:
+                            do_bar.write(f"    [error-ts] import failed for {ts_ref.name}")
+                            ts_failed += 1
+
+                # ── Structured data ────────────────────────────────────────────
+                for sd_ref in src_do.structured_refs:
+                    state_key = f"sd/{step_key}/{src_do.do_id}/{sd_ref.ref_id}"
+                    if state is not None and state.is_structured_done(state_key):
+                        do_bar.write(f"    [skip-sd] {sd_ref.name}")
+                        continue
+
+                    payload = _src.download_structured(src_coll_id, src_do.do_id, sd_ref.ref_id)
+                    if payload is None:
+                        do_bar.write(f"    [error-sd] download failed for {sd_ref.name}")
+                        structured_failed += 1
+                        continue
+
+                    container_name = f"{src_do.name}/{sd_ref.name}"
+                    container_id = dest_client.create_structured_container(container_name)
+                    if container_id is None:
+                        do_bar.write(f"    [error-sd] could not create container for {sd_ref.name}")
+                        structured_failed += 1
+                        continue
+
+                    linked = dest_client.link_structured_to_do(coll_id, dest_do_id, container_id, container_name)
+                    ok = dest_client.upload_structured_payload(container_id, payload)
+                    if linked and ok:
+                        do_bar.write(f"    [ok-sd] {sd_ref.name}")
+                        structured_imported += 1
+                        if state is not None:
+                            state.mark_structured_done(state_key)
+                    else:
+                        do_bar.write(f"    [error-sd] upload/link failed for {sd_ref.name}")
+                        structured_failed += 1
 
                 do_bar.update(1)
 
-        print(f"  → uploaded={files_uploaded}  skipped={files_skipped}  failed={files_failed}")
-        dest_client.verify_references(coll_id, dest_do["id"], dest_do_name)
+        print(
+            f"  → files: uploaded={files_uploaded} skipped={files_skipped} failed={files_failed}"
+        )
+        print(
+            f"  → ts:    imported={ts_imported} skipped={ts_skipped} failed={ts_failed}"
+        )
+        print(
+            f"  → sd:    imported={structured_imported} failed={structured_failed}"
+        )
+        dest_client.verify_references(coll_id, dest_do_id, dest_do_name)
 
     return do_ids
 
@@ -1240,6 +1497,31 @@ class ImportState:
         self._data.setdefault("completed_files", [])
         if key not in self._data["completed_files"]:
             self._data["completed_files"].append(key)
+        self._save()
+
+    def is_ts_done(self, key: str) -> bool:
+        return key in self._data.get("completed_ts", [])
+
+    def mark_ts_done(self, key: str) -> None:
+        self._data.setdefault("completed_ts", [])
+        if key not in self._data["completed_ts"]:
+            self._data["completed_ts"].append(key)
+        self._save()
+
+    def is_structured_done(self, key: str) -> bool:
+        return key in self._data.get("completed_structured", [])
+
+    def mark_structured_done(self, key: str) -> None:
+        self._data.setdefault("completed_structured", [])
+        if key not in self._data["completed_structured"]:
+            self._data["completed_structured"].append(key)
+        self._save()
+
+    def get_ts_container(self, step_key: str) -> int | None:
+        return self._data.get("ts_containers", {}).get(step_key)
+
+    def set_ts_container(self, step_key: str, container_id: int) -> None:
+        self._data.setdefault("ts_containers", {})[step_key] = container_id
         self._save()
 
 
