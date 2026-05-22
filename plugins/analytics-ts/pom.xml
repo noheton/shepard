@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AT1 — shepard-plugin-analytics-ts is the timeseries-analytics plugin
+  extracting the in-tree AI1b rolling-median MAD anomaly detector
+  behind the `TimeseriesAnalytics` SPI (`de.dlr.shepard.spi.analytics`
+  in the backend).
+
+  v0 scope: MAD detector at the IN_PROCESS execution-mode tier (the
+  in-tree median() math moved verbatim — see plugins/analytics-ts/
+  docs/reference.md §"Behavioural equivalence" for the byte-stability
+  proof). The VIA_ORCHESTRATOR tier (heavy detectors via
+  shepard-plugin-mlops) ships as an SPI stub only; concrete adapters
+  land in the future mlops module.
+
+  Build order (the same two-pass dance as other plugins, ADR-0023):
+
+    $ cd backend && ./mvnw -DnoPlugins -DskipTests -Dmaven.test.skip=true \
+        -Dquarkus.build.skip=true install
+    $ cd plugins/analytics-ts && ../../backend/mvnw -DskipTests install
+    $ cd backend && ./mvnw package    # plugin is on the classpath
+
+  Discovery: this plugin's `MADDetector` `@ApplicationScoped` bean is
+  picked up by Quarkus's build-time CDI scanner when the backend's
+  `with-plugins` profile pulls in this JAR (see backend/pom.xml +
+  application.properties `quarkus.index-dependency.shepard-plugin-analytics-ts.*`).
+
+  Operator workflow (vendor-supplied drop-in install):
+    $ cp plugins/analytics-ts/target/shepard-plugin-analytics-ts-*.jar \
+         /path/to/shepard/backend/plugins/
+    $ # enable: PATCH /v2/admin/plugins/analytics-ts/enabled {"enabled":true}
+    $ #     or: SHEPARD_PLUGINS_ANALYTICS_TS_ENABLED=true env var
+
+  See `plugins/analytics-ts/docs/{reference,quickstart,install}.md`
+  for the full operator runbook.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>de.dlr.shepard.plugins</groupId>
+  <artifactId>shepard-plugin-analytics-ts</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+
+  <name>shepard plugin — Analytics-TS (timeseries anomaly + quality)</name>
+  <description>
+    Timeseries-analytics plugin. v0 ships the rolling-median MAD
+    anomaly detector (mad-v1) extracted from in-tree AI1b. Implements
+    the TimeseriesAnalytics SPI (de.dlr.shepard.spi.analytics) at the
+    IN_PROCESS execution-mode tier; the VIA_ORCHESTRATOR tier surface
+    is reserved for the future shepard-plugin-mlops.
+    See aidocs/platform/AT1-analytics-ts-plugin.md (planned).
+  </description>
+  <url>https://github.com/noheton/shepard</url>
+
+  <organization>
+    <name>DLR e.V.</name>
+    <url>https://www.dlr.de</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <properties>
+    <revision>6.0.0-SNAPSHOT</revision>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
+    <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+    <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <junit.version>5.10.5</junit.version>
+    <mockito.version>5.22.0</mockito.version>
+    <assertj.version>3.27.7</assertj.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>${quarkus.platform.group-id}</groupId>
+        <artifactId>${quarkus.platform.artifact-id}</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!--
+      backend as provided — the plugin compiles against the
+      TimeseriesAnalytics SPI types (`de.dlr.shepard.spi.analytics.*`)
+      shipped in the backend JAR. Same provided-scope shape as every
+      other shepard-plugin-* module (ADR-0023). The plugin JAR does
+      NOT bundle backend.jar; at runtime the backend image already
+      carries its own classes.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>backend</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <!--
+          Defence against the build-time circular reference: the
+          backend's `with-plugins` profile pulls every plugin back
+          onto its dependency list. Excluding them here keeps this
+          plugin's compile classpath self-consistent.
+        -->
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-analytics-ts</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-unhide</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-kip</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-local</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-epic</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-minter-datacite</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-spatial</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-hdf5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-git</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-aas</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-file-s3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- Quarkus runtime types used in plugin source (CDI, logging). -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ====== test scope ====== -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>shepard-plugin-analytics-ts-${revision}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler-plugin.version}</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
