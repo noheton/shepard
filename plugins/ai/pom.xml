@@ -59,7 +59,7 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.version>3.27.2</quarkus.platform.version>
-    <junit.version>5.10.5</junit.version>
+    <junit.version>6.1.0</junit.version>
     <mockito.version>5.22.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
   </properties>
