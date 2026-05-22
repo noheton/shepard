@@ -106,6 +106,7 @@ SHEPARD_URL = os.environ.get("SHEPARD_URL", "https://shepard.nuclide.systems").r
 SHEPARD_API_KEY = os.environ.get("SHEPARD_API_KEY", "")
 SHEPARD_BEARER_TOKEN = os.environ.get("SHEPARD_BEARER_TOKEN", "")
 SESSION_ID = os.environ.get("SESSION_ID", datetime.date.today().isoformat())
+MAX_DOS_PER_STEP = 0  # Set from --max-dos in main(); 0 = unlimited
 DATA_DIR = Path(os.environ.get("DATA_DIR", "."))
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "MFFD-Dropbox")
 LOG_DIR = Path(os.environ.get("LOG_DIR", Path(__file__).parent))
@@ -954,6 +955,9 @@ def run_source_mode(
             file=sys.stderr,
         ) as do_bar:
             for src_do in _src.iter_data_objects(src_coll_id):
+                if MAX_DOS_PER_STEP and do_bar.n >= MAX_DOS_PER_STEP:
+                    do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
+                    break
                 do_bar.set_postfix_str(src_do.name[:30])
                 do_bar.write(f"  ↳ {src_do.name}  ({len(src_do.file_refs)} file(s))")
 
@@ -1327,7 +1331,20 @@ def main() -> None:
         ),
     )
     ap.add_argument("--dry-run", action="store_true", help="Print plan, make no API calls.")
+    ap.add_argument(
+        "--max-dos",
+        type=int,
+        default=0,
+        metavar="N",
+        help=(
+            "Process at most N source DataObjects per step (default: 0 = unlimited). "
+            "Use for safe sample runs after a previous full attempt — e.g. `--max-dos 10` "
+            "to verify file transfer works before re-attempting all 8462 DOs."
+        ),
+    )
     args = ap.parse_args()
+    global MAX_DOS_PER_STEP
+    MAX_DOS_PER_STEP = args.max_dos
 
     source_mode = SOURCE_TAPELAYING_COLL_ID is not None or SOURCE_BRIDGEWELDING_COLL_ID is not None
     cross_instance = SOURCE_SHEPARD_URL != SHEPARD_URL
