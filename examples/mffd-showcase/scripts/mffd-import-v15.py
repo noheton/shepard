@@ -160,6 +160,241 @@ SOURCE_SHEPARD_API_KEY = os.environ.get("SOURCE_SHEPARD_API_KEY", SHEPARD_API_KE
 OPERATOR = os.environ.get("OPERATOR", "")
 
 
+# ── v15 concurrency + resilience primitives (aidocs/93 §5) ───────────────────
+#
+# Module-level helpers reused by the worker pool, state writer, and prov writer.
+# Each is independently unit-testable — the worker pool itself relies on these
+# building blocks but they're written to stand alone.
+
+import json as _json_for_state
+import os as _os_for_state
+import random as _random
+import signal as _signal
+import threading as _threading
+from queue import Queue, Empty
+
+
+def backoff_delay(attempt: int, base: float = 1.0, cap: float = 60.0,
+                  jitter: float = 0.25) -> float:
+    """Exponential backoff with full jitter, capped at `cap` seconds.
+
+    attempt: 0-indexed retry count (0 = first retry).
+    Returns: delay in seconds in [base*2^attempt * (1-jitter), base*2^attempt * (1+jitter)],
+             but never above `cap`.
+    """
+    raw = base * (2 ** max(0, attempt))
+    capped = min(raw, cap)
+    if jitter <= 0:
+        return capped
+    return capped * (1.0 + _random.uniform(-jitter, +jitter))
+
+
+def atomic_write_json(path: Path, payload: dict) -> None:
+    """Write JSON atomically: tmp file + fsync + rename.
+
+    Survives kill -9 mid-write — either the old file is intact, or the new
+    one is fully landed; no half-written state. Per the v15 §5 single
+    state-writer thread design.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        _json_for_state.dump(payload, fh, indent=2, sort_keys=True)
+        fh.flush()
+        _os_for_state.fsync(fh.fileno())
+    _os_for_state.replace(str(tmp), str(path))
+
+
+class StateFile:
+    """Single-writer-thread state ledger for v15 (aidocs/93 §5 + §11).
+
+    Tracks completed work so a restart resumes where the previous run paused.
+    Updates are coalesced into the atomic_write_json at most every 30s OR
+    after 100 completion events — whichever comes first.
+
+    Thread-safety: methods are guarded by an internal lock; persist() may
+    be called from any thread but actual disk writes happen on whichever
+    caller hits the flush threshold.
+    """
+
+    def __init__(self, path: Path) -> None:
+        self.path = Path(path)
+        self._lock = _threading.Lock()
+        self._state: dict[str, Any] = {
+            "completed_files":  [],
+            "completed_ts":     [],
+            "completed_structured": [],
+            "do_id_mapping":    {},   # src_do_id -> dest_do_id
+            "batch_sequence":   0,
+            "last_flush":       0,
+        }
+        self._dirty_since_flush = 0
+        # Initialise to "now" so the 30s throttle has a meaningful zero —
+        # otherwise the first persist(force=False) call always passes the
+        # time-since-last-flush gate (epoch 1970 is decades in the past).
+        self._last_flush_ts = time.time()
+        if self.path.exists():
+            self._load()
+
+    def _load(self) -> None:
+        try:
+            with self.path.open("r", encoding="utf-8") as fh:
+                loaded = _json_for_state.load(fh)
+            if isinstance(loaded, dict):
+                self._state.update(loaded)
+        except (ValueError, OSError) as exc:
+            print(f"  [state] could not load {self.path}: {exc} (starting fresh)")
+
+    def record_file(self, src_id: str) -> None:
+        with self._lock:
+            if src_id not in self._state["completed_files"]:
+                self._state["completed_files"].append(src_id)
+                self._dirty_since_flush += 1
+
+    def record_ts(self, src_ref_id: str) -> None:
+        with self._lock:
+            if src_ref_id not in self._state["completed_ts"]:
+                self._state["completed_ts"].append(src_ref_id)
+                self._dirty_since_flush += 1
+
+    def record_structured(self, src_ref_id: str) -> None:
+        with self._lock:
+            if src_ref_id not in self._state["completed_structured"]:
+                self._state["completed_structured"].append(src_ref_id)
+                self._dirty_since_flush += 1
+
+    def map_do(self, src_do_id: int, dest_do_id: int) -> None:
+        with self._lock:
+            self._state["do_id_mapping"][str(src_do_id)] = dest_do_id
+            self._dirty_since_flush += 1
+
+    def get_dest_do(self, src_do_id: int) -> int | None:
+        with self._lock:
+            v = self._state["do_id_mapping"].get(str(src_do_id))
+            return int(v) if v is not None else None
+
+    def is_file_done(self, src_id: str) -> bool:
+        with self._lock:
+            return src_id in self._state["completed_files"]
+
+    def is_ts_done(self, src_ref_id: str) -> bool:
+        with self._lock:
+            return src_ref_id in self._state["completed_ts"]
+
+    def is_structured_done(self, src_ref_id: str) -> bool:
+        with self._lock:
+            return src_ref_id in self._state["completed_structured"]
+
+    def next_batch_seq(self) -> int:
+        with self._lock:
+            self._state["batch_sequence"] += 1
+            self._dirty_since_flush += 1
+            return self._state["batch_sequence"]
+
+    def persist(self, force: bool = False) -> bool:
+        """Flush to disk if threshold met (or forced). Returns True if a write occurred."""
+        with self._lock:
+            if not force:
+                if self._dirty_since_flush < 100 and (time.time() - self._last_flush_ts) < 30.0:
+                    return False
+            payload = dict(self._state)
+            payload["last_flush"] = time.time()
+            self._dirty_since_flush = 0
+            self._last_flush_ts = payload["last_flush"]
+        atomic_write_json(self.path, payload)
+        return True
+
+    def snapshot(self) -> dict[str, Any]:
+        """Return a deep-ish copy of the current state (testing/debugging)."""
+        with self._lock:
+            return _json_for_state.loads(_json_for_state.dumps(self._state))
+
+
+class JwtPauseManager:
+    """JWT-expiry pause primitive (aidocs/93 §5).
+
+    Threading model (the gotcha): SIGCONT handling must live on the
+    main thread. Workers detect 401 → call `.request_pause()` which
+    sets a shared Event; the main thread waits on the Event and calls
+    `signal.pause()`. The operator sends SIGCONT after re-minting the
+    JWT in env; main thread sets the new headers on the client, clears
+    the Event, and workers continue.
+
+    Use:
+        pause_mgr = JwtPauseManager(client)
+        pause_mgr.install_signal_handler()
+        # in workers:
+        if response.status_code == 401:
+            pause_mgr.request_pause()
+            # worker blocks on pause_mgr.resume_event.wait()
+            # …main thread re-mints and clears…
+            continue  # retry the request
+    """
+
+    def __init__(self, client: "ShepardClient") -> None:
+        self._client = client
+        self._pause_requested = _threading.Event()
+        self.resume_event = _threading.Event()
+        self.resume_event.set()  # initially: workers may proceed
+        self._handler_installed = False
+
+    def request_pause(self) -> None:
+        """Called by a worker that observed 401. Idempotent."""
+        if not self._pause_requested.is_set():
+            print(
+                "\n  [JWT] worker observed 401 — pausing all workers.\n"
+                "  ┌─────────────────────────────────────────────────────────┐\n"
+                "  │ JWT EXPIRED — operator action required                   │\n"
+                "  ├─────────────────────────────────────────────────────────┤\n"
+                "  │ 1. Re-mint your kreb_fl JWT (DLR Shepard cube3 UI).      │\n"
+                "  │ 2. Update the running process's environment:             │\n"
+                "  │      export SOURCE_SHEPARD_API_KEY=<new-jwt>             │\n"
+                "  │      (or SHEPARD_API_KEY for dest)                       │\n"
+                "  │ 3. Send SIGCONT to resume:                               │\n"
+                f"  │      kill -CONT {_os_for_state.getpid()}\n"
+                "  └─────────────────────────────────────────────────────────┘",
+                flush=True,
+            )
+        self._pause_requested.set()
+        self.resume_event.clear()
+
+    def install_signal_handler(self) -> None:
+        """Wire SIGCONT → resume on the main thread.
+
+        Must be called from the main thread before workers start; raises
+        ValueError otherwise (Python's signal module enforces this).
+        """
+        def _on_sigcont(signum, frame):
+            print("  [JWT] SIGCONT received — re-reading JWT from env and resuming…", flush=True)
+            new_key = _os_for_state.environ.get("SOURCE_SHEPARD_API_KEY") \
+                      or _os_for_state.environ.get("SHEPARD_API_KEY") or ""
+            new_bearer = _os_for_state.environ.get("SHEPARD_BEARER_TOKEN", "")
+            if new_bearer:
+                self._client._s.headers["Authorization"] = f"Bearer {new_bearer}"
+                self._client._s.headers.pop("X-API-KEY", None)
+            elif new_key:
+                self._client._s.headers["X-API-KEY"] = new_key
+                self._client._s.headers.pop("Authorization", None)
+            self._pause_requested.clear()
+            self.resume_event.set()
+
+        try:
+            _signal.signal(_signal.SIGCONT, _on_sigcont)
+            self._handler_installed = True
+        except ValueError as exc:
+            # signal.signal raises if called from non-main thread.
+            print(f"  [JWT] could not install SIGCONT handler: {exc}")
+
+    def wait_if_paused(self, timeout: float | None = None) -> bool:
+        """Worker-side: blocks if a pause is active. Returns True when free to proceed."""
+        return self.resume_event.wait(timeout=timeout)
+
+    @property
+    def is_paused(self) -> bool:
+        return self._pause_requested.is_set()
+
+
 # ── V61-registered shepard: predicate IRIs (single source of truth) ──────────
 #
 # These ten IRIs are minted by V61__v15_prov_predicates.cypher as :Resource
