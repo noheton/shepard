@@ -46,7 +46,7 @@ shape: `shepard-plugin-hdf-hsds`, `shepard-plugin-video`,
 
 ## Bundled plugins
 
-The published backend image bakes four plugins into
+The published backend image bakes the in-tree plugins into
 `/deployments/plugins/` by default. They activate automatically
 via the `with-plugins` Maven profile; operators don't need to
 copy any JAR by hand.
@@ -57,7 +57,12 @@ copy any JAR by hand.
 | `kip` | `plugins/kip/` (`shepard-plugin-kip`) | HMC Kernel Information Profile resolver — `GET /v2/.well-known/kip/{pid-suffix}` returns the public JSON-LD KIP record per `aidocs/66 §3.2`. | KIP1g |
 | `minter-local` | `plugins/minter-local/` (`shepard-plugin-minter-local`) | Default `Minter` plugin — mints local-instance versioned PIDs of the form `shepard:<instance.id>:<kind>:<appId>:v<n>`. Replaces the pre-KIP1h in-core `MockMinter`. Optional: set `shepard.publish.minter=none` for resolver-only deployments. See [Publish and PIDs](/reference/publish-and-pids/). | KIP1h |
 | `minter-datacite` | `plugins/minter-datacite/` (`shepard-plugin-minter-datacite`) | DataCite Fabrica DOI minter — mints real DOIs against DataCite (test or production). Activated by `shepard.publish.minter=datacite` once credentials are configured. Admin-configurable runtime: `:DataciteMinterConfig` singleton + `/v2/admin/minters/datacite/...` + `shepard-admin minters datacite ...` CLI parity. AES-GCM credential cipher; versioned-PID chain via DataCite `IsNewVersionOf` / `HasVersion`. See [DataCite DOI minter](/reference/minter-datacite/). | KIP1d |
+| `file-s3` | `plugins/file-s3/` (`shepard-plugin-file-s3`) | S3-compatible file storage adapter — any S3 endpoint (AWS S3, Cloudflare R2, Backblaze B2, Wasabi, Garage, SeaweedFS, Ceph RGW, MinIO). Presigned upload + download + RO-Crate export URLs (FS1c–FS1g). First plugin to declare a sidecar (Garage) via the PM1f [Sidecars SPI](/reference/sidecars/). See [File storage](/reference/file-storage/). | FS1b–FS1g |
 | `video` | `plugins/video/` (`shepard-plugin-video`) | Video payload kind — upload, download, and annotate video files attached to DataObjects. Includes `VideoStreamReference` (Neo4j entity + storage via the active `FileStorage` adapter) and `VideoAnnotation` (time-segment annotations). **Disabled by default** (`shepard.plugins.video.enabled=false`). Requires `ffprobe` for metadata extraction (best-effort; absent ffprobe → null metadata fields). Install guide: `plugins/video/docs/install.md`. | VID1a–VID1b |
+| `ai` | `plugins/ai/` (`shepard-plugin-ai`) | `LlmProvider` SPI for OpenAI-compatible endpoints, with per-capability slots (TEXT / FAST_TEXT / IMAGE_GEN / VISION / EMBEDDING / STRUCTURED), prompt-injection defence, masked API-key surface, and `:AiActivity` provenance on every call. Admin-configurable runtime: `GET / PATCH /v2/admin/ai/capabilities/{capability}`. Default off (`shepard.plugins.ai.enabled=false`). | AI-SPI + AI1a |
+| `wiki-writer` | `plugins/wiki-writer/` (`shepard-plugin-wiki-writer`) | One-click Markdown lab-journal entry generator. `POST /v2/collections/{cid}/data-objects/{did}/wiki-write` assembles a layered prompt from the DataObject's attributes + Collection siblings + predecessors + successors, calls the TEXT capability of `shepard-plugin-ai`, and writes a `LabJournalEntry`. Default off. | WW1 |
+| `importer` | `plugins/importer/` (`shepard-plugin-importer`) | Cross-instance / cross-source import library. Carries the `importer_run` Postgres table + service (PR-2); the v5 source adapter + REST surface + CLI subcommand land in PR-3..PR-5. See [Cross-instance import](/reference/import/) for the v15 reference script that exercises the same shape. | IMP1a–IMP1b |
+| `v1-compat` | `plugins/v1-compat/` (`shepard-plugin-v1-compat`) | The byte-stability control plane for the upstream-frozen `/shepard/api/...` surface. Carries the `:LegacyV1Config` singleton, the v1 deprecation headers (`Deprecation`, `Link`, `X-Shepard-Legacy`), the admin REST (`/v2/admin/legacy/v1/{config,stats}`), and the frontend banner. Operators flip the singleton to disable the v1 surface when their tooling is ready — no fork-imposed sunset. See [v1 deprecation](/reference/v1-deprecation/). | V1COMPAT.0 |
 
 To opt out of a bundled plugin without removing the JAR: set
 `shepard.plugins.<id>.enabled=false` in `application.properties`
@@ -617,6 +622,19 @@ PM1b adds:
 - **Admin REST + CLI parity** —
   `GET / PATCH /v2/admin/plugins` + `shepard-admin plugins
   {list, enable, disable}`. See the dedicated sections above.
+
+PM1f adds:
+
+- **Declarative sidecar declarations.** A plugin that needs an
+  external service (S3 backend, Kafka broker, Redis, …) declares
+  it via `PluginManifest.sidecars()` returning a list of
+  `SidecarSpec` records. The operator-side bootstrap (or, today,
+  a hand-followed runbook) renders the compose snippet — operators
+  never hand-edit a compose override against a plugin's own
+  release cadence. See
+  [Sidecars SPI]({{ '/reference/sidecars' | relative_url }}). The
+  first concrete consumer is `FileS3PluginManifest` declaring its
+  Garage backend.
 
 Still queued for follow-up:
 

@@ -10,6 +10,13 @@ This page covers the operator surface: which adapter is active,
 how to pick a different one, and what guarantees apply across the
 upgrade path.
 
+> **Operator runbooks** (live, in production at `shepard.nuclide.systems`):
+> - [Garage S3 sidecar activation]({{ '/ops/garage-activation-runbook' | relative_url }})
+>   — the manual realisation of `FileS3PluginManifest.sidecars()` while
+>   the operator-side bootstrap is still being designed.
+> - [GridFS → S3 migration]({{ '/ops/migrate-gridfs-to-s3' | relative_url }})
+>   — in-place adapter swap with no API downtime.
+
 ## Quick reference
 
 | Knob | Default | Scope | Notes |

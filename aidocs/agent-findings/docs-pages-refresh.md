@@ -93,11 +93,18 @@ Filled in as edits land.
 
 ## Summary
 
-- **docs/ files modified:** 6 (`_config.yml`, `index.md`,
+- **docs/ files modified:** 5 (`_config.yml`, `index.md`,
   `architecture.md`, `reference/file-storage.md`,
-  `reference/plugins.md`, plus the findings doc itself).
+  `reference/plugins.md`).
 - **New pages:** 3 (`reference/import.md`, `reference/sidecars.md`,
   `reference/view-recipes.md`).
 - **Dead links fixed:** 0 (none found by the sweep — the docs were
-  drift-by-omission, not drift-by-wrong-link).
+  drift-by-omission, not drift-by-wrong-link). MinIO references
+  remain but are properly contextualised as a community-archived
+  alternative.
+- **Commits:** 3.
+  1. `docs: add reference pages for v15 import, sidecars SPI, view recipes`
+  2. `docs: refresh landing + architecture for Garage + plugin SPI`
+  3. `docs: refresh GH Pages for pre-push (Garage active + v15 + sidecars + view recipes)`
+     (cross-link sweep + bundled-plugin table extension)
 - **Ready for push.**
