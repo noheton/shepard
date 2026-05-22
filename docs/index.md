@@ -159,4 +159,8 @@ Snapshot date: {{ site.snapshot_date }}.
 ---
 
 Cite our work or look up the standards behind these design decisions in
-the [bibliography]({{ '/bibliography' | relative_url }}).
+the [bibliography]({{ '/bibliography' | relative_url }}). For an
+entirely overblown, AI-generated account of why this software is called
+*shepard*, see the [origin myth]({{ '/origin-myth' | relative_url }}).
+
+> *Unofficial motto:* **"Data management even institute directors understand."**

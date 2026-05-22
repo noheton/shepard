@@ -45,6 +45,8 @@ nav:
     url: /system-requirements
   - title: Bibliography
     url: /bibliography
+  - title: Origin myth
+    url: /origin-myth
 
 # Snapshot date — bump when content is refreshed.
 snapshot_date: 2026-05-22
