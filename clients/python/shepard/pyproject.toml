@@ -7,8 +7,8 @@ dependencies = ["shepard-client>=5.2,<6"]
 
 [project.optional-dependencies]
 pandas = ["pandas>=2.0"]
-excel  = ["pandas>=2.0", "openpyxl>=3.1"]
-all    = ["pandas>=2.0", "openpyxl>=3.1"]
+excel  = ["pandas>=2.0", "openpyxl>=3.1.5"]
+all    = ["pandas>=2.0", "openpyxl>=3.1.5"]
 
 [build-system]
 requires = ["setuptools>=68"]
