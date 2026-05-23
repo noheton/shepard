@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 37 |
 | `concept` | 14 |
 | `idea` | 9 |
-| `feature-defined` | 58 |
+| `feature-defined` | 59 |
 | `audited-by-personas` | 52 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **264** |
+| **total docs** | **265** |
 | **UNTAGGED** | **5** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -130,7 +130,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (58)
+## feature-defined (59)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -178,6 +178,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/104-author-research-profile.md`](strategy/104-author-research-profile.md) | Author research profile — Florian Krebs, DLR ZLP Augsburg | 2026-05-23 | — |
 | [`aidocs/strategy/87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | 88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
