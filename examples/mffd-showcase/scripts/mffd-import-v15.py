@@ -154,7 +154,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.16"
+IMPORT_SCRIPT_VERSION = "15.17"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -187,8 +187,26 @@ CHECKPOINT_PATH = Path(os.environ.get(
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
-SHEPARD_URL = os.environ.get("SHEPARD_URL", "https://shepard.nuclide.systems").rstrip("/")
-SHEPARD_API_KEY = os.environ.get("SHEPARD_API_KEY", "")
+# v15.17 ENV-ALIAS — accept multiple env-var names for the same setting,
+# strip any `/shepard/api[/]` suffix that some configs include.
+def _resolve_url_env(*names: str, default: str = "") -> str:
+    for n in names:
+        v = os.environ.get(n)
+        if v:
+            return v.rstrip("/").removesuffix("/shepard/api")
+    return default.rstrip("/")
+
+def _resolve_token_env(*names: str, default: str = "") -> str:
+    for n in names:
+        v = os.environ.get(n)
+        if v:
+            return v
+    return default
+
+# Dest (where data lands). Aliases: SHEPARD_URL (canonical), SHEPARD_BASE_URL.
+# Token aliases: SHEPARD_API_KEY (canonical), SHEPARD_TOKEN.
+SHEPARD_URL = _resolve_url_env("SHEPARD_URL", "SHEPARD_BASE_URL", default="https://shepard.nuclide.systems")
+SHEPARD_API_KEY = _resolve_token_env("SHEPARD_API_KEY", "SHEPARD_TOKEN")
 SHEPARD_BEARER_TOKEN = os.environ.get("SHEPARD_BEARER_TOKEN", "")
 SESSION_ID = os.environ.get("SESSION_ID", datetime.date.today().isoformat())
 MAX_DOS_PER_STEP = 0  # Set from --max-dos in main(); 0 = unlimited
@@ -211,9 +229,10 @@ SOURCE_BRIDGEWELDING_COLL_ID: int | None = (
 
 IMPORT_TIME = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
-# Cross-instance source (set SOURCE_* vars for DLR intranet pull)
-SOURCE_SHEPARD_URL = os.environ.get("SOURCE_SHEPARD_URL", SHEPARD_URL)
-SOURCE_SHEPARD_API_KEY = os.environ.get("SOURCE_SHEPARD_API_KEY", SHEPARD_API_KEY)
+# Cross-instance source. Aliases: SOURCE_SHEPARD_URL (canonical), SOURCE_URL.
+# Token aliases: SOURCE_SHEPARD_API_KEY (canonical), SOURCE_API_KEY, SOURCE_TOKEN.
+SOURCE_SHEPARD_URL = _resolve_url_env("SOURCE_SHEPARD_URL", "SOURCE_URL", default=SHEPARD_URL)
+SOURCE_SHEPARD_API_KEY = _resolve_token_env("SOURCE_SHEPARD_API_KEY", "SOURCE_API_KEY", "SOURCE_TOKEN", default=SHEPARD_API_KEY)
 OPERATOR = os.environ.get("OPERATOR", "")
 
 # v15.9 MFFD-IMPORT-USER-CAPTURE — populated once at startup by main()
@@ -4890,6 +4909,46 @@ def main() -> None:
 
     source_mode = SOURCE_TAPELAYING_COLL_ID is not None or SOURCE_BRIDGEWELDING_COLL_ID is not None
     cross_instance = SOURCE_SHEPARD_URL != SHEPARD_URL
+
+    # v15.17 AUTH-PROBE — fail fast if either side's credentials don't auth.
+    # Hits a tiny 1-row collections list against each instance. If anything
+    # other than HTTP 200 comes back, we EXIT before any work (no silent
+    # fallback, no busy-spin loop on a misconfigured environment). Skipped
+    # only in dry-run (where no live network is wanted anyway).
+    if not args.dry_run:
+        import urllib.request as _ur
+        import urllib.error as _ue
+        def _probe(url: str, token: str, label: str) -> None:
+            if not url or not token:
+                raise SystemExit(
+                    f"[v{IMPORT_SCRIPT_VERSION}] FATAL ({label}): missing URL or token.\n"
+                    f"  url={url!r}  token={'(empty)' if not token else token[:20]+'...'}\n"
+                    f"  Set {label}_URL + {label}_API_KEY (or the legacy aliases).")
+            probe_url = f"{url}/shepard/api/collections?page=0&size=1"
+            try:
+                req = _ur.Request(probe_url, headers={"X-API-KEY": token})
+                resp = _ur.urlopen(req, timeout=15)
+                if resp.status != 200:
+                    raise SystemExit(
+                        f"[v{IMPORT_SCRIPT_VERSION}] FATAL ({label}): auth probe got HTTP {resp.status} from {probe_url}")
+                print(f"  [auth] {label:<6}  ✓  HTTP 200  {url}  (token={token[:20]}...)")
+            except _ue.HTTPError as e:
+                raise SystemExit(
+                    f"[v{IMPORT_SCRIPT_VERSION}] FATAL ({label}): auth probe got HTTP {e.code} from {probe_url}\n"
+                    f"  Token may be expired or wrong instance. Re-mint or check env vars.")
+            except Exception as e:
+                raise SystemExit(
+                    f"[v{IMPORT_SCRIPT_VERSION}] FATAL ({label}): auth probe network error against {probe_url}: {e}")
+        print()
+        print(f"=== v{IMPORT_SCRIPT_VERSION} AUTH PROBE (fail-fast) ===")
+        _probe(SHEPARD_URL, SHEPARD_API_KEY, "DEST")
+        if cross_instance:
+            _probe(SOURCE_SHEPARD_URL, SOURCE_SHEPARD_API_KEY, "SOURCE")
+        else:
+            print(f"  [auth] SOURCE  (same as DEST — single-instance mode)")
+        print(f"=== AUTH OK ===")
+        print()
+
     if args.bootstrap:
         mode_label = "BOOTSTRAP"
     elif source_mode:
