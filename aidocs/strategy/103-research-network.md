@@ -8,8 +8,10 @@ audience: thesis-substrate, strategy
 # Shepard research network — DLR eLib + external-peer reconstruction
 
 **Date:** 2026-05-23
-**Author:** Krebs F. (thesis substrate). Synthesis: AI agents (Opus 4.7, with WebFetch over DLR eLib + WebSearch over peer databases).
+**Author:** Krebs F. (thesis substrate). Synthesis: AI agents (Opus 4.7, with WebFetch over DLR eLib + WebSearch over peer databases + ORCID public API + general-platform scan).
 **Scope:** Map the people, institutions, publications, and intellectual lineages that surround Shepard, ranging from the immediate DLR-ZLP-Augsburg authoring team out through NFDI4Ing CADEN, HMC, DLR-SC FAIR software, and adjacent space / aerospace-regulatory peers.
+
+**ORCID anchor.** The network is anchored on Krebs's verified ORCID **[0000-0001-6033-801X](https://orcid.org/0000-0001-6033-801X)** (retrieved 2026-05-23 via `https://pub.orcid.org/v3.0/0000-0001-6033-801X/record`). All other identifiers in this document — co-author affiliations, eLib records, Scopus IDs — were cross-checked against ORCID where possible. See §0 below for the cross-platform presence audit.
 
 **Companion docs.**
 - `aidocs/strategy/73-dlr-stakeholder.md` — DLR-wide institutional framing
@@ -22,6 +24,130 @@ audience: thesis-substrate, strategy
 - `aidocs/strategy/92-aerospace-x-regulatory-context.md` — Weber et al. industry framing
 - `aidocs/strategy/94-federation-and-dataspaces.md` — federation peers
 - `aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md` — capabilities inventory (Krebs F. 2025-04-18)
+
+---
+
+## §0 Primary anchor — ORCID 0000-0001-6033-801X
+
+**Florian Benedikt Krebs** is the load-bearing node of this network. His ORCID record is the single canonical anchor against which every other identity in this document is reconciled.
+
+| Field | Value |
+|-------|-------|
+| ORCID iD | **`0000-0001-6033-801X`** |
+| Profile URL | <https://orcid.org/0000-0001-6033-801X> |
+| API endpoint | `https://pub.orcid.org/v3.0/0000-0001-6033-801X/record` (Accept: application/json) |
+| Country | DE |
+| External identifiers | Scopus Author ID `16022558700` (asserted by Scopus-Elsevier, 2018-11-09) |
+| Other names | Florian Benedikt Krebs |
+| Public researcher URL | <https://www.linkedin.com/in/florian-krebs/> |
+| ORCID-listed works | **28** (retrieved 2026-05-23) |
+| Of which: with DOI on ORCID | 12 |
+| Of which: previously in `references.bib` | 2 (one by title match, one by sibling DOI) |
+| Of which: added 2026-05-23 from ORCID | 23 (1 concept-DOI variant + 22 distinct works) |
+| Employment (current) | DLR — Institute of Structures and Design, Leader Flexible Automation Systems Group (since 2009-10) |
+| Employment (prior) | KUKA Roboter GmbH (2008-04 → 2009-09) |
+| Education | Universität Augsburg — Diplom-Informatiker (Informatics / Computer Science) |
+| Funding listed on ORCID | none (the ORCID self-attribution model means grant attributions are absent — DLR funding is institutional, not Krebs-personal) |
+| Peer-review activity listed | none |
+
+**Retrieval discipline.** All §0 facts retrieved 2026-05-23 from `https://pub.orcid.org/v3.0/0000-0001-6033-801X/record`. Where the ORCID record is silent (biography, funding, peer review), the gap is preserved — not filled by inference.
+
+**Other people in this document are anchored by their own ORCIDs where findable.** Each entry in §3 onwards carries either the person's ORCID iD or `[ORCID unverified]`. The latter is honest: many DLR scientists do not maintain a public ORCID and DLR eLib does not always carry the iD even when it exists.
+
+### §0.1 Highest-leverage ORCID works the bib was missing
+
+These five are the most thesis-load-bearing additions surfaced by the ORCID cross-check, ordered by how much they strengthen the continuity story:
+
+1. **`krebsFairDigitalObjectsHelmholtz2022`** — DOI `10.3897/rio.8.e94758`. The Helmholtz-wide HMC consortium paper on realizing FAIR Digital Objects. This is the cross-institutional credentialing of Krebs's FAIR work and the missing link between his DLR-ZLP local work and the Helmholtz-wide PoF V framing in `aidocs/strategy/90-hmc-phase-2-positioning.md`.
+2. **`audetIrecRcim2024Erratum`** — DOI `10.1016/j.rcim.2024.102773`. Corrigendum to the existing Audet et al. 2024 IREC paper; surfaces the WOS-indexed canonical form.
+3. **`krebsAssemblyAutomationWrinkle2019`** — DOI `10.1108/aa-05-2019-0094`. Vision-based wrinkle detection at the FPC — direct ancestor of the Automated Defect Recognition (ADR) capability listed in `@krebsInventur2025` slide 22 and the planned image-region-annotation feature in `project_feature_ideas.md`.
+4. **`krebsIjamtMultifunctionalCell2016`** — DOI `10.1007/s00170-014-6022-1`. The MFZ design paper — the cell whose data Shepard later substrates.
+5. **`krebsSmcRelationalCognitive2008`** — DOI `10.1109/ICSMC.2008.4811781`. Krebs's earliest publication (pre-DLR). The *"relational cognitive structures"* framing is a deep-prior signal for Shepard's ontology-first design philosophy — predates DLR employment by a year. A useful provenance hook for any "where does the ontology lens come from" defence question.
+
+### §0.2 Co-author ORCIDs to discover next
+
+The ORCID record gives author lists, not co-author ORCIDs. Each of the recurring co-authors below is a candidate node whose own ORCID should be looked up and anchored separately in subsequent passes:
+
+| Co-author | Cluster | Recurring with Krebs on |
+|-----------|---------|------------------------|
+| Haase, Tobias | B (Shepard 2021 foundation) | shepardConceptDoi (5091603), krebsDlrk2021 |
+| Glück, Roland | B/F (Shepard core + ForInfPro) | krebsDlrk2021, krebsProcessOrchestrationPromfg2020 |
+| Kaufmann, Patrick | B (Shepard 2021) | krebsDlrk2021, krebsForInfPro2026 |
+| Willmeroth, Mark | B (Shepard 2021) | krebsDlrk2021 |
+| Brandt, Lars | C (cell engineering 2019–24) | krebsProcessOrchestrationPromfg2020, audetIrecRcim2024 |
+| Deden, Dennis | C (cell engineering 2020) | krebsProcessOrchestrationPromfg2020 |
+| Larsen, Lars | C (vision / detection 2018–19) | krebsCaseVisionWrinkle2018, krebsAssemblyAutomationWrinkle2019, krebsIccaMultirobotDeformation2019 |
+| Mayer, Manuel | B (Shepard 2021) | krebsDlrk2021 |
+| Audet, Julien-Mathieu | external (NRC Canada) | audetIrecRcim2024 + erratum |
+| Monsarrat, Bruno | external (NRC Canada) | audetIrecRcim2024 |
+| Vistein, Michael | C (cell engineering) | audetIrecRcim2024 |
+| Dudenhausen, Wolfgang | C (cell engineering / detection) | krebsAssemblyAutomationWrinkle2019, krebsIjamtMultifunctionalCell2016 |
+
+**Next-pass action:** for each of the 12 names, attempt `https://orcid.org/orcid-search/search?searchQuery=<last>%20<first>` and `https://pub.orcid.org/v3.0/expanded-search/?q=...`. Where found, anchor in this document with their own §0-style entry. Where not, mark `[ORCID unverified]` and rely on DLR eLib + WOS for identity verification.
+
+### §0.3 Honest verdict on the ORCID picture
+
+The ORCID anchor is **necessary but not sufficient** as a thesis-substrate identity foundation. Three gaps remain:
+
+1. **Krebs ORCID does not capture every relevant work.** Several known Krebs publications (the 2010 MFZ-Steuerungskonzept `@krebsMfzSteuerung2010`, the 2013 DLR Magazin issue 140 `@krebsJungDlrMagazin140`, every 2025–26 talk slide deck) are not on ORCID. ORCID is **strictly a lower bound** on the publication record; the bib has more, and that is correct.
+2. **No co-author ORCIDs are propagated** from the Krebs ORCID record. ORCID only stores author iDs that those authors themselves have asserted on their own ORCIDs; pulling the Krebs record alone gives one column of a sparse matrix. The §0.2 list is the next-pass shopping list.
+3. **The reverse direction — every bib entry → matching ORCID work-id** — is not yet exercised. The cross-check we performed went ORCID → bib, not bib → ORCID. The complement check (which bib entries are also on Krebs's ORCID under a different identifier) is a future tightening pass; for now the gap is documented as a known-unknown rather than silently closed.
+
+The §0 anchor as-of 2026-05-23 is **coherent for thesis-defence and funding-pitch use** — it grounds the Krebs author claim in a verifiable public record — but not yet **complete as a research-network identity graph**. Closing the gap is one more pass of ORCID lookups against the §0.2 co-author list.
+
+---
+
+## §0 ORCID anchor + cross-platform presence
+
+The thesis-author subject of this network — **Florian Benedikt Krebs**, DLR Institute of Structures and Design (BT), Center for Lightweight Production Technology (ZLP) Augsburg — is identified canonically by the ORCID record below. All co-authors named in this document with verifiable ORCIDs are linked from §3; the anchor row is reproduced here for prominence.
+
+### §0.1 Primary identifiers
+
+| Identifier | Value | Source / verification |
+|---|---|---|
+| **ORCID** | [`0000-0001-6033-801X`](https://orcid.org/0000-0001-6033-801X) | Public ORCID API record, retrieved 2026-05-23 (`/v3.0/0000-0001-6033-801X/record`); affiliation history confirms DLR-Augsburg/ZLP from 2009-10 onward |
+| **Full name on ORCID** | Florian Benedikt Krebs | ORCID `person.name` field |
+| **Scopus Author ID** | `16022558700` | ORCID external-identifiers field |
+| **DLR eLib creator-facet** | "Krebs, Florian" (Augsburg) | DLR eLib search; ~63 records returned (mix of peer-reviewed, working notes, decks) |
+| **IEEE Xplore Author** | `37085504634` | IEEE Xplore author page (HTTP 418 to WebFetch but URL stable) |
+| **DBLP** | *(not found)* | DBLP search returned no matches — see §7.5 gap |
+| **GitHub** | [`noheton`](https://github.com/noheton) | Profile page confirms real-name "Florian Krebs" + ORCID linkback; 9 public repos (incl. `shepard`, `f-ai-r`) |
+| **LinkedIn** | [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) | Primary; "Deputy Head of Department, DLR" headline |
+| **Email of record** | `florian.krebs@dlr.de` | Listed on @krebsDlrk2021 + 2010-era PPTX series |
+
+### §0.2 ORCID-attested chronology (the verifiable spine)
+
+The ORCID **employment + education** track is now the single most trustworthy spine for the §2 timeline in `aidocs/strategy/104` and for §6 of this document. Key fixed points:
+
+| Date range | Institution | Role / output |
+|---|---|---|
+| **2002–2008** | Universität Augsburg, Informatik | Diplominformatiker (Diplom-Informatiker in Angewandte Informatik) — *first detail of education in the record* |
+| **2008-04 to 2009-09** | **KUKA Roboter GmbH** (Augsburg) | *Pre-DLR industrial year at the vendor whose hardware later anchors every MFZ/FPC/T-AFP cell at ZLP — the clean industrial-pedigree → research-substrate arc* |
+| **2008** | (during Diplom / KUKA transition) | IEEE SMC paper "Relational Cognitive Structures for Intelligent Agent and Robot Control" (DOI 10.1109/ICSMC.2008.4811781) — *the deep-prior ontology signal; predates DLR by 1 year* |
+| **2009-10 to present** | DLR Institut für Bauweisen und Strukturtechnologie (BT) | "Leader of flexible automation systems group" (ORCID) / "Deputy Head of Department" (LinkedIn) — 16+ years continuous |
+
+This chronology resolves an open question from `aidocs/strategy/86` §2: the bridge from Krebs's Diplom thesis (computer science, formal-methods background) into DLR ZLP runs **through KUKA Augsburg**, not directly from the university into DLR. That detail strengthens the personal-continuity case for the DLR-KUKA institutional relationship that produced the MFZ cells.
+
+### §0.3 ORCID work-count vs. eLib record-count delta (explanatory)
+
+The Krebs publication record is counted three ways with three different totals; **the difference is real and the rows of §3 should be read with this in mind**:
+
+- **ORCID work-list: 28 distinct works** (peer-reviewed papers + selected research tools + adjacent contributions; opt-in, the author chooses what to surface)
+- **`docs/_data/references.bib` Krebs-entries: ~40+** (after the 2026-05-23 ORCID-backfill pass; includes ALL of ORCID's 28 plus the DLR-internal decks, sketches, and primary-source artefacts uploaded into the project's working memory)
+- **DLR eLib `creators=Krebs, Florian (Augsburg)`: ~63** (eLib indexes everything: peer-reviewed, conference contributions, internal reports, posters, talk announcements — the broadest count)
+
+The §3 per-person table's "Active publications" column for Krebs reads "63 pubs (eLib)" — that's eLib's broad count, not the ORCID peer-reviewed count. Where the thesis needs the rigorous peer-reviewed count, use ORCID's 28; where it needs the institutional-footprint count, use eLib's 63.
+
+### §0.4 Affiliations attested on ORCID for cross-author lookup
+
+Where co-authors named in §3 have ORCIDs, they are cited inline in the table. The four high-leverage ones to surface here:
+
+- **Krebs, F.** — [0000-0001-6033-801X](https://orcid.org/0000-0001-6033-801X) ← anchor
+- **Bronger, T.** (FZJ; JuliaBase/SciMesh) — [0000-0002-5174-6684](https://orcid.org/0000-0002-5174-6684)
+- **Selzer, M.** (KIT IAM-CMS; Kadi4Mat) — [0000-0002-9756-646X](https://orcid.org/0000-0002-9756-646X)
+- **Nestler, B.** (KIT IAM-CMS chair; Kadi4Mat senior) — [0000-0002-3768-3277](https://orcid.org/0000-0002-3768-3277)
+
+ORCIDs for the rest of the cohort (Haase, Glück, Kaufmann, Vistein, Görick, Nieberl, Welzmüller, Dannemann, Voggenreiter, Raps, Schlenz, Jejkal, ...) are open lookups for a follow-up pass — they are not blockers but each one tightens the network's verifiability.
 
 ---
 

@@ -17,6 +17,15 @@ supplies a thesis preamble, a funding-reviewer briefing, and a contributor
 
 ## §1 At-a-glance
 
+**ORCID iD:** **`0000-0001-6033-801X`** — <https://orcid.org/0000-0001-6033-801X>
+**Scopus Author ID:** `16022558700`
+**Affiliation (current):** DLR Institute of Structures and Design — Leader, Flexible Automation Systems Group (since 2009-10)
+**Education:** Universität Augsburg, Diplom-Informatiker (Informatics)
+**Public researcher URL:** <https://www.linkedin.com/in/florian-krebs/>
+**ORCID-listed work count (2026-05-23):** 28 works
+**Bibliography-cited Krebs works (2026-05-23):** see §5.0 below
+**Confirmed:** ORCID iD volunteered by F. Krebs 2026-05-23 and reconciled against `https://pub.orcid.org/v3.0/0000-0001-6033-801X/record`; see `aidocs/strategy/103-research-network.md` §0 for full anchor.
+
 Florian Krebs is a research engineer at the **DLR Zentrum für
 Leichtbauproduktionstechnologie (ZLP) Augsburg**, the German Aerospace
 Center's institute for lightweight production technology and the host site of
@@ -249,6 +258,26 @@ described at [`aidocs/strategy/89`](89-genai-methodology-and-reflexivity.md)
 can use generative AI in the open without ceasing to be scientific."
 
 ## §5 Publication record
+
+### 5.0 Verified via ORCID
+
+**Anchor:** ORCID `0000-0001-6033-801X`, retrieved 2026-05-23 from `https://pub.orcid.org/v3.0/0000-0001-6033-801X/record`.
+
+**Total works on ORCID profile:** 28.
+**Of which carry a DOI on ORCID:** 12 (`10.1016/j.rcim.2024.102743`; `10.1016/j.rcim.2024.102773`; `10.3897/rio.8.e94758`; `10.5281/zenodo.5091603`; `10.25967/550315`; `10.1016/j.promfg.2020.10.066`; `10.1108/aa-05-2019-0094`; `10.1109/IROS.2017.8205973`; `10.1007/s00170-014-6022-1`; `10.1109/ETFA.2015.7301469`; `10.1007/978-3-319-24704-5_15`; `10.1109/ICSMC.2008.4811781`).
+
+**ORCID → bib reconciliation (pass of 2026-05-23):**
+
+| Status | Count | Notes |
+|---|---:|---|
+| Already in bib before ORCID pass | 2 | `@krebsDlrk2021` (now carries DOI `10.25967/550315`); `@haaseShepard2021` (version DOI 5091604) |
+| Newly added in 2026-05-23 ORCID pass | 23 | One concept DOI variant (`@haaseShepardConceptDoi`) + 22 distinct Krebs works |
+| ORCID-listed but stub-only (no year / no venue) | 1 | *Learning in Layered Module Architectures* — preserved as stub `@krebsLearningLayeredModules`; unverified |
+| Skipped as duplicate-of-canonical | 2 | ORCID lists IROS 2017 and ETFA 2015 both as journal-article + conference-paper variants; one canonical bib entry suffices |
+
+Highest-leverage ORCID-surfaced additions (the works the thesis library most needed): see `aidocs/strategy/103-research-network.md` §0.1 — `krebsFairDigitalObjectsHelmholtz2022` (FAIR Digital Objects Helmholtz), `audetIrecRcim2024Erratum` (corrigendum to IREC paper), `krebsAssemblyAutomationWrinkle2019` (vision-based wrinkle detection), `krebsIjamtMultifunctionalCell2016` (MFZ design paper), `krebsSmcRelationalCognitive2008` (pre-DLR cognitive structures — deep prior for ontology lens).
+
+**Gap (honest):** ORCID is strictly a lower bound on the Krebs publication record. Several Krebs primary-source artefacts (the 2010 MFZ-Steuerungskonzept, the 2013 DLR Magazin issue 140, all 2025–26 talk slide decks) are not on ORCID; the bib has more, and that is correct. The reverse direction — bib → ORCID work-id reconciliation — has not been performed and is the next-pass tightening item.
 
 The publication record is split by category as recorded in
 [`docs/_data/references.bib`](../../docs/_data/references.bib). The
