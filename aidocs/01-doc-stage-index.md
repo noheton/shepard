@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 37 |
 | `concept` | 14 |
 | `idea` | 7 |
-| `feature-defined` | 44 |
+| `feature-defined` | 45 |
 | `audited-by-personas` | 44 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 37 |
 | `decommissioned` | 46 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **234** |
+| **total docs** | **235** |
 | **UNTAGGED** | **4** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -127,11 +127,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (44)
+## feature-defined (45)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
@@ -143,7 +144,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/data/84-live-digital-twin.md`](data/84-live-digital-twin.md) | aidocs/84 — Live Digital Twin: Moving Objects, Production Cell Scene, and State Streaming | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | aidocs/85 — Coordinate Frame Tree (CST1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | — |
+| [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
@@ -170,7 +171,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | — |
+| [`aidocs/semantics/99-promptlog-design.md`](semantics/99-promptlog-design.md) | 99 — PromptLog: prompts as first-class Shepard artefacts | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/74-auto-refresh-stale-session.md`](ux/74-auto-refresh-stale-session.md) | 74 — Auto-Refresh on Stale Session | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
