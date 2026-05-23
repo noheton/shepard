@@ -1047,3 +1047,11 @@ stable (no committed date).
   Reluctant Senior + Strategy Aligner + Digital Native + RDM),
   scoped to their own filings. Ascends to `tests-implemented` when the
   §11.1 criteria are met and the change requests are resolved.
+- **User decision 2026-05-23**: **APPROVED — VictoriaLogs primary + RDM2
+  (Garage NDJSON+fixity archive) pair adopted.** ESCALATION-2 (VictoriaLogs
+  maturity risk) is closed via the archive-format independence guarantee.
+  LOGSTORE1-RDM2 is therefore not optional — it's part of the substrate
+  contract from day one. Implementation order: RDM1 + RDM2 land BEFORE
+  any plugin emit-shape work (per the audit reframing: archive-format
+  coupling is what makes the substrate swap-safe, NOT operational
+  maturity guarantees from VictoriaLogs vendor).

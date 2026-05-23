@@ -916,9 +916,20 @@ as `aidocs/65`.
   endpoint (no GPU, but per-call cost + tenant)? Memory
   `project_ai_plugin_config.md` says SAIA is the recommended DLR
   provider — likely lean that direction.
-- **OQ-4 (§11).** PII redaction: ship as a default-on sidecar or a
-  default-off opt-in? Default-on is safer; default-off matches the
-  rest of Shepard's "opt-in to capture" posture.
+- ~~**OQ-4 (§11).** PII redaction: ship as a default-on sidecar or a
+  default-off opt-in?~~ **RESOLVED 2026-05-23** (user decision per
+  persona-audit-promptlog-2026-05-23.md ESCALATION-PROMPT-2 CRITICAL):
+  ship a **per-Collection `:Collection.promptLogMode` field** with three
+  modes — `hash-only` (default for new Collections; safe baseline +
+  GDPR-friendly), `body-redacted` (analytics-grade — PII-redaction
+  sidecar runs at ingest, redacted body stored), `body-raw` (air-gapped
+  or internal-only Collections where full body retention is needed for
+  EU AI Act Art-53 GPAI documentation). Matches TPL2c per-Collection
+  feature-flag pattern. Resolves the `§11 hash-only default × redaction
+  default` coherence issue surfaced by the RDM persona audit. New
+  sub-row **PROMPT-h2** filed: per-Collection mode field on
+  `:Collection` schema + Vuetify selector. Migration: existing
+  Collections default to `hash-only`; admin can flip per Collection.
 - **OQ-5 (§5).** Should `/v2/promptlog/evidence-pack` be on the
   Article 50 deadline path, or can it ship as a follow-up to PROMPT-i?
   Argument for follow-up: TPL9h already proposes the SPARQL canned
