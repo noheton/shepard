@@ -1610,7 +1610,7 @@ eLib records (PRAESTO):
   eLib record [94078](https://elib.dlr.de/94078/).
 - [krebsInputPraesto](#bib) — Krebs, F. (date undetermined).
   *Input Florian — PRAESTO.* Two-slide working deck preserved in
-  the artefact collection (filename `8c1fe026-Input_Florian_PRAESTO.pptx`,
+  the artefact collection (the *Input_Florian_PRAESTO* deck (DLR-internal primary source),
   ~2.0 MB; uploaded to AI working memory 2026-05-23). Load-bearing
   evidence for §2.1: (a) names *Kisters AG* as PRAESTO's commercial
   supplier (first primary-source identification); (b) records the
@@ -1696,7 +1696,7 @@ eLib records (PRAESTO):
   authorship pair (Krebs + Nuschele) that will deliver it.
 - [krebsSoaMes](#bib) — Krebs, F. (date undetermined; ≈ late 2017
   / early 2018). *SOA MES.* DLR ZLP Augsburg internal working
-  deck. Filename `e5da8afb-SOA_MES.pptx` (~750 KB; uploaded to AI
+  deck. Filename the *SOA_MES* deck (DLR-internal primary source) (~750 KB; uploaded to AI
   working memory 2026-05-23). Adjacent conceptual artefact for
   §3.6.5: sketches a service-oriented Manufacturing Execution
   System with the *Basis-Architektur* placing *SOA MES* alongside
@@ -1807,7 +1807,7 @@ Shepard itself:
   Bremen. **Load-bearing peer-reviewed publication of record for
   Shepard's architecture** — Krebs is lead author, jointly with all
   four Zenodo software-citation authors of `haaseShepard2021`. Filename
-  `6db8bac2-DLRK_Systematische_Erfassung_Verwaltung_und_Nutzung_von_Daten_aus_Experimenten.pdf`
+  the DLRK 2021 conference paper *Systematische Erfassung, Verwaltung und Nutzung von Daten aus Experimenten* (see bib entry @krebsDlrk2021)
   (~3.7 MB; uploaded to AI working memory 2026-05-23). The paper
   describes the polyglot-persistence architecture (Neo4j + InfluxDB +
   MongoDB), the Collection / DataObject / Container / Reference data

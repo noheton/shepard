@@ -311,7 +311,7 @@ These are not yet `aidocs/16` rows but should be considered:
 
 ## 6. Sources
 
-- `ff21078f-AerospaceX__Charting_a_course_through_regulatory_storms_towards_sustainable_aerospace_solutions.pptx`
+- the *AerospaceX — Charting a course through regulatory storms* deck (DLR-internal primary source)
   — 14-slide deck, creator (per PPTX core.xml) Weber, Holger;
   title fragment "Joint Target Picture". Uploaded to AI working
   memory 2026-05-23. Bib entry: `weberAerospaceX2025`. The deck

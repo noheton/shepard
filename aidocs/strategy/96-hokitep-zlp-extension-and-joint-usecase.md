@@ -59,7 +59,7 @@ This is the **physical infrastructure layer** of the HoKiTeP arc.
 
 ## §2 HoKiTeP-the-project — 2025 ZLP-joint-use-case orchestration
 
-**Primary source:** Krebs-authored `0a0f6211-HoKiTEP___ZLP_joint_usecase.pptx`,
+**Primary source:** the Krebs-authored HoKiTeP × ZLP joint use-case deck (DLR-internal primary source),
 6 slides, modified 2025-12-05 [@hokitepZlpUseCase2025].
 
 The 2025 deck is a different artefact in shape: it documents a **joint

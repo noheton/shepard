@@ -6,7 +6,7 @@ last-stage-change: 2026-05-23
 # API Scrutinizer — v14 → v15 import-script review
 
 Source: `examples/mffd-showcase/scripts/mffd-dropbox-import.py` (v14)
-Spec: DLR Shepard v5.4.0 OpenAPI (`/root/.claude/uploads/33f9b6cd-…/605810e8-openapi_1.json`)
+Spec: DLR Shepard v5.4.0 OpenAPI (the DLR Shepard v5.4.0 OpenAPI spec (snapshot from the upstream `dlr-shepard/shepard` repository))
 Destination: fork (byte-compat `/shepard/api/*` + additive `/v2/*`)
 
 The source side (DLR) is **strictly v5.4.0**: no `appId` on Collection/DataObject, no `/users/currentUser`, no `/v2/*`, `predecessorIds[]` writable inside the DataObject body (no `/predecessors/{predId}` path), `csv_format ∈ {ROW, COLUMN}`. The destination side (fork) inherits everything plus v2 additions.
