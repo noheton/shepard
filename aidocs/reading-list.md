@@ -181,6 +181,14 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | [Apache NiFi — User Guide](https://nifi.apache.org/docs/nifi-docs/html/user-guide.html) | Processor-graph dataflow engine | IMPORTER-CARRY §1 (REJECT) | Rejected as substrate (separate runtime cost); pattern source for retry+backpressure semantics | skimmed |
 | 2026-05-23 | [Prefect 3.x — flow concepts](https://docs.prefect.io/v3/develop/write-flows) | Python-native flow engine with state machine | IMPORTER-CARRY §1 (REJECT) + Pattern 10 | Confirms max-retries cap belongs on the JobService; rejected as substrate (wrong language) | unread |
 
+### MFFD-IMPORT-PERF diagnostic (2026-05-23)
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [Python concurrent.futures — ThreadPoolExecutor caveats](https://docs.python.org/3/library/concurrent.futures.html#threadpoolexecutor) | Pool's executor only runs callables submitted via `.submit()`; constructing the pool around an inline sequential call leaves workers idle | MFFD-IMPORT-PERF1 | Direct confirmation that v15's pool wrapping a sequential call is a no-op fan-out — the executor never receives real work, only the `lambda: True` probes | skimmed |
+| 2026-05-23 | [Singer.io spec — state.json incremental replication](https://github.com/singer-io/getting-started/blob/master/docs/SPEC.md#state-messages) | "State should be persisted only AFTER records are committed" pattern; corollary: state-check should happen BEFORE the expensive fetch | MFFD-IMPORT-PERF2 | The eager-enrichment-before-skip-check problem is what Singer's state-before-fetch pattern explicitly avoids; lazy-fetch is the canonical ELT shape | skimmed |
+| 2026-05-23 | [aiohttp — bounded-concurrency patterns](https://docs.aiohttp.org/en/stable/client_advanced.html#connector) + [asyncio.Semaphore](https://docs.python.org/3/library/asyncio-sync.html#asyncio.Semaphore) | `Semaphore(N)` + `asyncio.gather()` is the canonical N-bounded WAN-fan-out shape | MFFD-IMPORT-PERF1 alt-shape | If the refactor goes async instead of ThreadPoolExecutor, semaphores are simpler than executor + queue; reference for the actual fan-out implementation | unread |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
