@@ -7,6 +7,15 @@
 > measurements**. Every numerical value in this directory is a deterministic
 > output of `data/generate.py` (`numpy.random.default_rng(2024)`). Do not
 > attribute any conclusion drawn from this data to the real LUMEN project.
+>
+> **DaMaST connection.** Per operator clarification 2026-05-23: this
+> showcase is the **operational synthetic demonstrator of the DaMaST
+> Vorhaben** (Data Management for Space Transport) — see
+> [`aidocs/strategy/95-damast-space-transport-data-management.md`](../../aidocs/strategy/95-damast-space-transport-data-management.md).
+> LUMEN is one of the two DaMaST use-cases (alongside STORT hyperschall);
+> the synthetic dataset here exercises Shepard end-to-end against the
+> shape DaMaST's real data will have when the Vorhaben 2026 demonstrator
+> instantiates the `shepard + databus + MOSS` DataHub stack.
 
 This is a self-contained showcase that exercises shepard end-to-end:
 seven hot-fire test runs, ten sensor channels each at 100 Hz × 30 s,

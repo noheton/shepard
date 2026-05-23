@@ -25,9 +25,13 @@ cluster, scoped at roughly half a person-year (~0.5 PJ) per annum
 **Two-phase shape (per the deck):**
 
 - **2025 (Vorhaben 2025, ~0.5 PJ).** Use-case selection (*STORT*
-  hyperschall-experiment + *LUMEN* triebwerkstest — the LUMEN demonstrator
-  is already the namesake of this fork's flagship showcase dataset under
-  `examples/lumen-showcase/`); user-requirement interviews across
+  hyperschall-experiment + *LUMEN* triebwerkstest — **`examples/lumen-showcase/`
+  in this fork is the operational synthetic demonstrator of this exact
+  DaMaST use-case**, not merely a namesake. Per operator clarification
+  2026-05-23: *"LUMEN showcase is actually DaMaST"*. The showcase code,
+  the DaMaST Vorhaben, and the 93-page DaMaST workshop protocol (Oct
+  2024 Göttingen requirements workshop) are three surfaces of one
+  initiative); user-requirement interviews across
   Raumfahrt-institutes AS, BT, RA, RB, RY; preparation of the 2026+
   project proposal. Slide 4 marks the 2025 proposal pass as *gescheitert*
   (failed) with stated reasons: *komplexe Interaktionen* and *offene
