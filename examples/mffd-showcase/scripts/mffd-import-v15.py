@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.11"
+IMPORT_SCRIPT_VERSION = "15.12"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -2070,9 +2070,15 @@ class ShepardClient:
         """
         import json as _json
         url = f"{self._base}/shepard/api/structuredDataContainers/{container_id}/payload"
+        # Bug E (v15.12): backend StructuredDataService:53 calls Document.parse() on the
+        # payload string; MongoDB's BSON model rejects JSON arrays at root with
+        # "readStartDocument...not when CurrentBSONType is ARRAY". Wrap lists in
+        # {items: [...]} so the stored document always has an object root. Readers
+        # that consume MFFD SD payloads must unwrap the single "items" key.
+        inner = payload if isinstance(payload, dict) else {"items": payload, "_wrapped": "v15.12-bug-e"}
         body = {
             "structuredData": {"name": name},
-            "payload": _json.dumps(payload),   # Bug D: required STRING (minLength:2)
+            "payload": _json.dumps(inner),   # Bug D: required STRING (minLength:2)
         }
         r = self._request_with_retry("POST", url, json=body, timeout=60)
         if r is None:
