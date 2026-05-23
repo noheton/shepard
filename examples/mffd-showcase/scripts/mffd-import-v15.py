@@ -9,7 +9,7 @@ v15 (supersedes v14, see aidocs/integrations/93-mffd-import-v15-requirements.md)
      - LIVE cube3 source pull (v14's local-disk replay is shape-ref only; 0-byte TS placeholders)
      - 8 wire-shape bug fixes per aidocs/agent-findings/api-scrutinizer-v14-import.md:
          D (file fileOids[]), G (TS reference creation order),
-         H (csv_format=COLUMN not WIDE), L (drop readOnly TS container type),
+         H (csv_format=ROW; COLUMN cannot be re-imported + interpolates),
          E (StructuredDataPayload wrapper), B (POST not PUT for structured),
          C (non-empty structuredDataOids[]), I (predecessorIds in DataObject body)
      - 4-worker producer/consumer pool with bounded queue (256)
@@ -112,9 +112,14 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
+import io
+import json as _json
 import os
+import socket
 import sys
 import tempfile
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -140,6 +145,31 @@ try:
     _SMART_WARMUP_AVAILABLE = True
 except ImportError:
     _SMART_WARMUP_AVAILABLE = False
+
+# ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
+
+IMPORT_SCRIPT_VERSION = "15.6"
+
+# Self-update mechanism (IMPORT-SU1): the running script polls a JSON manifest
+# in dest Shepard. On newer version → sha256-verified download → checkpoint
+# save → os.execv replace. One starter curl, no more.
+SELFUPDATE_ENABLED = os.environ.get("MFFD_SELFUPDATE", "1") != "0"
+MANIFEST_CONTAINER_ID = int(os.environ.get("MFFD_MANIFEST_CONTAINER_ID", "473932"))
+MANIFEST_NAME_PREFIX = "mffd-import-manifest-v"
+HEARTBEAT_S = int(os.environ.get("MFFD_HEARTBEAT_S", "60"))
+
+# Telemetry (IMPORT-T1): metrics → TS container, events → SD container.
+# Dest container IDs are pinned because the script runs from anywhere; the
+# starter curl baker (Flo) creates these once, the IDs live in env defaults.
+TELEMETRY_TS_CONTAINER_ID = int(os.environ.get("MFFD_TELEMETRY_TS", "593750"))
+RUNLOG_SD_CONTAINER_ID = int(os.environ.get("MFFD_RUNLOG_SD", "593753"))
+
+# Checkpoint (IMPORT-CP1): single JSON file, atomic write. Restart resumes
+# from here — both after self-update os.execv and after a manual SIGTERM.
+CHECKPOINT_PATH = Path(os.environ.get(
+    "MFFD_CHECKPOINT",
+    str(Path.home() / ".mffd-import-state.json"),
+))
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -762,9 +792,23 @@ class ShepardClient:
     def export_ts(self, coll_id: int, do_id: int, ref_id: int) -> bytes | None:
         """Export a timeseries reference as CSV from the source instance.
 
-        Bug H fix: DLR v5.4.0 enum for csv_format is {ROW, COLUMN} only —
-        WIDE is a fork-only invention that 400s against upstream. COLUMN is
-        the row-orientation the dest importer expects (per spec §7).
+        v15.3 IMPORT-TS-ROW — use ROW format (was COLUMN in v15.2 and earlier).
+          1. ROW is the ONLY format the dest /timeseriesContainers/{id}/import
+             endpoint accepts (CsvConverter.convertToTimeseriesWithData uses
+             opencsv bean binding on CsvTimeseriesDataPoint with named columns:
+             measurement, device, location, symbolicName, field, timestamp,
+             value). COLUMN cannot be round-tripped — bug-H's claim was wrong.
+          2. ROW is cheaper on the source: no native column-pivot / timeline
+             alignment / value interpolation across channels — each row is one
+             native data point read straight from the timeseries DB.
+          3. ROW preserves each channel's exact native sampling (timestamps
+             match the source rows verbatim). COLUMN aligns all channels onto
+             a single shared timeline and may interpolate values to fill gaps,
+             which silently rewrites the data.
+          4. ROW is also the backend's default (CsvConverter L38: `format !=
+             null ? format : CsvFormat.ROW`), so we're using what the upstream
+             team meant as the canonical wire shape.
+
         Bug Q: empty body (zero point data) is treated as failure since v5.4.0
         TS export with at least one channel always returns at least the header.
         """
@@ -772,7 +816,7 @@ class ShepardClient:
             f"{self._base}/shepard/api/collections/{coll_id}"
             f"/dataObjects/{do_id}/timeseriesReferences/{ref_id}/export"
         )
-        r = self._request_with_retry("GET", url, params={"csv_format": "COLUMN"}, timeout=300)
+        r = self._request_with_retry("GET", url, params={"csv_format": "ROW"}, timeout=300)
         if r is None or not r.ok:
             if r:
                 self._log_err("GET (ts-export)", url, r)
@@ -1301,9 +1345,14 @@ class ShepardClient:
                         return repo.get("id")
             except (ValueError, AttributeError):
                 pass
-        body: dict[str, Any] = {"name": name, "type": type_}
-        if endpoint:
-            body["endpoint"] = endpoint
+        # v15.3 IMPORT-SR1 — backend now requires non-blank `endpoint` on
+        # all repo types (INTERNAL too), not just SPARQL. Provide a
+        # deterministic URN default when caller didn't pass one.
+        body: dict[str, Any] = {
+            "name": name,
+            "type": type_,
+            "endpoint": endpoint or f"urn:shepard:repo:{name}",
+        }
         r = self._post(f"{self._base}/shepard/api/semanticRepositories", body)
         return r.json().get("id") if r else None
 
@@ -2224,18 +2273,13 @@ def run_bootstrap(client: ShepardClient) -> None:
         client.upload_self(coll_id, isc["id"], isc.get("appId") or "")
         client.verify_references(coll_id, isc["id"], "ImportScripts")
 
-    # 4. t=0 snapshot — label records collection name at this moment
-    print(f"\n[snapshot] t=0 ...")
-    if coll_app_id:
-        label = f"bootstrap-t0@{coll_name}"
-        snap = client.create_snapshot(coll_app_id, label)
-        if snap:
-            print(f"  created: {snap.get('label')}  (appId={snap.get('appId')})")
-            print(f"  label captures collection name '{coll_name}' — renames tracked via snapshot history")
-        else:
-            print("  WARNING: snapshot creation failed (non-fatal)")
-    else:
-        print("  WARNING: no collection appId — snapshot skipped")
+    # v15.3 IMPORT-NS1 — script no longer auto-snapshots. Snapshots are a
+    # decisive HUMAN action per project_snapshot_boundaries.md. The boundary
+    # is real (bootstrap-t0 IS a larger transformation) but the decision +
+    # the fire belong to the human.
+    print(f"\n[snapshot] Reminder: bootstrap-t0 is a snapshot-worthy boundary.")
+    print(f"  Snapshot is a HUMAN-decided action — script does not auto-fire.")
+    print(f"  When ready: POST /v2/collections/{coll_app_id}/snapshots  body={{name:'bootstrap-t0@{coll_name}', label:'bootstrap-t0@{coll_name}'}}")
 
     print(f"\n=== Bootstrap done ===")
     print(f"  Collection '{coll_name}'  id={coll_id}")
@@ -3049,6 +3093,345 @@ class ImportState:
         self._save()
 
 
+# ── v15.4 IMPORT-T1: telemetry (metrics + runlog) ────────────────────────────
+
+class Telemetry:
+    """Background-flushed telemetry: metrics → TS container, events → SD
+    container. Both are stored INSIDE the dest Shepard instance (per
+    `feedback_shepard_measures_itself.md` — observability lives where the
+    researcher already looks). All emit calls are lock-protected + bounded;
+    failures are silent (telemetry must never break ingestion).
+
+    Metric schema (ROW format CSV uploaded to TELEMETRY_TS_CONTAINER_ID):
+        measurement=mffd_import, device=<hostname>, location=<mode>,
+        symbolicName=v<version>, field=<metric_name>, timestamp=<ns>,
+        value=<float>
+
+    Event schema (one structured-data row per heartbeat, with events array):
+        {ts, host, version, mode, events: [{ts,level,event,...}, ...]}
+    """
+
+    _NEVER_NEGATIVE = ("dos_processed", "ts_points_imported", "files_uploaded",
+                       "structured_imported", "errors", "retries",
+                       "redeploys_survived", "selfupdate_checks")
+
+    @staticmethod
+    def _scrub(s: str) -> str:
+        """v15.6 IMPORT-T2 — backend `TimeseriesValidator` rejects
+        Space/Comma/Point/Slash in ALL FIVE Timeseries fields (measurement,
+        device, location, symbolicName, field). Replace each with '_' so a
+        hostname like `cube3.intra.dlr.de` still produces a valid 5-tuple.
+        """
+        if not s:
+            return "unknown"
+        out = []
+        for ch in s:
+            out.append("_" if ch in " .,/" else ch)
+        return "".join(out) or "unknown"
+
+    def __init__(self, dest_client: Any, version: str, mode: str) -> None:
+        self._client = dest_client
+        self._version = version
+        self._mode = self._scrub(mode)
+        self._host = self._scrub(socket.gethostname())
+        self._lock = threading.Lock()
+        self._metrics: dict[str, list[tuple[int, float]]] = {}
+        self._events: list[dict] = []
+        self._counters: dict[str, float] = {k: 0.0 for k in self._NEVER_NEGATIVE}
+        self._gauges: dict[str, float] = {}
+        self._start_ts_s = time.time()
+        self._last_flush_s = self._start_ts_s
+        self._enabled = bool(TELEMETRY_TS_CONTAINER_ID and RUNLOG_SD_CONTAINER_ID)
+
+    def counter(self, name: str, delta: float = 1.0) -> None:
+        with self._lock:
+            self._counters[name] = self._counters.get(name, 0.0) + delta
+
+    def gauge(self, name: str, value: float) -> None:
+        with self._lock:
+            self._gauges[name] = float(value)
+
+    def event(self, level: str, event: str, **kwargs: Any) -> None:
+        row = {
+            "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "level": level,
+            "event": event,
+            "version": self._version,
+            "mode": self._mode,
+            "host": self._host,
+            **kwargs,
+        }
+        with self._lock:
+            self._events.append(row)
+            if len(self._events) > 5000:
+                self._events = self._events[-2000:]  # bound
+
+    def flush(self) -> None:
+        if not self._enabled:
+            return
+        now_s = time.time()
+        with self._lock:
+            counters = dict(self._counters)
+            gauges = dict(self._gauges)
+            events, self._events = self._events, []
+            self._gauges = {}
+            elapsed_since_last = now_s - self._last_flush_s
+            self._last_flush_s = now_s
+
+        # Build ROW-format CSV with both counter snapshots and current gauges.
+        ts_ns = time.time_ns()
+        try:
+            buf = io.StringIO()
+            buf.write("timestamp,measurement,device,location,symbolicName,field,value\n")
+            for k, v in counters.items():
+                buf.write(f"{ts_ns},mffd_import,{self._host},{self._mode},v{self._version.replace('.', '_')},counter_{k},{v}\n")
+            for k, v in gauges.items():
+                buf.write(f"{ts_ns},mffd_import,{self._host},{self._mode},v{self._version.replace('.', '_')},gauge_{k},{v}\n")
+            buf.write(f"{ts_ns},mffd_import,{self._host},{self._mode},v{self._version.replace('.', '_')},gauge_uptime_s,{now_s - self._start_ts_s}\n")
+            csv_bytes = buf.getvalue().encode("utf-8")
+            self._client.import_ts_csv(TELEMETRY_TS_CONTAINER_ID, csv_bytes,
+                                       filename=f"telemetry-{int(now_s)}.csv")
+        except Exception as exc:
+            print(f"  [telemetry] metric flush failed: {exc!r}", flush=True)
+
+        # Push events as one structured-data row carrying the batch.
+        if events:
+            try:
+                envelope = {
+                    "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "host": self._host,
+                    "version": self._version,
+                    "mode": self._mode,
+                    "events": events,
+                }
+                url = (
+                    f"{self._client._base}/shepard/api/structuredDataContainers/"
+                    f"{RUNLOG_SD_CONTAINER_ID}/payload"
+                )
+                self._client._post(url, {
+                    "structuredData": None,
+                    "payload": _json.dumps(envelope, default=str),
+                })
+            except Exception as exc:
+                print(f"  [telemetry] event flush failed: {exc!r}", flush=True)
+
+
+# ── v15.4 IMPORT-SU1: self-update mechanism ──────────────────────────────────
+
+class Manifest:
+    """Polls dest Shepard for the latest published manifest JSON. The newest
+    file in MANIFEST_CONTAINER_ID whose name starts with MANIFEST_NAME_PREFIX
+    is the source of truth. Manifest schema:
+        {"version": "15.5", "script_oid": "<uuid>",
+         "script_sha256": "<hex>", "script_filename": "mffd-import-v15.py",
+         "released_at": "2026-05-23T..."}
+    """
+
+    def __init__(self, dest_client: Any) -> None:
+        self._client = dest_client
+
+    def latest(self) -> dict | None:
+        # v15.6 IMPORT-SU2 — correct v5 path is /payload (lists files in
+        # container), not /files (which 404s — there is no such endpoint).
+        url = (
+            f"{self._client._base}/shepard/api/fileContainers/"
+            f"{MANIFEST_CONTAINER_ID}/payload"
+        )
+        r = self._client._get(url)
+        if r is None:
+            return None
+        try:
+            files = r.json()
+        except Exception:
+            return None
+        cands = [
+            f for f in (files or [])
+            if isinstance(f, dict)
+            and (f.get("filename") or "").startswith(MANIFEST_NAME_PREFIX)
+            and (f.get("filename") or "").endswith(".json")
+        ]
+        if not cands:
+            return None
+        cands.sort(key=lambda f: f.get("createdAt", ""), reverse=True)
+        oid = cands[0].get("oid")
+        if not oid:
+            return None
+        r2 = self._client._get(
+            f"{self._client._base}/shepard/api/fileContainers/"
+            f"{MANIFEST_CONTAINER_ID}/payload/{oid}"
+        )
+        if r2 is None:
+            return None
+        try:
+            return r2.json()
+        except Exception:
+            return None
+
+
+class SelfUpdater(threading.Thread):
+    """Background heartbeat thread that polls the manifest every
+    HEARTBEAT_S seconds. On version drift + sha256-verified download:
+      1. Writes the new script to a temp file next to __file__
+      2. Sets `update_event` — the main loop polls this between batches
+      3. When main loop sees the event: graceful checkpoint + flush +
+         atomic rename(temp → __file__) + os.execv to replace the process.
+    """
+
+    def __init__(self, current_version: str, dest_client: Any,
+                 telemetry: Telemetry) -> None:
+        super().__init__(daemon=True, name="SelfUpdater")
+        self._current = current_version
+        self._client = dest_client
+        self._tel = telemetry
+        self._manifest = Manifest(dest_client)
+        self.update_event = threading.Event()
+        self.stop_event = threading.Event()
+        self.pending_path: Path | None = None
+        self.pending_version: str | None = None
+
+    def stop(self) -> None:
+        self.stop_event.set()
+
+    def run(self) -> None:
+        # Initial 5s grace so the main loop has settled.
+        if self.stop_event.wait(5.0):
+            return
+        while not self.stop_event.is_set():
+            self._tel.counter("selfupdate_checks")
+            try:
+                latest = self._manifest.latest()
+                if latest and isinstance(latest, dict):
+                    new_v = str(latest.get("version") or "").strip()
+                    if new_v and new_v != self._current:
+                        self._handle_update(latest, new_v)
+            except Exception as exc:
+                self._tel.event("warn", "selfupdate_error",
+                                exc=type(exc).__name__, msg=str(exc)[:200])
+            if self.stop_event.wait(float(HEARTBEAT_S)):
+                return
+
+    def _handle_update(self, manifest: dict, new_v: str) -> None:
+        new_oid = manifest.get("script_oid")
+        new_sha = manifest.get("script_sha256")
+        new_name = manifest.get("script_filename", "mffd-import-v15.py")
+        if not new_oid:
+            self._tel.event("warn", "manifest_missing_oid",
+                            version=new_v, manifest=manifest)
+            return
+        self._tel.event("info", "update_available",
+                        current=self._current, target=new_v, oid=new_oid)
+        url = (
+            f"{self._client._base}/shepard/api/fileContainers/"
+            f"{MANIFEST_CONTAINER_ID}/payload/{new_oid}"
+        )
+        r = self._client._get(url)
+        if r is None:
+            self._tel.event("error", "update_download_failed",
+                            target=new_v, oid=new_oid)
+            return
+        body = r.content
+        if new_sha:
+            got = hashlib.sha256(body).hexdigest()
+            if got != new_sha:
+                self._tel.event("error", "update_sha256_mismatch",
+                                target=new_v, expected=new_sha, actual=got)
+                return
+        # Stage to a temp path; main loop renames + execv-replaces atomically.
+        tmp = Path(__file__).with_suffix(f".v{new_v}.new")
+        tmp.write_bytes(body)
+        self.pending_path = tmp
+        self.pending_version = new_v
+        self._tel.event("info", "update_ready_for_exec",
+                        target=new_v, path=str(tmp))
+        self.update_event.set()
+
+
+def apply_pending_update(updater: SelfUpdater, telemetry: Telemetry,
+                         checkpoint: "Checkpoint") -> None:
+    """Called from the main loop when updater.update_event is set. Atomic
+    rename + os.execv the new script. Returns only if the update could not
+    be applied (caller decides whether to continue or abort)."""
+    if not updater.pending_path or not updater.pending_version:
+        return
+    new_path = updater.pending_path
+    new_v = updater.pending_version
+    try:
+        # Ensure the checkpoint reflects "we are about to execv" so the new
+        # process has a known-good resume point.
+        telemetry.event("info", "applying_update", target=new_v)
+        telemetry.flush()
+        cur = checkpoint.load() or {}
+        cur["last_execv_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        cur["last_execv_from"] = IMPORT_SCRIPT_VERSION
+        cur["last_execv_to"] = new_v
+        checkpoint.save(cur)
+        # Atomic replace
+        final = Path(__file__)
+        new_path.replace(final)
+        # execv preserves argv + env. Mode + checkpoint allow resume.
+        os.execv(sys.executable, [sys.executable, str(final), *sys.argv[1:]])
+    except Exception as exc:
+        telemetry.event("error", "update_execv_failed",
+                        exc=type(exc).__name__, msg=str(exc)[:200])
+        # Fall through: caller continues with old version.
+
+
+# ── v15.4 IMPORT-CP1: checkpoint file (resume across self-update / kill) ─────
+
+class Checkpoint:
+    """Single-JSON checkpoint, atomic write via existing atomic_write_json.
+    Schema (free-form within reason):
+        {"version": "15.4", "mode": "source" | "bootstrap" | "verify",
+         "src_coll_id": <int>, "dest_coll_id": <int>,
+         "started_at": "...", "last_saved_at": "...",
+         "processed_src_do_ids": [...],
+         "skipped_src_do_ids": [...],
+         "counters": {...},
+         "last_execv_at": "...", "last_execv_from": "15.3", "last_execv_to": "15.4"}
+    """
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._lock = threading.Lock()
+
+    def load(self) -> dict | None:
+        if not self._path.exists():
+            return None
+        try:
+            return _json.loads(self._path.read_text())
+        except Exception:
+            return None
+
+    def save(self, state: dict) -> None:
+        with self._lock:
+            state["last_saved_at"] = datetime.datetime.now(
+                datetime.timezone.utc
+            ).isoformat()
+            atomic_write_json(self._path, state)
+
+    def update(self, **kwargs: Any) -> dict:
+        with self._lock:
+            cur = {}
+            if self._path.exists():
+                try:
+                    cur = _json.loads(self._path.read_text())
+                except Exception:
+                    cur = {}
+            cur.update(kwargs)
+            cur["last_saved_at"] = datetime.datetime.now(
+                datetime.timezone.utc
+            ).isoformat()
+            atomic_write_json(self._path, cur)
+            return cur
+
+    def clear(self) -> None:
+        with self._lock:
+            try:
+                self._path.unlink()
+            except FileNotFoundError:
+                pass
+
+
 # ── Deployment lock ───────────────────────────────────────────────────────────
 
 class DeployLock:
@@ -3358,18 +3741,27 @@ def main() -> None:
     # v15.1: FAIR R1 fail-fast for SOURCE/LOCAL import paths only.
     # Bootstrap + dry-run + verify-imported are exempt (no DO writes that
     # would carry a license field). Per advisor: scope to import-write paths.
+    # v15.5 IMPORT-CFG1: env-var fallbacks (MFFD_DEFAULT_LICENSE +
+    # MFFD_DEFAULT_ACCESS_RIGHTS) so the runner can carry MFFD-appropriate
+    # defaults without explicit CLI flags. Exit code 9 (was 1) so runner.sh
+    # can distinguish "config error — STOP" from "transient — RETRY".
+    if not args.default_license:
+        args.default_license = os.environ.get("MFFD_DEFAULT_LICENSE", "").strip() or None
+    if not args.default_access_rights:
+        args.default_access_rights = os.environ.get("MFFD_DEFAULT_ACCESS_RIGHTS", "").strip() or None
     if not args.bootstrap and not args.dry_run and not args.verify_imported:
         if not args.default_license or not args.default_access_rights:
             print(
                 "ERROR: v15.1 SOURCE/LOCAL imports require --default-license "
                 "and --default-access-rights (FAIR R1 per aidocs/agent-findings/"
                 "v15-review-rdm.md).\n"
-                "  example: --default-license=CC-BY-4.0 --default-access-rights='restricted access'\n"
-                "  for DLR MFFD industrial IP: --default-license=proprietary "
-                "--default-access-rights='restricted access'",
+                "  CLI: --default-license=CC-BY-4.0 --default-access-rights='restricted access'\n"
+                "  Env: MFFD_DEFAULT_LICENSE=proprietary MFFD_DEFAULT_ACCESS_RIGHTS='restricted access'\n"
+                "  for DLR MFFD industrial IP: license=proprietary access-rights='restricted access'\n"
+                "  EXIT 9 = config error (operator must act). Runner.sh stops; does NOT retry.",
                 file=sys.stderr,
             )
-            sys.exit(1)
+            sys.exit(9)
 
     tee = Tee(log_path)
     sys.stdout = tee  # type: ignore[assignment]
@@ -3394,6 +3786,61 @@ def main() -> None:
         print(f"[config] SOURCE_BRIDGEWELDING_COLL_ID= {SOURCE_BRIDGEWELDING_COLL_ID}")
 
     dest_client = ShepardClient(SHEPARD_URL, SHEPARD_API_KEY, SHEPARD_BEARER_TOKEN)
+
+    # v15.4 IMPORT-T1/SU1/CP1 — start observability stack BEFORE warmup so a
+    # failed warmup is itself captured as an event the operator can see in
+    # shepard. Mode label is preliminary here; refined once we know the
+    # branch (bootstrap / source / verify / local).
+    _mode_for_telemetry = (
+        "bootstrap" if args.bootstrap
+        else "verify" if args.verify_imported
+        else ("source" if (cross_instance and source_mode) else "local")
+    )
+    telemetry = Telemetry(dest_client, IMPORT_SCRIPT_VERSION, _mode_for_telemetry)
+    checkpoint = Checkpoint(CHECKPOINT_PATH)
+    prior_state = checkpoint.load()
+    if prior_state:
+        last_from = prior_state.get("last_execv_from")
+        last_to = prior_state.get("last_execv_to")
+        if last_from and last_to and last_to == IMPORT_SCRIPT_VERSION:
+            print(f"[v15.4] resumed after self-update v{last_from} → v{last_to}")
+            telemetry.event("info", "process_started_after_execv",
+                            from_version=last_from, to_version=last_to)
+            telemetry.counter("redeploys_survived", 0)  # mark counter exists
+        else:
+            print(f"[v15.4] resumed from checkpoint (last saved {prior_state.get('last_saved_at')})")
+            telemetry.event("info", "process_started_with_checkpoint",
+                            checkpoint_age_s=None)
+    else:
+        telemetry.event("info", "process_started_fresh", mode=_mode_for_telemetry)
+    checkpoint.update(
+        version=IMPORT_SCRIPT_VERSION,
+        mode=_mode_for_telemetry,
+        started_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        pid=os.getpid(),
+    )
+    updater = SelfUpdater(IMPORT_SCRIPT_VERSION, dest_client, telemetry)
+    if SELFUPDATE_ENABLED:
+        updater.start()
+        print(f"[v15.4] self-updater started (heartbeat={HEARTBEAT_S}s, "
+              f"manifest=fileContainer/{MANIFEST_CONTAINER_ID}/{MANIFEST_NAME_PREFIX}*.json)")
+    else:
+        print(f"[v15.4] self-updater DISABLED (MFFD_SELFUPDATE=0)")
+
+    # Background flusher: telemetry every HEARTBEAT_S seconds. Daemon so it
+    # dies with the process; nothing we emit at-flush is load-bearing.
+    def _telemetry_loop() -> None:
+        while not updater.stop_event.is_set():
+            if updater.stop_event.wait(float(HEARTBEAT_S)):
+                return
+            try:
+                telemetry.flush()
+            except Exception as exc:
+                print(f"  [telemetry] background flush error: {exc!r}", flush=True)
+    _tel_thread = threading.Thread(target=_telemetry_loop, daemon=True,
+                                   name="TelemetryFlusher")
+    if SELFUPDATE_ENABLED:
+        _tel_thread.start()
 
     # v15.2 IMPORT-W1/W2/W3 — smart warmup runs BEFORE the legacy warmup.
     # On success it stamps a flag so the later warmup_probe_and_gate() can
@@ -3440,6 +3887,92 @@ def main() -> None:
         tee.close()
         sys.stdout = tee._stdout  # type: ignore[attr-defined]
         sys.exit(1)
+
+    # v15.3 IMPORT-Q7-VERIFY (in-script) — fetch ONE of each data type from
+    # SOURCE before mass-importing. Catches the 0-byte-source failure mode
+    # (task #145 Q7) BEFORE the script wastes time ferrying empty bytes to dest.
+    # Exit code 8 = source-content-empty. Skip for bootstrap/verify/local modes.
+    source_mode_ck = cross_instance and not args.bootstrap and not args.verify_imported
+    if source_mode_ck and SOURCE_SHEPARD_URL and SOURCE_SHEPARD_API_KEY:
+        src_probe = ShepardClient(SOURCE_SHEPARD_URL, SOURCE_SHEPARD_API_KEY, "")
+        seed_cid = SOURCE_TAPELAYING_COLL_ID or SOURCE_BRIDGEWELDING_COLL_ID
+        print(f"\n=== Source content probe (one file + one TS + one structured) ===")
+        print(f"  source: {SOURCE_SHEPARD_URL}  seed-coll: {seed_cid}")
+        probe_results = {"file": "skip", "ts": "skip", "sd": "skip"}
+        if seed_cid:
+            try:
+                r = src_probe._get(
+                    f"{SOURCE_SHEPARD_URL}/shepard/api/collections/{seed_cid}/dataObjects",
+                    {"size": "50"},
+                )
+                dos = r.json() if r is not None else []
+                # Walk DOs looking for one with each ref kind
+                for d in dos[:50]:
+                    if probe_results["file"] == "skip":
+                        frs = src_probe._get(
+                            f"{SOURCE_SHEPARD_URL}/shepard/api/collections/{seed_cid}/dataObjects/{d['id']}/fileReferences"
+                        )
+                        frlist = frs.json() if frs is not None else []
+                        if frlist and frlist[0].get("fileOids"):
+                            oid = frlist[0]["fileOids"][0]
+                            head = src_probe._s.head(
+                                f"{SOURCE_SHEPARD_URL}/shepard/api/collections/{seed_cid}/dataObjects/{d['id']}/fileReferences/{frlist[0]['id']}/payload/{oid}",
+                                timeout=20,
+                            )
+                            sz = int(head.headers.get("Content-Length", "0") or 0)
+                            probe_results["file"] = f"OK {sz}B" if sz > 0 else f"EMPTY (0 bytes)"
+                    if probe_results["ts"] == "skip":
+                        tsrs = src_probe._get(
+                            f"{SOURCE_SHEPARD_URL}/shepard/api/collections/{seed_cid}/dataObjects/{d['id']}/timeseriesReferences"
+                        )
+                        tslist = tsrs.json() if tsrs is not None else []
+                        if tslist and tslist[0].get("timeseries"):
+                            # v15.3: don't trust channel-COUNT — actually fetch
+                            # time/value data via /export (ROW format — see
+                            # IMPORT-TS-ROW notes on export_ts). Channel
+                            # listings can exist with zero points behind them;
+                            # only the export endpoint proves real data.
+                            ts_ref_id = tslist[0]["id"]
+                            ch_n = len(tslist[0]["timeseries"])
+                            csv = src_probe.export_ts(seed_cid, d["id"], ts_ref_id)
+                            if csv is None:
+                                probe_results["ts"] = f"EMPTY (ref {ts_ref_id}: 0 points across {ch_n} channels)"
+                            else:
+                                # ROW format: header line + one line per native
+                                # data point (timestamp, measurement, device,
+                                # location, symbolicName, field, value). Total
+                                # lines therefore counts points across all
+                                # channels, not rows-per-timestamp.
+                                lines = [ln for ln in csv.decode("utf-8", "replace").splitlines() if ln.strip()]
+                                data_points = max(0, len(lines) - 1)
+                                if data_points == 0:
+                                    probe_results["ts"] = f"EMPTY (ref {ts_ref_id}: header-only, 0 data points across {ch_n} channels)"
+                                else:
+                                    # Sample the first data row so the operator
+                                    # sees an actual (timestamp,…,value) tuple.
+                                    sample = lines[1][:120] if len(lines) > 1 else "?"
+                                    probe_results["ts"] = f"OK ({ch_n} channels, {data_points} points; first row: {sample!r})"
+                    if probe_results["sd"] == "skip":
+                        sdrs = src_probe._get(
+                            f"{SOURCE_SHEPARD_URL}/shepard/api/collections/{seed_cid}/dataObjects/{d['id']}/structuredDataReferences"
+                        )
+                        sdlist = sdrs.json() if sdrs is not None else []
+                        if sdlist:
+                            probe_results["sd"] = f"OK ({len(sdlist)} refs found)"
+                    if all(v != "skip" for v in probe_results.values()):
+                        break
+            except Exception as exc:
+                probe_results = {k: f"ERROR {type(exc).__name__}" for k in probe_results}
+        for kind, res in probe_results.items():
+            marker = "❌" if "EMPTY" in res or "ERROR" in res else "✓"
+            print(f"  {marker} {kind:10s} : {res}")
+        if any("EMPTY" in v for v in probe_results.values()):
+            print("\n  ABORT: source returned empty bytes for one or more probes.", file=sys.stderr)
+            print("  This matches task #145 Q7 — source has placeholder rows but no content.", file=sys.stderr)
+            print("  The import would only ferry zero-byte files to dest. Stop here.", file=sys.stderr)
+            tee.close()
+            sys.stdout = tee._stdout  # type: ignore[attr-defined]
+            sys.exit(8)
 
     # ── Bootstrap mode (no lock — idempotent, no large upload) ────────────────
     if args.bootstrap:
@@ -3504,19 +4037,16 @@ def main() -> None:
         # forging-stage boundary is "before run_source_mode mutates anything";
         # the warmup is operator-controlled, not part of the bulk forging pass.
         # Note recorded in v15.1-implementation.md.
+        # v15.3 IMPORT-NS1 — pre-import G1 snapshot is a decisive HUMAN
+        # action per project_snapshot_boundaries.md. Script announces the
+        # boundary; the human fires.
         pre_snap_app_id: str | None = None
         if coll_app_id:
             current_name = dest_client.get_collection_name(coll_id)
             pre_label = f"v15-import-pre-{SESSION_ID}@{current_name}"
-            print(f"\n[snapshot] G1 pre-import: {pre_label!r}")
-            pre_snap = dest_client.create_snapshot(coll_app_id, pre_label)
-            if pre_snap:
-                pre_snap_app_id = pre_snap.get("appId") or ""
-                print(f"  created: appId={pre_snap_app_id}")
-            else:
-                print("  WARNING: pre-import snapshot failed (non-fatal — G1 partial)")
-        else:
-            print("[snapshot] WARNING: no collection appId — G1 pre-import snapshot skipped")
+            print(f"\n[snapshot] Reminder: pre-import boundary — fire when ready:")
+            print(f"  POST /v2/collections/{coll_app_id}/snapshots  name={pre_label!r} label={pre_label!r}")
+            print(f"  Script does not auto-fire snapshots (project_snapshot_boundaries.md).")
 
         if source_mode:
             src_client = (
@@ -3539,22 +4069,17 @@ def main() -> None:
 
         ensure_standalones(dest_client, coll_id)
 
-        # ── G4 post-import snapshot — label includes "as-imported" so RO-Crate
-        # / regulatory pack consumers can find the canonical baseline. ──────
-        print("\n[snapshot] G4 post-import creating ...")
+        # v15.3 IMPORT-NS1 — post-import G4 snapshot is a decisive HUMAN
+        # action per project_snapshot_boundaries.md. Script announces the
+        # boundary; the human fires. (The G5 lineage triples below still
+        # need a snapshot appId to anchor on — left for the human to fill in.)
         post_snap_app_id: str | None = None
         if coll_app_id:
             current_name = dest_client.get_collection_name(coll_id)
-            # G4: explicit "as-imported" substring per v15.1 task spec
             label = f"v15-as-imported-{SESSION_ID}@{current_name}"
-            snap = dest_client.create_snapshot(coll_app_id, label)
-            if snap:
-                post_snap_app_id = snap.get("appId") or ""
-                print(f"  snapshot: {snap.get('label')}  appId={post_snap_app_id}")
-            else:
-                print("  WARNING: post-import snapshot creation failed (non-fatal)")
-        else:
-            print("  WARNING: no collection appId — snapshot skipped")
+            print(f"\n[snapshot] Reminder: post-import boundary — fire when ready:")
+            print(f"  POST /v2/collections/{coll_app_id}/snapshots  name={label!r} label={label!r}")
+            print(f"  Script does not auto-fire snapshots (project_snapshot_boundaries.md).")
 
         # ── G5 partial: emit Collection-anchored snapshot lineage triples ──
         # (snapshots are not annotatable directly; we anchor on the Collection
@@ -3582,6 +4107,25 @@ def main() -> None:
         print(f"  Log:      {log_path}")
 
     finally:
+        # v15.4 IMPORT-T1/SU1 — graceful observability shutdown:
+        #   1) Final telemetry flush so the operator sees the closing state.
+        #   2) Stop the heartbeat thread.
+        #   3) If a self-update is pending, apply it BEFORE releasing the
+        #      lock + closing the tee — os.execv replaces the process so
+        #      no Python finally-handlers run after; we MUST persist the
+        #      checkpoint above this point, which we already do per-batch.
+        try:
+            telemetry.event("info", "process_shutting_down",
+                            update_pending=bool(updater.update_event.is_set()))
+            telemetry.flush()
+        except Exception:
+            pass
+        updater.stop()
+        if updater.update_event.is_set() and updater.pending_path:
+            print(f"\n[v15.4] applying pending self-update → v{updater.pending_version}…", flush=True)
+            apply_pending_update(updater, telemetry, checkpoint)
+            # If apply_pending_update returns, execv failed — fall through
+            # and exit normally so the wrapper script (if any) can restart.
         lock.release()
         tee.close()
         sys.stdout = tee._stdout  # type: ignore[attr-defined]
