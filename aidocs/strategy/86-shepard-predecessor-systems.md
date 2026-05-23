@@ -705,59 +705,79 @@ Framed as **shapes the new system chose**, not gaps:
   the client was only installable from inside DLR-Bauweisen-Augsburg.
   Shepard publishes its Python client to PyPI proper.
 
-## §8 Implications for upstreaming and adoption
+## 8. Methodological note on the sources
 
-Because iDMS never reached institute-wide deployment, there is **no
-population of iDMS users to migrate**. The adoption story is not
-"port your iDMS data to shepard"; it is **"the thing iDMS was trying
-to be, except this time it shipped."**
+The evidentiary basis for this chapter is uneven in a way that
+deserves explicit acknowledgement, and is itself part of the
+chapter's contribution.
 
-The stakeholders to address are not iDMS *users* (there effectively
-weren't any beyond IPRO), but **iDMS designers and adjacent DLR
-researchers who carry the institutional memory of what iDMS was
-trying to do**. For them, shepard is the deployed embodiment of
-intentions they recognise: heterogeneous-data storage, the
-Project/Experiment/Step entity model, the Mongo+Influx reference
-split, OPC UA shop-floor bridges, PROV-O provenance capture. Many
-of the shepard backlog rows from the 2026-05-23 UNAS code-drop sweep
-(IMPORTER-LIBRARY-SEED, OPCUA1, AAS-REUSE-AUDIT, SHEPARD-ECOSYSTEM-AUDIT)
-are field-confirmation that the iDMS-era wishlist remained
-unimplemented across the rest of the ecosystem too — shepard is now
-filling those gaps one plugin at a time.
+PRAESTO is attested in the public DLR eLib by a deposited record of
+a 2014 conference presentation, with named authors and an
+institutional affiliation, but without a full text or abstract.
+The keywords and the two-sentence summary surfaced through
+search are the limit of the public record. The framing of PRAESTO
+as a commercial product brought into ZLP and rejected as a bad fit
+(§2) does not come from the eLib record; it comes from the author's
+own testimony recorded during the writing of this chapter. Any
+claim in this chapter that exceeds the bibliographic metadata of
+the 2014 deposit rests on inference from adjacent evidence and on
+that testimony.
 
-The 7-component iDMS inventory therefore reads as a **demand signal
-confirmation**: each unshipped component (Kafka bridge, RCE
-workflow, oven importer, HotStuff importer, PANDORA-FE converter)
-encodes a shape that ZLP researchers thought was needed in 2018–2021
-and that ZLP researchers still need today. Shepard's job is to ship
-subsets, plugin-first, in a form that actually deploys.
+KIBID is attested only by working client code in the artefact
+collection. There is no conference paper, no eLib deposit, no
+public web page. The code's existence, its hostnames, its
+authentication patterns and its OPC UA bridge are facts; the
+framing of KIBID as company-built and vendor-abandoned (§3) comes
+from the same testimonial source as the PRAESTO framing. The
+inference that `gruenefeld` was a vendor-side rather than DLR-side
+author is plausible but not directly evidenced in the code itself.
 
-**No `IDMS-MIGRATION-PLUGIN` backlog row is filed** as a result of
-this history — the migration target population doesn't exist. The
-existing `IMPORTER-LIBRARY-SEED` row (which already references
-`kibid_exporter` and `hotstuff_idms_importer` as starter sources
-for the importer plugin library) is the right shape; this history
-just clarifies its provenance.
+CUBE iDMS is the system in this chapter with the most balanced
+evidence base. The artefact collection of seven projects, the
+2020-11-04 final presentation deposited as `20201104_iDMS_final.pptx`,
+the 2017-07-21 process-flow spreadsheet, the IPRO operations TODO
+and the 2017-11-06 Grafana dashboard screenshot together establish
+the system's design, its IPRO deployment, and the technical texture
+of its use to a level that would, under different historiographical
+circumstances, support a confident operational claim. The critical
+historical claim — that the system never reached institute-wide
+deployment beyond IPRO — comes from the author's own testimony and
+is consistent with the absence of any public deployment record.
 
-**The friction list shrinks accordingly**, from "migrate iDMS
-production data" to:
+The artefact collection that bears the bulk of the chapter's
+evidence is itself a primary historical source of unusual
+provenance. It is the contents of a researcher's NAS, retrieved on
+23 May 2026 from `/mnt/pve/unas/media/random/` on institutional
+storage shared with the present author. Such a collection is not a
+curated archive: there is no guarantee that it preserves every
+component of every system, nor that the components preserved are
+the final versions. What it does establish, beyond reasonable
+doubt, is *that these systems existed in the form the code
+describes* — that CUBE iDMS was not a paper project, that a Java
+client and a C++ client and a Flask frontend were actually written,
+that the OPC UA adapter to KIBID actually addressed a server at a
+specific hostname in 2017, and that the IPRO cell was actually
+instrumented and operationally monitored at the date the Grafana
+screenshot records. The collection does not, on its own, tell us
+who used those systems, for how long, or in what wider scope; for
+that, the historical record requires participant testimony of the
+kind the present chapter has been able to draw on directly from
+the author of the system itself.
 
-- **Capture the demand signal.** The 7 iDMS components and the KIBID
-  exporter encode design ideas worth preserving. Where they show up
-  as shapes shepard hasn't built yet (streaming Kafka ingest, native
-  RCE workflow integration), they belong as design-doc rows, not
-  migration-plugin rows.
-- **Conversations with iDMS designers** are the high-value adoption
-  motion — they recognise the shapes and can validate or correct
-  shepard's choices from the prototype-era perspective. This is
-  social work, not migration tooling.
-- **Document this history exists** (this doc) so a future researcher
-  encountering an old `de.dlr.cube.idms.client.java` artefact, an
-  `idms_client==2020.10.20` pin, or a `kibid-proxy.praesto.lo`
-  hostname in archive material doesn't conclude they are looking at
-  systems with no relationship to shepard.
+A reader of the thesis who lacks access to the same institutional
+storage must take the artefact-based claims on the author's
+evidence-of-record. This is a known limitation. The bibliography
+entry `unasZlpCodeDrop2026` in `docs/_data/references.bib` exists
+to make the evidentiary basis traceable rather than to serve as
+a verifiable public reference; the working documents
+(`20201104_iDMS_final.pptx`, `20170721_Prozessablauf.xlsx`, the
+operations TODO and the Grafana screenshot) are cited likewise as
+internal historical sources rather than as published artefacts.
+The chapter's evidentiary contribution is the integration of these
+internal sources with the public eLib record and the author's
+testimony into a single, citable historiography of the lineage.
 
-## §X Reflexivity
+## 9. Reflexivity
 
 This chapter is being written by an AI assistant working at the
 direction of **Florian Krebs** — who is both the principal user of
@@ -792,7 +812,63 @@ should know: the human in the loop is both subject and editor. The
 honesty of *naming that* is what makes the artefact defensible. The
 elegance of hiding it would not.
 
-## §9 References
+## 10. Conclusion
+
+The lineage of research-data-management systems at DLR ZLP
+Augsburg before Shepard is best read not as a succession of
+deployed services but as a sequence of attempts on the same
+problem, each carried in part by the same hands and each with
+its own evidence basis. PRAESTO is the moment a commercial
+product was evaluated and rejected; the conclusion drawn was
+that ZLP's needs were too particular for an off-the-shelf
+manufacturing-data database. KIBID is the moment a tagged-
+timeseries shape with OPC UA reach and Keycloak authentication
+arrived on the shop floor under vendor sponsorship, worked
+technically, and was abandoned by its supplier — leaving behind
+shapes that proved formative for everything that followed. CUBE
+iDMS is the moment Krebs built the in-house answer those two
+experiences pointed at: a graph-oriented platform whose
+architecture — Project / Experiment / Step with multi-substrate
+references, Keycloak authentication, multi-language SDKs, PROV
+provenance, RCE integration — is recognisably Shepard's, three
+to four years before Shepard appeared on GitLab. iDMS reached
+operational use in the bounded scope of the IPRO project but
+never graduated to institute-wide deployment.
+
+Shepard, the system the thesis takes as its subject, is the
+first in this lineage to reach an operational state across
+multiple ZLP use cases and to be released publicly under an
+open-source licence. Reading its design choices against the
+predecessor record makes the choices legible: the rejection of
+vendor lock-in as the structural lesson absorbed from PRAESTO
+and KIBID; the narrow open-source core with broad plugin
+extension surface as the architectural answer to CUBE iDMS's
+unshipped breadth; the timeseries-as-first-class commitment as
+the KIBID shape carried forward; the OPC UA and live-
+instrumentation reach as the PRAESTO/KIBID/iDMS inheritance;
+and the explicit choice of public open-source as the
+discontinuous step that the institute-internal predecessors
+never took.
+
+The personal continuity established by the `mwillmeroth` →
+Mark Willmeroth link, and the architect continuity established
+by Krebs's authorship across KIBID adapters, CUBE iDMS and
+this fork of Shepard, together close the public-record gap
+that the official ZLP project page leaves open. Shepard is
+not a 2021 greenfield system; it is the deployed embodiment of
+roughly a decade of work on the same problem at the same
+institute, by partly the same people, finally arriving in a
+form that ships.
+
+What this chapter cannot, and does not attempt to, establish
+is the counterfactual question of whether CUBE iDMS might
+have reached institute-wide deployment under different
+circumstances. That question belongs to participant testimony
+beyond the testimonial work already integrated here, and to
+archival work that subsequent chapters or follow-up research
+can take up.
+
+## 11. References
 
 **iDMS primary source** (the load-bearing primary source for §4):
 
