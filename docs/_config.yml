@@ -40,9 +40,9 @@ nav:
   - title: User guide
     url: /user-guide
   - title: Admin
-    url: /admin
+    url: /admin/
   - title: System requirements
-    url: /system-requirements
+    url: /admin/system-requirements/
   - title: Bibliography
     url: /bibliography
   - title: Origin myth

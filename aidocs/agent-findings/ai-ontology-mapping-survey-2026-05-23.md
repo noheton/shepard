@@ -358,7 +358,7 @@ license, activity, slice coverage, recommendation.
 | # | Tool | License | Lang | Last commit (≈) | Slice fit |
 |---|---|---|---|---|---|
 | **T1** | **OntoAligner** (TIB) | Apache-2.0 | Python | active, v1.8.0 (2026-05-22) | Best end-to-end LLM-OM pipeline; **MSE track support out of the box** |
-| **T2** | **DeepOnto** (Oxford/Samsung) | Apache-2.0 | Python | active (2024 paper, 2025 commits) | BERTMap reference impl; reasoning + verbalisation |
+| **T2** | **DeepOnto** (Oxford/Samsung) | Apache-2.0 | Python | **WATCH** — last release v0.9.3 on 2025-03-10 (~14 mo stale per PyPI, per persona-audit-ontology-mapping §F3.1 BLOCKING) | BERTMap reference impl; reasoning + verbalisation |
 | T3 | **Matcha** (U. Lisbon) | **GPL-3.0** | Java | active, OAEI 2024 SOTA | Production traditional + LM hybrid; **license blocks adoption** |
 | T4 | **AgreementMakerLight (AML)** | LGPL-3.0 | Java | older, superseded by Matcha | Historical; not the active fork |
 | T5 | **LogMap** | LGPL-3.0 | Java | maintained, low-activity | Logic-based; deterministic baseline, no LLM |
@@ -385,16 +385,23 @@ license, activity, slice coverage, recommendation.
   before Q3 2026, switch to DeepOnto (T2) with an OntoAligner-style
   adapter we maintain ourselves.
 
-**T2 — DeepOnto.** ADOPT as fallback / complement.
+**T2 — DeepOnto.** ~~ADOPT as fallback~~ → **WATCH (per audit §F3.1 BLOCKING).**
 
-- Apache-2.0; KRR-Oxford academic stewardship; lower release cadence
-  but more mature.
-- Bundles **BERTMap** which is the unsupervised baseline Shepard
-  should compare against for every pair.
-- We adopt it for **reasoning + verbalisation** (Python wrapper over
-  OWL API) — those features are missing from OntoAligner.
-- **What would change my mind.** If OntoAligner grows native
-  reasoning + verbalisation, DeepOnto becomes optional.
+- Apache-2.0; KRR-Oxford academic stewardship.
+- **Per persona-audit-ontology-mapping-2026-05-23.md §F3.1:** last release
+  v0.9.3 was 2025-03-10 — ~14 months stale on PyPI as of 2026-05-23. Per
+  `feedback_reuse_before_reimplement.md` activity-heuristic, this fails
+  the ADOPT bar. **Status downgraded from ADOPT-fallback → WATCH.**
+- Bundles **BERTMap** which is still the unsupervised baseline Shepard
+  should compare against for every pair — but we cite the paper + the
+  pretrained models, NOT depend on the DeepOnto Python package.
+- Reasoning + verbalisation features are still desirable but no longer
+  routed through DeepOnto in v1. **Alternative paths:** (a) OntoAligner
+  grows native reasoning before Shepard needs it, (b) BERTMap directly
+  via PyPI `bertmap`, (c) defer reasoning + verbalisation to v0.2.
+- **What would change my mind.** DeepOnto v0.10 release with active
+  maintenance signal (recent commits + responsive issue tracker) →
+  WATCH → ADOPT-fallback restored.
 
 **T3 — Matcha.** REJECT for direct adoption.
 
@@ -440,7 +447,7 @@ license, activity, slice coverage, recommendation.
 
 ### 3.3 Verdict
 
-**ADOPT: OntoAligner (T1) + DeepOnto (T2 fallback) + sssom-py (T6
+**ADOPT: OntoAligner (T1) + ~~DeepOnto (T2 fallback)~~ (T2 WATCH per audit §F3.1) + sssom-py (T6
 mandatory) + LogMap (T5 deterministic baseline).**
 
 This stack is all-Apache/MIT/LGPL — no GPL pollution — and covers the

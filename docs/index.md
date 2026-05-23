@@ -57,7 +57,7 @@ FAIR research-data management. (Source: `aidocs/01-repo-overview.md`.)
 <ul class="role-nav">
   <li><a href="{{ '/getting-started' | relative_url }}">I want to use shepard</a><br>
       <span>Quickstart with the Python client.</span></li>
-  <li><a href="{{ '/admin' | relative_url }}">I want to deploy shepard</a><br>
+  <li><a href="{{ '/admin/' | relative_url }}">I want to deploy shepard</a><br>
       <span>docker-compose stack, configuration, health endpoints.</span></li>
   <li><a href="{{ '/architecture' | relative_url }}">I want to extend shepard</a><br>
       <span>Stack, modules, data model, auth model.</span></li>
