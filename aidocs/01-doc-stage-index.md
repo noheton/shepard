@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 37 |
 | `concept` | 14 |
 | `idea` | 7 |
-| `feature-defined` | 43 |
+| `feature-defined` | 44 |
 | `audited-by-personas` | 44 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 37 |
 | `decommissioned` | 46 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **233** |
+| **total docs** | **234** |
 | **UNTAGGED** | **4** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -127,7 +127,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (43)
+## feature-defined (44)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -143,6 +143,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/data/84-live-digital-twin.md`](data/84-live-digital-twin.md) | aidocs/84 — Live Digital Twin: Moving Objects, Production Cell Scene, and State Streaming | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | aidocs/85 — Coordinate Frame Tree (CST1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | — |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/67-unhide-publish-plugin.md`](integrations/67-unhide-publish-plugin.md) | 67 — Unhide publish plugin (Helmholtz Knowledge Graph integration) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/70-home-showcase-mqtt-design.md`](integrations/70-home-showcase-mqtt-design.md) | home-showcase — MQTT → shepard collector + demo (HOME1) | 2026-05-23 | 2026-05-23 |
@@ -154,7 +155,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/83-rebar-airflow-integration.md`](integrations/83-rebar-airflow-integration.md) | 83 — ReBAR / Airflow Integration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/84-process-orchestrator-plugin.md`](integrations/84-process-orchestrator-plugin.md) | 84 — shepard-plugin-process-orchestrator | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/92-mffd-real-data-import-strategy.md`](integrations/92-mffd-real-data-import-strategy.md) | 92 — MFFD real-data import strategy | 2026-05-23 | 2026-05-23 |
-| [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | — |
+| [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |

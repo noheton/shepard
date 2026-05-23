@@ -250,6 +250,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | RO-Crate description generation | none | TBD | 📐 (queued, AI1j) | `aidocs/43 §5.5` |
 | Conversational lineage (chat over the lineage graph) | none | TBD | 📐 (queued, AI1k) | `aidocs/43 §5.6` |
 | Notebook scaffolding | none | TBD | 📐 (queued, AI1l) | `aidocs/43 §5.7` |
+| **PromptLog substrate** (`shepard-plugin-promptlog`, PROMPT1) — prompts as first-class Shepard payload kind. Substrate realisation of TPL9's `fair2r:Prompt` + `fair2r:Transcript`. **ADOPT** OpenTelemetry GenAI v1.38+ wire format + Langfuse-pattern substrate split (Postgres metadata + Garage S3 bodies + pgvector embeddings) + PROV-O + F(AI)²R vocabulary; **BUILD** thin Shepard semantic adapter (`:PromptRun` Neo4j identity node bridging OTel spans ↔ `fair2r:Prompt`/`Transcript` ↔ `:DataObject` prov edges). Ten REST endpoints under `/v2/promptlog/*`; four SHACL shapes (`PromptTemplate`, `PromptRun`, `PromptChain`, `PromptEvaluation`); UI surface (list / detail / lineage DAG / similar / agent-runs / template-runs / eval); MCP integration (every MCP tool call auto-recorded); EU AI Act Article 50 evidence-pack endpoint emits JSON-LD per F(AI)²R reference shape. Sub-rows PROMPT-a..j (~29 days). Critical path a→b→i delivers Article 50 evidence by 2026-08-02 deadline. Subsumes TPL9e (replaces `:StructuredData` blob storage). | none | design done | 📐 (queued, PROMPT1 — design landed 2026-05-23) | `aidocs/semantics/99-promptlog-design.md`; `aidocs/16` PROMPT1 |
 
 ## 13. Admin tooling
 

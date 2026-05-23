@@ -495,7 +495,18 @@ Mid-horizon:
   metadata + Collection context. Queued: semantic-annotation
   suggestion; auto-summarisation; natural-language search; snap
   dashboards (AI1e — the killer feature). All AI inference
-  BYOK / admin-fallback gated.
+  BYOK / admin-fallback gated. **PromptLog substrate** (PROMPT1,
+  `shepard-plugin-promptlog`, designed) — prompts become a
+  first-class payload kind: every LLM call (and every MCP tool call)
+  is recorded as a queryable PromptRun with the model, parameters,
+  input + output, cost, evaluation score, and chain link. One SPARQL
+  query answers "list every AI-generated artefact in this collection
+  with the prompt that produced it" — the F(AI)²R verification ladder
+  becomes operational, and the EU AI Act Article 50 evidence pack
+  (deadline 2026-08-02) drops out as a single JSON-LD export. Adopts
+  OpenTelemetry GenAI conventions on the wire so every existing
+  OpenLLMetry / Phoenix / vendor-SDK instrumented client emits
+  Shepard-compatible data with zero code changes.
 - **S3-compatible file storage** (`aidocs/45`, FS series). The
   **`FileStorage` SPI seam is shipped** (FS1a): an in-tree interface
   + the in-core GridFS default adapter, with `shepard.storage.provider`
