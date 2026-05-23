@@ -21,6 +21,38 @@ This document is the operator reference for the live script. The companion
 user-facing task page is
 [`docs/help/importing-from-dlr-cube3.md`](../../../docs/help/importing-from-dlr-cube3.md).
 
+## What's new in v15.8 (2026-05-23) — two performance fixes
+
+Per the diagnostic [`aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md`](../../../aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md).
+
+**IMPORT-PERF1 — real worker fan-out.** Prior to v15.8, `--workers N` was a
+footgun: the wrapper spawned a `ThreadPoolExecutor`, ran `lambda: True` probes,
+then called `run_source_mode` SEQUENTIALLY inside the executor context. With
+`--workers 4` the operator believed they had 4× concurrency; they had 1×. v15.8
+moves the worker-pool implementation INTO `run_source_mode` so the per-DO loop
+(the actual unit of work) is what fans out — one future per source DO, bounded
+at N concurrent in-flight per `aidocs/93 §5`. Expected speedup: ~Nx on
+cube3-WAN-bound work. `ImportState` is now thread-safe (RLock); the dest
+`list_file_refs` snapshot is hoisted to per-step (one call per step, not one
+per source DO).
+
+**IMPORT-PERF2 — lazy enrichment.** Prior to v15.8, `iter_data_objects`
+fired 3 cube3 GETs per source DO (file / TS / SD refs) BEFORE the state-skip
+check could decline the work. On a fully-resumed 8 457-DO collection that
+meant 25 371 wasted WAN round-trips. v15.8 yields a `SourceDO` stub with
+`file_refs=None / ts_refs=None / structured_refs=None`; new `_load_*_refs`
+helpers fetch on first access. The per-DO loop body calls these AFTER each
+per-ref state-skip would short-circuit. A fully-done DO on resume now costs
+ZERO cube3 GETs (was 3).
+
+Both fixes are stackable + independent. PERF2 helps the resume case
+dramatically; PERF1 helps both first-run and resume. Together they take the
+diagnostic's observed "0 payload imported in 5 h" pathology to a few minutes
+for resume / under an hour for first run.
+
+The running v15.7 script self-updates to v15.8 at the next graceful boundary
+(typically when `run_source_mode` returns at the end of the current step).
+
 ## Quick start (4 lines, MFFD config baked in)
 
 In a `tmux` session on the dev box that can reach BOTH `shepard.nuclide.systems`
@@ -63,7 +95,7 @@ All flags are optional. The script picks a mode from env vars
 | `--default-license SPDX` | (env `MFFD_DEFAULT_LICENSE`) | **REQUIRED for SOURCE/LOCAL imports** (FAIR R1). SPDX id or any literal (e.g. `CC-BY-4.0`, `proprietary`). |
 | `--default-access-rights RIGHTS` | (env `MFFD_DEFAULT_ACCESS_RIGHTS`) | **REQUIRED for SOURCE/LOCAL imports** (FAIR R1.1). E.g. `'restricted access'`, `'public-with-attribution'`. |
 | `--name-mapping CSV` | none | Path to a `source-name,operator-name` CSV. When a source DO matches, the dest DO gets the operator's preferred name + the original survives as `dcterms:alternative`. |
-| `--workers N` | `1` | Concurrent worker count. `1` = sequential (byte-for-byte v15 behavior). MFFD ingest runs at `--workers 4`. |
+| `--workers N` | `1` | Concurrent worker count. `1` = sequential (byte-for-byte v15 behavior). MFFD ingest runs at `--workers 4`. **v15.8 IMPORT-PERF1**: real fan-out — one future per source DO, bounded at N concurrent in-flight per `aidocs/93 §5`. Prior to v15.8 this flag was a footgun (pool spawned but `run_source_mode` ran sequentially inside it; see `aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md §5 hypothesis #1`). Expected speedup: ~Nx on cube3-WAN-bound work. |
 | `--verify-imported` | off | Read-only walk of the dest collection, count DOs / refs by kind, DAG-reachability spot-check. Writes `mffd-verify-<session>.json`. License/access-rights not required. |
 | `--smart-warmup` | on | Run the IMPORT-W1/W2/W3 phase before the main loop. Probes auth + read + write + wire-shape on both sides, with throwaway DOs cleaned up before every exit. |
 | `--legacy-warmup` | — | Opt back to the v15.1 single read-only warmup. Use only when investigating a smart-warmup false-positive. |
@@ -74,7 +106,7 @@ from `SHEPARD_URL`; otherwise LOCAL.
 
 ## Env vars
 
-Defaults grepped from the v15.7 source. Every one of these is read at module
+Defaults grepped from the v15.8 source. Every one of these is read at module
 load (lines 156-203, 3749-3751) so changing them mid-run requires a restart
 (except `SOURCE_SHEPARD_API_KEY` / `SHEPARD_API_KEY` — see [JWT expiry](#jwt-expiry-pause--sigcont-resume)).
 
@@ -229,7 +261,7 @@ timestamp,measurement,device,location,symbolicName,field,value
 fields. Every value is rewritten to replace each with `_`, so a host like
 `cube3.intra.dlr.de` becomes `cube3_intra_dlr_de`.
 
-Counter names emitted by v15.7:
+Counter names emitted by v15.8:
 `dos_processed`, `ts_points_imported`, `files_uploaded`, `structured_imported`,
 `errors`, `retries`, `redeploys_survived`, `selfupdate_checks`,
 `telemetry_flush_errors`.

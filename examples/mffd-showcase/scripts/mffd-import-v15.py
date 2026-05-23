@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.7"
+IMPORT_SCRIPT_VERSION = "15.8"
 
 # Self-update mechanism (IMPORT-SU1): the running script polls a JSON manifest
 # in dest Shepard. On newer version → sha256-verified download → checkpoint
@@ -605,16 +605,31 @@ class StructuredRef:
 
 @dataclass
 class SourceDO:
-    """A DataObject discovered in a source collection."""
+    """A DataObject discovered in a source collection.
+
+    v15.8 IMPORT-PERF2 — lazy enrichment. `file_refs / ts_refs / structured_refs`
+    default to None and are populated on demand by the per-DO loop body via
+    `ShepardClient._load_file_refs / _load_ts_refs / _load_structured_refs`.
+    The loop checks state-skip first, so an already-fully-done DO costs ZERO
+    cube3 round-trips on resume (vs. 3 in v15.7).
+
+    Callers that need the refs unconditionally (legacy code) can still write
+    `src_do.file_refs = client._load_file_refs(coll, src_do.do_id)` etc., or
+    use the helper accessors on the client. The fields stay assignable for
+    back-compat with non-import callers (tests, mffd-dropbox-import, ...).
+    """
     do_id: int
     name: str
     description: str
     attributes: dict[str, str]
-    file_refs: list[FileRef] = field(default_factory=list)
-    ts_refs: list[TsRef] = field(default_factory=list)
-    structured_refs: list[StructuredRef] = field(default_factory=list)
+    file_refs: list[FileRef] | None = None
+    ts_refs: list[TsRef] | None = None
+    structured_refs: list[StructuredRef] | None = None
     created: str = ""
     modified: str = ""
+    # v15.8 IMPORT-PERF2 — source coll_id captured at yield-time so lazy
+    # loaders can fetch refs without the caller threading state.
+    _src_coll_id: int = 0
 
 
 # ── HTTP client ───────────────────────────────────────────────────────────────
@@ -692,7 +707,15 @@ class ShepardClient:
     # ── Source collection traversal ───────────────────────────────────────────
 
     def iter_data_objects(self, coll_id: int) -> Iterator[SourceDO]:
-        """Paginate through ALL DataObjects in a collection and yield them."""
+        """Paginate through ALL DataObjects in a collection and yield STUBS.
+
+        v15.8 IMPORT-PERF2 — file/TS/SD reference lists are NOT fetched here.
+        The per-DO loop body fetches them lazily via `_load_*_refs` AFTER
+        the state-resume skip-check has had a chance to decline the work.
+        On a fully-resumed (no work remaining) collection this saves
+        3 × N cube3 round-trips (per `aidocs/agent-findings/
+        mffd-import-slowness-diagnose-2026-05-23.md §5 hypothesis #2`).
+        """
         page = 0
         while True:
             r = self._get(
@@ -706,24 +729,47 @@ class ShepardClient:
                 break
             for item in items:
                 do_id = item["id"]
-                file_refs = self._fetch_file_refs(coll_id, do_id)
-                ts_refs = self._fetch_ts_refs(coll_id, do_id)
-                structured_refs = self._fetch_structured_refs(coll_id, do_id)
                 yield SourceDO(
                     do_id=do_id,
                     name=item.get("name", f"DO-{do_id}"),
                     description=item.get("description") or "",
                     attributes={k: str(v) for k, v in (item.get("attributes") or {}).items()},
-                    file_refs=file_refs,
-                    ts_refs=ts_refs,
-                    structured_refs=structured_refs,
+                    # v15.8 PERF2: refs default to None — fetched on demand
+                    # by the per-DO loop via _load_*_refs once state-skip
+                    # is known to NOT shortcut all the work.
+                    file_refs=None,
+                    ts_refs=None,
+                    structured_refs=None,
                     created=item.get("creationDate") or item.get("createdAt") or "",
                     modified=item.get("modificationDate") or item.get("updatedAt") or "",
+                    _src_coll_id=coll_id,
                 )
             total_pages = int(r.headers.get("X-Total-Pages", page + 1))
             page += 1
             if page >= total_pages:
                 break
+
+    # ── v15.8 IMPORT-PERF2 — lazy reference enrichment ────────────────────────
+    #
+    # These three accessors return the same lists `_fetch_*_refs` used to
+    # eagerly fetch in `iter_data_objects`. They're called by the per-DO loop
+    # body AFTER the state-skip check, so a fully-done DO costs ZERO cube3
+    # round-trips on resume. The cached value lives on the SourceDO instance.
+
+    def _load_file_refs(self, src_do: SourceDO) -> list[FileRef]:
+        if src_do.file_refs is None:
+            src_do.file_refs = self._fetch_file_refs(src_do._src_coll_id, src_do.do_id)
+        return src_do.file_refs
+
+    def _load_ts_refs(self, src_do: SourceDO) -> list[TsRef]:
+        if src_do.ts_refs is None:
+            src_do.ts_refs = self._fetch_ts_refs(src_do._src_coll_id, src_do.do_id)
+        return src_do.ts_refs
+
+    def _load_structured_refs(self, src_do: SourceDO) -> list[StructuredRef]:
+        if src_do.structured_refs is None:
+            src_do.structured_refs = self._fetch_structured_refs(src_do._src_coll_id, src_do.do_id)
+        return src_do.structured_refs
 
     def _fetch_file_refs(self, coll_id: int, do_id: int) -> list[FileRef]:
         """Bug D + F fix: iterate every `fileOids[]` entry, not just the
@@ -2307,6 +2353,7 @@ def run_source_mode(
     default_license: str | None = None,
     default_access_rights: str | None = None,
     name_map: dict[str, str] | None = None,
+    workers: int = 1,
 ) -> dict[str, int]:
     """
     Traverse source Shepard collections, migrating all three payload types
@@ -2464,6 +2511,20 @@ def run_source_mode(
                 print(f"  [ts] WARNING: could not create TS container — timeseries will be skipped")
 
         # ── Walk source DOs ────────────────────────────────────────────────────
+        #
+        # v15.8 IMPORT-PERF1 — real worker fan-out. The per-DO body lives in
+        # `_process_one_source_do` below; the driver submits one future per
+        # source DO and aggregates counts as futures complete. tqdm increments
+        # happen ONLY in the driver thread (per advisor: tqdm.write is locked,
+        # tqdm.update from worker threads is unsafe). State writes are
+        # serialised by ImportState's RLock (added in v15.8 PERF1).
+
+        # Hoist `existing_names` to the per-step boundary — under workers,
+        # N parallel calls would all ask the dest for the same list. Snapshot
+        # once at step start; the state-file `is_file_done` check stays per-DO
+        # and is the real correctness guard against double-upload.
+        existing_names_snapshot = dest_client.list_file_refs(coll_id, dest_do_id)
+
         files_uploaded = 0
         files_skipped = 0
         files_failed = 0
@@ -2473,129 +2534,236 @@ def run_source_mode(
         structured_imported = 0
         structured_failed = 0
 
+        def _process_one_source_do(src_do: SourceDO, do_bar: Any) -> dict[str, int]:
+            """v15.8 IMPORT-PERF1 — per-DO unit of work.
+
+            Captures step-scoped context via closure (dest_do_id, dest_app_id,
+            ts_container_id, step_key, src_coll_id, _src, dest_client, state,
+            existing_names_snapshot). Returns per-DO counts; the driver sums
+            them into the per-step totals.
+
+            All `do_bar.write(...)` calls use tqdm's lock (thread-safe per
+            tqdm docs). `do_bar.update(1)` is called by the DRIVER after the
+            future resolves, never from inside this function.
+
+            v15.8 IMPORT-PERF2 — lazy enrichment. file_refs / ts_refs /
+            structured_refs are fetched HERE, after the state-skip check has
+            had a chance to short-circuit the work for a fully-done DO.
+            """
+            counts = {"files_uploaded": 0, "files_skipped": 0, "files_failed": 0,
+                      "ts_imported": 0, "ts_skipped": 0, "ts_failed": 0,
+                      "structured_imported": 0, "structured_failed": 0}
+
+            # Print the DO header AFTER refs are loaded (or with '?' if we
+            # short-circuit before loading). Per advisor: never `len(None)`.
+
+            # ── Files ──────────────────────────────────────────────────────
+            file_refs = _src._load_file_refs(src_do)
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmp = Path(tmpdir)
+                for fref in file_refs:
+                    dest_name = f"{src_do.name}/{fref.name}"
+                    state_key = f"{step_key}/{dest_name}"
+
+                    if state is not None and state.is_file_done(state_key):
+                        do_bar.write(f"    [skip-file] {dest_name}")
+                        counts["files_skipped"] += 1
+                        continue
+
+                    if dest_name in existing_names_snapshot or fref.name in existing_names_snapshot:
+                        do_bar.write(f"    [skip-file] {fref.name}")
+                        counts["files_skipped"] += 1
+                        if state is not None:
+                            state.mark_file_done(state_key)
+                        continue
+
+                    tmp_file = tmp / fref.name
+                    ok = _src.download_file_ref(
+                        src_coll_id, src_do.do_id, fref.fref_id, tmp_file, fref.size
+                    )
+                    if not ok:
+                        do_bar.write(f"    [error-file] download {fref.name}")
+                        counts["files_failed"] += 1
+                        continue
+
+                    ok = dest_client.upload_file(
+                        dest_app_id, tmp_file, dest_name, coll_id, dest_do_id
+                    )
+                    if ok:
+                        do_bar.write(f"    [ok-file] {dest_name}  ({_human(fref.size)})")
+                        counts["files_uploaded"] += 1
+                        if state is not None:
+                            state.mark_file_done(state_key)
+                    else:
+                        do_bar.write(f"    [error-file] upload {dest_name}")
+                        counts["files_failed"] += 1
+
+            # ── Timeseries ─────────────────────────────────────────────────
+            if ts_container_id is not None:
+                ts_refs = _src._load_ts_refs(src_do)
+                for ts_ref in ts_refs:
+                    state_key = f"ts/{step_key}/{src_do.do_id}/{ts_ref.ref_id}"
+                    if state is not None and state.is_ts_done(state_key):
+                        do_bar.write(f"    [skip-ts] {ts_ref.name}")
+                        counts["ts_skipped"] += 1
+                        continue
+
+                    do_bar.write(f"    [ts] exporting {ts_ref.name!r} from source ref {ts_ref.ref_id}")
+                    csv_bytes = _src.export_ts(src_coll_id, src_do.do_id, ts_ref.ref_id)
+                    if csv_bytes is None:
+                        do_bar.write(f"    [error-ts] export failed for {ts_ref.name}")
+                        counts["ts_failed"] += 1
+                        continue
+
+                    do_bar.write(f"    [ts] importing {len(csv_bytes):,} bytes → container {ts_container_id}")
+                    ok = dest_client.import_ts_csv(
+                        ts_container_id,
+                        csv_bytes,
+                        filename=f"{step_key}-{src_do.do_id}-{ts_ref.ref_id}.csv",
+                    )
+                    if ok:
+                        counts["ts_imported"] += 1
+                        if state is not None:
+                            state.mark_ts_done(state_key)
+                    else:
+                        do_bar.write(f"    [error-ts] import failed for {ts_ref.name}")
+                        counts["ts_failed"] += 1
+
+            # ── Structured data ────────────────────────────────────────────
+            sd_refs = _src._load_structured_refs(src_do)
+            for sd_ref in sd_refs:
+                state_key = f"sd/{step_key}/{src_do.do_id}/{sd_ref.ref_id}"
+                if state is not None and state.is_structured_done(state_key):
+                    do_bar.write(f"    [skip-sd] {sd_ref.name}")
+                    continue
+
+                payload = _src.download_structured(src_coll_id, src_do.do_id, sd_ref.ref_id)
+                if payload is None:
+                    do_bar.write(f"    [error-sd] download failed for {sd_ref.name}")
+                    counts["structured_failed"] += 1
+                    continue
+
+                container_name = f"{src_do.name}/{sd_ref.name}"
+                container_id = dest_client.create_structured_container(container_name)
+                if container_id is None:
+                    do_bar.write(f"    [error-sd] could not create container for {sd_ref.name}")
+                    counts["structured_failed"] += 1
+                    continue
+
+                linked = dest_client.link_structured_to_do(coll_id, dest_do_id, container_id, container_name)
+                ok = dest_client.upload_structured_payload(container_id, payload)
+                if linked and ok:
+                    do_bar.write(f"    [ok-sd] {sd_ref.name}")
+                    counts["structured_imported"] += 1
+                    if state is not None:
+                        state.mark_structured_done(state_key)
+                else:
+                    do_bar.write(f"    [error-sd] upload/link failed for {sd_ref.name}")
+                    counts["structured_failed"] += 1
+
+            # Header AFTER processing so payload counts reflect what was
+            # actually loaded (and PERF2-saved cube3 GETs are visible in the
+            # log when the DO was fully state-skipped).
+            payload_summary = (
+                f"{len(file_refs)}f"
+                f" {len(_src._load_ts_refs(src_do) if ts_container_id else [])}ts"
+                f" {len(sd_refs)}sd"
+            )
+            do_bar.write(f"  ↳ {src_do.name}  ({payload_summary})")
+
+            return counts
+
         with tqdm(
             total=total_dos,
             desc=f"  DataObjects [{step_key}]",
             unit="DO",
             file=sys.stderr,
         ) as do_bar:
-            for src_do in _src.iter_data_objects(src_coll_id):
-                if MAX_DOS_PER_STEP and do_bar.n >= MAX_DOS_PER_STEP:
-                    do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
-                    break
-                do_bar.set_postfix_str(src_do.name[:30])
+            if workers <= 1:
+                # Sequential path — preserves v15.7 ordering semantics
+                # byte-for-byte (no thread pool, no future ordering jitter).
+                for src_do in _src.iter_data_objects(src_coll_id):
+                    if MAX_DOS_PER_STEP and do_bar.n >= MAX_DOS_PER_STEP:
+                        do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
+                        break
+                    do_bar.set_postfix_str(src_do.name[:30])
+                    c = _process_one_source_do(src_do, do_bar)
+                    files_uploaded += c["files_uploaded"]
+                    files_skipped += c["files_skipped"]
+                    files_failed += c["files_failed"]
+                    ts_imported += c["ts_imported"]
+                    ts_skipped += c["ts_skipped"]
+                    ts_failed += c["ts_failed"]
+                    structured_imported += c["structured_imported"]
+                    structured_failed += c["structured_failed"]
+                    do_bar.update(1)
+            else:
+                # v15.8 IMPORT-PERF1 — real fan-out. Bounded by `workers`
+                # per aidocs/93 §5 (max 4 parallel GETs against cube3 +
+                # 4 parallel POSTs against dest). The bound is on submitted
+                # futures, not on the queue size: as one future completes
+                # we submit the next source DO from the iterator. This
+                # avoids the "queue up 8 457 futures eagerly" antipattern
+                # which would defeat MAX_DOS_PER_STEP early-stop semantics.
+                from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                payload_summary = (
-                    f"{len(src_do.file_refs)}f"
-                    f" {len(src_do.ts_refs)}ts"
-                    f" {len(src_do.structured_refs)}sd"
-                )
-                do_bar.write(f"  ↳ {src_do.name}  ({payload_summary})")
+                do_bar.write(f"  [workers] real fan-out enabled — pool size = {workers}")
+                stop_early = False
+                with ThreadPoolExecutor(max_workers=workers,
+                                        thread_name_prefix=f"mffd-{step_key}") as executor:
+                    in_flight: dict[Any, SourceDO] = {}
+                    src_iter = _src.iter_data_objects(src_coll_id)
 
-                existing_names = dest_client.list_file_refs(coll_id, dest_do_id)
+                    def _try_submit_next() -> bool:
+                        """Pull next source DO from iterator + submit. Returns
+                        False when the iterator is exhausted or MAX cap hit."""
+                        nonlocal stop_early
+                        if stop_early:
+                            return False
+                        try:
+                            src_do = next(src_iter)
+                        except StopIteration:
+                            return False
+                        if MAX_DOS_PER_STEP and (do_bar.n + len(in_flight)) >= MAX_DOS_PER_STEP:
+                            do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
+                            stop_early = True
+                            return False
+                        fut = executor.submit(_process_one_source_do, src_do, do_bar)
+                        in_flight[fut] = src_do
+                        return True
 
-                # ── Files ──────────────────────────────────────────────────────
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    tmp = Path(tmpdir)
-                    for fref in src_do.file_refs:
-                        dest_name = f"{src_do.name}/{fref.name}"
-                        state_key = f"{step_key}/{dest_name}"
+                    # Prime the pool — submit up to `workers` futures.
+                    for _ in range(workers):
+                        if not _try_submit_next():
+                            break
 
-                        if state is not None and state.is_file_done(state_key):
-                            do_bar.write(f"    [skip-file] {dest_name}")
-                            files_skipped += 1
-                            continue
-
-                        if dest_name in existing_names or fref.name in existing_names:
-                            do_bar.write(f"    [skip-file] {fref.name}")
-                            files_skipped += 1
-                            if state is not None:
-                                state.mark_file_done(state_key)
-                            continue
-
-                        tmp_file = tmp / fref.name
-                        ok = _src.download_file_ref(
-                            src_coll_id, src_do.do_id, fref.fref_id, tmp_file, fref.size
-                        )
-                        if not ok:
-                            do_bar.write(f"    [error-file] download {fref.name}")
-                            files_failed += 1
-                            continue
-
-                        ok = dest_client.upload_file(
-                            dest_app_id, tmp_file, dest_name, coll_id, dest_do_id
-                        )
-                        if ok:
-                            do_bar.write(f"    [ok-file] {dest_name}  ({_human(fref.size)})")
-                            files_uploaded += 1
-                            if state is not None:
-                                state.mark_file_done(state_key)
-                        else:
-                            do_bar.write(f"    [error-file] upload {dest_name}")
-                            files_failed += 1
-
-                # ── Timeseries ─────────────────────────────────────────────────
-                if ts_container_id is not None:
-                    for ts_ref in src_do.ts_refs:
-                        state_key = f"ts/{step_key}/{src_do.do_id}/{ts_ref.ref_id}"
-                        if state is not None and state.is_ts_done(state_key):
-                            do_bar.write(f"    [skip-ts] {ts_ref.name}")
-                            ts_skipped += 1
-                            continue
-
-                        do_bar.write(f"    [ts] exporting {ts_ref.name!r} from source ref {ts_ref.ref_id}")
-                        csv_bytes = _src.export_ts(src_coll_id, src_do.do_id, ts_ref.ref_id)
-                        if csv_bytes is None:
-                            do_bar.write(f"    [error-ts] export failed for {ts_ref.name}")
-                            ts_failed += 1
-                            continue
-
-                        do_bar.write(f"    [ts] importing {len(csv_bytes):,} bytes → container {ts_container_id}")
-                        ok = dest_client.import_ts_csv(
-                            ts_container_id,
-                            csv_bytes,
-                            filename=f"{step_key}-{src_do.do_id}-{ts_ref.ref_id}.csv",
-                        )
-                        if ok:
-                            ts_imported += 1
-                            if state is not None:
-                                state.mark_ts_done(state_key)
-                        else:
-                            do_bar.write(f"    [error-ts] import failed for {ts_ref.name}")
-                            ts_failed += 1
-
-                # ── Structured data ────────────────────────────────────────────
-                for sd_ref in src_do.structured_refs:
-                    state_key = f"sd/{step_key}/{src_do.do_id}/{sd_ref.ref_id}"
-                    if state is not None and state.is_structured_done(state_key):
-                        do_bar.write(f"    [skip-sd] {sd_ref.name}")
-                        continue
-
-                    payload = _src.download_structured(src_coll_id, src_do.do_id, sd_ref.ref_id)
-                    if payload is None:
-                        do_bar.write(f"    [error-sd] download failed for {sd_ref.name}")
-                        structured_failed += 1
-                        continue
-
-                    container_name = f"{src_do.name}/{sd_ref.name}"
-                    container_id = dest_client.create_structured_container(container_name)
-                    if container_id is None:
-                        do_bar.write(f"    [error-sd] could not create container for {sd_ref.name}")
-                        structured_failed += 1
-                        continue
-
-                    linked = dest_client.link_structured_to_do(coll_id, dest_do_id, container_id, container_name)
-                    ok = dest_client.upload_structured_payload(container_id, payload)
-                    if linked and ok:
-                        do_bar.write(f"    [ok-sd] {sd_ref.name}")
-                        structured_imported += 1
-                        if state is not None:
-                            state.mark_structured_done(state_key)
-                    else:
-                        do_bar.write(f"    [error-sd] upload/link failed for {sd_ref.name}")
-                        structured_failed += 1
-
-                do_bar.update(1)
+                    # Drain + refill loop. as_completed yields futures as
+                    # they finish; for each completion we increment the bar
+                    # in the DRIVER thread, aggregate counts, then submit
+                    # the next source DO to keep the pool saturated.
+                    while in_flight:
+                        # Use a fresh as_completed each iteration so newly
+                        # submitted futures are picked up. We pop one ready
+                        # future per outer iteration.
+                        done_fut = next(as_completed(list(in_flight.keys())))
+                        src_do = in_flight.pop(done_fut)
+                        do_bar.set_postfix_str(src_do.name[:30])
+                        try:
+                            c = done_fut.result()
+                        except Exception as exc:
+                            do_bar.write(f"  [error-do] {src_do.name}: {exc!r}")
+                            c = {"files_failed": 1}
+                        files_uploaded += c.get("files_uploaded", 0)
+                        files_skipped += c.get("files_skipped", 0)
+                        files_failed += c.get("files_failed", 0)
+                        ts_imported += c.get("ts_imported", 0)
+                        ts_skipped += c.get("ts_skipped", 0)
+                        ts_failed += c.get("ts_failed", 0)
+                        structured_imported += c.get("structured_imported", 0)
+                        structured_failed += c.get("structured_failed", 0)
+                        do_bar.update(1)
+                        # Keep pool topped up.
+                        _try_submit_next()
 
         print(
             f"  → files: uploaded={files_uploaded} skipped={files_skipped} failed={files_failed}"
@@ -2929,86 +3097,46 @@ def run_source_mode_workers(
     default_access_rights: str | None = None,
     name_map: dict[str, str] | None = None,
 ) -> dict[str, int]:
-    """v15.1 Tier 5: concurrent wrapper around `run_source_mode`.
+    """v15.8 IMPORT-PERF1 — thin forwarder onto `run_source_mode(workers=N)`.
 
-    Design choice (per task §"Tier 5"): when `workers == 1` this is a strict
-    pass-through to the existing sequential `run_source_mode`. When
-    `workers > 1`, the source-DO iteration is fanned out across a bounded
-    queue + ThreadPoolExecutor using the C7 primitives already shipped in v15
-    (`backoff_delay`, `atomic_write_json`, `StateFile`, `JwtPauseManager`).
+    In v15.1..v15.7 this was a fake wrapper: it instantiated a
+    ThreadPoolExecutor, ran four `lambda: True` probes, then delegated to
+    `run_source_mode` SEQUENTIALLY inside the executor context. `--workers 4`
+    was a footgun that bought zero concurrency. See
+    `aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md §5`
+    hypothesis #1.
 
-    The per-DO unit of work — file refs + TS refs + structured refs — stays
-    encapsulated in the existing `run_source_mode` loop body; the worker pool
-    parallelizes across DOs, not within a single DO. This matches the §5
-    "Source: max 4 parallel GETs against cube3" + "Dest: max 4 parallel POST"
-    bound in `aidocs/93`.
+    v15.8 moves the worker-pool implementation INTO `run_source_mode` so the
+    per-DO loop body (the actual unit of work) is the thing that fans out,
+    not the per-step driver. The wrapper stays as the script-level entry
+    point and as a stable name for callers; it now does what its name says.
 
-    Note on test discipline: this entry point's tests assert the *wiring* —
-    queue exists, executor sees N workers, sequential fallback bypasses the
-    queue. Real-concurrency convergence tests are flaky and out of scope here
-    (per Agent A's deferral rationale).
+    Sequential fallback at `workers <= 1` is preserved byte-for-byte: the
+    same sequential path executes inside `run_source_mode`. Tests in
+    `tests/test_worker_pool.py` were updated in v15.8 to assert the new
+    contract.
     """
     if workers <= 1:
-        # Sequential fallback — preserves v15 behavior byte-for-byte.
+        # Pure sequential — `run_source_mode` takes the workers==1 branch.
         return run_source_mode(
             dest_client, coll_id, state, source_client,
             default_license=default_license,
             default_access_rights=default_access_rights,
             name_map=name_map,
+            workers=1,
         )
 
-    # Concurrent path. Build the task queue + worker pool using stdlib only.
-    from concurrent.futures import ThreadPoolExecutor
-    from queue import Queue
+    print(f"\n[workers] v15.8 real fan-out — pool size = {workers}")
+    print(f"[workers] per-step ThreadPoolExecutor, per-DO future submission")
+    print(f"[workers] cube3 + dest concurrency bound: {workers} parallel in-flight per aidocs/93 §5")
 
-    print(f"\n[workers] concurrent path enabled — pool size = {workers}")
-    print(f"[workers] bounded queue size = 256 (per aidocs/93 §5)")
-
-    task_queue: Queue = Queue(maxsize=256)
-
-    # The actual fan-out path defers to the same per-DO logic the sequential
-    # branch uses; we don't refactor `run_source_mode` here. Instead the
-    # producer enqueues each (step_key, src_do, dest_do_id, ts_container_id)
-    # task as a closure, and workers pull-and-execute. This is the minimum
-    # viable wiring that satisfies the §5 design without disturbing the
-    # sequential code path.
-    #
-    # NOTE: in v15.1 we ship the *wiring* + the sequential-by-default contract.
-    # The actual per-task closure is identical to what `run_source_mode` does
-    # inline. Because that body is ~150 lines and not factored out today, the
-    # concurrent path delegates back to `run_source_mode` after constructing
-    # the queue + executor (a no-op fan-out that proves the wiring is in
-    # place). Future work: extract the per-DO loop body into a callable so
-    # each worker can pull tasks. Tracked as v15.2 backlog.
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        # Probe the executor wiring (1 trivial task per worker — verifies the
-        # pool is healthy before running the real import).
-        probes = [executor.submit(lambda: True) for _ in range(workers)]
-        for p in probes:
-            p.result(timeout=5.0)
-        print(f"[workers] pool healthy ({workers} workers responded)")
-
-        # Run the existing sequential path inside the executor context. This
-        # is a deliberate v15.1 conservatism — the wiring is provable, the
-        # behavior is unchanged. Tests assert both branches.
-        result = run_source_mode(
-            dest_client, coll_id, state, source_client,
-            default_license=default_license,
-            default_access_rights=default_access_rights,
-            name_map=name_map,
-        )
-
-    # Drain the queue (always empty in the conservative path, but the
-    # invariant should hold for forward-compat tests).
-    drained = 0
-    while not task_queue.empty():
-        try:
-            task_queue.get_nowait()
-            drained += 1
-        except Empty:
-            break
-
-    return result
+    return run_source_mode(
+        dest_client, coll_id, state, source_client,
+        default_license=default_license,
+        default_access_rights=default_access_rights,
+        name_map=name_map,
+        workers=workers,
+    )
 
 
 # ── State tracker (resume support) ───────────────────────────────────────────
@@ -3017,11 +3145,21 @@ import json
 import time
 
 class ImportState:
-    """Persist progress to JSON so a failed run can resume cleanly."""
+    """Persist progress to JSON so a failed run can resume cleanly.
+
+    v15.8 IMPORT-PERF1 — thread-safe under parallel workers. All reads + writes
+    are guarded by `_lock` (RLock so a `mark_*` that nests inside another
+    state op cannot self-deadlock). The lock also covers `_save()`, which
+    rewrites the entire JSON; under 4 workers each marking a few times per
+    second this is N file rewrites per sec but bounded by the lock — never
+    overlapping.
+    """
 
     def __init__(self, path: Path) -> None:
         self._path = path
         self._data: dict = {}
+        # v15.8 PERF1 — RLock guards _data + _save against concurrent workers.
+        self._lock = threading.RLock()
         if path.exists():
             try:
                 with path.open() as f:
@@ -3031,66 +3169,82 @@ class ImportState:
                 self._data = {}
 
     def _save(self) -> None:
+        # Caller MUST hold _lock. _save is private and only called from
+        # mutators below, which all hold the lock.
         self._path.write_text(json.dumps(self._data, indent=2))
 
     @property
     def warmup_done(self) -> bool:
-        return bool(self._data.get("warmup_done"))
+        with self._lock:
+            return bool(self._data.get("warmup_done"))
 
     def mark_warmup_done(self) -> None:
-        self._data["warmup_done"] = True
-        self._save()
+        with self._lock:
+            self._data["warmup_done"] = True
+            self._save()
 
     @property
     def gate_passed(self) -> bool:
-        return bool(self._data.get("gate_passed"))
+        with self._lock:
+            return bool(self._data.get("gate_passed"))
 
     def mark_gate_passed(self) -> None:
-        self._data["gate_passed"] = True
-        self._save()
+        with self._lock:
+            self._data["gate_passed"] = True
+            self._save()
 
     def is_do_done(self, do_name: str) -> bool:
-        return do_name in self._data.get("completed_dos", [])
+        with self._lock:
+            return do_name in self._data.get("completed_dos", [])
 
     def mark_do_done(self, do_name: str) -> None:
-        self._data.setdefault("completed_dos", [])
-        if do_name not in self._data["completed_dos"]:
-            self._data["completed_dos"].append(do_name)
-        self._save()
+        with self._lock:
+            self._data.setdefault("completed_dos", [])
+            if do_name not in self._data["completed_dos"]:
+                self._data["completed_dos"].append(do_name)
+            self._save()
 
     def is_file_done(self, key: str) -> bool:
-        return key in self._data.get("completed_files", [])
+        with self._lock:
+            return key in self._data.get("completed_files", [])
 
     def mark_file_done(self, key: str) -> None:
-        self._data.setdefault("completed_files", [])
-        if key not in self._data["completed_files"]:
-            self._data["completed_files"].append(key)
-        self._save()
+        with self._lock:
+            self._data.setdefault("completed_files", [])
+            if key not in self._data["completed_files"]:
+                self._data["completed_files"].append(key)
+            self._save()
 
     def is_ts_done(self, key: str) -> bool:
-        return key in self._data.get("completed_ts", [])
+        with self._lock:
+            return key in self._data.get("completed_ts", [])
 
     def mark_ts_done(self, key: str) -> None:
-        self._data.setdefault("completed_ts", [])
-        if key not in self._data["completed_ts"]:
-            self._data["completed_ts"].append(key)
-        self._save()
+        with self._lock:
+            self._data.setdefault("completed_ts", [])
+            if key not in self._data["completed_ts"]:
+                self._data["completed_ts"].append(key)
+            self._save()
 
     def is_structured_done(self, key: str) -> bool:
-        return key in self._data.get("completed_structured", [])
+        with self._lock:
+            return key in self._data.get("completed_structured", [])
 
     def mark_structured_done(self, key: str) -> None:
-        self._data.setdefault("completed_structured", [])
-        if key not in self._data["completed_structured"]:
-            self._data["completed_structured"].append(key)
-        self._save()
+        with self._lock:
+            self._data.setdefault("completed_structured", [])
+            if key not in self._data["completed_structured"]:
+                self._data["completed_structured"].append(key)
+            self._save()
 
     def get_ts_container(self, step_key: str) -> int | None:
-        return self._data.get("ts_containers", {}).get(step_key)
+        with self._lock:
+            return self._data.get("ts_containers", {}).get(step_key)
 
     def set_ts_container(self, step_key: str, container_id: int) -> None:
-        self._data.setdefault("ts_containers", {})[step_key] = container_id
-        self._save()
+        with self._lock:
+            self._data.setdefault("ts_containers", {})[step_key] = container_id
+            self._save()
 
 
 # ── v15.4 IMPORT-T1: telemetry (metrics + runlog) ────────────────────────────

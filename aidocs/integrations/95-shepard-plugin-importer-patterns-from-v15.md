@@ -14,7 +14,7 @@ audience: contributors, plugin authors
 
 ## 0. Why this doc exists
 
-`examples/mffd-showcase/scripts/mffd-import-v15.py` (4167 LoC, v15.7) is the
+`examples/mffd-showcase/scripts/mffd-import-v15.py` (4321 LoC, v15.8) is the
 **field-validated cross-instance importer** that lifts the real MFFD process data
 (8457 source DataObjects across two collections — 5012 tapelaying + 3371
 bridgewelding) from DLR cube3 (`backend.bt-au-cube3.intra.dlr.de`) into
@@ -632,6 +632,73 @@ hope the operator notices." The plugin's pattern is "block in a visible
 JobState until the operator decides." That's a real UI surface change — not
 just an importer-plugin design point, but a `frontend/components/importer/`
 follow-up. Add IMPORTER-PAT-NS1-UI sub-row to §4.
+
+---
+
+### Pattern 16 — Worker fan-out + lazy enrichment (`IMPORT-PERF1` + `IMPORT-PERF2`, v15.8)
+
+**Source lines:** `mffd-import-v15.py` `run_source_mode` (workers parameter +
+`_process_one_source_do` closure + per-step `ThreadPoolExecutor` with
+`as_completed` drain/refill); `iter_data_objects` (yields stubs);
+`ShepardClient._load_file_refs / _load_ts_refs / _load_structured_refs`
+(lazy fetchers); `ImportState._lock: RLock` (state thread-safety).
+
+**Why it matters — two anti-patterns the field caught:**
+
+1. **PERF1 — fake fan-out.** In v15.1..v15.7, `run_source_mode_workers`
+   spawned a `ThreadPoolExecutor`, ran trivial `lambda: True` probes, then
+   called `run_source_mode` SEQUENTIALLY inside the executor context. The
+   author admitted this in the source ("a no-op fan-out that proves the
+   wiring is in place"). `--workers 4` bought ZERO concurrency. The
+   diagnostic ([`aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md
+   §5 hypothesis #1`](../agent-findings/mffd-import-slowness-diagnose-2026-05-23.md))
+   measured 0.98 s/DO single-thread, which would have been ~250 ms/DO with
+   real 4-worker concurrency.
+2. **PERF2 — eager enrichment defeats resume.** `iter_data_objects` fired
+   3 cube3 GETs per source DO (file / TS / SD refs) BEFORE the state-skip
+   check could short-circuit the work. On a fully-resumed 8 457-DO collection
+   that was 25 371 wasted WAN round-trips just to discover the work was
+   already done.
+
+**Adoption risk: MEDIUM.** The fix requires three coordinated edits — extract
+the per-DO body into a callable, make the iterator yield stubs, add a
+state-file lock — all of which need to land together. Worker-pool tests
+(`test_worker_pool.py`) had to be rewritten in v15.8 to assert the new shape.
+Easy to ship the wiring without the actual fan-out (v15.1 already did that;
+v15.8 closes the gap).
+
+**How it lands in the plugin:**
+
+- The plugin's `ImporterJob.runStep(step, sourceDOs)` ALREADY parallelises
+  per-DO via a Quarkus `@Asynchronous` ManagedExecutor; the v15.8 lesson is
+  "make sure the pool actually executes futures, not health-checks itself."
+  Convergence test: assert that with 4 workers, total wall-clock < 1.5× the
+  per-DO mean (i.e. ≥ 2.5× speedup achieved against the serial baseline).
+- Pre-flight enrichment goes through a lazy gateway: `SourceDOReference`
+  carries `(coll_id, do_id, name)`; `client.refsForDO(ref)` is called only
+  when the per-DO state check confirms work is needed. The DAO equivalent
+  in the plugin: don't `JOIN FETCH` ref-lists in the source-side pagination
+  query — fetch per-DO only when downstream needs them.
+- `ImporterRunState` (JSONB) writes need transactional isolation (Postgres
+  row-level `FOR UPDATE` or optimistic locking on `version`) — same problem
+  as v15.8's `ImportState._lock: RLock`, different solution because the JVM
+  doesn't share process memory across workers in the same way.
+- The per-step pool size is configurable via `:ImporterConfig.maxWorkers`
+  (default 4 per `aidocs/93 §5`). The plugin enforces the same upper bound
+  the script does (don't let an operator set 1000 and DDoS their source).
+- `existing_names` hoisting: in the plugin, `ImporterRunStep.knownDestNames`
+  is a Set materialised ONCE per step at step-start. Workers consume; the
+  per-DO state-file check is the actual correctness guard against
+  double-upload.
+
+**What the v15.8 fix did NOT do (and the plugin should):**
+
+- The `tqdm`-style progress bar in v15.8 is updated only from the driver
+  thread. The plugin needs a per-step gauge that increments from each
+  completing future (atomic counter; visible via `/v2/imports/{id}/status`).
+- The v15.8 sequential fallback (`workers <= 1`) preserves byte-for-byte
+  semantics — useful for debugging. The plugin should retain a `workers=1`
+  mode flag for the same reason.
 
 ## 3. What's different in the plugin vs the v15 script
 
