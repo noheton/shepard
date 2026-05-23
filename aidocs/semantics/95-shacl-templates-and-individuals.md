@@ -1,5 +1,5 @@
 ---
-stage: feature-defined
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 ---
 
