@@ -30,17 +30,17 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 37 |
+| `fragment` | 38 |
 | `concept` | 14 |
-| `idea` | 8 |
-| `feature-defined` | 56 |
+| `idea` | 9 |
+| `feature-defined` | 57 |
 | `audited-by-personas` | 52 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **261** |
+| **total docs** | **264** |
 | **UNTAGGED** | **5** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -55,7 +55,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md`](agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md) | Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23) | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 |
 
-## fragment (37)
+## fragment (38)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -89,6 +89,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — multi-database reconstruction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/70-competitor-landscape-and-feature-ideas.md`](strategy/70-competitor-landscape-and-feature-ideas.md) | aidocs/70 — Competitor landscape & feature ideas for shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/71-fork-adoption-as-upstream.md`](strategy/71-fork-adoption-as-upstream.md) | aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |
@@ -116,7 +117,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
 
-## idea (8)
+## idea (9)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -125,11 +126,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (56)
+## feature-defined (57)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -175,7 +177,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | — |
+| [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | 88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
@@ -183,6 +185,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/91-forinfpro-semantically-driven-analytics.md`](strategy/91-forinfpro-semantically-driven-analytics.md) | ForInfPro and the semantically-driven analytics use case | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/92-aerospace-x-regulatory-context.md`](strategy/92-aerospace-x-regulatory-context.md) | 92 — Aerospace-X and the aerospace regulatory context | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — institutional stack, governance frame, compliance gates | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/94-federation-and-dataspaces.md`](strategy/94-federation-and-dataspaces.md) | 94 — Federation and dataspaces: where Shepard sits in Manufacturing-X / Aerospace-X / Catena-X | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |

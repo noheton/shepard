@@ -22,6 +22,16 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 
 ## 2026-05-23 seed (from this session's dispatches)
 
+### Institute YouTube channel — HRI thread + cell films
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [VAM-HRI 2018 — Sch&ouml;nheits & Krebs](https://doi.org/10.1145/nnnnnnn.nnnnnnn) | Embedding AR in Industrial HRI Applications | Doc 102 | Academic anchor of an 8-year HRI line through 2024 DrapeBot — adds an HRI thesis chapter candidate | cited |
+| 2026-05-23 | [DLR@UBC 2017 HRI Demo PPTX](file:///root/.claude/uploads/33f9b6cd-283e-4eb5-bfea-fec7b3720743/7b074b7f-20171205_Workshop_HRI_Demo.pptx) | Workshop deck same testbed (KUKA + Hololens + Pozyx + V-REP + OPC-UA) | Doc 102 | Chronological anchor: same 2017-12-05 day as Vision_Datenmanagement PPTX — HRI + data-mgmt thread emerge together | cited |
+| 2026-05-23 | [DrapeBot project (drapebot.eu)](https://drapebot.eu/) | EU HRI project; 22-participant user study | Doc 102 §3 | If accessible, the published HRI study would be a citable comparator to VAM-HRI 2018 — read paper next | unread |
+| 2026-05-23 | [KoKo (Collision-free Cooperation) — DLR tool](https://www.youtube.com/watch?v=kU_q4OQ8hrE) | Dual-robot programming automation tool | Doc 102 §3 (TEC entry) | Internal DLR tool, likely undocumented externally — worth asking lars.larsen@dlr.de if there's a citable description | unread |
+| 2026-05-23 | YouTube `MmT9ZTkENvo` 10-Years-ZLP narration script (if archived) | Institute self-history at 10-yr mark | Doc 102 open-asks §5 | Would strengthen doc 86 (predecessor systems) intro — currently inferred from secondary sources only | unread |
+
 ### AAS + EDC + dataspaces
 
 | Date | Source | Topic | Surface | Why interesting | Status |

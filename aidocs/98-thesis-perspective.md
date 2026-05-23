@@ -44,6 +44,81 @@ Quantitatively, as of 2026-05-21:
 | Production deployment | live at shepard.nuclide.systems | — |
 | Plugin-first SPI design | covering ai, wiki-writer, mcp, video, importer | `aidocs/platform/47` + plugins/ |
 | Adjacent published work | f(ai)²r + Obscurity-Is-Dead | github.com/noheton/ |
+| **Prior author publications** | DLRK 2021 (Shepard architecture, Krebs lead) + ICRA 2024 (T-AFP calibration, Krebs co-author) + DLR magazin #140 (MFZ public exposition, Krebs co-author) | bib: `krebsDlrk2021`, `audetIcra2024`, `krebsJungDlrMagazin140` |
+
+### 1.5 Prior author publications — the citation chain to the thesis itself
+
+Three primary publications by the author anchor the thesis's
+literature review back to its own subject:
+
+- **[@krebsDlrk2021]** — *Systematische Erfassung, Verwaltung und
+  Nutzung von Daten aus Experimenten*, DLRK 2021 Bremen. **The
+  load-bearing peer-reviewed publication of record for Shepard's
+  architecture.** Krebs is lead author, joint with all four named
+  Zenodo software-citation authors (Haase, Glück, Kaufmann,
+  Willmeroth on [@haaseShepard2021]). The paper specifies the
+  polyglot-persistence stack (Neo4j + InfluxDB + MongoDB), the
+  Collection / DataObject / Container / Reference data model
+  (citing the RDA Research Data Collections WG recommendation),
+  the JWT/OAuth2/API-key authentication model, the OPC-Router +
+  Data-Reference-Generator (DRG) shop-floor ingest stack, and the
+  thermoplastic AFP use case at the ZLP Fiber Placement Cell (FPZ).
+  The §5 outlook anticipates git integration, CAD/PDM integration,
+  search/filter expansion, and access-rights management — **all of
+  which this fork has since shipped or designed**. This is the
+  inheritance line: the thesis builds on a peer-reviewed paper the
+  thesis author wrote five years earlier, and can quote the
+  forward-looking §5 against what the fork has subsequently
+  delivered. The DLR-side citation chain from precursor → thesis
+  is therefore *closed within the author's own publication record*.
+
+- **[@audetIcra2024]** — *Iterative Robot Calibration with
+  Accuracy Saturation Termination and Application for AFP
+  Processing of a Thermoplastic Aerostructure with Real-time
+  Elastic Path Compensation*, ICRA 2024 (Audet, Fortin, Côté,
+  Vistein, Brandt, **Krebs**, Monsarrat). Krebs is seventh-named
+  co-author on the DLR side, with NRC Canada lead. Evidence of the
+  Fiber Placement Cell's continuing peer-reviewed scientific
+  output stream; the cell in the ICRA paper is explicitly the same
+  KUKA KR 120 HA + AFPT MTLH + Laserline LDM laser configuration
+  the DLRK 2021 paper described as Shepard's demonstrator. The
+  thesis can cite this as evidence that the cell described in the
+  Shepard architecture paper continues to produce peer-reviewed
+  scientific results, validating the Shepard-as-substrate claim
+  empirically rather than as a design intention.
+
+- **[@krebsJungDlrMagazin140]** — *Hightech auf vier Säulen —
+  Glanzstück im DLR Augsburg: multifunktionale Roboteranlage für
+  die Fertigung von Flugzeugbauteilen*, DLR magazin #140 (Roboter
+  themed issue, 2013). Krebs + Jung. Public-facing institutional
+  exposition of the MFZ (Multifunktionale Roboterzelle), the cell
+  the Krebs 2010 MFZ-Steuerungskonzept deck
+  ([@krebsMfzSteuerung2010]) specified. Bookend to the 2010
+  design-thinking deck: same author, same cell, three years later,
+  operational hardware. Useful as the **citable public-domain
+  source** for cell-level descriptions when thesis chapters need
+  to reach beyond internal DLR documents.
+
+**The citation chain from precursor to thesis is now intact at
+three depths:**
+
+1. *Pre-design* — Krebs 2010 MFZ-Steuerungskonzept
+   ([@krebsMfzSteuerung2010]) → Krebs+Jung 2013 DLR magazin
+   ([@krebsJungDlrMagazin140]): same author, design-intent to
+   operational-hardware, three-year span.
+2. *Architecture* — Krebs 2020 CUBE iDMS final presentation
+   ([@krebsIdms2020]) → Krebs et al. 2021 DLRK
+   ([@krebsDlrk2021]): same architect (lead author), iDMS
+   prototype to peer-reviewed Shepard publication, one-year span.
+3. *Operational* — Krebs et al. 2021 DLRK
+   ([@krebsDlrk2021]) → this thesis (2026→): same author, paper to
+   thesis, five-year span. The §5 outlook of the 2021 paper enumerates
+   what the thesis demonstrates has since been delivered.
+
+This is a **publication record of one author writing
+continuously about the same evolving system across 16 years**.
+The thesis is not citing a system; it is the next instalment in
+an established author-track.
 
 This is **dissertation-volume work** by any standard German university yardstick:
 - Master's thesis target: typically 60-120 pages over 6 months. Already exceeded.

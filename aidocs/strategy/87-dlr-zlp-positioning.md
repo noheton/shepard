@@ -155,6 +155,70 @@ KUKA.CNC, the timeseries-attribute namespace would gain a new
 controller-frame qualifier; this is a **forward-compatibility
 note** for the M1 wave's attribute design.
 
+#### 3.1.1 Public-facing institutional exposition of the MFZ (2013)
+
+The MFZ has its own public-facing institutional record: the
+**DLR magazin issue #140 "Roboter"** carries a four-page ZLP
+article *"Hightech auf vier Säulen — Glanzstück im DLR Augsburg:
+multifunktionale Roboteranlage für die Fertigung von
+Flugzeugbauteilen"*, **authored by Krebs and Jung**
+[@krebsJungDlrMagazin140]. The article describes the cell's
+commissioning in September 2013, its five hang-down KUKA robots
+on a 30~m linear axis, two portal robots (240~kg payload each),
+the 450~m² cell floor area, the bodenfreie Hang-Down-Konfiguration
+that enables convex-tooling work, and the cell's role in producing
+fuselage parts for next-generation single-aisle aircraft. Contact
+professors named are Voggenreiter (DLR-BT) and Kupke (ZLP).
+
+This is the **same time-window** in which Krebs's 2010
+*Steuerungskonzept der MFZ-Anlage* deck
+([@krebsMfzSteuerung2010], §1.5 of doc 86) had matured into
+operational hardware: the 2010 control-concept document and the
+2013 public commissioning piece form bookends on the MFZ's first
+chapter, both with Krebs as named author. For thesis use, the
+DLR magazin piece is the public-domain citable source describing
+the cell that the MFFD-import pipeline now drains data from.
+
+*Caveat on numbering.* The local filename "06" is a sequence
+number, not the issue number — the actual issue is **#140
+(Roboter-themed)**. Any earlier reference to "DLR Magazin #6"
+should be read as issue #140.
+
+#### 3.1.2 Peer-reviewed output from the Fiber Placement Cell (FPC)
+
+The FPC's research output also has peer-reviewed coverage: the
+**ICRA 2024 paper** *Iterative Robot Calibration with Accuracy
+Saturation Termination and Application for AFP Processing of a
+Thermoplastic Aerostructure with Real-time Elastic Path
+Compensation* (Audet, Fortin, Côté, **Vistein, Brandt, Krebs**,
+Monsarrat) [@audetIcra2024] is a joint DLR–NRC (National Research
+Council Canada) publication in which Krebs is the seventh-named
+co-author on the DLR side (with Vistein and Brandt).
+
+The paper introduces the **ICAST algorithm** (Iterative robot
+Calibration with Accuracy Saturation Termination) and applies it
+to the in-situ elastic calibration of the DLR ZLP T-AFP robotic
+workcell — explicitly the same KUKA KR 120 HA + AFPT MTLH + 6~kW
+Laserline LDM laser configuration described in
+[@krebsDlrk2021] §3 (the DLRK 2021 Shepard architecture paper
+also co-authored by Krebs, Vistein not named there but Brandt is).
+Demonstrator: an 8-section thermoplastic rear pressure dome for a
+next-generation aircraft, ten layers, 27–36 tracks per layer. The
+ICAST contribution: calibration set reduced from 31 to 17 poses
+(–45 %) with side-deviation accuracy preserved at 0.057–0.064 mm.
+
+For Shepard's positioning, the ICRA paper is **evidence of the
+FPC's peer-reviewed scientific output stream** sitting alongside
+the Schuster/Mayer/Willmeroth/Brandt FAIM 2021 inline-quality-
+control paper and the Brandt/Deden/Harig/Fischer/Kupke 2023
+thermocouple-based process-optimization paper (both cited in
+[@krebsDlrk2021] refs). Three peer-reviewed papers on FPC output
+across 2021–2024 with Krebs co-authorship on the architecture
+paper provide the **scientific-publication backbone** the thesis
+can cite when establishing the cell's research-output legitimacy
+— complementary to, not competing with, the Shepard-as-substrate
+narrative.
+
 ### 3.2 The metrology platform: Spatial Analyzer + Leica trackers
 
 The TEC's "metrology streams" deserve their own enumeration. The
@@ -556,3 +620,13 @@ project on 2026-05-23:
 
 Citations resolve via [`docs/_data/references.bib`](../../docs/_data/references.bib);
 see [`/bibliography`](/bibliography) on the live site.
+
+A supplementary source set — the institute's own public YouTube channel
+(`@dlrinstituteofstructuresan6594`, 57 videos at 2026-05-23 retrieval) — is
+indexed and methodologically positioned in
+[`aidocs/strategy/102-institute-youtube-profile.md`](102-institute-youtube-profile.md).
+It is read there as **institutional self-presentation to a non-DLR audience**,
+methodologically distinct from the internal positioning documents listed
+above. The image film `dlrZlpYoutubeCuftGghuRGc` ("We lighten. Everything.",
+2023-05-16) is the closest external counterpart to the Kompetenzportfolio
+PDF cited here.
