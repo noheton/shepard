@@ -172,6 +172,47 @@ months full-time, or 3-4 years part-time alongside DLR work. The volume
 of work to convert what exists into a defensible thesis is **substantially
 less** than starting from scratch.
 
+### 4.1. Positioning vs the community-standard RDM handbook
+
+The published German engineering-research RDM community-standard
+is now **Schlenz, Bronger, Selzer, Nestler, Riem and Enahoro
+(2026), _Research Data Management: A Practical Introduction_,
+Zenodo 18468308, V1.1, CC BY-SA 4.0** (ref `schlenzRdmHandbook2026`
+in [`docs/_data/references.bib`](../docs/_data/references.bib)).
+NFDI4Ing-CADEN-funded, CoRDI-2025-launched, 100 pp,
+DFG-codes-cited. The author team maintains JuliaBase + SciMesh
+(Bronger, FZJ) and Kadi4Mat (Selzer / Nestler / Riem, KIT) — the
+three free ELNs the handbook profiles. **A thesis examiner from
+RWTH Aachen, KIT, Karlsruhe, FZJ, the Helmholtz Association or
+any NFDI4Ing-affiliated chair will probably already own this
+handbook** and will read Shepard against it.
+
+Distilled from the actual handbook (full PDF read 2026-05-23),
+the seven claims that connect to Shepard's design choices:
+
+| # | Handbook claim | Shepard position | Where it lands in the thesis |
+|---|---|---|---|
+| 1 | **The DMP is the project's load-bearing planning document** — six sub-headings (§ 4.1 -- 4.6) align to DFG funder expectations. Most researchers prefer "a simple text file that can be modified gradually" over heavyweight tools like RDMO. | Shepard's Collection-level attribute schema can project into the same six headings; `shepard-plugin-dmp` is the (queued) productisation. The thesis frames Shepard as the **substrate-aware DMP companion** — the DMP describes intent, Shepard captures the execution against it. | Framing A § "Compliance integration"; Framing C § "DMP-as-shape" (SHACL shape over Collection attributes). |
+| 2 | **FAIR = Findability, Accessibility, Interoperability, Reusability** (Wilkinson 2016 letters), but the handbook's § 2.2.3 subsection-heading slips to "Processability". This is editorial inconsistency, not framework divergence. | Shepard's FAIR scoring uses the canonical four letters; documenting the handbook's slip is itself a small *clarification contribution* the thesis can cite. | Thesis Lit-review § FAIR; spend one paragraph naming the slip + the canonical reading. |
+| 3 | **Data quality** (§ 6) is systematic / statistical errors + outlier detection. CADEN is building **AI-supported intrinsic data analysis with automatic outlier detection** in ELN, not yet released. | Shepard's `shepard-plugin-ai` quality-flagging is the directly-overlapping work (see `project_ai_data_arranger.md`). The honest thesis position is **alignment + handoff**: integrate Bronger's CADEN AI output upstream when it ships rather than duplicate it. | Framing A § "AI quality plugin"; explicitly cite the handbook's § 6 forward-reference to subsequent edition. |
+| 4 | **SciMesh** (§ 7.1 -- 7.4) is the in-NFDI4Ing standard for ELN-to-ELN data exchange: HTTP GET on sample URIs returns RDF; opaque mass data carries multihash in URL fragment (`<base>base<version><multihash>`). Sample stays homed at its issuing ELN; collaborators federate via cross-instance GETs. | Shepard's Garage CAS substrate (multihash IS the content-address) + per-DataObject n10s repository + HMC WP-3 federation prototype implement the same shape. **`shepard-plugin-scimesh`** (REST adapter, HTTP GET on `appId` → SciMesh RDF) is a small surface-area / large-alignment-payoff plugin candidate — the thesis writes it up as the empirical bridge to the consortium. | Framing C or D § "Federation implementation"; one chapter of the thesis. |
+| 5 | **MetaData4Ing is positioned by the handbook as "more for IT experts / application developers"** (§ 7.5) while SciMesh sits at the researcher-facing layer. The two are presented as alternatives, not a stack. | Shepard's m4i alignment (`aidocs/semantics/94`) targets the application/JSON-LD-render layer; speaking SciMesh at the researcher-facing layer is additive. **The handbook implicitly leaves room for "a platform that does both"** — that platform is Shepard. | Framing A § "Ontology stack" — Shepard occupies a slot the handbook describes but does not fill. |
+| 6 | **ELNs profiled by the handbook are evaluated along five implicit axes**: open-source license, customisability to existing workflows, sample/experiment/process model fit, REST-API completeness, federation-readiness via SciMesh. Demo accounts are public (JuliaBase at `demo.juliabase.org`, password `12345`). | Shepard is **not** an ELN — but the thesis examiner will apply these five axes anyway. The honest scorecard: open-source ✓ (Apache 2.0), customisability mid (plugin-first SPI but heavier than a JuliaBase Python process-class), process-model fit very high (Predecessor/Successor + PROV-O), REST completeness high (v2 surface), federation-readiness designed-not-shipped. **The 10-minute demo gate** (per `feedback_three_audience_docs.md`) is the equivalent of the handbook's `demo.juliabase.org` — and Shepard already has it at `shepard.nuclide.systems`. | Framing C § "Related work — ELN comparison"; one table. |
+| 7 | **Publication walk-through** (§ 8.2) uses Zenodo (the same path this handbook itself takes). § 8.4 frames published research data as **AI training material** — "garbage in, garbage out" is the handbook's preferred slogan. Permanent storage (§ 9) names Coscine (KIT/RWTH) as the recommended administrative-storage layer. | Shepard's Unhide feed + RO-Crate export + KIP-DOI mint are the equivalent of the handbook's "data to Zenodo" walk-through; the `shepard-plugin-publisher` design (per `project_competitive_position.md` gap analysis) is a direct alignment slice. Shepard above Coscine (modelling-on-storage) is the integration shape; no work scheduled but the option is open. | Framing A § "FAIR publication path"; Framing D § "Coscine-as-substrate stack". |
+
+The honest thesis-positioning sentence: *"This handbook is the
+frame Shepard implements, not the frame Shepard departs from.
+Where the handbook leaves a slot un-filled (industrial-scale
+process data + multi-substrate + large-timeseries), Shepard
+already occupies it; where the handbook names a slot
+(JuliaBase / eLabFTW / Kadi4Mat at the ELN layer), Shepard
+peer-federates via SciMesh rather than competes."*
+
+The handbook's CoRDI 2025 launch venue is the obvious target
+for the thesis's first NFDI4Ing-facing paper — **CoRDI 2026
+or 2027 should carry a Shepard contribution** (cf. § 5.2 of
+`aidocs/strategy/90` for the publication calendar).
+
 ---
 
 ## 5. Strategic recommendation
