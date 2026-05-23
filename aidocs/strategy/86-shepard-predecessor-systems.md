@@ -489,6 +489,20 @@ Eigenschaften* (self-configuration / self-X properties). The
 Prozessleitsystem layer is the orchestration counterpart to the
 ProDES data layer.
 
+Slide 11 of the same deck (*Status Big-Data-Adapter*) carries
+a second evidentiary point that **sharpens the §3.5 personal-
+continuity claim**: it reports *"Aufzeichnung von Roboterdaten
+mittels KiBiD erfolgreich"* (robot-data-into-KIBID write path
+validated) and names **Christian Rähtz** and **Mark Willmeroth**
+as the personnel on the integration workstream. This is the
+*earliest dated primary-source appearance* of Willmeroth in the
+predecessor record — earlier than the IPRO operations TODO that
+§3.5 currently cites as the `mwillmeroth` → 2021-Shepard-co-author
+bridge. The personal-continuity arc from Willmeroth-in-KIBID-
+operations to Willmeroth-as-2021-Shepard-co-author is therefore
+a documented four-year arc (2017-07 → 2021-07), not the briefer
+arc §3.5 inferred from the undated TODO.
+
 `20170721_Prozessablauf.xlsx` (the IPRO process-flow spreadsheet
 already cited at §4.4) lands three days later — composite-layup
 process sequence at the IPRO cell, the operational form the
@@ -1313,6 +1327,104 @@ eLib records (PRAESTO):
   eLib record [94077](https://elib.dlr.de/94077/).
 - [nuschelePraesto2014talk](#bib) — Nuschele (2014). Same title.
   eLib record [94078](https://elib.dlr.de/94078/).
+- [krebsInputPraesto](#bib) — Krebs, F. (date undetermined).
+  *Input Florian — PRAESTO.* Two-slide working deck preserved in
+  the artefact collection (filename `8c1fe026-Input_Florian_PRAESTO.pptx`,
+  ~2.0 MB; uploaded to AI working memory 2026-05-23). Load-bearing
+  evidence for §2.1: (a) names *Kisters AG* as PRAESTO's commercial
+  supplier (first primary-source identification); (b) records the
+  engagement as *"DLR seit 2010"* (PRAESTO at DLR from 2010, four
+  years before the DLRK 2014 paper); (c) shows the scope as
+  inspection-only (*Inspektionsprozess*, *Prüfung
+  Trockenfaserablage*, *Prüfung Endbauteil*), corroborating the
+  misfit thesis by scope-evidence rather than by stated argument.
+
+**2017 chronology — the eight-month break-and-synthesis sequence**
+(the load-bearing primary sources for §3.6):
+
+- [krebsProDES2017a](#bib) — Krebs, F. (2017). *Industrie 4.0 @ ZLP
+  — Prozessdatenerfassungssystem (ProDES).* DLR ZLP Augsburg internal
+  working deck, dated 2017-04-25 (slide footer 11.04.2017).
+  Filename `f2263088-20170425_Prozessdatenerfassungssystem_ProDES.pptx`
+  (~2.5 MB; uploaded to AI working memory 2026-05-23). Sole-author
+  Krebs. Load-bearing evidence for §3.6.1: *"Aktueller Stand der
+  Technik: Praesto, KiBiD … Viele Inseln"* (slide 6), layered basis
+  architecture (slides 10–11), NoSQL technology survey (slide 13),
+  multi-view analysis model (slide 9).
+- [krebsProDES2017b](#bib) — Nuschele, S. & Schuster, A. & Krebs, F.
+  (2017). *Industrie 4.0 @ ZLP — Prozessdatenerfassungssystem
+  (ProDES).* DLR ZLP Augsburg internal working deck, dated
+  2017-06-19. Filename
+  `dd112669-20170619_Prozessdatenerfassungssystem_ProDES.pptx`
+  (~6.4 MB; uploaded to AI working memory 2026-05-23). Three-author
+  iteration two months after [krebsProDES2017a](#bib); the addition
+  of Nuschele (PRAESTO first-author) and Schuster places the
+  PRAESTO-era authoring community on the same transitional document
+  as the iDMS architect — the load-bearing personal-authorship
+  bridge in §5. Adds the roadmap with milestones (slide 4: MS1 7/17
+  platform selection, MS2 9/17 OPC UA demo, MS3 ProComp demo 2018).
+- [krebsStatusProzessleitsystem2017](#bib) — Krebs, F. (2017).
+  *Status Prozessleitsystem.* DLR ZLP Augsburg internal working
+  deck, dated 2017-07-18. Filename
+  `c6a10fed-20170718_Status_Prozessleitsystem.pptx` (~2.0 MB; an
+  exact duplicate copy is present in the upload set as
+  `48f8e5b0-20170718_Status_Prozessleitsystem.pptx` — verified by
+  MD5 hash on 2026-05-23; treated as one source for citation).
+  Load-bearing evidence for §3.6.2: modular *Plug & Automate*
+  vision, cross-process information exchange as first step, Self-X
+  as future ambition.
+- [krebsNSROrchestrator2017](#bib) — Krebs, F. (2017). *NSR
+  Prozessleitsystem Architektur — Orchestrator-Konzept.* DLR ZLP
+  Augsburg internal working deck, dated 2017-09-14. Filename
+  `f88f8e4b-20170914_NSR_Orchestrator_Konzept.pptx` (~6.0 MB;
+  uploaded to AI working memory 2026-05-23). **Architecturally
+  load-bearing for both §3 (KIBID) and §4.4 (IPRO)**: the slide-3
+  IPRO architecture diagram (*IPRO: Aufbau*) explicitly labels
+  *KiBiD Adapter* among the participating components alongside
+  *Process Orchestrator*, *IOT 2040*, *Werkzeug-Wechsler*, *Festo
+  Ventil-Insel*, *Siemens S7-300 SPS*, *Router*, *Big Data Storage*,
+  *KUKA Robot Controller* — the first primary-source
+  corroboration that KIBID was IPRO's data layer (prior evidence
+  was hostname-level in source code).
+- [krebsI4Definition2017](#bib) — Krebs, F. (curator) (2017).
+  *Industry 4.0 defined* — curation of *Design News* article *From
+  Advanced Robotics to Rapid Prototyping: 10 of the Varied Faces
+  of Smart Manufacturing*. DLR ZLP Augsburg internal framing deck,
+  dated 2017-10-10. Filename
+  `ad29fe36-20171010_Industry_4.0_defined.pptx`. Framing artefact
+  for §3.6.3 — places the team's work in the Industrie 4.0
+  vocabulary.
+- [krebsNSRArchitektur2017](#bib) — Krebs, F. (2017). *NSR
+  Architektur.* DLR ZLP Augsburg internal working deck, dated
+  2017-12-04. Filename `43fafd03-20171204_NSR_Architektur.pptx`
+  (~3.3 MB; uploaded to AI working memory 2026-05-23). Substantive
+  content thin (visible slides carry template Lorem-Ipsum
+  boilerplate); the date itself is the evidentiary contribution to
+  §3.6.4 (architecture-vision-deliverable week, one day before
+  Vision Datenmanagement).
+- [krebsVisionDatamanagement2017](#bib) — Krebs, F. & Nuschele, S.
+  (2017). *Vision: Datenmanagement.* DLR ZLP Augsburg internal
+  working deck, cover date 2017-12-05, footer-date 2017-12-12.
+  Filename `7ff3d48c-20171205_Vision_Datenmanagement.pptx` (~5.4 MB;
+  uploaded to AI working memory 2026-05-23). Load-bearing evidence
+  for §3.6.4: the *Herausforderung: Datenmanagement* slide names
+  the digital-products diagnosis (Anwendung, Auslegungsdaten,
+  Werkstoffdaten, CAD Modelle, Numerische Modelle, Messdaten,
+  Quellcode, Berichte / Publikationen, Medien, *u.v.m.*) that the
+  iDMS data model is built to answer; the cover names the
+  authorship pair (Krebs + Nuschele) that will deliver it.
+- [krebsSoaMes](#bib) — Krebs, F. (date undetermined; ≈ late 2017
+  / early 2018). *SOA MES.* DLR ZLP Augsburg internal working
+  deck. Filename `e5da8afb-SOA_MES.pptx` (~750 KB; uploaded to AI
+  working memory 2026-05-23). Adjacent conceptual artefact for
+  §3.6.5: sketches a service-oriented Manufacturing Execution
+  System with the *Basis-Architektur* placing *SOA MES* alongside
+  *Prozess- und QS-Datensammlung (CUBE, KiBiD?)* — the **CUBE
+  acronym appears here with the KIBID? question-mark**, suggesting
+  late-2017/early-2018 dating. Workshop participant slide names
+  **Tobias Haase** (later first-named author on the 2021 Shepard
+  Zenodo record) as workshop co-organiser with Krebs — earliest
+  Haase↔Krebs personal link in the chapter's evidence.
 
 Related ZLP-Augsburg eLib records by the same authoring community
 (Nuschele, Schmidt, Krebs, Dutta) — included for context:
@@ -1369,10 +1481,19 @@ author to AI working memory; archived ZLP working documents):
 
 | Source | Date | Evidence supplied |
 | --- | --- | --- |
-| `20201104_iDMS_final.pptx` (iDMS final presentation) | 2020-11-04 | Krebs F., DLR Augsburg ZLP — iDMS architecture and IPRO use case snapshot at the end of the prototype's active development |
+| `Input_Florian_PRAESTO.pptx` (Krebs's PRAESTO-input deck) | date undetermined | Names supplier Kisters AG; "DLR seit 2010"; inspection-only scope diagram (§2.1) |
+| `20170425_Prozessdatenerfassungssystem_ProDES.pptx` (ProDES v1) | 2017-04-25 | Krebs (sole author) — "viele Inseln" diagnosis of PRAESTO/KIBID; layered architecture; NoSQL technology survey; multi-view analysis (§3.6.1) |
+| `20170619_Prozessdatenerfassungssystem_ProDES.pptx` (ProDES v2) | 2017-06-19 | **Nuschele + Schuster + Krebs** co-authored iteration — bridges PRAESTO authoring community to iDMS architect (§3.6.1, §5) |
+| `20170718_Status_Prozessleitsystem.pptx` (Status Prozessleitsystem) | 2017-07-18 | Plug & Automate vision, cross-process information exchange, Self-X future ambition (§3.6.2) |
 | `20170721_Prozessablauf.xlsx` (IPRO process flow) | 2017-07-21 | Composite-layup process sequence at the IPRO cell — confirms IPRO as direct CFRP technical lineage to MFFD (§4.4) |
-| IPRO operations TODO (plain-text) | undated, c. 2017 | Channel-namespace taxonomy `TPZ.*` / `IPRO.*`; OPC UA integration recorded DONE; force-sensor calibration parameters; KIBID series-creation worklist; `mwillmeroth` username (Mark Willmeroth, later 2021 shepard co-author) — password `[redacted historical credential]` (§3.5) |
+| `20170914_NSR_Orchestrator_Konzept.pptx` (NSR Orchestrator) | 2017-09-14 | **KiBiD Adapter named in IPRO architecture diagram** alongside KUKA / Festo / Siemens — primary-source proof KIBID was IPRO's data layer (§3.6.2) |
+| `20171010_Industry_4.0_defined.pptx` (I4.0 framing) | 2017-10-10 | Curated *Design News* piece; Industrie-4.0 vocabulary anchor (§3.6.3) |
 | IPRO Grafana dashboard screenshot | 2017-11-06 14:50–15:15 UTC | KUKA R10 live telemetry view: 6-axis joints, TCP position/orientation, tool force, I/O states — sourced from KIBID; figure-suitable for thesis use (§4.4) |
+| `20171204_NSR_Architektur.pptx` (NSR Architektur) | 2017-12-04 | Architecture-vision-deliverable week opens; substantive content thin, date itself is the contribution (§3.6.4) |
+| `20171205_Vision_Datenmanagement.pptx` (Vision Datenmanagement) | 2017-12-05 (footer 2017-12-12) | **Krebs + Nuschele** — *Herausforderung: Datenmanagement* diagnosis the iDMS data model is built to answer (§3.6.4) |
+| `SOA_MES.pptx` (SOA MES concept) | date undetermined (≈ late 2017 / early 2018) | CUBE acronym + *KiBiD?* with question mark; **Haase named as Krebs's workshop co-organiser** — earliest Haase↔Krebs link (§3.6.5, §5) |
+| IPRO operations TODO (plain-text) | undated, c. 2017 | Channel-namespace taxonomy `TPZ.*` / `IPRO.*`; OPC UA integration recorded DONE; force-sensor calibration parameters; KIBID series-creation worklist; `mwillmeroth` username (Mark Willmeroth, later 2021 shepard co-author) — password `[redacted historical credential]` (§3.5) |
+| `20201104_iDMS_final.pptx` (iDMS final presentation) | 2020-11-04 | Krebs F., DLR Augsburg ZLP — iDMS architecture and IPRO use case snapshot at the end of the prototype's active development |
 
 For the figure-suitable Grafana screenshot specifically, the
 caption proposed in §4.4 is the recommended thesis-register form.

@@ -1033,3 +1033,92 @@
   note         = {Forschungspolitische Ziele (research-policy targets) of the Helmholtz Association for the fifth Programme-Oriented Funding period PoF V (2028--2034). Binding cross-association targets that apply to ZLP Augsburg through its HGF-affiliated centre DLR. Three Datenmanagement obligations directly relevant to Shepard: (a) ``the definition of a joint and cross-cutting architecture concept for the data management infrastructure (data acquisition, data analysis / aggregation, data provision per FAIR principles, and IP management)''; (b) NFDI alignment required, not optional -- ``the fundamental inclusion of work and recommendations already produced by NFDI''; (c) Datenresilienz -- ``the safeguarding of data resilience to guarantee the availability, integrity and access to data even in the case of unforeseen events, disruptions or failures''. Sibling cross-association targets: Pakt f{\"u}r Forschung und Innovation continuity through PoF V; Nachhaltigkeit (joint sustainability strategy + climate-neutral operation of research infrastructures). Primary source for \texttt{aidocs/strategy/87-dlr-zlp-positioning.md} \S 7.5 (the federal-funding-cycle frame -- HGF research-policy targets for PoF V).},
   category     = {dlr_internal}
 }
+
+@unpublished{krebsIdms2020,
+  author       = {Krebs, Florian},
+  title        = {{CUBE iDMS --- Final Presentation}},
+  year         = {2020},
+  month        = nov,
+  howpublished = {35-slide internal presentation, DLR ZLP Augsburg, 2020-11-04. Filename \texttt{f3fd7c26-20201104\_iDMS\_final.pptx} ($\sim$18\,MB). Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S 4. Authoritative for: system name (``CUBE iDMS'', slide 14), architecture (slide 14: graph DB + per-data-type substrate, ``no one-size-fits all''), technology stack (slide 15: Neo4j + InfluxDB + MongoDB + Tomcat/Jersey + Flask + docker containers), data model (slide 17: Project / Experiment / Step / Artifact), vision (slide 10: ``one data base -- many digital twins''), data-pipeline model (slide 12: three input modes), Neo4j rationale (slide 16: schema-light iterative model growth), security model (slide 18: Keycloak + API-key JWTs at \texttt{bt-au-keycloak.intra.dlr.de}). Slide footers carry ``Datenmanagement > Florian Krebs 12.12.2017'' on multiple slides, evidence the 2020 deck is a refinement of the December 2017 vision (see \S 3.6.4 of \S 86).},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsProDES2017a,
+  author       = {Krebs, Florian},
+  title        = {{Industrie 4.0 @ ZLP --- Prozessdatenerfassungssystem (ProDES) v1}},
+  year         = {2017},
+  month        = apr,
+  howpublished = {Working PPTX, sole-author Krebs, DLR ZLP Augsburg, 2017-04-25 (slide footer 11.04.2017). Filename \texttt{20170425\_Prozessdatenerfassungssystem\_ProDES.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Earliest ProDES iteration. Sole-author Krebs. Cited at \texttt{aidocs/strategy/86} \S 3.6.1. Carries the ``many islands'' diagnosis of the state of the art at ZLP (PRAESTO + KIBID as isolated platforms), the layered basis architecture (Datenerfassung $\to$ Datenorganisation \& Datenablage $\to$ Datenzugriff $\to$ Analyse $\to$ Management \& Administration), and the NoSQL technology survey (Document / Column / Key-Value / Graph categories named with CouchDB, MongoDB, hBase, Cassandra, Neo4j, OrientDB).},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsProDES2017b,
+  author       = {Nuschele, Stefan and Schuster, Alfons and Krebs, Florian},
+  title        = {{Industrie 4.0 @ ZLP --- Prozessdatenerfassungssystem (ProDES) v2}},
+  year         = {2017},
+  month        = jun,
+  howpublished = {Working PPTX, three-author iteration, DLR ZLP Augsburg, 2017-06-19. Filename \texttt{20170619\_Prozessdatenerfassungssystem\_ProDES.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Two-month expansion of \texttt{krebsProDES2017a} adding Nuschele (PRAESTO author, \S 2 of \S 86) and Schuster as co-authors. First primary-source evidence that the PRAESTO-era authoring community and the iDMS-era architect co-authored a transitional design. Slide 27 (``Ein System -- mehrere Sichten'') names the three-views model (Prozessketten / Prozesse / Ressourcen) that surfaces verbatim in the December 2017 Vision deck and the 2020 iDMS final presentation. Slide 36 schedules ``MS1 12/17: Evaluation KiBiD abgeschlossen'' -- dating the KIBID-evaluation deadline six months in advance of the December Vision synthesis. Slide 38 (``M{\"o}gliche Komponenten eines IDMS am ZLP'') coins the ``iDMS'' name six months before the Vision deck. Cited at \texttt{aidocs/strategy/86} \S 3.6.1.},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsStatusProzessleitsystem2017,
+  author       = {Krebs, Florian},
+  title        = {{Status Prozessleitsystem}},
+  year         = {2017},
+  month        = jul,
+  howpublished = {13-slide working PPTX, DLR ZLP Augsburg, 2017-07-18. Filename \texttt{20170718\_Status\_Prozessleitsystem.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Cited at \texttt{aidocs/strategy/86} \S 3.6.2. Names the orchestration goal as ``modularisation of automation solutions (Vision: Plug \& Automate)'' with cross-process information exchange as concrete first step. Slide 10 frames the first iDMS-era orchestrator as ``einfache Schrittkettensteuerung einer SPS'' -- the PLC-step-sequence-into-software-orchestrator lineage that Shepard's importer-plugin family inherits. Slide 11 (``Status Big-Data-Adapter'') reports ``Aufzeichnung von Roboterdaten mittels KiBiD erfolgreich'' and names \textbf{Christian R{\"a}htz, Mark Willmeroth} on the integration workstream -- the earliest primary-source appearance of Willmeroth (later 2021 Shepard co-author per \texttt{haaseShepard2021}) in the predecessor record.},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsNSROrchestrator2017,
+  author       = {Krebs, Florian},
+  title        = {{NSR Prozessleitsystem Architektur (NSR Orchestrator Konzept)}},
+  year         = {2017},
+  month        = sep,
+  howpublished = {9-slide working PPTX, DLR ZLP Augsburg, 2017-09-14. Filename \texttt{20170914\_NSR\_Orchestrator\_Konzept.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S 3.6.2. Slide 3 (``IPRO: Aufbau'') names the IPRO architecture as ``4 Interface-Knoten, 3 Virtuelle Knoten, Kommunikation {\"u}ber OPC UA, Datenerfassung in KiBiD {\"u}ber HTTP Schnittstelle'' -- the first primary-source corroboration in the chapter that KIBID was the IPRO data-acquisition layer, named inside an architecture diagram by Krebs himself (until this deck, the KIBID$\to$IPRO connection was only hostname-level evidence in source code). Slide 5 (``Architektur: OPC UA Prozesleitsystem'') depicts the OPC-UA-router-fronting-heterogeneous-device-fleet pattern (KUKA + Siemens IOT 2040 + Festo CEC + Siemens S7-300) with ``Python implementation for all clients'' -- the architectural ancestor of \texttt{shepard-timeseries-collector}.},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsI4Definition2017,
+  author       = {Krebs, Florian},
+  title        = {{Industry 4.0 defined (curated reading of Design News article)}},
+  year         = {2017},
+  month        = oct,
+  howpublished = {12-slide reading-pass PPTX reproducing \emph{From Advanced Robotics to Rapid Prototyping: 10 of the Varied Faces of Smart Manufacturing} (Design News, 2017). DLR ZLP Augsburg, 2017-10-10. Filename \texttt{20171010\_Industry\_4.0\_defined.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Cited at \texttt{aidocs/strategy/86} \S 3.6.3. Not original design work but a vocabulary-adoption pass -- documents the moment Digital Twin, Cyber-Physical Systems, M2M and IoT vocabulary entered the iDMS design discourse from external trade press. Slide 11's ``Digital Twin: Virtual Products in Virtual Production'' definition becomes the ``one data base -- many digital twins'' framing in \texttt{krebsIdms2020} slide 10. Methodologically narrower evidentiary role than the surrounding decks (reading-pass, not design moment).},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsNSRArchitektur2017,
+  author       = {Krebs, Florian},
+  title        = {{NSR Architektur (working deck)}},
+  year         = {2017},
+  month        = dec,
+  howpublished = {Working PPTX, DLR ZLP Augsburg, 2017-12-04. Filename \texttt{20171204\_NSR\_Architektur.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Cited at \texttt{aidocs/strategy/86} \S 3.6.4. Substantive prose content thin (deck retained template Lorem-Ipsum boilerplate around figure placeholders), but the \emph{date and filename} establish that an NSR-architecture working deck was iterated on 2017-12-04 -- the day before the Vision-Datenmanagement deck. Bracket the December architecture-vision-deliverable week.},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsVisionDatamanagement2017,
+  author       = {Krebs, Florian and Nuschele, Stefan},
+  title        = {{Vision: Datenmanagement}},
+  year         = {2017},
+  month        = dec,
+  howpublished = {19-slide vision PPTX, DLR ZLP Augsburg, 2017-12-05 (slide-footer iteration date 12.12.2017). Filename \texttt{20171205\_Vision\_Datenmanagement.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S 3.6.4. The architectural blueprint that the 2020 iDMS final presentation (\texttt{krebsIdms2020}) refines, not synthesises. Slide 9 (``M{\"o}gliche Architektur eines integrierten Datenmanagementsystems'') is the direct architectural ancestor of \texttt{krebsIdms2020} slide 14 (graph-DB for relations + per-type substrates + ``kein one-size-fits all'' -- verbatim). Slide 10 (``Exkurs: Graphorientierte Datenbanken'') carries the schema-light justification (``Das Datenmodell muss nicht vollst{\"a}ndig sein, und kann st{\"a}ndig um neue Beziehungen erweitert werden'') that becomes \texttt{krebsIdms2020} slide 16 and Shepard's SHACL-driven model evolution. Slide 19 (``Weitergehende Fragestellungen'') articulates the open-source commitment (``Open Source Ansatz'', ``Umsetzung eines funktionalen Prototypen anschlie{\ss}end Transfer an und Upscaling durch Partner'') and Helmholtz Open Science alignment four years before Shepard appeared on GitLab. Footer date 12.12.2017 is exactly the KIBID-evaluation deadline that \texttt{krebsProDES2017b} slide 36 set six months in advance.},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsSoaMes,
+  author       = {Krebs, Florian},
+  title        = {{SOA MES --- Service-oriented architecture for a Manufacturing Execution System}},
+  year         = {2018},
+  howpublished = {7-slide conceptual PPTX, DLR ZLP Augsburg, date-undetermined (provisional dating range: late 2017 / early 2018). Filename \texttt{SOA\_MES.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
+  note         = {Cited at \texttt{aidocs/strategy/86} \S 3.6.5 as an adjacent conceptual artefact that cannot be ordered by its own metadata. ``Everything is a service'' framing with three participant classes (physical / virtual / worker-ERP) and a four-step task-execution model. Slide 6's Basis-Architektur places \emph{SOA MES} alongside \emph{Prozess- und QS-Datensammlung (CUBE, KiBiD?)} -- the CUBE acronym appears at slide-label level with \emph{KiBiD?} carrying a question mark. Workshop-organiser slide names \textbf{Tobias Haase} (first-named 2021 Shepard Zenodo author per \texttt{haaseShepard2021}) and Krebs as co-organisers -- the earliest primary source in \S 86 linking Haase to Krebs's working community.},
+  category     = {dlr_internal}
+}
