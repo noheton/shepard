@@ -154,6 +154,15 @@ its result against the pairs Shepard cares about.
   best ~0.65. Across 20 datasets, LLM-only configurations match or
   beat traditional OM systems "particularly in complex matching
   scenarios."
+- **CAVEAT (added 2026-05-23 per persona-audit-ontology-mapping-2026-05-23.md
+  ESCALATION-ONT-3):** The "MSE track" cited above is the 2023 OAEI
+  Materials Science & Engineering track, which is **no longer active in
+  OAEI 2025**. The MSE-Benchmark GitHub repo (`mse-benchmark/mse-benchmark`)
+  is dormant since 2022-11. Shepard's MFFD demonstrator therefore lands
+  as a **"would-be MSE-track revival"** rather than "production-validated
+  alignment against the current OAEI benchmark." The strategic
+  opportunity (revive the MSE track in OAEI 2026 with TIB + DLR
+  co-authoring) is captured under ESCALATION-ONT-4 in the audit doc.
 - **Strengths for Shepard.** **This is the framework directly applicable
   to Shepard's hardest pair (CHAMEO ↔ MatOnto).** Materials track was
   a major focus.

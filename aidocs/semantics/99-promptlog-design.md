@@ -436,8 +436,8 @@ serves.
 | `GET /v2/promptlog/runs` | List with filters: `model`, `provider`, `agent_id`, `started_after`, `started_before`, `min_score`, `template_id`, `claim_status`. Paginated. | `pages/promptlog/runs/index.vue` (the discovery surface) | — |
 | `GET /v2/promptlog/runs/{appId}/lineage` | Predecessor + successor PromptRuns across the chain (PROV `wasInformedBy`). | `pages/promptlog/runs/[id]/lineage.vue` (chain DAG view) | — |
 | `GET /v2/promptlog/runs/{appId}/similar?k=10` | Embedding-similarity search via pgvector. | `pages/promptlog/runs/[id]/similar.vue` (rec-style sidebar) | — |
-| `GET /v2/promptlog/templates/{appId}/runs` | All runs of a template (the "callers" view). | `pages/promptlog/templates/[id]/runs.vue` | — |
-| `GET /v2/promptlog/agents/{appId}/runs` | All runs by a model — the "what did Claude Opus 4.7 do this week?" view. | `pages/promptlog/agents/[id]/runs.vue` | — |
+| ~~`GET /v2/promptlog/templates/{appId}/runs`~~ | **DROPPED 2026-05-23** per persona-audit ESCALATION-PROMPT-3 (API Scrutinizer): redundant with `GET /v2/promptlog/runs?template_id=…`. UI binding `pages/promptlog/templates/[id]/runs.vue` calls the canonical filter query instead. | — | — |
+| ~~`GET /v2/promptlog/agents/{appId}/runs`~~ | **DROPPED 2026-05-23** per persona-audit ESCALATION-PROMPT-3: redundant with `GET /v2/promptlog/runs?agent_id=…`. UI binding `pages/promptlog/agents/[id]/runs.vue` calls the canonical filter query instead. | — | — |
 
 ### 5.1 Argument for the surface size
 
