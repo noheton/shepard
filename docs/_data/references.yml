@@ -1899,3 +1899,47 @@ krebsShepardSpatialConcept2023:
   howpublished: "10-slide internal design deck, DLR ZLP Augsburg (BT), 2023-01-24. Filename shepard_spatial_concept.pptx. Uploaded to AI working memory 2026-05-23 by F.~Krebs. Authorship verified via pptx docProps/core.xml (dc:creator: Krebs, Florian). Slide-1 explicit authoring date: ``Florian Krebs, BT, 24.1.2023''. The pptx file-system dcterms:created: 2021-06-11 reflects a cloned template, not the authoring date; slide-1 date is authoritative."
   note: "Primary source for aidocs/data/81-spatial-data-binding.md \\S 8a. Design ancestor of plugin-spatial (aidocs/16 task #79) and of the current spatial DataBinding design. Five claims that survive in present design: (1)~Spatial as a first-class kind alongside time-series / GIT / files / structured documents (slide-2 architecture diagram, slide-3 four-lane extension shape: Frontend / API Extension / Processing / Data storage); (2)~Payload schema (slide 4): mandatory \\emphcoordinates (x,y,z) + \\emphmeasurement data (scalar; 1D/nD array; serialised JSON); optional \\emphtimestamp, \\emphorientation (Euler angles), \\emphoperational metadata (coordinate system, track/run number, layer); (3)~Three operation classes (slide 5): POST /store for live capture, POST /import for a-posteriori capture, GET /select for retrieval with k-nearest / bounding-sphere / bounding-box / by-timestamp / by-metadata queries + downsampling + coordinate-transform; (4)~Container as the permission boundary (slide 10) analogous to timeseries containers; (5)~Spatio-temporal as the outlook layer (slide 8 ``Join classic timeseries and spatial data''; slide 9 ``Outlook: Spatio-temporal data''). Slide 4 even sketches the URL shape: col/do T123[scanDir:right]/spatialRef $\\rightarrow$ payload."
   category: "dlr_internal"
+
+guelhan_2022_stort_iac:
+  entry_type: "inproceedings"
+  author: "Gülhan, Ali and Hargarten, Dorian Amadeus and Zurkaulen, Maximilian and Klingenberg, Florian and Siebe, Frank and Reimer, Thomas and Di Martino, Giuseppe"
+  title: "Objectives and Achievements of the Hypersonic Flight Experiment STORT"
+  booktitle: "73rd International Astronautical Congress (IAC 2022)"
+  year: "2022"
+  address: "Paris"
+  month: "sep"
+  number: "IAC-22-D2.6.7x69473"
+  issn: "0074-1795"
+  url: "https://elib.dlr.de/189284/"
+  note: "DLR eLib 189284. STORT = Schlüsseltechnologien für hochenergetische Rückkehrflüge der Trägerstufen --- DLR-led hypersonic sounding-rocket experiment. Three-stage configuration, achieved Mach 8+. Lead investigator Gülhan (ORCID 0000-0003-4905-5881). Partner institutes: DLR Institute for Aerodynamics and Flow Technology + Mobile Rocket Base. Funding: HGF Space Programme / DLR Space Focus. Cited from aidocs/strategy/95 \\S 1 as the primary STORT objectives publication; STORT is the second of two DaMaST Vorhaben use-cases (alongside LUMEN)."
+  category: "dlr_internal"
+
+guelhan_2023_stort_acta:
+  entry_type: "article"
+  author: "Gülhan, Ali and others"
+  title: "Selected results of the hypersonic flight experiment STORT"
+  journal: "Acta Astronautica"
+  year: "2023"
+  url: "https://elib.dlr.de/200758/"
+  note: "DLR eLib 200758. Peer-reviewed comprehensive-results paper for the STORT hypersonic flight experiment. Cited from aidocs/strategy/95 \\S 1 as the STORT load-bearing peer-reviewed publication of record."
+  category: "dlr_internal"
+
+reimer_2025_stort_aiaa:
+  entry_type: "inproceedings"
+  author: "Reimer, Thomas and Di Martino, Giuseppe and Dauth, Mario and Baier, Hans-Joachim and Gülhan, Ali and Klingenberg, Florian and Hargarten, Dorian Amadeus"
+  title: "STORT Hypersonic Flight Experiment Forebody Temperature Results"
+  booktitle: "AIAA SciTech Forum 2025"
+  year: "2025"
+  month: "jan"
+  url: "https://elib.dlr.de/218011/"
+  note: "DLR eLib 218011. AIAA SciTech presentation of STORT forebody temperature instrumentation results. Cited from aidocs/strategy/95 \\S 1 as the recent thermal-management measurements publication."
+  category: "dlr_internal"
+
+dimartino_2026_stort_tps:
+  entry_type: "article"
+  author: "Di Martino, Giuseppe and Reimer, Thomas and Baier, Hans-Joachim and Dauth, Mario and Hargarten, Dorian Amadeus and Gülhan, Ali"
+  title: "Thermo-Mechanical Design of the C/C-SiC-Based Thermal Protection Structure for the Forebody of the Hypersonic Sounding Rocket STORT"
+  year: "2026"
+  url: "https://elib.dlr.de/223910/"
+  note: "DLR eLib 223910. Thermo-mechanical design publication for STORT's C/C-SiC thermal protection structure. Cited from aidocs/strategy/95 \\S 1 as the engineering-detail publication on the CMC thermal-protection system used in STORT."
+  category: "dlr_internal"

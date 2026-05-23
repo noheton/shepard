@@ -24,14 +24,37 @@ cluster, scoped at roughly half a person-year (~0.5 PJ) per annum
 
 **Two-phase shape (per the deck):**
 
-- **2025 (Vorhaben 2025, ~0.5 PJ).** Use-case selection (*STORT*
-  hyperschall-experiment + *LUMEN* triebwerkstest — **`examples/lumen-showcase/`
-  in this fork is the operational synthetic demonstrator of this exact
-  DaMaST use-case**, not merely a namesake. Per operator clarification
-  2026-05-23: *"LUMEN showcase is actually DaMaST"*. The showcase code,
-  the DaMaST Vorhaben, and the 93-page DaMaST workshop protocol (Oct
-  2024 Göttingen requirements workshop) are three surfaces of one
-  initiative); user-requirement interviews across
+- **2025 (Vorhaben 2025, ~0.5 PJ).** Use-case selection. The two named
+  DaMaST use-cases:
+  - **STORT** — *Schlüsseltechnologien für hOchenergetische Rückkehrflüge
+    der Trägerstufen* (Key Technologies for High-Energy Return Flights of
+    Launch Vehicle Stages). DLR-led hypersonic sounding-rocket experiment;
+    three-stage configuration; achieved Mach 8+ flight; tested CMC
+    (C/C-SiC) thermal-protection structures and thermal-management
+    instrumentation. Lead investigator: Ali Gülhan (DLR-AS, ORCID
+    `0000-0003-4905-5881`). Partner institutes: DLR Institute for
+    Aerodynamics and Flow Technology (AS) + Mobile Rocket Base (MORABA).
+    Funding: HGF Space Programme / DLR Space Focus / Space Transport
+    Research Division. Key publications: Gülhan et al., *Objectives and
+    Achievements of the Hypersonic Flight Experiment STORT*, IAC 2022
+    Paris [eLib 189284, @guelhan_2022_stort_iac]; Gülhan et al.,
+    *Selected results of the hypersonic flight experiment STORT*, Acta
+    Astronautica 2023 [eLib 200758, @guelhan_2023_stort_acta]; Reimer et
+    al., *STORT Hypersonic Flight Experiment Forebody Temperature
+    Results*, AIAA SciTech 2025 [eLib 218011, @reimer_2025_stort_aiaa];
+    Di Martino et al., *Thermo-Mechanical Design of the C/C-SiC-Based
+    Thermal Protection Structure for the Forebody of the Hypersonic
+    Sounding Rocket STORT*, 2026 [eLib 223910, @dimartino_2026_stort_tps].
+  - **LUMEN** — *Liquid Upper-stage Methane ENgine* triebwerkstest at
+    Lampoldshausen. **`examples/lumen-showcase/`
+    in this fork is the operational synthetic demonstrator of this exact
+    DaMaST use-case**, not merely a namesake. Per operator clarification
+    2026-05-23: *"LUMEN showcase is actually DaMaST"*. The showcase code,
+    the DaMaST Vorhaben, and the 93-page DaMaST workshop protocol (Oct
+    2024 Göttingen requirements workshop) are three surfaces of one
+    initiative.
+
+  Vorhaben 2025 also covered user-requirement interviews across
   Raumfahrt-institutes AS, BT, RA, RB, RY; preparation of the 2026+
   project proposal. Slide 4 marks the 2025 proposal pass as *gescheitert*
   (failed) with stated reasons: *komplexe Interaktionen* and *offene
