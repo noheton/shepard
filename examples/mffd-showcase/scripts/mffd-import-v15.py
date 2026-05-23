@@ -154,7 +154,13 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.19"
+IMPORT_SCRIPT_VERSION = "16.0"
+
+# v16 PRESERVE-HIERARCHY — sentinel for "parentId kwarg not supplied" on
+# patch_data_object(). Distinct from None, which is a LEGAL parentId value
+# meaning "make this DO top-level (no parent)". Using a module-level
+# singleton lets the kwarg default participate in `is` identity checks.
+_UNSET_PARENT: Any = object()
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -689,6 +695,12 @@ class SourceDO:
     # v15.8 IMPORT-PERF2 — source coll_id captured at yield-time so lazy
     # loaders can fetch refs without the caller threading state.
     _src_coll_id: int = 0
+    # v16 PRESERVE-HIERARCHY — parentId + predecessorIds carried from the
+    # source DataObject response so Pass 2 can wire dest edges via the
+    # src→dest id map. parentId is nullable per OpenAPI 5.4.0; predecessorIds
+    # defaults to an empty list (v15 source DOs may not have them set).
+    parentId: int | None = None
+    predecessorIds: list[int] = field(default_factory=list)
 
 
 # ── HTTP client ───────────────────────────────────────────────────────────────
@@ -948,6 +960,21 @@ class ShepardClient:
                 break
             for item in items:
                 do_id = item["id"]
+                # v16 PRESERVE-HIERARCHY — capture source tree edges so Pass 2
+                # can wire dest parent+predecessor relationships. parentId may
+                # be null (top-level DO) or absent (older payloads).
+                _parent = item.get("parentId")
+                try:
+                    _parent_id_int = int(_parent) if _parent is not None else None
+                except (TypeError, ValueError):
+                    _parent_id_int = None
+                _pred_raw = item.get("predecessorIds") or []
+                _pred_ids: list[int] = []
+                for _p in _pred_raw:
+                    try:
+                        _pred_ids.append(int(_p))
+                    except (TypeError, ValueError):
+                        continue
                 yield SourceDO(
                     do_id=do_id,
                     name=item.get("name", f"DO-{do_id}"),
@@ -962,6 +989,8 @@ class ShepardClient:
                     created=item.get("creationDate") or item.get("createdAt") or "",
                     modified=item.get("modificationDate") or item.get("updatedAt") or "",
                     _src_coll_id=coll_id,
+                    parentId=_parent_id_int,
+                    predecessorIds=_pred_ids,
                 )
             total_pages = int(r.headers.get("X-Total-Pages", page + 1))
             page += 1
@@ -1282,6 +1311,7 @@ class ShepardClient:
         predecessor_ids: list[int] | None = None,
         license: str | None = None,
         access_rights: str | None = None,
+        parent_id: int | None = None,
     ) -> dict | None:
         """Bug I fix: set `predecessorIds` inside the DataObject body at POST.
 
@@ -1303,6 +1333,12 @@ class ShepardClient:
             pred_list.append(int(predecessor_id))
         if pred_list:
             body["predecessorIds"] = pred_list
+        # v16 PRESERVE-HIERARCHY — parentId is writable + nullable per
+        # OpenAPI 5.4.0; pass-through when caller supplied a value (None
+        # is a legal value meaning "top-level DO", omitted means "don't
+        # specify").
+        if parent_id is not None:
+            body["parentId"] = int(parent_id)
         # v15.1: FAIR R1 license + accessRights — present only when operator
         # supplied them via --default-license / --default-access-rights.
         if license:
@@ -1313,6 +1349,53 @@ class ShepardClient:
         if r is None:
             return None
         return r.json()
+
+    def patch_data_object(
+        self,
+        coll_id: int,
+        do_id: int,
+        parentId: Any = _UNSET_PARENT,
+        predecessorIds: list[int] | None = None,
+    ) -> bool:
+        """v16 PRESERVE-HIERARCHY — set parentId + predecessorIds on an
+        existing DataObject via the v5.4.0 PUT endpoint (no real PATCH on
+        the upstream surface).
+
+        Read-modify-write: GET the current DO, mutate the writable fields,
+        strip the truly-readonly fields (NOT parentId, NOT predecessorIds —
+        both are writable per OpenAPI 5.4.0), PUT.
+
+        ``parentId`` semantics:
+          - Omit the kwarg → existing parentId on the dest DO is preserved.
+          - Pass ``None`` → DO becomes top-level (parentId cleared).
+          - Pass an int → DO's parent is set to that id.
+
+        ``predecessorIds`` semantics:
+          - Omit (``None``) → existing predecessorIds preserved.
+          - Pass ``[]`` → predecessors cleared.
+          - Pass a list → predecessors REPLACED with that list (idempotent).
+        """
+        r = self._get(
+            f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+        )
+        if r is None:
+            return False
+        body = r.json()
+        if parentId is not _UNSET_PARENT:
+            body["parentId"] = int(parentId) if parentId is not None else None
+        if predecessorIds is not None:
+            body["predecessorIds"] = [int(p) for p in predecessorIds]
+        # Strip ONLY the truly readonly fields per OpenAPI 5.4.0.
+        # NOTE: `parentId` + `predecessorIds` are writable — do NOT strip.
+        # `set_predecessors` (legacy v15 helper) over-strips parentId; this
+        # method is the v16 replacement that preserves parentId on PUT.
+        for k in (
+            "id", "createdAt", "createdBy", "updatedAt", "updatedBy", "collectionId",
+            "referenceIds", "successorIds", "childrenIds", "incomingIds",
+        ):
+            body.pop(k, None)
+        url = f"{self._base}/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+        return self._put(url, body) is not None
 
     def set_predecessors(self, coll_id: int, do_id: int, pred_ids: list[int]) -> bool:
         """Bug I fix: post-creation predecessor wiring via PUT on the DataObject body.
@@ -2767,6 +2850,221 @@ def _persist_completeness_artifact(verdict: dict, dest_client: "ShepardClient", 
         print(f"  [completeness-warn] anchor upload skipped: {e!r}")
 
 
+# ── v16 PRESERVE-HIERARCHY helpers (module-level for test access) ─────────────
+#
+# Pass 1, Pass 2, and the per-DO target-resolution live as module-level
+# helpers (not nested closures inside `run_source_mode`) so the unit tests
+# can drive them directly with mocked dest_clients + synthetic SourceDOs.
+# Per `feedback_validate_via_ui.md` + the v16 spec: every code path must be
+# unit-testable; closure-trapped logic isn't.
+
+
+def v16_pass1_create_dest_mirrors(
+    src_dos: list[SourceDO],
+    dest_client: ShepardClient,
+    coll_id: int,
+    step_key: str,
+    state: "ImportState | None",
+    src_coll_id: int,
+    source_url: str = "",
+    source_user_info: dict | None = None,
+    session_id: str = "",
+    import_time: str = "",
+) -> dict[int, dict[str, Any]]:
+    """v16 Pass 1 — create one dest DO per source DO; populate src→dest map.
+
+    Returns ``{src_do_id: {"dest_id": int, "dest_app_id": str}}``. Resume-safe:
+    if `state.get_dest_id(src_do_id)` already has a value the source DO is
+    skipped (no new POST) and the persisted mapping is preserved. Failures
+    are logged but don't abort — the failed src DO just doesn't appear in
+    the returned map (Pass 2 + Pass 3 silently skip it).
+
+    The dest DO is created with NAME + ATTRIBUTES + DESCRIPTION only.
+    parentId + predecessorIds are wired in Pass 2 (forward refs work because
+    Pass 1 completes the full src list before Pass 2 starts).
+    """
+    src_to_dest: dict[int, dict[str, Any]] = {}
+    created = resumed = failed = 0
+    for src_do in src_dos:
+        # Resume safety — persisted dest_id wins over a fresh POST.
+        existing_id = state.get_dest_id(src_do.do_id) if state else None
+        if existing_id:
+            existing_app_id = state.get_dest_app_id(src_do.do_id) if state else None
+            if not existing_app_id:
+                # Recover appId via GET when older state files didn't persist it.
+                r = dest_client._get(
+                    f"{dest_client._base}/shepard/api/collections/"
+                    f"{coll_id}/dataObjects/{existing_id}"
+                )
+                if r is not None:
+                    try:
+                        existing_app_id = r.json().get("appId") or ""
+                    except Exception:
+                        existing_app_id = ""
+            src_to_dest[src_do.do_id] = {
+                "dest_id": int(existing_id),
+                "dest_app_id": existing_app_id or "",
+            }
+            resumed += 1
+            continue
+
+        # Build per-leaf attrs — source provenance + caller context.
+        leaf_attrs: dict[str, str] = {k: str(v) for k, v in (src_do.attributes or {}).items()}
+        leaf_attrs.update({
+            "source_do_id": str(src_do.do_id),
+            "source_coll_id": str(src_coll_id),
+            "source_instance": source_url,
+            "process_step": step_key,
+            "session": session_id,
+            "campaign": "MFFD",
+            "import_time": import_time,
+            "v16_pass1": "1",
+        })
+        if src_do.created:
+            leaf_attrs["source_created"] = src_do.created
+        if src_do.modified:
+            leaf_attrs["source_modified"] = src_do.modified
+        if source_user_info:
+            su_user = source_user_info.get("username") or ""
+            if su_user:
+                leaf_attrs["source_user_username"] = su_user
+
+        # OpenAPI 5.4.0 — `name` requires `\\S` pattern. Fallback for blanks.
+        leaf_name = src_do.name.strip() if src_do.name else ""
+        if not leaf_name:
+            leaf_name = f"src-do-{src_do.do_id}"
+
+        leaf = dest_client.create_data_object(
+            coll_id, leaf_name,
+            description=src_do.description or "",
+            attrs=leaf_attrs,
+        )
+        if not leaf or not leaf.get("id"):
+            failed += 1
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 FAILED "
+                f"to create leaf for src_do_id={src_do.do_id} name={leaf_name!r}"
+            )
+            continue
+        new_id = int(leaf["id"])
+        new_app_id = str(leaf.get("appId") or "")
+        src_to_dest[src_do.do_id] = {"dest_id": new_id, "dest_app_id": new_app_id}
+        created += 1
+        if state is not None:
+            state.set_dest_id(src_do.do_id, new_id, new_app_id)
+    print(
+        f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 done — "
+        f"created={created} resumed={resumed} failed={failed}"
+    )
+    return src_to_dest
+
+
+def v16_pass2_wire_edges(
+    src_dos: list[SourceDO],
+    src_to_dest: dict[int, dict[str, Any]],
+    step_dest_do_id: int,
+    dest_client: ShepardClient,
+    coll_id: int,
+    step_key: str = "",
+) -> tuple[int, int]:
+    """v16 Pass 2 — PATCH each dest DO with parentId + predecessorIds via the
+    src→dest map. Returns (wired, failed).
+
+    Mapping rules:
+      * Top-level src DOs (parentId == None / not in map) reparent under
+        ``step_dest_do_id`` so the entire imported tree stays browsable
+        from the step DO root.
+      * Cross-step predecessors (not in ``src_to_dest``) are silently
+        dropped. Intra-step predecessors are mapped.
+      * Forward references in the source's predecessor list work because
+        Pass 1 completes the full src list before Pass 2 starts (every
+        intra-step src_do_id is already in the map).
+    """
+    wired = failed = 0
+    for src_do in src_dos:
+        leaf = src_to_dest.get(src_do.do_id)
+        if not leaf:
+            continue
+        src_parent = src_do.parentId
+        if src_parent and src_parent in src_to_dest:
+            parent_dest_id: int | None = int(src_to_dest[src_parent]["dest_id"])
+        else:
+            # Top-level (or cross-step parent) → reparent under step DO.
+            parent_dest_id = int(step_dest_do_id)
+        pred_dest_ids: list[int] = [
+            int(src_to_dest[p]["dest_id"])
+            for p in (src_do.predecessorIds or [])
+            if p in src_to_dest
+        ]
+        ok = dest_client.patch_data_object(
+            coll_id, int(leaf["dest_id"]),
+            parentId=parent_dest_id,
+            predecessorIds=pred_dest_ids if pred_dest_ids else None,
+        )
+        if ok:
+            wired += 1
+        else:
+            failed += 1
+    if step_key:
+        print(
+            f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 2 done — "
+            f"wired={wired} failed={failed}"
+        )
+    return wired, failed
+
+
+def v16_resolve_target(
+    src_do: SourceDO,
+    v16_src_to_dest: dict[int, dict[str, Any]] | None,
+    step_dest_do_id: int,
+    step_dest_app_id: str,
+    step_key: str,
+) -> dict[str, Any]:
+    """v16 Pass 3 — per-source-DO target resolution.
+
+    When ``v16_src_to_dest`` is non-None and contains ``src_do.do_id``, the
+    per-DO file/TS/SD writes route to the LEAF dest DO created in Pass 1
+    (preserves hierarchy). When None, writes route to the STEP dest DO
+    (v15 flat fallback).
+
+    Returns a dict with:
+      * ``target_dest_do_id`` — the int id to use in link_structured_to_do
+        and upload_file's coll_id/do_id args.
+      * ``target_dest_app_id`` — the str appId for upload_file's first arg.
+      * ``do_done_key`` — state key for is_do_done / mark_do_done. v16 keys
+        by ``src_do.do_id`` (stable across name changes); v15 keys by name.
+      * ``existing_names`` — name set for upload-skip dedup. v16: empty
+        (leaves are fresh — no existing refs). v15: caller's snapshot.
+      * ``active`` — True when v16-mode resolution applied, False for v15.
+      * ``missing_leaf`` — True when v16-mode active but no leaf was created
+        (Pass 1 failed for this DO); caller should skip.
+    """
+    if v16_src_to_dest is None:
+        return {
+            "target_dest_do_id": step_dest_do_id,
+            "target_dest_app_id": step_dest_app_id,
+            "do_done_key": f"{step_key}/{src_do.name}",
+            "active": False,
+            "missing_leaf": False,
+        }
+    leaf = v16_src_to_dest.get(src_do.do_id)
+    if not leaf:
+        return {
+            "target_dest_do_id": step_dest_do_id,
+            "target_dest_app_id": step_dest_app_id,
+            "do_done_key": f"v16/{step_key}/{src_do.do_id}",
+            "active": True,
+            "missing_leaf": True,
+        }
+    return {
+        "target_dest_do_id": int(leaf["dest_id"]),
+        "target_dest_app_id": str(leaf.get("dest_app_id") or ""),
+        "do_done_key": f"v16/{step_key}/{src_do.do_id}",
+        "active": True,
+        "missing_leaf": False,
+    }
+
+
 def run_source_mode(
     dest_client: ShepardClient,
     coll_id: int,
@@ -3066,7 +3364,16 @@ def run_source_mode(
         # N parallel calls would all ask the dest for the same list. Snapshot
         # once at step start; the state-file `is_file_done` check stays per-DO
         # and is the real correctness guard against double-upload.
-        existing_names_snapshot = dest_client.list_file_refs(coll_id, dest_do_id)
+        #
+        # v16: in PRESERVE-HIERARCHY mode every leaf is freshly created in
+        # Pass 1 (or resumed from the state file), so existing-names dedup
+        # against the STEP DO is meaningless. Skip the network round-trip
+        # entirely; rely on `state.is_file_done` for resume correctness.
+        v16_enabled_for_step = os.environ.get("MFFD_PRESERVE_HIERARCHY", "1") == "1"
+        if v16_enabled_for_step:
+            existing_names_snapshot: set[str] = set()
+        else:
+            existing_names_snapshot = dest_client.list_file_refs(coll_id, dest_do_id)
 
         # v15.15 BUG-F2 — SD container is PREDEFINED for this step. Look up
         # the pre-created container id (validated at run_source_mode startup
@@ -3082,6 +3389,18 @@ def run_source_mode(
         ts_failed = 0
         structured_imported = 0
         structured_failed = 0
+
+        # v16 PRESERVE-HIERARCHY — populated in Pass 1 below when the env
+        # flag is on. Maps src_do_id → {"dest_id": int, "dest_app_id": str}.
+        # When non-None, `_process_one_source_do` routes file / TS / SD
+        # writes to the LEAF dest DO (src_to_dest[src.do_id]) instead of
+        # the step DO, drops the `src_do.name/` prefix from dest_name +
+        # ref_name (the leaf IS the source DO so the prefix is now a
+        # double-prefix), uses an empty existing_names set (leaves are
+        # fresh dest DOs — zero existing refs at Pass 3 start, the state
+        # file is the real correctness guard), and switches state keys
+        # to src_do_id from src_do.name (stable resume).
+        v16_src_to_dest: dict[int, dict[str, Any]] | None = None
 
         def _process_one_source_do(src_do: SourceDO, do_bar: Any) -> dict[str, int]:
             """v15.8 IMPORT-PERF1 — per-DO unit of work.
@@ -3118,9 +3437,25 @@ def run_source_mode(
             corr_id = f"{step_key}:{src_do.do_id}"
             do_start_s = time.time()
 
-            # v15.8 PERF2 per-DO short-circuit. Key by step + name so the
-            # same source name in tapelaying vs bridgewelding doesn't collide.
-            do_done_key = f"{step_key}/{src_do.name}"
+            # v16 PRESERVE-HIERARCHY — module-level helper resolves the
+            # per-DO target (leaf in v16 mode, step DO in v15 fallback).
+            # Direct unit-testable via test_v16_resolve_target_picks_leaf.
+            _target = v16_resolve_target(
+                src_do, v16_src_to_dest, dest_do_id, dest_app_id, step_key,
+            )
+            if _target.get("missing_leaf"):
+                do_bar.write(
+                    f"  ↳ {src_do.name}  [v16-skip — Pass 1 did not "
+                    f"create a dest mirror (likely 4xx); see prior logs]"
+                )
+                return counts
+            _target_dest_do_id: int = int(_target["target_dest_do_id"])
+            _target_dest_app_id: str = str(_target["target_dest_app_id"])
+            _v16_active: bool = bool(_target["active"])
+            do_done_key = _target["do_done_key"]
+            _existing_names: set[str] = (
+                set() if _v16_active else existing_names_snapshot
+            )
             if state is not None and state.is_do_done(do_done_key):
                 do_bar.write(f"  ↳ {src_do.name}  [skip-do — fully done in prior run]")
                 _diag_emit("do_skip", {
@@ -3149,15 +3484,24 @@ def run_source_mode(
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmp = Path(tmpdir)
                 for fref in file_refs:
-                    dest_name = f"{src_do.name}/{fref.name}"
-                    state_key = f"{step_key}/{dest_name}"
+                    # v16: file lands ON the leaf dest DO whose name IS
+                    # src_do.name — dropping the prefix avoids the double-
+                    # prefix `TR-004/TR-004/file.csv` that v15 would emit
+                    # under hierarchy mode. State key also switches to
+                    # src_do_id for stable resume.
+                    if _v16_active:
+                        dest_name = fref.name
+                        state_key = f"v16/file/{step_key}/{src_do.do_id}/{fref.fref_id}"
+                    else:
+                        dest_name = f"{src_do.name}/{fref.name}"
+                        state_key = f"{step_key}/{dest_name}"
 
                     if state is not None and state.is_file_done(state_key):
                         do_bar.write(f"    [skip-file] {dest_name}")
                         counts["files_skipped"] += 1
                         continue
 
-                    if dest_name in existing_names_snapshot or fref.name in existing_names_snapshot:
+                    if dest_name in _existing_names or fref.name in _existing_names:
                         do_bar.write(f"    [skip-file] {fref.name}")
                         counts["files_skipped"] += 1
                         if state is not None:
@@ -3174,7 +3518,7 @@ def run_source_mode(
                         continue
 
                     ok = dest_client.upload_file(
-                        dest_app_id, tmp_file, dest_name, coll_id, dest_do_id
+                        _target_dest_app_id, tmp_file, dest_name, coll_id, _target_dest_do_id
                     )
                     if ok:
                         do_bar.write(f"    [ok-file] {dest_name}  ({_human(fref.size)})")
@@ -3246,9 +3590,14 @@ def run_source_mode(
                     continue
                 # Reference name carries the per-Execution identity (so the UI
                 # shows which Execution this oid belongs to); container is shared.
-                ref_name = f"{src_do.name}/{sd_ref.name}"
+                # v16: ref lands on the LEAF (named `src_do.name` already),
+                # so the prefix is dropped to avoid the double-prefix.
+                if _v16_active:
+                    ref_name = sd_ref.name
+                else:
+                    ref_name = f"{src_do.name}/{sd_ref.name}"
                 linked = dest_client.link_structured_to_do(
-                    coll_id, dest_do_id, container_id, ref_name, oids=[oid]
+                    coll_id, _target_dest_do_id, container_id, ref_name, oids=[oid]
                 )
                 if linked:
                     do_bar.write(f"    [ok-sd] {sd_ref.name} -> oid={oid[:12]}...")
@@ -3330,16 +3679,86 @@ def run_source_mode(
 
             return counts
 
+        # ── v16 PRESERVE-HIERARCHY: Pass 1 + Pass 2 ────────────────────────
+        #
+        # Gated on MFFD_PRESERVE_HIERARCHY (default "1" — ON). Setting
+        # MFFD_PRESERVE_HIERARCHY=0 falls back to the v15 flat shape (every
+        # source DO collapsed to ref-prefix on the single step DO).
+        #
+        # Pass 1: flat-enumerate the source collection (paginated; all-depth)
+        #         and create a dest DO per source DO (name + attributes +
+        #         description; parentId set in Pass 2). Persists the
+        #         src→dest mapping via state.set_dest_id for resume safety.
+        #
+        # Pass 2: for each source DO, PUT the dest DO with parentId mapped
+        #         via src_to_dest + predecessorIds mapped via src_to_dest.
+        #         Top-level source DOs (parentId == None) reparent under
+        #         the STEP dest DO so the entire tree stays browsable from
+        #         the step root.
+        #
+        # Pass 3: the existing per-DO loop body iterates the materialized
+        #         list, routing writes to the leaf via v16_src_to_dest.
+        v16_enabled = os.environ.get("MFFD_PRESERVE_HIERARCHY", "1") == "1"
+        all_src_v16: list[SourceDO] | None = None
+        if v16_enabled:
+            if state is None:
+                print(
+                    f"  [v{IMPORT_SCRIPT_VERSION}] WARN: PRESERVE-HIERARCHY mode active "
+                    f"WITHOUT a state file — re-runs will duplicate dest DOs in {step_key}.\n"
+                    f"  Hint: pass --state <file.json> to persist the src→dest id map."
+                )
+            print(
+                f"\n  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] PRESERVE-HIERARCHY mode — "
+                f"3-pass tree replication"
+            )
+
+            # ── Pass 1 — enumerate + mirror (module-level helper) ──────────
+            print(f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1: enumerate + mirror")
+            all_src_v16 = list(_src.iter_data_objects(src_coll_id))
+            # Apply --max-dos cap to Pass 1 too (so Pass 2 + Pass 3 stay
+            # consistent with the early-stop guard).
+            if MAX_DOS_PER_STEP and len(all_src_v16) > MAX_DOS_PER_STEP:
+                print(
+                    f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] "
+                    f"--max-dos {MAX_DOS_PER_STEP}: truncating Pass 1 set "
+                    f"({len(all_src_v16)} → {MAX_DOS_PER_STEP})"
+                )
+                all_src_v16 = all_src_v16[:MAX_DOS_PER_STEP]
+            v16_src_to_dest = v16_pass1_create_dest_mirrors(
+                all_src_v16, dest_client, coll_id, step_key, state, src_coll_id,
+                source_url=SOURCE_SHEPARD_URL,
+                source_user_info=SOURCE_USER_INFO,
+                session_id=SESSION_ID,
+                import_time=IMPORT_TIME,
+            )
+
+            # ── Pass 2 — wire parent + predecessor edges (module-level helper)
+            print(f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 2: wire parent + predecessor edges")
+            v16_pass2_wire_edges(
+                all_src_v16, v16_src_to_dest, dest_do_id, dest_client, coll_id,
+                step_key=step_key,
+            )
+            print(f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 3: per-DO file/TS/SD writes (leaf-targeted)")
+
         with tqdm(
-            total=total_dos,
+            total=(len(all_src_v16) if all_src_v16 is not None else total_dos),
             desc=f"  DataObjects [{step_key}]",
             unit="DO",
             file=sys.stderr,
         ) as do_bar:
+            # Pass 3 driver: in v16 mode iterate the materialized list (so
+            # the same SourceDO instances flow through and v16_src_to_dest
+            # is keyed by id); v15 mode iterates the lazy paginator.
+            def _step_source_iter() -> Iterator[SourceDO]:
+                if all_src_v16 is not None:
+                    yield from all_src_v16
+                else:
+                    yield from _src.iter_data_objects(src_coll_id)
+
             if workers <= 1:
                 # Sequential path — preserves v15.7 ordering semantics
                 # byte-for-byte (no thread pool, no future ordering jitter).
-                for src_do in _src.iter_data_objects(src_coll_id):
+                for src_do in _step_source_iter():
                     if MAX_DOS_PER_STEP and do_bar.n >= MAX_DOS_PER_STEP:
                         do_bar.write(f"  [--max-dos {MAX_DOS_PER_STEP} reached; stopping step early]")
                         break
@@ -3369,7 +3788,9 @@ def run_source_mode(
                 with ThreadPoolExecutor(max_workers=workers,
                                         thread_name_prefix=f"mffd-{step_key}") as executor:
                     in_flight: dict[Any, SourceDO] = {}
-                    src_iter = _src.iter_data_objects(src_coll_id)
+                    # v16: iterate the materialized list so v16_src_to_dest
+                    # entries match by id; v15: iterate the lazy paginator.
+                    src_iter = _step_source_iter()
 
                     def _try_submit_next() -> bool:
                         """Pull next source DO from iterator + submit. Returns
@@ -3956,6 +4377,48 @@ class ImportState:
         with self._lock:
             self._data.setdefault("ts_containers", {})[step_key] = container_id
             self._save()
+
+    # ── v16 PRESERVE-HIERARCHY — src→dest DataObject id map ───────────────
+    #
+    # When Pass 1 of v16 creates a dest mirror per source DO, the mapping
+    # is persisted so a crash + resume in mid-Pass-1 (or in Pass 2 / Pass 3)
+    # doesn't re-create dest DOs already created on the prior session.
+    #
+    # JSON-safe shape: keys are stringified source DO ids (JSON object keys
+    # must be strings); values are integer dest DO ids. The optional
+    # `dest_app_id_map` parallel persists each leaf's appId so resume in
+    # Pass 3 doesn't need a GET to re-fetch it before upload_file().
+    #
+    # Backward compat: old state files lack these dicts. Default to empty
+    # dict — no migration error, no fail-fast (per the v15.8 PERF2 pattern).
+
+    def get_dest_id(self, src_do_id: int) -> int | None:
+        """Look up the dest DataObject id Pass 1 created for ``src_do_id``."""
+        with self._lock:
+            val = self._data.get("dest_id_map", {}).get(str(src_do_id))
+            if val is None:
+                return None
+            try:
+                return int(val)
+            except (TypeError, ValueError):
+                return None
+
+    def set_dest_id(self, src_do_id: int, dest_do_id: int,
+                    dest_app_id: str | None = None) -> None:
+        """Persist a src→dest mapping. ``dest_app_id`` optional; when set,
+        also persisted into the sibling dest_app_id_map so resume mid-Pass-3
+        can skip the appId GET round-trip."""
+        with self._lock:
+            self._data.setdefault("dest_id_map", {})[str(src_do_id)] = int(dest_do_id)
+            if dest_app_id:
+                self._data.setdefault("dest_app_id_map", {})[str(src_do_id)] = str(dest_app_id)
+            self._save()
+
+    def get_dest_app_id(self, src_do_id: int) -> str | None:
+        """Look up the dest appId Pass 1 captured for ``src_do_id``."""
+        with self._lock:
+            val = self._data.get("dest_app_id_map", {}).get(str(src_do_id))
+            return str(val) if val else None
 
 
 # ── v15.4 IMPORT-T1: telemetry (metrics + runlog) ────────────────────────────

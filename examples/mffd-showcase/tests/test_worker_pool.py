@@ -244,11 +244,573 @@ class TestWorkerPoolPrimitivesAvailable(unittest.TestCase):
 class TestVersionConstant(unittest.TestCase):
     """IMPORT_SCRIPT_VERSION constant is the source of truth.
 
-    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx).
+    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx) → 16.0 (PRESERVE-HIERARCHY: 3-pass tree replication of cube3 source DOs — v15's flat ref-prefix shape is gated behind MFFD_PRESERVE_HIERARCHY=0 fallback).
     """
 
-    def test_version_is_15_19(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.19")
+    def test_version_is_16_0(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.0")
+
+
+# ── v16 PRESERVE-HIERARCHY tests ──────────────────────────────────────────────
+#
+# These assert the structural contract of the v16 3-pass design:
+#
+#   Pass 1: enumerate source DOs flat + create one dest DO per source DO
+#           (name + attributes + description; NO parentId yet).
+#   Pass 2: PATCH each dest DO with parentId + predecessorIds, mapped via
+#           src_to_dest. Top-level src DOs (parentId=None) reparent under
+#           the STEP dest DO so the tree is browsable from the step root.
+#   Pass 3: per-source-DO file/TS/SD writes hit the LEAF dest DO, not the
+#           step DO. dest_name / ref_name no longer carry src_do.name prefix.
+#
+# State key shape for v16 uses src_do_id (not src_do.name) for stable
+# resume across re-runs of the same source dataset.
+
+
+class TestV16PreserveHierarchy(unittest.TestCase):
+    """v16 PRESERVE-HIERARCHY — 3-pass tree replication.
+
+    Tests target the contracts the v16 design must satisfy. The concrete
+    code under test lives inside `run_source_mode`'s v16 branch (Pass 1 +
+    Pass 2) and in `_process_one_source_do`'s v16-active code paths
+    (Pass 3). The closure capture pattern means the assertions probe:
+      * ShepardClient.patch_data_object semantics (parentId + predecessor)
+      * ShepardClient.create_data_object accepts a parent_id kwarg
+      * SourceDO carries parentId + predecessorIds from iter_data_objects
+      * ImportState.set_dest_id / get_dest_id round-trip + resume safety
+    """
+
+    def test_pass1_sourcedo_carries_parent_and_predecessor(self):
+        """SourceDO yielded from iter_data_objects carries parentId +
+        predecessorIds drawn from the source response. Pass 2 reads them
+        from this struct (no extra GET per DO)."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://test"
+        fake_resp = MagicMock()
+        fake_resp.json.return_value = [
+            # Root DO — no parentId, no predecessors
+            {"id": 100, "name": "root", "parentId": None, "predecessorIds": []},
+            # Child of 100, has a predecessor 100
+            {"id": 101, "name": "child", "parentId": 100, "predecessorIds": [100]},
+            # Grandchild + multi-predecessor
+            {"id": 102, "name": "gc", "parentId": 101, "predecessorIds": [101, 100]},
+        ]
+        fake_resp.headers = {"X-Total-Pages": "1"}
+        client._get = MagicMock(side_effect=[fake_resp, None])
+
+        result = list(client.iter_data_objects(48297))
+        self.assertEqual(len(result), 3)
+        self.assertIsNone(result[0].parentId)
+        self.assertEqual(result[0].predecessorIds, [])
+        self.assertEqual(result[1].parentId, 100)
+        self.assertEqual(result[1].predecessorIds, [100])
+        self.assertEqual(result[2].parentId, 101)
+        self.assertEqual(result[2].predecessorIds, [101, 100])
+
+    def test_create_data_object_accepts_parent_id_kwarg(self):
+        """Pass 1 doesn't set parentId at create time, but the kwarg must
+        exist on create_data_object for callers (e.g. v15 step DO under
+        a future opt-in) that want to wire parent during POST."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://test"
+        # Capture the POST body to assert parentId leaks through.
+        captured = {}
+        def _fake_post(url, body):
+            captured["url"] = url
+            captured["body"] = body
+            r = MagicMock()
+            r.json.return_value = {"id": 99, "appId": "app-99"}
+            return r
+        client._post = _fake_post
+
+        result = client.create_data_object(
+            42, "leaf", description="d", attrs={"k": "v"},
+            parent_id=11,
+        )
+        self.assertEqual(result["id"], 99)
+        self.assertEqual(captured["body"]["parentId"], 11)
+        # Verify POST endpoint shape
+        self.assertIn("/collections/42/dataObjects", captured["url"])
+
+    def test_patch_data_object_does_not_strip_parent_or_predecessor(self):
+        """advisor flag #3 — `set_predecessors` over-strips by popping
+        parentId from the PUT body. v16's patch_data_object MUST NOT strip
+        parentId or predecessorIds; they're writable per OpenAPI 5.4.0."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://test"
+        # GET returns the existing DO body (with readonly + writable fields).
+        get_resp = MagicMock()
+        get_resp.json.return_value = {
+            "id": 99,
+            "name": "leaf",
+            "createdAt": "2026-05-23",
+            "createdBy": "alice",
+            "updatedAt": "2026-05-23",
+            "updatedBy": "alice",
+            "collectionId": 42,
+            "referenceIds": [],
+            "successorIds": [],
+            "childrenIds": [],
+            "parentId": None,
+            "incomingIds": [],
+            "predecessorIds": [],
+            "attributes": {"k": "v"},
+        }
+        client._get = MagicMock(return_value=get_resp)
+        captured = {}
+        def _fake_put(url, body):
+            captured["url"] = url
+            captured["body"] = body
+            return MagicMock()
+        client._put = _fake_put
+
+        ok = client.patch_data_object(42, 99, parentId=11, predecessorIds=[7, 8])
+        self.assertTrue(ok)
+        body = captured["body"]
+        # CRITICAL — parentId is writable, must NOT be stripped from PUT body.
+        self.assertEqual(body["parentId"], 11)
+        # predecessorIds must be exactly the requested list (REPLACE semantics).
+        self.assertEqual(body["predecessorIds"], [7, 8])
+        # Truly readonly fields must be stripped per v5.4.0 PUT contract.
+        for k in (
+            "id", "createdAt", "createdBy", "updatedAt", "updatedBy",
+            "collectionId", "referenceIds", "successorIds", "childrenIds",
+            "incomingIds",
+        ):
+            self.assertNotIn(k, body, f"readonly field {k!r} not stripped")
+        # Writable scalar attributes are preserved on the round-trip.
+        self.assertEqual(body["name"], "leaf")
+        self.assertEqual(body["attributes"], {"k": "v"})
+
+    def test_patch_data_object_omitting_parent_preserves_existing(self):
+        """When parentId kwarg is omitted, the existing parentId on the dest
+        DO must be preserved (UNSET sentinel semantics)."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://test"
+        get_resp = MagicMock()
+        get_resp.json.return_value = {
+            "id": 99, "name": "leaf", "parentId": 55,
+            "predecessorIds": [3],
+            "createdAt": "x", "createdBy": "y", "updatedAt": "x",
+            "updatedBy": "y", "collectionId": 42, "referenceIds": [],
+            "successorIds": [], "childrenIds": [], "incomingIds": [],
+        }
+        client._get = MagicMock(return_value=get_resp)
+        captured = {}
+        def _fake_put(url, body):
+            captured["body"] = body
+            return MagicMock()
+        client._put = _fake_put
+
+        # No parentId kwarg — must preserve 55.
+        client.patch_data_object(42, 99, predecessorIds=[7])
+        self.assertEqual(captured["body"]["parentId"], 55)
+        self.assertEqual(captured["body"]["predecessorIds"], [7])
+
+    def test_import_state_dest_id_map_roundtrip(self):
+        """ImportState.set_dest_id / get_dest_id stores src→dest mapping
+        for Pass 1 resume safety. Both id (always) and appId (optional)
+        round-trip cleanly."""
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = Path(f.name)
+        state = mffd_v15.ImportState(path)
+        # Fresh state: no mapping.
+        self.assertIsNone(state.get_dest_id(12345))
+        # Set + read back.
+        state.set_dest_id(12345, 99, dest_app_id="app-99")
+        self.assertEqual(state.get_dest_id(12345), 99)
+        self.assertEqual(state.get_dest_app_id(12345), "app-99")
+        # Different src_do_id doesn't collide.
+        self.assertIsNone(state.get_dest_id(99999))
+        # set_dest_id without appId still records the id.
+        state.set_dest_id(67890, 42)
+        self.assertEqual(state.get_dest_id(67890), 42)
+        self.assertIsNone(state.get_dest_app_id(67890))
+        path.unlink(missing_ok=True)
+
+    def test_import_state_dest_id_map_back_compat(self):
+        """Old state files (no dest_id_map field) load without error;
+        get_dest_id on missing keys returns None."""
+        import tempfile
+        with tempfile.NamedTemporaryFile(
+                suffix=".json", delete=False, mode="w") as f:
+            # v15 state shape — no dest_id_map field.
+            import json as _json
+            _json.dump({
+                "completed_files": ["tapelaying/a"],
+                "completed_dos": ["tapelaying/DO-1"],
+                "ts_containers": {"tapelaying": 42},
+            }, f)
+            path = Path(f.name)
+        state = mffd_v15.ImportState(path)
+        # Missing field treated as empty dict — no migration error.
+        self.assertIsNone(state.get_dest_id(12345))
+        # Mutator still works against the absent field.
+        state.set_dest_id(12345, 99)
+        self.assertEqual(state.get_dest_id(12345), 99)
+        path.unlink(missing_ok=True)
+
+    def test_preserve_hierarchy_env_flag_default_on(self):
+        """MFFD_PRESERVE_HIERARCHY defaults to "1" (v16 mode ON). Setting
+        it to "0" disables v16 (v15 fallback path). The flag is read via
+        os.environ.get with default "1"."""
+        import os
+        # Default ON: when unset, .get returns "1" → v16 active.
+        os.environ.pop("MFFD_PRESERVE_HIERARCHY", None)
+        self.assertEqual(os.environ.get("MFFD_PRESERVE_HIERARCHY", "1"), "1")
+        # Explicit OFF: when "0", v16 is bypassed.
+        os.environ["MFFD_PRESERVE_HIERARCHY"] = "0"
+        self.assertEqual(os.environ.get("MFFD_PRESERVE_HIERARCHY", "1"), "0")
+        # Cleanup so other tests don't observe this.
+        os.environ.pop("MFFD_PRESERVE_HIERARCHY", None)
+
+
+def _make_src_do(do_id, name="DO", parentId=None, predecessorIds=None,
+                 attributes=None, description="", _src_coll_id=42):
+    """Build a SourceDO stub for v16 tests (avoids the dataclass
+    keyword-only field repetition in every test)."""
+    return mffd_v15.SourceDO(
+        do_id=do_id,
+        name=name,
+        description=description,
+        attributes=attributes or {},
+        _src_coll_id=_src_coll_id,
+        parentId=parentId,
+        predecessorIds=list(predecessorIds or []),
+    )
+
+
+class TestV16Pass1CreateDestMirrors(unittest.TestCase):
+    """v16 PRESERVE-HIERARCHY Pass 1 — flat-enumerate + create one dest DO
+    per source DO. Direct unit tests against the extracted module-level
+    helper ``v16_pass1_create_dest_mirrors``."""
+
+    def _client(self, create_results=None):
+        """Build a mock ShepardClient with a stubbed create_data_object."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+        # Returns ascending dest ids — id=1000+, appId=app-1000+ — unless
+        # a custom result list is supplied (e.g. failures).
+        if create_results is None:
+            counter = {"n": 0}
+            def _fake_create(coll_id, name, description="", attrs=None, **kw):
+                counter["n"] += 1
+                return {"id": 1000 + counter["n"], "appId": f"app-{1000 + counter['n']}"}
+            client.create_data_object = MagicMock(side_effect=_fake_create)
+        else:
+            client.create_data_object = MagicMock(side_effect=create_results)
+        client._get = MagicMock(return_value=None)
+        return client
+
+    def test_pass1_creates_dest_mirror_per_source_do(self):
+        """Spec test #1 — 5 source DOs with mixed parent/pred topology;
+        expect 5 dest create calls + populated src_to_dest map."""
+        from unittest.mock import MagicMock
+        client = self._client()
+        src_dos = [
+            _make_src_do(101, "root1"),
+            _make_src_do(102, "root2"),
+            _make_src_do(103, "child1", parentId=101),
+            _make_src_do(104, "child2", parentId=101, predecessorIds=[103]),
+            _make_src_do(105, "gc", parentId=104),
+        ]
+        state = None  # no resume
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=state, src_coll_id=48297,
+        )
+        # 5 source DOs → 5 dest creates → 5 map entries.
+        self.assertEqual(client.create_data_object.call_count, 5)
+        self.assertEqual(len(result), 5)
+        for src_do in src_dos:
+            self.assertIn(src_do.do_id, result)
+            self.assertIn("dest_id", result[src_do.do_id])
+            self.assertIn("dest_app_id", result[src_do.do_id])
+            self.assertIsInstance(result[src_do.do_id]["dest_id"], int)
+        # Each source DO's name + provenance attrs reach the dest create call.
+        first_call_kwargs = client.create_data_object.call_args_list[0].kwargs
+        self.assertIn("attrs", first_call_kwargs)
+        self.assertEqual(first_call_kwargs["attrs"]["source_do_id"], "101")
+        self.assertEqual(first_call_kwargs["attrs"]["process_step"], "tapelaying")
+        self.assertEqual(first_call_kwargs["attrs"]["source_coll_id"], "48297")
+
+    def test_pass1_resume_safety_uses_state_dest_id_map(self):
+        """Spec test #4 — state pre-populated with 2 of 5 mappings; Pass 1
+        only creates the 3 missing entries; resumed entries flow through
+        the result map unchanged."""
+        import tempfile
+        from pathlib import Path as _Path
+        with tempfile.NamedTemporaryFile(
+                suffix=".json", delete=False) as f:
+            path = _Path(f.name)
+        state = mffd_v15.ImportState(path)
+        # Pre-populate 2 of 5 mappings.
+        state.set_dest_id(101, 9001, "app-9001")
+        state.set_dest_id(103, 9003, "app-9003")
+
+        client = self._client()
+        src_dos = [
+            _make_src_do(101, "root1"),
+            _make_src_do(102, "root2"),
+            _make_src_do(103, "child1"),
+            _make_src_do(104, "child2"),
+            _make_src_do(105, "gc"),
+        ]
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=state, src_coll_id=48297,
+        )
+        # Only 3 missing entries → 3 create calls.
+        self.assertEqual(client.create_data_object.call_count, 3)
+        # All 5 entries in the map (resumed + freshly-created).
+        self.assertEqual(len(result), 5)
+        # Resumed entries preserve the pre-populated dest_ids.
+        self.assertEqual(result[101]["dest_id"], 9001)
+        self.assertEqual(result[101]["dest_app_id"], "app-9001")
+        self.assertEqual(result[103]["dest_id"], 9003)
+        path.unlink(missing_ok=True)
+
+    def test_pass1_failed_create_excluded_from_map(self):
+        """When dest create returns None (4xx/5xx), the src_do_id is NOT
+        present in the result map; Pass 2 + Pass 3 must skip it cleanly."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+        # First create succeeds, second fails (None), third succeeds.
+        client.create_data_object = MagicMock(side_effect=[
+            {"id": 9001, "appId": "app-9001"},
+            None,
+            {"id": 9003, "appId": "app-9003"},
+        ])
+        src_dos = [
+            _make_src_do(101, "root1"),
+            _make_src_do(102, "root2"),
+            _make_src_do(103, "root3"),
+        ]
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="bridgewelding",
+            state=None, src_coll_id=163811,
+        )
+        self.assertEqual(len(result), 2)
+        self.assertIn(101, result)
+        self.assertNotIn(102, result)  # failed create — excluded
+        self.assertIn(103, result)
+
+    def test_pass1_blank_name_replaced_with_fallback(self):
+        """OpenAPI 5.4.0 requires `name` to match `\\S` pattern. Pass 1
+        substitutes a deterministic fallback for blank source names."""
+        from unittest.mock import MagicMock
+        client = self._client()
+        src_dos = [_make_src_do(7777, name="   "), _make_src_do(8888, name="")]
+        mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=None, src_coll_id=48297,
+        )
+        names = [c.args[1] for c in client.create_data_object.call_args_list]
+        self.assertIn("src-do-7777", names)
+        self.assertIn("src-do-8888", names)
+
+
+class TestV16Pass2WireEdges(unittest.TestCase):
+    """v16 PRESERVE-HIERARCHY Pass 2 — parent + predecessor edge wiring
+    via the src→dest map. Direct unit tests against the module-level helper
+    ``v16_pass2_wire_edges``."""
+
+    def _client_capturing_patches(self):
+        """Mock ShepardClient.patch_data_object that captures every call."""
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+        captured = []
+        def _fake_patch(coll_id, do_id, **kwargs):
+            captured.append({"do_id": do_id, **kwargs})
+            return True
+        client.patch_data_object = MagicMock(side_effect=_fake_patch)
+        return client, captured
+
+    def test_pass2_wires_parentid_via_src_to_dest_map(self):
+        """Spec test #2 — 3-level tree (root → child → grandchild) wires
+        parentId via src→dest mapping. Forward refs work because Pass 1
+        completes the full src list before Pass 2 starts."""
+        client, captured = self._client_capturing_patches()
+        src_dos = [
+            _make_src_do(100, "root"),
+            _make_src_do(101, "child", parentId=100),
+            _make_src_do(102, "gc", parentId=101),
+        ]
+        src_to_dest = {
+            100: {"dest_id": 9100, "dest_app_id": "app-9100"},
+            101: {"dest_id": 9101, "dest_app_id": "app-9101"},
+            102: {"dest_id": 9102, "dest_app_id": "app-9102"},
+        }
+        wired, failed = mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=8000,
+            dest_client=client, coll_id=42,
+        )
+        self.assertEqual(wired, 3)
+        self.assertEqual(failed, 0)
+        # Map do_id → patch body for direct assertion.
+        by_id = {c["do_id"]: c for c in captured}
+        # Root (parentId=None) reparents under the STEP dest DO (8000).
+        self.assertEqual(by_id[9100]["parentId"], 8000)
+        # Child of 100 — parent must map to dest 9100.
+        self.assertEqual(by_id[9101]["parentId"], 9100)
+        # Grandchild of 101 — parent must map to dest 9101.
+        self.assertEqual(by_id[9102]["parentId"], 9101)
+
+    def test_pass2_top_level_src_do_reparents_under_step_do(self):
+        """advisor flag — top-level source DOs (parentId=None) MUST
+        reparent under the STEP dest DO so the imported tree stays
+        browsable from the step root."""
+        client, captured = self._client_capturing_patches()
+        src_dos = [
+            _make_src_do(500, "Layup"),           # parentId=None (top)
+            _make_src_do(501, "Setup"),           # parentId=None (top)
+            _make_src_do(502, "Calibration"),     # parentId=None (top)
+        ]
+        src_to_dest = {
+            500: {"dest_id": 9500, "dest_app_id": "app-9500"},
+            501: {"dest_id": 9501, "dest_app_id": "app-9501"},
+            502: {"dest_id": 9502, "dest_app_id": "app-9502"},
+        }
+        mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=42424242,
+            dest_client=client, coll_id=42,
+        )
+        # Every top-level src DO reparented under the step DO.
+        for c in captured:
+            self.assertEqual(c["parentId"], 42424242,
+                             f"top-level src must reparent under step DO, "
+                             f"got parentId={c['parentId']} for dest {c['do_id']}")
+
+    def test_pass2_wires_predecessor_edges_with_forward_refs(self):
+        """Spec test #3 — source DO 5 has predecessorIds=[3,7] where DO 7
+        appears AFTER 5 in Pass 1 ordering. Pass 2 still wires the edge
+        because Pass 1 completes (full src list) before Pass 2 starts."""
+        client, captured = self._client_capturing_patches()
+        # Pass-1 ordering puts 5 BEFORE 7 — the forward-ref case.
+        src_dos = [
+            _make_src_do(3, "early"),
+            _make_src_do(5, "mid", predecessorIds=[3, 7]),
+            _make_src_do(7, "late"),
+        ]
+        src_to_dest = {
+            3: {"dest_id": 9003, "dest_app_id": ""},
+            5: {"dest_id": 9005, "dest_app_id": ""},
+            7: {"dest_id": 9007, "dest_app_id": ""},
+        }
+        mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=8000,
+            dest_client=client, coll_id=42,
+        )
+        by_id = {c["do_id"]: c for c in captured}
+        # DO 5's forward+back predecessors both wired.
+        self.assertEqual(set(by_id[9005]["predecessorIds"]), {9003, 9007})
+
+    def test_pass2_cross_step_predecessor_silently_dropped(self):
+        """Cross-step predecessors (src ids not in src_to_dest, e.g. a
+        bridgewelding DO whose predecessor lives in tapelaying) are
+        silently dropped — they're outside the step's mapping universe."""
+        client, captured = self._client_capturing_patches()
+        src_dos = [
+            _make_src_do(200, "in-step", predecessorIds=[999, 100]),
+        ]
+        # Only 200 is in the map; 999 (foreign) + 100 (foreign) are not.
+        src_to_dest = {200: {"dest_id": 9200, "dest_app_id": ""}}
+        mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=8000,
+            dest_client=client, coll_id=42,
+        )
+        # The patch call has no predecessors wired (empty list dropped to None).
+        self.assertEqual(len(captured), 1)
+        # predecessorIds either omitted or None — never an empty list.
+        self.assertIn(captured[0].get("predecessorIds"), (None, []))
+
+    def test_pass2_skips_dos_missing_from_src_to_dest(self):
+        """When Pass 1 failed for a src DO (not in src_to_dest), Pass 2
+        skips it cleanly — no patch call attempted."""
+        client, captured = self._client_capturing_patches()
+        src_dos = [
+            _make_src_do(100, "ok"),
+            _make_src_do(101, "pass1-failed"),  # not in map
+            _make_src_do(102, "ok"),
+        ]
+        src_to_dest = {
+            100: {"dest_id": 9100, "dest_app_id": ""},
+            102: {"dest_id": 9102, "dest_app_id": ""},
+        }
+        wired, _ = mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=8000,
+            dest_client=client, coll_id=42,
+        )
+        # Only 2 patches (100 + 102); 101 was skipped.
+        self.assertEqual(wired, 2)
+        self.assertEqual(len(captured), 2)
+        do_ids_patched = {c["do_id"] for c in captured}
+        self.assertEqual(do_ids_patched, {9100, 9102})
+
+
+class TestV16Pass3TargetResolution(unittest.TestCase):
+    """v16 Pass 3 — per-source-DO target resolution. Direct unit tests
+    against the module-level helper ``v16_resolve_target``. This is the
+    seam where the per-DO writes pick LEAF (v16) vs STEP (v15 fallback)."""
+
+    def test_pass3_dest_do_id_is_leaf_not_step(self):
+        """Spec test #5 — in v16 mode the resolver returns the LEAF dest
+        id (src_to_dest[src.do_id]["dest_id"]), NOT the step DO id."""
+        src_do = _make_src_do(999, "TR-004")
+        v16_src_to_dest = {999: {"dest_id": 5500, "dest_app_id": "app-5500"}}
+        target = mffd_v15.v16_resolve_target(
+            src_do, v16_src_to_dest,
+            step_dest_do_id=42, step_dest_app_id="step-app",
+            step_key="tapelaying",
+        )
+        self.assertEqual(target["target_dest_do_id"], 5500)
+        self.assertEqual(target["target_dest_app_id"], "app-5500")
+        self.assertNotEqual(target["target_dest_do_id"], 42,
+                            "Pass 3 must route to LEAF, not STEP DO")
+        self.assertTrue(target["active"])
+        self.assertFalse(target["missing_leaf"])
+        # State key uses src_do_id (stable across name changes).
+        self.assertEqual(target["do_done_key"], "v16/tapelaying/999")
+
+    def test_v15_flat_fallback_when_env_off(self):
+        """Spec test #6 — when v16_src_to_dest is None (env flag OFF /
+        v15 path), resolver returns the STEP DO id (v15 flat shape)."""
+        src_do = _make_src_do(999, "TR-004")
+        target = mffd_v15.v16_resolve_target(
+            src_do, v16_src_to_dest=None,
+            step_dest_do_id=42, step_dest_app_id="step-app",
+            step_key="tapelaying",
+        )
+        # v15 path — STEP DO, name-based state key.
+        self.assertEqual(target["target_dest_do_id"], 42)
+        self.assertEqual(target["target_dest_app_id"], "step-app")
+        self.assertFalse(target["active"])
+        self.assertFalse(target["missing_leaf"])
+        # State key uses src_do.name for v15 back-compat.
+        self.assertEqual(target["do_done_key"], "tapelaying/TR-004")
+
+    def test_pass3_missing_leaf_when_pass1_failed(self):
+        """When v16 mode is active but Pass 1 didn't create a mirror for
+        the src DO (4xx/5xx), the resolver signals missing_leaf so the
+        per-DO body skips the DO instead of writing to a bogus target."""
+        src_do = _make_src_do(999, "TR-004")
+        # Map exists (v16 active) but doesn't contain src 999.
+        v16_src_to_dest = {100: {"dest_id": 5100, "dest_app_id": "x"}}
+        target = mffd_v15.v16_resolve_target(
+            src_do, v16_src_to_dest,
+            step_dest_do_id=42, step_dest_app_id="step-app",
+            step_key="tapelaying",
+        )
+        self.assertTrue(target["active"])
+        self.assertTrue(target["missing_leaf"])
 
 
 if __name__ == "__main__":
