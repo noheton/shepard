@@ -1,5 +1,5 @@
 ---
-stage: feature-defined
+stage: deployed
 last-stage-change: 2026-05-23
 ---
 
@@ -9,6 +9,17 @@ last-stage-change: 2026-05-23
 GitHub-native project-management features (Issues, Projects v2,
 Milestones, Releases, Labels, PR/Issue templates) so that the
 project's development is **provably traceable end-to-end**.
+
+> **Adopted 2026-05-23** after 5-persona audit (Strategy Aligner, API
+> Scrutinizer, RDM, Reluctant Senior Researcher, Digital Native
+> Researcher). Six adoption questions resolved unanimously on Q1–Q4;
+> Q5 (board scripted vs manual) + Q6 (PR-scope hook now vs trust+CI)
+> resolved by user judgement on minority-with-evidence findings.
+> Full synthesis at
+> [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](../agent-findings/gh-pm-adoption-synthesis-2026-05-23.md).
+> Per `feedback_no_synthetic_provenance.md` in agent memory:
+> **retroactive Issues require per-artefact transparency markers** —
+> see §3 and §8 below.
 
 **Audience.** Contributors, reviewers, future maintainers, the AI
 (Claude). Operators consult §5 and §13.
@@ -127,6 +138,19 @@ rows do NOT get back-filled into Issues.
 **Until external velocity picks up** (5+ external contributors / month,
 per GH-INFRA4 gate), expect Issues to remain rare — single digits
 per quarter.
+
+**Retroactive backfill — ALLOWED with transparency markers, NOT auto-fire.**
+Backfilling historical Issues (catching up the public ledger after a
+period of aidocs/16-only operation) is permitted as a **deliberate
+operator gesture** under GH-PM5, never as an automatic §3 gate-fire.
+The 4-gate filter still selects which rows backfill applies to — most
+rows are internal refactors / chores / docs and SKIP. Every backfilled
+artefact MUST carry a transparency disclosure as the first element of
+its primary surface (Issue body, Milestone description, persona
+finding, PROV-O `:Activity` row) per `feedback_no_synthetic_provenance.md`.
+See §8 for the Issue-body marker template; §15 anti-pattern #7 for the
+forbidden form. A backfilled Issue that conceals its retroactivity is
+forgery of the audit trail.
 
 ---
 
@@ -279,6 +303,37 @@ follows.
 │                            (via `Closes #N` in PR body)     │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### 8.1 Transparency marker for retroactive Issues (MANDATORY)
+
+When a backfilled Issue is filed under GH-PM5 (or any other retroactive
+backfill operation), the Issue body MUST open with the following
+marker before any other content:
+
+```
+🤖 **BACKFILL** — created retroactively YYYY-MM-DD as part of <operation>.
+Original work: commit <hash>, date <YYYY-MM-DD>. Audit trail: <aidocs/16
+row ID>; persona findings: <paths if applicable>.
+```
+
+If the row's status is already `done`, the body MUST also include a
+closing line at the end:
+
+```
+Closed by <commit-hash> on <YYYY-MM-DD>.
+```
+
+The same shape applies to backfilled **Milestones** — the milestone
+description MUST open with:
+
+```
+🤖 BACKFILL milestone — bundles work shipped between <date-range>.
+Post-hoc milestone, not real-time planning.
+```
+
+The marker is the discriminator between honest backfill and forgery
+(see §15 anti-pattern #7). Per `feedback_no_synthetic_provenance.md`
+in agent memory.
 
 **Never:**
 - Close an Issue without first flipping the aidocs/16 row to `done`
@@ -510,10 +565,17 @@ Things NOT to do:
 6. **Stage label drift between doc front-matter and Issue label** —
    the unified state machine breaks. If `aidocs/00` taxonomy
    changes, `.github/labels.yml` changes in the same commit.
-7. **Mass-renaming labels in the GitHub web UI** — `.github/labels.yml`
+7. **Filing backfilled Issues without a BACKFILL disclosure marker —
+   silent forgery of the audit trail.** Retroactive Issues without
+   the §8.1 marker look identical to real-time-filed Issues; a future
+   reader cannot tell the difference. That's not "filling in audit
+   history" — it's **fabricating** distributed contemporaneous review.
+   Per `feedback_no_synthetic_provenance.md`. The marker shape in §8.1
+   is non-negotiable.
+8. **Mass-renaming labels in the GitHub web UI** — `.github/labels.yml`
    is the SSOT. The sync workflow re-applies the canonical set on
    the next push to `main`.
-8. **Cherry-picking commits across the release boundary without
+9. **Cherry-picking commits across the release boundary without
    updating aidocs/34** — back-porting a fix into a published
    release line requires a fresh aidocs/34 row (the fix is, by
    definition, admin-visible).

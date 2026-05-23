@@ -233,3 +233,10 @@
 - name: "security"
   color: "ee0701"
   description: "Security-relevant (also tag `area:security`)."
+
+# ──────────────────────────── META ──────────────────────────────────
+# Cross-cutting markers for the Issue itself rather than the work.
+
+- name: "meta:backfill"
+  color: "ededed"
+  description: "Synthetic retroactive Issue per GH-PM5 backfill (carries the BACKFILL marker in body)."
