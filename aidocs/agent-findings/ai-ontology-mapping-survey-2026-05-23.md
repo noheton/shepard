@@ -1,8 +1,9 @@
 ---
 title: AI-assisted ontology mapping — research survey + adoption recommendation
-stage: feature-defined
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 audience: contributors, ontology engineers, plugin authors
+audit-trail: aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md (4 personas, all ACCEPT-WITH-CHANGES, 1 BLOCKING + 9 MAJOR + 8 MINOR)
 ---
 
 # AI-assisted ontology mapping — research survey + adoption recommendation

@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 37 |
 | `concept` | 14 |
 | `idea` | 7 |
-| `feature-defined` | 43 |
-| `audited-by-personas` | 47 |
+| `feature-defined` | 42 |
+| `audited-by-personas` | 49 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
-| `deployed` | 37 |
+| `deployed` | 38 |
 | `decommissioned` | 46 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **237** |
+| **total docs** | **239** |
 | **UNTAGGED** | **5** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -128,12 +128,11 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (43)
+## feature-defined (42)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
@@ -176,10 +175,11 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (47)
+## audited-by-personas (49)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/ai-ontology-mapping-survey-2026-05-23.md`](agent-findings/ai-ontology-mapping-survey-2026-05-23.md) | AI-assisted ontology mapping — research survey + adoption recommendation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/aidocs-consolidation-survey.md`](agent-findings/aidocs-consolidation-survey.md) | aidocs consolidation survey — single source of truth enforcement | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/analytics-ai.md`](agent-findings/analytics-ai.md) | Applied ML & Data Science — Shepard Platform Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-05-23 |
@@ -197,7 +197,8 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/garage-activation-runbook.md`](agent-findings/garage-activation-runbook.md) | Garage activation runbook — findings & gotchas | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md`](agent-findings/persona-audit-promptlog-2026-05-23.md) | Persona audit — PromptLog design (aidocs/semantics/99) | 2026-05-23 | — |
+| [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | — |
+| [`aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md`](agent-findings/persona-audit-promptlog-2026-05-23.md) | Persona audit — PromptLog design (aidocs/semantics/99) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-rdm-gh-pm-2026-05-23.md`](agent-findings/persona-rdm-gh-pm-2026-05-23.md) | Persona review — Research Data Manager / FAIR Steward | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-review-ai-opportunities.md`](agent-findings/persona-review-ai-opportunities.md) | Persona Review — Analytics & AI Opportunities Specialist | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-review-api-scrutinizer.md`](agent-findings/persona-review-api-scrutinizer.md) | API Scrutinizer — review of the `/v2/views` + view-shapes proposal | 2026-05-23 | 2026-05-23 |
@@ -234,7 +235,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 |---|---|---|---|
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (37)
+## deployed (38)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -251,6 +252,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](agent-findings/gh-pm-backfill-plan-2026-05-23.md) | GH-PM5 backfill — plan + execution log (2026-05-23) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/persona-audit-admin-stale-ch-2026-05-23.md`](agent-findings/persona-audit-admin-stale-ch-2026-05-23.md) | Persona audit — ADMIN-STALE-CH (Stale timeseries channel admin tool) | 2026-05-23 | — |
 | [`aidocs/case-study-2026-05-19.md`](case-study-2026-05-19.md) | Case Study: One Month of AI-Assisted Fork Development | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/00-model-inventory.md`](data/00-model-inventory.md) | 00 — Model inventory (SSOT) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/37-lab-journal-and-jupyter-design.md`](data/37-lab-journal-and-jupyter-design.md) | Lab Journal Reassessment + Jupyter Feasibility — Design | 2026-05-23 | 2026-05-23 |
