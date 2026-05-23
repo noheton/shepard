@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.13"
+IMPORT_SCRIPT_VERSION = "15.14"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -2977,6 +2977,20 @@ def run_source_mode(
         # and is the real correctness guard against double-upload.
         existing_names_snapshot = dest_client.list_file_refs(coll_id, dest_do_id)
 
+        # v15.14 BUG-F fix — one SD container per process-step + per ref-name,
+        # NOT per-Execution. Shared across all per-Execution DOs of this step;
+        # per-Execution distinction lives in the structuredDataOids[] list on
+        # the Reference, not in container proliferation.
+        # Cache shape: {ref_name -> container_id} (e.g. "StepMetaProcessExecution"
+        # -> 633520). Filled lazily on first use; reused for every subsequent
+        # Execution of this step with the same ref_name.
+        # Thread-safety: workers may race to populate the same key; the lock
+        # below serialises the create-on-miss. After the first successful create,
+        # subsequent reads are lock-free dict access.
+        import threading as _threading
+        step_sd_containers: dict[str, int] = {}
+        step_sd_containers_lock = _threading.Lock()
+
         files_uploaded = 0
         files_skipped = 0
         files_failed = 0
@@ -3133,22 +3147,45 @@ def run_source_mode(
                     counts["structured_failed"] += 1
                     continue
 
-                container_name = f"{src_do.name}/{sd_ref.name}"
-                container_id = dest_client.create_structured_container(container_name)
+                # v15.14 BUG-F: look up or create-once the per-step SD container
+                # for this ref_name. Shared across every Execution of this step.
+                container_id = step_sd_containers.get(sd_ref.name)
                 if container_id is None:
-                    do_bar.write(f"    [error-sd] could not create container for {sd_ref.name}")
+                    with step_sd_containers_lock:
+                        container_id = step_sd_containers.get(sd_ref.name)
+                        if container_id is None:
+                            shared_name = f"{step_key}-{SESSION_ID}-{sd_ref.name}"
+                            container_id = dest_client.create_structured_container(shared_name)
+                            if container_id is not None:
+                                step_sd_containers[sd_ref.name] = container_id
+                if container_id is None:
+                    do_bar.write(f"    [error-sd] could not create shared container for {sd_ref.name}")
                     counts["structured_failed"] += 1
                     continue
 
-                linked = dest_client.link_structured_to_do(coll_id, dest_do_id, container_id, container_name)
-                ok = dest_client.upload_structured_payload(container_id, payload)
-                if linked and ok:
-                    do_bar.write(f"    [ok-sd] {sd_ref.name}")
+                # v15.14 BUG-G fix — upload payload FIRST to get the oid, THEN
+                # link the oid to this DO as a structuredDataReference. The
+                # previous v15.13 ordering called link before upload AND without
+                # the oid, so link_structured_to_do always refused (Bug C path),
+                # and the oid from upload was never captured (just truthy ok).
+                oid = dest_client.upload_structured_payload(container_id, payload, name=sd_ref.name)
+                if not oid:
+                    do_bar.write(f"    [error-sd] payload upload failed for {sd_ref.name}")
+                    counts["structured_failed"] += 1
+                    continue
+                # Reference name carries the per-Execution identity (so the UI
+                # shows which Execution this oid belongs to); container is shared.
+                ref_name = f"{src_do.name}/{sd_ref.name}"
+                linked = dest_client.link_structured_to_do(
+                    coll_id, dest_do_id, container_id, ref_name, oids=[oid]
+                )
+                if linked:
+                    do_bar.write(f"    [ok-sd] {sd_ref.name} -> oid={oid[:12]}...")
                     counts["structured_imported"] += 1
                     if state is not None:
                         state.mark_structured_done(state_key)
                 else:
-                    do_bar.write(f"    [error-sd] upload/link failed for {sd_ref.name}")
+                    do_bar.write(f"    [error-sd] link-to-DO failed for {sd_ref.name}")
                     counts["structured_failed"] += 1
 
             # Per-DO summary footer + PERF2 mark-do-done. The footer reflects
