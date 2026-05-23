@@ -564,15 +564,15 @@ pass):
 
 - The task instructions referenced two sibling docs by name —
   `aidocs/strategy/102-thesis-timeline-of-ideas.md` and
-  `aidocs/strategy/103-research-network.md` — neither of which
-  exists at the time of this profile pass. The actual
-  `aidocs/strategy/102` is `institute-youtube-profile.md`. The
-  natural next library-maintenance step is to author both **102b
-  (thesis-timeline-of-ideas)** and **103 (research-network)** as
-  standalone docs that the next pass of this profile can
-  cross-reference. The timeline doc would consolidate the §2
-  table above into a citable figure; the network doc would do the
-  same for §3.
+  `aidocs/strategy/103-research-network.md`. The actual
+  `aidocs/strategy/102` is `institute-youtube-profile.md`, and
+  **`aidocs/strategy/103-research-network.md` does exist as of
+  this profile pass** (it landed in commit `6c72a712`). The next
+  pass of this profile should cross-reference doc 103 in §3 in
+  place of the in-text reconstruction. A separate
+  **thesis-timeline-of-ideas** doc consolidating the §2 table into
+  a citable figure remains the natural next library-maintenance
+  step.
 
 **External-source asks** (would extend §5.5 *adjacent network*):
 
