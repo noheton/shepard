@@ -171,6 +171,16 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | [UX Movement — How to Make Sure Users Don't Accidentally Delete](https://uxmovement.com/buttons/how-to-make-sure-users-dont-accidentally-delete/) + [UX Psychology — destructive action modals](https://uxpsychology.substack.com/p/how-to-design-better-destructive) | Type-to-confirm pattern halves accidental-click rate on destructive ops | ADMIN-STALE-CH audit F9-1 | v-stepper alone is insufficient for ≥10-row deletes; typed channel-count confirmation needed | skimmed |
 | 2026-05-23 | [Stripe — Idempotent Requests pattern](https://stripe.com/docs/api/idempotent_requests) | Idempotency-Key header + 24h receipt cache for safe-retry on bulk operations | ADMIN-STALE-CH audit F3-3 | Bulk-delete is currently non-idempotent — a retry after network blip can delete recovered channels | unread |
 
+### IMPORTER-CARRY — patterns from v15.x → shepard-plugin-importer (2026-05-23)
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [Singer.io — open standard for moving data](https://www.singer.io/spec/) | tap/target/state.json protocol; foundational ELT decoupling thesis | IMPORTER-CARRY §1 + §2 Pattern 3 | Confirms v15's checkpoint shape is industry-standard; we deliberately reject Singer's tap/target decoupling because Shepard sources must know about `:DataObject` | skimmed |
+| 2026-05-23 | [dlt — data-load-tool docs](https://dlthub.com/docs/) | Python ELT framework with declarative pipelines + incremental state | IMPORTER-CARRY §1 + §6.2 | Critique of imperative ETL informs the `AbstractImportSource` base-class scaffolding decision; SPI-enforced patterns prevent each source from hand-coding retry/state ad-hoc | skimmed |
+| 2026-05-23 | [Airbyte protocol — connector-spec model](https://docs.airbyte.com/understanding-airbyte/airbyte-protocol) | spec/check/discover/read contract per source; JSON-schema config | IMPORTER-CARRY §3.1 (`ImportSource.connectorSpec()`) | Directly adopted as the source-adapter registry shape; informs frontend form rendering for per-source config | skimmed |
+| 2026-05-23 | [Apache NiFi — User Guide](https://nifi.apache.org/docs/nifi-docs/html/user-guide.html) | Processor-graph dataflow engine | IMPORTER-CARRY §1 (REJECT) | Rejected as substrate (separate runtime cost); pattern source for retry+backpressure semantics | skimmed |
+| 2026-05-23 | [Prefect 3.x — flow concepts](https://docs.prefect.io/v3/develop/write-flows) | Python-native flow engine with state machine | IMPORTER-CARRY §1 (REJECT) + Pattern 10 | Confirms max-retries cap belongs on the JobService; rejected as substrate (wrong language) | unread |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
