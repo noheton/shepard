@@ -680,6 +680,37 @@ User directive 2026-05-23: *"after import we should do the database optimisation
 | DB-OPT5 | **Frontend payload diet** — once query latency is honest, the next round of wins is on response-shape. Use the actual `/v2/collections/{appId}/data-objects` payload size on MFFD-Dropbox (≈8k DOs × ~2 KB each = 16 MB) and figure out which fields the frontend actually reads. Slim the response by `?fields=` or default-trim heavy nested objects. | M | queued | Pairs with the existing pagination work (task #51 + #112). |
 | DB-OPT6 | **Operator runbook** — `docs/ops/db-optimisation-runbook.md`: how an admin of a downstream Shepard fork instance runs the same optimisation pass against their own data. Templated `EXPLAIN ANALYZE` queries + interpretation cheat-sheet. | S | queued | Mirrors `docs/ops/garage-activation-runbook.md` shape. |
 
+### V16-PRESERVE-HIERARCHY — 2026-05-23 (replace v15's flat shape with full source-DO tree replication)
+
+User directive 2026-05-23 after v15 hit steady-state ingest: *"so under one DO many DOs could be and then another... DOs to the bottom — along the way references ... is the script doing this"* + decision **B** when offered the trade-off. v15 flattens cube3's hierarchical DO tree (Step → Layer → Ply Group → Track) into a single step DO with thousands of refs whose names encode the source-DO identity. v16 ships the proper-fidelity design: replicate the source tree as actual dest DOs with parent/child + predecessor/successor edges + per-DO attributes.
+
+**Fidelity gaps v15 has that v16 closes**:
+
+- Source DO tree → flattened to single step DO (loses Layer / Ply Group / Track structure)
+- Per-source-DO attributes → only step DO carries attrs (loses `layer_index`, `ply_orientation`, `track_idx`, `material_batch`, etc.)
+- Per-source-DO predecessor/successor edges → not replicated (Track N→N+1 chain lost)
+- Per-source-DO timestamps → only step DO carries import-time stamp
+
+**What stays from v15**:
+
+- Predefined SD containers (645000 + 645003) — these are SHARED across all leaf DOs of a step. Each leaf's structuredDataReference points at the shared container with its own oids list.
+- TS container per step (e.g., 653673) — same shared-container pattern.
+- File container per source DO — each source file lands as 1 file ref on the leaf dest DO that owned it in source.
+- AUTH PROBE (v15.17), ENV-ALIAS (v15.17), uv-PEP-723 runner (v15.16), exit-0 break (v1.1), MFFD_SELFUPDATE / MFFD_CREATE_SEMANTIC_REPOS env opt-outs (v15.19) — all carry forward unchanged.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| V16-IMPL-1 | **Recursive source traversal** — `iter_data_objects` extends to either (a) return all DOs incl. nested + script reconstructs tree via parentId, OR (b) recurse children explicitly. (a) is fewer cube3 round-trips; prefer it. Returned SourceDO must carry `parentId`, `childrenIds`, `predecessorIds`, `successorIds`, full `attributes`. | M | queued | Audit v5 `/collections/{c}/dataObjects` endpoint — does it return all-depth or top-level-only? If top-level: need `/dataObjects/{d}/children` traversal. |
+| V16-IMPL-2 | **Dest tree creation** — for each source DO, create a dest DO whose parent is the dest-side mirror of the source's parent (step DO at the root). Two-pass: first pass creates all dest DOs without edges; second pass wires parent/child + predecessor/successor edges using a source-id → dest-id map. State file extends to map `src_do.do_id → dest_do_id` for resume safety. | L | queued | The two-pass is necessary because predecessor edges may forward-reference DOs not yet created. |
+| V16-IMPL-3 | **Per-DO attribute copy** — copy ALL source DO attributes verbatim plus standard `source_*` markers (per v15.10). No attribute is privileged; every key the source carries lands on dest. Critical for `layer_index`, `ply_orientation`, etc. which are the queryable identity of each Track. | S | queued | Filter only operational shepard-internal attrs (`createdBy`, `appId`, etc. that the dest fills itself). |
+| V16-IMPL-4 | **Reference placement at the correct depth** — file/TS/SD references land on the LEAF dest DO that carried the source ref, NOT on the step DO. Step DO becomes a pure parent container. State file granularity = per-source-DO-id × per-ref-kind × per-ref-id. | M | queued | The big behaviour change. v15's `dest_do_id = step_dest_do_id` becomes `dest_do_id = src_to_dest_map[src_do.do_id]`. |
+| V16-IMPL-5 | **Resume safety** — state file's `do_done`/`file_done`/`ts_done`/`structured_done` keys all key by SOURCE DO ID (not name). `dest_id_map` persisted to state so a resumed run knows the dest-side mapping. Idempotent: re-running over a half-done state yields zero duplicate dest DOs. | M | queued | Critical — re-runs are the norm during ingest tuning. |
+| V16-IMPL-6 | **Bridgewelding parallel paths** — source has multiple `Execution YYYY-MM-DD HH:MM:SS` DOs under Bridgewelding, plus `Process Data N`, `AF_9` etc. These are sibling at the same depth (children of Bridgewelding step). v16 preserves them all as sibling dest DOs. | S | queued | Reference 50-ref listing seen during today's debug shows the shape. |
+| V16-IMPL-7 | **Test fixtures + unit tests** — recursion correctness, two-pass edge wiring, resume safety, dest_id_map persistence. `tests/test_v16_hierarchy.py`. | M | queued | Before live deploy. |
+| V16-IMPL-8 | **Deploy + re-run** — wipe dest MFFD-Dropbox 652941 (already wiped per this row's prompt), launch v16 from clean state. ETA roughly same as v15 (cube3 source-pull is the bottleneck, not the dest writes). | S | blocked-on-1..7 | Cube redeploy + tmux launch using existing runbook. |
+
+**Acceptance**: at completion, MFFD-Dropbox contains a tree of dest DOs matching cube3's source tree — step DOs at the root, Layer / Ply Group / Track / Execution DOs nested below, leaf-DO references attached at the correct depth, predecessor/successor edges between sibling DOs preserved. UI shows the AFP digital thread structurally, not just as a flat ref-list.
+
 ### MFFD-GRAPH-PRUNE — 2026-05-23 (post-ingest graph hygiene)
 
 User directive 2026-05-23 mid-MFFD-redeploy: *"backlog maybe prune graph afterwards"*. After MFFD ingest drains, run a graph-pruning pass to remove the artifacts accumulated during today's bug-chase (orphan TS containers 528098 / 589657 / 599903, the 52 `tapelaying/Track N (Run M)/Timeseries` Neo4j shadow nodes with NULL `id`, any DataObjects that ended up with broken `:HAS_REFERENCE` edges to deleted containers, and the legacy SD containers that survived the wipes). Pre-mutation snapshot per `PRE-MUT-SNAP` before any destructive Cypher.
