@@ -398,6 +398,70 @@ explicitly demanding the shape Shepard already has, and that this
 alignment is not coincidental — both responses derive from the same
 2024–2026 European-sovereignty turn.
 
+## 7.5 The federal-funding-cycle frame — HGF research-policy targets for PoF V
+
+Above the Bavarian dataspace panel sits the larger institutional
+frame that authorises ZLP's funding cycle: the **forschungspolitische
+Ziele** (research-policy targets) of the Helmholtz Association for
+the fifth Programme-Oriented Funding period **PoF V (2028–2034)**, as
+addressed to HGF in the version-V cross-association document of
+2025-09-19 [@hgfFoPoZi5_2025]. Three of the document's binding targets
+align directly with what Shepard provides as substrate and demand the
+shape it already has:
+
+- **Datenmanagement as a binding cross-association target.** The
+  Zuwendungsgeber (federal funding body) explicitly expects from
+  the Helmholtz Association including its centres *"the definition
+  of a joint and cross-cutting architecture concept for the data
+  management infrastructure (data acquisition, data analysis /
+  aggregation, data provision per FAIR principles, and IP
+  management)"*, with the infrastructure required to *"ensure a
+  scalable integration of data-management demonstrators also for
+  partners from science, industry and society"*
+  [@hgfFoPoZi5_2025]. This is, in administrative-language form, the
+  same requirements profile that Shepard's substrate-split design
+  (Neo4j entity graph + Postgres/Timescale + MongoDB + Garage) plus
+  plugin SPI is built to satisfy. The mandate names FAIR explicitly
+  and frames IP-aware operation as a co-equal concern — both load-
+  bearing for Shepard's positioning between research and industry.
+- **NFDI integration is required, not optional.** The same target
+  obliges the Association to *"fundamentally include work and
+  recommendations already produced by NFDI and to closely coordinate
+  further development with NFDI's relevant bodies"*
+  [@hgfFoPoZi5_2025]. The alignment work documented in
+  [`aidocs/strategy/88-nfdi4ing-alignment.md`](88-nfdi4ing-alignment.md)
+  is not a contribution-by-courtesy; it is responding to a binding
+  funding-cycle obligation that PoF V will measure against.
+- **Datenresilienz** as an explicit target — *"the safeguarding of
+  data resilience to guarantee the availability, integrity and
+  access to data even in the case of unforeseen events,
+  disruptions or failures"* [@hgfFoPoZi5_2025]. Shepard's policy
+  posture on this (no US-cloud lock-in, European-jurisdiction
+  object storage via Garage per ADR-0024, an explicit exit-strategy
+  obligation inherited from `dlrCloudStrategie2019`) is not a
+  preference; it is the response to a PoF V target.
+
+In the same document, two adjacent binding targets — *Nachhaltigkeit*
+(the Association is required to develop a joint sustainability
+strategy, including operational measures for climate-neutrality and
+the sustainable operation of research infrastructures) and *Pakt für
+Forschung und Innovation* (PFI) continuity through PoF V — frame the
+constraints under which the data-management target has to be met.
+The sustainability frame in particular reaches into Shepard's
+operational substrate through the LLM-energy-cost reporting (see
+[`aidocs/sustainability/00-energy-estimation-log.md`](../sustainability/00-energy-estimation-log.md))
+and the European-jurisdiction storage choice (Garage in EU rather
+than US-cloud blob storage).
+
+For the thesis, the PoF V research-policy document is the
+**funding-cycle-level evidence** that the substrate Shepard provides
+is on-policy at the highest institutional layer above the centre:
+the Bavarian dataspace panel (§7) sets the regional shape; HGF's
+PoF V targets set the federal-Association-level shape; both
+converge on the same requirements profile that Shepard's plugin-
+first, FAIR-by-default, IP-aware, resilient-by-design architecture
+already meets.
+
 ## 8. The strategic outlook: ZEUS and the move toward hydrogen-class structures
 
 The portfolio's closing section names the next research front as
@@ -439,10 +503,16 @@ will arrive with:
    enabling technologies for the "integrated factory," alongside the
    DigECAT digital twin and the inline-QA computer-vision systems.
 4. **Is the environment around the centre asking for this shape?**
-   Yes — the Bavarian Fachpanel on data spaces independently
-   converges on requirements that Shepard's plugin-first,
-   open-standards, European-sovereignty-aware architecture already
-   meets.
+   Yes, on two institutional layers. **Regionally**, the Bavarian
+   Fachpanel on data spaces (§7) independently converges on
+   requirements that Shepard's plugin-first, open-standards,
+   European-sovereignty-aware architecture already meets.
+   **Federally**, HGF's research-policy targets for PoF V (2028–2034)
+   (§7.5) bind the Association including ZLP to a joint
+   data-management architecture concept implementing FAIR principles,
+   IP-aware operation, NFDI alignment and data resilience — which is
+   the requirements profile Shepard's substrate split and plugin SPI
+   are built to satisfy [@hgfFoPoZi5_2025].
 
 The next thesis chapter (the architecture chapter — drafted in part at
 [`aidocs/strategy/86`](86-shepard-predecessor-systems.md) §3 and in
@@ -451,7 +521,7 @@ takes those four answers as given and starts to design against them.
 
 ## Primary sources
 
-The institutional positioning above is grounded in four primary
+The institutional positioning above is grounded in five primary
 sources uploaded by the author to the AI working memory of this
 project on 2026-05-23:
 
@@ -470,6 +540,16 @@ project on 2026-05-23:
 - @bayernFachpanel2026 — *Ergebnis Fachpanel: Aufbau und Nutzung von
   Datenräumen, 20.03.2026* (PPTX, 16 slides). Bavarian dataspace
   expert panel.
+- @hgfFoPoZi5_2025 — *Forschungsbereichsübergreifende
+  forschungspolitische Ziele für die PoF V (2028–2034)*
+  (DOCX, cross-association research-policy target document
+  addressed to HGF, dated 2025-09-19). Names *Datenmanagement* as
+  a binding cross-association target with explicit FAIR + IP +
+  NFDI-alignment + Datenresilienz obligations on the centres;
+  the funding-cycle-level frame for §7.5. Sibling targets:
+  *Nachhaltigkeit* (joint sustainability strategy + climate-neutral
+  operation) and *Pakt für Forschung und Innovation* continuity
+  through PoF V.
 - @dlrZlpShepard — the external eLib / DLR project page for Shepard,
   retained for the contrast: external visibility lags internal
   positioning.

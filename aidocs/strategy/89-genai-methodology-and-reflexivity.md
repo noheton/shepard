@@ -248,6 +248,42 @@ The deck has limits the thesis should not paper over:
 These are extensions the thesis methodology chapter has the room to
 make and the source material to support.
 
+## 8.5 A biographical aside on the author's posture
+
+A reflexivity chapter that names *stated position vs observed
+practice* (§6) and *failure-case material* (§8) can afford a third,
+lighter, primary-source register: the author's own self-framing,
+preserved in a single-page satirical "Wanted" poster Krebs kept on
+his office door at DLR ZLP, authored 2012-07-25
+[@wantedFlo2012]. The text is brief and deliberately ridiculous —
+
+> *"WANTED. EVIL GENIUS seeks minions to sacrifice their lives in
+> world domination attempt. Must be prepared to work 24-7 for
+> psychopath for close to no pay. Messy death inevitable but costumes
+> and laser death rays provided. NO Weirdos."*
+
+The poster is not a methodological document. Its value to the
+reflexivity chapter is twofold and limited. First, it dates an
+author-stance that is *self-aware about the asymmetry between PI and
+collaborator* — the satire works because the underlying labour
+relation it parodies is real — fourteen years before the same author
+articulated, on a public deck, a thoughtful position on the
+human-machine asymmetry in AI-assisted science
+[@krebsGenKi2026 ; slide 14]. Second, it is a small primary-source
+calibration on the *register* of the author's working voice: the
+project's MEMORY entries on highlight-capture, on the persona-board's
+willingness to argue back, on the "Reluctant Senior Researcher"
+critic role being an in-house critic rather than an external one —
+all of those design choices are consistent with an author who, in
+2012, found the *evil-genius-and-minions* framing of academic
+hierarchy worth nailing to the office door as a joke against
+himself.
+
+The reflexivity chapter does not need to make more of this than
+that. The poster is included as a footnote-class primary source —
+not load-bearing, but on the record, and consistent with the
+*stated and observed practice converge* finding of §6.
+
 ## 9. Closing — the chapter the deck makes possible
 
 The thesis's methodology chapter has, in this deck, the rarest of
@@ -257,7 +293,7 @@ independent of the convenience of the present argument. Citing it is
 not self-citation. It is verification that the methodology chapter is
 describing a posture the author has already publicly defended.
 
-## Primary source
+## Primary sources
 
 @krebsGenKi2026 — *Generative KI: Technologie, Ethik und Zukunft —
 Wie LLMs (unser) Arbeiten und Denken (verändern)* (PDF, 17 slides;
@@ -267,5 +303,11 @@ The deck's own bibliography (slide 14) cites @vaswani2017attention,
 @hoffmann2022chinchilla, @shumailov2024modelCollapse, and
 @nistAiRmf_2023 among 19 references; the relevant subset has been
 copied into this project's bibliography for downstream citation.
+
+@wantedFlo2012 — *"Wanted" office-door poster* (DOC, 2 pp., 35 words;
+authored by Florian Krebs, DLR ZLP Augsburg; create-date 2012-07-25,
+last-saved 2012-07-25 10:41). Single-page satirical "Wanted" notice
+that hung on the author's office door. Primary source for §8.5 only;
+not load-bearing. Uploaded to AI working memory 2026-05-23.
 
 Citations resolve via [`docs/_data/references.bib`](../../docs/_data/references.bib).

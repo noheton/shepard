@@ -1230,6 +1230,51 @@ design because:
    inter-instance federation bus, not just an external-catalog
    bridge.
 
+### ODIX Milestone 2 — what the four work-packages actually shipped (2025-09-30)
+
+The ODIX project is funded as a four-HAP (*Hauptarbeitspaket*)
+collaboration; Milestone 2 — *"first prototype finished and evaluated"*
+— was delivered on 2025-09-30 (originally scheduled 2025-05-31; moved
+to 2025-09-30 in PCR 1) [@odixMilestone2_2025]. The milestone report
+authored by F. Krebs makes the per-HAP scope concrete and confirms
+which Shepard surfaces the project exercises today:
+
+| HAP | Lead | Scope (Milestone 2 acceptance) | Delivered? |
+| --- | --- | --- | --- |
+| HAP 1 — *Information extraction from semi-structured technical documents* | DW | Prototype information-extraction tool usable via GUI; LLM-based extraction from PDFs, output as JSON, mapping into the HAP-4 ontology with human-in-the-loop correction; persistence in a backend DB | **Achieved.** Extraction latency 2–3 min per PDF; final output planned to move from JSON to RDF/Turtle for direct triplestore ingestion |
+| HAP 2 — *Shepard storage management with metadata schemas + timeseries support* | BT (Krebs's group) | Prototype for storage management usable + connected to the components for information extraction and exploration; semantic annotation of timeseries; automatic metric calculation on intervals | **Mostly achieved** — semantic annotation + interval-metric calculation shipped in Shepard; component-to-component automation pending |
+| HAP 3 — *Exploration UI for the extracted KG* | DW | Prototype for exploration usable via GUI; KG-driven views grouped by *Machines / Procedures / Planned Procedures / Samples*; planned-vs-set-vs-measured comparison; stage-level temporal navigation | **Achieved.** Continuously-integrated GitLab Pages deployment; user feedback as GitLab issues |
+| HAP 4 — *Evaluation* | SY | Textual documentation of prototype evaluation exists | **Achieved.** Per-component evaluation summaries from WF/FM and MO; issue reports filed in GitLab |
+
+Two findings from the Milestone-2 report carry forward into the
+SHACL / TPL design here:
+
+1. **HAP 2's evaluation surfaces the same two operational gaps the
+   design names.** The report records that *"the connection of
+   components was delayed, mostly due to technical decisions in HAP
+   1"* and that automation between the HAP-1 extraction backend and
+   HAP-2 Shepard storage is *"not yet automated"*. This is the gap
+   TPL1 + TPL3 close at platform level (ontology-driven shapes
+   generated from `process.ttl` rather than hand-coded per
+   notebook); the design is responding to a documented operational
+   need, not a hypothetical one.
+2. **HAP 1's design pivot (JSON-as-intermediate, then RDF) confirms
+   the platform's posture.** The Milestone-2 report records that
+   *"approaches to convert information directly from PDF to RDF
+   provided problems"* and that JSON-as-intermediate became the
+   compromise; the next deliverable will *"move the final output to
+   RDF instead of JSON"*. Shepard's SHACL-driven shape layer is the
+   substrate-side answer to this — once shapes are first-class,
+   the extractor can target shapes directly and avoid the
+   intermediate-format round-trip.
+
+A second use-case in HAP 1 — *aircraft maintenance manuals
+processed by MO via a PDF → JSONL layout-aware pipeline* — confirms
+that the extraction layer is not coupled to the resin-infusion
+domain. The same loop transplants to other regulatory document
+classes, which is what the platform-native version (next subsection)
+is designed to enable across the SHACL shape library.
+
 ### What the platform-native version adds beyond ODIX
 
 | Aspect | ODIX today | Shepard-native after TPL1+3+9 |

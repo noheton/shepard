@@ -137,6 +137,15 @@ Design notes, analysis docs, and strategy docs for this fork of
 | [`75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | DFG e-research funding context |
 | [`76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | Known users + citation tracking |
 | [`82-zlp-augsburg-stakeholder.md`](strategy/82-zlp-augsburg-stakeholder.md) | ZLP Augsburg stakeholder details |
+| [`83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features adoption + leverage matrix |
+| [`85-github-project-management-policies.md`](strategy/85-github-project-management-policies.md) | GitHub PM policies — SSOT-first, 4-gate Issues, one-way sync |
+| [`86-shepard-predecessor-systems.md`](strategy/86-shepard-predecessor-systems.md) | PRAESTO / KIBID / iDMS at DLR ZLP — continuity-of-field history |
+| [`87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg institutional positioning — the substrate Shepard serves |
+| [`88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | NFDI4Ing alignment — German engineering RDM federation positioning |
+| [`89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — stated position vs observed practice |
+| [`90-hmc-phase-2-positioning.md`](strategy/90-hmc-phase-2-positioning.md) | HMC Phase 2 work-packages at DLR ZLP — externally-promised roadmap items |
+| [`91-forinfpro-semantically-driven-analytics.md`](strategy/91-forinfpro-semantically-driven-analytics.md) | ForInfPro + semantically-driven analytics — DIKW architecture motivation |
+| [`93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — Compliance Agent briefing source |
 
 ---
 

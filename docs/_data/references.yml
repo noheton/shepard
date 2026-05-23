@@ -621,28 +621,6 @@ petschPandora2018:
   note: "PANDORA aircraft-sizing framework at DLR --- referenced as a sidebar in aidocs/strategy/86 §4.4 (iDMS bridged to PANDORA via the idms_pandora_converter, but PANDORA is NOT in the Shepard lineage)."
   category: "papers"
 
-nuschele2014Praesto:
-  entry_type: "inproceedings"
-  author: "Nuschele, Stefan and Schmidt, Thomas and Kießig, Mildred and Mühlhausen, Thomas and Wagenfeld, Bastian and Voss, Hajo"
-  title: "Datenbank PRAESTO: Speicherung von CFK-Forschungsdaten auf Fertigungsniveau"
-  booktitle: "63. Deutscher Luft- und Raumfahrtkongress (DLRK 2014)"
-  year: "2014"
-  month: "sep"
-  address: "Augsburg, Germany"
-  organization: "DGLR"
-  url: "https://elib.dlr.de/94077/"
-  note: "DLR eLib 94077 (presentation: 94078). The earliest documented predecessor of the Shepard line: an industrial-partner CFRP manufacturing database developed with Kisters AG and Premium Aerotec, focused on geometric measurements and non-destructive testing data. Conference presentation; no full text deposited."
-  category: "dlr_internal"
-
-shepardZlpProject:
-  entry_type: "misc"
-  author: "DLR ZLP Augsburg"
-  title: "shepard --- storage for heterogeneous product and research data"
-  year: "2021"
-  url: "https://www.dlr.de/de/zlp/forschung-transfer/projekte/projekte-aus-augsburg/projekte-augsburg/shepard"
-  note: "Official ZLP Augsburg project page for Shepard. Names Florian Krebs as project lead; positions Shepard as the institute's research-data substrate spanning simulation, production, flight experiments and laser testing."
-  category: "dlr_internal"
-
 unasZlpCodeDrop2026:
   entry_type: "misc"
   author: "DLR Augsburg / ZLP (artefact collection)"
@@ -650,4 +628,362 @@ unasZlpCodeDrop2026:
   year: "2026"
   url: "file:///mnt/pve/unas/media/random/"
   note: "Primary historical source of unusual provenance: a researcher's NAS snapshot retrieved 2026-05-23 containing PRAESTO-era client code (kibid_exporter, opcua_kibid_adapter, c.~2017), the full seven-component iDMS project (Java/Python/Jupyter clients, Flask frontend, Kafka bridge, RCE integration, importers; c.~2020), and adjacent ZLP tooling. Establishes the existence and shape of internal systems not represented in eLib. See methodological discussion in aidocs/strategy/86-shepard-predecessor-systems.md."
+  category: "dlr_internal"
+
+zlpKompetenzportfolio2026:
+  entry_type: "misc"
+  author: "DLR Zentrum für Leichtbauproduktionstechnologie (ZLP) Augsburg"
+  title: "Wissenschaftliches Kompetenzportfolio: DLR Zentrum für Leichtbauproduktionstechnologie (ZLP) Augsburg"
+  year: "2026"
+  howpublished: "Internal positioning document; PDF, 3 pp."
+  note: "Institutional competence portfolio for ZLP Augsburg. Author not identified on the document; PDF metadata shows ``Skia/PDF m147 Google Docs Renderer''. Synthesises the five research groups (Flexible Automation; Assembly & Joining; Production-Integrated Quality Assurance; Processes & Automation; Technical Centre for Production Processes), the four flagship cells (MFZ, FPC, TPC, TEC), and names Shepard as part of the centre's digital backbone. Used as primary source for aidocs/strategy/87-dlr-zlp-positioning.md. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+krebsDIVA2026:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Projektentwurf: DIVA --- Drone Integration via AAS"
+  year: "2026"
+  howpublished: "Initial project-idea skizze (V01); DOCX, one page; reference: LuFo~VII-2, Disruptive Technologien, Aufgabe~3; TRL target 1--2"
+  note: "Earliest formal artefact for the DIVA project --- a DLR-internal, research-only consortium proposing to use Asset Administration Shell (AAS) Typ~3 as an \\emphactive application protocol for decentralised UAS swarm coordination, transferring AAS technologies ``aus der Lieferkette (Aerospace-X) direkt in den operativen Flugbetrieb''. Names a five-institute DLR consortium: FT (Flugsystemtechnik, system architecture + UTM interface), KI (KI-Sicherheit, certifiable multi-agent AI), DW (Datenwissenschaften, AAS data modelling), MO (Instandhaltung und Modifikation, predictive maintenance + digital product passport), and BT/ZLP (Bauweisen und Strukturtechnologie, AAS-Repository-Infrastruktur \\textscShepard). Four work-packages: protocol theory; submodel architecture (DroneIdentity, AirspaceSlot); ROS~2 / Gazebo 3--5 UAS swarm lab-demonstrator (``Delivery by Drone''); ML state-prognosis + predictive maintenance. Outcome target: open-access reference architecture + IDTA/EUROCAE standardisation contributions. Primary source for aidocs/strategy/101-diva-project-context.md. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+krebsInventur2025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Fähigkeiten-Inventur DLR-BT --- Standort Augsburg / ZLP"
+  year: "2025"
+  month: "apr"
+  howpublished: "Capability inventory; PDF, 31 slides; dated 2025-04-18; institutional context: DLR Institut für Bauweisen und Strukturtechnologie, Standort Augsburg (ZLP)"
+  note: "Comprehensive machine-portfolio inventory for DLR BT/ZLP Augsburg. Documents nine named cells/Anlagen (FPZ Fiberplacement-Zelle, TPZ Thermoplast-Zelle, IQZ Inline-Qualitätssicherungszelle, MFZ Multifunktionale Zelle, TEZ Technologie-Erprobungszelle, Heißpresse, Cutterzentrum, Wasserstrahlanlage, CoBots+AGV) and eight cross-cutting technologies (LEA Laser-Excited Acoustics, 3D-mapped Thermography, 3D Geometrie-Vermessung incl.\\ Leica AT901, AFP on-the-fly 3D profilometer, autonome Produktion, Automated Defect Recognition, Soll-Ist-Vergleich, integrated digital-twin layer). Slide~22 (Panel Produktion process chain) names ``Datenerfassung, -speicherung und -auswertung, DigTwin'' as the underlying data layer --- the integration target Shepard serves. Slide~23 (Krebs F., 2025-02-21) positions Shepard explicitly as the cross-domain substrate spanning Structural mechanics / Materials / Design,Process / Production / Ground+Flight Test in the ``Digital integration by process chain spanning data management system'' band; this is the canonical thesis-substrate figure. Primary source for aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md; one-line citation in aidocs/strategy/101-diva-project-context.md. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+krebsForInfPro2026:
+  entry_type: "misc"
+  author: "Krebs, Florian and Glück, Roland and Lettowsky, Felix and Kaufmann, Patrick and others"
+  title: "Semantically-Driven Data Analytics --- the ForInfPro use case"
+  year: "2026"
+  howpublished: "Talk slides; PPTX, 11 slides; speaker-date placeholder names ``Florian Krebs, BT, 21.2.2025'' on slide 3 (DIKW pyramid citation)"
+  note: "Position deck describing the ``Context Gap'' framing, ontology--Shepard interplay, and the ForInfPro composite-infusion process-control use case at DLR ZLP. Contains the canonical Shepard contextualisation diagram (Infusion / Pump / Sensor / Image container $\\to$ Experiment data object) and the dry-spot reasoning chain (Phenomenon $\\to$ Measurable $\\to$ Physical quantity $\\to$ Constraint). Used as primary source for aidocs/strategy/91-forinfpro-semantically-driven-analytics.md. Provenance: uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+krebsGenKi2026:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Generative KI: Technologie, Ethik und Zukunft --- Wie LLMs (unser) Arbeiten und Denken (verändern)"
+  year: "2026"
+  howpublished: "Talk; PDF, 17 slides; creation date 2026-02-26 (Foxit PDF Editor)"
+  note: "Author-led tutorial on LLM mechanics (tokenisation, embeddings, transformer attention, training phases), data limits (Chinchilla optimum, model collapse), the alignment problem, ethical risks for scientists (hallucination, bias, reproducibility), and the NIST AI RMF. Includes a closing ``AI Disclosure'' slide naming the SAIA/GWDG scientific cloud, Marp CLI, Docling-MCP, paper-search MCP, and web-search tools as the workflow used to produce the deck --- a primary-source statement of the author's transparent-AI-use posture. Used as primary source for aidocs/strategy/89-genai-methodology-and-reflexivity.md. Provenance: uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+krebsHumanoids2026:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Humanoids 2026: Trends, Achievements, Gaps --- Implementation in Manufacturing"
+  year: "2026"
+  howpublished: "Talk slides; PPTX, 15 slides"
+  note: "Market and capability survey of humanoid-robot deployments in manufacturing (Xiaomi, Tesla, BMW, Toyota, Amazon/GXO), with citations to Gitnux 2026, SVRC 2026, Lexology 2026, Roland Berger 2026, McKinsey 2025, Axis Intelligence 2025, Bloomberg 2026. Surveys ISO~10218, ISO/TS~15066, ANSI/A3~R15.06-2025, ISO~25785-1, ISO~13482 as the relevant safety-standards landscape. Tangential to Shepard's core thesis arc; logged in the thesis-memory artefact inventory but not the substrate of a standalone strategy doc. Provenance: uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+bayernFachpanel2026:
+  entry_type: "misc"
+  author: "Bayerisches Fachpanel --- Aufbau und Nutzung von Datenräumen"
+  title: "Ergebnis Fachpanel: Aufbau und Nutzung von Datenräumen --- 20.03.2026"
+  year: "2026"
+  howpublished: "Panel-results deck; PPTX, 16 slides; German"
+  note: "Outcomes of a Bavarian expert panel on data spaces: SWOT analysis (strengths/weaknesses/opportunities/risks) plus six action fields (Gelebte Datenkultur; Expertise aktivieren; Zugang zur Infrastruktur; Souveränität & Resilienz; Regulatorik & Standards; Bayern agiert global), each with a vision statement. Regional/policy context for Shepard's positioning in the Bavarian dataspace ecosystem (cited as a regional-context aside in aidocs/strategy/87 §5). Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+rowleyDikw2007:
+  entry_type: "misc"
+  author: "Rowley, Jennifer"
+  title: "The Wisdom Hierarchy: Representations of the DIKW Hierarchy"
+  journal: "Journal of Information and Communication Science"
+  volume: "33"
+  number: "2"
+  pages: "163--180"
+  year: "2007"
+  doi: "10.1177/0165551506070706"
+  note: "Canonical DIKW (Data $\\to$ Information $\\to$ Knowledge $\\to$ Wisdom) hierarchy paper. Cited on slide 3 of krebsForInfPro2026 as the theoretical scaffold for the ``data-driven'' framing that motivates Shepard's contextualisation layer."
+  category: "papers"
+
+vaswani2017attention:
+  entry_type: "misc"
+  author: "Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, Lukasz and Polosukhin, Illia"
+  title: "Attention Is All You Need"
+  year: "2017"
+  howpublished: "Advances in Neural Information Processing Systems 30; arXiv:1706.03762"
+  url: "https://arxiv.org/abs/1706.03762"
+  note: "Original Transformer paper. Cited in krebsGenKi2026 (ref [1]) as the architectural foundation of contemporary LLMs."
+  category: "papers"
+
+hoffmann2022chinchilla:
+  entry_type: "misc"
+  author: "Hoffmann, Jordan and Borgeaud, Sebastian and Mensch, Arthur and Buchatskaya, Elena and Cai, Trevor and Rutherford, Eliza and others"
+  title: "Training Compute-Optimal Large Language Models (Chinchilla)"
+  year: "2022"
+  howpublished: "arXiv:2203.15556"
+  url: "https://arxiv.org/abs/2203.15556"
+  note: "Compute-optimal scaling laws (the ``20 tokens per parameter'' Chinchilla regime). Cited in krebsGenKi2026 (ref [12]) as the constraint that frames the 2026--2032 data-bottleneck argument."
+  category: "papers"
+
+shumailov2024modelCollapse:
+  entry_type: "misc"
+  author: "Shumailov, Ilia and Shumaylov, Zakhar and Zhao, Yiren and Gal, Yarin and Papernot, Nicolas and Anderson, Ross"
+  title: "AI models collapse when trained on recursively generated data (model collapse)"
+  journal: "Nature"
+  volume: "631"
+  year: "2024"
+  pages: "755--759"
+  doi: "10.1038/s41586-024-07566-y"
+  note: "Empirical demonstration of degenerative learning when LLMs train on synthetic data. Cited in krebsGenKi2026 (ref [13]) as the failure mode that constrains naive ``train on the web's AI output'' strategies; relevant to Shepard's f(ai)$^2$r AI-provenance vocabulary, which makes the human/AI/synthetic split visible in the data substrate."
+  category: "papers"
+
+nfdi4ingIntroKrebs2025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Intro NFDI4Ing (1+2)"
+  year: "2025"
+  month: "nov"
+  howpublished: "Internal DLR ZLP positioning briefing slide deck, dated 2025-11-03 (8 slides)"
+  note: "NFDI4Ing introduction and Phase 2 (2025--2030) DLR-partner positioning. Names Measure F-1 (data integration guidelines; partners WZL, IPT, IoP, DLR) and Measure F-2 (Data Mesh to RDM adaption concept; partners WZL, IPT, TUB, DLR). Internal DLR partners listed: IW, TS, BT, RY, (VE) at 4 PM/a. Uploaded to AI working memory 2026-05-23. Primary source for aidocs/strategy/88-nfdi4ing-alignment.md."
+  category: "dlr_internal"
+
+hmcPhase2WpKrebs2025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "HMC 2 Workpackages @ DLR ZLP"
+  year: "2025"
+  howpublished: "DLR ZLP Augsburg HMC Phase 2 work-package proposal slide deck (preliminary version with placeholder presenter/date footer; named slide 3 footer ``BT, 05.05.2025'')"
+  note: "Helmholtz Metadata Collaboration Phase 2 work-package proposal naming three Shepard-bearing WPs: (1) Solutions for data export and import (RO-Crate, Shepard import/export functionality, PID integration), (2) Shepard semantic features extensions development (ontology-annotation usability), (3) Establish interoperability between DM solutions in DLR (Shepard, twinStash, Defacto, Inst.DLR; Databus + MOSS foundation). Uploaded to AI working memory 2026-05-23. Primary source for aidocs/strategy/90-hmc-phase-2-positioning.md."
+  category: "dlr_internal"
+
+nfdi4energyDatabusMossGuide:
+  entry_type: "misc"
+  author: "NFDI4Energy"
+  title: "Databus and MOSS Integration Guide"
+  howpublished: "NFDI4Energy programme guide document"
+  note: "NFDI4Energy-published integration manual for DBpedia Databus + MOSS (Metadata Online Submission System). Databus is ``a digital factory platform for managing files online with stable IDs, high-quality metadata, powerful API and tools for building on data'' (\\urlhttps://github.com/dbpedia/databus). Uploaded to AI working memory 2026-05-23. Cited in aidocs/strategy/90-hmc-phase-2-positioning.md \\S 5 as the federation-substrate manual Shepard's WP-3 prototype would follow."
+  category: "dlr_internal"
+
+schlenzRdmHandbook2026:
+  entry_type: "misc"
+  author: "Schlenz, Hartmut and Bronger, Torsten and Selzer, Michael and Nestler, Britta and Riem, Leo and Enahoro, Salome"
+  title: "Research Data Management --- A Practical Introduction"
+  year: "2026"
+  month: "feb"
+  howpublished: "Best-practice handbook, 100 pp, Zenodo"
+  doi: "10.5281/zenodo.18468308"
+  url: "https://zenodo.org/records/18468308"
+  note: "Version 1.1 (Feb 2026); first published July 2025 (J\\\"ulich and Karlsruhe). CC BY-SA 4.0. Funded by DFG via NFDI4ING CADEN archetype (codes D.B.B01953, D.B.C02632). Initially presented at the international CoRDI 2025 conference at RWTH Aachen. Authors are the maintainers of JuliaBase (Bronger, FZJ), Kadi4Mat (Selzer/Nestler/Riem, KIT) and SciMesh (Bronger). German companion edition: \\hrefhttps://doi.org/10.5281/zenodo.1846823910.5281/zenodo.18468239. The community-standard reference for engineering-research RDM in Germany; covers FAIR life-cycle, DFG-aligned DMP template (\\S 4.1--4.6), the three free ELNs (JuliaBase / eLabFTW / Kadi4Mat), data-quality fundamentals, ELN-to-ELN data exchange via SciMesh (\\S 7.1), MetaData4Ing process model (\\S 7.5), Zenodo publication walk-through (\\S 8.2), and ML training-data preparation (\\S 8.4). Shepard positioning vs. this handbook is captured in aidocs/strategy/88-nfdi4ing-alignment.md \\S 5 and the thesis-positioning \\S 4.1 of aidocs/98-thesis-perspective.md."
+  category: "papers"
+
+krebsKukaCnc2025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "KUKA CNC Robotics"
+  year: "2025"
+  month: "jul"
+  howpublished: "Internal technology-strategy talk slides; PPTX, 7 slides; cover dated 23.07.2025"
+  note: "Author-led internal evaluation of the KUKA.CNC integration option (KUKA robots fronted by Siemens Sinumerik 840D control) versus the conventional KRL+RoboDK path the DLR ZLP centre operates today. Documents the X63 EMI interface (PROFINET IRT / ProfiSAFE), KSS 8.6+ requirement, lack of IIQKA.OS compatibility, the ``Sinumerik Run MyRobot / Machining with KUKA robots'' incompatibility with 840D Sl CNC-SW 4.9.x and Sinumerik ONE, and the medium-term compatibility risk posed by Siemens's ``Run My Robot / direct control'' (MTR) direction. Strategic conclusion: \\emphCNC-as-compatibility-factor (Airbus, ASA, PAG) weighed against \\char`\\~\\,€100k equipment cost, mandatory OLP, training, and the paradigm tension with autonomous-production research. Primary source for aidocs/strategy/87-dlr-zlp-positioning.md \\S 3.1. Provenance: uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+krebsMetrologyI42025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Integrating Metrology, Spatial Analyzer and Industry 4.0"
+  year: "2025"
+  howpublished: "Internal positioning talk slides; PDF, 10 slides"
+  note: "Author-led survey of the DLR ZLP metrology platform (Spatial Analyzer Ultimate; 2$\\times$~Leica AT~901~LR; T-Probe; T-MAC; T-SCAN~5) and its day-to-day application set (GD&T of finished parts/assemblies, process-specific measurements, surface-geometry reconstruction). The deck's load-bearing advanced application is in-situ elastic calibration of robots (IREC): a 18-DOF lumped kinetostatic model running on a Linux-Xenomai real-time PC corrects the KUKA KR~120 HA TCP via the RSI interface every 4~ms, based on ATI 6-axis F/T sensor readings. Published results on the MFFD double-curvature mould with 280~N lateral / 1100~N normal load cases: 89.30% reduction in mean TCP deviation, 70.19% reduction in maximum deviation, trajectory within the $\\pm 0.3$~mm aerospace tolerance. Primary source for aidocs/strategy/87-dlr-zlp-positioning.md \\S 3.2 and the design seed in aidocs/integrations/96-metrology-spatial-analyzer.md. Provenance: uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+bmftrPofV2025:
+  entry_type: "techreport"
+  author: "Zachgo, Jochen"
+  title: "Übergreifende forschungspolitische Ziele für die Programmorientierte Förderung Periode V (PoF V, 2028--2034)"
+  institution: "Bundesministerium für Forschung, Technologie und Raumfahrt (BMFTR)"
+  year: "2025"
+  month: "sep"
+  type: "Ministerial letter to the President of the Helmholtz Association"
+  note: "Two-page letter from Dr.~Jochen Zachgo (Leiter Abteilung~4 ``Hochschul- und Wissenschaftssystem; Bildungsfinanzierung'', BMFTR) to Prof.~Dr.~Otmar D. Wiestler (President, Helmholtz-Gemeinschaft Deutscher Forschungszentren e.V., Berlin), dated 24~September~2025 (Bonn), with cc to Dr.~Martin Keller. Transmits the overarching research-policy goals for the fifth period of Programmorientierte Förderung (PoF~V, 2028--2034) to be agreed with the Helmholtz presidium. The three named overarching goals are: (a) a purely declaratory reference to the validity of the PFI (Pakt für Forschung und Innovation) research-policy goals, (b) the development of a joint sustainability strategy, and (c) the development of a joint and overarching architecture concept for the data-management infrastructure (``ein gemeinsames und übergreifendes Architekturkonzept für die Datenmanagement-Infrastruktur''). Goal (c) is the load-bearing strategic context for Shepard's HMC-aligned federation work; see aidocs/strategy/90-hmc-phase-2-positioning.md \\S 1.1. PDF metadata names ``Wolf, Frank /423'' as document author (the BMFTR drafting staffer); signed by Zachgo on the printed letter. Uploaded to AI working memory 2026-05-23."
+  category: "policy"
+
+weberAerospaceX2025:
+  entry_type: "misc"
+  author: "Weber, Holger"
+  title: "Aerospace-X: Charting a course through regulatory storms towards sustainable aerospace solutions"
+  year: "2025"
+  howpublished: "Aerospace-X consortium positioning slide deck; PPTX, 14 slides; PPTX core.xml dc:title fragment ``Joint Target Picture''"
+  note: "Consortium positioning deck for the BDLI-initiated, Airbus-Operations-led Aerospace-X project (the aerospace branch of the German BMWK-funded Manufacturing-X programme). Records: the regulatory-tsunami timeline (REACH~2007 through DPP~2030 and minimum recycling quotas 2036); the four pain-points motivating a sovereign aerospace dataspace (no seamless data transfer, paper-based documentation, multi-scan degradation, manual processes); the export-control and counterfeit-part traceability use cases; the project shape (consortium of 30+ companies/associations/research institutions, kickoff April~2024, 27-month duration, scope ``Supply Chain for Aircraft Manufacturing in Germany focusing fuselage, Cabin and Engine''); the four named use cases (Demand-and-capacity, CO\\textsubscript2/PCF, Circularity/R-Strategies, End-to-End Quality); the technical vision (Catena-X+AAS+Eclipse Tractus-X as substrate, EDC connectors federating); and the worked E2E-quality use case for safety-critical aero-engine components citing Bergs & Ganser IMEC~2024. Primary source for aidocs/strategy/92-aerospace-x-regulatory-context.md. Uploaded to AI working memory 2026-05-23."
+  category: "policy"
+
+bergsAerospaceXImec2024:
+  entry_type: "inproceedings"
+  author: "Bergs, Berend and Ganser, Patrick"
+  title: "Aerospace-X --- Towards multi-tier traceability in the manufacturing of safety critical aerospace components"
+  booktitle: "Proceedings of IMEC2024 (The 20th International Machine Tool Engineers' Conference)"
+  year: "2024"
+  note: "The cited IMEC 2024 conference paper from which the E2E-quality worked example on slide 13 of weberAerospaceX2025 is sourced. Establishes the three-step traceability use case (production monitoring~$\\to$ root-cause analysis at MRO~$\\to$ containment) as the canonical Aerospace-X demonstrator. Not directly retrieved; cited as the deck cites it."
+  category: "papers"
+
+welzmuellerForschungsdatenPoster2025:
+  entry_type: "misc"
+  author: "Welzmüller, Finn and Dannemann, Frank and Scharringhausen, Marco and Dannemann, Tanja"
+  title: "Research Data Management for Space Missions: Practical Experiences and Lessons Learned"
+  year: "2025"
+  howpublished: "Conference poster, PPTX 1-slide format, with author annotations by Florian Krebs (file name ``Tag_der_Forschungsdaten_Poster_Anmerkungen_FK.pptx'')"
+  note: "Single-slide A0-format poster presenting the PLUTO mission's RDM work and its use of Shepard as the technology stack. Authors are all from DLR Institute of Space Systems, Bremen. The poster cites Friedline et al.~2025 (HMC Conference shepard paper), Haase et al.~2021 (Zenodo shepard release), Aksteiner et al.~2024 (PLUTO mission paper), and Holz 2024 (Bremen master thesis on deployable flexible solar arrays for space). Documents Shepard's role: storage (data containers as partitions of dedicated DBs), organization (collections / data objects / references; Parent/Child for hierarchy; Predecessor/Successor for sequence), access (REST + frontend + Python library + IAM with API keys), and documentation (key-value metadata + ontology classes + built-in Lab Journal). The file was uploaded by Florian Krebs annotated with his comments --- the poster itself is not FK-authored. Bib key chosen to credit the actual authors (Welzmüller \\emphet al.). Complements the existing welzmueller2024Pluto entry for the PLUTO mission paper. Uploaded to AI working memory 2026-05-23. Cited as primary source in the thesis-idea artefact inventory (project_thesis_idea.md)."
+  category: "dlr_internal"
+
+zlpDataDrivenIntelligence2025:
+  entry_type: "misc"
+  author: "DLR Zentrum für Leichtbauproduktionstechnologie (ZLP) Augsburg"
+  title: "DLR ZLP Augsburg --- Data Driven Intelligence"
+  year: "2025"
+  month: "jan"
+  howpublished: "Institutional presentation deck; PDF, 29 pages, generated 2025-01-27 by Google Docs Renderer"
+  note: "Twenty-nine-slide ZLP Augsburg positioning deck framing the centre's mission as ``data-driven'' production technology. Slides 1--7 introduce the centre (mission, four research-group Venn diagram, valley-of-death framing, DIKW-pyramid epistemology, Industry 4.0 vs 5.0 comparison, manufacturing-vision 2030+). Slides 8--14 articulate the digital-strategy stack (Exchange / Standardisation / Analytics / Data management) and name Shepard explicitly as the ``integrated data management system''. Slide 9 is the canonical Shepard architecture diagram (Shopfloor + OPC UA / Edge Collector $\\to$ REST API $\\to$ graph-organisational-DB with Time series / GIT / Files / Structured-documents stores); slide 10 the (raw) data-capture interface view (PLC Cell, KRC4, TPS Controller, PLC MTLH with PN/EC/UA/FSD/ADS/REST protocol overlay); slide 11 the data-contextualization architecture (Context Provider + Data Aggregator + leading-component observation); slide 12 the MFFD AFP thermoplastic fibre-placement demonstrator showing the live ``shepard_cube2-IR Image'' figure; slide 14 the GTlab/ADAPT gas-turbine-laboratory use case (a second use-case beyond MFFD). Slides 15--17 + 22 cover the Asset Administration Shell (AAS / Plattform Industrie 4.0) substrate. Slides 18--24 lay out the Manufacturing-X / Catena-X / Aerospace-X federation landscape, with slide 23 ``First planned application E2E-Quality assurance'' showing the architectural intent EDC $\\leftrightarrow$ AAS Repository $\\leftrightarrow$ SHEPARD for cross-supply-chain quality control --- primary-source evidence Shepard is positioned as the substrate underneath the planned aerospace dataspace. Slides 25--29 outlook: REBAR (EASA Learning Assurance), ForInfPro ML control-loop, HoKiTEP mobile-robotics platform, DrapeBot HMI. Used as primary source for aidocs/strategy/87-dlr-zlp-positioning.md \\S 8 and aidocs/strategy/94-federation-and-dataspaces.md. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+krebsAerospaceXJaxa2025:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Aerospace-X --- for JAXA"
+  year: "2025"
+  month: "mar"
+  howpublished: "Talk slides; PPTX, 10 slides; speaker-date slide 1 ``Florian Krebs, 17.03.2025''; some slides re-used from a 2022-10-07 DLR ZAP talk"
+  note: "Author-led briefing on the German Manufacturing-X / Aerospace-X programme for the Japanese Aerospace Exploration Agency (JAXA). Core claim: adapt the emerging Catena-X / Tractus-X automotive dataspace ecosystem to aeronautics needs (slide 3 cites Airbus's ``70% reuse, 30% adaptation'' positioning). Slide 5 names the Catena-X stack (AAS as digital-twin technological base; Eclipse Tractus-X open-source code base; estimated $\\sim$26 million AAS in the ecosystem demonstrator). Slide 6 lists the four Manufacturing-X priority use cases (Demand-and-capacity management, CO\\textsubscript2 emissions / PCF, Circularity / R-strategies, End-to-End quality management). Slide 7 sketches the cross-tier Aerospace-X data space for safety-critical aero-engine components (production monitoring + early warning, root-cause analysis from MRO findings, containment + countermeasure across Tier-n $\\to$ Engine OEM $\\to$ Aircraft OEM $\\to$ Airline). Slide 9 lays out the Manufacturing-X flagship-project function set (Design, Development, Do-how, Control, Communication, Support, Coordination). Slide 10 closes with the synchronisation-project framing (``a standardized global data exchange based on European values''). Used as primary source for aidocs/strategy/94-federation-and-dataspaces.md. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs."
+  category: "dlr_internal"
+
+krebsFederationSketches2026:
+  entry_type: "misc"
+  author: "Krebs, Florian"
+  title: "Federated Shepard & Pub-Service architecture sketches"
+  year: "2026"
+  month: "may"
+  howpublished: "Two architecture sketches received in session chat 2026-05-23 (no file artefacts on disk; re-upload required for thesis-quality figure embedding)"
+  note: "Two architecture sketches by F.~Krebs articulating the cross-instance integration paths Shepard must support. Sketch A (``Federated Shepard architecture''): a process-chain figure showing Simulation/Auslegung (as-designed) $\\to$ Bauteilherstellung $\\to$ NDT Prüfung (Laser US) $\\to$ Re-Simulation (as-built) $\\to$ Maintenance, with a side-branch for Destructive Testing. Each step labelled with DLR organisational roles (SY/VPH, SY/BT, BT/MO?, VPH, MO). A bottom horizontal bar labelled ``Common Data Infrastructure (shepard)'' connects bidirectionally to every process step. Footer note records the two integration paths explicitly: \\emph``2 Wege: Export Import zur Datenweitergabe (mittels RO-Crate) / Federated shepard service (viel Aufwand, höheres Risiko)'' --- the lower-risk RO-Crate export/import path, vs.\\ the higher-effort federated Shepard service path. Sketch B (``Pub-Service publication architecture''): a whiteboard photograph showing Shepard with ``Sammlung V1'' $\\to$ ``meta.json'' (with a DL-Lin\\ldots\\ annotation) $\\to$ ``Pub Service'' branching to Databus / S3 / Invenio; md5-checksum annotation on the collection node; ``FDM Institution'' header on the right margin. Concrete shape of the publication pipeline contemplated under HMC Phase 2 WP-1 (PID + export functionality). Both sketches are publication-quality candidates for the thesis architecture chapter; the physical originals (file uploads of the sketch and the whiteboard photograph) need to be re-uploaded for PDF embedding. Cited in aidocs/strategy/94-federation-and-dataspaces.md \\S 4 (Sketch A) and aidocs/strategy/90-hmc-phase-2-positioning.md \\S 3 (Sketch B). Provenance: received in AI session chat 2026-05-23."
+  category: "dlr_internal"
+
+helmholtzKiEmpfehlungen2024:
+  entry_type: "misc"
+  author: "Helmholtz-Gemeinschaft Deutscher Forschungszentren e.V."
+  title: "Handlungsempfehlungen zum Einsatz von Künstlicher Intelligenz"
+  year: "2024"
+  month: "sep"
+  howpublished: "Version 1.0, adopted by the Helmholtz Mitgliederversammlung on 2024-09-18; published by Helmholtz Geschäftsstelle Berlin (Anna-Louisa-Karsch-Straße 2, 10178 Berlin)"
+  note: "Helmholtz-binding AI recommendations across 18 member centres. Five risk categories (4.1 data-protection / leak; 4.2 copyright/IP; 4.3 misinformation/scientific integrity; 4.4 bias from training data; 4.5 violation of AI-specific regulation incl.\\ EU AI Act). Good-practice baselines: review AI-generated content; document AI use transparently; responsible non-use for sensitive data; prefer European-hosted services. Authorship reserved for natural persons. Primary source for aidocs/strategy/93-management-context-and-compliance.md \\S 2 (AI-governance framework) and \\S 6.A audit lens. Uploaded to AI working memory 2026-05-23."
+  category: "dlr_internal"
+
+dlrKiLeitbild:
+  entry_type: "misc"
+  author: "Deutsches Zentrum für Luft- und Raumfahrt (DLR)"
+  title: "Unser Leitbild zu Künstlicher Intelligenz"
+  howpublished: "DLR one-pager AI mission statement (undated; uploaded to AI working memory 2026-05-23)"
+  note: "DLR's official AI mission statement. Headline claim: ``Wir sind Vorreiter in der Nutzung von und Forschung an KI-basierten Lösungen. Wir setzen KI selbstverständlich und verantwortungsbewusst ein.'' Ten values: Aufgeschlossenheit, Bewusstsein, Menschenorientierung, Kompetenz, Ethik, Rechtssicherheit/Compliance, Effizienz, Souveränität, Transparenz, Alleinstellung. Cited in aidocs/strategy/93-management-context-and-compliance.md \\S 2 + \\S 6.B and aidocs/strategy/89-genai-methodology-and-reflexivity.md (three-way alignment)."
+  category: "dlr_internal"
+
+dlrKiLeitfaden2024:
+  entry_type: "misc"
+  author: "Köster, F. and Raulf, A."
+  title: "Leitfaden zur Einführung und Nutzung KI-basierter Lösungen im DLR"
+  year: "2024"
+  month: "dec"
+  howpublished: "Version 1.00, dated 2024-12-17. Beteiligte: A.\\ Bernhardt, M.\\ Felderer, T.\\ Schneiderhan. Weitere Beteiligte: D.\\ Beckmann, T.\\ Hecking, P.\\ Lay, S.\\ Schotter. Reviewed by IT-LA. Freed by 594. VS. DLR-internal document, uploaded to AI working memory 2026-05-23"
+  note: "Operational AI-use guidance for DLR, translating the dlrKiLeitbild into a checklist. Builds on EU AI HLEG ethics guidelines, federal AI strategy, OECD AI principles. Seven value-pairs: Menschenzentrierung/Gemeinwohl, Fairness/Diskriminierungsfreiheit, Transparenz/Erklärbarkeit, Privatsphäre/Schutz, Sicherheit/Robustheit, ökologische Nachhaltigkeit, Beherrschbarkeit/Verantwortung. \\S 2.3 names EU AI Act, DSGVO, Digital Services Act, Data Act, Data Governance Act as applicable. \\S 3 contains the operational checklist. Primary source for aidocs/strategy/93-management-context-and-compliance.md \\S 2 + \\S 6.B audit lens."
+  category: "dlr_internal"
+
+dlrRahmenrichtlinieSE2025:
+  entry_type: "techreport"
+  author: "Schlauch, T. and Druskat, S. and Steude, B."
+  title: "Rahmenrichtlinie Software-Engineering"
+  institution: "Deutsches Zentrum für Luft- und Raumfahrt (DLR)"
+  year: "2025"
+  month: "jul"
+  number: "QMH-DLR-VA004, Ausgabe 6"
+  type: "DLR-Managementsystem Verfahrensanweisung -- fachspezifisch Qualität"
+  howpublished: "Valid from 2025-07-01. Reviewed and freed by A.\\ Bernhardt (CIO DLR) and S.\\ Bonk (QMB) for the Lenkungsausschuss DLR-Managementsystem. Uploaded to AI working memory 2026-05-23"
+  note: "DLR-wide software-engineering framework directive. Issue 6 (2025-07-01) introduces ``Forschungssoftware'' as an explicit category with Anwendungsklasse 1 as the floor for research software. Defines four Anwendungsklassen (0--3) plus accountability chain (DLR-Vorstand $\\to$ CIO $\\to$ Software-Engineering-Beauftragter SEB $\\to$ Leitung der Organisationseinheit $\\to$ Software-Engineering-Ansprechperson SEA $\\to$ Verantwortliche Person für die Software). \\S 4.2.4 mandates documentation (Name, Zweck, Verantwortliche Person, Anwendungsklasse, Reifegrad) for AK 2/3 and AK 1 with long-term Weiterentwicklungsperspektive. Mitgeltende Unterlagen include QMH-DLR-VA014 Open Science and QMH-DLR-VA015 Forschungsdatenmanagement. Primary source for aidocs/strategy/93-management-context-and-compliance.md \\S 3 + \\S 6.C audit lens."
+  category: "dlr_internal"
+
+dlrCloudStrategie2019:
+  entry_type: "techreport"
+  author: "IT-LTG, DLR"
+  title: "Cloud-Strategie des DLR: Rahmenbedingungen für die strategische Nutzung von IT-basierten Cloud-Diensten"
+  institution: "Deutsches Zentrum für Luft- und Raumfahrt (DLR)"
+  year: "2019"
+  month: "sep"
+  howpublished: "Version 1.0, dated 2019-09-26. Author: IT-LTG. Reviewed by IT-Lenkungsausschuss. Uploaded to AI working memory 2026-05-23"
+  note: "DLR-wide cloud-services authorisation framework. Shifts from ``Cloud-Verbot'' to Chancen-Risiken-Abwägung posture. \\S 5.3 defines four risk tiers (Niedrig / Mittel / Hoch / Sehr hoch): ``Sehr hoch'' = external cloud forbidden; ``Hoch'' = Einzelfallprüfung + IT-Sicherheitsbeauftragter approval required; clouds outside Germany ``often unsuitable'' for Hoch tier. CIO + IT-Sicherheitsbeauftragter hold Veto-Recht. \\S 8 mandates Exit-Strategie + container-Lösungen. \\S 9 central cloud-services register. \\S 10 export-control rules. Primary source for aidocs/strategy/93-management-context-and-compliance.md \\S 4 + \\S 6.D audit lens."
+  category: "dlr_internal"
+
+dlrCloudStrategieAnhang2019:
+  entry_type: "techreport"
+  author: "IT-LTG, DLR"
+  title: "Anhang zur Cloud-Strategie des DLR: Nutzungsszenarien"
+  institution: "Deutsches Zentrum für Luft- und Raumfahrt (DLR)"
+  year: "2019"
+  month: "sep"
+  howpublished: "Version 1.0, dated 2019-09-26. Annex to dlrCloudStrategie2019. Uploaded to AI working memory 2026-05-23"
+  note: "Annex to the DLR Cloud-Strategie with concrete usage scenarios. \\S 4.1 Prozessierung öffentlicher Daten; \\S 4.2 Externe Speicher/Datenaustausch (Dropbox / OneDrive / AWS); \\S 4.3 Dedizierte externe Wissenschafts-Clouds (DFN, EOSC) -- the category Shepard's nuclide demo falls in; \\S 4.4 Externe Kommunikation/Kollaboration; \\S 4.5 Externe Rechenkapazität -- mandates Exitstrategie; \\S 4.7 Externe Software-Entwicklungsplattformen (GitHub); \\S 4.8 Externe Web-Portale; \\S 5 interne Cloud-Dienste. Cited in aidocs/strategy/93-management-context-and-compliance.md \\S 4."
+  category: "dlr_internal"
+
+dlrDatenstrategieV60_2026:
+  entry_type: "misc"
+  author: "Deutsches Zentrum für Luft- und Raumfahrt (DLR)"
+  title: "Datenstrategie des DLR"
+  year: "2026"
+  howpublished: "v60 working draft, dated 2026-05-23. Internal DLR Protokoll-template document with editorial comments still in place. Präambel/Vorwort: Christian. Uploaded to AI working memory 2026-05-23"
+  note: "DLR-wide data strategy, v60 working draft. Vision: ``DLR als datengetriebenes Innovationszentrum -- Pionier für zukunftsweisende Forschung und kontinuierlichen Fortschritt.'' Four objectives: (Ziel 1) integrierte Dateninfrastruktur + -plattformen (Datenökosystem); (Ziel 2) interdisziplinäre Forschung + Innovation fördern; (Ziel 3) Entscheidungsprozesse durch unabhängige prädiktive Analysen unterstützen; (Ziel 4) Datenkultur etablieren + Datenkompetenz erhöhen. Maßnahmen include: föderierte Speicherarchitektur (Data Hub); FAIR-Prinzipien verbindlich; kontrollierte Vokabulare/Ontologien; Data-Steward-Netzwerk; Politikberatung. Cross-references DSGVO, SatDSiG, Exportkontrolle, NDA. \\S 5 Empfehlungen-Maßnahmen list and overall accountability/governance pattern still under editorial debate. Primary source for aidocs/strategy/93-management-context-and-compliance.md \\S 1 (fifth institutional layer) and \\S 5 (funding/evaluation cadence). Cite future versions as v$X$ in the same key once finalised."
+  category: "dlr_internal"
+
+krebsMfzSteuerung2010:
+  entry_type: "unpublished"
+  author: "Krebs, Florian"
+  title: "Steuerungskonzept der MFZ-Anlage"
+  year: "2010"
+  month: "oct"
+  howpublished: "Internal working deck, DLR Centre for Lightweight Production Technology in Augsburg (ZLP). PowerPoint .ppt (Composite Document File V2), 21 internal revisions between 2010-09-28 and 2010-10-05, 721 words on substantive slides. Cites the EUROP Robotic Visions to 2020 and beyond -- The Strategic Research Agenda for robotics in Europe (2009-07). Filename 9acbb990-20101005_Steuerungskonzept_der_MFZAnlage.ppt ($\\sim$3.1\\,MB). Uploaded to AI working memory 2026-05-23"
+  note: "Earliest primary source in the predecessor-systems lineage at DLR ZLP Augsburg. Specifies the automation control concept for the Multifunktionale Fertigungszelle (Multifunctional Production Cell). Read for design intent, it articulates 14 commitments that map directly onto Shepard surfaces a decade-plus later: Konsequente Vermeidung von Einzel-/Insel-L\\\"osungen (avoidance of point/island solutions), Modulare Architektur f\\\"ur schrittweise Weiterentwicklung (modular architecture for incremental evolution), Generische Schnittstelle f\\\"ur Messdatenerfassung (generic measurement-data interface -- the PayloadKind / PayloadStorage SPI ancestor), Automatische Dokumentation von Prozessdaten (automatic process-data documentation -- the W3C-PROV Activity stream ancestor), Detektion von Abweichungen zum Kalibrier-Prozess (deviation detection from calibration baseline -- anomaly-detection ancestor), Zentrale Datenhaltung auf Datenbank (central DB-backed storage), Replay-F\\\"ahigkeit in Simulation zur Analyse und Optimierung (replay capability for analysis and optimisation), Anlagenkonfigurationsmanagement (plant configuration management -- the admin-configurable knobs ancestor, cf. A3b / N1c2 / UH1a), Offene Schnittstellen: AutomationML, XML (open interfaces), Drahtloses virtuelles SmartPAD + Mobile Bedienpanels (wireless shop-floor terminals), Integration des NDT Frameworks ($\\to$ PI-NDT) (NDT as first-class). Primary source for aidocs/strategy/86-shepard-predecessor-systems.md \\S 1.5 (pre-PRAESTO design thinking already articulated in 2010)."
+  category: "dlr_internal"
+
+krebsRobotikThemen2010:
+  entry_type: "unpublished"
+  author: "Krebs, Florian"
+  title: "Themen Robotik für Faserverbundfertigung"
+  year: "2010"
+  month: "nov"
+  howpublished: "Internal slot-deck, DLR Centre for Lightweight Production Technology in Augsburg (ZLP). PowerPoint .ppt (Composite Document File V2), dated 2010-11-16, 2 internal revisions, 29 words; one MFZ photograph. Filename 7f5ba9ac-ThemenRobotik_f_r_Faserverbundfertigung.ppt ($\\sim$1.2\\,MB). Uploaded to AI working memory 2026-05-23"
+  note: "Companion slot-deck to krebsMfzSteuerung2010. Sparse substantive content (the deck functions as a section-header placeholder for the research-themes-around-the-MFZ context). Cited for completeness in aidocs/strategy/86-shepard-predecessor-systems.md \\S 1.5 as evidence that the 2010 design-thinking layer extended beyond pure cell-control concerns into the robotics-for-composites research agenda."
+  category: "dlr_internal"
+
+wantedFlo2012:
+  entry_type: "unpublished"
+  author: "Krebs, Florian"
+  title: "``Wanted'' office-door poster"
+  year: "2012"
+  month: "jul"
+  howpublished: "DOC (Composite Document File V2), 2 pp., 35 words; create-date 2012-07-25 09:50, last-saved 2012-07-25 10:41. Filename 9370feab-WANTED.doc ($\\sim$27\\,KB). Uploaded to AI working memory 2026-05-23"
+  note: "Single-page satirical ``Wanted'' notice that hung on Krebs's office door at DLR ZLP Augsburg. Text in full: ``WANTED. EVIL GENIUS seeks minions to sacrifice their lives in world domination attempt. Must be prepared to work 24-7 for psychopath for close to no pay. Messy death inevitable but costumes and laser death rays provided. NO Weirdos.'' Cited at aidocs/strategy/89-genai-methodology-and-reflexivity.md \\S 8.5 as a small biographical primary source: the satire works only if the author is self-aware about the PI/collaborator asymmetry it parodies, which calibrates the register of the author's working voice fourteen years before the same author articulated, on a public deck, a thoughtful position on the human-machine asymmetry in AI-assisted science. Footnote-class source; not load-bearing."
+  category: "dlr_internal"
+
+odixMilestone2_2025:
+  entry_type: "unpublished"
+  author: "Krebs, Florian"
+  title: "ODIX -- Milestone Report: ``first prototype finished and evaluated''"
+  year: "2025"
+  month: "sep"
+  howpublished: "Internal milestone report, DLR ODIX project. DOCX. Milestone due date moved from 2025-05-31 to 2025-09-30 in PCR 1 and finalised on 2025-09-30. Filename 3d5b5d38-ODIXMilestone_2_FK.docx ($\\sim$1.8\\,MB). Uploaded to AI working memory 2026-05-23"
+  note: "Cross-cutting milestone report covering all four ODIX work-packages (HAPs): HAP 1 -- information extraction from semi-structured technical documents (DW, LLM-based PDF $\\to$ JSON with HITL correction, GUI usable, 2--3\\,min latency per PDF, output to move from JSON to RDF in next deliverable); HAP 2 -- Shepard storage management with metadata schemas + timeseries support (BT, Krebs's group; semantic annotation + interval-metric calculation shipped; component-to-component automation pending); HAP 3 -- exploration UI for the extracted KG (DW; categories: Machines / Procedures / Planned Procedures / Samples; planned-vs-set-vs-measured comparison; CI on GitLab Pages with GitLab-issue feedback loop); HAP 4 -- textual evaluation documentation (SY; per-component evaluation summaries from WF/FM and MO). Two thesis-load-bearing findings: (a) HAP 2's documented gap (``connection of components not yet automated'') is exactly the gap that platform-level SHACL / TPL design closes; (b) HAP 1's pivot from direct PDF $\\to$ RDF to JSON-as-intermediate, with planned move to RDF output, confirms the platform's posture of first-class shapes as the substrate-side answer. Primary source for aidocs/semantics/95-shacl-templates-and-individuals.md \\S 14ee (ODIX Milestone 2 -- what the four work-packages actually shipped)."
+  category: "dlr_internal"
+
+hgfFoPoZi5_2025:
+  entry_type: "techreport"
+  author: "Helmholtz-Gemeinschaft Deutscher Forschungszentren"
+  title: "Forschungsbereichsübergreifende forschungspolitische Ziele für die PoF V (2028--2034)"
+  institution: "Helmholtz-Gemeinschaft Deutscher Forschungszentren"
+  year: "2025"
+  month: "sep"
+  howpublished: "Cross-association research-policy target document, version V, dated 2025-09-19, addressed to HGF (Helmholtz-Gemeinschaft). DOCX. Filename 7ed80232-_bergreifende_FoPoZi_PoF_V_20250919_1_an_HGF.docx ($\\sim$30\\,KB). Uploaded to AI working memory 2026-05-23"
+  note: "Forschungspolitische Ziele (research-policy targets) of the Helmholtz Association for the fifth Programme-Oriented Funding period PoF V (2028--2034). Binding cross-association targets that apply to ZLP Augsburg through its HGF-affiliated centre DLR. Three Datenmanagement obligations directly relevant to Shepard: (a) ``the definition of a joint and cross-cutting architecture concept for the data management infrastructure (data acquisition, data analysis / aggregation, data provision per FAIR principles, and IP management)''; (b) NFDI alignment required, not optional -- ``the fundamental inclusion of work and recommendations already produced by NFDI''; (c) Datenresilienz -- ``the safeguarding of data resilience to guarantee the availability, integrity and access to data even in the case of unforeseen events, disruptions or failures''. Sibling cross-association targets: Pakt für Forschung und Innovation continuity through PoF V; Nachhaltigkeit (joint sustainability strategy + climate-neutral operation of research infrastructures). Primary source for aidocs/strategy/87-dlr-zlp-positioning.md \\S 7.5 (the federal-funding-cycle frame -- HGF research-policy targets for PoF V)."
   category: "dlr_internal"

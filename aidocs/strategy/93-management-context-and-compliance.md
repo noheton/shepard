@@ -549,4 +549,4 @@ PR:
 - `bayernFachpanel2026` — DLR, *Ergebnis Fachpanel 2026-03-20*
   (already cited in earlier docs).
 
-Cross-cited (already in bib): `krebsGenKi2026`, `oecdAiScience2024`.
+Cross-cited (already in bib): `krebsGenKi2026` (thesis-author position deck), `bayernFachpanel2026` (project-level evaluation), `oecdAiInScience2023` (OECD AI-in-Science framing).

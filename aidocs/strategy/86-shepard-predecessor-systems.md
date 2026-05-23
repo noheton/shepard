@@ -65,6 +65,97 @@ testimony as company-built and vendor-abandoned; CUBE iDMS was
 developed to remarkable completeness and saw use in the **IPRO**
 research project but never reached institute-wide deployment.
 
+A further primary source pushes the lineage **earlier still**, into
+the design-thinking phase that preceded any of the three platforms:
+two 2010 PowerPoint decks authored by Krebs at DLR ZLP — the
+**MFZ-Anlage control-concept deck** of 2010-10-05
+[@krebsMfzSteuerung2010] and a companion *Themen Robotik für
+Faserverbundfertigung* slot-deck of 2010-11-16
+[@krebsRobotikThemen2010]. The MFZ deck (21 internal revisions
+between September and October 2010 — a working document, not a
+one-off pitch) does not yet name an RDM system; it specifies the
+*automation control concept for the Multifunktionale Fertigungszelle*
+(Multifunctional Production Cell). But several of its bullet points
+read, with 15 years of hindsight, as the design intent that the
+later PRAESTO / KIBID / iDMS / Shepard lineage has spent the rest of
+its existence implementing — a finding that warrants its own
+sub-section before §2.
+
+## 1.5 Pre-PRAESTO: design thinking already articulated in 2010
+
+The 2010-10-05 *Steuerungskonzept der MFZ-Anlage*
+[@krebsMfzSteuerung2010] is the earliest primary source recovered in
+the predecessor-systems lineage. It precedes PRAESTO (2014) by four
+years, KIBID (2016) by six, CUBE iDMS (2017–2020) by seven, and the
+public arrival of Shepard (2021) by eleven. Its subject is not data
+management as such: it is the control architecture for the MFZ —
+the Multifunktionale Fertigungszelle, a flagship robot cell at ZLP
+Augsburg. The deck is a working document (21 internal revisions,
+721 words on the substantive slides, an explicit citation to the
+EUROP *Robotic Visions to 2020 and beyond — Strategic Research
+Agenda* of 2009), authored by Krebs in his role as the cell's
+control-concept owner.
+
+Read for design intent, several of its 2010 commitments anticipate
+the architecture of the data substrate that would not arrive in
+ZLP-deployable form for more than a decade:
+
+| 2010 design commitment (MFZ control-concept deck) | Shepard surface today |
+| --- | --- |
+| *"Konsequente Vermeidung von Einzel-/Insel-Lösungen"* — consistent avoidance of point/island solutions | the rationale for a shared substrate at all; the thesis case against the per-cell folder-share status quo |
+| *"Modulare Architektur für schrittweise Weiterentwicklung"* — modular architecture for incremental evolution | the plugin-first SPI seam (`aidocs/platform/47`); CLAUDE.md §"Always: think plugin-first" |
+| *"Generische Schnittstelle für Messdatenerfassung"* — generic interface for measurement data acquisition | `PayloadKind` + `PayloadStorage` SPI (`aidocs/platform/47 §2`); ancestor of the substrate-agnostic Container family |
+| *"Automatische Dokumentation von Prozessdaten"* — automatic documentation of process data | `ProvenanceCaptureFilter` (PROV1a) + the F(AI)²R Activity stream; the conversation IS the prov data |
+| *"Detektion von Abweichungen zum Kalibrier-Prozess"* — deviation detection from the calibration baseline | anomaly-detection on timeseries (LUMEN TR-004 substrate, `shepard-plugin-ai` design line) |
+| *"Zentrale Datenhaltung auf Datenbank"* — central database-backed data storage | the substrate split (Neo4j + Postgres/Timescale + MongoDB + Garage) replacing per-machine local files |
+| *"Replay-Fähigkeit in Simulation zur Analyse und Optimierung"* — replay capability in simulation for analysis and optimisation | the Predecessor/Successor chain + Activity history; reproducible reconstruction of a process run from the substrate |
+| *"Ableiten von Wirtschaftlichkeitsdaten"* — derivation of economic-performance data | dataset-forging passes (`project_dataset_forging.md`); the substrate-as-analysis-input layer |
+| *"Anlagenkonfigurationsmanagement"* — plant configuration management | `:FeatureToggleRegistry` + per-feature `:*Config` (A3b / N1c2 / UH1a / `aidocs/integrations/67`); admin-configurable knobs as a first-class shape |
+| *"Offene Schnittstellen: AutomationML, XML, …"* — open interfaces | OpenAPI 3.0 + Codegen client SDKs; SHACL + JSON-LD on the semantic side |
+| *"Echtzeit-Ethernet als Basis-Kommunikationstechnologie"* — real-time Ethernet baseline | `shepard-timeseries-collector` as the OPC UA / MQTT side-process pattern |
+| *"Drahtloses virtuelles SmartPAD"* — wireless virtual SmartPAD (shop-floor terminal) | the shop-floor-UI requirement the Industrial Manufacturing & Quality Engineer role names in CLAUDE.md (`aidocs/agent-findings/manufacturing-quality.md`) |
+| *"Mobile Bedienpanels zur Arbeitsbereichsteuerung"* — mobile control panels for work-area handling | per-cell admin UI (Shepard's per-shelf admin endpoints + frontend admin routes) |
+| *"Integration des NDT Frameworks (→ PI-NDT)"* — integration of the NDT framework | `Plugin` family — NDT scans as a first-class payload kind in the visualization-plugin design (`project_vis_categories.md`) |
+
+The deck's companion piece, *Themen Robotik für Faserverbundfertigung*
+[@krebsRobotikThemen2010] of 2010-11-16, is a much shorter (29-word,
+2-revision) title-and-image deck whose primary content is a single
+MFZ photograph — it sits in the archive as a slot-holder for the
+research-themes section but does not carry substantive prose.
+
+Three observations follow:
+
+1. **The architectural ambition predates the platforms.** The 2010
+   deck names *generic measurement-data interfaces*, *central
+   database storage*, *automatic process documentation*, *replay
+   capability* and *avoidance of island solutions* as control-cell
+   requirements four years before PRAESTO was evaluated. The
+   substrate Shepard provides is not a 2021 idea; it is a 2010
+   articulation finally meeting its operational form.
+2. **The architect is continuous.** PRAESTO (2014, evaluated by
+   Krebs's group), KIBID (2016, used in IPRO with Krebs's group),
+   CUBE iDMS (2017–2020, *architected by Krebs*) and Shepard (2021,
+   *carrying the same design DNA* via the IPRO-to-Shepard transfer
+   documented in §4) trace, on the primary-source evidence, to the
+   same author's continuously-held design commitments — committed
+   to paper in October 2010, refined in iDMS in 2020, and
+   ship-shaped in Shepard from 2021 onward.
+3. **What the 2010 deck does *not* yet articulate.** The deck is a
+   *control-cell* concept, not a data-management concept. It names
+   "zentrale Datenhaltung auf Datenbank" but does not yet specify
+   the substrate split, the graph-vs-relational decision, the
+   provenance vocabulary (W3C PROV arrives in iDMS, not here), the
+   semantic-annotation layer, or the multi-tenancy story. Those are
+   the layers the later platforms add. The 2010 deck establishes the
+   *requirements*; the later platforms iterate the *answers*.
+
+This pushes the methodological note in §8 a layer deeper: the
+continuity-of-architect runs not from 2014 (PRAESTO) but from
+**2010 — the MFZ control-concept deck**. Whatever else Shepard
+inherits from PRAESTO, KIBID and iDMS, it also inherits, by way of
+its principal designer, an institutional design-thinking lineage
+that was already on paper before any of them.
+
 Shepard, the system that is the principal subject of this thesis,
 emerged at ZLP Augsburg in 2021 ([haaseShepard2021](#9-references),
 [dlrZlpShepard](#9-references)) and is the first in this lineage to
@@ -126,6 +217,63 @@ NDT, thermoplastic-processing robot cells, and the ZLP project
 AZIMUT (eLib 94104) and PulForm (eLib 101718) — positions PRAESTO
 as the data-management point in an arc of CFRP-manufacturing
 research outputs from ZLP Augsburg in that period.
+
+### 2.1 Krebs's own input deck — primary source for the misfit (date undetermined)
+
+A two-slide working deck `Input_Florian_PRAESTO.pptx`
+([@krebsInputPraesto](#11-references)) preserved in the artefact
+collection (no date in the filename or in the in-slide footer)
+records Krebs's contemporaneous documentation of PRAESTO's scope
+from his side of the engagement. The deck is short and does not
+contain a stated grievance or proposed adjustment — it is a
+*scope-stocktake* annotated with an architecture diagram, not a
+critique-of-record. What the deck does establish is two facts not
+present in the eLib record and one corroborating observation:
+
+1. **The supplier is named: Kisters AG.** Both slides repeat the
+   line *"PRAESTO: Weiterentwicklung zusammen mit Kisters AG (DLR
+   seit 2010)"* (PRAESTO: further development together with Kisters
+   AG; at DLR since 2010). This is the first primary source to
+   identify the commercial supplier. Until this batch, §2 carried
+   the testimony-only claim "supplier not named here"; the
+   evidentiary basis is now upgraded.
+2. **PRAESTO's relationship with DLR dates to 2010.** "DLR seit 2010"
+   (DLR since 2010) places the engagement four years before the
+   DLRK 2014 conference deposit. The 2014 paper is therefore not
+   PRAESTO's arrival at DLR but a mid-engagement publication. This
+   moves the chronology lower bound from 2014 to 2010 and aligns
+   PRAESTO's DLR-presence with the same 2010 window in which the
+   MFZ-Anlage control-concept deck (§1.5) articulates the data-
+   management requirements that would later be measured against
+   PRAESTO's actual capabilities.
+3. **The scope, as drawn, is inspection-only.** The architecture
+   diagram on both slides is captioned *Inspektionsprozess*
+   (inspection process) four times on slide 1, and the workflow
+   blocks read *Prüfung Trockenfaserablage* (dry-fibre layup
+   inspection) and *Prüfung Endbauteil* (end-component inspection).
+   The architecture is: CAD + offline programming + environmental
+   data + sensor reading + position information → pre-evaluation
+   → spatial data fusion → analysis & visualisation, with a
+   robot-cell as the data-source. This is a *spatial-fusion
+   inspection analyser*, not a process-data acquisition platform
+   for the full manufacturing chain.
+
+The deck does *not* state "PRAESTO was a bad fit"; it shows what
+PRAESTO was scoped to do. The misfit thesis remains a testimony
+claim. What the artefact supplies is the *evidence shape* that
+makes the testimony legible: PRAESTO answered a narrower question
+(inspection-data fusion) than the question the centre was forming
+in the same period (durchgängige Prozessdatenerfassung — end-to-end
+process-data acquisition; see §3.6.1, the ProDES decks). The
+"bad fit" — read against this scope evidence — is not that PRAESTO
+worked badly at what it did, but that what it did was a subset of
+what the centre needed.
+
+The decision to build internally rather than commission a
+Kisters-AG-led expansion of PRAESTO is plausibly the *organising
+question* of the eight-month 2017 chronology that follows (§3.6).
+The chronology, read against the input deck, is what Krebs and
+Nuschele put in place of an expanded PRAESTO.
 
 ## 3. KIBID (c. 2016–2017) — company-built, vendor-abandoned, critical inspiration
 
@@ -266,6 +414,218 @@ shepard's `{measurement, device, location, symbolicName, field}`
 channel name; the shepard `aidocs/platform/87` migration from 5-tuple
 to `shepardId` is the modernisation of this discipline, not its
 abandonment.
+
+### 3.6 The break and the synthesis — eight months in 2017
+
+A run of nine working artefacts dated between **2017-04-25** and
+**2017-12-12** documents the period in which the team at ZLP
+Augsburg moved from "what should we build?" to a system specified
+in enough detail that CUBE iDMS (§4) would be its operational
+realisation. Read as a sequence, the eight months are the break
+from the commercial supplier (§2) and the synthesis of the
+in-house answer that §4 then builds. Three threads run through
+the sequence: (a) the *Prozessdatenerfassung* (process-data
+acquisition) thread — what the centre actually needed PRAESTO to
+do and decided to build itself, (b) the *Prozessleitsystem*
+(process-control system) thread — how the cell-level orchestration
+fits the data architecture, and (c) the *Vision* thread — the
+December 2017 articulation that closes the year and opens the
+iDMS development phase.
+
+#### 3.6.1 The ProDES thread (April → June 2017)
+
+The earliest deck in the recovered chronology is
+`20170425_Prozessdatenerfassungssystem_ProDES.pptx`
+([@krebsProDES2017a](#11-references)), dated 2017-04-25, sole
+author Florian Krebs ("Industrie 4.0 @ ZLP — Prozessdatenerfassungssystem
+(ProDES) — 11.04.2017, Florian Krebs", with the slide footer
+showing 11.04.2017 and the filename carrying 20170425 — the deck
+was built up through April). A two-month-later iteration,
+`20170619_Prozessdatenerfassungssystem_ProDES.pptx`
+([@krebsProDES2017b](#11-references)), dated 2017-06-19, expands
+the authorship to **Stefan Nuschele, Alfons Schuster, Florian
+Krebs** — three names. This is the first primary-source evidence
+in the chapter that **Nuschele (PRAESTO author, §2) and Krebs
+(iDMS architect, §4) co-authored a transitional ProDES design in
+2017**, with Schuster joining as a third contributor. The
+PRAESTO-era authoring community and the iDMS-era architect are
+not separate generations; they are the same working group in mid-
+1990s-style succession from one platform to the next.
+
+The April deck names *one system — multiple views* (Prozessketten /
+Prozessen / Ressourcen as three analysis perspectives; slide 9),
+the *layered basis architecture* (Datenerfassung → Datenorganisation
+& Datenablage → Datenzugriff → Analyse → Management & Administration;
+slides 10–11), and the technology survey (NoSQL: Document / Column /
+Key-Value / Graph — slide 13, with CouchDB, MongoDB, hBase,
+Cassandra, Neo4j, OrientDB, "Oracle NoSQL", Amazon DynamoDB named).
+Slide 6 carries the framing: *Aktueller Stand der Technik:
+Praesto, KiBiD … Viele Inseln* (Current state of the art:
+PRAESTO, KIBID … many islands). The diagnosis is on record: the
+existing platforms are *island solutions*, and the centre's
+answer is a layered, multi-substrate data architecture.
+
+The June deck adds the *roadmap* (slide 4): platform selection
+through 2017, OPC UA + ProComp + NSR demos through 2018,
+spatial-referencing + map-reduce analytics into 2019, with three
+milestones (MS1 7/17: Vorauswahl Plattform; MS2 9/17: Demo
+Projekt OPC-UA; MS3 x/18: Demo Procomp). Read in 2026, this is
+a research-engineering plan that landed on KIBID's OPC UA bridge
+(MS2, §3) and led into iDMS by 2018.
+
+#### 3.6.2 The Prozessleitsystem thread (July → September 2017)
+
+`20170718_Status_Prozessleitsystem.pptx`
+([@krebsStatusProzessleitsystem2017](#11-references)), dated
+2017-07-18, is a status stocktake of the *Prozessleitsystem*
+(process-control system) at ZLP. The deck names the goal as
+**modularisation of automation solutions (Vision: Plug & Automate)**
+with a concrete first step of *prozessübergreifender Austausch
+von Prozessinformationen* (cross-process information exchange)
+and *Ablaufsteuerung für Prozessketten / -netzwerke* (sequence
+control for process chains / networks). The further-future
+ambition listed on the same slide is *Selbstkonfiguration / Self-X
+Eigenschaften* (self-configuration / self-X properties). The
+Prozessleitsystem layer is the orchestration counterpart to the
+ProDES data layer.
+
+`20170721_Prozessablauf.xlsx` (the IPRO process-flow spreadsheet
+already cited at §4.4) lands three days later — composite-layup
+process sequence at the IPRO cell, the operational form the
+Prozessleitsystem would orchestrate.
+
+`20170914_NSR_Orchestrator_Konzept.pptx`
+([@krebsNSROrchestrator2017](#11-references)), dated 2017-09-14,
+is the architectural deliverable of the Prozessleitsystem thread.
+**This deck is load-bearing for §3 (KIBID) and §4 (iDMS) both:**
+its IPRO-architecture diagram (slide 3, *IPRO: Aufbau*) names the
+participating components as *4 Interface-Knoten, 3 Virtuelle
+Knoten, Kommunikation über OPC UA, Datenerfassung in KiBiD über
+HTTP Schnittstelle* (4 interface nodes, 3 virtual nodes,
+communication via OPC UA, data acquisition in KIBID via HTTP
+interface). The diagram explicitly labels the participating
+boxes: *Process Orchestrator*, *IOT 2040* (Siemens IoT gateway),
+*Werkzeug-Wechsler* (tool changer), *Festo Ventil-Insel* (Festo
+valve island), *Siemens S7-300 SPS* (PLC), *KiBiD Adapter*,
+*Router*, *Big Data Storage*, *KUKA Robot Controller*. This is
+the **first primary-source corroboration in this chapter that
+KIBID was the data-acquisition layer of the IPRO cell, named
+inside an IPRO architecture diagram by Krebs himself** — until
+now §3 and §4.4 had only hostname-level evidence (`kibid-proxy.praesto.lo`
+in source code) for the KIBID→IPRO connection. The
+2017-09-14 deck moves this from inference to documented
+architectural fact.
+
+#### 3.6.3 The framing artefact (October 2017)
+
+`20171010_Industry_4.0_defined.pptx`
+([@krebsI4Definition2017](#11-references)), dated 2017-10-10, is
+not a project artefact but a framing reference — a curated reading
+of an external *Design News* piece on smart manufacturing,
+positioning ZLP's work in the Industrie 4.0 vocabulary the
+ProDES decks were already invoking. The slot it occupies in the
+chronology is rhetorical: between the September architectural
+deliverable (NSR Orchestrator) and the December vision, the team
+documented how it would frame the work to outside audiences.
+
+#### 3.6.4 The architecture-vision-deliverable week (December 2017)
+
+Three consecutive working days in early-to-mid December 2017
+bridge architectural thinking to operational vision to written
+deliverable:
+
+- **2017-12-04** — `20171204_NSR_Architektur.pptx`
+  ([@krebsNSRArchitektur2017](#11-references)). The deck is
+  thin on extractable prose (the visible content is largely
+  template Lorem-Ipsum boilerplate retained around figure
+  placeholders), but its *date and filename* establish that an
+  NSR-architecture working deck was iterated on this day.
+- **2017-12-05** — `20171205_Vision_Datenmanagement.pptx`
+  ([@krebsVisionDatamanagement2017](#11-references)),
+  *"Vision: Datenmanagement"* — **Dipl.-inf. Florian Krebs,
+  Dr. Stefan Nuschele**, with a footer date of 12.12.2017
+  (so the deck was iterated through to 12 December). The opening
+  challenge slide (*Herausforderung: Datenmanagement*) names the
+  problem in the form a 2017 research-project manager would
+  recognise: *ein Projekt erzeugt Vielzahl von unterschiedlichster
+  digitale Produkte* (one project produces a multitude of varied
+  digital products) — Anwendung, Auslegungsdaten, Werkstoffdaten,
+  CAD Modelle, Numerische Modelle, Messdaten, Quellcode, Berichte /
+  Publikationen, Medien, *u.v.m.* (application, design data,
+  material data, CAD models, numerical models, measurement data,
+  source code, reports / publications, media, and much more).
+  This is the diagnosis that the iDMS data model — `Project /
+  Experiment / Step / Artifact`, multi-substrate references for
+  files / timeseries / structured data — is built to answer.
+- **2017-12-12** — the footer date of the same deck, and
+  evidence that the iteration continued through the week.
+
+The December 2017 week, read in sequence, is the moment the vision
+gets named explicitly (*Datenmanagement* in the title) and the
+authorship pair that will deliver it gets placed on the cover
+slide (Krebs + Nuschele). The April → December chronology
+**replaces the previous "iDMS came from somewhere" hand-wave**
+(see §1) with an eight-month documented evolution: ProDES (April)
+→ ProDES expanded with Schuster (June) → Prozessleitsystem status
+(July) → IPRO process flow (July) → NSR Orchestrator with the
+*KiBiD Adapter* drawn into the IPRO architecture (September) →
+Industry 4.0 framing (October) → NSR Architektur (December 4)
+→ Vision Datenmanagement (December 5–12).
+
+#### 3.6.5 An adjacent conceptual artefact (date unknown) — SOA MES
+
+A seven-slide deck `SOA_MES.pptx` ([@krebsSoaMes](#11-references))
+in the same artefact collection, undated by filename or footer,
+sketches a *service-oriented architecture for a Manufacturing
+Execution System* — *"Everything is a service"* — with three
+participant classes (physical systems: robot cells, mobile
+robots, presses, fixtures; virtual systems: data collectors,
+task planners, displays; workers / ERP-APS-PPS systems), a
+four-step task-execution model (Task Decomposition → Step
+Scheduling → n-step allocation → Distributed Execution), and a
+*Basis-Architektur* (slide 6) that places the *SOA MES* layer
+alongside *Prozess- und QS-Datensammlung (CUBE, KiBiD?)*,
+*Planungsschicht / Visualisierung (externe PPS, ERP …)* and an
+*Auswertung* (analysis) layer with Matlab / R / Deep Learning.
+The CUBE acronym appears here at slide-label level — the same
+acronym that names CUBE iDMS in §4, attached to *Prozess- und
+QS-Datensammlung* (process and QA data collection).
+
+The deck cannot be placed in the chronology by its own metadata.
+Two indirect cues place it adjacent: the workshop participant
+slide (*Workshop Orga: Haase, Krebs / Teilnehmer: FAS: LCL, MS,
+RG, CR; PNA: Mkü, …; PQS: AS, CF?*) lists **Tobias Haase** —
+the first-named author on the 2021 Shepard Zenodo record
+([@haaseShepard2021](#11-references)) — as workshop co-organiser
+alongside Krebs. This is the **earliest primary source in this
+chapter linking Haase (the eventual Shepard lead author) into the
+same workshop community as Krebs (the iDMS architect)**. The
+provisional dating range for the deck is therefore the window
+in which the CUBE-iDMS-naming convention is in flux (*CUBE,
+KiBiD?* with question mark) but Haase is already in the room —
+no earlier than the December 2017 vision deck (when the CUBE
+naming begins to settle) and no later than the iDMS deployment
+phase (when *KiBiD?* would no longer carry a question mark).
+The deck is therefore most plausibly *late 2017 or early 2018*,
+the bridging months from the chronology's end to §4's prototype.
+It is excluded from §3.6.1–3.6.4 because it cannot be ordered by
+its own metadata; it is included here as an adjacent conceptual
+artefact that the bibliography needs to record.
+
+#### 3.6.6 The chronology table
+
+| Date | Artefact | What it adds |
+| --- | --- | --- |
+| 2017-04-25 | ProDES v1 [@krebsProDES2017a](#11-references) | Sole-author Krebs; "many islands" diagnosis; layered basis architecture; NoSQL technology survey; multi-view analysis model |
+| 2017-06-19 | ProDES v2 [@krebsProDES2017b](#11-references) | Adds **Nuschele + Schuster** as co-authors; roadmap with milestones (MS1 platform selection 7/17, MS2 OPC UA demo 9/17, MS3 ProComp demo 2018) |
+| 2017-07-18 | Status Prozessleitsystem [@krebsStatusProzessleitsystem2017](#11-references) | Orchestration goal: modular *Plug & Automate*; cross-process information exchange as first step; Self-X as future ambition |
+| 2017-07-21 | IPRO Prozessablauf XLSX | Composite-layup process flow at the IPRO cell (already cited at §4.4) |
+| 2017-09-14 | NSR Orchestrator Konzept [@krebsNSROrchestrator2017](#11-references) | IPRO architecture diagram naming *KiBiD Adapter* alongside KUKA / Festo / Siemens — primary-source proof KIBID was IPRO's data layer |
+| 2017-10-10 | Industry 4.0 defined [@krebsI4Definition2017](#11-references) | External *Design News* curation framing the work in Industrie-4.0 vocabulary |
+| 2017-11-06 | IPRO Grafana dashboard screenshot | Live KIBID-sourced telemetry from the IPRO cell (already cited at §4.4) |
+| 2017-12-04 | NSR Architektur [@krebsNSRArchitektur2017](#11-references) | Architecture-vision week opens; deck content thin but date establishes the iteration |
+| 2017-12-05 (–12) | Vision Datenmanagement [@krebsVisionDatamanagement2017](#11-references) | *"Vision: Datenmanagement"* — Krebs + Nuschele; the digital-products diagnosis the iDMS data model is built to answer |
+| (date undetermined; ≈ late 2017 / early 2018) | SOA MES [@krebsSoaMes](#11-references) | CUBE acronym appears with *KiBiD?* at slide-label level; **Haase named as workshop co-organiser with Krebs** — earliest Haase↔Krebs link |
 
 ## 4. CUBE iDMS (2017–2020) — Krebs's prototype, used in IPRO
 
@@ -587,18 +947,40 @@ DLR ZLP**, attested in two ways:
    that preceded his own work in this domain at ZLP, evaluated and
    rejected per his testimony.
 
-2. *Personal handoff into Shepard.* The IPRO operations TODO
-   records `user: mwillmeroth` as the active KIBID-era account, and
-   **Mark Willmeroth** is one of the four named authors on the 2021
-   Zenodo Shepard record ([haaseShepard2021](#9-references)). This
-   is the first piece of *personal* continuity evidence from iDMS
-   operations into the 2021 Shepard authoring team. The other
-   Shepard authors (Haase, Glück, Kaufmann) do not appear in
-   iDMS/KIBID sources we hold; the continuity into the 2021 team
-   is therefore predominantly *institutional and architectural*
-   (same ZLP Augsburg, same architect's principles transcribed
-   into a successor team's code) — but is no longer *zero* on
-   personal handoff.
+2. *Personal handoff into Shepard.* Two strands of personal
+   continuity now stand on the artefacts:
+
+   - **Mark Willmeroth** appears as `user: mwillmeroth` in the IPRO
+     operations TODO (the active KIBID-era account) and is one of
+     the four named authors on the 2021 Zenodo Shepard record
+     ([@haaseShepard2021](#11-references)). This is the operations-
+     side handoff: the engineer running the data layer in 2017 is
+     on the masthead of the 2021 release.
+   - **Tobias Haase**, the first-named author on the 2021 Zenodo
+     Shepard record, appears as workshop co-organiser alongside
+     Krebs on the SOA MES deck (§3.6.5), most plausibly dated late
+     2017 / early 2018. This is the architecture-side handoff: the
+     eventual Shepard lead author is in the same workshop room as
+     the iDMS architect at the moment the CUBE acronym is being
+     decided. The Haase↔Krebs personal link is now also no longer
+     zero on the primary-source record — though the SOA MES deck's
+     undetermined date keeps this finding at confidence MEDIUM.
+
+   The two remaining 2021 Shepard authors (Glück, Kaufmann) do not
+   appear in the predecessor sources we hold; the continuity into
+   the 2021 team is therefore now a *braid* — institutional and
+   architectural baseline, *plus* two named personal links
+   (Willmeroth on operations, Haase on workshop authorship).
+
+3. *Authoring community across the 2017 chronology.* The
+   2017-06-19 ProDES iteration ([@krebsProDES2017b](#11-references))
+   is co-authored by **Nuschele, Schuster, Krebs** — placing the
+   PRAESTO first-author (Nuschele, §2) and the iDMS architect
+   (Krebs, §4) on the same authoring document mid-chronology. The
+   PRAESTO-era authoring community and the iDMS-era architect are
+   the same working group in mid-platform succession. This
+   tightens the continuity claim from "shared institution" to
+   "shared authorship on the transitional design".
 
 Shape-continuity remains the strongest evidence — Project/Experiment/
 Step ≈ Collection/DataObject; mongo+influx reference split survives
@@ -735,14 +1117,25 @@ author is plausible but not directly evidenced in the code itself.
 CUBE iDMS is the system in this chapter with the most balanced
 evidence base. The artefact collection of seven projects, the
 2020-11-04 final presentation deposited as `20201104_iDMS_final.pptx`,
-the 2017-07-21 process-flow spreadsheet, the IPRO operations TODO
-and the 2017-11-06 Grafana dashboard screenshot together establish
-the system's design, its IPRO deployment, and the technical texture
-of its use to a level that would, under different historiographical
+the 2017-07-21 process-flow spreadsheet, the IPRO operations TODO,
+the 2017-11-06 Grafana dashboard screenshot, and the eight-month
+2017 working-deck chronology now established in §3.6
+(`20170425_…ProDES`, `20170619_…ProDES`, `20170718_Status_Prozessleitsystem`,
+`20170914_NSR_Orchestrator_Konzept`, `20171010_Industry_4.0_defined`,
+`20171204_NSR_Architektur`, `20171205_Vision_Datenmanagement`, plus
+the undated `SOA_MES` deck) together establish the system's
+design, its IPRO deployment, and the technical texture of its use
+to a level that would, under different historiographical
 circumstances, support a confident operational claim. The critical
 historical claim — that the system never reached institute-wide
 deployment beyond IPRO — comes from the author's own testimony and
 is consistent with the absence of any public deployment record.
+
+PRAESTO's evidence base is also no longer eLib-only: Krebs's own
+`Input_Florian_PRAESTO.pptx` (§2.1) supplies primary-source
+identification of the supplier (Kisters AG) and the engagement's
+2010 lower bound, lifting §2 from "supplier not named here" to
+"supplier identified by primary source".
 
 The artefact collection that bears the bulk of the chapter's
 evidence is itself a primary historical source of unusual
@@ -869,6 +1262,29 @@ archival work that subsequent chapters or follow-up research
 can take up.
 
 ## 11. References
+
+**Pre-PRAESTO design thinking** (the load-bearing primary sources for §1.5):
+
+- [krebsMfzSteuerung2010](#bib) — Krebs, F. (2010). *Steuerungskonzept der MFZ-Anlage.*
+  Internal DLR ZLP Augsburg working deck, dated 2010-10-05, 21
+  internal revisions between 2010-09-28 and 2010-10-05, 721 words on
+  substantive slides; cites the EUROP *Robotic Visions to 2020 and
+  beyond* Strategic Research Agenda (2009-07). Filename
+  `9acbb990-20101005_Steuerungskonzept_der_MFZAnlage.ppt`
+  (~3.1 MB Composite Document File V2 .ppt; uploaded to AI working
+  memory 2026-05-23). Load-bearing evidence for §1.5: 14 design
+  commitments anticipating Shepard surfaces — generic measurement
+  interfaces, central DB storage, modular architecture, automatic
+  process documentation, replay capability, deviation detection,
+  open interfaces (AutomationML, XML), shop-floor mobile panels,
+  NDT framework integration.
+- [krebsRobotikThemen2010](#bib) — Krebs, F. (2010). *Themen Robotik
+  für Faserverbundfertigung.* Internal DLR ZLP Augsburg slot-deck,
+  dated 2010-11-16, 2 revisions, 29 words; one MFZ photograph.
+  Filename `7f5ba9ac-ThemenRobotik_f_r_Faserverbundfertigung.ppt`
+  (~1.2 MB; uploaded to AI working memory 2026-05-23). Companion
+  source for §1.5; sparse substantive content but confirms the
+  research-themes-around-the-MFZ context.
 
 **iDMS primary source** (the load-bearing primary source for §4):
 
