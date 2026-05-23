@@ -32,15 +32,15 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 39 |
 | `concept` | 14 |
-| `idea` | 9 |
-| `feature-defined` | 63 |
+| `idea` | 10 |
+| `feature-defined` | 64 |
 | `audited-by-personas` | 53 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **273** |
+| **total docs** | **275** |
 | **UNTAGGED** | **6** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -119,7 +119,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
 
-## idea (9)
+## idea (10)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -128,12 +128,13 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-23 | — |
 | [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (63)
+## feature-defined (64)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -193,6 +194,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/92-aerospace-x-regulatory-context.md`](strategy/92-aerospace-x-regulatory-context.md) | 92 — Aerospace-X and the aerospace regulatory context | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — institutional stack, governance frame, compliance gates | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/94-federation-and-dataspaces.md`](strategy/94-federation-and-dataspaces.md) | 94 — Federation and dataspaces: where Shepard sits in Manufacturing-X / Aerospace-X / Catena-X | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/ai-fork-production-readiness-2026-05-23.md`](strategy/ai-fork-production-readiness-2026-05-23.md) | Is the AI-collaborative `noheton/shepard` fork production-ready? | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md`](strategy/requirements-alignment-damast-ux-mffd-2026-05-23.md) | Requirements alignment — DaMaST workshop × UX 5-phase journey × MFFD-focused gap analysis | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-23 |
