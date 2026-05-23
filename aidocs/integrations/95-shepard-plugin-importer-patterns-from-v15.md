@@ -14,7 +14,7 @@ audience: contributors, plugin authors
 
 ## 0. Why this doc exists
 
-`examples/mffd-showcase/scripts/mffd-import-v15.py` (4321 LoC, v15.8) is the
+`examples/mffd-showcase/scripts/mffd-import-v15.py` (5169 LoC, v15.11) is the
 **field-validated cross-instance importer** that lifts the real MFFD process data
 (8457 source DataObjects across two collections — 5012 tapelaying + 3371
 bridgewelding) from DLR cube3 (`backend.bt-au-cube3.intra.dlr.de`) into
@@ -118,7 +118,7 @@ Airbyte (citations in §2 and §3).**
 - **Airflow / Prefect max-attempts knob** → confirms Pattern 10 belongs on
   the JobService not on a runner. Cited under Pattern 10.
 
-## 2. The 15 patterns and how they land in the plugin
+## 2. The patterns (15 → 19 with v15.9 + v15.11 additions) and how they land in the plugin
 
 Each row below cites the v15.x line range, names the failure mode the pattern
 prevents (often from this session's MFFD logs), and shows the Java/Quarkus
@@ -818,6 +818,140 @@ partial / inconsistent middle state.
 - `apply_source_user_headers(None)` is a no-op (port
   `test_apply_source_user_headers_none_user_is_noop`) — the plugin
   equivalent is "no `SourceUser` resolved → no header context".
+
+### Pattern 19 — Structured diagnostic instrumentation for self-diagnosable failures (`MFFD-IMPORT-DIAG`, v15.11)
+
+**Source lines:** `mffd-import-v15.py` `DiagSink` class
+(`emit` / `classify_error` / `mask_credential` / `jwt_age_seconds`
+/ `_aggregate_window`); module-level `_DIAG` + `_diag_emit` helper;
+event-emission sites at `do_start` / `do_done` / `do_error` / `do_skip`
+in `_process_one_source_do`; `iter_start` / `iter_end` around the
+per-step loop in `run_source_mode`; `startup` / `shutdown` in `main()`.
+Tests: `test_diag.py` (36 cases — wire shape, atomic writes under
+8-thread concurrency, mode gating, error classification, JWT decode,
+credential masking with plaintext-leak guard, summary aggregation,
+payload truncation, PIPE_BUF overflow marker, telemetry-mirror
+best-effort, version constant).
+
+**Why it matters — the second-order debugging cost.** Before v15.11,
+diagnosing any failure class required code spelunking. A future Claude
+session (or Flo at 2 AM) reading `tmux capture-pane -t mffd -p | tail
+-200` saw free-form prints with no structure: HTTP 403 carried no hint
+about which writer-list was missing; a JWT expiry looked the same as a
+network blip; a duplicate-by-name 409 was indistinguishable from a
+bean-validation 4xx. v15.11 closes this gap by making **every failure
+class self-diagnosable from logs alone**.
+
+The contract: **one JSON line per event**, single `os.write(2, ...)` under
+a module-level lock, ≤4096 bytes (Linux PIPE_BUF — kernel-atomic write
+boundary). Schema:
+
+```json
+{"t":"<iso>", "v":"<version>", "session":"<id>", "pid":<int>,
+ "kind":"<event-kind>", "corr":"<correlation-id-or-null>",
+ "payload": {...}}
+```
+
+`kind` taxonomy (18 distinct event kinds): **startup, warmup_step,
+source_user_resolved, iter_start, iter_end, do_start, do_skip, do_done,
+do_error, http_request, http_response, worker_pool, jwt_status,
+manifest_poll, state_save, telemetry_flush, summary, shutdown.**
+The `corr` field ties together every event emitted while processing one
+source DO — `grep 'corr.*tapelaying:42'` returns the whole sub-story.
+
+**Auto-classified diagnostic hints — the load-bearing greppable signal.**
+Every `do_error` and non-2xx `http_response` carries a `diagnostic_hint`
+string from a pure-function classifier (`DiagSink.classify_error`).
+The hint codes are stable strings the next agent can search the
+documentation for:
+
+| HTTP / cond | Hint code | Human action |
+|---|---|---|
+| 401 | `jwt-expired-or-rotated` | Re-mint token; check `MFFD_REFRESH_JWT_CMD` env hook |
+| 403 | `permission-denied` | Check FC/Collection `permissionType` + writer list |
+| 404 | `not-found` | Verify v1/v2 path + ID type (Neo4j long vs appId UUID) |
+| 409 | `conflict` | Duplicate-by-name; check state-file vs dest consistency |
+| 429 | `rate-limited` | Reduce `--workers` or raise backoff cap |
+| 4xx w/ `violations` | `bean-validation` | Quarkus rejected request shape; see `error_body_truncated` |
+| 4xx other | `client-error` | Check request shape + body |
+| 5xx | `server-side` | Transient; backoff usually clears within 30s |
+| None (timeout) | `timeout-or-network` | Network/slow source; reduce workers |
+
+**`--diag-mode` flag — verbosity dial.** Default `normal`. Non-2xx
+HTTP responses are emitted **regardless of mode** — the failure-class
+signal must not be filterable away.
+
+| Mode | What gets emitted |
+|---|---|
+| `quiet` | startup, shutdown, warmup_step, do_error, summary, source_user_resolved |
+| `normal` | + do_start/done/skip, iter_start/end, jwt_status, state_save |
+| `verbose` | + worker_pool ticks, manifest_poll, telemetry_flush |
+| `http-trace` | + every 2xx http_response, http_request |
+
+**Atomicity under concurrency** — every line is built into bytes then
+written with a single `os.write(2, ...)` under a module-level
+`threading.Lock`. Linux guarantees atomicity for writes ≤ PIPE_BUF
+(4096 bytes); the lock is belt-and-braces for non-Linux platforms.
+Oversized payloads collapse to an `_overflow` marker rather than
+spilling into a second line — interleaving would otherwise destroy
+the greppable contract. The test suite emits 400 events from 8
+concurrent threads and asserts every line parses as JSON (zero decode
+errors = zero interleaving).
+
+**Credential masking — the leak guard.** Any token / API key passed to
+`mask_credential()` is rendered as `sha256:<first-12-hex>` of the SHA-256
+digest. The test suite explicitly searches captured emit output for
+substrings of a known plaintext JWT and fails if any fragment leaks.
+This is the same posture as `feedback_no_redactions.md` flipped one
+way: credentials *in* outbound HTTP requests stay literal (copy-paste-
+ready bug reports); credentials *in* emitted diagnostic events are
+always masked.
+
+**Telemetry mirror — best-effort, never breaks emit.** Every emitted
+event is also forwarded to the existing `Telemetry.event(level, name,
+**payload)` channel (which lands events in
+`structuredDataContainer/593753` per Pattern 2). The mirror is wrapped
+in `try/except Exception` — a telemetry failure can never break a
+`DiagSink.emit` call. So the operator gets both:
+
+  - **stderr / tmux** — one JSON line per event, instantly greppable
+  - **Shepard itself** — same events rolled into the SD container
+    (Pattern 2 channel still works as before)
+
+**Shutdown summary** — on graceful exit, `kind:shutdown` carries the
+final 60s rolling-window summary as `final_summary` (do_done_count,
+do_error_count, avg/p95 duration, http_4xx/5xx/429 counts). An operator
+running `tmux capture-pane -p | tail -100` after a run sees the rollup
+immediately without scrolling through 8000 DO events.
+
+**Adoption risk: LOW.** Pure additive instrumentation. Default
+`--diag-mode=normal` produces a reasonable signal-to-noise ratio
+(roughly 5 events/sec in steady state per the 60s heartbeat budget);
+`quiet` mode is available for operators who only want failure + summary
+visibility. Telemetry mirror means existing Pattern 2 dashboards still
+work without change.
+
+**How it lands in the plugin:**
+
+- `ImporterJob.diagSink()` returns a `DiagSink`-shaped Java object
+  scoped to the run id; events flow into the runlog SD container
+  (per Pattern 2) **plus** a per-run stream visible via
+  `GET /v2/admin/importer/runs/{id}/diag-stream` (SSE).
+- The `diagnostic_hint` classifier is a pure helper:
+  `de.dlr.shepard.plugin.importer.ErrorClassifier.classify(status, body)`
+  returning `(HintCode, String action)`. Plugin authors call it
+  uniformly so every importer (DLR v5, Git, Local) produces the same
+  greppable hint vocabulary.
+- The plugin SHOULD NOT invent new `kind` values without bumping the
+  pattern doc — the taxonomy is the contract the next agent's grep
+  depends on.
+
+**Sibling backlog rows.** This pattern resolves only the **diagnostic
+emission half**. The downstream consumer half is `LOG-AS-PROV-ARTEFACT`
+(diagnostic events get lifted into PROV-O `:Activity` records, with
+the `diagnostic_hint` value mapped to a controlled vocabulary IRI per
+the `prov:WasInvalidatedBy` family). That work is queued — v15.11
+emits the structured shape; the dest-side consumption is a follow-up.
 
 ## 3. What's different in the plugin vs the v15 script
 

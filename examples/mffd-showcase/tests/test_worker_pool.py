@@ -242,10 +242,13 @@ class TestWorkerPoolPrimitivesAvailable(unittest.TestCase):
 
 
 class TestVersionConstant(unittest.TestCase):
-    """v15.8 — IMPORT_SCRIPT_VERSION constant is the source of truth."""
+    """IMPORT_SCRIPT_VERSION constant is the source of truth.
 
-    def test_version_is_15_8(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.8")
+    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11).
+    """
+
+    def test_version_is_15_11(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.11")
 
 
 if __name__ == "__main__":

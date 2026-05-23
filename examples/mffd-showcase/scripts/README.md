@@ -21,6 +21,96 @@ This document is the operator reference for the live script. The companion
 user-facing task page is
 [`docs/help/importing-from-dlr-cube3.md`](../../../docs/help/importing-from-dlr-cube3.md).
 
+## What's new in v15.11 (2026-05-23) — structured diagnostic instrumentation
+
+Per the `MFFD-IMPORT-DIAG` backlog row in
+[aidocs/16-dispatcher-backlog.md](../../../aidocs/16-dispatcher-backlog.md).
+Pattern 19 in [aidocs/integrations/95](../../../aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md).
+
+**Why this exists.** Before v15.11, a future Claude session (or Flo at 2 AM)
+reading `tmux capture-pane -t mffd -p | tail -200` had to do code spelunking
+to diagnose any failure. Logs were free-form prints; an HTTP 403 carried no
+hint about which writer-list was missing; a JWT expiry looked the same as a
+network blip; a duplicate-by-name 409 was indistinguishable from a wire-shape
+4xx. v15.11 closes the gap with **one structured JSON line per event**,
+classified errors, and a per-DO correlation id so the next operator can
+grep the failure class without opening the source file.
+
+**The contract** — every emitted line is a single JSON object on one line,
+≤4096 bytes (Linux PIPE_BUF — kernel-atomic write boundary), with this
+schema:
+
+```json
+{"t":"2026-05-23T12:34:56.789+00:00","v":"15.11","session":"2026-05-23",
+ "pid":12345,"kind":"do_error","corr":"tapelaying:42",
+ "payload":{"src_do_id":42,"src_do_name":"ply-005","where":"fileref_create",
+            "diagnostic_hint":"permission-denied; check FC/Collection ..."}}
+```
+
+`kind` is one of: **startup, warmup_step, source_user_resolved, iter_start,
+iter_end, do_start, do_skip, do_done, do_error, http_request, http_response,
+worker_pool, jwt_status, manifest_poll, state_save, telemetry_flush, summary,
+shutdown**. The `corr` field ties together every event emitted while
+processing a single source DO — `grep 'corr.*tapelaying:42'` returns the
+whole sub-story.
+
+**Auto-classified diagnostic hints** — `do_error` and non-2xx `http_response`
+carry a `diagnostic_hint` field with an actionable string:
+
+| HTTP status | Hint code | Action |
+|---|---|---|
+| 401 | `jwt-expired-or-rotated` | Re-mint token or set `MFFD_REFRESH_JWT_CMD` |
+| 403 | `permission-denied` | Check FC/Collection `permissionType` + writer list |
+| 404 | `not-found` | Verify v1/v2 path + ID type (Neo4j long vs appId UUID) |
+| 409 | `conflict` | Duplicate-by-name; check state-file vs dest consistency |
+| 429 | `rate-limited` | Reduce `--workers` or raise backoff cap |
+| 4xx w/ `violations` | `bean-validation` | Quarkus rejected request shape — fix per `error_body_truncated` |
+| 5xx | `server-side` | Transient; backoff usually clears within 30s |
+| None (timeout) | `timeout-or-network` | Network / slow source — reduce workers |
+
+**`--diag-mode` flag** — verbosity dial. Default `normal`. Non-2xx
+http responses are emitted **regardless of mode** so the failure-class
+signal can never be filtered away.
+
+| Mode | What gets emitted |
+|---|---|
+| `quiet` | startup, shutdown, warmup_step, do_error, summary, source_user_resolved |
+| `normal` (default) | `quiet` + do_start/done/skip, iter_start/end, jwt_status, state_save |
+| `verbose` | `normal` + worker_pool ticks, manifest_poll, telemetry_flush |
+| `http-trace` | `verbose` + every 2xx http_response, http_request (debug only) |
+
+**Credential masking** — every event field carrying a token / API key is
+emitted as `sha256:<first-12-hex>`. The plaintext never reaches the emit
+path; the test suite (`test_diag.py`) explicitly asserts no substring of
+a known test JWT appears in any captured line.
+
+**Atomic writes under concurrency** — every line is written via a single
+`os.write(2, line + "\n")` under a module-level lock. Lines that would
+exceed PIPE_BUF collapse to an `_overflow` marker rather than spilling
+into a second line. 8-thread × 50-event concurrency test asserts zero
+interleaving across 400 emitted lines.
+
+**Telemetry mirror** — every emitted event is also forwarded to the
+existing `Telemetry.event(level, name, **payload)` channel (which already
+lands events in `structuredDataContainer/593753`). The mirror is
+best-effort: a `telemetry` exception NEVER breaks `DiagSink.emit`. So
+you get both:
+
+  - **stderr / tmux** — one JSON line per event, instantly greppable
+  - **Shepard itself** — same events rolled into structured-data container
+    (the existing IMPORT-T1 channel; same observability discipline as
+    [`docs/help/observing-an-import.md`](../../../docs/help/observing-an-import.md))
+
+**Shutdown summary** — on clean exit, `kind:shutdown` carries the final
+60s rolling-window summary as `final_summary`. An operator running
+`tmux capture-pane -p | tail -100` after a finished run sees the
+roll-up (DOs done, errors, p95 latency, 4xx/5xx/429 counts) immediately.
+
+**The running v15.9 script self-updates to v15.11 at the next graceful
+boundary** (60s heartbeat — the manifest poll happens between batch
+boundaries) once the v15.11 manifest is published in
+`fileContainer/473932`.
+
 ## What's new in v15.9 (2026-05-23) — source-side user identity capture
 
 Per the `MFFD-IMPORT-USER-CAPTURE` backlog row in
@@ -152,6 +242,7 @@ All flags are optional. The script picks a mode from env vars
 | `--verify-imported` | off | Read-only walk of the dest collection, count DOs / refs by kind, DAG-reachability spot-check. Writes `mffd-verify-<session>.json`. License/access-rights not required. |
 | `--smart-warmup` | on | Run the IMPORT-W1/W2/W3 phase before the main loop. Probes auth + read + write + wire-shape on both sides, with throwaway DOs cleaned up before every exit. |
 | `--legacy-warmup` | — | Opt back to the v15.1 single read-only warmup. Use only when investigating a smart-warmup false-positive. |
+| `--diag-mode {quiet,normal,verbose,http-trace}` | `normal` (env: `MFFD_DIAG_MODE`) | **v15.11 IMPORT-DIAG**: structured-event verbosity. `quiet` = errors + summary + startup/shutdown only; `normal` = adds do_start/done/skip + jwt + state; `verbose` = adds worker_pool + manifest_poll; `http-trace` = adds every 2xx http response (debug). Non-2xx http responses are ALWAYS emitted regardless of mode. See [§What's new in v15.11](#whats-new-in-v1511-2026-05-23--structured-diagnostic-instrumentation). |
 
 Mode-selection rules in `main()` (line 3686): SOURCE if either
 `SOURCE_*_COLL_ID` env is set; cross-instance if `SOURCE_SHEPARD_URL` differs
@@ -200,6 +291,7 @@ load (lines 156-203, 3749-3751) so changing them mid-run requires a restart
 | `MFFD_TELEMETRY_TS` | `593750` | `timeseriesContainer` id receiving the ROW-format counter CSV. |
 | `MFFD_RUNLOG_SD` | `593753` | `structuredDataContainer` id receiving the events envelope. |
 | `MFFD_CHECKPOINT` | `~/.mffd-import-state.json` | Single-file resume state. Atomic-write (tmp + fsync + rename). |
+| `MFFD_DIAG_MODE` | `normal` | v15.11 IMPORT-DIAG verbosity. CLI `--diag-mode` overrides. Values: `quiet`, `normal`, `verbose`, `http-trace`. |
 
 **Other**
 

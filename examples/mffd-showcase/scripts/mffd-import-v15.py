@@ -148,7 +148,15 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.9"
+IMPORT_SCRIPT_VERSION = "15.11"
+
+# v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
+# one JSON line per event to stderr + the existing log file, classifies errors
+# into auto-generated hints, and stamps each event with a correlation id so a
+# future operator reading 200 lines of tmux scrollback can diagnose the failure
+# class without code access. See `aidocs/integrations/95 §Pattern 19`.
+# Mode: quiet|normal|verbose|http-trace (default normal).
+DIAG_MODE: str = os.environ.get("MFFD_DIAG_MODE", "normal")
 
 # Self-update mechanism (IMPORT-SU1): the running script polls a JSON manifest
 # in dest Shepard. On newer version → sha256-verified download → checkpoint
@@ -208,6 +216,25 @@ OPERATOR = os.environ.get("OPERATOR", "")
 # source_user_* attrs. Stays None when the source-user lookup fails
 # (graceful degradation — script continues, just without enrichment).
 SOURCE_USER_INFO: dict | None = None
+
+# v15.11 IMPORT-DIAG — module-level DiagSink set by main() right after
+# Telemetry creation. Helper sites (worker pool, per-DO body, error paths)
+# read this without per-call threading. Stays None until main() runs, so
+# import-only test contexts see a no-op `_diag_emit` helper below.
+_DIAG: Any | None = None
+
+
+def _diag_emit(kind: str, payload: dict | None = None,
+               corr: str | None = None) -> None:
+    """Module-level helper so call sites don't have to plumb DiagSink through
+    closures. No-op when DiagSink isn't installed yet (e.g. before main()
+    initialises it, or in test contexts that load the module without running)."""
+    if _DIAG is not None:
+        try:
+            _DIAG.emit(kind, payload, corr=corr)
+        except Exception:
+            # Diagnostic must never break ingestion.
+            pass
 
 
 # ── v15 concurrency + resilience primitives (aidocs/93 §5) ───────────────────
@@ -2568,11 +2595,22 @@ def run_source_mode(
     for step_key, src_coll_id, pred_key in source_map:
         if src_coll_id is None:
             print(f"\n[{step_key}] SOURCE_{step_key.upper()}_COLL_ID not set — skipping")
+            _diag_emit("iter_end", {
+                "step": step_key,
+                "skipped_reason": "source_coll_id_unset",
+            })
             continue
 
         print(f"\n[{step_key}] source collection {src_coll_id}")
+        _iter_start_s = time.time()
         total_dos = _src.count_data_objects(src_coll_id)
         print(f"  {total_dos} DataObject(s) to migrate")
+        _diag_emit("iter_start", {
+            "step": step_key,
+            "src_coll_id": src_coll_id,
+            "pred_step": pred_key,
+            "total_source_dos": total_dos,
+        })
 
         # v15.1 name mapping (Reluctant Senior trust-G2):
         # `source-name → operator-name`. Source name preserved as
@@ -2750,11 +2788,24 @@ def run_source_mode(
                       "ts_imported": 0, "ts_skipped": 0, "ts_failed": 0,
                       "structured_imported": 0, "structured_failed": 0}
 
+            # v15.11 IMPORT-DIAG — per-DO correlation id ties together every
+            # http_request / http_response / state_save event emitted while
+            # processing this source DO. Format: `<step>:<src_do_id>` keeps
+            # the correlation small enough for log filtering by `grep corr`.
+            corr_id = f"{step_key}:{src_do.do_id}"
+            do_start_s = time.time()
+
             # v15.8 PERF2 per-DO short-circuit. Key by step + name so the
             # same source name in tapelaying vs bridgewelding doesn't collide.
             do_done_key = f"{step_key}/{src_do.name}"
             if state is not None and state.is_do_done(do_done_key):
                 do_bar.write(f"  ↳ {src_do.name}  [skip-do — fully done in prior run]")
+                _diag_emit("do_skip", {
+                    "src_do_id": src_do.do_id,
+                    "src_do_name": src_do.name,
+                    "step": step_key,
+                    "reason": "state-file-says-done",
+                }, corr=corr_id)
                 # Surface the saved cube3 round-trips. counts stay zero (we
                 # didn't process anything; the per-step totals already
                 # absorbed this work on the prior session that marked it).
@@ -2764,6 +2815,11 @@ def run_source_mode(
             # interleaved [ok-file]/[error-ts] lines can be traced back to
             # the source DO that produced them.
             do_bar.write(f"  ↳ {src_do.name}  (start)")
+            _diag_emit("do_start", {
+                "src_do_id": src_do.do_id,
+                "src_do_name": src_do.name,
+                "step": step_key,
+            }, corr=corr_id)
 
             # ── Files ──────────────────────────────────────────────────────
             file_refs = _src._load_file_refs(src_do)
@@ -2893,6 +2949,51 @@ def run_source_mode(
             if state is not None and all_clean:
                 state.mark_do_done(do_done_key)
 
+            # v15.11 IMPORT-DIAG — per-DO outcome event. `all_clean` decides
+            # which kind: do_done for full success, do_error otherwise. The
+            # error path carries a coarse `where` field so a future operator
+            # can grep `kind:do_error` + see which payload family is failing.
+            duration_ms = int((time.time() - do_start_s) * 1000)
+            if all_clean:
+                _diag_emit("do_done", {
+                    "src_do_id": src_do.do_id,
+                    "src_do_name": src_do.name,
+                    "step": step_key,
+                    "file_refs_written": counts["files_uploaded"],
+                    "ts_refs_written": counts["ts_imported"],
+                    "sd_refs_written": counts["structured_imported"],
+                    "file_refs_skipped": counts["files_skipped"],
+                    "ts_refs_skipped": counts["ts_skipped"],
+                    "duration_ms": duration_ms,
+                }, corr=corr_id)
+            else:
+                # Categorise which payload family failed. The `where` field
+                # is the greppable signal a future Claude / operator can sort
+                # error frequency by.
+                fail_classes = []
+                if counts["files_failed"]:
+                    fail_classes.append("file")
+                if counts["ts_failed"]:
+                    fail_classes.append("ts")
+                if counts["structured_failed"]:
+                    fail_classes.append("sd")
+                _diag_emit("do_error", {
+                    "src_do_id": src_do.do_id,
+                    "src_do_name": src_do.name,
+                    "step": step_key,
+                    "where": "+".join(fail_classes) or "unknown",
+                    "files_failed": counts["files_failed"],
+                    "ts_failed": counts["ts_failed"],
+                    "structured_failed": counts["structured_failed"],
+                    "duration_ms": duration_ms,
+                    # The per-call http_response events carry the structured
+                    # `diagnostic_hint`; the do_error event is the aggregate.
+                    "diagnostic_hint": (
+                        "see http_response events with same corr for "
+                        "per-call status + hint"
+                    ),
+                }, corr=corr_id)
+
             return counts
 
         with tqdm(
@@ -2997,6 +3098,23 @@ def run_source_mode(
             f"  → sd:    imported={structured_imported} failed={structured_failed}"
         )
         dest_client.verify_references(coll_id, dest_do_id, dest_do_name)
+
+        # v15.11 IMPORT-DIAG — step boundary event so a future operator
+        # can grep `kind:iter_end` + read total throughput for each step.
+        _diag_emit("iter_end", {
+            "step": step_key,
+            "src_coll_id": src_coll_id,
+            "duration_s": round(time.time() - _iter_start_s, 1),
+            "total_source_dos": total_dos,
+            "files_uploaded": files_uploaded,
+            "files_skipped": files_skipped,
+            "files_failed": files_failed,
+            "ts_imported": ts_imported,
+            "ts_skipped": ts_skipped,
+            "ts_failed": ts_failed,
+            "structured_imported": structured_imported,
+            "structured_failed": structured_failed,
+        })
 
     return do_ids
 
@@ -3592,6 +3710,375 @@ class Telemetry:
                 print(f"  [telemetry] event flush failed: {exc!r}", flush=True)
 
 
+# ── v15.11 IMPORT-DIAG: structured diagnostic instrumentation ────────────────
+#
+# DiagSink emits one JSON line per event so a future operator (or Claude session)
+# can grep the tmux scrollback / log file for `kind:do_error` + the auto-classified
+# `diagnostic_hint` and act without code access. Emits ALONGSIDE Telemetry — does
+# not replace it. Telemetry remains the rollup-into-Shepard channel (counters +
+# event batches every HEARTBEAT_S); DiagSink is the per-event greppable line.
+#
+# Modes:
+#   quiet       — startup/shutdown + do_error + summary only (lowest noise)
+#   normal      — adds do_start/do_done + iter ticks + jwt_status + state_save
+#   verbose     — adds worker_pool ticks + manifest_poll + telemetry_flush
+#   http-trace  — adds every 2xx http_response (verbose mode + http traces)
+#
+# Atomicity: every line is written via a single `os.write(2, line + "\n")` under
+# a module-level lock. Lines are bounded at 4096 bytes (payload truncation, not
+# line truncation) so the kernel guarantees no interleaving with concurrent emit.
+# Credential masking: any token / api-key / Authorization header is rendered as
+# `sha256:<first-12-of-hex>` before it ever reaches the emit path.
+
+class DiagSink:
+    """Structured single-line JSON event emitter for self-diagnosable failures.
+
+    The contract: every event is one line of JSON terminated by '\\n', atomic
+    against concurrent threads, with a stable schema:
+
+        {"t":<iso>, "v":<version>, "session":<session>, "pid":<pid>,
+         "kind":<event-kind>, "corr":<correlation-id-or-null>,
+         "payload":{...}}
+
+    Events are emitted to stderr (so they show up in tmux), tee'd into the
+    existing log file (already opened by `Tee`), and optionally batched
+    forward to the existing Telemetry event channel (which lands them in
+    structured-data container 593753).
+
+    `kind` taxonomy (see aidocs/integrations/95 §Pattern 19):
+      startup, warmup_step, source_user_resolved, iter_start, iter_end,
+      do_start, do_skip, do_done, do_error, http_request, http_response,
+      worker_pool, jwt_status, manifest_poll, state_save, telemetry_flush,
+      summary, shutdown.
+
+    Diagnostic hints (auto-classified from http_status + body content):
+      jwt-expired-or-rotated (401), permission-denied (403),
+      not-found (404), conflict (409), bean-validation (Quarkus violations),
+      server-side (5xx), timeout (network), rate-limited (429).
+    """
+
+    _VALID_MODES = ("quiet", "normal", "verbose", "http-trace")
+    _MAX_LINE_BYTES = 4096  # Linux PIPE_BUF — kernel-atomic write boundary.
+    _MAX_PAYLOAD_FIELD = 500  # Truncate any string payload field to this.
+
+    # Per-mode allowed-event sets. Membership test is cheap; the emit path
+    # short-circuits on `kind not in self._allowed` before doing any work.
+    _ALWAYS = frozenset({
+        "startup", "shutdown", "warmup_step", "do_error",
+        "summary", "source_user_resolved",
+    })
+    _NORMAL = _ALWAYS | frozenset({
+        "do_start", "do_done", "do_skip", "iter_start", "iter_end",
+        "jwt_status", "state_save",
+    })
+    _VERBOSE = _NORMAL | frozenset({
+        "worker_pool", "manifest_poll", "telemetry_flush",
+        "http_response",  # non-2xx ALWAYS; 2xx only with http-trace
+    })
+    _HTTP_TRACE = _VERBOSE | frozenset({"http_request"})
+
+    def __init__(self, version: str, session: str, mode: str = "normal",
+                 telemetry: Any | None = None) -> None:
+        if mode not in self._VALID_MODES:
+            mode = "normal"
+        self._version = version
+        self._session = session
+        self._mode = mode
+        self._telemetry = telemetry
+        self._pid = os.getpid()
+        self._lock = threading.Lock()
+        # Rolling-window summary aggregator (60s window).
+        self._summary_lock = threading.Lock()
+        self._summary_window: list[dict] = []
+        self._summary_start_s = time.time()
+        # Allowed event set per mode (resolved once).
+        self._allowed: frozenset[str]
+        if mode == "quiet":
+            self._allowed = self._ALWAYS
+        elif mode == "normal":
+            self._allowed = self._NORMAL
+        elif mode == "verbose":
+            self._allowed = self._VERBOSE
+        else:  # http-trace
+            self._allowed = self._HTTP_TRACE
+
+    # ── public API ────────────────────────────────────────────────────────
+
+    @property
+    def mode(self) -> str:
+        return self._mode
+
+    def emit(self, kind: str, payload: dict | None = None,
+             corr: str | None = None) -> None:
+        """Write one JSON event line. No-op when the mode filters this kind.
+
+        For http_response specifically: non-2xx statuses are ALWAYS emitted
+        regardless of mode (the failure-class signal must not be filterable
+        away). 2xx http_response is gated on http-trace mode.
+        """
+        if kind == "http_response" and payload is not None:
+            status = payload.get("status")
+            if isinstance(status, int) and status >= 400:
+                pass  # Always emit non-2xx — bypass mode gating.
+            elif self._mode != "http-trace":
+                return
+        elif kind not in self._allowed:
+            return
+
+        line = self._build_line(kind, payload or {}, corr)
+        self._write_atomic(line)
+
+        # Best-effort mirror into Telemetry (the existing observability
+        # channel that rolls events into structured-data container 593753).
+        # Failures here are silent — Telemetry already swallows its own
+        # IO errors; we mustn't break ingestion either way.
+        if self._telemetry is not None and kind not in ("http_request", "worker_pool"):
+            try:
+                level = "error" if kind == "do_error" else (
+                    "warn" if kind == "do_skip" else "info"
+                )
+                self._telemetry.event(level, f"diag_{kind}",
+                                      corr=corr or "", **(payload or {}))
+            except Exception:
+                pass
+
+        # Update the rolling-window summary for any DO-level event.
+        if kind in ("do_done", "do_error", "do_skip", "http_response"):
+            self._update_summary(kind, payload or {})
+
+    def summary_tick(self) -> dict:
+        """Flush the rolling 60s window. Returns the aggregated summary
+        dict (also emitted as `kind=summary`). Called from the periodic
+        driver tick.
+        """
+        with self._summary_lock:
+            window = self._summary_window
+            self._summary_window = []
+            elapsed = time.time() - self._summary_start_s
+            self._summary_start_s = time.time()
+
+        agg = self._aggregate_window(window, elapsed)
+        self.emit("summary", agg)
+        return agg
+
+    # ── error classification (the load-bearing greppable signal) ──────────
+
+    @staticmethod
+    def classify_error(http_status: int | None,
+                       error_body: str | None) -> tuple[str, str]:
+        """Return (hint_code, human_action) for a given http error context.
+
+        Pure function — testable in isolation. Hint codes are the greppable
+        strings that show up in `diagnostic_hint` on `do_error` / `http_response`
+        events; the human_action is a short imperative the operator can act on
+        without further code reading.
+        """
+        if http_status is None:
+            # Timeout / connection refused — surfaced as None by requests.
+            return ("timeout-or-network",
+                    "network or slow source; consider --workers reduction")
+
+        if http_status == 401:
+            return ("jwt-expired-or-rotated",
+                    "JWT rejected; check token age + re-mint via "
+                    "MFFD_REFRESH_JWT_CMD env hook (v15.10) or restart")
+        if http_status == 403:
+            return ("permission-denied",
+                    "permission denied; check FileContainer/Collection "
+                    "permissionType + writer list for the auth principal")
+        if http_status == 404:
+            return ("not-found",
+                    "endpoint or resource not found; verify v1/v2 path + "
+                    "ID type (Neo4j long vs appId UUID)")
+        if http_status == 409:
+            return ("conflict",
+                    "conflict; likely duplicate-by-name — check state-file "
+                    "consistency vs dest collection contents")
+        if http_status == 429:
+            return ("rate-limited",
+                    "rate-limited by source/dest; reduce --workers or "
+                    "increase backoff cap")
+
+        if 400 <= http_status < 500:
+            # Generic 4xx — inspect body for Quarkus bean-validation envelope.
+            if error_body and ("violations" in error_body
+                               or "constraintViolations" in error_body):
+                return ("bean-validation",
+                        "Quarkus bean-validation failed; field list is in "
+                        "error_body_truncated — fix the request shape")
+            return ("client-error",
+                    "4xx without specific class; check request shape + "
+                    "error_body_truncated for server-side detail")
+
+        if http_status >= 500:
+            return ("server-side",
+                    "server-side fault; retry with backoff "
+                    "(transient — usually clears within 30s)")
+
+        return ("unclassified",
+                "unrecognised status; inspect error_body_truncated manually")
+
+    @staticmethod
+    def mask_credential(token: str | None) -> str:
+        """Render a token / API key as `sha256:<first-12-hex>`. Never emits
+        any plaintext substring of the original. Empty/None → `none`."""
+        if not token:
+            return "none"
+        digest = hashlib.sha256(token.encode("utf-8", "replace")).hexdigest()
+        return f"sha256:{digest[:12]}"
+
+    @staticmethod
+    def jwt_age_seconds(token: str | None) -> int | None:
+        """Decode the unverified JWT payload and return age in seconds since
+        `iat`. Returns None on any decode failure. Never raises.
+        """
+        if not token or "." not in token:
+            return None
+        try:
+            import base64
+            parts = token.split(".")
+            if len(parts) < 2:
+                return None
+            # Base64url + padding fix (urlsafe_b64decode requires pad).
+            payload_b64 = parts[1]
+            padding = "=" * (-len(payload_b64) % 4)
+            payload_bytes = base64.urlsafe_b64decode(payload_b64 + padding)
+            payload = _json.loads(payload_bytes.decode("utf-8", "replace"))
+            iat = payload.get("iat")
+            if not isinstance(iat, (int, float)):
+                return None
+            return int(time.time() - iat)
+        except Exception:
+            return None
+
+    @staticmethod
+    def jwt_has_exp(token: str | None) -> bool:
+        """True if the unverified JWT carries an `exp` claim. Never raises."""
+        if not token or "." not in token:
+            return False
+        try:
+            import base64
+            parts = token.split(".")
+            if len(parts) < 2:
+                return False
+            payload_b64 = parts[1]
+            padding = "=" * (-len(payload_b64) % 4)
+            payload_bytes = base64.urlsafe_b64decode(payload_b64 + padding)
+            payload = _json.loads(payload_bytes.decode("utf-8", "replace"))
+            return "exp" in payload
+        except Exception:
+            return False
+
+    # ── internals ────────────────────────────────────────────────────────
+
+    def _build_line(self, kind: str, payload: dict,
+                    corr: str | None) -> bytes:
+        """Build one JSON-serialised line, truncating any oversize fields."""
+        # Defensive: truncate large string fields so the whole line fits
+        # in PIPE_BUF (atomic write boundary on Linux). Only string values
+        # are truncated; ints/dicts/lists pass through.
+        safe_payload = {}
+        for k, v in payload.items():
+            if isinstance(v, str) and len(v) > self._MAX_PAYLOAD_FIELD:
+                safe_payload[k] = v[:self._MAX_PAYLOAD_FIELD] + "...[truncated]"
+            else:
+                safe_payload[k] = v
+
+        event = {
+            "t": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "v": self._version,
+            "session": self._session,
+            "pid": self._pid,
+            "kind": kind,
+            "corr": corr,
+            "payload": safe_payload,
+        }
+        line = _json.dumps(event, default=str, separators=(",", ":"))
+        encoded = (line + "\n").encode("utf-8", "replace")
+
+        # If still oversized (very rare — nested structure too deep), trim
+        # the payload completely and add an overflow marker. Lines must
+        # never exceed PIPE_BUF or we lose atomicity.
+        if len(encoded) > self._MAX_LINE_BYTES:
+            event["payload"] = {"_overflow": True,
+                                "_original_size": len(encoded),
+                                "_keys": list(safe_payload.keys())}
+            line = _json.dumps(event, default=str, separators=(",", ":"))
+            encoded = (line + "\n").encode("utf-8", "replace")
+        return encoded
+
+    def _write_atomic(self, line_bytes: bytes) -> None:
+        """Write the line to stderr fd as a single os.write call. Linux
+        guarantees atomicity for writes ≤ PIPE_BUF (4096 bytes). The
+        module-level lock is a belt-and-braces for non-Linux platforms.
+        """
+        with self._lock:
+            try:
+                os.write(2, line_bytes)
+            except Exception:
+                # Diagnostic must never break the import.
+                pass
+
+    def _update_summary(self, kind: str, payload: dict) -> None:
+        with self._summary_lock:
+            self._summary_window.append({"k": kind, "p": payload})
+            # Bound to avoid unbounded growth between ticks.
+            if len(self._summary_window) > 10_000:
+                self._summary_window = self._summary_window[-5_000:]
+
+    @staticmethod
+    def _aggregate_window(window: list[dict], elapsed_s: float) -> dict:
+        """Pure-function aggregator — unit-testable. Returns the summary
+        payload (do_done_count, do_error_count, http_4xx/5xx/429, avg/p95
+        duration_ms)."""
+        do_done = []
+        do_done_count = 0
+        do_error_count = 0
+        do_skip_count = 0
+        http_4xx = 0
+        http_5xx = 0
+        http_429 = 0
+        for ev in window:
+            k = ev["k"]
+            p = ev["p"]
+            if k == "do_done":
+                do_done_count += 1
+                d = p.get("duration_ms")
+                if isinstance(d, (int, float)):
+                    do_done.append(float(d))
+            elif k == "do_error":
+                do_error_count += 1
+            elif k == "do_skip":
+                do_skip_count += 1
+            elif k == "http_response":
+                s = p.get("status")
+                if isinstance(s, int):
+                    if s == 429:
+                        http_429 += 1
+                    elif 400 <= s < 500:
+                        http_4xx += 1
+                    elif s >= 500:
+                        http_5xx += 1
+        avg_ms = (sum(do_done) / len(do_done)) if do_done else 0.0
+        if do_done:
+            sorted_dur = sorted(do_done)
+            p95_idx = max(0, int(len(sorted_dur) * 0.95) - 1)
+            p95_ms = sorted_dur[p95_idx]
+        else:
+            p95_ms = 0.0
+        return {
+            "window_s": round(elapsed_s, 1),
+            "do_done_count": do_done_count,
+            "do_error_count": do_error_count,
+            "do_skip_count": do_skip_count,
+            "avg_do_duration_ms": round(avg_ms, 1),
+            "p95_do_duration_ms": round(p95_ms, 1),
+            "http_4xx_count": http_4xx,
+            "http_5xx_count": http_5xx,
+            "http_429_count": http_429,
+        }
+
+
 # ── v15.4 IMPORT-SU1: self-update mechanism ──────────────────────────────────
 
 class Manifest:
@@ -4055,6 +4542,25 @@ def main() -> None:
         action="store_false",
         help="Opt back to v15.1's single read-only warmup (no write probes, no spec diff).",
     )
+    # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. See
+    # `aidocs/integrations/95 §Pattern 19`. Single greppable JSON line per
+    # event with auto-classified diagnostic hints. Env fallback:
+    # MFFD_DIAG_MODE={quiet,normal,verbose,http-trace}.
+    ap.add_argument(
+        "--diag-mode",
+        dest="diag_mode",
+        type=str,
+        default=os.environ.get("MFFD_DIAG_MODE", "normal"),
+        choices=["quiet", "normal", "verbose", "http-trace"],
+        help=(
+            "v15.11 IMPORT-DIAG: structured-event verbosity. "
+            "`quiet` = startup/shutdown + errors + summary only; "
+            "`normal` (default) = adds do_start/done/skip + jwt + state; "
+            "`verbose` = adds worker_pool ticks + manifest_poll + telemetry_flush; "
+            "`http-trace` = adds every 2xx http response (debug only). "
+            "Non-2xx http responses are ALWAYS emitted regardless of mode."
+        ),
+    )
     args = ap.parse_args()
     global MAX_DOS_PER_STEP
     MAX_DOS_PER_STEP = args.max_dos
@@ -4173,6 +4679,43 @@ def main() -> None:
         else ("source" if (cross_instance and source_mode) else "local")
     )
     telemetry = Telemetry(dest_client, IMPORT_SCRIPT_VERSION, _mode_for_telemetry)
+    # v15.11 IMPORT-DIAG — instantiate DiagSink BEFORE manifest poller starts.
+    # Mode is whichever the CLI / env said. The sink will mirror events into
+    # `telemetry` so the existing structured-data-container channel still gets
+    # them; the wire shape is the new greppable JSON-per-line on stderr.
+    global _DIAG  # consumed by helper sites further down without per-call threading
+    _DIAG = DiagSink(IMPORT_SCRIPT_VERSION, SESSION_ID,
+                     mode=args.diag_mode, telemetry=telemetry)
+    try:
+        script_path = Path(__file__)
+        script_sha = hashlib.sha256(script_path.read_bytes()).hexdigest()
+    except Exception:
+        script_sha = "unknown"
+    _DIAG.emit("startup", {
+        "version": IMPORT_SCRIPT_VERSION,
+        "mode": _mode_for_telemetry,
+        "diag_mode": args.diag_mode,
+        "session": SESSION_ID,
+        "shepard_url": SHEPARD_URL,
+        "source_url": SOURCE_SHEPARD_URL,
+        "source_tapelaying_coll_id": SOURCE_TAPELAYING_COLL_ID,
+        "source_bridgewelding_coll_id": SOURCE_BRIDGEWELDING_COLL_ID,
+        "workers": args.workers,
+        "max_dos_per_step": args.max_dos,
+        "script_sha256": script_sha,
+        "manifest_container_id": MANIFEST_CONTAINER_ID,
+        "telemetry_ts_container_id": TELEMETRY_TS_CONTAINER_ID,
+        "runlog_sd_container_id": RUNLOG_SD_CONTAINER_ID,
+        "selfupdate_enabled": SELFUPDATE_ENABLED,
+        "auth_mode": "Bearer" if SHEPARD_BEARER_TOKEN else "X-API-KEY",
+        "dest_token_masked": DiagSink.mask_credential(
+            SHEPARD_BEARER_TOKEN or SHEPARD_API_KEY),
+        "dest_jwt_age_seconds": DiagSink.jwt_age_seconds(
+            SHEPARD_BEARER_TOKEN or SHEPARD_API_KEY),
+        "source_token_masked": DiagSink.mask_credential(SOURCE_SHEPARD_API_KEY),
+        "source_jwt_age_seconds": DiagSink.jwt_age_seconds(SOURCE_SHEPARD_API_KEY),
+        "pid": os.getpid(),
+    })
     checkpoint = Checkpoint(CHECKPOINT_PATH)
     prior_state = checkpoint.load()
     if prior_state:
@@ -4588,6 +5131,22 @@ def main() -> None:
         #      lock + closing the tee — os.execv replaces the process so
         #      no Python finally-handlers run after; we MUST persist the
         #      checkpoint above this point, which we already do per-batch.
+        # v15.11 IMPORT-DIAG — emit one final summary tick + shutdown event so
+        # an operator looking at `tmux capture-pane -p | tail -100` after a
+        # clean exit sees the run rollup immediately.
+        try:
+            final_summary = _DIAG.summary_tick() if _DIAG is not None else {}
+        except Exception:
+            final_summary = {}
+        try:
+            _diag_emit("shutdown", {
+                "update_pending": bool(updater.update_event.is_set()),
+                "pending_version": updater.pending_version or "",
+                "final_summary": final_summary,
+                "exit_reason": "graceful",
+            })
+        except Exception:
+            pass
         try:
             telemetry.event("info", "process_shutting_down",
                             update_pending=bool(updater.update_event.is_set()))
