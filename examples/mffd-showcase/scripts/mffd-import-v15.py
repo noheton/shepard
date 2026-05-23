@@ -154,7 +154,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.17"
+IMPORT_SCRIPT_VERSION = "15.18"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -1610,16 +1610,34 @@ class ShepardClient:
                         return repo.get("id")
             except (ValueError, AttributeError):
                 pass
-        # v15.3 IMPORT-SR1 — backend now requires non-blank `endpoint` on
-        # all repo types (INTERNAL too), not just SPARQL. Provide a
-        # deterministic URN default when caller didn't pass one.
+        # v15.18 IMPORT-SR2 — backend validator now rejects `urn:` endpoints
+        # ("Invalid endpoint"), requires URL shape. Use a deterministic
+        # https:// URL that's namespace-stable but not required to resolve
+        # (the endpoint is just an identifier for the repo's IRI space).
+        # Caller-supplied `endpoint=urn:...` gets normalized too.
+        def _normalize_endpoint(ep: str, fallback_name: str) -> str:
+            if not ep:
+                return f"https://noheton.org/shepard/repo/{fallback_name}"
+            if ep.startswith(("http://", "https://")):
+                return ep
+            # Convert urn:foo:bar:baz → https://noheton.org/shepard/repo/foo/bar/baz
+            return "https://noheton.org/shepard/repo/" + ep.replace("urn:", "").replace(":", "/")
         body: dict[str, Any] = {
             "name": name,
             "type": type_,
-            "endpoint": endpoint or f"urn:shepard:repo:{name}",
+            "endpoint": _normalize_endpoint(endpoint, name),
         }
         r = self._post(f"{self._base}/shepard/api/semanticRepositories", body)
-        return r.json().get("id") if r else None
+        if r is None:
+            # v15.18 — soft-fail: semantic repo creation is best-effort
+            # provenance metadata, NOT critical for ingest. Log + continue.
+            print(f"  [warn-sr] could not create semantic repo {name!r}; continuing without it (provenance annotations will skip)")
+            return None
+        try:
+            return r.json().get("id")
+        except (ValueError, AttributeError):
+            print(f"  [warn-sr] semantic repo {name!r} POST returned non-JSON; continuing")
+            return None
 
     def add_semantic_annotation(
         self, coll_id: int, do_id: int,
@@ -2984,7 +3002,7 @@ def run_source_mode(
             prov_repo_id = dest_client.get_or_create_semantic_repo("prov-o")
             migration_repo_id = dest_client.get_or_create_semantic_repo(
                 f"mffd-migration-{SESSION_ID}", type_="SPARQL",
-                endpoint=f"urn:mffd:migration:{SESSION_ID}",
+                endpoint=f"https://noheton.org/mffd/migration/{SESSION_ID}",
             )
             fair2r_repo_id = dest_client.get_or_create_semantic_repo("fair2r")
             if prov_repo_id and migration_repo_id and fair2r_repo_id:
@@ -5486,7 +5504,7 @@ def main() -> None:
         prov_repo_id = dest_client.get_or_create_semantic_repo("prov-o")
         migration_repo_id = dest_client.get_or_create_semantic_repo(
             f"mffd-migration-{SESSION_ID}", type_="SPARQL",
-            endpoint=f"urn:mffd:migration:{SESSION_ID}",
+            endpoint=f"https://noheton.org/mffd/migration/{SESSION_ID}",
         )
         if prov_repo_id and migration_repo_id:
             if pre_snap_app_id:
