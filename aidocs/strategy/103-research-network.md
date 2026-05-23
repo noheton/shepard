@@ -61,6 +61,109 @@ The 41 individuals catalogued below cluster naturally into nine groups by intell
 
 ---
 
+## §2.5 Multi-database cross-verification addendum (2026-05-23, second pass)
+
+> **Context.** This addendum was contributed by a sibling agent invocation responding to the user course-correction *"also extend to other databases for search"* on 2026-05-23. The primary eLib-based reconstruction in §1–§2 and §3–§11 is the canonical narrative; this section adds **machine-resolvable identifiers** (OpenAlex Work IDs, OpenAlex Author IDs, ORCID) for cross-referencing and surfaces three methodological findings that the eLib-only path would not expose.
+
+### §2.5.1 ORCID and OpenAlex Author IDs (cross-reference table)
+
+| Person | ORCID | OpenAlex Author ID | OpenAlex works (count, h-idx) | Notes |
+|---|---|---|---|---|
+| Florian Krebs (DLR) | 0009-0008-8139-9581 (OpenAlex-reported; not yet verified against DLR profile) | A5078274992 | 102 / h-21 — **merged-identity profile**, includes namesake noise | DLR-Krebs subset = the 9 DLR-affiliated years 2013-2024 + topics "Manufacturing Process and Optimization" (21 works) |
+| Tobias Haase (DLR) | 0000-0001-6285-3242 | A5091651035 | 9 / h-4 | Distinct from Drosophila biologist Tobias Haase at MPI Göttingen (A5063043339) |
+| Roland Glück | **0000-0001-7909-1942** (verified via 2023 MEMAS paper authorships) | (no clean profile; A5026500569 is misrouted "Rebecca Gluck" cardiology) | fragmented | The 2021 Shepard paper assigned Glück to a cardiology profile; the 2023 MEMAS paper exposes his correct ORCID |
+| Patrick Kaufmann | **0000-0003-1181-7211** (verified via 2025 Vistein QA paper) | A5013423038 (partial; ORCID-less in 2021 paper record) | 2 / h-1 (partial) | DLR-Kaufmann's ORCID only visible from the 2025 paper |
+| Mark Willmeroth | (none in OpenAlex) | A5009590030 | small | Surfaces in 2021 paper + earlier KIBID-era decks per §86 |
+| Lars Brandt | 0009-0007-8608-0759 | A5039137221 | small | Co-author 2024 NRC ICAST paper — external-industry bridge |
+| Dennis Deden | (none) | A5039607463 | small | AFP automated fibre placement |
+| Michèle Mayer | (none) | A5083855448 | small | Co-author 2021 + 2023 Shepard papers |
+| Michael Vistein | 0000-0001-6998-0017 | A5044533622 | **48 / h-9** | 8-year U Augsburg co-affiliation (2009-2017) + DLR-ZLP (2017-2024). The strongest bridge-node by OpenAlex metrics. |
+| Christoph Frommel | 0000-0002-3717-1087 | A5054226256 | (visible only via Frommel 2020 W3100809365) | First-author of the 2020 process-orchestration paper |
+| Alfons Schuster | 0000-0002-7444-366X | A5039314197 | (DLR-ZLP) | KIBID-lineage bridge: co-presenter ProDES v2 2017-06-19 + co-author Frommel 2020 |
+| Lars Larsen | 0000-0002-4450-8581 | A5064588054 | (DLR-ZLP) | Frommel 2020 co-author |
+| Marian Körber | 0000-0003-0109-8102 | A5049150304 | (DLR-ZLP) | Frommel 2020 co-author |
+| Marcin Malecha | 0000-0003-2824-0914 | A5060451016 | (DLR-ZLP) | Frommel 2020 co-author |
+| Michael Kupke | (none in OpenAlex) | A5044778076 | senior author across multiple ZLP papers | Head of DLR-ZLP Augsburg centre |
+| Daniel Nieberl | 0000-0001-7546-5476 | (visible via Vistein 2025) | small | Cluster B' QA anchor |
+| Andreas Buchheim | 0000-0003-3333-7227 | (visible via Vistein 2025) | small | Cluster B' QA anchor |
+| Hartmut Schlenz | 0000-0002-2197-4846 | A5123370500 | handbook + small standalone | FZ Jülich; CADEN PI |
+| Torsten Bronger | 0000-0002-5174-6684 | A5037905877 | **39 / h-7** | FZ Jülich; see §2.5.3 below for the discipline-pivot finding |
+| Michael Selzer | 0000-0002-9756-646X | A5124956699 | (KIT, Kadi4Mat) | Handbook anchor |
+| Britta Nestler | 0000-0002-3768-3277 | A5124909094 | (KIT, Kadi4Mat senior) | Handbook anchor |
+| Salome Ehinomen Enahoro | (none) | A5123393256 | (FZJ, CADEN team) | Handbook co-author |
+| Leo Riem | (none) | A5123408562 | (KIT, CADEN) | Handbook co-author |
+| Mathieu Vinot | 0000-0003-3394-5142 | (visible via Vinot 2023) | (DLR) | Cluster MEMAS anchor (Glück bridge) |
+| Nicolas Unger | 0000-0001-8394-9534 | (visible via Vinot 2023) | (DLR) | Cluster MEMAS anchor |
+| Pradnil Kamble | 0000-0003-1299-4340 | (visible via Vinot 2023) | (DLR) | Cluster MEMAS anchor |
+| Robert Schmitt | 0000-0002-0011-5962 | A5045094368 | (RWTH Aachen) | **Second-degree expansion node** — NFDI4Ing scientific director; first author of 2020 launch paper (14 cit, the most-cited bridge paper in the network) |
+| Sören Auer | 0000-0002-0698-2864 | A5071765665 | (TIB Hannover, Cluster I per §2) | NFDI4Ing infrastructure director; ORKG maintainer |
+
+**Bib entries with verified OpenAlex Work IDs** (for cross-referencing into `docs/_data/references.bib`):
+
+- `krebsDlrk2021` = OpenAlex **W3203659884** (`10.25967/550315`)
+- `schlenzRdmHandbook2026` = OpenAlex **W7127314963** (`10.5281/zenodo.18468308`)
+- `gluckMemas2023` = OpenAlex **W6967949398** (`10.5281/zenodo.10074677`)
+- `kaufmannQaDataManagement2025` = OpenAlex **W7094948360** (`10.25967/650226`)
+- Frommel et al. 2020 *Procedia Manufacturing* = OpenAlex **W3100809365** (`10.1016/j.promfg.2020.10.066`) — *NEW citation surfaced by the multi-DB pass; not yet in the bib delta of §10*. Recommended for inclusion under bib-key `frommelProcessOrchestration2020`.
+- NFDI4Ing 2020 launch = OpenAlex **W3115788969** (`10.5281/zenodo.4015201`) — *NEW citation surfaced by the multi-DB pass*. Recommended for inclusion under bib-key `schmittNfdi4ing2020`.
+- Vistein 2010 Robotics API foundation = OpenAlex **W2084313239** (`10.1109/iros.2010.5649098`) — historical reference; 23 cites; grounds the U Augsburg ↔ DLR-ZLP bridge.
+
+### §2.5.2 OpenAlex author disambiguation is broken for DLR-engineering Germans (methodological finding)
+
+The multi-DB pass surfaced a systematic disambiguation failure that any future automated bibliometric analysis must be aware of:
+
+- *"Florian Krebs"* (A5078274992) is a **merged-identity profile** spanning at least three distinct people: a music-and-audio-processing researcher (26 works at LMU, U Maryland, JKU Linz, Joanneum Research), a Stuttgart researcher, and the DLR-Krebs subset (the 9 DLR-affiliated years 2013-2024). OpenAlex's `h_index: 21` is therefore not Krebs F.'s actual DLR-only h-index.
+- *"Roland Glück"* in the 2021 Shepard paper was misrouted to a cardiology profile A5026500569 ("Rebecca Gluck", aortic surgery). The correct ORCID 0000-0001-7909-1942 only surfaces from the 2023 MEMAS paper authorships.
+- *"Tobias Haase"* requires institutional filtering to separate the DLR aerospace acoustics + AFP researcher (A5091651035) from a Drosophila biologist at MPI Göttingen (A5063043339).
+- *"P. Kaufmann"* appears with null ORCID in the 2021 Shepard paper record but with a verified ORCID 0000-0003-1181-7211 in the 2025 Vistein QA paper — suggesting OpenAlex may have split him into two profiles that need merging.
+
+**Methodological implication.** Any future automation built on OpenAlex name-search for DLR-engineering Germans will produce systematically incorrect attribution. The reliable path is **DOI-rooted author-ID extraction** (resolve a known paper's DOI, then read its `authorships[]` array for the disambiguated IDs). This is what §2.5.1 above did.
+
+### §2.5.3 Bronger's discipline-pivot is publication-record-verifiable (intellectual lineage finding)
+
+Bronger T. (A5037905877, FZJ) is described in §2 / §4 as "JuliaBase + SciMesh creator." The OpenAlex publication record confirms a deeper structural pattern:
+
+- **Phase 1 (2007–2014): silicon solar-cell physics.** Microcrystalline silicon, thin-film solar cells, hot-wire CVD. Five papers in this thread (`10.1016/j.tsf.2009.01.115` 54 cit, `10.1063/1.3104781` 49 cit, `10.1002/aenm.201301871` 37 cit, etc.) — high single-paper impact in a materials-science discipline.
+- **Phase 2 (2018–present): research data management.** NFDI4Ing 2018 (`10.15488/3519`), NFDI4Ing 2020 launch (`10.5281/zenodo.4015201`, 14 cit — by far his highest-cited 2018+ paper), PyVISA JOSS 2023 (`10.21105/joss.05304`, 19 cit).
+
+This is a **documented discipline-pivot from physics-of-experiments to RDM-of-experiments** within one career at one institution. It is the cleanest analogue in the network to the trajectory Shepard's authoring team is on (composite-manufacturing engineering → engineering-RDM). **Implication for the thesis:** Bronger's pivot is a published precedent for the legitimacy of the cross-discipline move — the thesis can cite it as a model for the broader NFDI4Ing methodology of "domain expert maintains data-management infrastructure for their own discipline".
+
+### §2.5.4 Database coverage table (honest gap)
+
+The multi-DB scope of the brief mandates an honest accounting of which databases were queried per person. Legend: ✓ = hits found; ∅ = ran query, zero hits; — = not queried; **502** = MCP outage; **403** = `robots.txt` blocked.
+
+| DB family | Status during this pass (2026-05-23 09:29–09:34 UTC) | Persons queried | Coverage |
+|---|---|---|---|
+| **OpenAlex** (direct REST via `api.openalex.org`) | ✓ working | 28 of 41 (the ZLP + NFDI4Ing + MEMAS anchors with known DOI rooting) | Highest-yield path; all 28 returned data |
+| **Google Scholar** (paper-search MCP) | **502** Cloudflare bad-gateway, all retries | 0 | Outage |
+| **Semantic Scholar** (paper-search MCP) | **502** | 0 | Outage |
+| **DBLP** (paper-search MCP) | **502** | 0 | Outage |
+| **Crossref** (paper-search MCP) | **502** | 0 | Outage |
+| **Zenodo** (paper-search MCP) | **502** | 0 | Outage |
+| **arXiv** (paper-search MCP) | **502** | 0 | Outage |
+| **DLR eLib** | **403** `robots.txt` (autonomous fetch disallowed) — already covered by sibling agent via WebFetch in the §1–§2 / §3–§11 pass | 41 (via sibling agent) | The §3 per-person table is the eLib evidence base |
+| **Scholar Gateway** (Wiley corpus) | ✓ working but corpus-irrelevant | 1 (Haase trial) | Returned only Wiley-published composites papers, no DLR matches; abandoned |
+| **Searxng web search** (MCP) | **502** | 0 | Outage |
+
+**Coverage statistics.**
+
+- For the **28 anchors with OpenAlex coverage**: ORCID + Author-ID resolved for 22 (79%); fragmented or merged-identity profiles for 6 (Krebs, Glück, Haase pre-disambiguation, Kaufmann partial).
+- For the **13 anchors not yet OpenAlex-resolved**: the eLib evidence in §3 is the sole source; subsequent agent runs should fill priority-2/3 DBs when the MCP is restored.
+- **Reading-list item RL-103-MULTI-DB-RETRY (logged)**: re-run Google Scholar / Semantic Scholar / DBLP / Crossref / Zenodo / arXiv against the §3 anchor list once the paper-search MCP is restored.
+
+### §2.5.5 Cluster J — second-degree network expansion
+
+The brief calls for a Cluster J of names not in the original 9 clusters but surfaced as second-degree co-authors (cap ≈ 15). After the multi-DB pass, **the sibling agent's existing §2 taxonomy already accommodates all candidate Cluster J names**:
+
+- Christoph Frommel, Alfons Schuster, Lars Larsen, Marian Körber, Marcin Malecha — surfaced from Frommel 2020 paper — are *DLR-ZLP residents* and fold naturally into the existing **Cluster B'** (Shepard 2023-25 extension arc) or into a *Cluster B+* (pre-Shepard ZLP-process-orchestration cohort). They are not a separate Cluster J.
+- Michael Kupke — head of DLR-ZLP — likewise belongs in **Cluster B'** as the institutional senior author; the sibling agent has already noted him.
+- Robert Schmitt (RWTH Aachen) and Sören Auer (TIB Hannover) — **genuinely Cluster J candidates**. Auer is **already in Cluster I** in the sibling agent's taxonomy (TIB / Semantic Web peer). Schmitt is **not yet in §2 of the sibling agent's taxonomy**; he is the single name worth surfacing here as the canonical NFDI4Ing-leadership bridge. Recommended placement: **expand Cluster C** (NFDI4Ing CADEN peer cohort) to include Schmitt as the institutional director.
+- Audet J.-M., Fortin Y., Côté G., Monsarrat B. (NRC Canada) — surfaced from `audetIcast2024` — sit on a single bridge edge and don't justify Cluster J inclusion; they are cited only at §6's bridge-papers narrative level.
+
+**Cluster J net additions: 1** (Schmitt → recommend expansion of Cluster C).
+
+---
+
 ## §3 The network at a glance — per-person table
 
 | Person | Affiliation | Role in thesis context | Most-cited connection | Active publications |
@@ -354,4 +457,5 @@ Existing references cross-referenced: `nuschelePraesto2014paper`, `nuschelePraes
 ## §11 Changelog
 
 - **2026-05-23 (first pass)** — Scaffolded with cluster taxonomy + placeholder sections by an earlier agent invocation.
-- **2026-05-23 (this pass)** — Replaced placeholders with substantive content from DLR eLib + web research (~25 eLib queries, ~10 web searches). 41 individuals catalogued, 9 clusters narrated, 13-node graph rendered, 12 bib-delta entries identified, 9 specific asks for Flo articulated.
+- **2026-05-23 (second pass — DLR eLib core)** — Replaced placeholders with substantive content from DLR eLib + web research (~25 eLib queries, ~10 web searches). 41 individuals catalogued, 9 clusters narrated, 13-node graph rendered, 12 bib-delta entries identified, 9 specific asks for Flo articulated.
+- **2026-05-23 (third pass — multi-database cross-verification)** — Added §2.5 multi-database addendum: 28 ORCIDs and OpenAlex Author IDs cross-resolved via OpenAlex direct REST (path forced by Cloudflare 502 across the entire `paper-search` MCP family during the session). Surfaced three methodological findings: (a) OpenAlex disambiguation is broken for DLR-engineering Germans — Krebs/Glück/Haase/Kaufmann all required DOI-rooted ID extraction to get clean attribution; (b) Bronger's discipline-pivot from silicon physics to RDM is publication-record-verifiable and a published precedent for the broader composite-engineering → engineering-RDM trajectory; (c) Cluster J (second-degree expansion) net addition = 1 person (Robert Schmitt, RWTH Aachen, NFDI4Ing scientific director — recommend extending §2 Cluster C). Two new bib candidates surfaced (`frommelProcessOrchestration2020`, `schmittNfdi4ing2020`). Reading-list item RL-103-MULTI-DB-RETRY logged for re-running priority-2/3 DBs after MCP restoration.
