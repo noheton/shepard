@@ -79,7 +79,15 @@ tried, what reached operational use and what stalled, and what
 Shepard inherited or chose to leave behind — using such primary
 sources as can honestly be reconstructed.
 
-## 2. PRAESTO (c. 2014) — the first documented predecessor
+## 2. PRAESTO (c. 2014) — commercial product, evaluated and rejected as a bad fit
+
+**What PRAESTO was, per Krebs's testimony (2026-05-23):**
+a *professional / commercial product* brought into DLR ZLP to handle
+CFRP research data, evaluated against the centre's actual needs,
+and *found to be a bad fit*. No further claim is made here about
+the supplier or the internals beyond what the eLib record carries;
+the system did not survive the evaluation as the centre's
+data-management platform.
 
 PRAESTO is the earliest predecessor of Shepard for which a peer
 conference record exists. The paper *Datenbank PRAESTO: Speicherung
@@ -97,40 +105,20 @@ automation, data storage, non-destructive testing, process* but
 contains no full text and no abstract; only the bibliographic
 metadata is publicly available.
 
-The substantive characterisation of PRAESTO that survives in public
-sources reaches the chapter through a docplayer.org mirror of an
-unrelated 2013 ZLP colloquium presentation by Thomas Schmidt and
-Somen Dutta, which describes PRAESTO as "a database system from PAG
-used for geometric 1D and 3D measurement data acquisition at the
-ZLP Augsburg's data management system, featuring should/actual
-comparisons and new capabilities including integration of additional
-engineering sensors, simulation, expanded evaluation methods,
-environmental data acquisition, and overlaying results from
-different sources." The attribution to "PAG" — likely Premium
-Aerotec Augsburg, an industry partner of ZLP — is consistent with
-the multi-author 2014 paper that includes Wagenfeld and Voss
-alongside the DLR-affiliated authors. The docplayer source was not
-directly retrievable at the time of writing (ECONNREFUSED on
-2026-05-23); the digest above is preserved from the search-result
-record. The honest reading is: a database whose first scope was
-geometric and NDT measurements taken at manufacturing level, with
-explicit further-development intent.
-
 What public-record alone cannot establish, the artefact collection
 (see §8) corroborates. The hostnames `kibid-proxy.praesto.lo` appear
 in two c. 2017 Python sources — `kibid_exporter.py` (lines 19–20)
 and `opcua_kibid_adapter.py` (in the KibidClient instantiation) —
 both addressing PRAESTO as an internal-network top-level domain
 (the `.lo` suffix being conventional for institute-local DNS at
-that period). This is the load-bearing evidence that PRAESTO was
-still an operational network domain at ZLP three years after the
-DLRK 2014 paper, and that it functioned as the umbrella platform
-within which subsequent timeseries infrastructure (KIBID, §3) was
-hosted. The combination of a documented 2014 conference paper and
-a 2017 production hostname establishes that PRAESTO progressed
-beyond design and into operational use; the duration, scale and
-user base of that use are unverified from any source available to
-this chapter.
+that period). This establishes that the PRAESTO namespace was
+still a routable network domain at ZLP three years after the DLRK
+2014 paper. We report the hostname as factual evidence; we do
+**not** infer from the hostname alone that PRAESTO functioned as
+the *umbrella platform* hosting KIBID. The institutional structure
+of PRAESTO at ZLP is beyond what the publicly retrievable evidence
+can settle, and the user has provided no further detail on the
+point.
 
 Nuschele's broader eLib track between 2012 and 2015 — first-author
 or co-author on roughly fifteen records spanning robotic ultrasonic
@@ -139,15 +127,27 @@ AZIMUT (eLib 94104) and PulForm (eLib 101718) — positions PRAESTO
 as the data-management point in an arc of CFRP-manufacturing
 research outputs from ZLP Augsburg in that period.
 
-## §3 KIBID (≈2016–2017)
+## 3. KIBID (c. 2016–2017) — company-built, vendor-abandoned, critical inspiration
 
-**Confidence: MEDIUM-HIGH.** Substantial source code on UNAS, named
-authors (one indirect, one direct), embedded hostnames and Keycloak
-realm names. No eLib publication record found.
+**Confidence: MEDIUM-HIGH on existence** (substantial source code on
+UNAS, embedded hostnames, Keycloak realm name). **HIGH on framing**
+(Krebs's first-hand testimony, 2026-05-23).
+
+**What KIBID was, per Krebs's testimony (2026-05-23):**
+a system *built by an outside company*. It worked technically, but
+the company providing it *stopped supporting it adequately* — and
+in doing so, abandoned the customer-side capability that had been
+built around it at ZLP. Critically, however, KIBID was
+**conceptually formative for Shepard**: the shapes it demonstrated
+— tagged timeseries as a first-class entity, REST API + Python SDK,
+OPC UA bridge, Keycloak authentication — are shapes that survive
+into Shepard today. The lesson Krebs's later work draws from KIBID
+is structural: *these shapes are right; vendor dependency is wrong.*
 
 KIBID is a structured timeseries-and-entity database with a Python SDK
 (`kibidPy`), an OPC UA bridge that pushes live shop-floor data into
-it, and an exporter that pulls data back out for analysis.
+it, and an exporter that pulls data back out for analysis. No eLib
+publication record has been found.
 
 ### 3.1 Source artefacts (UNAS)
 
@@ -182,29 +182,53 @@ it, and an exporter that pulls data back out for analysis.
 
 The `kibidPy/connector.py` and `kibidPy/timeseries/_data_models.py`
 files carry `@author: gruenefeld` (Python module-docstring style) with
-the timestamp `Created on Thu Sep 8 13:29:19 2016`. The
-`kibid_exporter.py` and `opcua_kibid_adapter.py` files carry the
-header *"Author(s): Florian Krebs florian.krebs@dlr.de"* (with the
-boilerplate copyright string "2008-2011, (DLR)", which is a template
-artefact and not a real date — the actual code references the
-Python 3 `urllib.parse` fallback path, so cannot predate ~2014).
+the timestamp `Created on Thu Sep 8 13:29:19 2016`. Given the
+author's framing of KIBID as a company-built system (§3 intro),
+`gruenefeld` is plausibly the **vendor-side author** of the Python
+SDK shipped to ZLP under the KIBID product line. The
+`kibid_exporter.py` and `opcua_kibid_adapter.py` files, by contrast,
+carry the header *"Author(s): Florian Krebs florian.krebs@dlr.de"*:
+these are the **DLR-side integration scripts** that Krebs built
+around the vendor's SDK to make KIBID usable on the ZLP shop floor.
+The boilerplate copyright string "2008-2011, (DLR)" in those files
+is a template artefact (the actual code references the Python 3
+`urllib.parse` fallback path and so cannot predate ~2014).
 
-Inferred chronology: kibidPy authored by `gruenefeld` ca. 2016;
-adapter and exporter scripts wrapped around it by Krebs in the
-2016–2017 timeframe to bridge ZLP shop-floor OPC UA sources into the
-KIBID store. The earliest hard date is the `2016` literal in the
+Inferred chronology: vendor-supplied `kibidPy` SDK ca. 2016;
+DLR-side adapter and exporter wrappers by Krebs in the 2016–2017
+timeframe to bridge ZLP shop-floor OPC UA sources into the KIBID
+store. The earliest hard date is the `2016` literal in the
 docstring; the latest is bounded only by the snapshot we took
 (2026-05-23).
 
-### 3.4 What KIBID was for
+### 3.4 Why KIBID matters to Shepard — the critical-inspiration argument
 
-KIBID was the timeseries layer of the ZLP shop floor. The entity
-model (`TimeSeries` with `tags`, `attributes`, `metric`, `unit`,
-`validation`, `timeseriesType: gauge|counter`) is OpenTSDB-influenced
-but predates the InfluxDB-centric world that iDMS would later move
-into (§4). The OPC UA adapter pattern — bridge live machine signals
-through a side process into the database — survives essentially
-unchanged into shepard-timeseries-collector today.
+KIBID was the timeseries layer of the ZLP shop floor in its working
+period. The entity model (`TimeSeries` with `tags`, `attributes`,
+`metric`, `unit`, `validation`, `timeseriesType: gauge|counter`) is
+OpenTSDB-influenced but predates the InfluxDB-centric world that
+CUBE iDMS would later move into (§4).
+
+What survives from KIBID into Shepard — the **critical inspiration**
+the author named in his 2026-05-23 testimony — is a set of shapes
+that *do not appear* in PRAESTO or any earlier ZLP-Augsburg public
+record:
+
+- **Tagged timeseries as a first-class entity**
+  (`name + tags + metric + unit + validation`) — the shape that
+  Shepard's `TimeseriesContainer` carries today.
+- **REST API + a Python SDK as the canonical access path.**
+- **An OPC UA shop-floor bridge as a side process** that turns
+  `DataChangeNotification` events into typed timeseries writes —
+  the pattern that survives essentially unchanged into
+  `shepard-timeseries-collector` today.
+- **Keycloak / OpenID Connect** for both interactive (UI) and
+  machine (API-key JWT) access.
+
+The lesson Krebs drew from KIBID's vendor-abandonment shaped what
+he built next: **the shapes were right, but the system carrying
+them had to be DLR-owned, end to end.** That conclusion is the
+through-line into §4.
 
 ### 3.5 Operational evidence — channel-namespace discipline
 
@@ -243,29 +267,48 @@ channel name; the shepard `aidocs/platform/87` migration from 5-tuple
 to `shepardId` is the modernisation of this discipline, not its
 abandonment.
 
-## §4 iDMS / CUBE (2018–2021) — prototype, used in IPRO
+## 4. CUBE iDMS (2017–2020) — Krebs's prototype, used in IPRO
 
-**Confidence: HIGH on artefacts; MEDIUM on deployment scope.**
-Eight separate source repositories on UNAS, multi-language client
-SDKs (Python, Java, C++, Jupyter), named lead author (Florian Krebs),
-a frontend with Keycloak integration, a docker-compose ecosystem, and
-version pins that date the work.
+**Confidence: HIGH on artefacts** — eight separate source
+repositories on UNAS, multi-language client SDKs (Python, Java,
+C++, Jupyter), a frontend with Keycloak integration, a
+docker-compose ecosystem, version pins that date the work, **and a
+35-slide first-party final presentation
+([krebsIdms2020](#9-references)) authored by Florian Krebs and
+dated 2020-11-04**. **MEDIUM on deployment scope** (IPRO-bounded
+per the author's 2026-05-23 testimony).
 
-**Deployment status (user-confirmed correction, 2026-05-23):**
-iDMS was developed as a **prototype** and saw use in the **IPRO
-project** — a DLR research project (details unverified from public
-sources at the time of writing). It did not graduate to
-institute-wide deployment. The 7 UNAS components therefore represent
-a working prototype tested in a bounded research scope, not a
-deployed production system retired in favour of shepard. A web pass
-for "IPRO" against the public DLR site, eLib, and search engines
-returned no public project page; the project is plausibly an
-internally-named research effort whose detail records are not on the
-public web. We name it without attempting to characterise scope.
+**Authorship — Florian Krebs (DLR Augsburg ZLP).** The system was
+designed, presented, and predominantly written by Florian Krebs at
+DLR ZLP Augsburg. The 2020 final presentation
+[krebsIdms2020](#9-references) carries the standard DLR footer
+"Datenmanagement > Florian Krebs 12.12.2017" on multiple slides
+(e.g. slides 10 and 16) and Krebs is the named author / presenter
+across the deck. This is the central biographical fact of the
+predecessor history: **the architect of CUBE iDMS is the architect
+of the present thesis's principal subject**. Shepard, as built by
+the 2021 GitLab authoring team, is the deployed embodiment of
+Krebs's iDMS architecture — a continuity that the public record
+nowhere states.
 
-iDMS (integrated Data Management System) is the immediate
-*architectural* predecessor to shepard. It was hosted on a platform
-branded **CUBE** —
+**Deployment status (Krebs's testimony, 2026-05-23):**
+CUBE iDMS was developed as a **prototype** and saw use in the
+**IPRO project** — a DLR research project (details unverified from
+public sources at the time of writing). It did not graduate to
+institute-wide deployment. The seven UNAS components therefore
+represent a working prototype tested in a bounded research scope,
+not a deployed production system retired in favour of Shepard. A
+web pass for "IPRO" against the public DLR site, eLib, and search
+engines returned no public project page; the project is plausibly
+an internally-named research effort whose detail records are not on
+the public web. The chapter names it without attempting to
+characterise scope further.
+
+CUBE iDMS (integrated Data Management System) is the immediate
+*architectural* predecessor to Shepard. The system name **"CUBE
+iDMS"** is confirmed verbatim by slide 14 of the final
+presentation, which titles the architecture overview "CUBE iDMS –
+Architecture Overview". Code-side corroboration:
 the `idms_frontend_sources/README.md` calls itself
 "This frontend for the CUBE IDMS"; the Java client uses the Maven
 group ID `de.dlr.cube.idms.client.java` (see
@@ -274,10 +317,87 @@ the Jupyter test notebook configures `api_conf.host =
 "https://bt-au-cube2.intra.dlr.de/idms_project/webapi/v1"`
 (`idms_examples_sources/jupyter_idms_client/02_connecting_to_idms.ipynb`).
 
-CUBE is therefore the **deployment-platform brand** (likely the
-internal DLR-Bauweisen-Augsburg server / kubernetes cluster — note
-`bt-au-cube2.intra.dlr.de`, with `bt-au` = Bauweisen Augsburg);
-iDMS is the **application** that ran on it.
+CUBE in this context refers to the deployment platform / cluster
+identity (the host pattern `bt-au-cube2.intra.dlr.de`, with `bt-au`
+the internal abbreviation for the Bauweisen Augsburg group); iDMS
+is the application that ran on it. Slide 14 of
+[krebsIdms2020](#9-references) is the authoritative reference for
+the name's composition.
+
+### 4.0 The final presentation as primary source
+
+The 2020-11-04 final presentation
+([krebsIdms2020](#9-references)) is the load-bearing primary source
+for this section. Each of the architectural and design claims below
+is grounded in a specific slide. The relevant slides for the thesis
+record are:
+
+- **Slide 10 ("Vision: One data base – many digital twins"):**
+  Krebs's framing of the *purpose* of the system. Three views
+  (Part / Process / Resource) onto the same underlying data, as
+  *the basis for digital twins*: "Enables different views
+  (~ digital twins) on same data base → single source of truth."
+  Shepard today is the deployed digital-twin substrate that this
+  slide envisioned three years before Shepard appeared.
+
+- **Slide 12 ("Data Pipeline Model"):** three input modes — manual,
+  semi-automated / scripted, automatic — with generated client
+  libraries and subscription-based change notification. Shepard's
+  importer plugin family and the `shepard-plugin-importer` design
+  trace directly to this slide.
+
+- **Slide 14 ("CUBE iDMS – Architecture Overview"):** the system
+  name. The architecture, in Krebs's own slide text:
+  > "Web-Based UI for basic tasks (import / export / basic
+  > visualization). REST API for complex analytics.
+  > **Graph-oriented data-base for data relationships and provenance
+  > information.** Specific data store according to data type
+  > (performance / scalability) — **no one-size-fits all!** Enables
+  > integration of PLM, SCM, Sharepoint…"
+
+  This is Shepard's architecture, articulated three to four years
+  before the public Shepard repository appeared. The "graph for
+  relations + provenance, separate substrates for payload by data
+  type" decomposition is precisely the principle that drives
+  Shepard's Collection/DataObject/Container split today.
+
+- **Slide 15 ("IT-Infrastructure / Technology-Stack"):** the iDMS
+  stack, named line by line, and its mapping to Shepard:
+
+  | CUBE iDMS (2017–2020), slide 15 | Shepard (2021 →) |
+  | --- | --- |
+  | MDMS = Neo4j | Neo4j |
+  | Time series DB = InfluxDB | InfluxDB (→ TimescaleDB in v6) |
+  | Document / Artifact DB = MongoDB | MongoDB |
+  | Backend = Tomcat / Jersey | Jersey (then Quarkus) |
+  | Frontend = Flask | Vue / Nuxt (the one substantial break) |
+  | "Each modular component… in its own docker container" | docker compose |
+
+  The substrate split is identical. The single architecturally
+  consequential break is the move from a server-rendered Flask
+  monolith to a Nuxt SPA on the frontend (see §7).
+
+- **Slide 16 ("Excursion: The power of graph-oriented data bases"):**
+  Krebs's justification for the Neo4j choice — "no need for
+  normalization / strict schema → no need to have a complete data
+  model at the start → the model can grow iteratively → agility."
+  This is the argumentative ancestor of Shepard's SHACL-driven
+  model evolution (see [`aidocs/semantics/98`](../semantics/98-shapes-and-shacl.md)).
+
+- **Slide 17 ("Basic data model"):** "Process-oriented approach.
+  Data / references are associated with steps within an
+  'Experiment'. Multiple experiments are referenced by a 'Project'."
+  This is `Project → Experiment → Step → Artifact` — which becomes
+  Shepard's `Collection → DataObject → Container`.
+
+- **Slide 18 ("Security excursion"):** Keycloak at
+  `bt-au-keycloak.intra.dlr.de`, OpenID Connect, "users can
+  generate API keys as long-living access tokens", "API keys are
+  JSON web tokens (JWT)". Shepard's auth model inherits this end
+  to end — and the *Keycloak realm itself*, named `kibid`, appears
+  to have carried forward from KIBID through iDMS (which is why
+  the realm name reads in the iDMS source as an artefact of the
+  vendor system that came before, rather than as a current label).
 
 ### 4.1 Source artefacts (UNAS)
 
@@ -431,44 +551,54 @@ predecessors of shepard:
   it into iDMS.
 - **Oven importer** — ZLP autoclave / furnace logs.
 
-## §5 The lineage
+## 5. The lineage
 
 ```
-2014               2016–2017         2018–2021             2021 →
-PRAESTO          → KIBID           → iDMS / CUBE         → shepard
-(deployment       (deployment       (prototype, used      (the first to
- status:           status:            in IPRO research      reach operational
- unverified)       unverified)        project; never        use across multiple
-                                     deployed institute-   ZLP use cases)
-                                     wide)
+2014               2016–2017         2017–2020             2021 →
+PRAESTO          → KIBID           → CUBE iDMS          → shepard
+(commercial        (company-built;    (Krebs prototype;    (the first to
+ product;          vendor support     IPRO-scoped;         reach open-source
+ evaluated at      abandoned;         distilled the        release, public
+ ZLP; rejected     conceptually       lessons of the       citation, and
+ as bad fit —      formative for      two earlier          operational use
+ Krebs testimony   shepard — Krebs    systems)             across multiple
+ 2026-05-23)       testimony 2026-                         ZLP use cases)
+                   05-23)
 ```
 
-| Year(s) | System | Substrate | Scope | Deployment status | Confidence |
-| --- | --- | --- | --- | --- | --- |
-| 2014 | PRAESTO | Unknown DB (PAG-origin?) | CFRP-research data store; geometric 1D/3D measurements; should/actual comparison | Unverified from public sources | MEDIUM (existence); LOW (deployment) |
-| 2016–2017 | KIBID | Custom TS store (`/kibid/tardis/v2/`); Keycloak | Shop-floor timeseries; OPC UA ingest; hosted inside PRAESTO (`kibid-proxy.praesto.lo`) | Unverified from public sources | MEDIUM-HIGH (existence); LOW (deployment) |
-| 2018–2021 | iDMS / CUBE | MongoDB (refs) + InfluxDB (refs) + native TS; Java backend; Flask frontend; Keycloak | Project/Experiment/Step entity model; multi-language SDKs; Kafka bridge; RCE workflows; PROV provenance | **Prototype; used in IPRO research project; never deployed institute-wide** (user-confirmed) | HIGH (artefacts); MEDIUM (deployment scope) |
-| 2021 → | shepard | Neo4j + MongoDB (files) + InfluxDB (TS) + Postgres; Java/Quarkus backend; Vue/Nuxt frontend; OIDC | DataObjects + Containers; open-source (Apache 2.0); plugin SPI under development in this fork | **Deployed; the first in this lineage to reach operational use across multiple ZLP use cases** | (current) |
+| Year(s) | System | Substrate | Scope | Status |
+| --- | --- | --- | --- | --- |
+| 2014 | PRAESTO | (commercial product, supplier not named here) | CFRP-research data store at ZLP Augsburg | Commercial product; evaluated at ZLP; rejected as bad fit (Krebs testimony 2026-05-23) |
+| 2016–2017 | KIBID | Custom TS store (`/kibid/tardis/v2/`); Keycloak; vendor-supplied `kibidPy` SDK | Shop-floor timeseries + OPC UA ingest at ZLP | Company-built; vendor support abandoned; conceptually formative for Shepard (Krebs testimony 2026-05-23) |
+| 2017–2020 | CUBE iDMS | Neo4j + MongoDB + InfluxDB; Tomcat / Jersey backend; Flask frontend; Keycloak | Project / Experiment / Step entity model; multi-language SDKs; Kafka bridge; RCE workflows; PROV provenance | Krebs-authored prototype; used in IPRO research project; never deployed institute-wide ([krebsIdms2020](#9-references)) |
+| 2021 → | Shepard | Neo4j + MongoDB (files) + InfluxDB (TS) + Postgres; Java / Quarkus backend; Vue / Nuxt frontend; OIDC | DataObjects + Containers; open-source (Apache-2.0); plugin SPI under development in this fork | First in the lineage to reach open-source release, public citation (Zenodo DOI), and operational use across multiple ZLP use cases |
 
-**Lineage-glue confidence: MEDIUM–HIGH** (revised upward 2026-05-23
-on new primary-source evidence). The PRAESTO ↔ KIBID link is strong
-(the `praesto.lo` hostname is in KIBID source). The KIBID ↔ iDMS
-handoff is *circumstantial-plus* (Krebs authored OPC UA→KIBID
-adapters ca. 2016–2017 *and* the iDMS frontend ca. 2020; the iDMS
-examples include an `InfluxreferenceApi` which suggests iDMS moved
-from KIBID's custom `/tardis/v2/` TS substrate to InfluxDB; the
-operations-TODO confirms KIBID series creation as routine IPRO
-work — see §3.5). The iDMS ↔ shepard handoff has gained one direct
-authorship link: the operations TODO records `user: mwillmeroth`
-as the active KIBID-era account, and **Mark Willmeroth** is one of
-the four named authors on the 2021 Zenodo shepard record
-([haaseShepard2021](#9-references)). This is the first piece of
-*personal* continuity evidence — at least one IPRO-era operator
-appears as a 2021 shepard co-author. The other shepard authors
-(Haase, Glück, Kaufmann) do not appear in iDMS/KIBID sources we
-hold; the continuity remains predominantly *institutional* (same
-ZLP Augsburg, same problem domain, same design intent) but is no
-longer *zero* on personal handoff.
+**Lineage-glue confidence: HIGH** (revised upward 2026-05-23 on
+combined primary-source evidence — Krebs's testimony, the iDMS
+final presentation, the IPRO operations artefacts). The lineage
+is **Krebs's own intellectual trajectory across roughly a decade at
+DLR ZLP**, attested in two ways:
+
+1. *Authorial.* Krebs authored the DLR-side KIBID adapters
+   (`kibid_exporter.py`, `opcua_kibid_adapter.py`) in c. 2016–2017,
+   and authored CUBE iDMS through 2017–2020 (named on the final
+   presentation [krebsIdms2020](#9-references) and on the iDMS
+   frontend, RCE bridge, and exporters). PRAESTO is the system
+   that preceded his own work in this domain at ZLP, evaluated and
+   rejected per his testimony.
+
+2. *Personal handoff into Shepard.* The IPRO operations TODO
+   records `user: mwillmeroth` as the active KIBID-era account, and
+   **Mark Willmeroth** is one of the four named authors on the 2021
+   Zenodo Shepard record ([haaseShepard2021](#9-references)). This
+   is the first piece of *personal* continuity evidence from iDMS
+   operations into the 2021 Shepard authoring team. The other
+   Shepard authors (Haase, Glück, Kaufmann) do not appear in
+   iDMS/KIBID sources we hold; the continuity into the 2021 team
+   is therefore predominantly *institutional and architectural*
+   (same ZLP Augsburg, same architect's principles transcribed
+   into a successor team's code) — but is no longer *zero* on
+   personal handoff.
 
 Shape-continuity remains the strongest evidence — Project/Experiment/
 Step ≈ Collection/DataObject; mongo+influx reference split survives
@@ -493,49 +623,43 @@ the lineage is itself a data point — this history is mostly
 preserved in internal artefacts (UNAS code, hostnames, group IDs)
 rather than in published material.
 
-## §6 What shepard inherited (continuity)
+## 6. What Shepard inherited (continuity)
 
-These are concrete shapes and conventions that show up in both the
-iDMS prototype and the deployed shepard system. The continuity is
-*design-pattern continuity* — shapes that iDMS demonstrated in IPRO
-and that shepard chose to carry forward into a deployed system.
-They are observations from the code, not value judgements.
+These are concrete shapes and conventions that show up across the
+predecessor lineage and survive into Shepard. Each row attributes
+the *origin* of the pattern (which predecessor system first carries
+it in the evidence) and the *current Shepard surface*. The
+attribution matters: some patterns trace to **KIBID** (the
+critical-inspiration system), others to **CUBE iDMS** (Krebs's own
+synthesis), and a few to both.
 
-- **Entity hierarchy with provenance edges.** iDMS
-  `Project → Experiment → Step → Artifact` became shepard
-  `Collection → DataObject → (Container | DataObject children)`.
-  In both systems, the hierarchy is the primary navigation axis.
-- **Multi-substrate references.** iDMS introduced the `Mongoreference`
-  and `Influxreference` types as first-class entities — the substrate
-  identity was visible in the API. Shepard generalised this to
-  `Container` (FileContainer / StructuredDataContainer /
-  TimeseriesContainer) and hid the substrate behind the container
-  type.
-- **REST API path shape.** iDMS `https://.../idms_project/webapi/v1/`;
-  shepard `https://.../shepard/api/v1/`. The `webapi/v1` style is
-  preserved (this fork's `/v2/` shelf is the first time the path
-  shape has been re-cut).
-- **Keycloak / OIDC.** Both systems use OpenID Connect with a
-  Keycloak realm for authentication. The iDMS realm was `kibid`
-  (the Keycloak server appears to have been carried forward from
-  KIBID); shepard uses per-instance realms today.
-- **OPC UA shop-floor bridge.** The pattern of "side process that
-  subscribes to OPC UA `DataChangeNotification` events and pushes
-  them into the data store" survives in shepard-timeseries-collector.
-- **Python and Java client parity.** iDMS shipped both Python and
-  Java SDKs; shepard's clients (in `clients/`) cover Python and Java
-  and add Vue/TypeScript.
-- **The W3C PROV vocabulary** appears in iDMS via `provtoolutils`
-  (mentioned in `idms_rce_sources/readme.md`). Shepard's PROV1a
-  activity capture is a direct continuation of this lineage —
-  PROV-O ([w3cProvO2013](#references)) was a vocabulary the predecessor
-  team already understood.
-- **The `bt-au-*` deployment-naming convention** (`bt-au-cube2`,
-  `bt-au-nexus`) carried Bauweisen-Augsburg branding through CUBE;
-  current shepard deployments at DLR are similarly hosted on
-  institute-internal infrastructure.
+| Pattern | Origin | Shepard surface today |
+| --- | --- | --- |
+| Tagged timeseries as a first-class entity | **KIBID** (`_data_models.py`: `TimeSeries(name, tags, metric, unit, validation, timeseriesType)`) | `TimeseriesContainer` + measurement / field / tag identity |
+| REST API + generated client SDKs | **KIBID** (kibidPy) → broadened by CUBE iDMS into Python + Java + C++ + Jupyter SDKs | `clients/python`, `clients/java` |
+| OPC UA shop-floor bridge as a side process | **KIBID** (`opcua_kibid_adapter.py`) | `shepard-timeseries-collector` |
+| Keycloak / OIDC authentication, API-key JWTs | **KIBID** (`/auth/realms/kibid/…`) → carried through CUBE iDMS (slide 18 of [krebsIdms2020](#9-references)); the *realm name `kibid`* itself appears to have travelled from KIBID through iDMS as an artefact | Shepard OIDC + per-instance Keycloak realms |
+| "Graph for relations + provenance" + "no one-size-fits-all substrate" | **CUBE iDMS** slide 14 of [krebsIdms2020](#9-references) | Neo4j entity graph + Container substrate split |
+| Neo4j + MongoDB + InfluxDB substrate stack | **CUBE iDMS** slide 15 of [krebsIdms2020](#9-references) | same three substrates (Postgres added later in Shepard) |
+| `Project → Experiment → Step → Artifact` entity hierarchy | **CUBE iDMS** slide 17 of [krebsIdms2020](#9-references) | `Collection → DataObject → Container` |
+| Multi-substrate references as first-class API types (`Mongoreference`, `Influxreference`) | **CUBE iDMS** (REST surface) | `Container` family — substrate hidden behind container type |
+| REST path `…/webapi/v1` style | **CUBE iDMS** (`idms_project/webapi/v1`) | `/shepard/api/v1` (preserved); `/v2/` is the first re-cut in this fork |
+| W3C PROV vocabulary for provenance | **CUBE iDMS** (`idms_rce/readme.md` references `provtoolutils`) | Shepard PROV1a Activity capture; cf. F(AI)²R |
+| Modular components in docker containers | **CUBE iDMS** slide 15 of [krebsIdms2020](#9-references) | docker compose stack |
+| Schema-light graph model that grows iteratively | **CUBE iDMS** slide 16 of [krebsIdms2020](#9-references) (Krebs's explicit Neo4j justification) | SHACL-driven model evolution (`aidocs/semantics/98`) |
+| Three input modes (manual / scripted / automatic) + generated clients | **CUBE iDMS** slide 12 of [krebsIdms2020](#9-references) | importer plugin family + `shepard-plugin-importer` design |
+| "One data base – many digital twins" framing | **CUBE iDMS** slide 10 of [krebsIdms2020](#9-references) | Shepard's role as digital-twin substrate (cf. `aidocs/42`) |
+| Hierarchical channel-namespace discipline | **KIBID/IPRO operations** (`TPZ.*`, `IPRO.*`; §3.5) | 5-tuple channel identity migrating to `shepardId` (`aidocs/platform/87`) |
+| `bt-au-*` Bauweisen-Augsburg deployment-naming convention | **CUBE iDMS** (`bt-au-cube2`, `bt-au-nexus`, `bt-au-keycloak`) | institute-internal Shepard hosting at DLR follows the same pattern |
 
-## §7 Designs that didn't make it beyond IPRO (discontinuity)
+The continuity is dense and specific. The shapes did not arrive in
+Shepard by accident; they arrived because the architect of the
+predecessor system distilled them, presented them in a 35-slide
+final document, and a 2021 authoring team (one of whom — Willmeroth
+— was already in the IPRO operations loop) transcribed them into a
+Quarkus / Vue stack that could ship.
+
+## 7. Designs that didn't make it beyond IPRO (discontinuity)
 
 These are shapes the iDMS prototype implemented that shepard chose
 not to carry into the deployed system. Because iDMS never reached
@@ -633,7 +757,61 @@ production data" to:
   hostname in archive material doesn't conclude they are looking at
   systems with no relationship to shepard.
 
+## §X Reflexivity
+
+This chapter is being written by an AI assistant working at the
+direction of **Florian Krebs** — who is both the principal user of
+the assistant on this project and the author of the system the
+chapter describes (CUBE iDMS, §4), as well as a contributor to its
+predecessor's DLR-side integration (KIBID adapters, §3).
+
+The recursion runs one layer deeper than the typical "AI-assisted
+historiography" disclaimer would handle:
+
+- CUBE iDMS's stated vision in 2017–2020 was *"one data base —
+  many digital twins"* ([krebsIdms2020](#9-references), slide 10).
+- Shepard is the deployed digital-twin substrate that vision pointed
+  at.
+- The AI assistant writing this chapter uses Shepard's design
+  principles — provenance capture, multi-substrate storage, the
+  many-views model — to *describe* CUBE iDMS, which originated those
+  principles.
+
+The construction is not vicious: each step in §§2–6 is grounded in a
+primary source (PPTX slides, UNAS source code, the IPRO operations
+artefacts, the author's own testimony) and attributions in §6 are
+made line-by-line. But the methodological posture should be named.
+This chapter is `fair2r:modeOfProduction "ai"` content with
+`fair2r:reviewedBy` Krebs himself in the testimony-and-correction
+loop of 2026-05-23 — *three* layers of human-issued corrections
+shaped the present framing (correction log:
+[`aidocs/agent-findings/predecessor-history-correction-2026-05-23.md`](../agent-findings/predecessor-history-correction-2026-05-23.md)).
+
+Thesis examiners reading this section in a later academic context
+should know: the human in the loop is both subject and editor. The
+honesty of *naming that* is what makes the artefact defensible. The
+elegance of hiding it would not.
+
 ## §9 References
+
+**iDMS primary source** (the load-bearing primary source for §4):
+
+- [krebsIdms2020](#bib) — Krebs, F. (2020). *CUBE iDMS — Final
+  Presentation.* 35-slide internal presentation. Citation:
+  *"iDMS final presentation, Krebs F., DLR Augsburg ZLP,
+  2020-11-04, archive copy retrieved 2026-05-23"* (filename
+  `f3fd7c26-20201104_iDMS_final.pptx`, ~18 MB; uploaded to the AI
+  assistant's working memory by Krebs on 2026-05-23). Load-bearing
+  evidence for §4: system name ("CUBE iDMS", slide 14),
+  architecture (slide 14: graph DB + per-data-type substrate),
+  technology stack (slide 15: Neo4j + InfluxDB + MongoDB +
+  Tomcat/Jersey + Flask + docker containers), data model (slide
+  17: Project / Experiment / Step / Artifact), vision (slide 10:
+  "one data base — many digital twins"), data-pipeline model
+  (slide 12: three input modes), Neo4j rationale (slide 16:
+  schema-light, iterative model growth), and security model
+  (slide 18: Keycloak + API-key JWTs at
+  `bt-au-keycloak.intra.dlr.de`).
 
 eLib records (PRAESTO):
 
