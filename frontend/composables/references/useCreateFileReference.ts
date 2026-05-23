@@ -15,10 +15,23 @@ export function useCreateFileReference(
     fileContainerId: number,
     fileRef: FileRef,
   ) {
-    loading.value = true;
+    // Guard against the empty-oids case before the request fires.
+    // Backend rejects with 400 "fileOids must not be empty" otherwise; the
+    // user previously saw the truncated "Error while createFileReference:"
+    // toast because the rejection body wasn't surfaced.
+    if (!fileRef.fileOids || fileRef.fileOids.length === 0) {
+      handleError(
+        new Error(
+          "No files to link — upload at least one file before creating the reference.",
+        ),
+        "createFileReference",
+      );
+      return;
+    }
 
-    useShepardApi(FileReferenceApi)
-      .value.createFileReference({
+    loading.value = true;
+    try {
+      await useShepardApi(FileReferenceApi).value.createFileReference({
         collectionId,
         dataObjectId,
         fileReference: {
@@ -26,16 +39,15 @@ export function useCreateFileReference(
           name,
           fileContainerId,
         },
-      })
-      .then(_ => {
-        emitSuccess("Successfully created file reference");
-        handleDataObjectUpdate();
-        onSuccess();
-      })
-      .catch(error => {
-        handleError(error, "createFileReference");
       });
-    loading.value = false;
+      emitSuccess("Successfully created file reference");
+      handleDataObjectUpdate();
+      onSuccess();
+    } catch (error) {
+      handleError(error, "createFileReference");
+    } finally {
+      loading.value = false;
+    }
   }
 
   return {

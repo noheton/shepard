@@ -89,12 +89,26 @@ async function createFileReferences(files: (ShepardFile | undefined)[]) {
   if (!fileContainerId.value) {
     return;
   }
-  const fileRef: FileRef = {
-    fileOids: files
-      .filter(entry => entry !== undefined)
-      .filter(file => file.oid !== undefined)
-      .map(file => file.oid!),
-  };
+  const oids = files
+    .filter(entry => entry !== undefined)
+    .filter(file => file.oid !== undefined)
+    .map(file => file.oid!);
+  // Surface the upload failure honestly instead of POSTing a body the
+  // backend will reject with the truncated "Error while createFileReference:"
+  // toast. If files were picked but no oids came back, the upload step
+  // itself failed.
+  if (oids.length === 0) {
+    handleError(
+      new Error(
+        files.length === 0
+          ? "No files selected for the reference."
+          : "File upload didn't return any file IDs — check that the file container is reachable and try again.",
+      ),
+      "createFileReference",
+    );
+    return;
+  }
+  const fileRef: FileRef = { fileOids: oids };
   try {
     await addFileReference(
       newReferenceName.value,
