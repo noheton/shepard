@@ -1,0 +1,22 @@
+# systemd timer for mffd-import-health.sh
+# Install:
+#   sudo cp mffd-import-health.timer /etc/systemd/system/
+#   sudo cp mffd-import-health.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now mffd-import-health.timer
+#
+# Status:   systemctl status mffd-import-health.timer
+# Logs:     journalctl -u mffd-import-health.service --since "1 hour ago"
+
+[Unit]
+Description=MFFD import health watchdog (every 5 min)
+Requires=mffd-import-health.service
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

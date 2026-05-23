@@ -1,0 +1,19 @@
+# systemd service unit invoked by mffd-import-health.timer
+#
+# Replace the User=, WorkingDirectory=, and EnvironmentFile= paths with the
+# cube-side install location and configured alert webhook/email.
+
+[Unit]
+Description=MFFD import health watchdog (one-shot)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=cube
+WorkingDirectory=/home/cube/mffd-export
+EnvironmentFile=-/etc/default/mffd-import-health
+ExecStart=/home/cube/mffd-export/mffd-import-health.sh
+# Don't propagate stall-detected exit code 1 to the timer (we want the timer
+# to keep firing; the alert side-effect already happened).
+SuccessExitStatus=0 1
+Nice=10
