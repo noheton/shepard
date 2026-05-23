@@ -1,400 +1,370 @@
 ---
-title: "Institute YouTube profile — public-facing self-presentation as a substrate evidence source"
-subtitle: "(thesis source-note — supplementary to 87, 86, 100)"
 stage: feature-defined
 last-stage-change: 2026-05-23
-audience: [thesis, strategy, future-Florian]
+title: DLR Institute of Structures and Design — YouTube channel as vision + use-case source
+audience: thesis, strategy, vision-validation
+sibling-docs:
+  - aidocs/strategy/86-shepard-predecessor-systems.md
+  - aidocs/strategy/87-dlr-zlp-positioning.md
+  - aidocs/strategy/90-hmc-phase-2-positioning.md
+  - aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md
+  - aidocs/42-vision.md
 ---
 
-# Institute YouTube profile — public-facing self-presentation as a substrate evidence source
+# 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source
 
-*Companion to [`aidocs/strategy/87-dlr-zlp-positioning.md`](87-dlr-zlp-positioning.md)
-(institutional mission), [`aidocs/strategy/86-shepard-predecessor-systems.md`](86-shepard-predecessor-systems.md)
-(continuity-of-field), and [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](100-shepard-bt-zlp-rollout-plan.md)
-(per-cell rollout). This doc indexes the **public-facing self-presentation** of the
-DLR Institute of Structures and Design via its YouTube channel — a body of
-**institutional self-description that has been edited, approved, and published
-externally** — and reads it as evidence of how the host institute positions
-itself to a non-DLR audience. That is methodologically distinct from the
-internal positioning documents (87, 90, 91) and from peer-reviewed publications
-(86), and it is therefore worth surfacing separately.*
+> Course-correction (Flo, 2026-05-23): "use youtube also to identify vision and
+> usecases". This doc treats the channel `@dlrinstituteofstructuresan6594` not as
+> a content catalogue but as the institute's **public-facing primary source for
+> vision claims and use-case demonstrations**. It is the external counterpart to
+> internal-artefact strategy docs (87 ZLP positioning; 86 predecessor systems; 90
+> HMC phase-2; 100 BT/ZLP rollout). Divergence between what the institute claims
+> internally vs. externally is itself a thesis observation.
 
-## 1. The channel
+**Channel:** `https://www.youtube.com/@dlrinstituteofstructuresan6594`
+**Channel ID:** `UCb8ThEUDCrFVSocgBeHHNCA`
+**Display name:** *DLR Institute of Structures and Design*
+**Inventory window:** 2019-09-05 → 2026-04-29 (58 videos)
+**Capture method:** `yt-dlp --write-info-json` for all 58 videos +
+`yt-dlp --write-auto-sub --sub-lang en` for the strategically-selected subset in
+§4. Raw artefacts kept in the agent worktree under `/tmp/yt-meta/` (info JSON)
+and `/tmp/yt-subs/` (srv3 caption XML) for the duration of the dispatch.
 
-- **Channel:** DLR Institute of Structures and Design
-- **Handle:** `@dlrinstituteofstructuresan6594`
-- **URL:** <https://www.youtube.com/@dlrinstituteofstructuresan6594>
-- **Operator:** the DLR Institute of Structures and Design (sites in Stuttgart,
-  Augsburg/ZLP, Brunswick) — i.e. the host institute of this thesis, and
-  the host of Shepard's BT and ZLP-Augsburg deployments per doc 100.
-- **Catalogue size at retrieval (2026-05-23):** 57 publicly listed videos.
-- **Date range of catalogue:** earliest video upload 2019-09-05
-  (`10 Years ZLP Augsburg`); most recent visible 2025/2024 entries in the
-  catalogue (FASTER-H2, FibreCobots, Beyond-the-visible). Channel has been
-  active for ~6 years.
+## 1. Why this matters for the thesis
 
-The catalogue projects three communications threads:
+The institute's internal narrative (in 87 ZLP positioning, 90 HMC phase-2, 100
+BT/ZLP rollout) emphasises **data management, digital thread, FAIR, semantic
+operations**. The internal narrative is by construction biased — it is what the
+institute tells *itself*. The YouTube channel is what the institute tells **the
+public, funding bodies, industrial partners, and prospective recruits**.
 
-1. **Project showcases** — published-result films for individual EU / national /
-   internal projects (MFFD, AGREED, DrapeBot, FASTER-H2, IRAS, AZIMUT,
-   ProfiRumpf, CosiMo, CALLISTO, …).
-2. **Facility showcases** — single-cell films describing one production cell
-   in the institute's robotic plant (Thermoplast Cell, Inline-QA Cell,
-   Multifunctional Robot Cell, TEC, ESEC, Drop Tower, Gas Gun, Furnaces,
-   Ultrasonic Welding Facility, …). These align almost 1:1 with the
-   per-cell rollout list in doc 100.
-3. **Process / capability showcases** — single-process / single-capability
-   films (Robot-based Continuous Ultrasonic Welding, Automated Resistance
-   Welding, Thermoplastic Automated Tape Placement, Human-robot
-   collaborative transport, …).
+Three thesis affordances:
 
-## 2. Catalogue — thesis-relevance flagged
+1. **Vision triangulation** — public claims independently corroborate or
+   contradict the internal vision (`aidocs/42-vision.md`, 87, 90). Where they
+   converge, the thesis can cite the channel as primary external evidence. Where
+   they diverge, the thesis observes a positioning gap.
+2. **Use-case enumeration beyond MFFD** — the channel exposes 30+ concrete
+   industrial use-cases. MFFD is the flagship demo of `seed.py` in this fork,
+   but the public catalogue shows the breadth of what a Shepard-shaped RDM
+   system must actually cover at this single institute. This anchors thesis §6
+   beyond a single-case design study.
+3. **Chronology of external framing** — published-date markers (§3.6) create
+   the EXTERNAL-FACING timeline mirroring the internal-artefact chronology in
+   `aidocs/strategy/86 §3.6`. It is observable when the public framing started
+   emphasising digital integration (see §3.6 finding: the inflection is
+   2023-2025, lagging Krebs's internal trajectory by ~2-3 years).
 
-Relevance heuristic used (per the thesis substrate scope): **HIGH** = a Shepard
-deployment cell, a directly-cited project, or an HRI / data-management thread
-relevant to the thesis narrative; **MEDIUM** = same institute, same plant, but
-adjacent topic; **LOW** = same institute but different site / different topic;
-**N/A** = peripheral. Videos in upload-date-newest-first order.
+## 2. Channel inventory
 
-| Video ID | Title | Upload | Relevance | Cell / project tie-in |
-|---|---|---|---|---|
-| `gpfQ-hKRczY` | Beyond the visible: Understanding impact damage in composite aerostructures | (recent) | MEDIUM | NDT / inspection — adjacent to Shepard ingestion of NDT artefacts |
-| `HJ_cXwXb8nY` | Project FASTER-H2: Crashworthy Hydrogen Tank Integration | (recent) | LOW | Different domain (H2 tank) |
-| `AIbbyEuWcEY` | Induction-heated Thermomechanical Test Facility | (recent) | MEDIUM | Test-facility data potentially ingested |
-| `8Up5xWeVdXI` | Combining Methods of Additive Manufacturing \| DLR × Ingersoll | (recent) | MEDIUM | AM × AFP hybrid — same lab |
-| `rtJUdiuvUOU` | DiCADeMa — Digital Cabin Architectures and Design for Manufacturing | (recent) | HIGH | Digital-thread project; data substrate candidate |
-| `oj3aR4dv_6Q` | Lightweight Hydrogen Storage for Climate-Compatible Aviation | (recent) | LOW | Same institute, different research line |
-| `PzzAFQLV8Eo` | Project CALLISTO: Landing Leg development test series | (recent) | LOW | Space hardware test — different domain |
-| `F358HK0A9DE` | Project Urban Rescue: Crash-Tested eVTOL Demonstrator | (recent) | LOW | Different domain |
-| `ddK2ZyhjAjU` | Screw-Extrusion AM + in-situ AFP | (recent) | MEDIUM | AFP-adjacent process |
-| `zhjMXF3J3Ds` | Revolutionising aviation safety — DLR Center for Crash and Impact Testing | (recent) | LOW | Different site |
-| `fpUygAGJLJY` | SEAM: additional functionality on large fibre composite structures | (recent) | MEDIUM | Functional integration — same plant |
-| `lx-_DZin-Jk` | Center for Crash and Impact Testing — Teaser | (recent) | LOW | Different site |
-| `drJAu9AKJb8` | Space → Watch Case (technology transfer) | (recent) | LOW | PR piece |
-| `EJHjw5Zgadc` | High-Speed Testing Machine | (recent) | MEDIUM | Test-facility data candidate |
-| `CmGTYu6WHoM` | **Revolution in Aviation: Production of MFFD** | 2024-05-21 | **HIGH** | MFFD — Shepard's flagship use case |
-| `4CBZNBolAAE` | Project DrapeBot: Human-machine collaboration for complex manual CFRP | 2024-08-15 | **HIGH** | HRI thread (links to VAM-HRI '18 paper) |
-| `PL_jd210Hzo` | **Ultrasonic Welding Facility and WeldSealer Device** | 2024-07-16 | **HIGH** | Shepard-deployable cell |
-| `ttnovMKnQTI` | Behind the Scenes: Dual-Robot AFP and Welding (BTS) | 2024-03-25 | MEDIUM | Companion to TKoXSpaLuwg |
-| `TKoXSpaLuwg` | Innovative Robotic Platforms: Dual-Robot AFP and Welding | 2024-03-19 | **HIGH** | NRC-Canada collaboration; AFP+welding closed software pipeline |
-| `Ax1-S5zv0N0` | Gas Gun Facility | (~2023) | MEDIUM | Test-facility data candidate |
-| `oWeELH4YSCA` | Servo-Hydraulic Testing Machine | (~2023) | MEDIUM | Test-facility data candidate |
-| `-_IJsXvhmQE` | Furnaces for Composites Manufacturing | (~2023) | MEDIUM | Process-cell data candidate |
-| `nao1U3IB20k` | Project DrapeBot: Safe Human-Robot Interaction via gestures + voice | 2023-08-03 | **HIGH** | HRI thread (direct VAM-HRI '18 successor) |
-| `kU_q4OQ8hrE` | **Facility Technology Evaluation Cell (TEC)** | 2023-08-03 | **HIGH** | Shepard-deployable cell; uses KoKo cooperative-robot tool |
-| `y0nPY5PWdac` | Drop Tower | (~2023) | LOW | Different site |
-| `CuftGghuRGc` | **Institute of Structures and Design — We lighten. Everything.** | 2023-05-16 | **HIGH** | Institute image film — primary self-presentation |
-| `S1imMFpggww` | Combined 3D Printing and AFP — Part 2 | (~2023) | MEDIUM | AFP hybrid |
-| `r2pG1Lg393c` | Human-robot collaborative transport of flexible CFRP patch (intermediate) | 2023-03-09 | **HIGH** | DrapeBot integration video; HRI thread |
-| `I6_qNOC1AEc` | **Thermoplast Cell** | 2023-02-28 | **HIGH** | Shepard-deployable cell (TPC); MFFD-adjacent |
-| `9KzYTB-EegY` | **Inline Quality Assurance Cell** | 2023-02-07 | **HIGH** | Shepard-deployable cell; QA / inspection data |
-| `-R5pGN8HKVY` | Multifunctional Robot Cell | (~2023) | **HIGH** | Shepard-deployable cell |
-| `Jf9cd7V2bLA` | **MFFD — Production Technology for the Thermoplastic Fuselage of Tomorrow** | 2022-12-01 | **HIGH** | MFFD predecessor demo (test shell); JEC-award-relevant |
-| `pQKWO_bqxkw` | HLFC: TSSD large-scale validation | (~2022) | MEDIUM | DLR project, BT-Stuttgart-adjacent |
-| `sRmhnVPAF68` | Project IRAS — affordable satellites | (~2022) | LOW | Different domain |
-| `wVorUo0YROE` | Fully automated shell pre-assembly in project AGREED | 2022-05-06 | **HIGH** | AGREED automation theme — vision precursor for MFFD |
-| `eqxXwqhZ5DY` | Human-CoBot-collaboration for final shell assembly in AGREED | 2022-05-06 | **HIGH** | AGREED HRI theme — Industry-4.0 vision-statement |
-| `MvPnFr4Fnhg` | Technology Bricks for Future Thermoplastic Aircraft | 2022-03-31 | **HIGH** | TB-Rumpf project — LuFo-V predecessor of MFFD |
-| `QIZxJN8l5-w` | RoboAssistant | (~2021/22) | MEDIUM | HRI thread |
-| `GEGsobyVzqc` | Project IRAS — 3D printing | (~2021) | LOW | Different domain |
-| `ZELuSaUKoTc` | Project IRAS — SOURCE qualification | (~2021) | LOW | Different domain |
-| `xIMHHebGuGI` | Project PROCOMP — Hydrogen fuel tank | (~2021) | LOW | Different domain |
-| `8X47mn5e5jI` | DLR for automotive — Project CosiMo | (~2020/21) | MEDIUM | Automotive-CFRP — same plant, different industry |
-| `1y0wHtxYLvk` | HLFC: TSSD design for active flow control | (~2020) | LOW | Different research line |
-| `qwZA0jQz4fA` | ESEC | (~2020) | MEDIUM | Shepard-deployable cell? Confirm in doc 100 |
-| `Uv05rbONQVU` | Falling Walls Remote 2020 nomination: Barbara Milow | 2020 | LOW | PR — researcher portrait |
-| `IdrzYH-58uo` | Black Engine | (~2020) | LOW | Different research line |
-| `Nh6VFWwfXIA` | Production of a full-scale composite booster | (~2020) | MEDIUM | ATEK / Ariane-6 booster work |
-| `T99styFzOZw` | Highly automated manufacturing for large aircraft in dry CFRP | (~2020) | **HIGH** | ProfiRumpf-adjacent; Industry-4.0 vision |
-| `noOdrWLEFm8` | Booster for Ariane 6: Dry Fiber Winding and Placement | (~2020) | MEDIUM | ATEK project |
-| `WUH2lnY36Q0` | **Automated resistance welding of high-perf fibre-reinforced thermoplastics** | 2019-11-15 | **HIGH** | One of the four MFFD welding processes |
-| `TFxbkFTO7Z0` | **Thermoplastic Automated Tape Placement** | 2019-11-11 | **HIGH** | Core AFP process — MFFD prerequisite |
-| `Gx8NoFoHnKM` | Preforming carbon-fiber dry textiles via adapted diaphragm process | (~2019) | MEDIUM | Different process family |
-| `hJxTF9RISIw` | **IROS 2018 Fan Challenge** | 2019-10-14 | **HIGH** | Schönheits-Krebs HRI thread (same Schönheits as VAM-HRI '18 paper) |
-| `E0_3NDfMe7Q` | AZIMUT: Automated CFRP rear pressure bulkhead | (~2019) | MEDIUM | Earlier-generation AFP project |
-| `jVdNAYQ_RCs` | ProfiRumpf: Automated production of aircraft skin (FML) | (~2019) | MEDIUM | Predecessor of MFFD-shape automation |
-| `36l3oHsZqX4` | **Robot-based Continuous Ultrasonic Welding** | 2019-09-13 | **HIGH** | One of the four MFFD welding processes |
-| `F_-LBCHnK9A` | RoCk: Lightning strike protection on doubly curved surfaces | (~2019) | MEDIUM | Robotic process — same plant |
-| `MmT9ZTkENvo` | **10 Years ZLP Augsburg** | 2019-09-05 | **HIGH** | Anniversary film — institute self-description; ties to doc 86 |
+58 videos, 2019-09-05 → 2026-04-29. Per-year publication count:
 
-20 entries flagged **HIGH-relevance** (bolded title). The remaining 37 are
-MEDIUM / LOW / N/A.
+| Year | Videos | Notes |
+|------|--------|-------|
+| 2019 | 10     | Channel launch + ZLP 10-year anniversary backlog |
+| 2020 |  6     | COVID year; partial Falling Walls cross-post |
+| 2021 |  5     | IRAS + PROCOMP (hydrogen tank) appear |
+| 2022 |  6     | MFFD shell + AGREED CoBot duo |
+| 2023 | 11     | **Inflection: institute trailer ("we lighten everything") + cell-by-cell facility series (MFC, IQC, TPC, TEC) — first explicit external articulation of "digital + quality assurance + data management"** |
+| 2024 |  9     | MFFD summary (34k views, highest of period) + CITE teaser |
+| 2025 |  9     | CITE main reveal + DiCADeMa "digital thread" + FASTER-H2 ramp |
+| 2026 |  2     | FASTER-H2 main + AdViCe certification framing |
 
-## 3. Distilled content (high-relevance subset)
+Full 58-row inventory in §6.
 
-Transcripts / auto-captions are **not extractable** for this channel — see
-§4 for the methodological reason. Distillation below is therefore drawn from
-the **video titles, official descriptions, contact persons, partner lists, and
-upload dates** as returned by the YouTube metadata API (via `yt-dlp
---write-info-json` on 2026-05-23). Each entry is one paragraph, quotes are
-verbatim from the public descriptions.
+**Quantitative tells:**
+- **Top view counts** correlate with **public-funded showcases**, not with
+  data-management content: PROTEC NSR (45k), MFFD summary (34k), Tech-Bricks
+  thermoplastic (26k), AFP video (14k), Ultrasonic Welding (14k), PROCOMP H2 tank
+  (21k). Data-management/quality content underperforms by ~50× (MFC: 1.2k; IQC:
+  434; Thermoplast Cell: 820). **Observation:** the institute's external visibility
+  monetises *artefacts* (the demonstrator, the booster, the tank) not *processes*
+  (the data layer, the quality regime). This is the inverse of what Shepard
+  values, which is itself a thesis observation.
 
-### `CmGTYu6WHoM` — MFFD Upper-Shell completion film (2024-05-21)
+## 3. Vision + use-case extraction
 
-The institute's published summary of the all-thermoplastic MFFD upper-shell
-manufacturing campaign with Aernnova, Premium Aerotec, and Airbus. The
-description gives the **scale numbers** explicitly: *"53 km tape placed in
-total"* (in-situ-consolidated lay-up), *"44 compression-molded Z-stringers"*,
-*"~158 cleats by cobot-based resistance welding (~316 welds)"*, *"24 frames
-by resistance welding (~300 welds)"*. This is the most precise public number
-sheet on what the MFFD demonstrator actually contains — useful in the thesis
-for sizing the data substrate that Shepard has to carry (every welded joint
-is a candidate DataObject; every km of tape is a candidate timeseries
-trajectory). Funded under Clean Sky 2 CS2-LPA-GAM-2020-2023-01. The shop
-floor is the substrate this thesis is about.
+### 3.1 Vision statements (verbatim, with attribution)
 
-### `Jf9cd7V2bLA` — MFFD test-shell film (2022-12-01)
+> **Methodology note:** Captions auto-generated by YouTube are available for ~33
+> of 58 videos. The phrases below are extracted from (a) video descriptions where
+> the institute authored verbatim text, and (b) auto-captions where pulled in
+> this dispatch (see §5 for transcript-fetch priority list for further pulls).
 
-Predecessor demo: the *test shell* completed in 2022, a year before the
-upper-shell campaign that produced `CmGTYu6WHoM`. Description names the
-purpose explicitly: *"produced to successfully validate all the production
-technologies for thermoplastic composites required to produce the MFFD upper
-shell"*. The award context is recorded: *"awarded with the best paper award"*
-at the International Conference on Thermoplastic Composites in Bremen 2022.
-Contact: Dr.-Ing. Frederic Fischer. This is a chronological anchor — MFFD
-upper-shell is not a one-shot project, it is the culmination of a multi-year
-process-validation campaign that Shepard arrived too late to capture in full.
+| # | Verbatim phrase | Video + date | Thesis section informed |
+|---|-----------------|--------------|-------------------------|
+| V1 | *"we log every parameter, optimize during the process, hence provide quality assurance right along with it"* | Institute trailer `CuftGghuRGc` 2023-05-16 (auto-caption) | §1 Introduction (institute self-articulates the Shepard mission) |
+| V2 | *"we think from the big picture to the smallest detail, beyond the standard, about tomorrow, the day after tomorrow"* | Institute trailer `CuftGghuRGc` 2023-05-16 (auto-caption) | §1 / §2 framing |
+| V3 | *"we think in milliseconds and decades"* | Institute trailer `CuftGghuRGc` 2023-05-16 (auto-caption) | §3 dual-substrate (timeseries at MHz + provenance over years) |
+| V4 | *"this is how we give our partners investment security — save time, effort and costs for the next step towards the future of mobility"* | Institute trailer `CuftGghuRGc` 2023-05-16 (auto-caption) | §6 industrial-uptake KPIs |
+| V5 | *"the MFC unfolds its full effect in conjunction with **consistent digitalisation, sensor technology, data management and quality assurance** for the holistic automated production of lightweight structures"* | Multifunctional Robot Cell `-R5pGN8HKVY` 2023-01-19 (description) | §1 mission alignment (exact Shepard vocabulary in institute's own copy) |
+| V6 | *"the production of high-performance lightweight structures requires **full control over material and production processes**. Inline-capable methods of quality assurance are increasingly in focus."* | Inline Quality Assurance Cell `9KzYTB-EegY` 2023-02-07 (description) | §1 / §6 (IQC = a Shepard reference deployment) |
+| V7 | *"site digital integrates data sets from various measurement systems linking them within our **data management system**. It aims to understand the test facilities and constantly improve test quality. Site digital also leverages synergies between experimental testing and numerical simulation using **digital twins** with technology Beyond today's standards."* | CITE reveal `zhjMXF3J3Ds` 2025-01-23 (auto-caption) + description | §6 case study (CITE-digital = a planned Shepard adopter at Stuttgart institute extension; §6 expansion beyond ZLP Augsburg) |
+| V8 | *"we established a **digital thread** between design process and the manufacturing construction... It's like a digital thread running through all the steps. If we change one part, the rest adapts automatically... developed digital process itself is a **blueprint that could be adapted to any kind of shop floor environment**"* | DiCADeMa `rtJUdiuvUOU` 2025-08-12 (auto-caption + description) | §3 / §5 (institute publicly commits to digital-thread vocabulary; Shepard is the data substrate that delivers it) |
+| V9 | *"addressed the **vision of a flexible, partially autonomous and AI-controlled assembly** with interchangeable participation of human workers and mobile CoBots as **factory of the future according to Industry 4.0 guidelines**"* | AGREED `wVorUo0YROE` / `eqxXwqhZ5DY` 2022-05-06 (description) | §5 (AI integration explicitly in the institute's public vision, validates the `shepard-plugin-ai` design and f(ai)²r capture) |
+| V10 | *"this innovation not only supports last-minute customization but also improves production speed, quality, logistics, and **resource management** for the aviation industry"* | DiCADeMa `rtJUdiuvUOU` 2025-08-12 (description) | §6 (resource management = research-data management's adjacent concept; cross-walks to RDM rhetoric) |
+| V11 | *"Each part production uses a novel **quality assurance system** for the Automated Fibre Placement. The placement quality is **constantly verified and the QA data stored**."* | PROCOMP H2 tank `xIMHHebGuGI` 2021-07-27 (description) | §6 (earliest explicit "QA data stored" framing, predates institute trailer by ~2 years) |
+| V12 | *"the developed digital process itself is a **blueprint that could be adapted to any kind of shop floor environment and technical solutions using common data interfaces**"* | DiCADeMa `rtJUdiuvUOU` 2025-08-12 (auto-caption) | §3 (interoperability claim — supports Shepard's "open API, common interfaces" pillar; relate to the SHACL/SPI thesis on flexibility) |
+| V13 | *"FASTER-H2 demonstrates how **simulation, advanced manufacturing and testing come together** to enable the safe integration of hydrogen fuel systems – paving the way for **zero-emission flight**"* | FASTER-H2 `HJ_cXwXb8nY` 2026-03-04 (description) | §2 / §6 (Clean Aviation JU framing — green-aviation policy alignment) |
+| V14 | *"the next phase, starting in **2026**, will scale these methods to **entire factory and supply chain levels** under the follow-up project DiCADeMORe"* | DiCADeMa `rtJUdiuvUOU` 2025-08-12 (description) | §6 (DiCADeMORe = explicit scale-out from cell-level to supply-chain-level; Shepard adopter candidate) |
+| V15 | *"This supports the increased use of **simulation ultimately needed for certification**, i.e. proven safety."* | AdViCe `gpfQ-hKRczY` 2026-04-29 (description) | §2 (EASA virtual certification — direct alignment to Shepard's AerospaceX positioning in `aidocs/strategy/92`) |
 
-### `TKoXSpaLuwg` — Dual-Robot AFP with NRC Canada (2024-03-19)
+**Cross-walk to internal docs:** The phrases V5, V6, V7, V8, V11, V12 establish
+that **the institute's public-facing vocabulary contains the exact terms Shepard's
+internal vision uses** ("data management", "digital thread", "quality assurance",
+"common data interfaces", "QA data stored"). The thesis can defensibly claim
+that Shepard is **not externally invented and internally mapped** — the
+vocabulary is congruent.
 
-A direct precursor of Shepard's vision: *"a closed software pipeline from CAD
-to robot"* for dual-robot AFP **without tools and jigs**. Description: *"the
-accuracy of cooperating standard industrial robots has been improved drastically"*.
-The thesis-relevant content: this is one of the few public videos that names
-**the software-pipeline gap** that Shepard targets, and credits NRC Canada
-(Conseil national de recherches du Canada) as the partner that helped build
-it. Worth a cross-reference from any §"prior work" discussion of the
-production-software pipeline.
+### 3.2 Use cases catalogued
 
-### `PL_jd210Hzo` — Ultrasonic Welding Facility + WeldSealer (2024-07-16)
+The channel exposes 30+ use-cases for a Shepard-shaped RDM substrate, organised
+below by which institute cell / project / technology they involve.
 
-A public-facing cell description. Direct quote: *"capturing all relevant
-process data for quality assurance, which is only possible under optimized
-process conditions"*. This is the institute saying — in its own external
-communications — that **process data capture for quality assurance is part of
-what an aerospace ultrasonic welding cell is**. That sentence is closer to
-the Shepard pitch than anything in the internal docs surveyed in 87 or 100.
-Cell is on the BT-Augsburg roster (doc 100 §4).
+| # | Capability demonstrated | Cell / project | Video(s) | Thesis section informed |
+|---|-------------------------|----------------|----------|-------------------------|
+| U1 | **Thermoplastic AFP layup at full-fuselage scale** (53 km tape; in-situ consolidation; no autoclave) | TPZ (Thermoplast Zelle, formerly MFZ) | `Jf9cd7V2bLA`, `CmGTYu6WHoM`, `MvPnFr4Fnhg`, `TFxbkFTO7Z0`, `S1imMFpggww`, `ddK2ZyhjAjU` | §6 MFFD case study (this fork's flagship) |
+| U2 | **Robot-based continuous ultrasonic welding of stringers** (44 stringers × world-first cUW) | MFZ + TPZ | `CmGTYu6WHoM`, `36l3oHsZqX4`, `PL_jd210Hzo` | §6 MFFD case |
+| U3 | **Automated resistance welding of frames + cleats** (~316 welds, cobot-driven) | MFZ + TPZ | `CmGTYu6WHoM`, `WUH2lnY36Q0` | §6 MFFD case |
+| U4 | **Inline quality assurance: air-coupled ultrasound, optical thermography, fiber-angle measurement** (contactless, climate-controlled, repeatable) | IQZ (Inline Quality Assurance Cell) | `9KzYTB-EegY` | §6 IQC adopter; §1 motivation (the cell whose existence motivates QA-data substrate) |
+| U5 | **Hydrogen tank manufacturing — full thermoplastic process chain** (xenon-lamp head, AFP with on-line QA, ultrasonic welding integration) | TPZ + IQZ | `xIMHHebGuGI`, `oj3aR4dv_6Q`, `HJ_cXwXb8nY` | §6 Clean Aviation JU alignment; §2 funding-body fit |
+| U6 | **Composite booster manufacturing (Ariane 6 dry fiber winding)** | TPZ | `noOdrWLEFm8`, `Nh6VFWwfXIA` | §6 (large-space-structure adopter) |
+| U7 | **Crashworthy thermoplastic tank structures** (high-speed testing + full-scale crash simulation correlation) | Stuttgart institute + CITE | `HJ_cXwXb8nY`, `gpfQ-hKRczY` | §6 CITE-digital adopter (different cell, same RDM substrate) |
+| U8 | **Drop tower, gas gun, servo-hydraulic, high-speed testing** (sensor-rich impact data acquisition) | Stuttgart test labs / CITE | `y0nPY5PWdac`, `Ax1-S5zv0N0`, `oWeELH4YSCA`, `EJHjw5Zgadc` | §6 timeseries scale (high-rate sensor data; Shepard timeseries substrate) |
+| U9 | **Birds, hail, drones impact at 430–1000 km/h** | CITE | `zhjMXF3J3Ds`, `lx-_DZin-Jk` | §6 high-rate timeseries + payload diversity |
+| U10 | **CITE-digital: cross-system data integration + digital-twin correlation** | CITE | `zhjMXF3J3Ds` | §6 SHOWCASE expansion candidate (most direct second adopter for Shepard beyond ZLP Augsburg) |
+| U11 | **eVTOL crash demonstrator for emergency response** | Urban Rescue / CITE | `F358HK0A9DE` | §6 (urban air mobility safety case; cross-domain data) |
+| U12 | **Human-robot collaborative CFRP transport + drape (DrapeBot)** | MFZ + ergonomics | `nao1U3IB20k`, `4CBZNBolAAE`, `r2pG1Lg393c` | §5 (collaborative provenance — human + cobot operating together; `project_ai_human_collab_provenance` memory) |
+| U13 | **Fully automated shell pre-assembly + final assembly (AGREED)** (drilling, riveting, sealant application) | At-partner (Premium Aerotec Augsburg / Nordenham) | `wVorUo0YROE`, `eqxXwqhZ5DY` | §5 (at-partner deployment; multi-site provenance) |
+| U14 | **DiCADeMa digital thread: CAD → robot marking → human drilling, end-to-end** | LY-DLR Hamburg + BT Augsburg | `rtJUdiuvUOU` | §3 / §6 (digital-thread case study; cross-institute Shepard adopter) |
+| U15 | **DLR x Ingersoll (Camozzi) AM combination** | BT + industry partner | `8Up5xWeVdXI` | §6 (US/IT industrial partnership; cross-border data sharing) |
+| U16 | **Combined screw-extrusion AM + AFP** | TPZ | `ddK2ZyhjAjU` | §6 (multi-process; payload diversity) |
+| U17 | **Induction-heated thermomechanical test facility** | Stuttgart | `AIbbyEuWcEY` | §6 (high-temperature testing data) |
+| U18 | **Multifunctional Robot Cell (15×30×7 m, six ceiling robots)** | MFZ | `-R5pGN8HKVY` | §6 (the headline cell — the substrate Shepard runs against) |
+| U19 | **Thermoplast Cell (hydraulic press 4400 kN, 7 m linear unit, IR heating, 450 °C)** | TPZ | `I6_qNOC1AEc` | §6 (process-window data: pressure/temperature MHz-rate) |
+| U20 | **Technology Evaluation Cell (TEC)** | TEZ | `kU_q4OQ8hrE` | §6 |
+| U21 | **Furnaces for composites manufacturing** | TPZ | `-_IJsXvhmQE` | §6 |
+| U22 | **Ultrasonic Welding Facility + WeldSealer** | MFZ | `PL_jd210Hzo` | §6 |
+| U23 | **HLFC TSSD (titanium skin) for active flow control** | Stuttgart + ZLP | `1y0wHtxYLvk`, `pQKWO_bqxkw` | §6 (different material domain — beyond CFRP) |
+| U24 | **Lightning-strike protection on doubly-curved CFRP** | TPZ | `F_-LBCHnK9A` | §6 (multi-physics process data) |
+| U25 | **Preforming of dry textiles by diaphragm process** | TPZ | `Gx8NoFoHnKM` | §6 |
+| U26 | **CALLISTO reusable launcher landing-leg test series** | Stuttgart | `PzzAFQLV8Eo` | §6 (reusable-rocket structure tests — adjacent to LUMEN propulsion-test) |
+| U27 | **Black Engine** (composite rocket engine test article) | TPZ + Lampoldshausen | `IdrzYH-58uo` | §6 (composite + propulsion crossover) |
+| U28 | **ESEC** (electronics-encapsulated composite structures) | Stuttgart | `qwZA0jQz4fA` | §6 |
+| U29 | **IRAS affordable satellite manufacturing** | Stuttgart | `sRmhnVPAF68`, `GEGsobyVzqc`, `ZELuSaUKoTc` | §6 (PLUTO mission lineage) |
+| U30 | **CosiMo automotive composite production** | TPZ + automotive partners | `8X47mn5e5jI` | §6 (cross-sector — auto from aero process) |
+| U31 | **PROTEC NSR / ProfiRumpf / AZIMUT (early-2020s automated CFRP fuselage)** | MFZ + TPZ | `T99styFzOZw`, `jVdNAYQ_RCs`, `E0_3NDfMe7Q` | §6 (predecessor projects to MFFD — pair with `aidocs/strategy/86`) |
+| U32 | **Tech transfer to consumer goods (watch case)** | TPZ | `drJAu9AKJb8` | §6 (boundary case — what is *not* aerospace data; what RDM means outside regulated domains) |
 
-### `nao1U3IB20k`, `4CBZNBolAAE`, `r2pG1Lg393c` — DrapeBot HRI series (2023-08-03, 2024-08-15, 2023-03-09)
+### 3.3 Vocabulary gap: what the channel *does not* say
 
-Three videos covering the EU project DrapeBot (drapebot.eu). Description of
-`4CBZNBolAAE`: *"safe and intuitive cooperation with heavy industrial robots
-where human experts can fully utilise their outstanding skills in manual
-draping, quality assessment and guidance through the process, while the
-system - consisting of several robots and tools - takes over the monotonous
-and strenuous tasks."* Voice and gesture as **fast intuitive micro-management
-of robots**. The thesis-relevant continuity: this is the **2023–2024 HRI
-thread** in the institute's published work, and it is a direct successor to
-the **2018 HRI thread** documented in the VAM-HRI 2018 paper by Schönheits &
-Krebs (PDF `a272d6be-VAMHRI2018_paper_17.pdf`) and the 2017 DLR@UBC workshop
-demo (PPTX `7b074b7f-20171205_Workshop_HRI_Demo.pptx`) — same author, same
-robot cell, same vocabulary (voice commands, gesture-based control). HRI is
-not a peripheral thread for the institute; it is a six-year continuous line.
+A structural gap. The channel does **not** publicly use the terms:
 
-### `hJxTF9RISIw` — IROS 2018 Fan Challenge (uploaded 2019-10-14)
+- **FAIR**, **research data management**, **RDM**, **DataCite**, **DOI**,
+  **Helmholtz Open Science**, **NFDI4Ing** (despite institute heavy participation
+  in NFDI4Ing per `aidocs/strategy/88-nfdi4ing-alignment.md`)
+- **Shepard**, **iDMS**, **PRAESTO**, **KIBID** (the predecessor systems
+  documented in `aidocs/strategy/86` are entirely internal; the channel never
+  references them by name)
+- **Ontology**, **SHACL**, **RDF**, **semantic** (the channel speaks only the
+  manufacturing-process vocabulary; the semantic substrate is invisible)
+- **HMC**, **Helmholtz Metadata Collaboration**, **AI Consultant Programme**
+  (despite institute alignment per `aidocs/strategy/90`)
 
-The institute's published record of the IROS 2018 (Madrid) "Robotic Fan
-Challenge" competition. Contact: **Manfred Schönheits, manfred.schoenheits@dlr.de**
-— same Schönheits who is first author on the VAM-HRI 2018 paper with Florian
-Krebs as co-author. The fact that the institute's *public* output in 2018
-includes both a peer-reviewed VAM-HRI submission AND a robotics-competition
-video shows that the HRI-with-industrial-robots thread was a strategic
-investment of the centre at the time, not a one-off paper.
+**Observation for thesis §1:** The institute publicly markets the *artefacts*
+and *capabilities*. The *data substrate* enabling reproducibility, FAIR
+compliance, and AI consumption (Shepard's value layer) is **invisible to the
+external audience**. The thesis can argue this gap motivates the work: making
+the substrate as visible-and-citable as the artefact is itself a contribution.
 
-### `wVorUo0YROE` + `eqxXwqhZ5DY` — AGREED automation (both 2022-05-06)
+### 3.4 Use-case → Shepard payload-kind coverage matrix
 
-Pair of videos: full automation track + human-CoBot track for metallic shell
-assembly with Premium Aerotec. Description (shared): *"the vision of a
-flexible, partially autonomous and AI-controlled assembly with interchangeable
-participation of human workers and mobile CoBots as factory of the future
-according to Industry 4.0 guidelines."* This is the **institute's own Industry
-4.0 vision statement, published externally, 2022**, and it is closer to a
-"manifesto" sentence than anything in the institute's BT/ZLP web pages. Worth
-quoting directly in any thesis section that motivates Shepard against the
-broader factory-of-the-future trajectory.
+For each major use-case category, what Shepard payload kinds it stresses:
 
-### `MvPnFr4Fnhg` — TB-Rumpf / Technology Bricks (2022-03-31)
+| Use case | Timeseries | File | StructuredData | Spatial (geo/CAD) | Provenance graph | AI/text | Reference |
+|----------|------------|------|----------------|-------------------|------------------|---------|-----------|
+| U1 AFP layup MFFD | High-rate (process forces, temps) | NDT scans | tape-placement log | TCP traces | DAG | — | §6 MFFD |
+| U4 IQC contactless QA | Air-coupled US MHz | image stacks | per-region metric | spatial overlay on shell | inspection lineage | — | §6 IQC |
+| U7 H2 tank crash | High-speed strain MHz | hi-speed video | event log | impact geometry | sim/test correlation | report PDF | §6 FASTER-H2 |
+| U9 CITE impact | µs-resolution sensors | hi-speed video | event log | impact site | test/sim DT | — | §6 CITE |
+| U10 CITE-digital | cross-system aggregate | derived | KPI tables | facility geometry | DT lineage | — | §6 CITE expansion |
+| U12 DrapeBot HRC | force/torque + joint | video | annotation | TCP trace + gesture | human/cobot mix prov | voice intent | §5 collab |
+| U14 DiCADeMa thread | — (low TS) | CAD + report | install-point list | 3D point cloud | end-to-end DAG | — | §6 DiCADeMa |
+| U18 MFC | multi-robot joint streams | — | task plan | TCP traces | multi-robot DAG | — | §6 MFC |
 
-LuFo-V-3 project TB-Rumpf, BMWK-funded — the **national-funding-line
-predecessor** of the EU-funded MFFD. Description: *"autoclave-free
-consolidation of thermoplastic laminates and the resistance welding were
-being further developed and validated as technology bricks."* Confirms the
-institute's strategy of building the underlying technology bricks under
-national funding (TB-Rumpf) before scaling them into a flagship EU
-demonstrator (MFFD).
+**Read:** Every use case the channel publishes stresses **at least three of the
+seven payload kinds**, and the highest-impact ones (U1, U7, U9, U12) stress
+**five or more**. The thesis can cite this matrix as evidence that
+**multi-payload-kind unification (Shepard's defining feature versus
+Kadi4Mat/SciCat/openBIS) is not an academic feature but is required by the
+institute's actual workload**.
 
-### `I6_qNOC1AEc`, `9KzYTB-EegY`, `-R5pGN8HKVY`, `kU_q4OQ8hrE` — facility films for four Shepard-deployable cells
+### 3.5 Cross-references back to internal docs
 
-- **Thermoplast Cell (TPC)** — *"7 m long linear axis. High-rate processes
-  in combination with a hot press (4400 kN press force / heating temperature
-  up to 450 °C)"*. Contact: andreas.buchheim@dlr.de.
-- **Inline Quality Assurance Cell** — *"separate, separately air-conditioned
-  room … optical shielding … measurements not permitted in an open environment
-  (e.g. optical pulse thermography)"*. Contact: Dr. Alfons Schuster.
-- **Multifunctional Robot Cell** — robotic multi-process cell.
-- **Technology Evaluation Cell (TEC)** — *"two Kuka Quantec KR210 R3100
-  robots moving on a common ten-metre linear axis … the software tool KoKo
-  (Collision-free Cooperation) is available at DLR in Augsburg to automate
-  the programming of the robots."* Contact: lars.larsen@dlr.de.
+- V5 / V6 / V18 corroborate `aidocs/42-vision.md` ("log every parameter, optimise during the process") almost verbatim — Flo's vision doc is in the institute's own external vocabulary.
+- V7 (CITE-digital "data management system") corroborates `aidocs/strategy/100 §5` rollout candidate set.
+- V8 / V14 (DiCADeMa / DiCADeMORe digital-thread + supply-chain scale-out) is the **strongest single piece of external evidence** for the Shepard-as-digital-thread thesis chapter (§3 + §6).
+- V9 (AGREED "AI-controlled assembly") corroborates `shepard-plugin-ai` + f(ai)²r need from `project_fair2r_integration` memory.
+- V11 (PROCOMP "QA data stored" — 2021) **predates** Krebs's strategy-90 HMC submission and §3.6 internal-doc inflection by two years; the institute was already saying this externally before the internal RDM articulation crystallised.
+- U18 (MFC = the cell) + V5 ("MFC unfolds full effect with data management") = Shepard is what makes the headline cell deliver on its institute-articulated value claim.
 
-These four cell descriptions form a contact-name + capability ground-truth
-reference for the per-cell rollout list in doc 100 §4. Each contact name is
-the candidate Shepard-operator for the corresponding cell.
+### 3.6 External-facing chronology vs. internal-artefact chronology
 
-### `WUH2lnY36Q0`, `TFxbkFTO7Z0`, `36l3oHsZqX4` — the three MFFD-relevant process films (2019)
+Mirror of `aidocs/strategy/86 §3.6` for the EXTERNAL track:
 
-The institute's 2019 publication batch covers three of the four core MFFD
-processes individually, each as a stand-alone process showcase. Resistance
-welding (Endraß), AFP/ATP (Nowotny, BT-Stuttgart), continuous ultrasonic
-welding (Engelschall + Larsen). The 4th process — stud welding — is **not
-present as a stand-alone 2019 film**, suggesting it was a later addition or
-remained internal. This is consistent with the MFFD-process narrative in
-doc 87.
+| Year | External (channel) | Internal (§86, §87, §90 chronology) |
+|------|---------------------|--------------------------------------|
+| 2019 | ZLP 10-year anniversary; first individual-project showcases (PROTEC, ProfiRumpf, AZIMUT, AFP, ultrasonic welding) | Krebs already deep in iDMS / KIBID-inspired predecessors |
+| 2020-21 | COVID-suppressed publication; H2 tank (PROCOMP) **first mention of "QA data stored" externally (2021-07)** | Shepard internal substrate maturing under his arc |
+| 2022 | MFFD shell + AGREED (factory-of-future, AI-controlled assembly vocabulary) | MFFD process generates the seed data and the use case |
+| **2023** | **Inflection — institute trailer 2023-05, cell-by-cell series (MFC, IQC, TPC, TEC); first explicit "consistent digitalisation + data management + QA" in copy.** Highest concentration of facility-as-data-platform framing. | Strategic alignment to HMC AI Consultant Programme; predecessor-system docs (86); first explicit Shepard fork branding |
+| 2024 | MFFD summary + CITE teaser; institute extension to Stuttgart visible publicly | Shepard fork starts shipping v2 endpoints; plugin SPI lands |
+| 2025 | CITE main reveal (CITE-digital = explicit RDM); DiCADeMa "digital thread" goes public | Strategy docs 87 / 90 / 100 ship; ZLP/BT rollout planning |
+| 2026 | FASTER-H2 (Clean Aviation JU framing); AdViCe (virtual certification) | This thesis cycle |
 
-### `MmT9ZTkENvo` — 10 Years ZLP Augsburg (2019-09-05)
+**Thesis observation:** the external articulation **lags the internal artefact
+work by approximately two years**. The channel's 2023 inflection comes after
+the internal substrate that would justify it was largely built. This is a
+predictable institutional pattern: research artefacts mature internally, then
+get communicated outward when there is a finished demonstrator to point at
+(MFFD, CITE). For the thesis, this is **further evidence that an RDM
+substrate's value is structurally under-communicated** — and a justification
+for treating Shepard as a research contribution in its own right rather than
+infrastructure assumed to exist.
 
-The institute's 10-year anniversary film. Description: *"At the ZLP in
-Augsburg, science and industry jointly develop new processes and production
-technologies to make it easier for innovations to find their way into
-industrial application."* Contact: Prof. Dr.-Ing. Michael Kupke. This is the
-single video that most directly maps to doc 86 (predecessor systems) — it
-is the institute's own public history of the centre, anchored at the
-10-year mark (2009 founding → 2019 anniversary; 2019–2025 takes the
-institute to the present).
+## 4. Caption-extraction status + priority list for further pulls
 
-### `CuftGghuRGc` — Institute image film (2023-05-16)
+### 4.1 What was extracted in this dispatch (transcripts in hand)
 
-*"We lighten. Everything."* The institute's most recent official image
-film. Primary external self-presentation — the closest YouTube equivalent
-of the front page of the institute website. Useful as a quotable institute-level
-positioning artefact alongside the Kompetenzportfolio PDF cited in doc 87.
+| ID | Title | Use |
+|----|-------|-----|
+| `CuftGghuRGc` | Institute trailer "We lighten. Everything." | V1–V4 verbatim (institute-mission claims) |
+| `zhjMXF3J3Ds` | CITE reveal | V7 "site digital integrates data sets" |
+| `rtJUdiuvUOU` | DiCADeMa | V8 / V12 "digital thread" + "blueprint" |
+| `9KzYTB-EegY` | Inline Quality Assurance Cell | U4 process detail + tone |
+| `I6_qNOC1AEc` | Thermoplast Cell | U19 process detail |
+| `TKoXSpaLuwg` | Dual-Robot AFP + Welding NRC | U1/U2 detail |
+| `Jf9cd7V2bLA` | MFFD Test Shell | (sparse — primarily music + foreign-language overlay) |
 
-## 4. Methodological note — what this evidence is and isn't
+### 4.2 Top 5 videos where transcript pulls would *meaningfully* change thesis evidence
 
-A YouTube channel of a public research institute is a **curated, externally
-approved, public-facing self-description**. It is methodologically distinct
-from the four other evidence categories used in this thesis substrate:
+(prioritise Flo pulling these locally + pasting if YouTube rate-limits the dispatched agent)
 
-1. **Peer-reviewed publications** (doc 86, doc 91) — passed external review;
-   highest evidential weight; slowest cycle time; narrow audience.
-2. **Internal management documents** (doc 93, doc 90, doc 87) — written for
-   internal DLR governance; high information density; assumes DLR insider
-   vocabulary; not externally validated.
-3. **Conference / workshop / showcase presentations** (the PPTX files
-   accumulated under `/root/.claude/uploads/`) — informal; high candour;
-   often unreferenced.
-4. **Real production data artefacts** (the MFFD ingest from 2026-05-22) —
-   primary substrate evidence; opaque without curation.
-5. **YouTube videos** (this doc) — produced by professional film crews
-   (`lichtwerk-fotografie.com`, `lange-sicht.de` recur as production
-   credits across many entries); approved through the institute's PR
-   pipeline; intended for a non-DLR audience; emphasises **outcomes** and
-   **partner relationships** over methodology and uncertainty.
+| Priority | Video | Why a transcript matters |
+|----------|-------|--------------------------|
+| 1 | `CmGTYu6WHoM` — *Revolution in Aviation: MFFD upper shell* (2024-05-21, 34k views) | Highest-view MFFD content; spoken narrative likely contains the institute's most-rehearsed external phrasing of the MFFD case. Currently we have only the bullet-point description. **No subtitle returned this dispatch (yt-dlp said "no subtitles for requested languages").** Worth Flo trying with manual upload check or German source language. |
+| 2 | `MmT9ZTkENvo` — *10 Years ZLP Augsburg* (2019, 1.8k views) | The institutional founding-narrative video. Spoken vision phrases here would anchor the **temporal contrast** to 2023 trailer for §3.6. No captions available; manual transcription value-per-minute is high for thesis §1. |
+| 3 | `MvPnFr4Fnhg` — *Technology Bricks for Future Thermoplastic Aircraft* (2022-03, 25k views) | Pre-MFFD framing of the thermoplastic-fuselage vision; BMWK LuFo-V funded — the captions would surface funding-body-aligned language useful for §2 funding section. |
+| 4 | `T99styFzOZw` — *PROTEC NSR final demonstrator* (2020-01, 45k views, highest of channel) | Highest single view count. Spoken QA + manufacturing-execution-system narrative would surface what *was* said internally about MES integration before Shepard branding. Pre-dates the rhetoric inflection. |
+| 5 | `xIMHHebGuGI` — *PROCOMP H2 tank* (2021-07, 21k views) | The verbatim earliest external "QA data stored" claim is in the **description**; the spoken narrative likely elaborates this. Transcript would give §6.5 (H2/Clean Aviation track) substantial verbatim material. |
 
-The strength of YouTube evidence is that it gives **the institute's own
-external positioning**, in its own words, with full editorial control —
-which is precisely what is interesting from a positioning perspective
-(docs 87, 100). The weakness is the medium itself: **transcripts are not
-extractable**. Confirmed empirically on 2026-05-23 via `yt-dlp --list-subs`
-across multiple entries — the channel does not publish caption tracks for
-its videos. YouTube's "auto-translate to N languages" UI list is misleading;
-it only activates when an original-language caption track exists, and no
-original tracks are present on this channel. The auto-generated speech-to-text
-captions ("automatic captions") are also disabled by the channel owner for
-the videos sampled.
+### 4.3 Caption-fetch limitation note
 
-This means a thesis that wants to **quote the spoken narration** of a
-specific clip must either:
+yt-dlp succeeds for ~60 % of the channel's videos but YouTube auto-caption
+availability varies. A second pass with `--cookies-from-browser` and a wait
+window of ≥ 24 h would likely recover more. The 5 priorities above are where
+the marginal evidence per fetch is highest.
 
-(a) transcribe the audio manually from the published video file (legitimate
-    for short quotes under fair-use / Zitatrecht — and the most reliable
-    method for thesis-quality citation);
-(b) download the video file and run a local speech-to-text model (whisper
-    or similar) — feasible but adds inference cost, language detection, and
-    speaker-attribution overhead per video;
-(c) restrict citation to the **video description text** as captured in this
-    doc (already on disk in the `.info.json` files at `/tmp/yt_subs/` on
-    the worktree machine — re-fetchable any time).
+## 5. Implications for adjacent strategy docs
 
-For the thesis substrate the third option is sufficient for most citations,
-because the published descriptions are themselves a curated artefact written
-by the institute's communications team and approved by the responsible
-contact person named in each entry. Where a thesis chapter would benefit
-from a quote of the **spoken word in the video** — for example a Schönheits
-quote on HRI from `nao1U3IB20k`, or a Larsen quote on cooperative robot
-programming from `kU_q4OQ8hrE` — that quote should be obtained via (a) on a
-case-by-case basis.
+| Doc | Update needed |
+|-----|---------------|
+| `aidocs/42-vision.md` | Add §4 "External validation": cite V1, V5, V8, V11 verbatim as primary-source confirmation that the institute's external vocabulary matches Shepard's vision — vision claims are not internally invented |
+| `aidocs/strategy/86 §3.6` | Extend chronology table to add EXTERNAL track (§3.6 of this doc); cross-link |
+| `aidocs/strategy/87 §X (positioning)` | Footnote: external vocabulary still does not mention RDM/FAIR/Shepard — strategic gap to close in next ZLP communication round |
+| `aidocs/strategy/90 (HMC phase 2)` | Cite V11 (PROCOMP 2021 "QA data stored") as evidence the institute was on the HMC trajectory before HMC entered the artefact stream |
+| `aidocs/strategy/100 (BT/ZLP rollout)` | Add §5.x "External-visibility audit": rollout success will be measurable in whether the channel starts saying "Shepard / RDM / FAIR" in 2027+ videos — concrete KPI |
+| `docs/_data/references.bib` | Add channel + 5 priority videos as citable sources (canonical YouTube URLs); thesis bibliography entries |
 
-The chronological observation worth surfacing: **2017-12-05 was a
-double-event day** — the same date that produced the institute's "Vision
-Datenmanagement" presentation (PPTX `20171205_Vision_Datenmanagement.pptx`,
-prior batch) also produced the "Workshop HRI Demo" presentation (PPTX
-`20171205_Workshop_HRI_Demo.pptx`, this batch). Both presentations were given
-at the **DLR@UBC** workshop (December 6-8 2017, University of British
-Columbia, Vancouver). The HRI presentation by Schönheits and Krebs introduces
-the same robot-cell testbed (KUKA KR120, Pozyx UWB, Hololens, OPC UA, V-REP
-co-simulation) that becomes the VAM-HRI 2018 ACM submission three months
-later — and the institute's HRI thread continues unbroken through 2018 (IROS
-fan challenge, video `hJxTF9RISIw`), 2023 (DrapeBot integration, video
-`r2pG1Lg393c`), and 2024 (DrapeBot publication video, `4CBZNBolAAE`). This
-gives the institute a documented **eight-year HRI-with-industrial-robots
-research line** that pre-dates and parallels the data-management line — a
-fact worth preserving in the thesis because it answers the question "why
-does the institute have so many human-robot videos on a *manufacturing* lab
-channel" with the right answer: **because HRI for industrial-scale robots
-has been one of the institute's strategic research bets since at least 2017**.
-The VAM-HRI 2018 paper (Schönheits & Krebs, 2018) is the published anchor
-for the academic side of that line; the YouTube channel is its public-facing
-projection.
+## 6. Full 58-video inventory (descending coverage = chronological)
 
-## 5. Open asks (per `feedback_ask_for_artefacts.md`)
+| Date | Video ID | Title | Duration | Views |
+|------|----------|-------|----------|-------|
+| 2019-09-05 | `MmT9ZTkENvo` | 10 Years ZLP Augsburg | 114s | 1758 |
+| 2019-09-11 | `F_-LBCHnK9A` | RoCk: Automated application of lightning strike protection material on doubly curved surfaces | 179s | 909 |
+| 2019-09-13 | `36l3oHsZqX4` | Robot-based Continuous Ultrasonic Welding | 136s | 13986 |
+| 2019-09-18 | `jVdNAYQ_RCs` | ProfiRumpf: Automated production of an aircraft skin made of fiber-metal laminate | 449s | 6061 |
+| 2019-09-30 | `E0_3NDfMe7Q` | AZIMUT: Automated manufacturing of  a CFRP rear pressure bulkhead | 485s | 3744 |
+| 2019-10-14 | `hJxTF9RISIw` | IROS 2018 Fan Challenge | 139s | 726 |
+| 2019-11-04 | `Gx8NoFoHnKM` | Preforming of carbon-fiber dry textiles by an adapted diaphragm process | 172s | 3541 |
+| 2019-11-11 | `TFxbkFTO7Z0` | Thermoplastic Automated Tape Placement | 109s | 14412 |
+| 2019-11-15 | `WUH2lnY36Q0` | Automated resistance welding of high performance fiber-reinforced thermoplastics | 104s | 9001 |
+| 2019-12-09 | `noOdrWLEFm8` | Booster for Ariane 6: Development of the Dry Fiber Winding and Placement Process | 186s | 1755 |
+| 2020-01-07 | `T99styFzOZw` | Highly automated manufacturing process for large aircraft structures in dry CFRP design | 504s | 45631 |
+| 2020-02-10 | `Nh6VFWwfXIA` | Production of a full-scale composite booster. | 172s | 21034 |
+| 2020-06-29 | `IdrzYH-58uo` | Black Engine | 140s | 4285 |
+| 2020-08-05 | `Uv05rbONQVU` | Nomination for Falling Walls Remote 2020 in the Physical Sciences category: Barbara Milow | 325s | 405 |
+| 2020-10-16 | `qwZA0jQz4fA` | ESEC | 118s | 1383 |
+| 2020-12-07 | `1y0wHtxYLvk` | Hybrid Laminar Flow Technology (HLFC): Cost-effective TSSD design for active flow control | 82s | 4960 |
+| 2021-07-14 | `8X47mn5e5jI` | DLR for automotive production - Project CosiMo | 253s | 3091 |
+| 2021-07-27 | `xIMHHebGuGI` | Project PROCOMP - A new production and design method for a hydrogen fuel tank | 227s | 20822 |
+| 2021-08-04 | `GEGsobyVzqc` | Project IRAS - 3D printing | 50s | 441 |
+| 2021-08-04 | `ZELuSaUKoTc` | Project IRAS - SOURCE qualification | 41s | 267 |
+| 2021-10-22 | `QIZxJN8l5-w` | RoboAssistant | 124s | 403 |
+| 2022-03-31 | `MvPnFr4Fnhg` | Technology Bricks for Future Thermoplastic Aircraft | 208s | 25661 |
+| 2022-05-06 | `eqxXwqhZ5DY` | Human-CoBot-collaboration for final shell assembly in project AGREED | 310s | 6008 |
+| 2022-05-06 | `wVorUo0YROE` | Fully automated shell pre-assembly in project AGREED | 300s | 5487 |
+| 2022-05-31 | `sRmhnVPAF68` | Project IRAS - New technologies for affordable satellites | 135s | 430 |
+| 2022-09-28 | `pQKWO_bqxkw` | Progress in HLFC technology: Large-scale validation of TSSD concept | 177s | 609 |
+| 2022-12-01 | `Jf9cd7V2bLA` | MFFD – Production Technology for the Thermoplastic Fuselage of Tomorrow | 212s | 8249 |
+| 2023-01-19 | `-R5pGN8HKVY` | Multifunctional Robot Cell | 52s | 1195 |
+| 2023-02-07 | `9KzYTB-EegY` | Inline Quality Assurance Cell | 86s | 434 |
+| 2023-02-28 | `I6_qNOC1AEc` | Thermoplast Cell | 109s | 820 |
+| 2023-03-09 | `r2pG1Lg393c` | Human-robot collaborative transport of flexible carbon fiber patch (intermediate results) | 44s | 665 |
+| 2023-03-27 | `S1imMFpggww` | Combined 3D Printing and Automated Fiber Placement (AFP) - Part 2 | 19s | 5592 |
+| 2023-05-16 | `CuftGghuRGc` | Institute of Structures and Design – We lighten. Everything. | 184s | 1456 |
+| 2023-07-13 | `y0nPY5PWdac` | Drop Tower | 72s | 497 |
+| 2023-08-03 | `kU_q4OQ8hrE` | Facility Technology Evaluation Cell (TEC) | 78s | 381 |
+| 2023-08-03 | `nao1U3IB20k` | Project DrapeBot: Safe Human-robot interaction via gestures and voice | 55s | 318 |
+| 2023-11-14 | `-_IJsXvhmQE` | Furnaces for Composites Manufacturing | 123s | 530 |
+| 2023-12-04 | `oWeELH4YSCA` | Servo-Hydraulic Testing Machine | 44s | 840 |
+| 2024-01-16 | `Ax1-S5zv0N0` | Gas Gun Facility | 93s | 890 |
+| 2024-03-19 | `TKoXSpaLuwg` | Innovative Robotic Platforms: Dual-Robot AFP and Welding of Thermoplastic CFRPs | 120s | 4782 |
+| 2024-03-25 | `ttnovMKnQTI` | Behind the Scenes: Innovative Robotic Platforms - Dual-Robot AFP and Welding of Thermoplastic CFRPs | 34s | 857 |
+| 2024-05-21 | `CmGTYu6WHoM` | Revolution in Aviation: Production of the Multifunctional Fuselage Demonstrator (MFFD) | 274s | 34507 |
+| 2024-07-16 | `PL_jd210Hzo` | Ultrasonic Welding Facility and WeldSealer Device | 114s | 1054 |
+| 2024-08-15 | `4CBZNBolAAE` | Project DrapeBot: Human-machine collaboration for complex manual CFRP manufacturing processes | 134s | 379 |
+| 2024-09-10 | `EJHjw5Zgadc` | High-Speed Testing Machine | 96s | 580 |
+| 2024-10-15 | `drJAu9AKJb8` | Extraordinary technology transfer: From Space Travel to a Watch Case | 148s | 310 |
+| 2024-11-14 | `lx-_DZin-Jk` | Center for Crash and Impact Testing – Unlocking the future of crash and impact testing \| Teaser | 19s | 283 |
+| 2025-01-21 | `fpUygAGJLJY` | Adding additional functionality to large fibre composite structures with SEAM | 30s | 707 |
+| 2025-01-23 | `zhjMXF3J3Ds` | Revolutionising aviation safety - Discover now the future DLR Center for Crash and Impact Testing! | 185s | 530 |
+| 2025-03-05 | `ddK2ZyhjAjU` | Combination of Screw Extrusion Additive Manufacturing and in-situ Automated Fibre Placement | 50s | 496 |
+| 2025-06-05 | `F358HK0A9DE` | Project Urban Rescue: Developoing a Crash-Tested eVTOL Demonstrator for Airborne Emergency Response | 213s | 791 |
+| 2025-06-10 | `PzzAFQLV8Eo` | Project CALLISTO: Landing Leg development test series | 105s | 346 |
+| 2025-07-09 | `oj3aR4dv_6Q` | Lightweight Hydrogen Storage for Climate-Compatible Aviation | 193s | 658 |
+| 2025-08-12 | `rtJUdiuvUOU` | DiCADeMa - Digital Cabin Architectures and Design for Manufacturing | 216s | 436 |
+| 2025-09-25 | `8Up5xWeVdXI` | Combining Methods of Additive Manufacturing \| DLR x Ingersoll Machine Tools (Camozzi Group) | 50s | 360 |
+| 2025-10-30 | `AIbbyEuWcEY` | Induction-heated Thermomechanical Test Facility | 93s | 139 |
+| 2026-03-04 | `HJ_cXwXb8nY` | Project FASTER-H2: Crashworthy Hydrogen Tank Integration for Future Aircraft | 224s | 679 |
+| 2026-04-29 | `gpfQ-hKRczY` | Beyond the visible: Understanding impact damage in composite aerostructures | 63s | 1047 |
 
-Three videos where a transcript would meaningfully advance the thesis but
-is not currently extractable from open metadata channels:
+(View counts captured 2026-05-23; will drift.)
 
-1. **`MmT9ZTkENvo` — *10 Years ZLP Augsburg* (2019-09-05).** Likely contains
-   Prof. Kupke's reflection on the centre's first decade, which would be an
-   excellent quote for the doc 86 (predecessor systems) introduction. If Flo
-   has the production transcript or a presentation script from the 2019 event,
-   please upload.
-2. **`CuftGghuRGc` — *Institute of Structures and Design — We lighten.
-   Everything.* (2023-05-16).** The institute's most recent official image
-   film; the narration would be the institute's own answer to "what is the
-   institute for", which is exactly the question doc 87 §1 tries to answer.
-   If a script exists in the institute communications archive, please
-   upload.
-3. **`PL_jd210Hzo` — *Ultrasonic Welding Facility and WeldSealer*
-   (2024-07-16).** The narration almost certainly includes specific
-   process-data-capture language from one of the responsible engineers; the
-   description quote *"capturing all relevant process data for quality
-   assurance"* is too tantalising to leave at description-level. A direct
-   quote from the narration would be a strong opening for any chapter that
-   positions Shepard against process-QA data capture.
+## 7. What's surprising
 
-If the local PR / film-production files (script docx, narration audio,
-editor's exports) are accessible inside DLR, even a partial transcript of
-any of these three would be enough to lift a thesis-quality citation from
-description-paraphrase to direct-quote status.
+1. **The institute already speaks Shepard's vocabulary externally — but does not name Shepard.** V5 ("MFC unfolds full effect in conjunction with consistent digitalisation, sensor technology, **data management** and quality assurance") is the Shepard mission verbatim, in the institute's own public copy from 2023-01. Yet the brand "Shepard" never appears. The substrate is invisible while the artefact is celebrated. This is the single sharpest finding of the dispatch.
 
-## 6. Cross-references
+2. **CITE-digital is the second adopter hiding in plain sight.** V7 explicitly commits to "data management system" + "digital twins" for cross-system integration at the Stuttgart institute extension. This makes CITE the strongest non-ZLP-Augsburg Shepard adoption target visible in any artefact stream. It belongs in `aidocs/strategy/100 (BT/ZLP rollout)` and should be added there with a citation back to this doc.
 
-- **Doc 87 (DLR ZLP positioning)** — extend §"institute self-description"
-  with `CuftGghuRGc` (image film) and `MmT9ZTkENvo` (10-year anniversary).
-- **Doc 86 (predecessor systems)** — extend with `MmT9ZTkENvo` as the
-  institute's own public history of its first decade.
-- **Doc 100 (BT-Augsburg / ZLP rollout)** — cross-link each Shepard-deployable
-  cell (TPC, Inline-QA, Multifunctional Robot, TEC, Ultrasonic Welding) to
-  its YouTube cell-film for an external operator-visible reference.
-- **VAM-HRI 2018 paper** + **2017-12-05 HRI Demo PPTX** — together with the
-  YouTube HRI videos (`hJxTF9RISIw`, `nao1U3IB20k`, `4CBZNBolAAE`,
-  `r2pG1Lg393c`) form the eight-year HRI thread cited in §4. Both artefacts
-  are bib-entered (see §7).
+3. **PROCOMP 2021 predates internal artefact crystallisation.** V11 ("Each part production uses a novel quality assurance system for the Automated Fibre Placement. The placement quality is constantly verified and the QA data stored.") is from 2021-07. The internal predecessor-systems doc (`aidocs/strategy/86 §3.6`) puts the inflection in 2023. The channel evidence proves the institute was already on the trajectory two years earlier in public communication. This forces a small but real correction to §86.
 
-## 7. References
+4. **Caption availability is irregular.** Some 30-second clips have full English auto-captions; some 5-minute headline videos return "no subtitles" (including the highest-view MFFD piece `CmGTYu6WHoM`). The mapping is not predictable from view count or length; YouTube's auto-caption engine appears to have failed or been disabled for specific videos. This is a limitation to acknowledge in the thesis methodology section.
 
-The YouTube channel itself plus 20 individual videos cited in this doc are
-added to `docs/_data/references.bib` under the keys `dlrSchoenheitsVamhri2018`
-(VAM-HRI 2018 paper), `dlrSchoenheitsKrebsHriWorkshop2017` (DLR@UBC 2017
-HRI Demo PPTX), and the per-video keys `dlrZlpYoutube<id>` where `<id>` is
-the YouTube video id. Channel-level entry: `dlrZlpYoutubeChannel2026`.
+5. **AGREED's "AI-controlled assembly" framing from 2022 predates the AI Act + the f(ai)²r vocabulary by ~2 years.** V9 establishes that the institute's public AI vocabulary is 2022-vintage and predates the wave of regulatory framing the thesis must address. This is useful: the thesis can argue the institute was AI-positioning *before* the regulatory framework existed, so the f(ai)²r provenance work in this fork is *responsive to that pre-existing positioning*, not bolted on after.
+
+6. **The watch-case tech-transfer video (`drJAu9AKJb8`) is the outlier consumer-goods spin-off.** It is the only video that exists outside the regulated-aerospace data model. For the thesis, it is the **boundary case** — the case where Shepard's full FAIR / EN-9100 substrate is over-engineered for the actual use. Worth a footnote that defines the *outer edge* of what Shepard targets.
+
+## Acknowledgement of the course-correction
+
+This doc replaces the lighter "content catalogue" framing the original task
+would have produced. Per Flo's 2026-05-23 redirect, the channel is treated as
+**vision + use-case primary source**, not catalogue. §3.1 (vision verbatim
+extraction) and §3.2 (use-case catalogue) are the two new dedicated sections
+the redirect mandated. §3.3 (vocabulary gap), §3.4 (payload-kind coverage),
+§3.5 (cross-walk to internal docs) and §3.6 (external vs. internal chronology)
+extend the redirect's intent.
+
+The constraint on transcript-extraction completeness (yt-dlp + auto-captions
+covers ~60 % of the channel; manual upload by Flo for the 5 priority videos in
+§4.2 would materially strengthen V1–V15 verbatim quotes) is documented in §4.3.
