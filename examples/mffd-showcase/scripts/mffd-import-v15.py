@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.12"
+IMPORT_SCRIPT_VERSION = "15.13"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -2544,6 +2544,186 @@ def run_bootstrap(client: ShepardClient) -> None:
 
 # ── SOURCE MODE ───────────────────────────────────────────────────────────────
 
+def _build_completeness_verdict(
+    *,
+    session_id: str,
+    script_version: str,
+    pre_totals: dict[str, int],
+    grand_total: int,
+    rows: list[dict],
+    started_ts: float,
+) -> dict:
+    """v15.13 contained completeness check — pure-function aggregator.
+
+    Compares each step's `expected_dos` (from the pre-flight count) against
+    `processed_dos` (what the importer actually moved through its work loop).
+    Per-kind sub-counts surface partial failures: 100% files-uploaded but
+    100% SD-failed is exactly the v15.11/v15.9 BUG-E signature.
+
+    Returns a verdict dict with `passing`, `summary`, `per_step`, `flags`.
+    """
+    now = time.time()
+    per_step = []
+    grand_processed = 0
+    grand_file_failed = 0
+    grand_ts_failed = 0
+    grand_sd_failed = 0
+    grand_file_uploaded = 0
+    grand_ts_imported = 0
+    grand_sd_imported = 0
+    flags: list[str] = []
+
+    for row in rows:
+        step = row["step"]
+        expected = int(row.get("expected_dos") or 0)
+        processed = int(row.get("processed_dos") or 0)
+        files = row.get("files") or {}
+        tsd = row.get("timeseries") or {}
+        sd = row.get("structured") or {}
+        step_record = dict(row)
+        step_record["counts_match"] = (expected == processed)
+        step_record["any_kind_failed"] = (
+            int(files.get("failed") or 0) > 0
+            or int(tsd.get("failed") or 0) > 0
+            or int(sd.get("failed") or 0) > 0
+        )
+        per_step.append(step_record)
+
+        grand_processed += processed
+        grand_file_failed += int(files.get("failed") or 0)
+        grand_ts_failed += int(tsd.get("failed") or 0)
+        grand_sd_failed += int(sd.get("failed") or 0)
+        grand_file_uploaded += int(files.get("uploaded") or 0)
+        grand_ts_imported += int(tsd.get("imported") or 0)
+        grand_sd_imported += int(sd.get("imported") or 0)
+
+        if not step_record["counts_match"]:
+            flags.append(f"DO-COUNT-MISMATCH:{step}:{processed}/{expected}")
+        if step_record["any_kind_failed"]:
+            flags.append(f"PARTIAL-KIND-FAILURE:{step}")
+
+    # BUG-E shape detector: many SD failures with file successes = the v15 pre-v15.12
+    # signature. Flag explicitly so the operator knows whether redrive is needed.
+    if grand_sd_failed > 0 and grand_sd_imported == 0 and grand_file_uploaded > 0:
+        flags.append("BUG-E-SHAPE-SD-100PCT-LOSS")
+    elif grand_sd_failed > 0 and grand_sd_imported > 0:
+        flags.append("SD-PARTIAL-LOSS-NEEDS-REDRIVE")
+
+    duration = max(1.0, now - started_ts)
+    rate_dos_per_min = (grand_processed / duration) * 60 if grand_processed > 0 else 0.0
+
+    passing = (
+        grand_processed == grand_total
+        and grand_file_failed == 0
+        and grand_ts_failed == 0
+        and grand_sd_failed == 0
+    )
+
+    return {
+        "session": session_id,
+        "script_version": script_version,
+        "ts_unix": now,
+        "duration_s": round(duration, 1),
+        "rate_dos_per_min": round(rate_dos_per_min, 2),
+        "pre_totals": pre_totals,
+        "grand_total_expected": grand_total,
+        "grand_total_processed": grand_processed,
+        "totals": {
+            "files_uploaded": grand_file_uploaded,
+            "files_failed": grand_file_failed,
+            "ts_imported": grand_ts_imported,
+            "ts_failed": grand_ts_failed,
+            "sd_imported": grand_sd_imported,
+            "sd_failed": grand_sd_failed,
+        },
+        "per_step": per_step,
+        "flags": flags,
+        "passing": passing,
+        "verdict": (
+            "PASS" if passing
+            else "FAIL-PARTIAL" if grand_processed > 0
+            else "FAIL-EMPTY"
+        ),
+    }
+
+
+def _print_completeness_banner(v: dict) -> None:
+    """Human-readable end-of-migration banner."""
+    print()
+    print("  ┌─ MIGRATION COMPLETENESS ────────────────────────────────────────┐")
+    print(f"  │  Verdict: {v['verdict']:<10}  Session: {v['session']:<32}│"[:69])
+    print(f"  │  Duration: {v['duration_s']}s   Rate: {v['rate_dos_per_min']} DOs/min".ljust(67) + "│")
+    print(f"  │  Expected: {v['grand_total_expected']} DOs   Processed: {v['grand_total_processed']} DOs".ljust(67) + "│")
+    t = v["totals"]
+    print(f"  │  Files: {t['files_uploaded']} ok / {t['files_failed']} failed".ljust(67) + "│")
+    print(f"  │  TS:    {t['ts_imported']} ok / {t['ts_failed']} failed".ljust(67) + "│")
+    print(f"  │  SD:    {t['sd_imported']} ok / {t['sd_failed']} failed".ljust(67) + "│")
+    if v["flags"]:
+        print("  │  Flags:".ljust(67) + "│")
+        for f in v["flags"][:10]:
+            print(f"  │    - {f}".ljust(67) + "│")
+    print("  └─────────────────────────────────────────────────────────────────┘")
+    print()
+
+
+def _persist_completeness_artifact(verdict: dict, dest_client: "ShepardClient", coll_id: int) -> None:
+    """Write JSON next to the importer + best-effort upload as a Shepard DO.
+
+    The JSON file is the durable record. The Shepard DO is the lineage anchor —
+    if upload fails (auth flap, network, dest down) the file on disk is still
+    consultable. Both forms exist so the verifier can be re-run against the
+    artifact later for audit.
+    """
+    import json as _json
+    out_dir = Path(os.environ.get("MFFD_COMPLETENESS_OUT_DIR") or ".")
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        out_dir = Path(".")
+    name = f"mffd-completeness-{verdict['session']}.json"
+    path = out_dir / name
+    try:
+        path.write_text(_json.dumps(verdict, indent=2, default=str), encoding="utf-8")
+        print(f"  [completeness] artifact written → {path}")
+    except OSError as e:
+        print(f"  [completeness-warn] disk write failed: {e!r}")
+        return
+
+    # Best-effort upload as a MIGRATION-COMPLETENESS-<session> DataObject.
+    try:
+        body = {
+            "name": f"MIGRATION-COMPLETENESS-{verdict['session']}",
+            "attributes": {
+                "kind": "migration-completeness-report",
+                "session": verdict["session"],
+                "script_version": verdict["script_version"],
+                "verdict": verdict["verdict"],
+                "passing": str(verdict["passing"]).lower(),
+                "grand_total_expected": str(verdict["grand_total_expected"]),
+                "grand_total_processed": str(verdict["grand_total_processed"]),
+                "rate_dos_per_min": str(verdict["rate_dos_per_min"]),
+                "flags_csv": ",".join(verdict["flags"]) if verdict["flags"] else "",
+                "source_url": os.environ.get("SOURCE_SHEPARD_URL", ""),
+                "dest_url": os.environ.get("SHEPARD_URL", ""),
+                "tool": "mffd-import-v15.py (contained)",
+            },
+        }
+        r = dest_client._session.post(
+            f"{dest_client._base}/shepard/api/collections/{coll_id}/dataObjects",
+            json=body, timeout=60,
+        )
+        if r.ok:
+            try:
+                anchor = r.json()
+                print(f"  [completeness] dest anchor DO appId={anchor.get('appId')}")
+            except (ValueError, AttributeError):
+                pass
+        else:
+            print(f"  [completeness-warn] DO anchor create failed: {r.status_code}")
+    except Exception as e:  # noqa: BLE001 — best-effort
+        print(f"  [completeness-warn] anchor upload skipped: {e!r}")
+
+
 def run_source_mode(
     dest_client: ShepardClient,
     coll_id: int,
@@ -2593,10 +2773,50 @@ def run_source_mode(
     # v15.1: parallel map of step_key → dest_app_id for G7 typed-predecessor edges
     do_app_ids: dict[str, str] = {}
 
+    # v15.13 CONTAINED-COMPLETENESS: per-step rows collected as iterations finish,
+    # used by the inline completeness pass at end of run_source_mode.
+    # Schema per row: {step, src_coll_id, dest_do_id, dest_app_id, expected_dos,
+    # processed_dos, files_uploaded/skipped/failed, ts_imported/skipped/failed,
+    # structured_imported/failed, duration_s}.
+    completeness_rows: list[dict] = []
+
     source_map = [
         ("tapelaying",    SOURCE_TAPELAYING_COLL_ID,    None),
         ("bridgewelding", SOURCE_BRIDGEWELDING_COLL_ID, "tapelaying"),
     ]
+
+    # v15.13 PROGRESS-ETA: pre-flight totals banner.
+    # Gives the operator + tmux readers a real "X of Y" denominator before the
+    # per-step loop starts. Each `count_data_objects` is a small list-page query;
+    # fetching twice (here + inside the loop) costs ~100ms — worth it for the
+    # banner. Stored on the function for later ETA computation.
+    pre_totals: dict[str, int] = {}
+    for _step_key, _src_coll_id, _ in source_map:
+        if _src_coll_id is None:
+            continue
+        try:
+            pre_totals[_step_key] = int(_src.count_data_objects(_src_coll_id))
+        except (ValueError, TypeError, AttributeError):
+            pre_totals[_step_key] = -1
+    grand_total = sum(v for v in pre_totals.values() if v >= 0)
+    print()
+    print("  ┌─ PRE-FLIGHT TOTALS ─────────────────────────────────────────────┐")
+    for _step_key, _src_coll_id, _ in source_map:
+        if _src_coll_id is None:
+            print(f"  │  {_step_key:<14}  (skipped — coll id not set)" + " " * 12 + "│")
+        else:
+            t = pre_totals.get(_step_key, "?")
+            print(f"  │  {_step_key:<14}  src_coll={_src_coll_id:<8}  total={t:>8} DOs   │")
+    print(f"  │  GRAND TOTAL: {grand_total} source DataObject(s) to migrate".ljust(67) + "│")
+    print("  └─────────────────────────────────────────────────────────────────┘")
+    _diag_emit("warmup_step", {
+        "step": "pre_flight_totals",
+        "pre_totals": pre_totals,
+        "grand_total": grand_total,
+        "source_map": [{"step": k, "src_coll_id": c, "pred": p} for k, c, p in source_map],
+    })
+    # Track cumulative processed across the run for ETA computation.
+    _processed_overall = {"dos": 0, "start_ts": time.time()}
 
     for step_key, src_coll_id, pred_key in source_map:
         if src_coll_id is None:
@@ -3121,6 +3341,43 @@ def run_source_mode(
             "structured_imported": structured_imported,
             "structured_failed": structured_failed,
         })
+
+        # v15.13 CONTAINED-COMPLETENESS: persist per-step row for inline pass
+        _processed_overall["dos"] += total_dos  # type: ignore[index]
+        completeness_rows.append({
+            "step": step_key,
+            "src_coll_id": src_coll_id,
+            "dest_do_id": dest_do_id,
+            "dest_do_app_id": do_app_ids.get(step_key),
+            "expected_dos": total_dos,
+            "processed_dos": files_uploaded + files_skipped + files_failed,
+            "files": {"uploaded": files_uploaded, "skipped": files_skipped, "failed": files_failed},
+            "timeseries": {"imported": ts_imported, "skipped": ts_skipped, "failed": ts_failed},
+            "structured": {"imported": structured_imported, "failed": structured_failed},
+            "duration_s": round(time.time() - _iter_start_s, 1),
+        })
+
+    # ── v15.13 CONTAINED-COMPLETENESS PASS ────────────────────────────────────
+    # Runs in the same process. No external script, no extra source queries —
+    # uses the running counters the importer already maintains. Emits a
+    # `migration_completeness` diag event + writes `mffd-completeness-<session>.json`
+    # + best-effort uploads the report as a MIGRATION-COMPLETENESS-<session>
+    # DataObject in the destination collection (lineage anchor).
+    try:
+        _verdict = _build_completeness_verdict(
+            session_id=SESSION_ID,
+            script_version=IMPORT_SCRIPT_VERSION,
+            pre_totals=pre_totals,
+            grand_total=grand_total,
+            rows=completeness_rows,
+            started_ts=_processed_overall["start_ts"],
+        )
+        _diag_emit("migration_completeness", _verdict)
+        _print_completeness_banner(_verdict)
+        _persist_completeness_artifact(_verdict, dest_client, coll_id)
+    except Exception as _exc:
+        print(f"  [completeness-warn] inline pass failed: {_exc!r}")
+        _diag_emit("migration_completeness_error", {"error": repr(_exc)})
 
     return do_ids
 
