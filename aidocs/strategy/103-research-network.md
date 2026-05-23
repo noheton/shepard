@@ -113,6 +113,7 @@ The §0 anchor as-of 2026-05-23 is **coherent for thesis-defence and funding-pit
 | **DBLP** | *(not found)* | DBLP search returned no matches — see §7.5 gap |
 | **GitHub** | [`noheton`](https://github.com/noheton) | Profile page confirms real-name "Florian Krebs" + ORCID linkback; 9 public repos (incl. `shepard`, `f-ai-r`) |
 | **LinkedIn** | [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) | Primary; "Deputy Head of Department, DLR" headline |
+| **Bluesky** | [`@nucli.de`](https://bsky.app/profile/nucli.de) | Operator-flagged 2026-05-23; handle uses the `nucli.de` custom domain (same domain as the `shepard.nuclide.systems` deploy host) — same-operator ownership verifiable via `did:web:nucli.de` + DNS. Verification pass pending per `BSKY-PROFILE-VERIFY` in `aidocs/16` |
 | **Email of record** | `florian.krebs@dlr.de` | Listed on @krebsDlrk2021 + 2010-era PPTX series |
 
 ### §0bis.2 ORCID-attested chronology (the verifiable spine)

@@ -24,6 +24,7 @@ supplies a thesis preamble, a funding-reviewer briefing, and a contributor
 **GitHub:** [`noheton`](https://github.com/noheton) (real-name + ORCID linkback verified 2026-05-23)
 **LinkedIn:** [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) (headline: "Deputy Head of Department, DLR")
 **ResearchGate:** unclaimed contribution stub at [`Florian-Krebs-75868717`](https://www.researchgate.net/scientific-contributions/Florian-Krebs-75868717)
+**Bluesky:** [`@nucli.de`](https://bsky.app/profile/nucli.de) (operator-flagged 2026-05-23 for completeness; uses the `nucli.de` custom domain shared with the deploy host `shepard.nuclide.systems` — handle ownership cryptographically verifiable via `did:web:nucli.de` resolution; verification pass pending per `BSKY-PROFILE-VERIFY` in `aidocs/16`)
 **DBLP:** *(not indexed as of 2026-05-23 — see §9 maintenance ask)*
 **Affiliation (current):** DLR Institute of Structures and Design — Leader, Flexible Automation Systems Group (since 2009-10)
 **Prior employment (per ORCID):** **KUKA Roboter GmbH, Augsburg — April 2008 to September 2009** (17-month industrial year at the vendor whose hardware later anchors every robot cell at ZLP; concurrent with the FP6 *XPRESS* Integrated Project consortium that includes the KUKA / Airbus / Premium-Aerotec partner set persisting through AZIMUT and MFFD — see `aidocs/strategy/86` §1.7)
