@@ -30,7 +30,7 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 37 |
+| `fragment` | 38 |
 | `concept` | 14 |
 | `idea` | 9 |
 | `feature-defined` | 57 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **263** |
+| **total docs** | **264** |
 | **UNTAGGED** | **5** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -55,7 +55,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md`](agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md) | Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23) | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 |
 
-## fragment (37)
+## fragment (38)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -89,6 +89,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — multi-database reconstruction | 2026-05-23 | — |
 | [`aidocs/strategy/70-competitor-landscape-and-feature-ideas.md`](strategy/70-competitor-landscape-and-feature-ideas.md) | aidocs/70 — Competitor landscape & feature ideas for shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/71-fork-adoption-as-upstream.md`](strategy/71-fork-adoption-as-upstream.md) | aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |
@@ -176,7 +177,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | Institute YouTube profile — public-facing self-presentation as a substrate evidence source | 2026-05-23 | — |
+| [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | Institute YouTube profile — public-facing self-presentation as a substrate evidence source | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | 88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
