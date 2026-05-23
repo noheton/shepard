@@ -234,6 +234,17 @@ aasRdf2019:
   note: "RDF/OWL representation of AAS submodels --- referenced by the planned shepard-plugin-aas design."
   category: "papers"
 
+luccioniPowerHungry2024:
+  entry_type: "inproceedings"
+  author: "Luccioni, Sasha and Jernite, Yacine and Strubell, Emma"
+  title: "Power Hungry Processing: Watts Driving the Cost of AI Deployment?"
+  booktitle: "Proceedings of the 2024 ACM Conference on Fairness, Accountability, and Transparency (FAccT '24)"
+  year: "2024"
+  publisher: "ACM"
+  url: "https://arxiv.org/abs/2311.16863"
+  note: "Per-token / per-inference energy measurements across decoder-only frontier LLMs. Comparable-class proxy used in aidocs/sustainability/00 for Claude Opus 4.7 inference accounting (Anthropic does not publish per-token Wh)."
+  category: "papers"
+
 oecdAiInScience2023:
   entry_type: "techreport"
   author: "OECD"
@@ -330,6 +341,25 @@ euCodeOfPracticeAiContent:
   year: "2026"
   url: "https://digital-strategy.ec.europa.eu/en/policies/code-practice-ai-generated-content"
   note: "Draft Code of Practice operationalising EU AI Act Article 50."
+  category: "policy"
+
+awsCustomerCarbonFootprint2024:
+  entry_type: "techreport"
+  author: "Amazon Web Services"
+  title: "Customer Carbon Footprint Tool: methodology and regional grid intensities"
+  institution: "Amazon Web Services --- Sustainability"
+  year: "2024"
+  url: "https://sustainability.aboutamazon.com/products-services/the-cloud"
+  note: "AWS-published grid carbon intensities + PUE used as the AWS-US proxy in aidocs/sustainability/00. us-east-1 (~370 gCO2eq/kWh) adopted as the conservative end of the band; us-west-2 (~80 gCO2eq/kWh) as the optimistic end."
+  category: "policy"
+
+anthropicPromptCachingDocs2026:
+  entry_type: "misc"
+  author: "Anthropic"
+  title: "Prompt caching --- developer documentation"
+  year: "2026"
+  url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching"
+  note: "Source for the ~10:1 fresh-input-to-cache-read energy ratio used in aidocs/sustainability/00. Anthropic does not publish a precise per-token Wh figure for cache reads; the 10:1 ratio is derived from the documented KV-cache reuse path."
   category: "policy"
 
 nfdi4ingMetadata4ing:
@@ -536,4 +566,88 @@ dlrLumenProgram:
   year: "2025"
   url: "https://www.dlr.de/en/research-and-transfer/projects-and-missions/lumen"
   note: "DLR's methane / LOX research engine. Shape the source of the synthetic LUMEN showcase dataset."
+  category: "dlr_internal"
+
+nuschelePraesto2014paper:
+  entry_type: "misc"
+  author: "Nuschele, Stefan and Schmidt, Thomas and Kießig, Mildred and Mühlhausen, Thomas and Wagenfeld, Bastian and Voss, Hajo"
+  title: "Datenbank PRAESTO: Speicherung von CFK-Forschungsdaten auf Fertigungsniveau"
+  year: "2014"
+  howpublished: "63. Deutscher Luft- und Raumfahrtkongress (DLRK 2014), Augsburg, 16--18 September 2014"
+  url: "https://elib.dlr.de/94077/"
+  note: "DLR eLib 94077. Conference paper. Predecessor system to Shepard at DLR ZLP Augsburg --- see aidocs/strategy/86. Full text not available in eLib."
+  category: "dlr_internal"
+
+nuschelePraesto2014talk:
+  entry_type: "misc"
+  author: "Nuschele, Stefan"
+  title: "Datenbank PRAESTO: Speicherung von CFK-Forschungsdaten auf Fertigungungsniveau"
+  year: "2014"
+  howpublished: "63. Deutscher Luft- und Raumfahrtkongress (DLRK 2014), Augsburg, 16--18 September 2014"
+  url: "https://elib.dlr.de/94078/"
+  note: "DLR eLib 94078. Conference talk (sister record to eLib 94077). Predecessor system to Shepard --- see aidocs/strategy/86."
+  category: "dlr_internal"
+
+haaseShepard2021:
+  entry_type: "misc"
+  author: "Haase, Tobias and Glück, Roland and Kaufmann, Patrick and Willmeroth, Mark"
+  title: "shepard --- storage for heterogeneous product and research data"
+  year: "2021"
+  month: "jul"
+  publisher: "Zenodo"
+  version: "1.0.0"
+  doi: "10.5281/zenodo.5091604"
+  url: "https://doi.org/10.5281/zenodo.5091604"
+  note: "Original Zenodo software citation for upstream shepard. Apache-2.0. None of the four named authors appear on the predecessor iDMS/KIBID source we hold --- continuity is institutional, not personal (see aidocs/strategy/86 §5)."
+  category: "software"
+
+dlrZlpShepard:
+  entry_type: "misc"
+  author: "DLR Center for Lightweight-Production-Technology (ZLP) Augsburg"
+  title: "shepard --- storage for heterogeneous product and research data (project page)"
+  year: "2024"
+  url: "https://www.dlr.de/en/zlp/research-transfer/projects/projects-from-augsburg/project-archive-zlp-augsburg/shepard-storage-for-heterogeneous-product-and-research-data"
+  note: "Official DLR ZLP project page. Notably contains no mention of predecessor systems (CUBE / iDMS / KIBID / PRAESTO) --- the absence is itself recorded in aidocs/strategy/86 §1."
+  category: "dlr_internal"
+
+petschPandora2018:
+  entry_type: "inproceedings"
+  author: "Petsch, Michael and Kohlgrüber, Dieter"
+  title: "PANDORA --- A python based framework for modelling and structural sizing of transport aircraft"
+  booktitle: "MATEC Web of Conferences (EASN--CEAS 2018)"
+  year: "2018"
+  publisher: "EDP Sciences"
+  url: "https://www.matec-conferences.org/articles/matecconf/ref/2018/92/matecconf_easn_ceas2018_00013/matecconf_easn_ceas2018_00013.html"
+  note: "PANDORA aircraft-sizing framework at DLR --- referenced as a sidebar in aidocs/strategy/86 §4.4 (iDMS bridged to PANDORA via the idms_pandora_converter, but PANDORA is NOT in the Shepard lineage)."
+  category: "papers"
+
+nuschele2014Praesto:
+  entry_type: "inproceedings"
+  author: "Nuschele, Stefan and Schmidt, Thomas and Kießig, Mildred and Mühlhausen, Thomas and Wagenfeld, Bastian and Voss, Hajo"
+  title: "Datenbank PRAESTO: Speicherung von CFK-Forschungsdaten auf Fertigungsniveau"
+  booktitle: "63. Deutscher Luft- und Raumfahrtkongress (DLRK 2014)"
+  year: "2014"
+  month: "sep"
+  address: "Augsburg, Germany"
+  organization: "DGLR"
+  url: "https://elib.dlr.de/94077/"
+  note: "DLR eLib 94077 (presentation: 94078). The earliest documented predecessor of the Shepard line: an industrial-partner CFRP manufacturing database developed with Kisters AG and Premium Aerotec, focused on geometric measurements and non-destructive testing data. Conference presentation; no full text deposited."
+  category: "dlr_internal"
+
+shepardZlpProject:
+  entry_type: "misc"
+  author: "DLR ZLP Augsburg"
+  title: "shepard --- storage for heterogeneous product and research data"
+  year: "2021"
+  url: "https://www.dlr.de/de/zlp/forschung-transfer/projekte/projekte-aus-augsburg/projekte-augsburg/shepard"
+  note: "Official ZLP Augsburg project page for Shepard. Names Florian Krebs as project lead; positions Shepard as the institute's research-data substrate spanning simulation, production, flight experiments and laser testing."
+  category: "dlr_internal"
+
+unasZlpCodeDrop2026:
+  entry_type: "misc"
+  author: "DLR Augsburg / ZLP (artefact collection)"
+  title: "UNAS ZLP code-drop --- 102 source-code zips representing the Augsburg software ecosystem (PRAESTO/KIBID/iDMS/Shepard era)"
+  year: "2026"
+  url: "file:///mnt/pve/unas/media/random/"
+  note: "Primary historical source of unusual provenance: a researcher's NAS snapshot retrieved 2026-05-23 containing PRAESTO-era client code (kibid_exporter, opcua_kibid_adapter, c.~2017), the full seven-component iDMS project (Java/Python/Jupyter clients, Flask frontend, Kafka bridge, RCE integration, importers; c.~2020), and adjacent ZLP tooling. Establishes the existence and shape of internal systems not represented in eLib. See methodological discussion in aidocs/strategy/86-shepard-predecessor-systems.md."
   category: "dlr_internal"
