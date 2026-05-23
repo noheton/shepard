@@ -77,10 +77,25 @@ while true; do
 
   case "${EC}" in
     0)
-      # Clean exit. If checkpoint says "last_execv_to" matches the new
-      # in-place script, restart so the new code runs. Otherwise stop.
-      echo "[runner] clean exit — checking if a self-update is pending"
-      sleep 2
+      # Clean exit. Only re-loop if a self-update is genuinely pending — i.e.
+      # the checkpoint records a `last_execv_from`/`last_execv_to` pair AND
+      # `last_execv_to` matches a NEWER version than what we just ran. Otherwise
+      # treat exit 0 as "import completed" and STOP — preventing the
+      # clean-exit-restart loop that thrashes the lock file every 2s.
+      STATE_FILE="${SCRIPT_DIR}/mffd-import-$(date +%Y-%m-%d).state.json"
+      if [[ -f "${STATE_FILE}" ]] && grep -q 'last_execv_to.*[0-9]' "${STATE_FILE}" 2>/dev/null; then
+        # Read last_execv_to and the current IMPORT_SCRIPT_VERSION in the script.
+        EXECV_TO=$(python3 -c "import json,sys; d=json.load(open('${STATE_FILE}')); print(d.get('last_execv_to') or '')" 2>/dev/null || echo '')
+        CURR_VERSION=$(grep '^IMPORT_SCRIPT_VERSION' "${PY_SCRIPT}" | head -1 | awk -F'"' '{print $2}')
+        if [[ -n "${EXECV_TO}" && "${EXECV_TO}" != "${CURR_VERSION}" ]]; then
+          echo "[runner] clean exit + self-update pending (current=${CURR_VERSION} → pending=${EXECV_TO}); restarting in 2s"
+          sleep 2
+          continue
+        fi
+      fi
+      echo "[runner] clean exit — import completed (no pending self-update); stopping the loop"
+      echo "[runner] (re-run ./mffd-runner.sh manually if you want another pass)"
+      break
       ;;
     8)
       # IMPORT-Q7-VERIFY exit code (source-content-empty). Operator must fix
