@@ -56,6 +56,27 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
         errorObject.message = parsed.error;
       } else if (typeof parsed?.detail === "string") {
         errorObject.message = parsed.detail;
+      } else if (Array.isArray(parsed?.violations) && parsed.violations.length > 0) {
+        // Quarkus Bean Validation — {title, status, violations: [{field, message}]}.
+        // Surface each violation; this is what previously rendered as an empty
+        // toast for createFileReference and similar constraint-rejection paths.
+        const lines = parsed.violations
+          .filter(
+            (v: unknown): v is { field?: string; message?: string } =>
+              v !== null && typeof v === "object",
+          )
+          .map((v: { field?: string; message?: string }) => {
+            const field = v.field
+              ? v.field.split(".").pop() ?? v.field
+              : "field";
+            return `${field}: ${v.message ?? "invalid"}`;
+          })
+          .join("; ");
+        errorObject.message =
+          (typeof parsed?.title === "string" ? `${parsed.title} — ` : "") + lines;
+      } else if (typeof parsed?.title === "string") {
+        // RFC 9457 Problem Details fallback — title is the human summary.
+        errorObject.message = parsed.title;
       }
     } else if (errorString.length > 0 && errorString.length < 2000) {
       // Plain-text error body (e.g. "repoUrl is required and must be non-blank")
@@ -77,6 +98,14 @@ export function handleError(e: unknown, situation: string) {
         situation: situation,
         error: parsedError,
       });
+    });
+  } else if (e instanceof Error) {
+    // Plain Error instance — preserve the message instead of dropping
+    // everything to "Unknown error". Callers that throw `new Error("...")`
+    // expect their message to surface to the user.
+    errorBus.emit({
+      situation,
+      error: e.message || e.toString() || "Unknown error",
     });
   } else {
     errorBus.emit({
