@@ -154,7 +154,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.18"
+IMPORT_SCRIPT_VERSION = "15.19"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -2998,13 +2998,24 @@ def run_source_mode(
         # ── v15.1 G2/G7/G8 + name-alt: per-DO annotations ─────────────────────
         # Cheap (3-5 annotations per step DO); failure is non-fatal — counted
         # but does not abort the import.
+        # v15.19 IMPORT-SR3 — semantic-repo creation + annotations are
+        # OFF by default (MFFD doesn't actually consume semantic-repo data;
+        # the calls were generating 400/500 noise). Opt-in via
+        # MFFD_CREATE_SEMANTIC_REPOS=1 when you actually want PROV-O writeback.
+        if os.environ.get("MFFD_CREATE_SEMANTIC_REPOS", "0") != "1":
+            prov_repo_id = migration_repo_id = fair2r_repo_id = None
+        else:
+            try:
+                prov_repo_id = dest_client.get_or_create_semantic_repo("prov-o")
+                migration_repo_id = dest_client.get_or_create_semantic_repo(
+                    f"mffd-migration-{SESSION_ID}", type_="SPARQL",
+                    endpoint=f"https://noheton.org/mffd/migration/{SESSION_ID}",
+                )
+                fair2r_repo_id = dest_client.get_or_create_semantic_repo("fair2r")
+            except Exception as _sr_e:
+                print(f"  [warn-sr] semantic-repo bootstrap failed ({_sr_e}); continuing without annotations")
+                prov_repo_id = migration_repo_id = fair2r_repo_id = None
         try:
-            prov_repo_id = dest_client.get_or_create_semantic_repo("prov-o")
-            migration_repo_id = dest_client.get_or_create_semantic_repo(
-                f"mffd-migration-{SESSION_ID}", type_="SPARQL",
-                endpoint=f"https://noheton.org/mffd/migration/{SESSION_ID}",
-            )
-            fair2r_repo_id = dest_client.get_or_create_semantic_repo("fair2r")
             if prov_repo_id and migration_repo_id and fair2r_repo_id:
                 # G2 + G8: per-DO modeOfProduction + wasAcceptedAs + wasGeneratedByAi
                 n_mode = dest_client.annotate_do_mode_of_production(

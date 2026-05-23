@@ -680,6 +680,17 @@ User directive 2026-05-23: *"after import we should do the database optimisation
 | DB-OPT5 | **Frontend payload diet** — once query latency is honest, the next round of wins is on response-shape. Use the actual `/v2/collections/{appId}/data-objects` payload size on MFFD-Dropbox (≈8k DOs × ~2 KB each = 16 MB) and figure out which fields the frontend actually reads. Slim the response by `?fields=` or default-trim heavy nested objects. | M | queued | Pairs with the existing pagination work (task #51 + #112). |
 | DB-OPT6 | **Operator runbook** — `docs/ops/db-optimisation-runbook.md`: how an admin of a downstream Shepard fork instance runs the same optimisation pass against their own data. Templated `EXPLAIN ANALYZE` queries + interpretation cheat-sheet. | S | queued | Mirrors `docs/ops/garage-activation-runbook.md` shape. |
 
+### MFFD-GRAPH-PRUNE — 2026-05-23 (post-ingest graph hygiene)
+
+User directive 2026-05-23 mid-MFFD-redeploy: *"backlog maybe prune graph afterwards"*. After MFFD ingest drains, run a graph-pruning pass to remove the artifacts accumulated during today's bug-chase (orphan TS containers 528098 / 589657 / 599903, the 52 `tapelaying/Track N (Run M)/Timeseries` Neo4j shadow nodes with NULL `id`, any DataObjects that ended up with broken `:HAS_REFERENCE` edges to deleted containers, and the legacy SD containers that survived the wipes). Pre-mutation snapshot per `PRE-MUT-SNAP` before any destructive Cypher.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| MFFD-PRUNE-1 | **Inventory the graph debris** — Cypher queries that produce an honest count: orphan `:TimeseriesContainer` (no `:USES_CONTAINER` back-edge), shadow `:TimeseriesContainer` with NULL `c.id`, `:StructuredDataContainer` not in the predefined set (`645000`/`645003`), `:DataObject` with refs pointing at non-existent containers, `:FileReference` orphan blobs in Garage. Output: `aidocs/agent-findings/mffd-graph-debris-<date>.md`. | S | queued | First pass — no deletes. Just counts + sample rows. |
+| MFFD-PRUNE-2 | **Snapshot before deletion** — per `PRE-MUT-SNAP` rule, snapshot the scope `(c:TimeseriesContainer WHERE …) + (c:StructuredDataContainer WHERE …) + (do:DataObject WHERE c.id IS NULL)` to `snapshots-system` collection with PROV-O attribution. | S | queued | Blocks PRUNE-3 until snapshot artefact verified. |
+| MFFD-PRUNE-3 | **Execute prune** — Cypher: `MATCH (c:TimeseriesContainer) WHERE c.id IS NULL OR NOT (c)<-[:USES_CONTAINER]-(:TimeseriesReference) DETACH DELETE c;` and equivalents for SD-side debris. Honor the integrity rule (`feedback_referenced_data_infinite_retention.md`) — anything with active refs stays. | M | queued | Closes the loop on today's bug-chase. |
+| MFFD-PRUNE-4 | **TimescaleDB chunk cleanup** — for the TS containers we pruned in Neo4j, the underlying TimescaleDB rows are still there (the REST DELETE blocks per TSDB-DELETE-LIMIT). Direct `SELECT drop_chunks('timeseries_data_points', …)` scoped to the dead container_ids. | S | queued | Pairs with TSDB-DDL-1 / TSDB-DDL-2 once they ship. |
+
 ### TSDB-DELETE-LIMIT — 2026-05-23 (TimescaleDB DML decompression limit blocks TS container delete)
 
 Surfaced during the MFFD-tapelaying triage (2026-05-23 ~13:36 UTC). `DELETE /shepard/api/timeseriesContainers/{id}` returns HTTP 500 for any TS container whose FK-cascade chain touches >100K rows in compressed chunks. The backend code is innocent — TimescaleDB substrate config knob `timescaledb.max_tuples_decompressed_per_dml_transaction = 100000` (default) is the gate.
