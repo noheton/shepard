@@ -89,7 +89,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — multi-database reconstruction | 2026-05-23 | — |
+| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — multi-database reconstruction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/70-competitor-landscape-and-feature-ideas.md`](strategy/70-competitor-landscape-and-feature-ideas.md) | aidocs/70 — Competitor landscape & feature ideas for shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/71-fork-adoption-as-upstream.md`](strategy/71-fork-adoption-as-upstream.md) | aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |

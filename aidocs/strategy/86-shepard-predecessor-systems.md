@@ -473,6 +473,22 @@ Projekt OPC-UA; MS3 x/18: Demo Procomp). Read in 2026, this is
 a research-engineering plan that landed on KIBID's OPC UA bridge
 (MS2, §3) and led into iDMS by 2018.
 
+Two further observations stand on the June deck's wider slide
+range (43 slides total in the working iteration). **Slide 36
+schedules MS1 12/17 as the KIBID-evaluation deadline** —
+*"Evaluation KiBiD abgeschlossen"* (KIBID evaluation completed)
+in December 2017. This places a specific decision-point on the
+chronology: the footer-date 12.12.2017 on the December Vision
+Datenmanagement deck (§3.6.4) is the same date the June deck
+set six months in advance as the KIBID-evaluation deadline. The
+December vision is not separately scheduled; it lands on the
+deadline the team itself defined in June. **Slide 38
+(`Mögliche Komponenten eines IDMS am ZLP`) coins the "iDMS"
+acronym in June 2017** — six months before the December Vision
+deck where the same architecture is reconfirmed. The chronology
+that follows in the autumn is iteration on a named-in-June
+target, not exploration of an unnamed one.
+
 #### 3.6.2 The Prozessleitsystem thread (July → September 2017)
 
 `20170718_Status_Prozessleitsystem.pptx`
@@ -571,8 +587,29 @@ deliverable:
   This is the diagnosis that the iDMS data model — `Project /
   Experiment / Step / Artifact`, multi-substrate references for
   files / timeseries / structured data — is built to answer.
+  Slide 9 of the deck (*"Mögliche Architektur eines integrierten
+  Datenmanagementsystems"*) is the direct architectural ancestor
+  of [@krebsIdms2020](#11-references) slide 14 — graph-DB for
+  relations + per-type substrates + *"kein one-size-fits all"* —
+  verbatim. Slide 10 (*"Exkurs: Graphorientierte Datenbanken"*)
+  carries the schema-light justification (*"Das Datenmodell muss
+  nicht vollständig sein, und kann ständig um neue Beziehungen
+  erweitert werden"*) that becomes [@krebsIdms2020](#11-references)
+  slide 16 and Shepard's SHACL-driven model evolution. **Slide
+  19 (*Weitergehende Fragestellungen*) explicitly articulates the
+  open-source commitment** — *"Open Source Ansatz"*, *"Umsetzung
+  eines funktionalen Prototypen anschließend Transfer an und
+  Upscaling durch Partner"*, and Helmholtz Open Science alignment
+  — **four years before Shepard appeared on GitLab**. The open-
+  source release of Shepard in 2021 is not a 2021 institutional
+  decision; it is the 2017 design intent finally landing.
 - **2017-12-12** — the footer date of the same deck, and
-  evidence that the iteration continued through the week.
+  evidence that the iteration continued through the week. **This
+  date is exactly the KIBID-evaluation deadline that
+  [@krebsProDES2017b](#11-references) slide 36 set six months in
+  advance** — the December Vision deck lands on the deadline the
+  team itself defined in June, closing the chronology on
+  schedule.
 
 The December 2017 week, read in sequence, is the moment the vision
 gets named explicitly (*Datenmanagement* in the title) and the
@@ -980,11 +1017,21 @@ DLR ZLP**, attested in two ways:
      zero on the primary-source record — though the SOA MES deck's
      undetermined date keeps this finding at confidence MEDIUM.
 
-   The two remaining 2021 Shepard authors (Glück, Kaufmann) do not
-   appear in the predecessor sources we hold; the continuity into
-   the 2021 team is therefore now a *braid* — institutional and
-   architectural baseline, *plus* two named personal links
-   (Willmeroth on operations, Haase on workshop authorship).
+   The two remaining 2021 Shepard authors (Glück, Kaufmann) **also
+   appear** on a primary source recovered 2026-05-23: the DLRK 2021
+   peer-reviewed paper *Systematische Erfassung, Verwaltung und
+   Nutzung von Daten aus Experimenten* ([@krebsDlrk2021](#11-references))
+   is authored by **F. Krebs (lead), M. Willmeroth, T. Haase,
+   P. Kaufmann, R. Glück, D. Deden, L. Brandt, M. Mayer** — i.e.
+   Krebs jointly with **all four** named Zenodo authors of
+   `haaseShepard2021`. The braid therefore closes completely on the
+   primary-source record: every 2021 Shepard masthead author is a
+   co-author with the iDMS architect on the canonical 2021 Shepard
+   architecture paper. Continuity into the 2021 team is *directly
+   attested by joint authorship*, not merely inferred from
+   institutional proximity or operational handoff. This subsumes
+   and supersedes the earlier framing of Glück/Kaufmann as
+   institutional-only links.
 
 3. *Authoring community across the 2017 chronology.* The
    2017-06-19 ProDES iteration ([@krebsProDES2017b](#11-references))
@@ -1258,14 +1305,19 @@ discontinuous step that the institute-internal predecessors
 never took.
 
 The personal continuity established by the `mwillmeroth` →
-Mark Willmeroth link, and the architect continuity established
-by Krebs's authorship across KIBID adapters, CUBE iDMS and
-this fork of Shepard, together close the public-record gap
-that the official ZLP project page leaves open. Shepard is
-not a 2021 greenfield system; it is the deployed embodiment of
-roughly a decade of work on the same problem at the same
-institute, by partly the same people, finally arriving in a
-form that ships.
+Mark Willmeroth link, the architect continuity established by
+Krebs's authorship across KIBID adapters, CUBE iDMS and this
+fork of Shepard, and — most directly — the **joint authorship
+of Krebs with all four named Zenodo Shepard authors (Haase,
+Glück, Kaufmann, Willmeroth) on the DLRK 2021 paper**
+([@krebsDlrk2021](#11-references)) together close the
+public-record gap that the official ZLP project page leaves
+open. Shepard is not a 2021 greenfield system; it is the
+deployed embodiment of roughly a decade of work on the same
+problem at the same institute, by **the same people whose
+joint authorship is now attested on the peer-reviewed
+publication of record for Shepard's architecture**, finally
+arriving in a form that ships.
 
 What this chapter cannot, and does not attempt to, establish
 is the counterfactual question of whether CUBE iDMS might
@@ -1446,10 +1498,30 @@ External / PANDORA (sidebar, not in lineage):
 
 Shepard itself:
 
+- [krebsDlrk2021](#bib) — Krebs, F. (lead), Willmeroth, M., Haase, T.,
+  Kaufmann, P., Glück, R., Deden, D., Brandt, L., Mayer, M. (2021).
+  *Systematische Erfassung, Verwaltung und Nutzung von Daten aus
+  Experimenten.* Deutscher Luft- und Raumfahrtkongress (DLRK 2021),
+  Bremen. **Load-bearing peer-reviewed publication of record for
+  Shepard's architecture** — Krebs is lead author, jointly with all
+  four Zenodo software-citation authors of `haaseShepard2021`. Filename
+  `6db8bac2-DLRK_Systematische_Erfassung_Verwaltung_und_Nutzung_von_Daten_aus_Experimenten.pdf`
+  (~3.7 MB; uploaded to AI working memory 2026-05-23). The paper
+  describes the polyglot-persistence architecture (Neo4j + InfluxDB +
+  MongoDB), the Collection / DataObject / Container / Reference data
+  model citing the RDA Research Data Collections WG recommendation, the
+  JWT / OAuth2 / API-key authentication model, the OPC-Router +
+  Data-Reference-Generator (DRG) shop-floor ingest stack, and the
+  thermoplastic AFP use case at the ZLP Fiber Placement Cell (FPZ). The
+  §5 outlook anticipates git integration, CAD/PDM integration, search /
+  filter expansion, and access-rights management — all of which the
+  fork has since shipped or designed. Author contact:
+  `florian.krebs@dlr.de`.
 - [haaseShepard2021](#bib) — Haase, Glück, Kaufmann, Willmeroth
   (2021). *shepard — storage for heterogeneous product and research
   data.* Zenodo, DOI [10.5281/zenodo.5091604](https://doi.org/10.5281/zenodo.5091604), v1.0.0,
-  Apache-2.0.
+  Apache-2.0. Software-citation companion to the DLRK 2021 paper above;
+  all four authors are co-authors with Krebs on `krebsDlrk2021`.
 - [dlrZlpShepard](#bib) — DLR ZLP project page,
   [shepard — storage for heterogeneous product and research data](https://www.dlr.de/en/zlp/research-transfer/projects/projects-from-augsburg/project-archive-zlp-augsburg/shepard-storage-for-heterogeneous-product-and-research-data).
 
@@ -1502,4 +1574,32 @@ of this document as the username only; the historical password is
 not quoted (treated as a redacted internal credential per the
 project policy on no-redactions-in-commands-and-yes-redactions-on-
 historical-secrets).
+
+**Supplementary chronological note (added 2026-05-23).** The 2017-12-05
+*Vision Datenmanagement* deck cited above was given as part of the
+**DLR@UBC workshop (06.12.17–08.12.17)** at the University of British
+Columbia, Vancouver. The institute's HRI-with-industrial-robots research
+line was presented at the same workshop on the same day (Schönheits &
+Krebs, *Robotics: Human-Robot-Interaction*, PPTX
+`20171205_Workshop_HRI_Demo.pptx`, cited as
+[@dlrSchoenheitsKrebsHriWorkshop2017](#bib)), and the same authors
+published the academic-anchor VAM-HRI 2018 paper three months later
+([@dlrSchoenheitsVamhri2018](#bib)). The chronological observation is
+that the institute's **data-management** thread and its
+**human-robot-interaction** thread emerged in the same week of the
+same external workshop — a single 2017 visit to UBC anchored both
+strategic research lines that the institute has continued through to
+the present (HRI thread documented in
+[`aidocs/strategy/102-institute-youtube-profile.md`](102-institute-youtube-profile.md)
+§4; data-management thread documented in this chapter and in
+`aidocs/strategy/87` §6). Neither thread is reducible to the other,
+but they share a single origin event.
+
+A supplementary external-source set — the institute's public YouTube
+channel — is methodologically positioned in
+[`aidocs/strategy/102-institute-youtube-profile.md`](102-institute-youtube-profile.md).
+The video `dlrZlpYoutubeMmT9ZTkENvo` (*10 Years ZLP Augsburg*,
+2019-09-05) is the institute's own public account of its first decade
+and is the closest external counterpart to this chapter's internal-source
+chronology table.
 
