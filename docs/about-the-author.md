@@ -72,11 +72,105 @@ research consortium that would later produce the
 (MFFD, JEC World Innovation Award 2025 — Aerospace Parts).
 
 **Education**: Diplom-Informatiker (Applied Computer Science),
-**Universität Augsburg**, 2002–2008. The earliest peer-reviewed
+**Universität Augsburg**, 2002–2008. **Diplom overall grade 1.38**
+(*sehr gut*) — Hauptstudium weighted average **1.51**, Diplomarbeit
+graded **1.0**, Philosophy minor **1.94**. The earliest peer-reviewed
 publication on ORCID — *Relational Cognitive Structures for
 Intelligent Agent and Robot Control* (IEEE SMC 2008) — predates DLR
 employment by ~1 year and signals the **ontology-first** design
 posture that surfaces throughout the later work.
+
+The specialisation tracks (Vertiefungsbereiche) covered **Multimedia
+& AI** (top-graded KI-Praktikum **1.0**, Multimediapraktikum **1.0**,
+Spieleprogrammierung **1.0**), **Systemnahe Informatik**
+(Mikrorechnertechnik I **1.7** + II **1.3**, Praktikum Prozessorbau
+**1.3**, UbiCom Praktikum **1.0**), and **Theoretische Informatik**
+(Algebraische Methoden / Topos theory, Verteilte Algorithmen,
+Algebraische Beschreibung paralleler Prozesse). Coursework also
+included **Advanced Cognitive Robotics** and **Intelligente
+autonome Roboter** — both graded **1.0**, the natural precursor to
+the 2008 IEEE SMC robotics paper and the subsequent KUKA industrial
+year. *Bio-inspired & Grid Computing* (graded 2.3) and *Organic
+Computing* sit in the same emergent-systems line.
+
+The **Nebenfach (minor) was Philosophy** — graded coursework across
+**Logik / Sprachphilosophie**, **Erkenntnistheorie /
+Kognitionswissenschaften**, **Philosophie des Geistes**, and **Ethik /
+Praktische Philosophie**. The specific seminar palette, with
+lecturers and grades, recovered from primary-source archive:
+
+- *"Natur, Ordnung, Geist"* — Vorlesung, **Dr. Martin E. Müller**.
+  *(Same Müller who later supervised the Diplomarbeit — see below.)*
+- *"Philosophie des Geistes — Grundlagen der Erkenntnistheorie,
+  Künstlichen Intelligenz, Wissenschaftstheorie"* — Vorlesung,
+  **Klaus Mainzer**.
+- *"Das Unendliche. Von Logik, Mathematik, Gott, Welt und Computern"* —
+  Seminar, **Mainzer**, graded **2.0**.
+- *"Naturphilosophie: ausgewählte Themen, insbes. Philosophie der
+  Biologie"* — Seminar, **Justus Leiber**, graded **2.0**.
+- *"Das Ende des Menschen? Philosophie, Anthropologie und TechnoScience
+  des Posthumanismus"* — Blockveranstaltung, **Leiber**, graded **1.0**.
+- *"Verantwortung. Zur aktuellen Debatte über einen neuen Grundbegriff
+  der Ethik"* — Seminar, **Schröer**, graded **2.7**.
+
+The intellectual genealogy of the present fork's posture —
+ontology-first, AI-collaboratively developed, provenance-disciplined —
+has its roots here. The combination is unusually specific: a
+**Mainzer** lineage on cognition + complex-systems epistemology, a
+**Leiber** lineage on philosophy of biology and posthumanism (with the
+*Das Ende des Menschen?* seminar on posthuman TechnoScience graded
+**1.0**, the load-bearing top mark of the minor), and a **Schröer**
+lineage on Hans-Jonas-style ethics-of-responsibility — three lecturers
+each anchoring one of the three argumentative spines the present
+AI-collaborative thesis method operates on.
+
+The Diplomarbeit project (2007–2008) was **PARIA** — *"Entwicklung
+eines Systems zur Implementierung von Layered Module Architekturen"*,
+supervised by **Dr. Martin E. Müller** at the *Lehrstuhl für
+Multimedia-Konzepte und Anwendungen* at Universität Augsburg.
+Technically: a modular reactive-agent runtime grounded in **Rodney
+Brooks's Subsumption Architecture** (1986), implemented on a Lego
+Mindstorms RCX substrate with Java-API design discipline
+(Javadoc-documented exceptions: `ConnectionException`,
+`RobotException`, `TimeoutException`, `RCXException`, `RallyRobot`),
+plus a JabRef-managed bibliography running from **Braitenberg's
+*Vehicles*** through Agre & Chapman, Brooks himself, and the
+1990s connectivist-agent line. The architectural posture —
+**layered, modular, reactive over deliberative, the world as its
+own model** — is recognisably the same posture the shepard
+plugin-SPI substrate now embodies sixteen years later. The
+robot-control + provenance discipline that runs through the later
+DLR work has its first production-shape here.
+
+### Things to explore deeper
+
+Three threads surfaced by the UNAS-archive deep-dive that warrant
+further primary-source work in subsequent dossier rounds:
+
+1. **The Müller bridge.** Dr. Martin E. Müller appears at *both*
+   ends of the Diplom — as lecturer of *Natur, Ordnung, Geist* in
+   the philosophy minor *and* as Diplomarbeit advisor for the
+   Brooks-subsumption project. A single supervisor straddling the
+   technical / philosophical tracks is an unusual configuration
+   worth tracing: it suggests the technical and philosophical
+   currents are not just intellectually but also institutionally
+   coupled in the author's training.
+
+2. **Brooks → AI-collaborative method, the load-bearing arc.** The
+   Diplomarbeit argues *reactive* agent architectures outperform
+   *planning* systems in unknown, fast-changing environments. The
+   present thesis-method posture — AI-as-collaborator-rather-than-
+   oracle, durable per-turn provenance, the conversation *is* the
+   data — has a structurally identical shape: prefer reactive
+   exploration with a faithful trace over up-front deliberation.
+   The line from Brooks 1986 through Krebs 2008 PARIA through
+   Krebs 2026 f(ai)²r deserves an explicit chapter-level treatment.
+
+3. **The KUKA 17-month window (April 2008 – September 2009).** Still
+   the only Krebs career segment with no primary-source content in
+   this profile. What product family / customer engagement was the
+   industrial year on? *Tracked as `RL-UNAS-KUKA` for the next
+   dossier round.*
 
 ## Selected publications
 
@@ -121,6 +215,58 @@ contribution is captured through the [f(ai)²r](https://github.com/noheton/f-ai-
 vocabulary the substrate itself operationalises. The thesis
 this work serves is reflexively a worked example of the very
 pattern its substrate is built to capture.
+
+## Beyond research — dive log
+
+A long-standing diving practice runs alongside the research line:
+**243 logged dives across seven countries**, 2009–2015, tracked in
+[Subsurface](https://subsurface-divelog.org/). The map below shows
+country-level aggregation — circle radius scales with dive count.
+*Site-level coordinates and individual dive records are intentionally
+not surfaced; only the country centroid and the per-country tally.*
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<div id="dive-map" style="height: 420px; max-width: 100%; margin: 1em 0; border: 1px solid #ccc; border-radius: 4px;"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function () {
+  var diveRegions = [
+    { region: 'Ägypten (Egypt / Red Sea)', dives: 108, lat: 25.5522, lon: 34.8995 },
+    { region: 'Malaysia',                  dives:  39, lat:  5.4147, lon: 118.3096 },
+    { region: 'Philippinen (Philippines)', dives:  34, lat: 12.7458, lon: 120.4653 },
+    { region: 'Indonesien (Indonesia)',    dives:  25, lat: -8.2156, lon: 120.0828 },
+    { region: 'Mexico',                    dives:  14, lat: 21.0197, lon: -86.8232 },
+    { region: 'Deutschland (Germany)',     dives:  10, lat: 48.1052, lon:  10.1960 },
+    { region: 'Dominikanische Republik',   dives:   6, lat: 18.4108, lon: -68.8101 }
+  ];
+  var map = L.map('dive-map', { worldCopyJump: true }).setView([15, 60], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 6,
+    minZoom: 1,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  diveRegions.forEach(function (d) {
+    var r = 6 + Math.sqrt(d.dives) * 2.2; // pixel radius scaled by sqrt(count)
+    L.circleMarker([d.lat, d.lon], {
+      radius: r,
+      color: '#0b3d91',
+      weight: 1.5,
+      fillColor: '#1e88e5',
+      fillOpacity: 0.55
+    }).bindTooltip(d.region + ': ' + d.dives + ' Tauchgänge', { permanent: false, direction: 'top' })
+      .addTo(map);
+  });
+})();
+</script>
+
+The distribution is itself characterful: **108 of 243 dives (44%) in
+the Red Sea / Ägypten** — a return-site pattern rather than a
+tourist-trail spread — followed by a Southeast-Asia cluster
+(Malaysia, Philippinen, Indonesien, jointly 98 dives) covering Sipadan,
+Lankayan, Komodo, Anilao, and Apo Reef. The seven-country footprint
+includes one home-country line (Deutschland, 10 dives, mostly Alpine
+lake / Bodensee). The dataset stops in late 2015 — a marker, in
+passing, of the work-life boundary the DLR period imposed.
 
 ## Get in touch
 
