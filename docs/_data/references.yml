@@ -618,6 +618,30 @@ azimutDlrZlp:
   note: "DLR ZLP Augsburg project page for AZIMUT. LuFo IV-3. Industrial lead Premium Aerotec; research partners DLR ZLP Augsburg + Stade with KUKA Systems as cell-integration partner. Scope: economic production of CFRP fuselage structures along the entire process chain. Cited from aidocs/strategy/86 \\S 1.7 as the AZIMUT partner-shape primary source."
   category: "dlr_internal"
 
+gerngrossAzimut2015:
+  entry_type: "article"
+  author: "Gerngroß, Tobias"
+  title: "Projekt AZIMUT --- Automatisierungslösungen für große Faserverbundbauteile in der Luftfahrt"
+  journal: "Ingenieurspiegel"
+  year: "2015"
+  month: "mar"
+  pages: "72--74"
+  publisher: "Hanse-Aerospace Wirtschaftsdienst GmbH"
+  issn: "1868-5919"
+  url: "https://elib.dlr.de/110578/"
+  note: "DLR eLib 110578. Public-facing summary of the AZIMUT project (DLR ZLP Augsburg, c.~2010-2013) covering automation solutions for large doubly-curved CFRP structural components in aerospace. Companion to the internal final report at eLib 94104 [@koerberAzimut2014]. Cited from aidocs/strategy/86 \\S 1.7 as the AZIMUT public summary + as the analog reference for the operator-testimony AZUR sibling project."
+  category: "dlr_internal"
+
+dlrAzimutVideo:
+  entry_type: "misc"
+  author: "DLR Institut für Bauweisen und Strukturtechnologie"
+  title: "AZIMUT --- Automated Manufacturing of a CFRP Rear Pressure Bulkhead"
+  year: "2013"
+  howpublished: "Video, 8\\,min~4\\,s"
+  url: "https://www.dlr.de/de/bt/medien/videos/azimut-automated-manufacturing-of-a-cfrp-rear-pressure-bulkhead"
+  note: "DLR-BT institute video documenting the AZIMUT project headline demonstrator --- automated manufacture of a CFRP rear pressure bulkhead (Druckkalotte). Funding attribution on the video page: Bundesministerium für Forschung, Technologie und Raumfahrt. Cited from aidocs/strategy/86 \\S 1.7 as the visual primary source for the project scope."
+  category: "dlr_internal"
+
 koerberAzimut2014:
   entry_type: "techreport"
   author: "Körber, Marian and Nieberl, Dorothea and Schmidt-Eisenlohr, Clemens and Nuschele, Stefan and Krebs, Florian and Kaps, Robert"

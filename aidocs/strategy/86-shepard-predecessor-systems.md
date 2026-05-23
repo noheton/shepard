@@ -227,19 +227,33 @@ consortium that produces AZIMUT a few years later and the
 Multifunctional Fuselage Demonstrator more than a decade later
 [@xpressFp6Cordis] [@orcidKrebs].
 
-**AZIMUT (LuFo IV-3, c. 2010-2014).** *Automatisierung
-zukunftsweisender industrieller Methoden und Technologien für
-CFK-Rümpfe* — the LuFo IV-3 follow-on focused on CFRP fuselage
-manufacture, led by **Premium Aerotec** as industrial principal with
-**DLR ZLP** (Augsburg + Stade) and **KUKA Systems** as the cell-
-integration partner [@azimutDlrZlp; @koerberAzimut2014]. The final
-report (DLR-IB 435-2014/52, eLib 94104) carries Körber, Nieberl,
-Schmidt-Eisenlohr, Nuschele, **Krebs**, and Kaps as named authors;
-Krebs is on the report by the time it lands, four to five years after
-his transition from KUKA into DLR. The consortium shape — Premium
-Aerotec + Airbus-side + KUKA + DLR — survives the change of
-funding instrument (FP6 → LuFo) and the change of Krebs's affiliation
-(KUKA Roboter → DLR BT).
+**AZIMUT (DLR ZLP, c. 2010-2013).** *Automatisierungslösungen für
+große Faserverbundbauteile in der Luftfahrt* — the federally-funded
+follow-on to the FP6 XPRESS work, focused on **cost-effective
+automated manufacture of large doubly-curved CFRP structural
+components** for aerospace, with the **automated CFRP rear pressure
+bulkhead (Druckkalotte)** as the headline demonstrator
+[@gerngrossAzimut2015; @dlrAzimutVideo]. Conducted by the **DLR
+Institute of Structures and Design (BT), Center for Lightweight
+Production Technology (ZLP) Augsburg** with industrial partners
+including **Premium Aerotec** (industrial principal) and **KUKA
+Systems** (cell-integration partner); funded under the
+Bundesministerium für Bildung und Forschung / Bundesministerium für
+Forschung, Technologie und Raumfahrt programme line for aerospace
+research [@dlrAzimutVideo; @azimutDlrZlp; @koerberAzimut2014]. The
+final report (DLR-IB 435-2014/52, eLib 94104) carries Körber,
+Nieberl, Schmidt-Eisenlohr, Nuschele, **Krebs**, and Kaps as named
+authors; Krebs is on the report by the time it lands, four to five
+years after his transition from KUKA into DLR. The popularised
+write-up — Gerngroß (2015), *Ingenieurspiegel* 1/2015, pp. 72-74,
+eLib 110578 [@gerngrossAzimut2015] — is the public-facing summary of
+the same project body of work. The consortium shape — Premium
+Aerotec + Airbus-side + KUKA + DLR — survives the change of funding
+instrument (FP6 → federal aerospace research programme) and the
+change of Krebs's affiliation (KUKA Roboter → DLR BT). The project
+dating is corrected here per operator testimony 2026-05-23 (Krebs):
+AZIMUT ran 2010-2013, with the 2014 final report and 2015 Ingenieur-
+spiegel article landing after the operational closeout.
 
 **MFZ partnership announcement (KUKA Systems × DLR ZLP, 2010-07).**
 The strategic partnership for the Multifunktionale Fertigungszelle —
@@ -275,21 +289,25 @@ both Krebs's testimony and the public record is that Weyrauch was the
 *DLR-side counterpart* of a KUKA-side / Airbus-side / Premium-Aerotec-
 side / DLR-side liaison structure — not himself at KUKA or Airbus.
 
-**AZUR (LuFo, partners and dates per Krebs testimony).** Krebs's
-testimony (2026-05-23) names a further LuFo project, *AZUR*, in the
-same consortium shape as AZIMUT — KUKA + Airbus + DLR, with Weyrauch
-as the same DLR-side primary contact — concurrent with or adjacent
-to the KUKA-Roboter employment period. **No public LuFo / CORDIS /
-DLR-eLib record carrying that acronym in that consortium shape has
-been recovered in this section's research pass.** Five targeted
-queries across the LuFo programme database, the CORDIS FP6 / FP7
-indices, the DLR eLib, and the Förderdatenbank des Bundes returned no
-match. The fact is recorded here per Krebs's testimony but
-**marked unverified** pending either a Förderkennzeichen (funding-
-instrument identifier), a fuller acronym expansion, or a primary-
-source document from the Krebs artefact archive. The headline
-continuity argument of this sub-section does not rest on AZUR; it
-rests on the verifiable XPRESS / AZIMUT / MFZ chain.
+**AZUR (per operator testimony, sibling of AZIMUT).** Krebs's
+testimony (2026-05-23) names a further DLR-led project, *AZUR*,
+"similar" in shape and scope to AZIMUT — same DLR-ZLP host
+institute, same general CFRP-automation problem space, broadly
+overlapping consortium and funding-programme family. The closest
+public anchor identified to date is the AZIMUT public-write-up by
+Gerngroß (2015), eLib 110578 [@gerngrossAzimut2015], to which the
+operator's testimony explicitly points as the type-and-shape
+reference: "AZUR was similar". No standalone CORDIS / Förderdaten-
+bank-des-Bundes / DLR-eLib record carrying the bare *AZUR* acronym
+has been retrieved in this research pass; the project is recorded
+here on operator testimony with the AZIMUT record as analog
+reference, pending a Förderkennzeichen, an acronym expansion, or a
+primary-source document from the Krebs artefact archive that
+disambiguates AZUR from AZIMUT. The headline continuity argument of
+this sub-section does not rest on AZUR specifically; it rests on the
+verifiable XPRESS / AZIMUT / MFZ chain, with AZUR adding a parallel
+sibling project the operator recalls but the public record has not
+yet surfaced under that exact name.
 
 **What the KUKA-era consortium establishes for the chapter.**
 The 2008-2009 KUKA period anchors the predecessor lineage *one full
