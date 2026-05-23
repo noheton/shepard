@@ -1041,3 +1041,20 @@ The remaining 10 land here as proper backlog rows.
 | BACKFILL-MORE | Backfill other features in the same pattern as GH-PM5 (transparently-marked retroactive Issues + milestones + traceability rows). Next candidates: A-series (auth), C-series (core), V-series (visualization), TPL-series. | L | design | Per `feedback_synthetic_artefacts_are_datasets.md`: each batch captured into Shepard as a Collection. Sized L because of throughput volume (likely 200-300 Issues per batch). |
 | AGENT-DOC-MAINT | Standing scope-extension for synergy/research agents — also (a) maintain `aidocs/40-ecosystem.md` + `aidocs/44` + `aidocs/42` when findings imply changes, and (b) mine prior session transcripts (`/root/.claude/projects/-opt-shepard/*.jsonl`, 12 files going back to 2026-05-08) for TODOs not yet in aidocs/16. | M | rule-applied | Persisted in agent prompts going forward (per `feedback_continuous_doc_maintenance.md`). |
 
+
+### DOCS-3A — 2026-05-23 (three-audience docs: admin + user + plugin)
+
+The rule is documented in `feedback_three_audience_docs.md`: three sharply
+distinct audiences (admin, user, plugin) with the same-PR maintenance shape,
+served from BOTH the Pages site AND Shepard's in-app `/help` route. The user
++ plugin audiences already have policies in CLAUDE.md; the admin audience
+needs explicit consolidation.
+
+| ID | Slice | Size | Status | Notes |
+|---|---|---|---|---|
+| DOCS-3A1 | Consolidate scattered admin docs into `docs/admin/` subtree. Current state: `docs/admin.md` (single file) + `docs/ops/*.md` + `docs/install/*.md` + `docs/deploy.md` + `docs/system-requirements.md`. Target: `docs/admin/{index,install,upgrade,config,backup,scaling,auth,storage,observability,security,incident-response}.md`. Cross-link from `docs/index.md`. Update `_config.yml` Jekyll collection if needed. | M | queued | Don't break existing inbound links — leave redirects. Pairs with task #46 (in-app `/help` route). |
+| DOCS-3A2 | Audit plugin docs three-page minimum (reference/quickstart/install) across all `plugins/<plugin-id>/docs/`. List the gaps + file per-plugin tickets. | S | queued | Per `CLAUDE.md §"Always: plugins ship their own documentation"`. Aggregator at `docs/reference/plugins.md`. |
+| DOCS-3A3 | Add audience-persona front-matter (`audience: admin | user | plugin-author`) to all existing `docs/**/*.md` pages. Retrofit gradually. Reviewer-enforced going forward. | M | queued | Per `feedback_three_audience_docs.md §"Audience-persona writing"`. |
+| DOCS-3A4 | Ship the in-app `/help` route (task #46). Auto-discover docs from classpath (frontend) + plugin manifests (backend). Until shipped, in-app help is a `frontend/utils/helpMarkdown.ts` cross-link to the Pages site. | L | design | Per `aidocs/ops/49-in-app-user-docs.md`. Cross-references task #46. |
+| DOCS-3A5 | Quarterly docs-currency sweep — for each `done` aidocs/16 row that's user-visible, verify the corresponding docs section exists + reflects current behavior. Lands as `scripts/docs-currency-audit.py`. | M | queued | Pairs with `feedback_continuous_doc_maintenance.md`. Auto-runnable in CI as a warning gate. |
+
