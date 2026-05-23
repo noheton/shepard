@@ -588,6 +588,95 @@ nuschelePraesto2014talk:
   note: "DLR eLib 94078. Conference talk (sister record to eLib 94077). Predecessor system to Shepard --- see aidocs/strategy/86."
   category: "dlr_internal"
 
+xpressFp6Cordis:
+  entry_type: "techreport"
+  author: "European Commission CORDIS"
+  title: "XPRESS --- Flexible Production experts for reconfigurable assembly technology"
+  institution: "European Commission"
+  year: "2011"
+  type: "FP6 Integrated Project factsheet"
+  number: "FP6-26674"
+  url: "https://cordis.europa.eu/project/id/26674"
+  note: "EU 6th Framework Programme Integrated Project, call FP6-2004-NMP-NI-4. Duration 2007-01-01 to 2011-06-30. Total cost EUR 12,477,505; EU contribution EUR 7,999,324. Coordinator Harms & Wende GmbH & Co KG (Hamburg). Seventeen participants including KUKA Schweissanlagen GmbH, Airbus Deutschland GmbH, Premium Aerotec GmbH, Centro Ricerche Fiat, Fraunhofer-Gesellschaft. Load-bearing for the consortium-shape continuity claim in aidocs/strategy/86 \\S 1.7 (the same KUKA + Airbus + Premium-Aerotec partner set re-appears in AZIMUT and MFFD)."
+  category: "dlr_internal"
+
+xpressFp6Hka:
+  entry_type: "misc"
+  author: "Hochschule Karlsruhe --- Institute for Sensor and Information Systems"
+  title: "XPRESS project page"
+  year: "2011"
+  url: "https://www.h-ka.de/isrg/projects/xpress"
+  note: "Secondary source for FP6-26674 XPRESS. Project lead at HKA-ISRG: Prof. Dr. Norbert Link. Describes the ``Expertons'' approach (intelligent networked production units; 50\\,% ramp-up-time-reduction target). Cited from aidocs/strategy/86 \\S 1.7 as the partner-list context corroborating cordis.europa.eu/project/id/26674."
+  category: "dlr_internal"
+
+azimutDlrZlp:
+  entry_type: "misc"
+  author: "DLR Zentrum für Leichtbauproduktionstechnologie"
+  title: "AZIMUT --- Automatisierung zukunftsweisender industrieller Methoden und Technologien für CFK-Rümpfe"
+  year: "2014"
+  url: "https://www.dlr.de/zlp/desktopdefault.aspx/tabid-8400/14345_read-36200/"
+  note: "DLR ZLP Augsburg project page for AZIMUT. LuFo IV-3. Industrial lead Premium Aerotec; research partners DLR ZLP Augsburg + Stade with KUKA Systems as cell-integration partner. Scope: economic production of CFRP fuselage structures along the entire process chain. Cited from aidocs/strategy/86 \\S 1.7 as the AZIMUT partner-shape primary source."
+  category: "dlr_internal"
+
+koerberAzimut2014:
+  entry_type: "techreport"
+  author: "Körber, Marian and Nieberl, Dorothea and Schmidt-Eisenlohr, Clemens and Nuschele, Stefan and Krebs, Florian and Kaps, Robert"
+  title: "AZIMUT Abschlussbericht"
+  institution: "Deutsches Zentrum für Luft- und Raumfahrt e.V."
+  year: "2014"
+  type: "DLR-Interner Bericht"
+  number: "DLR-IB 435-2014/52"
+  url: "https://elib.dlr.de/94104/"
+  note: "DLR eLib 94104. Internal final report for the LuFo IV-3 AZIMUT project. Full-text not publicly available (nicht ver\\\"offentlicht). Affiliations: Institut für Bauweisen und Strukturtechnologie + Institut für Faserverbundleichtbau und Adaptronik (Augsburg + Braunschweig). Keywords: Automatisierung, CFK, Effects-of-Defects, Door-Surround, NDT, Vakuumaufbau, flächiges Greifen. First peer-archived multi-author project-report record naming Krebs --- load-bearing for aidocs/strategy/86 \\S 1.7 and aidocs/strategy/104 \\S 2."
+  category: "dlr_internal"
+
+kukaDlrMfz2010:
+  entry_type: "misc"
+  author: "KUKA Systems GmbH"
+  title: "Automation for CFRP processing"
+  year: "2010"
+  month: "jul"
+  url: "https://www.kuka.com/en-us/company/press/news/2010/07/automation-for-cfrp-processing"
+  note: "KUKA Systems press release announcing the strategic partnership with DLR ZLP Augsburg for the Multifunktionale Fertigungszelle (MFZ). At 2026-05-23 retrieval the canonical KUKA-news URL returned an empty filter page; the press-release content is preserved in search-result summaries and corroborated by the academic record (Springer 10.1007/978-3-319-00557-7_42, ``Design of a Multifunctional Cell for Aerospace CFRP Production''). Cited from aidocs/strategy/86 \\S 1.7 as the MFZ-partnership announcement timing-anchor (one month before Krebs's MFZ control-concept deck)."
+  category: "dlr_internal"
+
+dlrZlpGroundbreaking2009:
+  entry_type: "misc"
+  author: "DLR Zentrum für Leichtbauproduktionstechnologie"
+  title: "Zweiter Spatenstich: Neues DLR-Zentrum für Leichtbauproduktionstechnologie in Augsburg"
+  year: "2009"
+  month: "sep"
+  url: "https://www.dlr.de/zlp/desktopdefault.aspx/tabid-7846/13332_read-36317/"
+  note: "DLR ZLP Augsburg symbolic groundbreaking ceremony, 2009-09-07. Institutional start-of-site date. Cited from aidocs/strategy/86 \\S 1.7 as the timing-anchor for Krebs's 2009-10 KUKA-Roboter \\(\\to\\) DLR transition (one month after groundbreaking)."
+  category: "dlr_internal"
+
+weyrauchResearchGate:
+  entry_type: "misc"
+  author: "Weyrauch, Florian"
+  title: "ResearchGate profile --- Florian Weyrauch"
+  year: "2023"
+  url: "https://www.researchgate.net/profile/Florian-Weyrauch"
+  note: "Master of Engineering; 25 years of fibre-reinforced-plastic experience in automotive and aerospace; held the role of Project Manager at DLR Stuttgart for federally-funded aerospace projects in cooperation with the German aircraft industry, with named responsibility for the automation of CFRP-structure manufacture and the set-up of the ZLP Augsburg site; 20 publications listed; cited by 119 at retrieval 2026-05-23. Load-bearing for the Weyrauch-was-DLR-side reading in aidocs/strategy/86 \\S 1.7 (corrects a small misattribution in Krebs's 2026-05-23 recall placing Weyrauch on the Airbus/KUKA side)."
+  category: "dlr_internal"
+
+weyrauchCevotec2023:
+  entry_type: "misc"
+  author: "Cevotec GmbH"
+  title: "Welcome, Florian Weyrauch!"
+  year: "2023"
+  url: "https://www.cevotec.com/welcome-florian-weyrauch/"
+  note: "Cevotec onboarding announcement for Florian Weyrauch as Team Lead Application Development. Verifies the DLR Stuttgart \\(\\to\\) Cevotec transition; provides the biographical anchor for the DLR-era affiliation claim in aidocs/strategy/86 \\S 1.7. Calendar year of move is the Cevotec announcement page's stated month (August); exact year inferred from peer evidence; treat as approximate."
+  category: "dlr_internal"
+
+orcidKrebs:
+  entry_type: "misc"
+  author: "Krebs, Florian Benedikt"
+  title: "ORCID public record --- 0000-0001-6033-801X"
+  year: "2026"
+  url: "https://orcid.org/0000-0001-6033-801X"
+  note: "Public ORCID record of the author. Anchors the KUKA Roboter GmbH (Augsburg, 2008-04 to 2009-09) employment and the DLR Institute of Structures and Design (2009-10 onward) transition that are load-bearing for aidocs/strategy/86 \\S 1.7 and aidocs/strategy/104 \\S 1--2. ORCID iD volunteered by F. Krebs 2026-05-23 and reconciled against pub.orcid.org/v3.0/0000-0001-6033-801X/record."
+  category: "dlr_internal"
+
 haaseShepard2021:
   entry_type: "misc"
   author: "Haase, Tobias and Glück, Roland and Kaufmann, Patrick and Willmeroth, Mark"

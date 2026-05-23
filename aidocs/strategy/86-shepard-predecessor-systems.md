@@ -81,6 +81,19 @@ later PRAESTO / KIBID / iDMS / Shepard lineage has spent the rest of
 its existence implementing — a finding that warrants its own
 sub-section before §2.
 
+A still-earlier vantage point on the same consortium — Krebs's
+seventeen-month tenure at **KUKA Roboter GmbH** in Augsburg
+(2008-04 to 2009-09, per [@orcidKrebs](#11-references)), concurrent
+with the first three years of the FP6 *XPRESS* Integrated Project
+(2007-2011, partners including KUKA Schweissanlagen + Airbus
+Deutschland + Premium Aerotec, [@xpressFp6Cordis](#11-references)) —
+is documented in §1.7 below. The continuity claim that section
+establishes is **consortium-shape** rather than personal-contribution:
+the partner set that runs through XPRESS / AZIMUT (LuFo IV-3) / MFZ
+commissioning / and onward into the Multifunctional Fuselage
+Demonstrator is the same set Krebs sat *inside* through his KUKA year
+and then re-entered from the DLR research-side seat in 2009-10.
+
 ## 1.5 Pre-PRAESTO: design thinking already articulated in 2010
 
 The 2010-10-05 *Steuerungskonzept der MFZ-Anlage*
@@ -169,6 +182,137 @@ chapter is to establish the historical continuity — what was
 tried, what reached operational use and what stalled, and what
 Shepard inherited or chose to leave behind — using such primary
 sources as can honestly be reconstructed.
+
+## 1.7 Pre-Krebs-at-DLR: the KUKA-era consortium (2008-2009) — same partners, different vantage point
+
+A continuity-of-field reading of the predecessor lineage that starts
+at the 2010 MFZ control-concept deck would miss a fact the primary
+sources establish: by the time Krebs sat down to write
+*Steuerungskonzept der MFZ-Anlage* in 2010 at DLR ZLP Augsburg, **he
+had already spent seventeen months inside the same Augsburg-based
+industrial consortium that the rest of this chapter follows** — but
+from the *vendor* side rather than the *research* side. The transition
+into DLR (2009-10 per ORCID) was a change of vantage point inside a
+*stable consortium of partners*, not a change of field. Three project
+records establish this consortium's shape during 2007-2014 and the
+seam at which Krebs crossed from one side to the other.
+
+**XPRESS (FP6-26674, 2007-01 to 2011-06).** *Flexible Production
+experts for reconfigurable assembly technology* — an EU 6th Framework
+Programme Integrated Project, total cost **€12,477,505** (EU
+contribution €7,999,324), coordinated by Harms & Wende GmbH & Co KG
+(Hamburg). Of the seventeen consortium partners, three are
+load-bearing for the continuity claim: **KUKA Schweissanlagen GmbH**,
+**Airbus Deutschland GmbH**, and **Premium Aerotec GmbH**
+[@xpressFp6Cordis; @xpressFp6Hka]. The objective was a *factory of
+the future* organised around intelligent, networked production units
+called "expertons", targeting 50 % ramp-up-time reduction and
+multi-variant production across automotive, aeronautics and
+electrical industries.
+
+**Krebs's place in this picture, per ORCID
+([0000-0001-6033-801X](https://orcid.org/0000-0001-6033-801X)):**
+employment at **KUKA Roboter GmbH, Augsburg, 2008-04 to 2009-09** —
+the seventeen-month period that is the bulk of XPRESS's first three
+years. KUKA Roboter and KUKA Schweissanlagen were sibling subsidiaries
+of the same Augsburg-headquartered KUKA group at the time (the welding-
+systems arm split out as an independent company in 1996; the robotics
+arm in 1995; the group later reconsolidated under KUKA AG). **No
+public XPRESS deliverable names Krebs as an author or contributor**;
+the verifiable claim is therefore the consortium-shape one, not a
+personal-contribution one: Krebs was inside the *KUKA-Augsburg
+organisation* through XPRESS's first three years, and the consortium
+he sat inside — **KUKA + Airbus + Premium Aerotec** — is the same
+consortium that produces AZIMUT a few years later and the
+Multifunctional Fuselage Demonstrator more than a decade later
+[@xpressFp6Cordis] [@orcidKrebs].
+
+**AZIMUT (LuFo IV-3, c. 2010-2014).** *Automatisierung
+zukunftsweisender industrieller Methoden und Technologien für
+CFK-Rümpfe* — the LuFo IV-3 follow-on focused on CFRP fuselage
+manufacture, led by **Premium Aerotec** as industrial principal with
+**DLR ZLP** (Augsburg + Stade) and **KUKA Systems** as the cell-
+integration partner [@azimutDlrZlp; @koerberAzimut2014]. The final
+report (DLR-IB 435-2014/52, eLib 94104) carries Körber, Nieberl,
+Schmidt-Eisenlohr, Nuschele, **Krebs**, and Kaps as named authors;
+Krebs is on the report by the time it lands, four to five years after
+his transition from KUKA into DLR. The consortium shape — Premium
+Aerotec + Airbus-side + KUKA + DLR — survives the change of
+funding instrument (FP6 → LuFo) and the change of Krebs's affiliation
+(KUKA Roboter → DLR BT).
+
+**MFZ partnership announcement (KUKA Systems × DLR ZLP, 2010-07).**
+The strategic partnership for the Multifunktionale Fertigungszelle —
+KUKA Systems building a multifunctional robotic automation cell for
+the new DLR ZLP Augsburg site — was announced publicly in July 2010
+[@kukaDlrMfz2010]. The cooperation is described in the public record
+as pooling DLR's research expertise with KUKA's automation-engineering
+expertise to manufacture aircraft assemblies from CFRP cost-effectively.
+ZLP Augsburg's symbolic groundbreaking ceremony was 2009-09-07
+[@dlrZlpGroundbreaking2009]. Krebs joined DLR 2009-10 [@orcidKrebs] —
+the month *after* the ZLP groundbreaking — and produced the MFZ
+control-concept document the year *after* the KUKA-DLR partnership
+announcement (2010-10; [@krebsMfzSteuerung2010]). The timing is tight
+enough to read as: Krebs joined DLR to write the data-and-control
+substrate of the cell that his former employer (KUKA Systems' sibling
+subsidiary) was building.
+
+**Florian Weyrauch — Krebs's DLR-side contact during the KUKA-era
+transition.** Krebs has named (2026-05-23) Florian Weyrauch as the
+primary DLR contact during the 2008-2009 KUKA period. The public
+record confirms the role and corrects a small misattribution: Weyrauch
+was **Project Manager at DLR Stuttgart** for federally-funded aerospace
+projects in cooperation with the German aircraft industry, and his
+main task in this period was the **automation of CFRP-structure
+manufacture and the set-up of the ZLP Augsburg site** — the very site
+Krebs would join in 2009-10 [@weyrauchResearchGate;
+@weyrauchCevotec2023]. Weyrauch's tenure at DLR overlapped the
+XPRESS / AZIMUT / MFZ years; his current role (Team Lead Application
+Development at Cevotec, Munich) post-dates the relevant predecessor
+period and is included only as the verifying anchor for the DLR-era
+biographical record [@weyrauchCevotec2023]. The reading that matches
+both Krebs's testimony and the public record is that Weyrauch was the
+*DLR-side counterpart* of a KUKA-side / Airbus-side / Premium-Aerotec-
+side / DLR-side liaison structure — not himself at KUKA or Airbus.
+
+**AZUR (LuFo, partners and dates per Krebs testimony).** Krebs's
+testimony (2026-05-23) names a further LuFo project, *AZUR*, in the
+same consortium shape as AZIMUT — KUKA + Airbus + DLR, with Weyrauch
+as the same DLR-side primary contact — concurrent with or adjacent
+to the KUKA-Roboter employment period. **No public LuFo / CORDIS /
+DLR-eLib record carrying that acronym in that consortium shape has
+been recovered in this section's research pass.** Five targeted
+queries across the LuFo programme database, the CORDIS FP6 / FP7
+indices, the DLR eLib, and the Förderdatenbank des Bundes returned no
+match. The fact is recorded here per Krebs's testimony but
+**marked unverified** pending either a Förderkennzeichen (funding-
+instrument identifier), a fuller acronym expansion, or a primary-
+source document from the Krebs artefact archive. The headline
+continuity argument of this sub-section does not rest on AZUR; it
+rests on the verifiable XPRESS / AZIMUT / MFZ chain.
+
+**What the KUKA-era consortium establishes for the chapter.**
+The 2008-2009 KUKA period anchors the predecessor lineage *one full
+funding cycle earlier* than the 2010 design-thinking deck and *eleven
+years earlier* than Shepard's open-source debut. The continuity is
+**consortium-shape**, not individual-contribution: KUKA + Airbus
+Deutschland + Premium Aerotec is the partner set that, with the
+addition of DLR ZLP as the research-side member, persists from XPRESS
+(2007-2011) through AZIMUT (LuFo IV-3, c. 2010-2014) through the
+Multifunktionale Fertigungszelle commissioning (2010-2013) through
+all four LuFo successor projects of the 2010s and into the
+Multifunctional Fuselage Demonstrator (Clean Sky 2, 2020-2025) that
+took the JEC World Innovation Award 2025 — Aerospace Parts
+[@mffdJecAward2025]. **Krebs's biographical trajectory inside this
+consortium runs vendor → research-engineer → research-architect**,
+from the KUKA subsidiary 2008-2009 (producer of robotic cells) to
+DLR-BT/ZLP from 2009-10 onward (designer of the data substrate the
+cells write into). The data-substrate problem this chapter follows
+is therefore one half of a paired problem the consortium has been
+working on since 2007: the other half — the *cell-building* problem —
+the consortium has industrialised and shipped; the *data-substrate*
+half is what PRAESTO, KIBID, iDMS, and now Shepard have been the
+successive responses to.
 
 ## 2. PRAESTO (c. 2014) — commercial product, evaluated and rejected as a bad fit
 
@@ -1477,6 +1621,79 @@ eLib records (PRAESTO):
   **Tobias Haase** (later first-named author on the 2021 Shepard
   Zenodo record) as workshop co-organiser with Krebs — earliest
   Haase↔Krebs personal link in the chapter's evidence.
+
+**KUKA-era consortium primary sources** (load-bearing for §1.7):
+
+- [xpressFp6Cordis](#bib) — *XPRESS — Flexible Production experts
+  for reconfigurable assembly technology.* European Commission
+  CORDIS factsheet for FP6 Integrated Project 26674 (call
+  FP6-2004-NMP-NI-4); duration 2007-01-01 to 2011-06-30; total cost
+  €12,477,505 / EU contribution €7,999,324; coordinator Harms & Wende
+  GmbH & Co KG (Hamburg); seventeen participants including KUKA
+  Schweissanlagen GmbH, Airbus Deutschland GmbH, Premium Aerotec
+  GmbH, Centro Ricerche Fiat, Fraunhofer-Gesellschaft.
+  <https://cordis.europa.eu/project/id/26674>
+- [xpressFp6Hka](#bib) — Karlsruhe University of Applied Sciences
+  (Hochschule Karlsruhe) Institute for Sensor and Information
+  Systems (ISRG) — XPRESS project page (Prof. Dr. Norbert Link).
+  Secondary source documenting the partner-list context.
+  <https://www.h-ka.de/isrg/projects/xpress>
+- [azimutDlrZlp](#bib) — DLR ZLP Augsburg project page.
+  *AZIMUT — Automatisierung zukunftsweisender industrieller
+  Methoden und Technologien für CFK-Rümpfe.* Industrial lead:
+  Premium Aerotec; research partners DLR ZLP (Augsburg + Stade)
+  with KUKA Systems as cell-integration partner.
+  <https://www.dlr.de/zlp/desktopdefault.aspx/tabid-8400/14345_read-36200/>
+- [koerberAzimut2014](#bib) — Körber, M.; Nieberl, D.;
+  Schmidt-Eisenlohr, C.; Nuschele, S.; **Krebs, F.**; Kaps, R.
+  (2014). *AZIMUT Abschlussbericht.* DLR-Interner Bericht
+  DLR-IB 435-2014/52, eLib [94104](https://elib.dlr.de/94104/).
+  Krebs appears as one of six named authors of the LuFo IV-3 final
+  report — first verifiable peer-archived appearance of Krebs in
+  the AZIMUT consortium record.
+- [kukaDlrMfz2010](#bib) — KUKA Systems × DLR ZLP Augsburg —
+  *Automation for CFRP processing.* KUKA press release announcing
+  the strategic partnership for the Multifunktionale
+  Fertigungszelle, July 2010. Reachable URL returned an empty filter
+  page at 2026-05-23 retrieval; the press release is cited in the
+  search-result summary and corroborated by the secondary record at
+  [Springer 10.1007/978-3-319-00557-7_42] (*Design of a
+  Multifunctional Cell for Aerospace CFRP Production*, 2013;
+  paywalled, metadata only).
+  <https://www.kuka.com/en-us/company/press/news/2010/07/automation-for-cfrp-processing>
+- [dlrZlpGroundbreaking2009](#bib) — DLR ZLP Augsburg —
+  *Zweiter Spatenstich: Neues DLR-Zentrum für
+  Leichtbauproduktionstechnologie in Augsburg.* Symbolic ZLP
+  Augsburg groundbreaking ceremony, 2009-09-07; the institutional
+  start-of-site date that the KUKA → DLR transition of Krebs
+  (2009-10) lands one month after.
+  <https://www.dlr.de/zlp/desktopdefault.aspx/tabid-7846/13332_read-36317/>
+- [weyrauchResearchGate](#bib) — Florian Weyrauch — ResearchGate
+  profile. Master of Engineering; 25 years of fibre-reinforced-
+  plastic experience in automotive and aerospace; Project Manager
+  at DLR Stuttgart for federally-funded aerospace projects;
+  responsible for the automation of CFRP-structure manufacture and
+  the set-up of the ZLP Augsburg site. 20 publications listed.
+  <https://www.researchgate.net/profile/Florian-Weyrauch>
+- [weyrauchCevotec2023](#bib) — Cevotec GmbH — *Welcome, Florian
+  Weyrauch!* announcement, August (year ~2023). Verifies the
+  DLR-Stuttgart → Cevotec transition; load-bearing for the
+  Weyrauch-was-DLR-side reading of the §1.7 KUKA-era consortium.
+  <https://www.cevotec.com/welcome-florian-weyrauch/>
+- [orcidKrebs](#bib) — Florian Benedikt Krebs — public ORCID
+  record, iD `0000-0001-6033-801X`. Anchors the
+  KUKA Roboter GmbH (2008-04 to 2009-09) → DLR (2009-10 onward)
+  transition.
+  <https://orcid.org/0000-0001-6033-801X>
+
+***UNVERIFIED*** — AZUR: Krebs's testimony (2026-05-23) names a
+LuFo project *AZUR* in the same consortium shape as AZIMUT
+(KUKA + Airbus + DLR; Weyrauch DLR-side contact), concurrent with
+or adjacent to the KUKA-Roboter period. Five targeted queries
+across LuFo / CORDIS / DLR-eLib / Förderdatenbank returned no
+match at 2026-05-23. Recorded here per testimony; pending
+Förderkennzeichen, acronym expansion, or a primary-source
+artefact from the Krebs archive.
 
 Related ZLP-Augsburg eLib records by the same authoring community
 (Nuschele, Schmidt, Krebs, Dutta) — included for context:
