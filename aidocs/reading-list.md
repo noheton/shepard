@@ -225,6 +225,15 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | [Hetzner ISO 27001 / BSI C5 certifications](https://www.hetzner.com/legal/) | Hetzner's published certification status | `aidocs/strategy/93 §6.E` COMP-HETZNER-CERT | One concrete look-up: which Hetzner DCs / services hold which cert? Needs verification before citing in deploy docs | unread |
 | 2026-05-23 | [DSGVO Art. 5 + Art. 17](https://gdpr-info.eu/) | GDPR storage-limitation + right-to-erasure | `aidocs/strategy/93 §6.E` COMP-DSGVO-RETENTION | Ties Shepard's SM1 storage management design to a concrete legal obligation; concrete retention-windows-per-payload-kind is the gap | skimmed |
 
+### Research-network multi-DB retry queue (RL-103 series, 2026-05-23)
+
+| ID | Item | Why | Status |
+|---|---|---|---|
+| RL-103-MULTI-DB-RETRY | Re-run Google Scholar / Semantic Scholar / DBLP / Crossref / Zenodo / arXiv against the 41-anchor list in `aidocs/strategy/103 §3` once the paper-search MCP is restored (Cloudflare 502 across the entire family 2026-05-23 09:29–09:34 UTC) | The 103-network OpenAlex pass got 28/41 anchors with verified ORCIDs; priority-2/3 DBs would close the gap and surface alternative-venue hits (Google Scholar especially for grey lit + theses) | open |
+| RL-103-1 | Identify Weber, Holger's BDLI / Aerospace-X publication footprint (Cluster G anchor; not queried in 103 because common surname + no anchor DOI) | The G-cluster external industrial framing leans on this Weber footprint; need the actual publication list before citing the Aerospace-X angle as anything beyond a deck | open |
+| RL-103-3 | Identify the next-window CoRDI / HMC Conference submission opportunity for Shepard | Shepard has not yet published at CoRDI or HMC Conference (per `aidocs/strategy/103 §7` venue overlap); this is a positioning gap, not a quality fact | open |
+| RL-103-4 | Read end-to-end + bib-classify the 5 OpenAlex-surfaced bridge papers: Frommel 2020 (W3100809365); Vistein 2025 QA (W7094948360); Schmitt 2020 NFDI4Ing launch (W3115788969); Vinot 2023 MEMAS (W6967949398); Vistein 2010 Robotics API (W2084313239) | These are the bridge papers `aidocs/strategy/103 §4.1` identifies but the bib doesn't yet have first-class entries for | open |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
