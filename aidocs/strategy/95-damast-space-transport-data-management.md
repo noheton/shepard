@@ -45,8 +45,23 @@ cluster, scoped at roughly half a person-year (~0.5 PJ) per annum
     Di Martino et al., *Thermo-Mechanical Design of the C/C-SiC-Based
     Thermal Protection Structure for the Forebody of the Hypersonic
     Sounding Rocket STORT*, 2026 [eLib 223910, @dimartino_2026_stort_tps].
-  - **LUMEN** — *Liquid Upper-stage Methane ENgine* triebwerkstest at
-    Lampoldshausen. **`examples/lumen-showcase/`
+  - **LUMEN** — *Liquid Upper-stage Methane ENgine* (also documented in
+    the project literature as *Liquid Upper Stage Demonstrator Engine*).
+    LOX/LCH4 expander-bleed cycle reusable upper-stage engine
+    demonstrator + test bed at DLR Lampoldshausen. Active development
+    line at DLR Institute of Space Propulsion (RA-Lampoldshausen); key
+    research threads include turbine-blade fatigue for reusable engines
+    and recent test-bed improvements for oxygen-methane rocket-engine
+    technologies. Key publications: Traudt et al., *Liquid Upper Stage
+    Demonstrator Engine (LUMEN): Status of the Project*, IAC 2019
+    Washington [eLib 131429, @traudt_2019_lumen_status]; Riccius et al.,
+    *Numerical turbine blade fatigue analysis with partial admission
+    effects*, FAR 2022 Heilbronn [eLib 189488, @riccius_2022_lumen_turbine];
+    Gulczynski et al., *Turbine blade fatigue life investigation for
+    reusable liquid rocket engines*, IEEE Aerospace 2023 [eLib 194305,
+    @gulczynski_2023_lumen_fatigue]; Hardi et al., *Recent improvements
+    in the LUMEN test bed for oxygen-methane rocket engine technologies*,
+    IAC 2025 Sydney [eLib 218583, @hardi_2025_lumen_testbed]. **`examples/lumen-showcase/`
     in this fork is the operational synthetic demonstrator of this exact
     DaMaST use-case**, not merely a namesake. Per operator clarification
     2026-05-23: *"LUMEN showcase is actually DaMaST"*. The showcase code,
