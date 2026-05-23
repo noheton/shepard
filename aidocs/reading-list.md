@@ -127,6 +127,16 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | DeepOnto (He et al., SWJ 2024) | KRR-Oxford Python package for ontology engineering w/ deep learning | ONT-AI-MAP1 §3 ADOPT fallback | Backup option to OntoAligner; Apache-2.0 | unread |
 | 2026-05-23 | [github.com/AgreementMakerLight](https://github.com/AgreementMakerLight) (AML) | AML — long-running OAEI competitor | ONT-AI-MAP1 §3 reuse-survey | Long history; LogMap-style deterministic baseline | unread |
 
+### Log substrates + observability (from LOGSTORE1 persona audit)
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [opentelemetry.io/docs/specs/otel/logs/data-model/](https://opentelemetry.io/docs/specs/otel/logs/data-model/) | **OpenTelemetry Logs Data Model** — Resource vs Attribute separation, `log.record.uid`, `log.record.original` | LOGSTORE1 persona audit F4/F18 | Server-stamped Resource attributes are standard practice — directly applicable to the EventShape wire-shape collapse fix; OTLP-equivalence column on the SHACL shape forward-compatibility | skimmed |
+| 2026-05-23 | [docs.victoriametrics.com/operator/](https://docs.victoriametrics.com/operator/) | **VictoriaLogs Kubernetes Operator** — `VLSingle` / `VLCluster` CRDs, render-before-apply patterns | LOGSTORE1-OPS5 (compose render) | The production-deployment pattern Shepard's compose-render endpoint should mirror; VictoriaLogs GA'd in VM Cloud Q1 2026 — operational maturity still building | skimmed |
+| 2026-05-23 | [victoriametrics.com/blog/q1-2026-whats-new-victoriametrics-cloud/](https://victoriametrics.com/blog/q1-2026-whats-new-victoriametrics-cloud/) | **VictoriaMetrics Cloud Q1 2026** — VictoriaLogs GA, Splunk ingestion, MCP server, advanced LogsQL tooling | LOGSTORE1-STR2 (maturity risk) | GA is recent; quarterly review trigger for the maturity-risk runbook should track these release-notes cadence; Splunk + MCP suggest direction-of-travel for Shepard's own MCP tool surface | unread |
+| 2026-05-23 | [docs.victoriametrics.com/victorialogs/data-ingestion/](https://docs.victoriametrics.com/victorialogs/data-ingestion/) | **VictoriaLogs jsonline ingestion** — `_msg_field`, `_time_field`, `VL-Stream-Fields`, AccountID/ProjectID tenant headers | LOGSTORE1-API4 (server-derive fields) + tenant tier mapping | The actual wire-shape Shepard's emit endpoint should wrap; tenant header maps directly to the four retention tiers (`audit`/`ops-30d`/`debug-7d`/`ephemeral-1d`); LogLayer transport example is the cleanest reference | skimmed |
+| 2026-05-23 | [opencoreventures.com/blog/agpl-license-is-a-non-starter-for-most-companies](https://www.opencoreventures.com/blog/agpl-license-is-a-non-starter-for-most-companies) | **AGPL as enterprise non-starter** — operator-redistribution friction even with sidecar isolation | LOGSTORE1 §3 licence gate | Confirms the "kinder-licence-by-default" posture; relevant beyond logs (every Loki/Tempo/Quickwit/Parseable evaluation) — fork-wide adoption pattern | skimmed |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*

@@ -1,9 +1,11 @@
 ---
 title: Log-store sidecar — structured logging substrate for Shepard + plugins
-stage: feature-defined
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 audience: contributors, plugin authors, ops, reviewers
 backlog-id: LOGSTORE1
+audit-record: aidocs/agent-findings/persona-audit-logstore-2026-05-23.md
+audit-status: ACCEPT-WITH-CHANGES (4 personas — API Scrutinizer + Reluctant Senior + Strategy Aligner + Digital Native); 20 change requests filed; closure required before feedback-implemented
 supersedes: ad-hoc SD-runlog pattern in `examples/mffd-showcase/scripts/mffd-import-v15.py` §3096
 companions:
   - feedback_shepard_measures_itself.md
@@ -1026,7 +1028,13 @@ stable (no committed date).
   `shepard-plugin-logs` row (📐 designed).
 - `aidocs/44-fork-vs-upstream-feature-matrix.md` gets a new
   `shepard-plugin-logs` row in the Dev-track plugins table.
-- Doc-stage: `feature-defined` (passes the basic shape gate);
-  ascends to `audited-by-personas` after a Strategy + RDM + API
-  Scrutinizer triple-pass; ascends to `tests-implemented` when the
-  §11.1 criteria are met.
+- Doc-stage: `audited-by-personas` (advanced 2026-05-23 per the
+  4-persona audit at
+  `aidocs/agent-findings/persona-audit-logstore-2026-05-23.md`). All
+  four personas verdict ACCEPT-WITH-CHANGES; 20 change requests filed
+  (`LOGSTORE1-API1..7`, `LOGSTORE1-OPS1..5`, `LOGSTORE1-STR1..4`,
+  `LOGSTORE1-DN1..4`) must close before the next transition to
+  `feedback-implemented`. Re-check personas: same four (API
+  Scrutinizer + Reluctant Senior + Strategy Aligner + Digital Native),
+  scoped to their own filings. Ascends to `tests-implemented` when the
+  §11.1 criteria are met and the change requests are resolved.
