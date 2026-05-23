@@ -47,6 +47,8 @@ nav:
     url: /bibliography
   - title: Origin myth
     url: /origin-myth
+  - title: About the author
+    url: /about-the-author
 
 # Snapshot date — bump when content is refreshed.
 snapshot_date: 2026-05-22
