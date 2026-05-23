@@ -643,8 +643,40 @@
   version      = {1.0.0},
   doi          = {10.5281/zenodo.5091604},
   url          = {https://doi.org/10.5281/zenodo.5091604},
-  note         = {Original Zenodo software citation for upstream shepard. Apache-2.0. None of the four named authors appear on the predecessor iDMS/KIBID source we hold --- continuity is institutional, not personal (see aidocs/strategy/86 §5).},
+  note         = {Original Zenodo software citation for upstream shepard. Apache-2.0. All four named authors are co-authors with F. Krebs on the DLRK 2021 architecture paper [@krebsDlrk2021] --- the personal continuity from CUBE iDMS (Krebs-architected, 2017--2020) into the 2021 Shepard team is therefore directly attested, not just institutional. See aidocs/strategy/86 §5 for the revised continuity reading.},
   category     = {software}
+}
+
+@inproceedings{krebsDlrk2021,
+  author       = {Krebs, Florian and Willmeroth, Mark and Haase, Tobias and Kaufmann, Patrick and Gl{\"u}ck, Roland and Deden, Dennis and Brandt, Lars and Mayer, Manuel},
+  title        = {{Systematische Erfassung, Verwaltung und Nutzung von Daten aus Experimenten}},
+  booktitle    = {Deutscher Luft- und Raumfahrtkongress (DLRK 2021)},
+  year         = {2021},
+  address      = {Bremen, Germany},
+  organization = {Deutsche Gesellschaft f{\"u}r Luft- und Raumfahrt (DGLR)},
+  note         = {Load-bearing peer-reviewed publication of record for Shepard's architecture. Krebs is lead author; the four Zenodo software-citation authors (Haase, Gl{\"u}ck, Kaufmann, Willmeroth on @haaseShepard2021) are co-authors here. The paper describes the polyglot-persistence architecture (Neo4j + InfluxDB + MongoDB), the Collection/DataObject/Container/Reference data model citing the RDA Research Data Collections WG recommendation, the JWT/OAuth2/API-key authentication model, the OPC-Router + Data-Reference-Generator (DRG) shop-floor ingest stack, and the thermoplastic AFP use case at the ZLP Fiber Placement Cell (FPZ). The §5 outlook anticipates git integration, CAD/PDM integration, search/filter expansion, and access-rights management --- all of which the fork has since shipped or designed. Contact address \texttt{florian.krebs@dlr.de}. See aidocs/strategy/86 §5 and aidocs/98 §1.5.},
+  category     = {papers}
+}
+
+@inproceedings{audetIcra2024,
+  author       = {Audet, Julien-Mathieu and Fortin, Yves and C{\^o}t{\'e}, Gabriel and Vistein, Michael and Brandt, Lars and Krebs, Florian and Monsarrat, Bruno},
+  title        = {{Iterative Robot Calibration with Accuracy Saturation Termination and Application for AFP Processing of a Thermoplastic Aerostructure with Real-time Elastic Path Compensation}},
+  booktitle    = {2024 IEEE International Conference on Robotics and Automation (ICRA)},
+  year         = {2024},
+  organization = {IEEE},
+  note         = {Manuscript 2640. Krebs co-authored (DLR side: Vistein, Brandt, Krebs; NRC Canada lead: Audet, Fortin, C{\^o}t{\'e}, Monsarrat). The paper introduces the ICAST (Iterative robot Calibration with Accuracy Saturation Termination) algorithm and applies it to in-situ elastic calibration of the DLR ZLP T-AFP robotic workcell --- a KUKA KR 120 HA on a rail system with an AFPT MTLH tape-laying machine and 6 kW Laserline LDM laser. Demonstrator: an 8-section thermoplastic rear pressure dome for next-generation aircraft. Calibration reduced from 31 to 17 poses with unaffected accuracy (0.057--0.064~mm side deviation). The cell is the same FPC described in @krebsDlrk2021 §3. Peer-reviewed publication evidence for the FPC research output. See aidocs/strategy/87 §3.x.},
+  category     = {papers}
+}
+
+@article{krebsJungDlrMagazin140,
+  author       = {Krebs, Florian and Jung, Bernadette},
+  title        = {{Hightech auf vier S{\"a}ulen --- Glanzst{\"u}ck im DLR Augsburg: multifunktionale Roboteranlage f{\"u}r die Fertigung von Flugzeugbauteilen}},
+  journal      = {DLR magazin},
+  number       = {140},
+  year         = {2013},
+  publisher    = {Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)},
+  note         = {Public-facing institutional exposition of the MFZ (Multifunktionale Roboterzelle) at ZLP Augsburg, authored by Krebs + Jung. Describes the cell's commissioning in September 2013, its five hang-down KUKA robots on a 30~m linear axis, two portal robots (240~kg payload each), 450~m\textsuperscript{2} cell floor area, and the convex-tooling capability that the bodenfreie Hang-Down-Konfiguration enables. Names Voggenreiter and Kupke as contact professors. Issue \#140 is the "Roboter" themed issue; the local filename "06" is a sequence number, NOT the issue number. Useful as evidence of how DLR positioned the ZLP/MFZ externally in 2013 --- the same time-window in which Krebs's MFZ-Steuerungskonzept work (@krebsMfzSteuerung2010) had matured into operational hardware. See aidocs/strategy/87 §3.1 and aidocs/98 §1.5.},
+  category     = {dlr_internal}
 }
 
 @misc{dlrZlpShepard,
@@ -673,6 +705,94 @@
   year         = {2026},
   url          = {file:///mnt/pve/unas/media/random/},
   note         = {Primary historical source of unusual provenance: a researcher's NAS snapshot retrieved 2026-05-23 containing PRAESTO-era client code (\texttt{kibid\_exporter}, \texttt{opcua\_kibid\_adapter}, c.~2017), the full seven-component iDMS project (Java/Python/Jupyter clients, Flask frontend, Kafka bridge, RCE integration, importers; c.~2020), and adjacent ZLP tooling. Establishes the existence and shape of internal systems not represented in eLib. See methodological discussion in \texttt{aidocs/strategy/86-shepard-predecessor-systems.md}.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsInputPraesto,
+  author       = {Krebs, Florian},
+  title        = {{Input Florian --- PRAESTO}},
+  year         = {n.d.},
+  howpublished = {DLR ZLP Augsburg internal two-slide working deck; PPTX, $\sim$2.0~MB; date undetermined (no date in filename or footer); preserved in the artefact collection},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S2.1. Names the PRAESTO supplier as \textbf{Kisters AG} (first primary-source identification --- prior to this artefact, \S2 carried the testimony-only claim ``supplier not named here''). Records the engagement as ``DLR seit 2010'' --- four years before the DLRK 2014 paper, moving PRAESTO's DLR-presence lower bound from 2014 to 2010. Architecture diagram on both slides scopes PRAESTO to \emph{inspection-only} workflows (\emph{Inspektionsprozess}, \emph{Pr\"ufung Trockenfaserablage}, \emph{Pr\"ufung Endbauteil}) --- spatial-data-fusion analyser for inspection, not full process-data acquisition platform. The deck does not state a grievance or proposed adjustment; the misfit thesis remains a testimony claim, with this deck supplying the scope-evidence that makes the testimony legible. Filename \texttt{8c1fe026-Input\_Florian\_PRAESTO.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsProDES2017a,
+  author       = {Krebs, Florian},
+  title        = {{Industrie 4.0 @ ZLP --- Prozessdatenerfassungssystem (ProDES)}},
+  year         = {2017},
+  month        = apr,
+  howpublished = {DLR ZLP Augsburg internal working deck, sole-author Krebs; PPTX, $\sim$2.5~MB; deck dated 2017-04-25 (slide footer 11.04.2017)},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S3.6.1 (the ProDES thread). Slide 6 names \emph{Aktueller Stand der Technik: Praesto, KiBiD \dots Viele Inseln} --- the explicit diagnosis of the predecessor platforms as island solutions that the centre's later work would replace. Slides 10--11 specify the layered basis architecture (Datenerfassung $\to$ Datenorganisation \& Datenablage $\to$ Datenzugriff $\to$ Analyse $\to$ Management); slide 13 surveys NoSQL substrate options (Document, Column, Key-Value, Graph). Slide 9 articulates the multi-view analysis model (Prozessketten / Prozessen / Ressourcen). The earliest deck in the 2017 chronology that follows; sole-author Krebs (the iDMS architect, \S4). Filename \texttt{f2263088-20170425\_Prozessdatenerfassungssystem\_ProDES.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsProDES2017b,
+  author       = {Nuschele, Stefan and Schuster, Alfons and Krebs, Florian},
+  title        = {{Industrie 4.0 @ ZLP --- Prozessdatenerfassungssystem (ProDES)}},
+  year         = {2017},
+  month        = jun,
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$6.4~MB; dated 2017-06-19},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S3.6.1 and \S5 (personal-continuity bridge). Three-author iteration two months after \texttt{krebsProDES2017a}: \textbf{adds Nuschele (PRAESTO first-author) and Schuster as co-authors with Krebs} --- the first primary-source evidence that the PRAESTO-era authoring community and the iDMS-era architect are the same working group in mid-platform succession. Slide 4 lays out the roadmap with milestones (MS1 7/17 Vorauswahl Plattform; MS2 9/17 Demo OPC UA; MS3 x/18 Demo ProComp), aligned with how the chronology subsequently lands (MS2 OPC UA demo $\Rightarrow$ KIBID/IPRO, \S3.6.2). Filename \texttt{dd112669-20170619\_Prozessdatenerfassungssystem\_ProDES.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsStatusProzessleitsystem2017,
+  author       = {Krebs, Florian},
+  title        = {{Status Prozessleitsystem}},
+  year         = {2017},
+  month        = jul,
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$2.0~MB; dated 2017-07-18},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S3.6.2 (the Prozessleitsystem thread). Names the orchestration goal as modular \emph{Plug \& Automate} with a concrete first step of \emph{prozess\"ubergreifender Austausch von Prozessinformationen} (cross-process information exchange) and \emph{Ablaufsteuerung f\"ur Prozessketten / -netzwerke} (sequence control for process chains / networks). Further-future ambition: \emph{Selbstkonfiguration / Self-X Eigenschaften}. The Prozessleitsystem layer is the orchestration counterpart to the ProDES data layer (\S3.6.1). Filename \texttt{c6a10fed-20170718\_Status\_Prozessleitsystem.pptx} (an exact MD5-verified duplicate copy is present in the upload set as \texttt{48f8e5b0-20170718\_Status\_Prozessleitsystem.pptx} --- treated as one source for citation). Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsNSROrchestrator2017,
+  author       = {Krebs, Florian},
+  title        = {{NSR Prozessleitsystem Architektur --- Orchestrator-Konzept}},
+  year         = {2017},
+  month        = sep,
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$6.0~MB; dated 2017-09-14},
+  note         = {\textbf{Architecturally load-bearing} primary source for \texttt{aidocs/strategy/86} \S3.6.2, \S3 (KIBID) and \S4.4 (IPRO) all three. The slide-3 IPRO architecture diagram (\emph{IPRO: Aufbau}) explicitly labels \emph{KiBiD Adapter} as a participating component alongside \emph{Process Orchestrator}, \emph{IOT 2040} (Siemens IoT gateway), \emph{Werkzeug-Wechsler}, \emph{Festo Ventil-Insel}, \emph{Siemens S7-300 SPS}, \emph{Router}, \emph{Big Data Storage}, \emph{KUKA Robot Controller}. This is the \textbf{first primary-source corroboration} that KIBID was the data-acquisition layer of the IPRO cell --- prior evidence for the KIBID$\to$IPRO connection was hostname-level only (\texttt{kibid-proxy.praesto.lo} in source code, \S3.2). The deck specifies the IPRO cell topology: 4 interface nodes, 3 virtual nodes, communication via OPC UA, data acquisition in KIBID via HTTP. Filename \texttt{f88f8e4b-20170914\_NSR\_Orchestrator\_Konzept.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsI4Definition2017,
+  author       = {Krebs, Florian},
+  title        = {{Industry 4.0 defined --- curation of \emph{From Advanced Robotics to Rapid Prototyping: 10 of the Varied Faces of Smart Manufacturing} (Design News)}},
+  year         = {2017},
+  month        = oct,
+  howpublished = {DLR ZLP Augsburg internal framing deck (Krebs as curator); PPTX; dated 2017-10-10},
+  note         = {Framing artefact for \texttt{aidocs/strategy/86} \S3.6.3. Curated reading of a \emph{Design News} piece on smart manufacturing, positioning the centre's work in the Industrie 4.0 vocabulary. Sits between the September architectural deliverable (NSR Orchestrator, \texttt{krebsNSROrchestrator2017}) and the December vision (\texttt{krebsVisionDatamanagement2017}) in the 2017 chronology. Filename \texttt{ad29fe36-20171010\_Industry\_4.0\_defined.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsNSRArchitektur2017,
+  author       = {Krebs, Florian},
+  title        = {{NSR Architektur}},
+  year         = {2017},
+  month        = dec,
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$3.3~MB; dated 2017-12-04},
+  note         = {Chronology marker for \texttt{aidocs/strategy/86} \S3.6.4 (the architecture-vision-deliverable week). Substantive content thin --- visible slides carry template Lorem-Ipsum boilerplate retained around figure placeholders --- but the \emph{date itself} is the evidentiary contribution: one day before the Vision Datenmanagement deck (\texttt{krebsVisionDatamanagement2017}) and eight days before its footer date, establishing the December 2017 working week (NSR Architektur $\to$ Vision Datenmanagement $\to$ iDMS-final-presentation footer date). Filename \texttt{43fafd03-20171204\_NSR\_Architektur.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsVisionDatamanagement2017,
+  author       = {Krebs, Florian and Nuschele, Stefan},
+  title        = {{Vision: Datenmanagement}},
+  year         = {2017},
+  month        = dec,
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$5.4~MB; cover date 2017-12-05, footer date 2017-12-12},
+  note         = {Load-bearing primary source for \texttt{aidocs/strategy/86} \S3.6.4. Cover slide names the authorship pair \textbf{Dipl.-inf.~Florian Krebs, Dr.~Stefan Nuschele} --- the second primary-source document (after \texttt{krebsProDES2017b}) placing Krebs and Nuschele as co-authors on the in-house data-management answer. The \emph{Herausforderung: Datenmanagement} slide names the diagnosis that the iDMS data model will answer: \emph{ein Projekt erzeugt Vielzahl von unterschiedlichster digitale Produkte} --- Anwendung, Auslegungsdaten, Werkstoffdaten, CAD Modelle, Numerische Modelle, Messdaten, Quellcode, Berichte / Publikationen, Medien, \emph{u.v.m}. The title's \emph{Vision} word signals the chronology's closing artefact: the year's work is named explicitly as a data-management vision in December. Filename \texttt{7ff3d48c-20171205\_Vision\_Datenmanagement.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsSoaMes,
+  author       = {Krebs, Florian},
+  title        = {{SOA MES}},
+  year         = {n.d.},
+  howpublished = {DLR ZLP Augsburg internal working deck; PPTX, $\sim$750~KB; date undetermined (no date in filename or footer; provisional dating $\approx$ late 2017 / early 2018 from internal cues)},
+  note         = {Adjacent conceptual artefact for \texttt{aidocs/strategy/86} \S3.6.5 and \S5 (Haase$\leftrightarrow$Krebs personal-link evidence). Sketches a service-oriented Manufacturing Execution System (\emph{``Everything is a service''}) with three participant classes (physical systems: robot cells, mobile robots, presses, fixtures; virtual systems: data collectors, task planners, displays; workers / ERP-APS-PPS), a four-step task-execution model (Task Decomposition $\to$ Step Scheduling $\to$ n-step allocation $\to$ Distributed Execution), and a \emph{Basis-Architektur} (slide 6) placing \emph{SOA MES} alongside \emph{Prozess- und QS-Datensammlung (CUBE, KiBiD?)}. \textbf{The CUBE acronym appears with the KIBID-question-mark} suggesting late-2017/early-2018 dating (when CUBE naming begins to settle but the KIBID role is in flux). The workshop participant slide names \textbf{Tobias Haase} (later first-named author on the 2021 Shepard Zenodo record, \texttt{haaseShepard2021}) as workshop co-organiser alongside Krebs --- earliest primary-source Haase$\leftrightarrow$Krebs personal link in the chapter's evidence base, confidence MEDIUM owing to the undetermined date. Filename \texttt{e5da8afb-SOA\_MES.pptx}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
   category     = {dlr_internal}
 }
 
@@ -1121,4 +1241,266 @@
   howpublished = {7-slide conceptual PPTX, DLR ZLP Augsburg, date-undetermined (provisional dating range: late 2017 / early 2018). Filename \texttt{SOA\_MES.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs},
   note         = {Cited at \texttt{aidocs/strategy/86} \S 3.6.5 as an adjacent conceptual artefact that cannot be ordered by its own metadata. ``Everything is a service'' framing with three participant classes (physical / virtual / worker-ERP) and a four-step task-execution model. Slide 6's Basis-Architektur places \emph{SOA MES} alongside \emph{Prozess- und QS-Datensammlung (CUBE, KiBiD?)} -- the CUBE acronym appears at slide-label level with \emph{KiBiD?} carrying a question mark. Workshop-organiser slide names \textbf{Tobias Haase} (first-named 2021 Shepard Zenodo author per \texttt{haaseShepard2021}) and Krebs as co-organisers -- the earliest primary source in \S 86 linking Haase to Krebs's working community.},
   category     = {dlr_internal}
+}
+
+@misc{dlrSchoenheitsVamhri2018,
+  author       = {Sch{\"o}nheits, Manfred and Krebs, Florian},
+  title        = {{Embedding {AR} in Industrial {HRI} Applications}},
+  year         = {2018},
+  month        = mar,
+  booktitle    = {Proceedings of the Workshop on Virtual, Augmented and Mixed Reality for Human-Robot Interaction (VAM-HRI 2018)},
+  publisher    = {ACM},
+  address      = {Chicago, IL, USA},
+  doi          = {10.1145/nnnnnnn.nnnnnnn},
+  howpublished = {VAM-HRI 2018 workshop paper, ACM},
+  note         = {VAM-HRI 2018 workshop paper by Sch{\"o}nheits and Krebs, both DLR Institute of Structures and Design, ZLP Augsburg. Six-page demonstrator paper describing an industrial HRI testbed built around a KUKA KR120 Quantec extra HA robot, Microsoft HoloLens, Pozyx UWB-RTLS, V-REP co-simulation, and OPC-UA middleware. Documents (i) a multi-modal HoloLens calibration process with three steps -- tap-gesture select, gaze-driven HUD manipulation, speech-command confirmation (``calibration done'') -- summarised in Table~1, and (ii) an interactive speech-driven robot control scheme with four commands (``Stop'', ``Look at me'', ``Come here'', ``Go home'') mapped as a pseudo-state machine (Figure~13). Safety frame: ISO 10218 + ISO/TS 15066; demo ran in manual mode with a separate dead-man operator. The 2018 anchor of an HRI research line the institute has continued through IROS 2018 Fan Challenge (Schoenheits, YouTube \texttt{hJxTF9RISIw}), DrapeBot 2023--2024 (YouTube \texttt{nao1U3IB20k, 4CBZNBolAAE, r2pG1Lg393c}), and is documented as a deliberate 2017--2024 strategic research line in \texttt{aidocs/strategy/102} \S 4. Filed under \texttt{/root/.claude/uploads/33f9b6cd-283e-4eb5-bfea-fec7b3720743/a272d6be-VAMHRI2018\_paper\_17.pdf}.},
+  category     = {peer_reviewed}
+}
+
+@misc{dlrSchoenheitsKrebsHriWorkshop2017,
+  author       = {Sch{\"o}nheits, Manfred and Krebs, Florian},
+  title        = {{Robotics: Human-Robot-Interaction (Workshop DLR@UBC, 06.12.17--08.12.17)}},
+  year         = {2017},
+  month        = dec,
+  howpublished = {Presentation slides, DLR@UBC workshop, University of British Columbia, Vancouver, 6--8 December 2017},
+  note         = {12-slide deck on the same robot-cell testbed that becomes the VAM-HRI 2018 paper (\texttt{dlrSchoenheitsVamhri2018}) three months later. Slide~1 dates the talk explicitly: ``Workshop DLR@UBC 06.12.17 -- 08.12.17''. Slide~3 (Objectives): ``Applying HRI concepts for (big) industrial robots'' and ``Create basis / starting point for future work''. Slides~4--7 introduce the four core concepts: UWB localisation (Pozyx), Augmented Reality (Hololens), OPC-UA, V-REP co-simulation. Slide~10 emphasises a peer-to-peer distributed-system stance: ``No master or central node $\ne$ ROS running master control logic''. Slide~11 lists the same four voice commands (``Stop'', ``Look at me'', ``Come here'', ``Go home'') and notes the safety-critical convention ``Stop command is always required to proceed''. Slide~12 (Future work): ``multi-laser sensor setup'', ``expansion to large scale scenarios'', ``automatic collision-free path planning''. \textbf{Chronological observation:} this presentation was given on the same day as \texttt{20171205\_Vision\_Datenmanagement.pptx} (prior batch) -- DLR@UBC 2017-12-05 produced both the institute's HRI demo \emph{and} the institute's data-management vision presentation. Filed under \texttt{/root/.claude/uploads/33f9b6cd-283e-4eb5-bfea-fec7b3720743/7b074b7f-20171205\_Workshop\_HRI\_Demo.pptx}. Accessed 2026-05-23.},
+  category     = {dlr_internal}
+}
+
+@misc{dlrZlpYoutubeChannel2026,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{{YouTube} channel @dlrinstituteofstructuresan6594}},
+  year         = {2026},
+  howpublished = {YouTube channel \texttt{@dlrinstituteofstructuresan6594}, 57 publicly listed videos at retrieval},
+  url          = {https://www.youtube.com/@dlrinstituteofstructuresan6594},
+  note         = {Official YouTube channel of the DLR Institute of Structures and Design (sites Stuttgart / Augsburg-ZLP / Brunswick). At retrieval 2026-05-23: 57 publicly listed videos spanning 2019-09 to the present. Three communications threads identified in \texttt{aidocs/strategy/102} \S 1: (1) project showcases (MFFD, AGREED, DrapeBot, FASTER-H2, IRAS, AZIMUT, ProfiRumpf, CosiMo, CALLISTO, \ldots); (2) facility showcases (Thermoplast Cell, Inline-QA Cell, Multifunctional Robot Cell, TEC, ESEC, Drop Tower, Gas Gun, Furnaces, Ultrasonic Welding Facility, \ldots) aligning 1:1 with the per-cell rollout list in \texttt{aidocs/strategy/100} \S 4; (3) process / capability showcases (Robot-based Continuous Ultrasonic Welding, Automated Resistance Welding, ATP, HRI, \ldots). Recurring film-production credits: \texttt{lichtwerk-fotografie.com} and \texttt{lange-sicht.de}. Captions / transcripts are not extractable via open metadata: empirically confirmed via \texttt{yt-dlp --list-subs} on 2026-05-23, no original-language caption track nor automatic-caption track is published by the channel owner. Description-text-level citation is the practical option; spoken-narration quotes require manual transcription per case.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeCmGTYu6WHoM,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Revolution in Aviation: Production of the Multifunctional Fuselage Demonstrator ({MFFD})}},
+  year         = {2024},
+  month        = may,
+  day          = {21},
+  howpublished = {YouTube video, 274\,s, uploaded 2024-05-21},
+  url          = {https://www.youtube.com/watch?v=CmGTYu6WHoM},
+  note         = {Accessed 2026-05-23 via channel \texttt{@dlrinstituteofstructuresan6594}; transcript extraction failed (no caption track published, confirmed via \texttt{yt-dlp --list-subs}). Description-level scale numbers used in \texttt{aidocs/strategy/102} \S 3: 53\,km tape placed in-situ-consolidated lay-up; 44 compression-molded Z-stringers (Aernnova); world's first fully automated robot-based continuous ultrasonic welding of 44 stringers; 24 frames + 12 frame-couplings by resistance welding ($\sim$300 welds); $\sim$158 cleats by cobot-based resistance welding ($\sim$316 welds). Partners: Aernnova, Premium Aerotec, Airbus. Funding: Clean Aviation JU, Clean Sky 2, grant CS2-LPA-GAM-2020-2023-01.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeJf9cd7V2bLA,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{{MFFD} -- Production Technology for the Thermoplastic Fuselage of Tomorrow}},
+  year         = {2022},
+  month        = dec,
+  day          = {01},
+  howpublished = {YouTube video, 212\,s, uploaded 2022-12-01},
+  url          = {https://www.youtube.com/watch?v=Jf9cd7V2bLA},
+  note         = {Accessed 2026-05-23 via channel \texttt{@dlrinstituteofstructuresan6594}; transcript extraction failed (no caption track). MFFD test-shell predecessor demo, completed 2022, one year before the upper-shell campaign captured in \texttt{dlrZlpYoutubeCmGTYu6WHoM}. Best-paper award at International Conference on Thermoplastic Composites, Bremen 2022. Contact: Dr.-Ing. Frederic Fischer.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeTKoXSpaLuwg,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Innovative Robotic Platforms: Dual-Robot {AFP} and Welding of Thermoplastic {CFRP}s}},
+  year         = {2024},
+  month        = mar,
+  day          = {19},
+  howpublished = {YouTube video, 121\,s, uploaded 2024-03-19},
+  url          = {https://www.youtube.com/watch?v=TKoXSpaLuwg},
+  note         = {Accessed 2026-05-23. Joint project of DLR Augsburg with the National Research Council of Canada / Conseil national de recherches du Canada (Aerospace Research Centre), funded via NRC Small Teams Initiative. Description: ``a closed software pipeline from CAD to robot has been built up that is a significant part of the advanced process''. Tools-and-jigs-free dual-robot AFP + continuous ultrasonic welding.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubePLjd210Hzo,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Ultrasonic Welding Facility and WeldSealer Device}},
+  year         = {2024},
+  month        = jul,
+  day          = {16},
+  howpublished = {YouTube video, 114\,s, uploaded 2024-07-16},
+  url          = {https://www.youtube.com/watch?v=PL_jd210Hzo},
+  note         = {Accessed 2026-05-23. Public cell description for the BT-Augsburg ultrasonic welding facility. Description quote: ``capturing all relevant process data for quality assurance, which is only possible under optimized process conditions. These conditions have been developed and extensively validated at DLR.'' Closest external statement of a process-QA data-capture requirement that maps directly onto Shepard's pitch.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeNao1U3IB20k,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Project {DrapeBot}: Safe Human-robot interaction via gestures and voice}},
+  year         = {2023},
+  month        = aug,
+  day          = {03},
+  howpublished = {YouTube video, 56\,s, uploaded 2023-08-03},
+  url          = {https://www.youtube.com/watch?v=nao1U3IB20k},
+  note         = {Accessed 2026-05-23. EU project DrapeBot (drapebot.eu). 3D-camera worker monitoring, voice commands, robot path generation under human guidance. Contact: Dr. Marcin Malecha. Direct successor of the HRI thread documented in \texttt{dlrSchoenheitsVamhri2018} -- same robot-cell architecture, same vocabulary, same site.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutube4CBZNBolAAE,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Project {DrapeBot}: Human-machine collaboration for complex manual {CFRP} manufacturing processes}},
+  year         = {2024},
+  month        = aug,
+  day          = {15},
+  howpublished = {YouTube video, 134\,s, uploaded 2024-08-15},
+  url          = {https://www.youtube.com/watch?v=4CBZNBolAAE},
+  note         = {Accessed 2026-05-23. Description: ``safe and intuitive cooperation with heavy industrial robots where human experts can fully utilise their outstanding skills in manual draping, quality assessment and guidance through the process, while the system -- consisting of several robots and tools -- takes over the monotonous and strenuous tasks.'' Implementation by Eng. Giulio Campagna (Aalborg University) with Christoph Frommel and Tobias Haase at DLR Augsburg; system analysed in studies with 22 participants. Most explicit institute-published statement of the human-robot capability division this thesis frames.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeR2pG1Lg393c,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Human-robot collaborative transport of flexible carbon fiber patch (intermediate results)}},
+  year         = {2023},
+  month        = mar,
+  day          = {09},
+  howpublished = {YouTube video, 45\,s, uploaded 2023-03-09},
+  url          = {https://www.youtube.com/watch?v=r2pG1Lg393c},
+  note         = {Accessed 2026-05-23. DrapeBot technology transfer end-2022 into a ZLP Augsburg robotic cell. ``Human leads the robot by controlling and moving the material edge he is holding.'' Camera-based deformation-driven trajectory correction. Technology by STIIMA-CNR Milan.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeHJxTF9RISIw,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{{IROS} 2018 Fan Challenge}},
+  year         = {2019},
+  month        = oct,
+  day          = {14},
+  howpublished = {YouTube video, 139\,s, uploaded 2019-10-14},
+  url          = {https://www.youtube.com/watch?v=hJxTF9RISIw},
+  note         = {Accessed 2026-05-23. IROS 2018 Madrid robotics competition: autonomous picking, opening, and closing of a Spanish fan. ZLP Augsburg team. Contact: Manfred Sch{\"o}nheits -- same Sch{\"o}nheits who is first author on \texttt{dlrSchoenheitsVamhri2018}. Public record of the institute's 2018 HRI strategic investment beyond the academic submission.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeMmT9ZTkENvo,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{10 Years {ZLP} Augsburg}},
+  year         = {2019},
+  month        = sep,
+  day          = {05},
+  howpublished = {YouTube video, 115\,s, uploaded 2019-09-05},
+  url          = {https://www.youtube.com/watch?v=MmT9ZTkENvo},
+  note         = {Accessed 2026-05-23. Institute's 10-year anniversary film (2009 founding $\to$ 2019). Contact: Prof. Dr.-Ing. Michael Kupke. ``At the ZLP in Augsburg, science and industry jointly develop new processes and production technologies to make it easier for innovations to find their way into industrial application.'' Anchors doc 86 (predecessor systems): a public institute history of the first decade.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeCuftGghuRGc,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Institute of Structures and Design -- We lighten. Everything.}},
+  year         = {2023},
+  month        = may,
+  day          = {16},
+  howpublished = {YouTube image film, 185\,s, uploaded 2023-05-16},
+  url          = {https://www.youtube.com/watch?v=CuftGghuRGc},
+  note         = {Accessed 2026-05-23. Institute's most recent official image film. Slogan ``We lighten. Everything.'' Primary external self-presentation; YouTube equivalent of the institute website front page. Useful as a quotable institute-level positioning artefact alongside the Kompetenzportfolio PDF cited in doc 87.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeI6qNOC1AEc,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Thermoplast Cell ({TPC})}},
+  year         = {2023},
+  month        = feb,
+  day          = {28},
+  howpublished = {YouTube video, 109\,s, uploaded 2023-02-28},
+  url          = {https://www.youtube.com/watch?v=I6_qNOC1AEc},
+  note         = {Accessed 2026-05-23. Integrated robotic work cell in BT-Augsburg for fibre-reinforced thermoplastic composite production. 7-m linear axis, hot press 4400\,kN, heating up to 450$^\circ$C. Contact: andreas.buchheim@dlr.de. One of the Shepard-deployable cells per \texttt{aidocs/strategy/100} \S 4.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutube9KzYTBEegY,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Inline Quality Assurance Cell}},
+  year         = {2023},
+  month        = feb,
+  day          = {07},
+  howpublished = {YouTube video, 87\,s, uploaded 2023-02-07},
+  url          = {https://www.youtube.com/watch?v=9KzYTB-EegY},
+  note         = {Accessed 2026-05-23. Separately air-conditioned, optically shielded inline-QA cell at BT-Augsburg. Enables optical pulse thermography and other measurements not permitted in an open environment. Contact: Dr. Alfons Schuster. Shepard-deployable cell per \texttt{aidocs/strategy/100}.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeKuQ4OQ8hrE,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Facility Technology Evaluation Cell ({TEC})}},
+  year         = {2023},
+  month        = aug,
+  day          = {03},
+  howpublished = {YouTube video, 79\,s, uploaded 2023-08-03},
+  url          = {https://www.youtube.com/watch?v=kU_q4OQ8hrE},
+  note         = {Accessed 2026-05-23. Two Kuka Quantec KR210 R3100 robots on a common 10-m linear axis. ``Collision-free Cooperation'' (KoKo) software tool automates dual-robot programming. Contact: lars.larsen@dlr.de. Shepard-deployable cell per \texttt{aidocs/strategy/100}.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeWVorUo0YROE,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Fully automated shell pre-assembly in project {AGREED}}},
+  year         = {2022},
+  month        = may,
+  day          = {06},
+  howpublished = {YouTube video, 300\,s, uploaded 2022-05-06},
+  url          = {https://www.youtube.com/watch?v=wVorUo0YROE},
+  note         = {Accessed 2026-05-23. AGREED project with Premium Aerotec for metallic aircraft shell pre-assembly. Quote: ``the vision of a flexible, partially autonomous and AI-controlled assembly with interchangeable participation of human workers and mobile CoBots as factory of the future according to Industry 4.0 guidelines.'' Test facility demonstrated December 2021 at Premium Aerotec, Augsburg. Contact: Dr. Marcin Malecha.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeEqxXwqhZ5DY,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Human-CoBot-collaboration for final shell assembly in project {AGREED}}},
+  year         = {2022},
+  month        = may,
+  day          = {06},
+  howpublished = {YouTube video, 311\,s, uploaded 2022-05-06},
+  url          = {https://www.youtube.com/watch?v=eqxXwqhZ5DY},
+  note         = {Accessed 2026-05-23. Companion video to \texttt{dlrZlpYoutubeWVorUo0YROE}. Final-assembly track with mobile CoBot stations parallel to manual work. Demonstrated December 2021 at Premium Aerotec, Nordenham. Contact: Dr. Marcin Malecha.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeMvPnFr4Fnhg,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Technology Bricks for Future Thermoplastic Aircraft (TB-Rumpf)}},
+  year         = {2022},
+  month        = mar,
+  day          = {31},
+  howpublished = {YouTube video, 208\,s, uploaded 2022-03-31},
+  url          = {https://www.youtube.com/watch?v=MvPnFr4Fnhg},
+  note         = {Accessed 2026-05-23. BMWK-funded LuFo-V-3 project TB-Rumpf -- national-funding-line predecessor of the EU-funded MFFD. Autoclave-free consolidation of thermoplastic laminates + resistance welding as ``technology bricks''. Contact: Matthias Horn.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeTFxbkFTO7Z0,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Thermoplastic Automated Tape Placement ({ATP})}},
+  year         = {2019},
+  month        = nov,
+  day          = {11},
+  howpublished = {YouTube video, 109\,s, uploaded 2019-11-11},
+  url          = {https://www.youtube.com/watch?v=TFxbkFTO7Z0},
+  note         = {Accessed 2026-05-23. State-of-the-art ATP facility at the DLR Institute of Structures and Design, Stuttgart site. Sounding-rocket primary-structure application referenced. Contact: Sebastian Nowotny.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutubeWUH2lnY36Q0,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Automated resistance welding of high-performance fibre-reinforced thermoplastics}},
+  year         = {2019},
+  month        = nov,
+  day          = {15},
+  howpublished = {YouTube video, 105\,s, uploaded 2019-11-15},
+  url          = {https://www.youtube.com/watch?v=WUH2lnY36Q0},
+  note         = {Accessed 2026-05-23. One of the four core MFFD welding processes. Robot-based and quality-assured. Contact: Manuel Endra{\ss}.},
+  category     = {institutional_self_presentation}
+}
+
+@misc{dlrZlpYoutube36l3oHsZqX4,
+  author       = {{DLR Institute of Structures and Design}},
+  title        = {{Robot-based Continuous Ultrasonic Welding}},
+  year         = {2019},
+  month        = sep,
+  day          = {13},
+  howpublished = {YouTube video, 136\,s, uploaded 2019-09-13},
+  url          = {https://www.youtube.com/watch?v=36l3oHsZqX4},
+  note         = {Accessed 2026-05-23. End-effector for continuous ultrasonic welding developed and built by ZLP Augsburg, mounted on standard industrial robot for large flat and double-curved structures. Demonstrated on stiffened fuselage panel and rear pressure bulkhead. Contacts: Manuel Engelschall, Dr. Lars-Christian Larsen.},
+  category     = {institutional_self_presentation}
 }

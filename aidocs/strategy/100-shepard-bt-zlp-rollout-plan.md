@@ -7,7 +7,7 @@ audience: strategy, contributor, thesis-substrate
 
 # Shepard rollout plan — BT / ZLP Augsburg cells
 
-**Lead use case:** MFFD AFP research. **Generalisation target:** every cell + technology in the BT/ZLP capabilities inventory (Krebs F. 2025-04-18, 31 slides).
+**Lead use case:** MFFD AFP research. **Generalisation target:** every cell + technology in the BT/ZLP capabilities inventory [@krebsInventur2025] (Krebs F. 2025-04-18, 31 slides).
 
 ## §1 The portfolio (from the 2025-04-18 inventory)
 
@@ -38,6 +38,8 @@ Cross-cutting **technologies** (instrumentation that flows across cells):
 The **integration target** (page 22) is *Produktionsintegrierte QS am Beispiel Panel Produktion*: an end-to-end process chain Stringerablage → Skinablage → Vakuumaufbau → Aushärten → Einmessen → Best-Fit Analyse → Spant-integration → NDI → Weiterverarbeitung, each step feeding a *Datenerfassung, -speicherung und -auswertung, DigTwin* layer. **That data layer is Shepard.**
 
 The **vision slide** (page 23, Krebs F. 2025-02-21) positions Shepard explicitly: yellow horizontal bar labelled "Digital integration by process chain spanning **data management system**" with the Shepard wordmark, sitting between *Multi-domain applied research with physical artefacts* (top) and *Domain-oriented digital tools for acceleration and validation of concept development* (bottom). Five vertical columns: Structural mechanics / Materials / Design,Process / **Production** / Ground/Flight Test. Shepard is the cross-column substrate.
+
+**Sibling axis (out of scope here).** The DIVA project — *Drone Integration via AAS*, a DLR-internal LuFo VII-2 consortium where BT/ZLP contributes the AAS repository (Shepard) — is a **parallel application axis on the same substrate**, not a wave of this manufacturing rollout. UAS / operational-airspace work runs alongside the cell-by-cell manufacturing waves below; see `aidocs/strategy/101-diva-project-context.md` for the project shape, work-packages, and consortium [@krebsDIVA2026].
 
 ## §2 Rollout sequence (waves)
 
