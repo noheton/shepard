@@ -2,8 +2,8 @@
 layout: default
 title: Monitor Collection activity
 permalink: /help/monitor-collection-activity/
+audience: user
 ---
-
 # See what's been happening in a Collection
 
 Every Collection page in shepard surfaces an **Activity** panel —

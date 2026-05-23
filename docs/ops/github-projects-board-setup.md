@@ -1,3 +1,7 @@
+---
+audience: admin
+---
+
 # Setting up the GitHub Projects v2 board
 
 GitHub Projects v2 is the Kanban surface for **issues actively being

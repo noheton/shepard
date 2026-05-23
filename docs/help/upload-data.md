@@ -2,8 +2,8 @@
 layout: default
 title: Upload data
 permalink: /help/upload-data/
+audience: user
 ---
-
 # Upload data into shepard
 
 You attach data to a [DataObject](/reference/data-object/) by

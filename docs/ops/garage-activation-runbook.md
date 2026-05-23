@@ -1,3 +1,7 @@
+---
+audience: admin
+---
+
 # Garage S3 sidecar — activation runbook for `shepard-api.nuclide.systems`
 
 **Audience:** the operator (fkrebs@nucli.de) standing on the nuclide.systems host.

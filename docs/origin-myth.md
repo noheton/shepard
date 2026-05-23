@@ -8,8 +8,8 @@ hero: true
 hero_eyebrow: Apocrypha
 hero_title: Origin myth
 hero_lede: Why is it called shepard? A reading.
+audience: visitor
 ---
-
 > [!WARNING]
 > **This page was AI-generated for the amusement of the maintainers.**
 > It is satire. The named contributors are real and their work is real;

@@ -1,3 +1,7 @@
+---
+audience: user
+---
+
 # Legacy v1 API deprecation
 
 shepard's upstream-frozen API surface lives at `/shepard/api/...`.

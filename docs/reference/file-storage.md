@@ -1,3 +1,7 @@
+---
+audience: user
+---
+
 # File storage
 
 shepard stores file payloads (the bytes behind a `FileReference` or

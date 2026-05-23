@@ -2,8 +2,8 @@
 layout: default
 title: Apache Superset — install guide
 permalink: /install/superset/
+audience: admin
 ---
-
 # Apache Superset against shepard
 
 Apache Superset is a SQL-native BI tool — dashboards, charts, ad-hoc

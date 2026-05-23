@@ -3,8 +3,8 @@ title: Delete a container that has references
 description: What happens when you try to delete a container that data objects still point at, and how to proceed safely
 permalink: /help/delete-container-with-references/
 layout: default
+audience: user
 ---
-
 # Delete a container that has references
 
 When you delete a container in shepard, any data objects that still

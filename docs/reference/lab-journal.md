@@ -2,8 +2,8 @@
 layout: default
 title: Lab journal entries
 permalink: /reference/lab-journal/
+audience: user
 ---
-
 # Lab journal entries
 
 A **`LabJournalEntry`** is a free-text (CommonMark + GFM markdown, since J1a)

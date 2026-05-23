@@ -1,3 +1,7 @@
+---
+audience: admin
+---
+
 # Cutting a release
 
 > **First post-GH-PM-adoption release** is `v6.0.0-rc.1` — the Milestone bundles the work shipped 2026-05-01 to 2026-05-23. See backfill plan at [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](../../aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md) for the synthetic-Issue audit trail.

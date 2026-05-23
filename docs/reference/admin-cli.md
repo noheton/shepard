@@ -2,8 +2,8 @@
 layout: default
 title: Admin CLI (reference)
 permalink: /reference/admin-cli/
+audience: admin
 ---
-
 # `shepard-admin` reference
 
 `shepard-admin` is the operator command-line tool that wraps the

@@ -1,8 +1,8 @@
 ---
 title: User profile
 weight: 65
+audience: user
 ---
-
 # User profile (`/v2/users/me`)
 
 shepard's **user profile** surface lets each authenticated user manage

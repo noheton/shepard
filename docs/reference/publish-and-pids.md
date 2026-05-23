@@ -2,8 +2,8 @@
 layout: default
 title: Publish and PIDs
 permalink: /reference/publish-and-pids/
+audience: user
 ---
-
 # Publish and PIDs
 
 shepard publishes entities by minting persistent identifiers (PIDs)

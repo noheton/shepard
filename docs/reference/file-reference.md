@@ -2,8 +2,8 @@
 layout: default
 title: File reference (singleton)
 permalink: /reference/file-reference/
+audience: user
 ---
-
 # File reference (singleton)
 
 A **`FileReference`** (FR1b — `aidocs/53 §1.8`) is the payload kind

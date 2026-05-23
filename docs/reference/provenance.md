@@ -2,8 +2,8 @@
 layout: default
 title: Provenance / activity log (reference)
 permalink: /reference/provenance/
+audience: user
 ---
-
 # Provenance reference
 
 shepard captures a W3C **PROV-O** provenance trail for every

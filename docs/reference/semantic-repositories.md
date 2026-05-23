@@ -2,8 +2,8 @@
 layout: default
 title: Semantic repositories (reference)
 permalink: /reference/semantic-repositories/
+audience: user
 ---
-
 # Semantic repositories
 
 A **`SemanticRepository`** is a registered source of ontology terms.

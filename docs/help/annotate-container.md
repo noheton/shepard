@@ -3,8 +3,8 @@ title: Annotate a container with semantic tags
 description: How to attach ontology terms to a timeseries / file / structured-data container so its purpose and provenance are searchable
 permalink: /help/annotate-container/
 layout: default
+audience: user
 ---
-
 # Annotate a container with semantic tags
 
 shepard lets you attach **semantic annotations** — ontology terms with

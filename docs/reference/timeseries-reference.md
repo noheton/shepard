@@ -2,8 +2,8 @@
 layout: default
 title: Timeseries reference
 permalink: /reference/timeseries/
+audience: user
 ---
-
 # Timeseries reference
 
 A **`TimeseriesReference`** attaches one or more sensor channels

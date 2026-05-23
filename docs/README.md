@@ -1,3 +1,7 @@
+---
+audience: contributor
+---
+
 # shepard docs site
 
 This is the source for the GitHub Pages site under `dlr-shepard/shepard`

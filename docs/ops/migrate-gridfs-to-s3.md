@@ -1,3 +1,7 @@
+---
+audience: admin
+---
+
 # Migrating from GridFS to S3 (upstream v5 → this fork)
 
 **Audience:** an operator running upstream shepard 5.2.0 (or an earlier version of this fork) on GridFS, who wants to switch file storage to an S3-compatible backend (Garage, MinIO, AWS S3, LocalStack, …) without downtime or data loss.

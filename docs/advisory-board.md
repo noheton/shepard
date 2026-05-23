@@ -8,8 +8,8 @@ hero: true
 hero_eyebrow: Process
 hero_title: Advisory board
 hero_lede: Ten lenses Shepard's design is filtered through. AI agents — but with real domain briefs, real findings docs, and real votes on real decisions.
+audience: visitor
 ---
-
 > [!NOTE]
 > This page describes the **AI-driven advisory board** that audits Shepard's design.
 > Each persona is a Claude sub-agent invoked with a domain-specific brief from

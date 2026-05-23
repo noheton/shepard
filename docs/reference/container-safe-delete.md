@@ -2,8 +2,8 @@
 layout: default
 title: Container safe-delete (reference)
 permalink: /reference/container-safe-delete/
+audience: user
 ---
-
 # Container safe-delete
 
 The `/v2/{kind}-containers/{id}` `DELETE` endpoints refuse to delete
