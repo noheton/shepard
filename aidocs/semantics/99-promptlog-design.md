@@ -1,8 +1,9 @@
 ---
 title: PromptLog — prompts as first-class Shepard artefacts
-stage: feature-defined
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 audience: contributors, AI engineers, design reviewers
+audited-by: aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md (Roles 8/5/3/10; 4× ACCEPT-WITH-CHANGES; escalations ESC-1/2/3)
 ---
 
 # 99 — PromptLog: prompts as first-class Shepard artefacts
