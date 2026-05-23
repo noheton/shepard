@@ -7,17 +7,26 @@ const isDarkMode = computed(() => theme.global.current.value.dark);
 
 const { play, prefersReducedMotion } = useAnimate();
 
-const heroRef = ref<HTMLElement | null>(null);
-const ctaCardsWrapper = ref<HTMLElement | null>(null);
-const howStepsWrapper = ref<HTMLElement | null>(null);
-const docsCardRef = ref<HTMLElement | null>(null);
+// Vue refs bound to Vuetify components (v-container, v-card) resolve to the
+// component instance, not the DOM node. Walk to the root element via `$el`.
+const heroRef = ref<unknown>(null);
+const ctaCardsWrapper = ref<unknown>(null);
+const howStepsWrapper = ref<unknown>(null);
+const docsCardRef = ref<unknown>(null);
+
+function toEl(r: unknown): HTMLElement | null {
+  if (!r) return null;
+  if (r instanceof HTMLElement) return r;
+  const el = (r as { $el?: unknown }).$el;
+  return el instanceof HTMLElement ? el : null;
+}
 
 onMounted(() => {
   // Stagger: hero in first, then CTA cards, then "how it works" steps, then docs card.
-  void play(heroRef.value, fadeUp, { duration: 620 });
+  void play(toEl(heroRef.value), fadeUp, { duration: 620 });
 
   const ctaCards = Array.from(
-    ctaCardsWrapper.value?.querySelectorAll<HTMLElement>("[data-anim='cta-card']") ?? [],
+    toEl(ctaCardsWrapper.value)?.querySelectorAll<HTMLElement>("[data-anim='cta-card']") ?? [],
   );
   void playStagger(ctaCards, popIn, {
     duration: 520,
@@ -27,7 +36,7 @@ onMounted(() => {
   });
 
   const howSteps = Array.from(
-    howStepsWrapper.value?.querySelectorAll<HTMLElement>("[data-anim='how-step']") ?? [],
+    toEl(howStepsWrapper.value)?.querySelectorAll<HTMLElement>("[data-anim='how-step']") ?? [],
   );
   void playStagger(howSteps, fadeUp, {
     duration: 540,
@@ -36,7 +45,7 @@ onMounted(() => {
     reducedMotion: prefersReducedMotion.value,
   });
 
-  void play(docsCardRef.value, fadeUp, { duration: 540, delay: 920 });
+  void play(toEl(docsCardRef.value), fadeUp, { duration: 540, delay: 920 });
 });
 
 // Quarkus Swagger UI lives on the backend, not the frontend domain.
