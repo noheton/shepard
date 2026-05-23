@@ -244,11 +244,11 @@ class TestWorkerPoolPrimitivesAvailable(unittest.TestCase):
 class TestVersionConstant(unittest.TestCase):
     """IMPORT_SCRIPT_VERSION constant is the source of truth.
 
-    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name).
+    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`).
     """
 
-    def test_version_is_15_15(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.15")
+    def test_version_is_15_16(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "15.16")
 
 
 if __name__ == "__main__":

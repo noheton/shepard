@@ -17,7 +17,21 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY_SCRIPT="${MFFD_SCRIPT:-${SCRIPT_DIR}/mffd-import-v15.py}"
 STOP_FILE="${MFFD_RUNNER_STOP:-/tmp/mffd-runner.stop}"
-PYTHON="${MFFD_PYTHON:-python3}"
+
+# v15.16 RUNNER-UV — prefer `uv run --script` (reads the PEP 723 header in the
+# script and creates an isolated venv with declared deps, zero global pollution).
+# Falls back to bare python3 if uv isn't on PATH. Operators can force a specific
+# interpreter via MFFD_PYTHON.
+if [[ -n "${MFFD_PYTHON:-}" ]]; then
+  RUN_CMD=("${MFFD_PYTHON}")                                          # honor explicit operator override
+elif command -v uv >/dev/null 2>&1; then
+  RUN_CMD=(uv run --script)                                           # PEP 723 self-contained
+  echo "[runner] using: uv run --script (PEP 723 isolated venv)"
+else
+  RUN_CMD=(python3)                                                   # legacy fallback
+  echo "[runner] WARNING: uv not on PATH; falling back to python3 — ensure 'requests' + 'tqdm' are installed."
+  echo "[runner]          install uv: curl -LsSf https://astral.sh/uv/install.sh | sh"
+fi
 
 if [[ ! -f "${PY_SCRIPT}" ]]; then
   echo "[runner] ERROR: ${PY_SCRIPT} not found"
@@ -51,8 +65,8 @@ crash_loop_check() {
 
 while true; do
   ATTEMPT=$((ATTEMPT + 1))
-  echo "[runner] attempt #${ATTEMPT} → ${PY_SCRIPT} $*"
-  "${PYTHON}" "${PY_SCRIPT}" "$@"
+  echo "[runner] attempt #${ATTEMPT} → ${RUN_CMD[*]} ${PY_SCRIPT} $*"
+  "${RUN_CMD[@]}" "${PY_SCRIPT}" "$@"
   EC=$?
   echo "[runner] script exited with ${EC}"
 

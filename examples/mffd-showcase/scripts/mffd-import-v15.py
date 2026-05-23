@@ -130,7 +130,13 @@ try:
     from requests import Session, Response
     from tqdm import tqdm
 except ImportError:
-    print("ERROR: uv run python mffd-dropbox-import.py  (or: pip install requests tqdm)", file=sys.stderr)
+    print(
+        "ERROR: missing dependencies (requests, tqdm).\n"
+        "  preferred:  uv run --script mffd-import-v15.py   "
+        "(reads PEP 723 header, isolated venv, zero global pollution)\n"
+        "  fallback:   pip install --user requests tqdm  &&  python3 mffd-import-v15.py",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 # v15.2 — smart warmup module (IMPORT-W1/W2/W3). Kept in a sibling file
@@ -148,7 +154,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.15"
+IMPORT_SCRIPT_VERSION = "15.16"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors

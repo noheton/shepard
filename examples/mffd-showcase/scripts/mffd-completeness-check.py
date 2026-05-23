@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["requests"]
+# ///
 #!/usr/bin/env python3
 """mffd-completeness-check.py — post-migration completeness verifier (v1.1)
 
