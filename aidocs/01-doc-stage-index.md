@@ -30,10 +30,10 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 36 |
+| `fragment` | 37 |
 | `concept` | 14 |
 | `idea` | 8 |
-| `feature-defined` | 47 |
+| `feature-defined` | 46 |
 | `audited-by-personas` | 52 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
@@ -55,7 +55,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md`](agent-findings/persona-strategy-aligner-gh-pm-2026-05-23.md) | Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23) | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 |
 
-## fragment (36)
+## fragment (37)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -94,6 +94,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/74-dlr-bt-stakeholder.md`](strategy/74-dlr-bt-stakeholder.md) | aidocs/74 — shepard: Stakeholder brief for DLR-BT (Stuttgart) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/82-zlp-augsburg-stakeholder.md`](strategy/82-zlp-augsburg-stakeholder.md) | aidocs/82 — shepard: Stakeholder brief for DLR ZLP Augsburg | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/86-shepard-predecessor-systems.md`](strategy/86-shepard-predecessor-systems.md) | Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
 ## concept (14)
@@ -128,7 +129,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (47)
+## feature-defined (46)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -172,7 +173,6 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/86-shepard-predecessor-systems.md`](strategy/86-shepard-predecessor-systems.md) | 86 — Shepard's predecessor systems at DLR ZLP: KIBID, iDMS, PRAESTO | 2026-05-23 | — |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |
@@ -293,7 +293,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
-| [`aidocs/agent-findings/predecessor-history-correction-2026-05-23.md`](agent-findings/predecessor-history-correction-2026-05-23.md) | Predecessor history — standing correction | 2026-05-23 | — |
+| [`aidocs/agent-findings/predecessor-history-correction-2026-05-23.md`](agent-findings/predecessor-history-correction-2026-05-23.md) | Predecessor history — standing correction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/01-repo-overview.md`](archive/01-repo-overview.md) | Repo Overview — shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/02-cluster-map.md`](archive/02-cluster-map.md) | Cluster Map — shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/03-issues-status.md`](archive/03-issues-status.md) | Issues Status — shepard (GitLab open items) | 2026-05-23 | 2026-05-23 |

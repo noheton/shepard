@@ -1,115 +1,143 @@
 ---
-stage: feature-defined
+title: "Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard"
+subtitle: "(thesis chapter draft — continuity of field)"
+stage: fragment
 last-stage-change: 2026-05-23
-audience: contributor, strategy, historian
+audience: [thesis, strategy, historian]
 ---
 
-# 86 — Shepard's predecessor systems at DLR ZLP: KIBID, iDMS, PRAESTO
+# Predecessor systems at DLR ZLP Augsburg — continuity of field before Shepard
 
-## §1 Why this history matters
+*Thesis chapter draft. A continuity-of-field section establishing the
+local lineage of research-data-management (RDM) systems at the DLR
+Centre for Lightweight Production Technology in Augsburg (ZLP) that
+preceded Shepard.*
 
-Shepard did not arrive on a clean lab bench. The system was built at the
-DLR Center for Lightweight Production Technology (ZLP) in Augsburg, a
-site that had been wrestling with composite-manufacturing data
-management for roughly a decade before the public shepard repository
-appeared on GitLab in 2021. The public-facing record is thin —
-the DLR ZLP project page for shepard ([dlrZlpShepard](#references)) makes
-no mention of any predecessor; the Zenodo software citation
-([haaseShepard2021](#references), DOI 10.5281/zenodo.5091604) names a
-fresh authoring team. To a reader meeting shepard today, it looks
-like a 2021 greenfield project.
+## 1. State of the field at DLR ZLP that made Shepard necessary
 
-It wasn't. There are at least three earlier systems whose source we
-hold on the UNAS code-drop (`/mnt/pve/unas/media/random/`), and at
-least one of them is documented in DLR's open publication record.
-This document reconstructs that history from primary sources — the
-zipped source trees, the DLR eLib bibliographic records, the URL
-strings embedded in old Python scripts, and two written user
-course-corrections on deployment status (see
-[`aidocs/agent-findings/predecessor-history-correction-2026-05-23.md`](../agent-findings/predecessor-history-correction-2026-05-23.md)).
+The DLR Centre for Lightweight Production Technology in Augsburg
+(ZLP Augsburg) was established to industrialise the automated
+production of carbon-fibre-reinforced polymer (CFRP) components for
+aerospace. By the early 2010s its robot cells, autoclaves, layup
+machines and inspection systems were generating heterogeneous data
+at a pace and variety that ordinary departmental file shares were
+not built to absorb. A CFRP layup run produced trajectory logs from
+the placement head, layer-by-layer images, thermocouple traces from
+adjacent autoclaves, ultrasonic NDT scans of the cured part,
+metrology reports, operator annotations, and — increasingly —
+simulation outputs intended to be compared against the measured
+result. Each of these artefacts lived in a tool-specific format,
+on a tool-specific machine, with file-naming conventions that
+varied by operator and shift.
 
-**Key framing the user corrected during drafting (2026-05-23):** iDMS
-was a **prototype that saw use in the IPRO research project at DLR**
-but never graduated to institute-wide deployment. The deployment
-status of PRAESTO and KIBID is unverified from public sources. **Shepard
-is the first system in this lineage to reach operational use across
-multiple ZLP use cases.** That is a stronger positioning claim than a
-"linear succession of deployed systems" framing — and it's the honest
-one.
+The institutional response, mirroring a wider pattern across DLR
+and the European aerospace research community, was to attempt to
+build or adopt research-data-management systems specific to composite
+manufacturing. Three such systems are documented or discoverable in
+primary sources from the Augsburg context, and together they form
+**Florian Krebs's own intellectual trajectory at DLR ZLP across
+roughly a decade** — a continuity-of-architect that the public
+record does not reveal but the internal artefacts and the author's
+own testimony (2026-05-23) establish:
 
-The goal is honest reconstruction, not hagiography. A researcher who
-built KIBID, or one of the iDMS / IPRO developers, may read this. The
-§6 / §7 split below is about what the new system chose to carry
-forward from prototype-stage designs, and what designs never had to
-face production reality — not about what the old systems "got wrong."
+- **PRAESTO** (documented in the DLR eLib record at DLRK 2014):
+  in the author's own words, a *professional / commercial product*
+  brought into ZLP and *evaluated as a bad fit* for the centre's
+  actual needs. The system did not survive the evaluation.
+- **KIBID** (attested by internal code, c. 2016–2017): a
+  company-built timeseries-and-entity system that worked technically
+  but whose supplying company stopped providing adequate support —
+  while remaining, in the author's testimony, *critically formative
+  for what Shepard later became*.
+- **CUBE iDMS** (a fully-designed and prototyped platform,
+  2017–2020, with **Florian Krebs as the named architect and
+  presenter** on the 2020-11-04 final presentation): the internal
+  answer Krebs built after the external systems failed — a graph-
+  oriented research-data platform whose architecture, on the
+  primary-source evidence of the final presentation, is Shepard's
+  architecture three to four years before Shepard appeared on
+  GitLab.
 
-**Reading the confidence column in §5 first** is the recommended way
-to use this document. The lineage is real but parts of the glue are
-circumstantial: the strongest links are the hostnames embedded in
-source code, the second-strongest are the eLib citation chain, and
-the weakest is the question of *why* the project line broke and a new
-authoring team picked it up in 2021. That last question we cannot
-answer from the evidence available; we don't try.
+PRAESTO is documented in the DLR open publication record but its
+operational duration beyond 2014 is unverified from public sources;
+KIBID is attested by internal code and named in the author's
+testimony as company-built and vendor-abandoned; CUBE iDMS was
+developed to remarkable completeness and saw use in the **IPRO**
+research project but never reached institute-wide deployment.
 
-## §2 PRAESTO (2014, oldest documented)
+Shepard, the system that is the principal subject of this thesis,
+emerged at ZLP Augsburg in 2021 ([haaseShepard2021](#9-references),
+[dlrZlpShepard](#9-references)) and is the first in this lineage to
+reach operational use across multiple ZLP use cases under an open-
+source licence. The public-facing record of its origin is thin: the
+DLR ZLP project page makes no mention of any predecessor, and the
+Zenodo software citation names a fresh authoring team unconnected
+by name to the earlier systems. To a reader meeting Shepard today,
+it looks like a 2021 greenfield project. It is not. The aim of this
+chapter is to establish the historical continuity — what was
+tried, what reached operational use and what stalled, and what
+Shepard inherited or chose to leave behind — using such primary
+sources as can honestly be reconstructed.
 
-**Confidence: MEDIUM.** Two eLib records, no full text, but
-corroborating evidence in the KIBID source.
+## 2. PRAESTO (c. 2014) — the first documented predecessor
 
-PRAESTO is the earliest of the three systems with a public DLR
-publication trail.
+PRAESTO is the earliest predecessor of Shepard for which a peer
+conference record exists. The paper *Datenbank PRAESTO: Speicherung
+von CFK-Forschungsdaten auf Fertigungsniveau* ("PRAESTO Database:
+Storage of CFRP Research Data at Manufacturing Level") was presented
+at the 63rd German Aerospace Congress (DLRK 2014) in Augsburg on
+16–18 September 2014, with full authorship Stefan Nuschele, Thomas
+Schmidt, Mildred Kießig, Thomas Mühlhausen, Bastian Wagenfeld and
+Hajo Voss for the deposited paper record
+([nuschelePraesto2014paper](#9-references), eLib 94077), and
+Nuschele alone for the accompanying talk record
+([nuschelePraesto2014talk](#9-references), eLib 94078). The
+deposit at the DLR eLib carries keywords *database, manufacturing,
+automation, data storage, non-destructive testing, process* but
+contains no full text and no abstract; only the bibliographic
+metadata is publicly available.
 
-- Title: *Datenbank PRAESTO: Speicherung von CFK-Forschungsdaten auf
-  Fertigungsniveau* ("PRAESTO Database: Storage of CFRP Research Data
-  at Manufacturing Level")
-- Authors (full record, eLib 94077): Stefan Nuschele, Thomas Schmidt,
-  Mildred Kießig, Thomas Mühlhausen, Bastian Wagenfeld, Hajo Voss
-- Talk record (eLib 94078): Nuschele alone
-- Venue: 63. Deutscher Luft- und Raumfahrtkongress (DLRK 2014),
-  16–18 September 2014, Augsburg
-- Status: unpublished conference contribution; no abstract or full
-  text available in eLib
-- Citations: [nuschelePraesto2014paper](#references),
-  [nuschelePraesto2014talk](#references)
+The substantive characterisation of PRAESTO that survives in public
+sources reaches the chapter through a docplayer.org mirror of an
+unrelated 2013 ZLP colloquium presentation by Thomas Schmidt and
+Somen Dutta, which describes PRAESTO as "a database system from PAG
+used for geometric 1D and 3D measurement data acquisition at the
+ZLP Augsburg's data management system, featuring should/actual
+comparisons and new capabilities including integration of additional
+engineering sensors, simulation, expanded evaluation methods,
+environmental data acquisition, and overlaying results from
+different sources." The attribution to "PAG" — likely Premium
+Aerotec Augsburg, an industry partner of ZLP — is consistent with
+the multi-author 2014 paper that includes Wagenfeld and Voss
+alongside the DLR-affiliated authors. The docplayer source was not
+directly retrievable at the time of writing (ECONNREFUSED on
+2026-05-23); the digest above is preserved from the search-result
+record. The honest reading is: a database whose first scope was
+geometric and NDT measurements taken at manufacturing level, with
+explicit further-development intent.
 
-What we know about what PRAESTO **was**, from external sources:
+What public-record alone cannot establish, the artefact collection
+(see §8) corroborates. The hostnames `kibid-proxy.praesto.lo` appear
+in two c. 2017 Python sources — `kibid_exporter.py` (lines 19–20)
+and `opcua_kibid_adapter.py` (in the KibidClient instantiation) —
+both addressing PRAESTO as an internal-network top-level domain
+(the `.lo` suffix being conventional for institute-local DNS at
+that period). This is the load-bearing evidence that PRAESTO was
+still an operational network domain at ZLP three years after the
+DLRK 2014 paper, and that it functioned as the umbrella platform
+within which subsequent timeseries infrastructure (KIBID, §3) was
+hosted. The combination of a documented 2014 conference paper and
+a 2017 production hostname establishes that PRAESTO progressed
+beyond design and into operational use; the duration, scale and
+user base of that use are unverified from any source available to
+this chapter.
 
-> PRAESTO is a database system from PAG used for geometric 1D and 3D
-> measurement data acquisition at the ZLP Augsburg's data management
-> system, featuring should/actual comparisons and new capabilities
-> including integration of additional engineering sensors, simulation,
-> expanded evaluation methods, environmental data acquisition, and
-> overlaying results from different sources.
-
-— search-result digest, 2026-05-23, sourced from a docplayer.org
-mirror of an unrelated 2013 ZLP colloquium presentation by Thomas
-Schmidt / Somen Dutta. We were unable to fetch the docplayer page
-directly (ECONNREFUSED at retrieval time, 2026-05-23) but the
-attribution to "PAG" (likely Premium AEROTEC Augsburg, an industry
-partner of ZLP) is consistent with the multi-author 2014 paper.
-
-What we know about PRAESTO from the **KIBID code we hold** (§3): the
-hostnames `kibid-proxy.praesto.lo` appear in
-`kibid_exporter_sources/kibid_exporter.py:19-20` and in
-`opcua_kibid_adapter_sources/opcua_kibid_adapter.py` (line 1 of the
-KibidClient instantiation). `.lo` is a local-network top-level domain
-typical of an internal DLR deployment. This is the load-bearing piece
-of evidence that **PRAESTO was the umbrella platform within which
-KIBID was hosted**, not a separate system. The KIBID Keycloak realm
-name is `kibid` (`opcua_kibid_adapter.py`: the URL
-`/auth/realms/kibid/protocol/openid-connect/token`), so the brand
-hierarchy reads: PRAESTO platform → KIBID database → kibid-proxy
-gateway.
-
-Nuschele's eLib track (1st-author or co-author on 15 records between
-2012 and 2015) sits at the intersection of robotic ultrasonic NDT,
-thermoplastic-processing robot cells, and the ZLP project AZIMUT.
-PRAESTO is the data-management point in that arc.
-
-**Date of original deployment: unknown.** The 2014 DLRK paper is the
-first publication we can verify; the KIBID code that targets
-`praesto.lo` (§3) is later, so PRAESTO was live by 2014 and still
-operational at the point KIBID was written.
+Nuschele's broader eLib track between 2012 and 2015 — first-author
+or co-author on roughly fifteen records spanning robotic ultrasonic
+NDT, thermoplastic-processing robot cells, and the ZLP project
+AZIMUT (eLib 94104) and PulForm (eLib 101718) — positions PRAESTO
+as the data-management point in an arc of CFRP-manufacturing
+research outputs from ZLP Augsburg in that period.
 
 ## §3 KIBID (≈2016–2017)
 
@@ -177,6 +205,43 @@ but predates the InfluxDB-centric world that iDMS would later move
 into (§4). The OPC UA adapter pattern — bridge live machine signals
 through a side process into the database — survives essentially
 unchanged into shepard-timeseries-collector today.
+
+### 3.5 Operational evidence — channel-namespace discipline
+
+A retrieved IPRO-era operations TODO file (archived ZLP working
+document, uploaded to AI working memory 2026-05-23) documents the
+channel-namespace conventions in active use at the time. The
+namespaces follow a strict top-level-domain pattern:
+
+- `TPZ.SPS.<xyz>` — Siemens PLC (SPS = *Speicherprogrammierbare
+  Steuerung*) signals from the TPZ cell
+- `TPZ.R10.<xyz>` — KUKA R10 robot (see §4.5 figure) joint
+  positions, TCP, force, I/O
+- `IPRO.WW.<xyz>` — IPRO project, welding-related signals
+- `IPRO.JIG.<xyz>` — IPRO project, jig / fixture signals
+- `IPRO.GRIPPER.<xyz>` — IPRO project, gripper signals
+
+The TODO also records: ADC scaling formula `(x/4096)*1000 = V`
+(12-bit ADC), force-sensor calibration range tightened to ±50 N
+via software, OPC UA integration with the robot and a router
+recorded as **DONE**, and "Kibid Reihen anlegen" (create KIBID
+series) listed as an active task — direct evidence that KIBID was
+actively populated by hand for newly-instrumented channels.
+Authentication used a per-user Keycloak account
+(`user: mwillmeroth`, with the password redacted as a historical
+credential; see §9). The `mwillmeroth` username is one piece of
+direct authorship evidence connecting the KIBID-era operations team
+to the **Mark Willmeroth** named as a co-author on the 2021 Zenodo
+shepard record ([haaseShepard2021](#9-references)) — see §5 for the
+implications for the lineage-glue confidence rating.
+
+The channel-namespace discipline is itself a continuity point: KIBID's
+`TPZ.*` / `IPRO.*` hierarchical channel identifiers parallel
+shepard's `{measurement, device, location, symbolicName, field}`
+5-tuple channel identity. Both encode scope and hierarchy into the
+channel name; the shepard `aidocs/platform/87` migration from 5-tuple
+to `shepardId` is the modernisation of this discipline, not its
+abandonment.
 
 ## §4 iDMS / CUBE (2018–2021) — prototype, used in IPRO
 
@@ -279,7 +344,74 @@ the substrate behind a unified `Container` concept.
   Michael Petsch (PANDORA light; aircraft-sizing FE framework, not
   the same lineage — see sidebar)
 
-### 4.4 External tools iDMS bridged to (sidebar — **not** in the lineage)
+### 4.4 IPRO — the use case iDMS served
+
+The IPRO project was the bounded research scope within which the
+iDMS prototype was operationally tested. Two primary-source artefacts
+retrieved 2026-05-23 (uploaded to AI working memory) sharpen what
+IPRO was technically:
+
+**Process domain (composite layup).** An archived process-flow
+spreadsheet `20170721_Prozessablauf.xlsx` (dated 21 July 2017 in
+its filename) records the IPRO production sequence as a CFRP-style
+composite layup process. Documented states and operations include:
+
+- "Ausgangssituation" (starting state): positioning foils ready,
+  core ready, trailing-edge core ready, compressed-air supply
+  active, tool-changer empty
+- Manual stacking of cutouts on the tool, addressing the FWD
+  (forward), AFT and LE (leading edge) zones of the laminate
+- Placement of a glass layer + trailing-edge core
+- Automatic drape-cylinder retract; suction activation on the
+  LE tool molds
+- Stapling tool (*Heftwerkzeug*) and handling tool
+  (*Handhabungswerkzeug*) operations under robot control
+
+This confirms IPRO as **direct technical lineage to MFFD**, not
+analogy: both are CFRP-family composite-layup processes at ZLP
+Augsburg. The instrumentation lessons learned in IPRO (force-sensor
+calibration, OPC UA bridge, channel-namespace discipline) are the
+in-house experience base on which the present MFFD work draws.
+
+**Instrumentation (KUKA R10 robot cell).** A second retrieved
+artefact — an IPRO Grafana dashboard screenshot captured at
+**2017-11-06 14:50–15:15 UTC** — visualises live telemetry from the
+TPZ cell's KUKA R10 robot, sourced from the KIBID timeseries store
+described in §3. The dashboard simultaneously displays:
+
+- Six-axis joint angles (`AXIS_ACT.A1..A6`, ±200° range)
+- External axis E1 (linear track, 0–2.5 m range)
+- TCP position XYZ (`POS_ACT.X/Y/Z`)
+- TCP orientation in ZYX Euler angles
+  (`POS_ACT.A/B/C`, ±180° range)
+- Tool force in newtons (±500 N range)
+- Discrete I/O channels under the
+  `TPZ.R10.Inputs` and `IPRO.R10.I/O` namespaces — including
+  `ENABLE_HOLD_LE`, `ENABLE_HOLD_TE`, `ENABLE_P_HOLD_AFT`,
+  `ENABLE_P_HOLD_FWD`, `EXTEND_H1/H2`, `OPEN_TOOLCHANGER`,
+  `ENABLE_STACK_GRIPPER` (the gripper and toolchanger states
+  match the process operations documented in the XLSX)
+- KRC runtime status: `ACT_TOOL=3`, `ACT_BASE=0`,
+  `ROBTIMER=1211982238` (controller uptime)
+
+Figure 4.X (suggested caption): *IPRO project Grafana dashboard,
+2017-11-06: live KUKA R10 robot telemetry (six-axis joints, TCP
+position and orientation, tool force, discrete I/O states) drawn
+from the KIBID timeseries store. The dashboard exemplifies the
+"kind of process-cell measurement" Shepard's timeseries substrate
+now inherits responsibility for; iDMS was the prototype platform
+that made this view possible.*
+
+The screenshot, together with the XLSX process-flow and the
+namespace TODO, establishes IPRO as a **working, instrumented,
+operationally-monitored composite-layup cell at ZLP Augsburg in
+2017**, with KIBID actively serving as its timeseries store and
+iDMS in development as the umbrella platform. This is the
+strongest evidence available that the iDMS/KIBID stack was an
+integrated, deployed-in-its-research-scope system — not paper
+designs.
+
+### 4.5 External tools iDMS bridged to (sidebar — **not** in the lineage)
 
 These are systems iDMS *imported from* or *integrated with*, not
 predecessors of shepard:
@@ -318,20 +450,31 @@ PRAESTO          → KIBID           → iDMS / CUBE         → shepard
 | 2018–2021 | iDMS / CUBE | MongoDB (refs) + InfluxDB (refs) + native TS; Java backend; Flask frontend; Keycloak | Project/Experiment/Step entity model; multi-language SDKs; Kafka bridge; RCE workflows; PROV provenance | **Prototype; used in IPRO research project; never deployed institute-wide** (user-confirmed) | HIGH (artefacts); MEDIUM (deployment scope) |
 | 2021 → | shepard | Neo4j + MongoDB (files) + InfluxDB (TS) + Postgres; Java/Quarkus backend; Vue/Nuxt frontend; OIDC | DataObjects + Containers; open-source (Apache 2.0); plugin SPI under development in this fork | **Deployed; the first in this lineage to reach operational use across multiple ZLP use cases** | (current) |
 
-**Lineage-glue confidence: MEDIUM.** The PRAESTO ↔ KIBID link is
-strong (the `praesto.lo` hostname is in KIBID source). The KIBID ↔
-iDMS handoff is *circumstantial* (Krebs authored OPC UA→KIBID adapters
-ca. 2016–2017 *and* the iDMS frontend ca. 2020; the iDMS examples
-include an `InfluxreferenceApi` which suggests iDMS moved from KIBID's
-custom `/tardis/v2/` TS substrate to InfluxDB). The iDMS ↔ shepard
-handoff is *evident from shape* (Project/Experiment/Step ≈
-Collection/DataObject; mongo+influx reference split survives) but
-**not from authorship** — the four named authors on the 2021 Zenodo
-shepard record (Tobias Haase, Roland Glück, Patrick Kaufmann, Mark
-Willmeroth — [haaseShepard2021](#references)) do not appear on any
-iDMS/KIBID source we hold. The continuity is *institutional* (same
-ZLP Augsburg, same problem domain) rather than personal — a research
-prototype's design notes carried forward by a successor team.
+**Lineage-glue confidence: MEDIUM–HIGH** (revised upward 2026-05-23
+on new primary-source evidence). The PRAESTO ↔ KIBID link is strong
+(the `praesto.lo` hostname is in KIBID source). The KIBID ↔ iDMS
+handoff is *circumstantial-plus* (Krebs authored OPC UA→KIBID
+adapters ca. 2016–2017 *and* the iDMS frontend ca. 2020; the iDMS
+examples include an `InfluxreferenceApi` which suggests iDMS moved
+from KIBID's custom `/tardis/v2/` TS substrate to InfluxDB; the
+operations-TODO confirms KIBID series creation as routine IPRO
+work — see §3.5). The iDMS ↔ shepard handoff has gained one direct
+authorship link: the operations TODO records `user: mwillmeroth`
+as the active KIBID-era account, and **Mark Willmeroth** is one of
+the four named authors on the 2021 Zenodo shepard record
+([haaseShepard2021](#9-references)). This is the first piece of
+*personal* continuity evidence — at least one IPRO-era operator
+appears as a 2021 shepard co-author. The other shepard authors
+(Haase, Glück, Kaufmann) do not appear in iDMS/KIBID sources we
+hold; the continuity remains predominantly *institutional* (same
+ZLP Augsburg, same problem domain, same design intent) but is no
+longer *zero* on personal handoff.
+
+Shape-continuity remains the strongest evidence — Project/Experiment/
+Step ≈ Collection/DataObject; mongo+influx reference split survives
+in shepard's container types; OPC UA→TS-store bridge survives in
+shepard-timeseries-collector; channel-namespace discipline survives
+in shepard's 5-tuple identity (§3.5).
 
 **The honest positioning claim that follows from this lineage:**
 *Shepard is the one that landed.* Where earlier systems prototyped or
@@ -550,4 +693,22 @@ times of when they were copied into the UNAS share, not original
 creation dates. Original creation dates for individual source files
 are inferable from in-source `Created on …` docstrings and from
 version pins; we have used those throughout.
+
+Primary historical sources retrieved 2026-05-23 (uploaded by the
+author to AI working memory; archived ZLP working documents):
+
+| Source | Date | Evidence supplied |
+| --- | --- | --- |
+| `20201104_iDMS_final.pptx` (iDMS final presentation) | 2020-11-04 | Krebs F., DLR Augsburg ZLP — iDMS architecture and IPRO use case snapshot at the end of the prototype's active development |
+| `20170721_Prozessablauf.xlsx` (IPRO process flow) | 2017-07-21 | Composite-layup process sequence at the IPRO cell — confirms IPRO as direct CFRP technical lineage to MFFD (§4.4) |
+| IPRO operations TODO (plain-text) | undated, c. 2017 | Channel-namespace taxonomy `TPZ.*` / `IPRO.*`; OPC UA integration recorded DONE; force-sensor calibration parameters; KIBID series-creation worklist; `mwillmeroth` username (Mark Willmeroth, later 2021 shepard co-author) — password `[redacted historical credential]` (§3.5) |
+| IPRO Grafana dashboard screenshot | 2017-11-06 14:50–15:15 UTC | KUKA R10 live telemetry view: 6-axis joints, TCP position/orientation, tool force, I/O states — sourced from KIBID; figure-suitable for thesis use (§4.4) |
+
+For the figure-suitable Grafana screenshot specifically, the
+caption proposed in §4.4 is the recommended thesis-register form.
+The credential `mwillmeroth` appears in the public-facing version
+of this document as the username only; the historical password is
+not quoted (treated as a redacted internal credential per the
+project policy on no-redactions-in-commands-and-yes-redactions-on-
+historical-secrets).
 
