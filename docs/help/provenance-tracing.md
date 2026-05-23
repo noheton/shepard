@@ -3,8 +3,8 @@ title: Trace dataset provenance
 description: How to view who acted on a dataset and when
 permalink: /help/provenance-tracing/
 layout: default
+audience: user
 ---
-
 # Trace dataset provenance
 
 Shepard records every significant action on a dataset as a provenance activity: who created it, who updated it, who read it, who deleted a reference, and so on.

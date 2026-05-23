@@ -2,8 +2,8 @@
 layout: default
 title: User guide
 description: Concepts an end user needs to navigate shepard — collections, data objects, references, permissions, search.
+audience: user
 ---
-
 This page introduces the concepts you encounter while using shepard. It is
 descriptive, not exhaustive — the live API explorer at
 `/shepard/doc/swagger-ui` is the source of truth for fields and parameters.

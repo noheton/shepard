@@ -2,8 +2,8 @@
 layout: default
 title: Cross-instance import (reference)
 permalink: /reference/import/
+audience: user
 ---
-
 # Cross-instance import — `mffd-import-v15`
 
 This page documents `examples/mffd-showcase/scripts/mffd-import-v15.py`,

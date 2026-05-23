@@ -2,8 +2,8 @@
 layout: default
 title: File bundle (reference)
 permalink: /reference/file-bundle/
+audience: user
 ---
-
 > **Looking for a single-file primitive?** With FR1b shipped, the
 > singleton `FileReference` is back as a distinct primitive — see
 > [File reference (singleton)](/reference/file-reference/) for the

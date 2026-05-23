@@ -8,8 +8,8 @@ hero_eyebrow: Architecture
 hero_title: Architecture
 hero_lede: Stack, persistence, entity model, auth, and export — sourced from `aidocs/01-repo-overview.md` and the in-repo `architecture/src/` AsciiDoc.
 hero_bg: green
+audience: [user, admin, plugin-author]
 ---
-
 This page summarises shepard's architecture as it exists today. Sources:
 `aidocs/01-repo-overview.md`, `architecture/src/05_building_block_view/`,
 `architecture/src/09_architecture_decisions/`, `infrastructure/docker-compose.yml`.

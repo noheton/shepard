@@ -2,8 +2,8 @@
 layout: default
 title: View recipes (reference)
 permalink: /reference/view-recipes/
+audience: user
 ---
-
 # View recipes — `TemplateKind.VIEW_RECIPE`
 
 A **view recipe** is a reusable, shape-driven projection. It

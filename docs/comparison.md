@@ -2,8 +2,8 @@
 layout: default
 title: Upstream vs this fork — feature comparison
 description: Side-by-side comparison of upstream shepard 5.2.0 and this fork's additional capabilities.
+audience: [user, admin, plugin-author]
 ---
-
 # Feature comparison: upstream vs this fork
 
 **Legend:** ✓ shipped · 📐 designed · 🗓 planned · — not present

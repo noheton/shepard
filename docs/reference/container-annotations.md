@@ -2,8 +2,8 @@
 layout: default
 title: Container annotations (reference)
 permalink: /reference/container-annotations/
+audience: user
 ---
-
 # Container annotations
 
 Semantic annotations on a container itself — distinct from annotations

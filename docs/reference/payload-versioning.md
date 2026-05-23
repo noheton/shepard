@@ -1,3 +1,7 @@
+---
+audience: user
+---
+
 # Payload versioning reference
 
 **Feature ID:** PV1a  

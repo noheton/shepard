@@ -2,8 +2,8 @@
 layout: default
 title: Getting started
 description: A 14-line Python quickstart against a running shepard instance.
+audience: user
 ---
-
 This walks through creating a Collection, creating a DataObject, attaching a
 child and a successor, and reading the data back — using the auto-generated
 Python client.

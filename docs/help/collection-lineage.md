@@ -3,8 +3,8 @@ title: Explore collection lineage
 description: How to visualise parent/child and predecessor/successor relationships between datasets
 permalink: /help/collection-lineage/
 layout: default
+audience: user
 ---
-
 # Explore collection lineage
 
 Datasets (DataObjects) in a collection can be linked by two types of relationship:

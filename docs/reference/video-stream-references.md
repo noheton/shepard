@@ -1,8 +1,8 @@
 ---
 title: Video stream references
 weight: 65
+audience: user
 ---
-
 # Video stream references
 
 shepard's **`VideoStreamReference`** payload kind attaches a video file

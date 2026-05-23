@@ -2,8 +2,8 @@
 layout: default
 title: Publish a DataObject or Collection
 permalink: /help/publish-data-object/
+audience: user
 ---
-
 # Publish a DataObject or Collection
 
 A **publish** in shepard mints a persistent identifier (PID) for one

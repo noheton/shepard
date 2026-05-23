@@ -2,8 +2,8 @@
 layout: default
 title: Plugins (reference)
 permalink: /reference/plugins/
+audience: plugin-author
 ---
-
 # shepard plugins reference
 
 shepard's value grows from extension. New payload kinds (HDF5,

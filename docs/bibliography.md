@@ -6,8 +6,8 @@ hero: true
 hero_eyebrow: Provenance
 hero_title: Bibliography
 hero_lede: The citable evidence trail behind every design decision.
+audience: visitor
 ---
-
 This is the bibliography of standards, regulations, papers, software, and
 ontologies cited across Shepard's documentation and design notes. It is
 auto-generated from a canonical BibTeX file

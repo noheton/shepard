@@ -1,3 +1,7 @@
+---
+audience: user
+---
+
 # Snapshots reference
 
 **Feature ID:** V2b  

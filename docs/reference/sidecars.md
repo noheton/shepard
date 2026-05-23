@@ -2,8 +2,8 @@
 layout: default
 title: Plugin sidecars SPI (reference)
 permalink: /reference/sidecars/
+audience: user
 ---
-
 # Plugin sidecars — `PluginManifest.sidecars()`
 
 shepard plugins frequently need **infrastructure sidecars** to

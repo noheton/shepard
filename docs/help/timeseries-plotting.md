@@ -3,8 +3,8 @@ title: Plot timeseries data
 description: How to view interactive charts for sensor channels
 permalink: /help/timeseries-plotting/
 layout: default
+audience: user
 ---
-
 # Plot timeseries data
 
 Shepard renders time-series channels as interactive charts with zoom, pan, and crosshair tooltips — no download or separate tool needed.

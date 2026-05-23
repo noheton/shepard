@@ -1,3 +1,7 @@
+---
+audience: user
+---
+
 # Create a data object or collection from a template
 
 Templates let you start with a predefined structure — pre-filled attributes, file slots, and a consistent name — instead of filling in everything from scratch.

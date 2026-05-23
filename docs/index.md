@@ -12,8 +12,8 @@ hero_cta1_text: Get started
 hero_cta1_url: /getting-started
 hero_cta2_text: View architecture
 hero_cta2_url: /architecture
+audience: visitor
 ---
-
 shepard ("Storage for HEterogeneous Product And Research Data") is a multi-database
 research-data platform developed by DLR's Center for Lightweight Production Technology
 (Augsburg). It exposes a single REST API that stores timeseries, files, structured

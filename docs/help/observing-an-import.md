@@ -3,8 +3,8 @@ title: Watch an import land in real time
 description: Plot Shepard's own ingestion rate while a large import is running
 permalink: /help/observing-an-import/
 layout: default
+audience: user
 ---
-
 # Watch an import land in real time
 
 When a large dataset is being imported, you want a quick way to confirm that

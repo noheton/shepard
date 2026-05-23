@@ -2,8 +2,8 @@
 layout: default
 title: API and clients
 permalink: /reference/api/
+audience: user
 ---
-
 # API surfaces and clients
 
 shepard exposes **two API shelves**, with a different stability promise
