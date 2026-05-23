@@ -861,3 +861,105 @@
   note         = {Single-slide A0-format poster presenting the PLUTO mission's RDM work and its use of Shepard as the technology stack. Authors are all from DLR Institute of Space Systems, Bremen. The poster cites Friedline et al.~2025 (HMC Conference shepard paper), Haase et al.~2021 (Zenodo shepard release), Aksteiner et al.~2024 (PLUTO mission paper), and Holz 2024 (Bremen master thesis on deployable flexible solar arrays for space). Documents Shepard's role: storage (data containers as partitions of dedicated DBs), organization (collections / data objects / references; Parent/Child for hierarchy; Predecessor/Successor for sequence), access (REST + frontend + Python library + IAM with API keys), and documentation (key-value metadata + ontology classes + built-in Lab Journal). The file was uploaded by Florian Krebs annotated with his comments --- the poster itself is not FK-authored. Bib key chosen to credit the actual authors (Welzm{\"u}ller \emph{et al.}). Complements the existing \texttt{welzmueller2024Pluto} entry for the PLUTO mission paper. Uploaded to AI working memory 2026-05-23. Cited as primary source in the thesis-idea artefact inventory (\texttt{project\_thesis\_idea.md}).},
   category     = {dlr_internal}
 }
+
+@misc{zlpDataDrivenIntelligence2025,
+  author       = {{DLR Zentrum f{\"u}r Leichtbauproduktionstechnologie (ZLP) Augsburg}},
+  title        = {{DLR ZLP Augsburg --- Data Driven Intelligence}},
+  year         = {2025},
+  month        = jan,
+  howpublished = {Institutional presentation deck; PDF, 29 pages, generated 2025-01-27 by Google Docs Renderer},
+  note         = {Twenty-nine-slide ZLP Augsburg positioning deck framing the centre's mission as ``data-driven'' production technology. Slides 1--7 introduce the centre (mission, four research-group Venn diagram, valley-of-death framing, DIKW-pyramid epistemology, Industry 4.0 vs 5.0 comparison, manufacturing-vision 2030+). Slides 8--14 articulate the digital-strategy stack (Exchange / Standardisation / Analytics / Data management) and name Shepard explicitly as the ``integrated data management system''. Slide 9 is the canonical Shepard architecture diagram (Shopfloor + OPC UA / Edge Collector $\to$ REST API $\to$ graph-organisational-DB with Time series / GIT / Files / Structured-documents stores); slide 10 the (raw) data-capture interface view (PLC Cell, KRC4, TPS Controller, PLC MTLH with PN/EC/UA/FSD/ADS/REST protocol overlay); slide 11 the data-contextualization architecture (Context Provider + Data Aggregator + leading-component observation); slide 12 the MFFD AFP thermoplastic fibre-placement demonstrator showing the live ``shepard\_cube2-IR Image'' figure; slide 14 the GTlab/ADAPT gas-turbine-laboratory use case (a second use-case beyond MFFD). Slides 15--17 + 22 cover the Asset Administration Shell (AAS / Plattform Industrie 4.0) substrate. Slides 18--24 lay out the Manufacturing-X / Catena-X / Aerospace-X federation landscape, with slide 23 ``First planned application E2E-Quality assurance'' showing the architectural intent EDC $\leftrightarrow$ AAS Repository $\leftrightarrow$ SHEPARD for cross-supply-chain quality control --- primary-source evidence Shepard is positioned as the substrate underneath the planned aerospace dataspace. Slides 25--29 outlook: REBAR (EASA Learning Assurance), ForInfPro ML control-loop, HoKiTEP mobile-robotics platform, DrapeBot HMI. Used as primary source for \texttt{aidocs/strategy/87-dlr-zlp-positioning.md} \S 8 and \texttt{aidocs/strategy/92-federation-and-dataspaces.md}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsAerospaceXJaxa2025,
+  author       = {Krebs, Florian},
+  title        = {{Aerospace-X --- for JAXA}},
+  year         = {2025},
+  month        = mar,
+  howpublished = {Talk slides; PPTX, 10 slides; speaker-date slide 1 ``Florian Krebs, 17.03.2025''; some slides re-used from a 2022-10-07 DLR ZAP talk},
+  note         = {Author-led briefing on the German Manufacturing-X / Aerospace-X programme for the Japanese Aerospace Exploration Agency (JAXA). Core claim: adapt the emerging Catena-X / Tractus-X automotive dataspace ecosystem to aeronautics needs (slide 3 cites Airbus's ``70\% reuse, 30\% adaptation'' positioning). Slide 5 names the Catena-X stack (AAS as digital-twin technological base; Eclipse Tractus-X open-source code base; estimated $\sim$26 million AAS in the ecosystem demonstrator). Slide 6 lists the four Manufacturing-X priority use cases (Demand-and-capacity management, CO\textsubscript{2} emissions / PCF, Circularity / R-strategies, End-to-End quality management). Slide 7 sketches the cross-tier Aerospace-X data space for safety-critical aero-engine components (production monitoring + early warning, root-cause analysis from MRO findings, containment + countermeasure across Tier-n $\to$ Engine OEM $\to$ Aircraft OEM $\to$ Airline). Slide 9 lays out the Manufacturing-X flagship-project function set (Design, Development, Do-how, Control, Communication, Support, Coordination). Slide 10 closes with the synchronisation-project framing (``a standardized global data exchange based on European values''). Used as primary source for \texttt{aidocs/strategy/92-federation-and-dataspaces.md}. Provenance: uploaded to AI working memory 2026-05-23 by F.~Krebs.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsFederationSketches2026,
+  author       = {Krebs, Florian},
+  title        = {{Federated Shepard \& Pub-Service architecture sketches}},
+  year         = {2026},
+  month        = may,
+  howpublished = {Two architecture sketches received in session chat 2026-05-23 (no file artefacts on disk; re-upload required for thesis-quality figure embedding)},
+  note         = {Two architecture sketches by F.~Krebs articulating the cross-instance integration paths Shepard must support. Sketch A (``Federated Shepard architecture''): a process-chain figure showing Simulation/Auslegung (as-designed) $\to$ Bauteilherstellung $\to$ NDT Pr{\"u}fung (Laser US) $\to$ Re-Simulation (as-built) $\to$ Maintenance, with a side-branch for Destructive Testing. Each step labelled with DLR organisational roles (SY/VPH, SY/BT, BT/MO?, VPH, MO). A bottom horizontal bar labelled ``Common Data Infrastructure (shepard)'' connects bidirectionally to every process step. Footer note records the two integration paths explicitly: \emph{``2 Wege: Export Import zur Datenweitergabe (mittels RO-Crate) / Federated shepard service (viel Aufwand, h{\"o}heres Risiko)''} --- the lower-risk RO-Crate export/import path, vs.\ the higher-effort federated Shepard service path. Sketch B (``Pub-Service publication architecture''): a whiteboard photograph showing Shepard with ``Sammlung V1'' $\to$ ``meta.json'' (with a DL-Lin\ldots\ annotation) $\to$ ``Pub Service'' branching to Databus / S3 / Invenio; md5-checksum annotation on the collection node; ``FDM Institution'' header on the right margin. Concrete shape of the publication pipeline contemplated under HMC Phase 2 WP-1 (PID + export functionality). Both sketches are publication-quality candidates for the thesis architecture chapter; the physical originals (file uploads of the sketch and the whiteboard photograph) need to be re-uploaded for PDF embedding. Cited in \texttt{aidocs/strategy/92-federation-and-dataspaces.md} \S 4 (Sketch A) and \texttt{aidocs/strategy/90-hmc-phase-2-positioning.md} \S 3 (Sketch B). Provenance: received in AI session chat 2026-05-23.},
+  category     = {dlr_internal}
+}
+
+@misc{helmholtzKiEmpfehlungen2024,
+  author       = {{Helmholtz-Gemeinschaft Deutscher Forschungszentren e.V.}},
+  title        = {{Handlungsempfehlungen zum Einsatz von K{\"u}nstlicher Intelligenz}},
+  year         = {2024},
+  month        = sep,
+  howpublished = {Version 1.0, adopted by the Helmholtz Mitgliederversammlung on 2024-09-18; published by Helmholtz Gesch{\"a}ftsstelle Berlin (Anna-Louisa-Karsch-Stra{\ss}e 2, 10178 Berlin)},
+  note         = {Helmholtz-binding AI recommendations across 18 member centres. Five risk categories (4.1 data-protection / leak; 4.2 copyright/IP; 4.3 misinformation/scientific integrity; 4.4 bias from training data; 4.5 violation of AI-specific regulation incl.\ EU AI Act). Good-practice baselines: review AI-generated content; document AI use transparently; responsible non-use for sensitive data; prefer European-hosted services. Authorship reserved for natural persons. Primary source for \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 2 (AI-governance framework) and \S 6.A audit lens. Uploaded to AI working memory 2026-05-23.},
+  category     = {dlr_internal}
+}
+
+@misc{dlrKiLeitbild,
+  author       = {{Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)}},
+  title        = {{Unser Leitbild zu K{\"u}nstlicher Intelligenz}},
+  howpublished = {DLR one-pager AI mission statement (undated; uploaded to AI working memory 2026-05-23)},
+  note         = {DLR's official AI mission statement. Headline claim: ``Wir sind Vorreiter in der Nutzung von und Forschung an KI-basierten L{\"o}sungen. Wir setzen KI selbstverst{\"a}ndlich und verantwortungsbewusst ein.'' Ten values: Aufgeschlossenheit, Bewusstsein, Menschenorientierung, Kompetenz, Ethik, Rechtssicherheit/Compliance, Effizienz, Souver{\"a}nit{\"a}t, Transparenz, Alleinstellung. Cited in \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 2 + \S 6.B and \texttt{aidocs/strategy/89-genai-methodology-and-reflexivity.md} (three-way alignment).},
+  category     = {dlr_internal}
+}
+
+@misc{dlrKiLeitfaden2024,
+  author       = {K{\"o}ster, F. and Raulf, A.},
+  title        = {{Leitfaden zur Einf{\"u}hrung und Nutzung KI-basierter L{\"o}sungen im DLR}},
+  year         = {2024},
+  month        = dec,
+  howpublished = {Version 1.00, dated 2024-12-17. Beteiligte: A.\ Bernhardt, M.\ Felderer, T.\ Schneiderhan. Weitere Beteiligte: D.\ Beckmann, T.\ Hecking, P.\ Lay, S.\ Schotter. Reviewed by IT-LA. Freed by 594. VS. DLR-internal document, uploaded to AI working memory 2026-05-23},
+  note         = {Operational AI-use guidance for DLR, translating the \texttt{dlrKiLeitbild} into a checklist. Builds on EU AI HLEG ethics guidelines, federal AI strategy, OECD AI principles. Seven value-pairs: Menschenzentrierung/Gemeinwohl, Fairness/Diskriminierungsfreiheit, Transparenz/Erkl{\"a}rbarkeit, Privatsph{\"a}re/Schutz, Sicherheit/Robustheit, {\"o}kologische Nachhaltigkeit, Beherrschbarkeit/Verantwortung. \S 2.3 names EU AI Act, DSGVO, Digital Services Act, Data Act, Data Governance Act as applicable. \S 3 contains the operational checklist. Primary source for \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 2 + \S 6.B audit lens.},
+  category     = {dlr_internal}
+}
+
+@techreport{dlrRahmenrichtlinieSE2025,
+  author       = {Schlauch, T. and Druskat, S. and Steude, B.},
+  title        = {{Rahmenrichtlinie Software-Engineering}},
+  institution  = {Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)},
+  year         = {2025},
+  month        = jul,
+  number       = {QMH-DLR-VA004, Ausgabe 6},
+  type         = {DLR-Managementsystem Verfahrensanweisung -- fachspezifisch Qualit{\"a}t},
+  howpublished = {Valid from 2025-07-01. Reviewed and freed by A.\ Bernhardt (CIO DLR) and S.\ Bonk (QMB) for the Lenkungsausschuss DLR-Managementsystem. Uploaded to AI working memory 2026-05-23},
+  note         = {DLR-wide software-engineering framework directive. Issue 6 (2025-07-01) introduces ``Forschungssoftware'' as an explicit category with Anwendungsklasse 1 as the floor for research software. Defines four Anwendungsklassen (0--3) plus accountability chain (DLR-Vorstand $\to$ CIO $\to$ Software-Engineering-Beauftragter SEB $\to$ Leitung der Organisationseinheit $\to$ Software-Engineering-Ansprechperson SEA $\to$ Verantwortliche Person f{\"u}r die Software). \S 4.2.4 mandates documentation (Name, Zweck, Verantwortliche Person, Anwendungsklasse, Reifegrad) for AK 2/3 and AK 1 with long-term Weiterentwicklungsperspektive. Mitgeltende Unterlagen include QMH-DLR-VA014 Open Science and QMH-DLR-VA015 Forschungsdatenmanagement. Primary source for \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 3 + \S 6.C audit lens.},
+  category     = {dlr_internal}
+}
+
+@techreport{dlrCloudStrategie2019,
+  author       = {{IT-LTG, DLR}},
+  title        = {{Cloud-Strategie des DLR: Rahmenbedingungen f{\"u}r die strategische Nutzung von IT-basierten Cloud-Diensten}},
+  institution  = {Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)},
+  year         = {2019},
+  month        = sep,
+  howpublished = {Version 1.0, dated 2019-09-26. Author: IT-LTG. Reviewed by IT-Lenkungsausschuss. Uploaded to AI working memory 2026-05-23},
+  note         = {DLR-wide cloud-services authorisation framework. Shifts from ``Cloud-Verbot'' to Chancen-Risiken-Abw{\"a}gung posture. \S 5.3 defines four risk tiers (Niedrig / Mittel / Hoch / Sehr hoch): ``Sehr hoch'' = external cloud forbidden; ``Hoch'' = Einzelfallpr{\"u}fung + IT-Sicherheitsbeauftragter approval required; clouds outside Germany ``often unsuitable'' for Hoch tier. CIO + IT-Sicherheitsbeauftragter hold Veto-Recht. \S 8 mandates Exit-Strategie + container-Lösungen. \S 9 central cloud-services register. \S 10 export-control rules. Primary source for \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 4 + \S 6.D audit lens.},
+  category     = {dlr_internal}
+}
+
+@techreport{dlrCloudStrategieAnhang2019,
+  author       = {{IT-LTG, DLR}},
+  title        = {{Anhang zur Cloud-Strategie des DLR: Nutzungsszenarien}},
+  institution  = {Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)},
+  year         = {2019},
+  month        = sep,
+  howpublished = {Version 1.0, dated 2019-09-26. Annex to \texttt{dlrCloudStrategie2019}. Uploaded to AI working memory 2026-05-23},
+  note         = {Annex to the DLR Cloud-Strategie with concrete usage scenarios. \S 4.1 Prozessierung {\"o}ffentlicher Daten; \S 4.2 Externe Speicher/Datenaustausch (Dropbox / OneDrive / AWS); \S 4.3 Dedizierte externe Wissenschafts-Clouds (DFN, EOSC) -- the category Shepard's nuclide demo falls in; \S 4.4 Externe Kommunikation/Kollaboration; \S 4.5 Externe Rechenkapazit{\"a}t -- mandates Exitstrategie; \S 4.7 Externe Software-Entwicklungsplattformen (GitHub); \S 4.8 Externe Web-Portale; \S 5 interne Cloud-Dienste. Cited in \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 4.},
+  category     = {dlr_internal}
+}
+
+@misc{dlrDatenstrategieV60_2026,
+  author       = {{Deutsches Zentrum f{\"u}r Luft- und Raumfahrt (DLR)}},
+  title        = {{Datenstrategie des DLR}},
+  year         = {2026},
+  howpublished = {v60 working draft, dated 2026-05-23. Internal DLR Protokoll-template document with editorial comments still in place. Pr{\"a}ambel/Vorwort: Christian. Uploaded to AI working memory 2026-05-23},
+  note         = {DLR-wide data strategy, v60 working draft. Vision: ``DLR als datengetriebenes Innovationszentrum -- Pionier f{\"u}r zukunftsweisende Forschung und kontinuierlichen Fortschritt.'' Four objectives: (Ziel 1) integrierte Dateninfrastruktur + -plattformen (Daten{\"o}kosystem); (Ziel 2) interdisziplin{\"a}re Forschung + Innovation f{\"o}rdern; (Ziel 3) Entscheidungsprozesse durch unabh{\"a}ngige pr{\"a}diktive Analysen unterst{\"u}tzen; (Ziel 4) Datenkultur etablieren + Datenkompetenz erh{\"o}hen. Ma{\ss}nahmen include: f{\"o}derierte Speicherarchitektur (Data Hub); FAIR-Prinzipien verbindlich; kontrollierte Vokabulare/Ontologien; Data-Steward-Netzwerk; Politikberatung. Cross-references DSGVO, SatDSiG, Exportkontrolle, NDA. \S 5 Empfehlungen-Maßnahmen list and overall accountability/governance pattern still under editorial debate. Primary source for \texttt{aidocs/strategy/93-management-context-and-compliance.md} \S 1 (fifth institutional layer) and \S 5 (funding/evaluation cadence). Cite future versions as v$X$ in the same key once finalised.},
+  category     = {dlr_internal}
+}
