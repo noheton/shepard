@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.14"
+IMPORT_SCRIPT_VERSION = "15.15"
 
 # v15.11 IMPORT-DIAG — structured diagnostic instrumentation. DiagSink emits
 # one JSON line per event to stderr + the existing log file, classifies errors
@@ -2755,6 +2755,43 @@ def run_source_mode(
     """
     _src = source_client or dest_client
 
+    # v15.15 BUG-F2 — PREDEFINED SD CONTAINERS.
+    # The dest SD shape is fixed up-front: exactly one SD container per process
+    # step, pre-created in Shepard by the operator before launch. IDs come in
+    # via env. Fail-fast if either is missing — better to abort here than to
+    # silently create thousands of orphan per-DO containers (the BUG-F pattern).
+    _sd_env = {
+        "tapelaying":    os.environ.get("MFFD_SD_CONTAINER_TAPELAYING"),
+        "bridgewelding": os.environ.get("MFFD_SD_CONTAINER_BRIDGEWELDING"),
+    }
+    _missing = [k for k, v in _sd_env.items() if not v]
+    if _missing:
+        raise SystemExit(
+            f"[v{IMPORT_SCRIPT_VERSION}] FATAL: predefined SD container env vars missing: {_missing}.\n"
+            f"  Required: MFFD_SD_CONTAINER_TAPELAYING, MFFD_SD_CONTAINER_BRIDGEWELDING\n"
+            f"  Pre-create the 2 SD containers in the dest Shepard and export their ids."
+        )
+    try:
+        PREDEFINED_SD: dict[str, int] = {k: int(v) for k, v in _sd_env.items()}
+    except ValueError as _e:
+        raise SystemExit(
+            f"[v{IMPORT_SCRIPT_VERSION}] FATAL: SD container env vars must be integer ids: {_sd_env}"
+        ) from _e
+    # Verify each predefined container is actually present in dest.
+    for _step, _cid in PREDEFINED_SD.items():
+        _verify_resp = dest_client._get(
+            f"{dest_client._base}/shepard/api/structuredDataContainers/{_cid}"
+        )
+        if _verify_resp is None or getattr(_verify_resp, "status_code", 0) != 200:
+            _status = getattr(_verify_resp, "status_code", "no-response") if _verify_resp else "no-response"
+            raise SystemExit(
+                f"[v{IMPORT_SCRIPT_VERSION}] FATAL: predefined SD container id={_cid} "
+                f"for step={_step!r} not present in dest (HTTP {_status})."
+            )
+    print(f"  [v{IMPORT_SCRIPT_VERSION}] predefined SD containers:")
+    for _step, _cid in PREDEFINED_SD.items():
+        print(f"    {_step:<14} → container_id={_cid}  name=mffd-{_step}-sd")
+
     print()
     print("  ┌─────────────────────────────────────────────────────────────────┐")
     print("  │  ⚠  TIMESTAMP CAVEAT                                            │")
@@ -2977,19 +3014,11 @@ def run_source_mode(
         # and is the real correctness guard against double-upload.
         existing_names_snapshot = dest_client.list_file_refs(coll_id, dest_do_id)
 
-        # v15.14 BUG-F fix — one SD container per process-step + per ref-name,
-        # NOT per-Execution. Shared across all per-Execution DOs of this step;
-        # per-Execution distinction lives in the structuredDataOids[] list on
-        # the Reference, not in container proliferation.
-        # Cache shape: {ref_name -> container_id} (e.g. "StepMetaProcessExecution"
-        # -> 633520). Filled lazily on first use; reused for every subsequent
-        # Execution of this step with the same ref_name.
-        # Thread-safety: workers may race to populate the same key; the lock
-        # below serialises the create-on-miss. After the first successful create,
-        # subsequent reads are lock-free dict access.
-        import threading as _threading
-        step_sd_containers: dict[str, int] = {}
-        step_sd_containers_lock = _threading.Lock()
+        # v15.15 BUG-F2 — SD container is PREDEFINED for this step. Look up
+        # the pre-created container id (validated at run_source_mode startup
+        # against the dest API). All SD payloads of this step + ALL ref_names
+        # land their oids into this single container.
+        step_sd_container_id_for_this_step: int = PREDEFINED_SD[step_key]
 
         files_uploaded = 0
         files_skipped = 0
@@ -3147,21 +3176,9 @@ def run_source_mode(
                     counts["structured_failed"] += 1
                     continue
 
-                # v15.14 BUG-F: look up or create-once the per-step SD container
-                # for this ref_name. Shared across every Execution of this step.
-                container_id = step_sd_containers.get(sd_ref.name)
-                if container_id is None:
-                    with step_sd_containers_lock:
-                        container_id = step_sd_containers.get(sd_ref.name)
-                        if container_id is None:
-                            shared_name = f"{step_key}-{SESSION_ID}-{sd_ref.name}"
-                            container_id = dest_client.create_structured_container(shared_name)
-                            if container_id is not None:
-                                step_sd_containers[sd_ref.name] = container_id
-                if container_id is None:
-                    do_bar.write(f"    [error-sd] could not create shared container for {sd_ref.name}")
-                    counts["structured_failed"] += 1
-                    continue
+                # v15.15 BUG-F2: use the predefined SD container for this step
+                # (validated at run_source_mode startup, no create-on-demand).
+                container_id = step_sd_container_id_for_this_step
 
                 # v15.14 BUG-G fix — upload payload FIRST to get the oid, THEN
                 # link the oid to this DO as a structuredDataReference. The
