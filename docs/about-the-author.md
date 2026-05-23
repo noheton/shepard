@@ -23,6 +23,7 @@ audience: visitor
 | **IEEE Xplore Author ID** | [`37085504634`](https://ieeexplore.ieee.org/author/37085504634) |
 | **GitHub** | [`noheton`](https://github.com/noheton) |
 | **LinkedIn** | [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) |
+| **Bluesky** | [`@nucli.de`](https://bsky.app/profile/nucli.de) |
 
 ## The sixteen-year line
 
@@ -125,6 +126,7 @@ pattern its substrate is built to capture.
 
 - **ORCID** — <https://orcid.org/0000-0001-6033-801X> (canonical)
 - **LinkedIn** — <https://www.linkedin.com/in/florian-krebs/>
+- **Bluesky** — <https://bsky.app/profile/nucli.de>
 - **GitHub** — <https://github.com/noheton>
 - **Email** — `florian.krebs@dlr.de`
 
