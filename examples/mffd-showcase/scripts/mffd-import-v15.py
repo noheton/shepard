@@ -156,7 +156,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.1"
+IMPORT_SCRIPT_VERSION = "16.2"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -1003,10 +1003,14 @@ class ShepardClient:
                     parentId=_parent_id_int,
                     predecessorIds=_pred_ids,
                 )
-            total_pages = int(r.headers.get("X-Total-Pages", page + 1))
+            # v16.2 PAGINATION-FIX — v5 source omits X-Total-Pages, so the
+            # prior `int(r.headers.get("X-Total-Pages", page + 1))` resolved
+            # to `page + 1` and the `page >= total_pages` check broke the
+            # loop after page 0 (capping enumeration at PAGE_SIZE items per
+            # collection — see `project_mffd_api_keys.md`). The empty-page
+            # sentinel above (`if not items: break`) is the only reliable
+            # end-of-pagination signal against v5; advance and retry.
             page += 1
-            if page >= total_pages:
-                break
 
     # ── v15.8 IMPORT-PERF2 — lazy reference enrichment ────────────────────────
     #

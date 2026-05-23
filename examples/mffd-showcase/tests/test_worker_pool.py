@@ -147,6 +147,54 @@ class TestLazyEnrichment(unittest.TestCase):
         self.assertIsNone(result[0].structured_refs)
         self.assertEqual(result[0]._src_coll_id, 48297)
 
+    def test_iter_data_objects_paginates_all_pages(self):
+        """v16.2 PAGINATION-FIX — iter_data_objects must paginate until the
+        source returns an empty page. The v5 source omits X-Total-Pages,
+        which prior code (v16.1) treated as "last page reached" — capping
+        enumeration at PAGE_SIZE items. This regression-shielded test
+        feeds three pages (50 + 50 + 0) and asserts all 100 items are
+        yielded.
+
+        See `project_mffd_api_keys.md`: 'X-Total-Count and X-Total-Pages
+        headers ABSENT — paginate until empty page'.
+        """
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://test"
+
+        page0 = MagicMock()
+        page0.json.return_value = [
+            {"id": i, "name": f"DO-{i}", "attributes": {}}
+            for i in range(0, 50)
+        ]
+        page0.headers = {}  # v5 reality: no X-Total-Pages header
+        page1 = MagicMock()
+        page1.json.return_value = [
+            {"id": i, "name": f"DO-{i}", "attributes": {}}
+            for i in range(50, 100)
+        ]
+        page1.headers = {}
+        page2 = MagicMock()
+        page2.json.return_value = []  # empty → end-of-pagination sentinel
+        page2.headers = {}
+
+        client._get = MagicMock(side_effect=[page0, page1, page2])
+
+        result = list(client.iter_data_objects(48297))
+
+        self.assertEqual(
+            len(result), 100,
+            f"expected 100 items across 2 non-empty pages, got {len(result)} "
+            "— pagination loop probably broke after page 0 (v16.1 bug)"
+        )
+        self.assertEqual(result[0].do_id, 0)
+        self.assertEqual(result[-1].do_id, 99)
+        # _get must have been called exactly 3 times: page 0, page 1, page 2 (empty).
+        self.assertEqual(client._get.call_count, 3)
+        # And the page param must have advanced 0 → 1 → 2.
+        page_args = [call.args[1]["page"] for call in client._get.call_args_list]
+        self.assertEqual(page_args, ["0", "1", "2"])
+
     def test_load_file_refs_populates_and_caches(self):
         """_load_file_refs fetches on first call, caches on subsequent calls."""
         from unittest.mock import MagicMock
@@ -244,11 +292,11 @@ class TestWorkerPoolPrimitivesAvailable(unittest.TestCase):
 class TestVersionConstant(unittest.TestCase):
     """IMPORT_SCRIPT_VERSION constant is the source of truth.
 
-    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx) → 16.0 (PRESERVE-HIERARCHY: 3-pass tree replication of cube3 source DOs — v15's flat ref-prefix shape is gated behind MFFD_PRESERVE_HIERARCHY=0 fallback).
+    Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx) → 16.0 (PRESERVE-HIERARCHY: 3-pass tree replication of cube3 source DOs — v15's flat ref-prefix shape is gated behind MFFD_PRESERVE_HIERARCHY=0 fallback) → 16.1 (parallelize Pass 1 + Pass 2 with worker fan-out) → 16.2 (PAGINATION-FIX: iter_data_objects no longer relies on the absent X-Total-Pages header, paginates until an empty page — v16.1 capped source enumeration at page 0 = ~100 DOs vs the ~30K-DO MFFD source).
     """
 
-    def test_version_is_16_1(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.1")
+    def test_version_is_16_2(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.2")
 
 
 # ── v16 PRESERVE-HIERARCHY tests ──────────────────────────────────────────────
