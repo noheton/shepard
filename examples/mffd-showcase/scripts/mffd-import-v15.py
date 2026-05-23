@@ -2546,16 +2546,36 @@ def run_source_mode(
             tqdm docs). `do_bar.update(1)` is called by the DRIVER after the
             future resolves, never from inside this function.
 
-            v15.8 IMPORT-PERF2 — lazy enrichment. file_refs / ts_refs /
-            structured_refs are fetched HERE, after the state-skip check has
-            had a chance to short-circuit the work for a fully-done DO.
+            v15.8 IMPORT-PERF2 — lazy enrichment + per-DO short-circuit:
+              1. If `state.is_do_done(<step_key>/<src_do.name>)` returns True
+                 — the previous successful run already fully processed this
+                 DO — return immediately. ZERO cube3 GETs. This is the
+                 "fully-done DO on resume costs 0 GETs" guarantee.
+              2. Otherwise: ref-lists are still lazy-loaded HERE (not in
+                 `iter_data_objects`). Per-ref state-skip checks still apply,
+                 so a partially-done DO only re-does the missing pieces.
+              3. At the end, if the DO completed with zero failures across
+                 all three payload kinds, `mark_do_done` is called so the
+                 short-circuit fires next time.
             """
             counts = {"files_uploaded": 0, "files_skipped": 0, "files_failed": 0,
                       "ts_imported": 0, "ts_skipped": 0, "ts_failed": 0,
                       "structured_imported": 0, "structured_failed": 0}
 
-            # Print the DO header AFTER refs are loaded (or with '?' if we
-            # short-circuit before loading). Per advisor: never `len(None)`.
+            # v15.8 PERF2 per-DO short-circuit. Key by step + name so the
+            # same source name in tapelaying vs bridgewelding doesn't collide.
+            do_done_key = f"{step_key}/{src_do.name}"
+            if state is not None and state.is_do_done(do_done_key):
+                do_bar.write(f"  ↳ {src_do.name}  [skip-do — fully done in prior run]")
+                # Surface the saved cube3 round-trips. counts stay zero (we
+                # didn't process anything; the per-step totals already
+                # absorbed this work on the prior session that marked it).
+                return counts
+
+            # Lightweight header BEFORE processing so under workers>1 the
+            # interleaved [ok-file]/[error-ts] lines can be traced back to
+            # the source DO that produced them.
+            do_bar.write(f"  ↳ {src_do.name}  (start)")
 
             # ── Files ──────────────────────────────────────────────────────
             file_refs = _src._load_file_refs(src_do)
@@ -2661,15 +2681,29 @@ def run_source_mode(
                     do_bar.write(f"    [error-sd] upload/link failed for {sd_ref.name}")
                     counts["structured_failed"] += 1
 
-            # Header AFTER processing so payload counts reflect what was
-            # actually loaded (and PERF2-saved cube3 GETs are visible in the
-            # log when the DO was fully state-skipped).
+            # Per-DO summary footer + PERF2 mark-do-done. The footer reflects
+            # actual loaded counts (file_refs, sd_refs always loaded above;
+            # ts_refs only when ts_container_id is set — read via the cached
+            # field on src_do, no extra GET).
+            cached_ts_refs = src_do.ts_refs if src_do.ts_refs is not None else []
             payload_summary = (
                 f"{len(file_refs)}f"
-                f" {len(_src._load_ts_refs(src_do) if ts_container_id else [])}ts"
+                f" {len(cached_ts_refs)}ts"
                 f" {len(sd_refs)}sd"
             )
-            do_bar.write(f"  ↳ {src_do.name}  ({payload_summary})")
+            do_bar.write(f"  ↳ {src_do.name}  (done — {payload_summary})")
+
+            # v15.8 PERF2 — mark the DO done IFF every payload kind landed
+            # cleanly (or was state-skipped because it was already done).
+            # A single failure in any kind leaves `is_do_done` False so the
+            # next resume retries the failing units.
+            all_clean = (
+                counts["files_failed"] == 0
+                and counts["ts_failed"] == 0
+                and counts["structured_failed"] == 0
+            )
+            if state is not None and all_clean:
+                state.mark_do_done(do_done_key)
 
             return counts
 

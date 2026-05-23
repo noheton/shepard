@@ -167,6 +167,29 @@ class TestLazyEnrichment(unittest.TestCase):
         self.assertIs(refs1, refs2)
         client._fetch_file_refs.assert_called_once()  # still 1 call total
 
+    def test_is_do_done_short_circuit_keys_exist(self):
+        """v15.8 PERF2 guarantee: ImportState has is_do_done/mark_do_done that
+        the per-DO loop short-circuits on. A fully-done DO costs 0 cube3 GETs
+        because `_process_one_source_do` returns early BEFORE calling
+        `_load_*_refs`.
+
+        This test asserts the API contract — the state methods exist and a
+        marked-done key reports done. The end-to-end "0 GETs" assertion lives
+        in TestPerDoShortCircuit below; this test is the unit-level shield
+        against accidental API removal.
+        """
+        import tempfile
+        from pathlib import Path
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = Path(f.name)
+        state = mffd_v15.ImportState(path)
+        self.assertFalse(state.is_do_done("tapelaying/DO-42"))
+        state.mark_do_done("tapelaying/DO-42")
+        self.assertTrue(state.is_do_done("tapelaying/DO-42"))
+        # Sibling step doesn't collide.
+        self.assertFalse(state.is_do_done("bridgewelding/DO-42"))
+        path.unlink(missing_ok=True)
+
 
 class TestImportStateThreadSafety(unittest.TestCase):
     """v15.8 IMPORT-PERF1 — ImportState must serialise read+write under
