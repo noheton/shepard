@@ -690,7 +690,7 @@
   title        = {{Semantically-Driven Data Analytics --- the ForInfPro use case}},
   year         = {2026},
   howpublished = {Talk slides; PPTX, 11 slides; speaker-date placeholder names ``Florian Krebs, BT, 21.2.2025'' on slide 3 (DIKW pyramid citation)},
-  note         = {Position deck describing the ``Context Gap'' framing, ontology--Shepard interplay, and the ForInfPro composite-infusion process-control use case at DLR ZLP. Contains the canonical Shepard contextualisation diagram (Infusion / Pump / Sensor / Image container $\to$ Experiment data object) and the dry-spot reasoning chain (Phenomenon $\to$ Measurable $\to$ Physical quantity $\to$ Constraint). Used as primary source for \texttt{aidocs/strategy/88-forinfpro-semantically-driven-analytics.md}. Provenance: uploaded to AI working memory 2026-05-23.},
+  note         = {Position deck describing the ``Context Gap'' framing, ontology--Shepard interplay, and the ForInfPro composite-infusion process-control use case at DLR ZLP. Contains the canonical Shepard contextualisation diagram (Infusion / Pump / Sensor / Image container $\to$ Experiment data object) and the dry-spot reasoning chain (Phenomenon $\to$ Measurable $\to$ Physical quantity $\to$ Constraint). Used as primary source for \texttt{aidocs/strategy/91-forinfpro-semantically-driven-analytics.md}. Provenance: uploaded to AI working memory 2026-05-23.},
   category     = {dlr_internal}
 }
 
@@ -766,12 +766,98 @@
   category     = {papers}
 }
 
-@misc{nistAiRmf2023,
-  author       = {{National Institute of Standards and Technology (NIST)}},
-  title        = {{Artificial Intelligence Risk Management Framework (AI RMF 1.0)}},
-  year         = {2023},
-  howpublished = {NIST AI 100-1},
-  url          = {https://www.nist.gov/itl/ai-risk-management-framework},
-  note         = {US-side counterpart to the EU AI Act in scope for trustworthy-AI guidance. Cited in \texttt{krebsGenKi2026} (ref [19/20]) as the framework Florian recommends for proactive AI-risk management in research settings; complements the EU AI Act Article~50 transparency framing already in Shepard's f(ai)$^2$r design.},
-  category     = {standards}
+@misc{nfdi4ingIntroKrebs2025,
+  author       = {Krebs, Florian},
+  title        = {{Intro NFDI4Ing (1+2)}},
+  year         = {2025},
+  month        = nov,
+  howpublished = {Internal DLR ZLP positioning briefing slide deck, dated 2025-11-03 (8 slides)},
+  note         = {NFDI4Ing introduction and Phase 2 (2025--2030) DLR-partner positioning. Names Measure F-1 (data integration guidelines; partners WZL, IPT, IoP, DLR) and Measure F-2 (Data Mesh to RDM adaption concept; partners WZL, IPT, TUB, DLR). Internal DLR partners listed: IW, TS, BT, RY, (VE) at 4 PM/a. Uploaded to AI working memory 2026-05-23. Primary source for \texttt{aidocs/strategy/88-nfdi4ing-alignment.md}.},
+  category     = {dlr_internal}
+}
+
+@misc{hmcPhase2WpKrebs2025,
+  author       = {Krebs, Florian},
+  title        = {{HMC 2 Workpackages @ DLR ZLP}},
+  year         = {2025},
+  howpublished = {DLR ZLP Augsburg HMC Phase 2 work-package proposal slide deck (preliminary version with placeholder presenter/date footer; named slide 3 footer ``BT, 05.05.2025'')},
+  note         = {Helmholtz Metadata Collaboration Phase 2 work-package proposal naming three Shepard-bearing WPs: (1) Solutions for data export and import (RO-Crate, Shepard import/export functionality, PID integration), (2) Shepard semantic features extensions development (ontology-annotation usability), (3) Establish interoperability between DM solutions in DLR (Shepard, twinStash, Defacto, Inst.DLR; Databus + MOSS foundation). Uploaded to AI working memory 2026-05-23. Primary source for \texttt{aidocs/strategy/90-hmc-phase-2-positioning.md}.},
+  category     = {dlr_internal}
+}
+
+@misc{nfdi4energyDatabusMossGuide,
+  author       = {{NFDI4Energy}},
+  title        = {{Databus and MOSS Integration Guide}},
+  howpublished = {NFDI4Energy programme guide document},
+  note         = {NFDI4Energy-published integration manual for DBpedia Databus + MOSS (Metadata Online Submission System). Databus is ``a digital factory platform for managing files online with stable IDs, high-quality metadata, powerful API and tools for building on data'' (\url{https://github.com/dbpedia/databus}). Uploaded to AI working memory 2026-05-23. Cited in \texttt{aidocs/strategy/90-hmc-phase-2-positioning.md} \S 5 as the federation-substrate manual Shepard's WP-3 prototype would follow.},
+  category     = {dlr_internal}
+}
+
+@misc{schlenzRdmHandbook2026,
+  author       = {Schlenz, Hartmut and Bronger, Torsten and Selzer, Michael and Nestler, Britta and Riem, Leo and Enahoro, Salome},
+  title        = {{Research Data Management --- A Practical Introduction}},
+  year         = {2026},
+  month        = feb,
+  howpublished = {Best-practice handbook, 100 pp, Zenodo},
+  doi          = {10.5281/zenodo.18468308},
+  url          = {https://zenodo.org/records/18468308},
+  note         = {Version 1.1 (Feb 2026); first published July 2025 (J\"ulich and Karlsruhe). CC BY-SA 4.0. Funded by DFG via NFDI4ING CADEN archetype (codes D.B.B01953, D.B.C02632). Initially presented at the international CoRDI 2025 conference at RWTH Aachen. Authors are the maintainers of JuliaBase (Bronger, FZJ), Kadi4Mat (Selzer/Nestler/Riem, KIT) and SciMesh (Bronger). German companion edition: \href{https://doi.org/10.5281/zenodo.18468239}{10.5281/zenodo.18468239}. The community-standard reference for engineering-research RDM in Germany; covers FAIR life-cycle, DFG-aligned DMP template (\S 4.1--4.6), the three free ELNs (JuliaBase / eLabFTW / Kadi4Mat), data-quality fundamentals, ELN-to-ELN data exchange via SciMesh (\S 7.1), MetaData4Ing process model (\S 7.5), Zenodo publication walk-through (\S 8.2), and ML training-data preparation (\S 8.4). Shepard positioning vs. this handbook is captured in \texttt{aidocs/strategy/88-nfdi4ing-alignment.md} \S 5 and the thesis-positioning \S 4.1 of \texttt{aidocs/98-thesis-perspective.md}.},
+  category     = {papers}
+}
+
+@misc{krebsKukaCnc2025,
+  author       = {Krebs, Florian},
+  title        = {{KUKA CNC Robotics}},
+  year         = {2025},
+  month        = jul,
+  howpublished = {Internal technology-strategy talk slides; PPTX, 7 slides; cover dated 23.07.2025},
+  note         = {Author-led internal evaluation of the KUKA.CNC integration option (KUKA robots fronted by Siemens Sinumerik 840D control) versus the conventional KRL+RoboDK path the DLR ZLP centre operates today. Documents the X63 EMI interface (PROFINET IRT / ProfiSAFE), KSS 8.6+ requirement, lack of IIQKA.OS compatibility, the ``Sinumerik Run MyRobot / Machining with KUKA robots'' incompatibility with 840D Sl CNC-SW 4.9.x and Sinumerik ONE, and the medium-term compatibility risk posed by Siemens's ``Run My Robot / direct control'' (MTR) direction. Strategic conclusion: \emph{CNC-as-compatibility-factor} (Airbus, ASA, PAG) weighed against \texttt{\char`\~}\,€100k equipment cost, mandatory OLP, training, and the paradigm tension with autonomous-production research. Primary source for \texttt{aidocs/strategy/87-dlr-zlp-positioning.md} \S 3.1. Provenance: uploaded to AI working memory 2026-05-23.},
+  category     = {dlr_internal}
+}
+
+@misc{krebsMetrologyI42025,
+  author       = {Krebs, Florian},
+  title        = {{Integrating Metrology, Spatial Analyzer and Industry 4.0}},
+  year         = {2025},
+  howpublished = {Internal positioning talk slides; PDF, 10 slides},
+  note         = {Author-led survey of the DLR ZLP metrology platform (Spatial Analyzer Ultimate; 2$\times$~Leica AT~901~LR; T-Probe; T-MAC; T-SCAN~5) and its day-to-day application set (GD\&T of finished parts/assemblies, process-specific measurements, surface-geometry reconstruction). The deck's load-bearing advanced application is in-situ elastic calibration of robots (IREC): a 18-DOF lumped kinetostatic model running on a Linux-Xenomai real-time PC corrects the KUKA KR~120 HA TCP via the RSI interface every 4~ms, based on ATI 6-axis F/T sensor readings. Published results on the MFFD double-curvature mould with 280~N lateral / 1100~N normal load cases: \textbf{89.30\% reduction in mean TCP deviation}, \textbf{70.19\% reduction in maximum deviation}, trajectory within the $\pm 0.3$~mm aerospace tolerance. Primary source for \texttt{aidocs/strategy/87-dlr-zlp-positioning.md} \S 3.2 and the design seed in \texttt{aidocs/integrations/96-metrology-spatial-analyzer.md}. Provenance: uploaded to AI working memory 2026-05-23.},
+  category     = {dlr_internal}
+}
+
+@techreport{bmftrPofV2025,
+  author       = {Zachgo, Jochen},
+  title        = {{\"U}bergreifende forschungspolitische Ziele f{\"u}r die Programmorientierte F{\"o}rderung Periode V (PoF V, 2028--2034)},
+  institution  = {Bundesministerium f{\"u}r Forschung, Technologie und Raumfahrt (BMFTR)},
+  year         = {2025},
+  month        = sep,
+  type         = {Ministerial letter to the President of the Helmholtz Association},
+  note         = {Two-page letter from Dr.~Jochen Zachgo (Leiter Abteilung~4 ``Hochschul- und Wissenschaftssystem; Bildungsfinanzierung'', BMFTR) to Prof.~Dr.~Otmar D. Wiestler (President, Helmholtz-Gemeinschaft Deutscher Forschungszentren e.V., Berlin), dated 24~September~2025 (Bonn), with cc to Dr.~Martin Keller. Transmits the overarching research-policy goals for the fifth period of Programmorientierte F{\"o}rderung (PoF~V, 2028--2034) to be agreed with the Helmholtz presidium. The three named overarching goals are: (a) a purely declaratory reference to the validity of the PFI (Pakt f{\"u}r Forschung und Innovation) research-policy goals, (b) the development of a joint sustainability strategy, and \textbf{(c) the development of a joint and overarching architecture concept for the data-management infrastructure} (``ein gemeinsames und {\"u}bergreifendes Architekturkonzept f{\"u}r die Datenmanagement-Infrastruktur''). Goal (c) is the load-bearing strategic context for Shepard's HMC-aligned federation work; see \texttt{aidocs/strategy/90-hmc-phase-2-positioning.md} \S 1.1. PDF metadata names ``Wolf, Frank /423'' as document author (the BMFTR drafting staffer); signed by Zachgo on the printed letter. Uploaded to AI working memory 2026-05-23.},
+  category     = {policy}
+}
+
+@misc{weberAerospaceX2025,
+  author       = {Weber, Holger},
+  title        = {{Aerospace-X: Charting a course through regulatory storms towards sustainable aerospace solutions}},
+  year         = {2025},
+  howpublished = {Aerospace-X consortium positioning slide deck; PPTX, 14 slides; PPTX core.xml \texttt{dc:title} fragment ``Joint Target Picture''},
+  note         = {Consortium positioning deck for the BDLI-initiated, Airbus-Operations-led Aerospace-X project (the aerospace branch of the German BMWK-funded Manufacturing-X programme). Records: the regulatory-tsunami timeline (REACH~2007 through DPP~2030 and minimum recycling quotas 2036); the four pain-points motivating a sovereign aerospace dataspace (no seamless data transfer, paper-based documentation, multi-scan degradation, manual processes); the export-control and counterfeit-part traceability use cases; the project shape (consortium of 30+ companies/associations/research institutions, kickoff April~2024, 27-month duration, scope ``Supply Chain for Aircraft Manufacturing in Germany focusing fuselage, Cabin and Engine''); the four named use cases (Demand-and-capacity, CO\textsubscript{2}/PCF, Circularity/R-Strategies, End-to-End Quality); the technical vision (Catena-X+AAS+Eclipse Tractus-X as substrate, EDC connectors federating); and the worked E2E-quality use case for safety-critical aero-engine components citing Bergs \& Ganser IMEC~2024. Primary source for \texttt{aidocs/strategy/92-aerospace-x-regulatory-context.md}. Uploaded to AI working memory 2026-05-23.},
+  category     = {policy}
+}
+
+@inproceedings{bergsAerospaceXImec2024,
+  author       = {Bergs, Berend and Ganser, Patrick},
+  title        = {{Aerospace-X --- Towards multi-tier traceability in the manufacturing of safety critical aerospace components}},
+  booktitle    = {Proceedings of IMEC2024 (The 20th International Machine Tool Engineers' Conference)},
+  year         = {2024},
+  note         = {The cited IMEC 2024 conference paper from which the E2E-quality worked example on slide 13 of \texttt{weberAerospaceX2025} is sourced. Establishes the three-step traceability use case (production monitoring~$\to$ root-cause analysis at MRO~$\to$ containment) as the canonical Aerospace-X demonstrator. Not directly retrieved; cited as the deck cites it.},
+  category     = {papers}
+}
+
+@misc{welzmuellerForschungsdatenPoster2025,
+  author       = {Welzm{\"u}ller, Finn and Dannemann, Frank and Scharringhausen, Marco and Dannemann, Tanja},
+  title        = {{Research Data Management for Space Missions: Practical Experiences and Lessons Learned}},
+  year         = {2025},
+  howpublished = {Conference poster, PPTX 1-slide format, with author annotations by Florian Krebs (file name ``Tag\_der\_Forschungsdaten\_Poster\_Anmerkungen\_FK.pptx'')},
+  note         = {Single-slide A0-format poster presenting the PLUTO mission's RDM work and its use of Shepard as the technology stack. Authors are all from DLR Institute of Space Systems, Bremen. The poster cites Friedline et al.~2025 (HMC Conference shepard paper), Haase et al.~2021 (Zenodo shepard release), Aksteiner et al.~2024 (PLUTO mission paper), and Holz 2024 (Bremen master thesis on deployable flexible solar arrays for space). Documents Shepard's role: storage (data containers as partitions of dedicated DBs), organization (collections / data objects / references; Parent/Child for hierarchy; Predecessor/Successor for sequence), access (REST + frontend + Python library + IAM with API keys), and documentation (key-value metadata + ontology classes + built-in Lab Journal). The file was uploaded by Florian Krebs annotated with his comments --- the poster itself is not FK-authored. Bib key chosen to credit the actual authors (Welzm{\"u}ller \emph{et al.}). Complements the existing \texttt{welzmueller2024Pluto} entry for the PLUTO mission paper. Uploaded to AI working memory 2026-05-23. Cited as primary source in the thesis-idea artefact inventory (\texttt{project\_thesis\_idea.md}).},
+  category     = {dlr_internal}
 }

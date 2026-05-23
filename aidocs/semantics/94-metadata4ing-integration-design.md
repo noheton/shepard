@@ -38,6 +38,12 @@ shipped). This design proposes the remaining deepening slices.
   content-negotiation; `ProvJsonLdRenderer` is the existing m4i renderer
 - `aidocs/strategy/73-dlr-stakeholder.md` + `aidocs/strategy/74-dlr-bt-stakeholder.md`
   — m4i as DLR-aligned vocabulary
+- `aidocs/strategy/88-nfdi4ing-alignment.md` — NFDI4Ing org/funding-cycle
+  positioning (Phase 2 measures F-1 + F-2); this doc is the
+  vocabulary-operationalisation half, 88 is the political/institutional half
+- `aidocs/strategy/90-hmc-phase-2-positioning.md` §4 — HMC WP-2 (semantic
+  features extensions) names m4i deepening as the load-bearing commitment;
+  same code path, two funding rationales
 - `aidocs/44-fork-vs-upstream-feature-matrix.md` §7a (preseed) +
   §8 (provenance) + §18 (PROV1h)
 - `aidocs/34-upstream-upgrade-path.md` ONT1b + PROV1h rows
