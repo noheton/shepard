@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""mffd-completeness-check.py — post-migration completeness verifier (v1.0)
+"""mffd-completeness-check.py — post-migration completeness verifier (v1.1)
+
+v1.1 — adds container-shape invariant check (SD + TS containers per process step).
+       After v15.15 predefined-SD shape: exactly 1 SD container per step expected;
+       multiple = sprawl signal. Same logic applied to TS containers per step.
+       Sprawl is FLAGGED in the report, NOT auto-deleted (per integrity rule
+       feedback_referenced_data_infinite_retention.md: only refs=0 + payload=0
+       orphans are deletion-eligible).
+
+
 
 Runs after `mffd-import-v15.py` declares "done". Compares source vs destination
 Shepard instances per DataObject and emits a structured completeness report.
@@ -391,6 +400,55 @@ def upload_report_to_dest(dest: Client, dest_coll_id: int, session: str,
         return None
 
 
+def check_predefined_containers(dest: Client) -> dict[str, dict]:
+    """v1.1 — verify the predefined-shape invariant (one container per step per kind).
+
+    Reports any duplicate / sprawl of MFFD-related SD + TS containers in the dest.
+    With v15.15's predefine-pattern, there should be EXACTLY:
+      * 1 SD container per process step (from MFFD_SD_CONTAINER_TAPELAYING / _BRIDGEWELDING env)
+      * 1 TS container per process step (matching name pattern `mffd-{step}-ts` ideally)
+    Any extra MFFD-named container is a sprawl signal — flag in the report but
+    don't auto-delete (per integrity rule `feedback_referenced_data_infinite_retention.md`:
+    only orphans with refs=0 + payload=0 are eligible; this check only flags).
+    """
+    out = {"sd": [], "ts": [], "sd_sprawl": [], "ts_sprawl": []}
+
+    # SD containers
+    sd_rows = dest._get("/shepard/api/structuredDataContainers", params={"size": "5000"}) or []
+    sd_mffd = [r for r in sd_rows if "mffd" in (r.get("name") or "").lower()
+                                  or "tapelaying" in (r.get("name") or "").lower()
+                                  or "bridgewelding" in (r.get("name") or "").lower()]
+    out["sd"] = sd_mffd
+    # group by step
+    sd_by_step = {"tapelaying": [], "bridgewelding": []}
+    for r in sd_mffd:
+        name = (r.get("name") or "").lower()
+        if "tapelaying" in name: sd_by_step["tapelaying"].append(r["id"])
+        if "bridgewelding" in name: sd_by_step["bridgewelding"].append(r["id"])
+    for step, ids in sd_by_step.items():
+        if len(ids) > 1:
+            out["sd_sprawl"].append({"step": step, "container_ids": ids,
+                "msg": f"{len(ids)} MFFD-{step} SD containers in dest (expected 1, predefined per v15.15)"})
+
+    # TS containers
+    ts_rows = dest._get("/shepard/api/timeseriesContainers", params={"size": "5000"}) or []
+    ts_mffd = [r for r in ts_rows if any(k in (r.get("name") or "").lower()
+                                          for k in ("mffd", "tapelaying", "bridgewelding"))]
+    out["ts"] = ts_mffd
+    ts_by_step = {"tapelaying": [], "bridgewelding": []}
+    for r in ts_mffd:
+        name = (r.get("name") or "").lower()
+        # exclude import-stats / telemetry containers (those are by-design separate)
+        if "import" in name or "telemetry" in name or "stats" in name: continue
+        if "tapelaying" in name: ts_by_step["tapelaying"].append(r["id"])
+        if "bridgewelding" in name: ts_by_step["bridgewelding"].append(r["id"])
+    for step, ids in ts_by_step.items():
+        if len(ids) > 1:
+            out["ts_sprawl"].append({"step": step, "container_ids": ids,
+                "msg": f"{len(ids)} MFFD-{step} TS containers in dest (expected 1 per step). Consider consolidation if all unreferenced — per integrity rule, keep referenced ones."})
+    return out
+
+
 def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     src = Client(SOURCE_URL, SOURCE_KEY, "src")
@@ -403,6 +461,17 @@ def main() -> int:
     if dest._get("/shepard/api/version") is None and dest._get("/shepard/api/collections") is None:
         print(f"  [fatal] could not auth against dest {DEST_URL}", file=sys.stderr)
         return 3
+
+    # v1.1 — predefined-shape invariant check (sprawl detection)
+    container_check = check_predefined_containers(dest)
+    if container_check["sd_sprawl"] or container_check["ts_sprawl"]:
+        print("\n  [sprawl-warning] more than 1 container per process step detected:")
+        for w in container_check["sd_sprawl"] + container_check["ts_sprawl"]:
+            print(f"    {w['msg']}  ids={w['container_ids']}")
+        print("  → predefined-shape invariant violated; consider consolidating unreferenced duplicates.")
+    else:
+        print(f"\n  [shape-ok] container shape matches v15.15 predefined invariant"
+              f" (SD: {len(container_check['sd'])} MFFD, TS: {len(container_check['ts'])} MFFD)")
 
     collection_reports = []
     for label, src_coll in SOURCE_COLLS.items():
@@ -423,6 +492,7 @@ def main() -> int:
         "source_url": SOURCE_URL,
         "dest_url": DEST_URL,
         "exit_code": exit_code,
+        "container_shape": container_check,
         "collections": collection_reports,
     }
 
