@@ -242,6 +242,13 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | RL-FAIR4-NFDI4DS-PROTOCOL | Read the NFDI4DS in-silico reproducibility metadata protocol (cited in solankiFair4mlCordi2025 as planned FAIR4ML adopter) | The protocol may name additional predicates that close the f(ai)²r authoring-trail gap from the FAIR4ML side; need first-hand read | unread |
 | RL-FAIR4-CASTRO-CONTACT | Identify a low-friction outreach path to Leyla-Jael Castro (ZB MED, RDA FAIR4ML IG convening lead) for the joint CoRDI 2026 publication possibility named in FAIR4-PUB-VENUE | Joint paper is the recommended publication venue for f(ai)²r; needs human contact | open |
 
+### UNAS biographical-source scans (RL-UNAS series, 2026-05-23)
+
+| ID | Item | Why | Status |
+|---|---|---|---|
+| RL-UNAS-STUDIUM | UNAS `public/documents/fkrebs/Studium` — scan for Diplom-era material (2002–2008) that anchors `aidocs/strategy/104` §2 timeline rows + the 2008 IEEE SMC paper backstory; operator-uploads-only per `feedback_uploads_never_in_repo.md` (raw files never enter the repo; only abstracted findings + public-source citations) | Op flag 2026-05-23. The 2002–2008 Diplom-era is the thinnest part of the timeline — surfacing the Diplom thesis title, supervisor, year-by-year project notes would close the strongest factual gap. Host-boundary: UNAS not reachable from dev box; needs operator to upload representative artefacts. Tracked as backlog row `UNAS-FKREBS-FOLDER-SCAN` | open |
+| RL-UNAS-TAUCHGAENGE | UNAS `public/documents/fkrebs/Tauchgänge - Subsurface` — scuba-diving logs in Subsurface format; lower priority for thesis substrate, possibly relevant for author-profile breadth-context | Op flag 2026-05-23. Adjacent biographical material — would inform "what the author does outside research" if any thesis chapter or about-the-author section needs breadth-context. Default posture: stays UNAS-only unless operator explicitly opts in | open |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
