@@ -493,19 +493,36 @@ When the block is rendered, the UI looks up `promptRunAppId` via
 `GET /v2/promptlog/runs/{appId}` (cached per session) to display the
 F(AI)²R badge + "Show prompt" affordance.
 
-### 6.2 The chain-vs-run open question
+### 6.2 The chain-vs-run reference — RESOLVED 2026-05-23
 
-aidocs/95 Part 15 + `project_block_editor.md` don't resolve: when a
+aidocs/95 Part 15 + `project_block_editor.md` didn't resolve: when a
 multi-turn conversation produces one block, does the block reference
 *the single PromptRun that produced the final text* (the leaf of the
 chain) or *the whole PromptChain* (the entire transcript)?
 
-Both shapes are queryable through PROV `wasInformedBy`. The default
-in this design: **the block references the leaf PromptRun**. The
-chain is reachable via `GET .../{id}/lineage`. This minimises wire
-size on the hot path (rendering a block) while keeping the chain
-queryable. **Flagged as open question §13-OQ-1** — needs user input
-before PROMPT-c lands.
+**RESOLVED 2026-05-23** (user OK on ESCALATION-PROMPT-1 from
+persona-audit-promptlog-2026-05-23.md): the block carries **both**:
+
+```typescript
+interface BlockPromptRef {
+  promptRunAppId: string;             // the leaf — REQUIRED
+  promptChainAppId: string | null;    // the whole transcript — null for single-turn
+}
+```
+
+Costs ~80 bytes per block on the wire; saves the forever-cognitive-cost
+("is the chain reachable from here without an extra round-trip?")
+that all four personas (Analytics & AI + RDM + API Scrutinizer +
+Digital Native) preferred dual over leaf-only.
+
+For single-turn invocations (the common case for `shepard.summarise`
+or `shepard.suggest_attributes`), `promptChainAppId = null` and the
+shapes degenerate to leaf-only at the wire level. For multi-turn
+chains (RAG + tool-use + re-prompts), both are populated.
+
+Chain lookup is still served by `GET /v2/promptlog/runs/{appId}/lineage`
+— the dual-id is for *direct reachability*, not for replacing the
+lineage endpoint.
 
 ### 6.3 Cross-Shepard reference
 
@@ -905,9 +922,11 @@ as `aidocs/65`.
 
 ## §13 Open questions
 
-- **OQ-1 (§6).** Block-editor: does each block carry a single
-  `promptRunAppId` (leaf-of-chain) or the whole `promptChainAppId`?
-  Default in this design: leaf. *Needs user input before PROMPT-g.*
+- ~~**OQ-1 (§6).** Block-editor: does each block carry a single
+  `promptRunAppId` (leaf-of-chain) or the whole `promptChainAppId`?~~
+  **RESOLVED 2026-05-23** (user OK on ESCALATION-PROMPT-1): block carries
+  BOTH (`promptRunAppId` required + `promptChainAppId|null`). See §6.2
+  for the resolution. PROMPT-c may proceed.
 - **OQ-2 (§4).** When does ClickHouse become non-deferrable? Concrete
   threshold (writes/sec? table cardinality?) so the trigger is
   measurable, not subjective.

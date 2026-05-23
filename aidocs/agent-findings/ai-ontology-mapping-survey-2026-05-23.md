@@ -726,6 +726,34 @@ the acceptance evidence.
 
 ---
 
+## §6b Scope confirmation 2026-05-23 — RDM first, EASA-LA as future plugin
+
+User decision on ESCALATION-ONT-5 (Manufacturing-Quality persona):
+**`shepard-plugin-ontology-mapper` is scoped to research-RDM only in
+v1.** Acceptance ladder targets FAIR + DIN EN 9100 audit-trail quality,
+NOT EASA Part-21G airworthiness rigor.
+
+The safety-critical / EASA Learning Assurance path is a **separate
+future plugin** — provisionally `shepard-plugin-easa-la` — that would
+layer on top of the basic mapper with: (a) per-mapping documented
+human-acceptance trail per EASA AI Concept Paper Issue 2, (b) immutable
+provenance for every alignment proposal incl. rejected ones, (c) DQR
+(Data Quality Requirement) records per TPL10, (d) independence proof
+canned Cypher per TPL11.
+
+New backlog row `ONT-EASA-LA-PLUGIN` queued to track the v2 escalation
+path. Triggered when MFFD outputs feed certified airworthiness records
+(currently they don't — JEC innovation award winner is design-and-
+manufacture, not certified-flight-parts).
+
+**Acceptance ladder consequence:** the §5 rungs ship as drafted (rung-1
+Suggested, rung-2 Reviewed-by-Operator, rung-3 Verified-by-Domain-Expert,
+rung-4 Standardised). Rung-5 ("EASA-Audit-Ready") is removed from v1
+and ships with `shepard-plugin-easa-la` later. No code changes — just
+the scope clarification.
+
+---
+
 ## §7 Plugin design — `shepard-plugin-ontology-mapper`
 
 ### 7.1 Should it be a plugin? Yes.
@@ -1008,6 +1036,16 @@ budget collapses under its own weight.
 ## §11 Acceptance criteria + open questions
 
 ### 11.1 Acceptance criteria for ONT-AI-MAP1 implementation
+
+**User decision 2026-05-23 on ESCALATION-ONT-6** (Strategy persona's
+proposed `criterion #0`: "plugin lands in production before 2026-08-02
+to capture the AI Act Article 50 market window"): **REJECTED as
+acceptance criterion.** Treated as observation only — implementation
+pace is driven by other constraints (MFFD demo, NFDI4Ing timing,
+internal capacity). Re-evaluate quarterly. The differentiator-positioning
+shifts from "first-mover at enforcement" to "most-thoughtful
+implementation N months in." Aug 2026 stays in the doc as context, not
+as a deadline.
 
 When all of these are met, the slice is done:
 
