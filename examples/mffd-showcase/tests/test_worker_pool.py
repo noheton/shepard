@@ -247,8 +247,8 @@ class TestVersionConstant(unittest.TestCase):
     Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx) → 16.0 (PRESERVE-HIERARCHY: 3-pass tree replication of cube3 source DOs — v15's flat ref-prefix shape is gated behind MFFD_PRESERVE_HIERARCHY=0 fallback).
     """
 
-    def test_version_is_16_0(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.0")
+    def test_version_is_16_1(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.1")
 
 
 # ── v16 PRESERVE-HIERARCHY tests ──────────────────────────────────────────────
@@ -578,7 +578,15 @@ class TestV16Pass1CreateDestMirrors(unittest.TestCase):
 
     def test_pass1_failed_create_excluded_from_map(self):
         """When dest create returns None (4xx/5xx), the src_do_id is NOT
-        present in the result map; Pass 2 + Pass 3 must skip it cleanly."""
+        present in the result map; Pass 2 + Pass 3 must skip it cleanly.
+
+        v16.1: workers=1 pins the side_effect iteration to src_dos order
+        so the "second call fails" semantics is deterministic. With
+        workers>1 the worker-arrival order is unspecified and the failure
+        could land on any src_do_id — that ordering invariant is unit-
+        tested separately in test_pass1_retry_on_failure (uses a by-id
+        side_effect that is thread-safe).
+        """
         from unittest.mock import MagicMock
         client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
         client._base = "http://dest"
@@ -596,6 +604,7 @@ class TestV16Pass1CreateDestMirrors(unittest.TestCase):
         result = mffd_v15.v16_pass1_create_dest_mirrors(
             src_dos, client, coll_id=42, step_key="bridgewelding",
             state=None, src_coll_id=163811,
+            workers=1,
         )
         self.assertEqual(len(result), 2)
         self.assertIn(101, result)
@@ -811,6 +820,197 @@ class TestV16Pass3TargetResolution(unittest.TestCase):
         )
         self.assertTrue(target["active"])
         self.assertTrue(target["missing_leaf"])
+
+
+class TestV16_1ParallelPasses(unittest.TestCase):
+    """v16.1 IMPORT-PERF2 — worker fan-out for Pass 1 + Pass 2.
+
+    Tests assert (a) concurrency actually happens when workers>1, (b)
+    resume-safety is preserved, (c) ordering invariants hold across the
+    pool boundary, (d) retry-on-exception path works.
+    """
+
+    def test_pass1_parallel_with_workers_4(self):
+        """workers=4 — 20 source DOs fan out across the pool. We use a
+        side_effect that sleeps briefly + tracks concurrent in-flight,
+        then assert peak concurrency was > 1 (we got real parallelism)
+        and the result map is complete + correct."""
+        import threading as _t
+        import time as _time
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+
+        in_flight = {"now": 0, "peak": 0}
+        lock = _t.Lock()
+        id_counter = {"n": 0}
+
+        def _slow_create(coll_id, name, description="", attrs=None, **kw):
+            with lock:
+                in_flight["now"] += 1
+                if in_flight["now"] > in_flight["peak"]:
+                    in_flight["peak"] = in_flight["now"]
+                id_counter["n"] += 1
+                my_id = 1000 + id_counter["n"]
+            _time.sleep(0.02)  # 20 ms — enough for pool to overlap
+            with lock:
+                in_flight["now"] -= 1
+            return {"id": my_id, "appId": f"app-{my_id}"}
+
+        client.create_data_object = MagicMock(side_effect=_slow_create)
+        client._get = MagicMock(return_value=None)
+
+        src_dos = [_make_src_do(200 + i, f"do-{i}") for i in range(20)]
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=None, src_coll_id=48297,
+            workers=4,
+        )
+        # Concurrency actually happened.
+        self.assertGreater(
+            in_flight["peak"], 1,
+            f"workers=4 should run >1 in flight; peak was {in_flight['peak']}",
+        )
+        # Every src DO ends up in the map.
+        self.assertEqual(len(result), 20)
+        self.assertEqual(client.create_data_object.call_count, 20)
+
+    def test_pass1_resume_skips_already_mapped(self):
+        """state pre-populated with 10 of 20 src→dest mappings; Pass 1
+        only creates the 10 missing entries. Result map carries all 20."""
+        import tempfile
+        from pathlib import Path as _Path
+        from unittest.mock import MagicMock
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+            path = _Path(f.name)
+        state = mffd_v15.ImportState(path)
+        # Pre-populate 10 of 20 (the even-indexed ones).
+        for i in range(0, 20, 2):
+            state.set_dest_id(300 + i, 9000 + i, f"app-{9000 + i}")
+
+        counter = {"n": 0}
+        def _fake_create(coll_id, name, description="", attrs=None, **kw):
+            counter["n"] += 1
+            return {"id": 7000 + counter["n"], "appId": f"app-{7000 + counter['n']}"}
+
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+        client.create_data_object = MagicMock(side_effect=_fake_create)
+        client._get = MagicMock(return_value=None)
+
+        src_dos = [_make_src_do(300 + i, f"do-{i}") for i in range(20)]
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=state, src_coll_id=48297,
+            workers=4,
+        )
+        # Only the 10 missing entries were created.
+        self.assertEqual(client.create_data_object.call_count, 10)
+        # All 20 entries present in map (10 resumed + 10 fresh).
+        self.assertEqual(len(result), 20)
+        # Resumed entries preserve their pre-set dest_ids.
+        for i in range(0, 20, 2):
+            self.assertEqual(result[300 + i]["dest_id"], 9000 + i)
+        path.unlink(missing_ok=True)
+
+    def test_pass2_parallel_with_workers_4(self):
+        """workers=4 — 20 dest DOs PATCHed in parallel. Assert peak
+        in-flight > 1 (real concurrency)."""
+        import threading as _t
+        import time as _time
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+
+        in_flight = {"now": 0, "peak": 0}
+        lock = _t.Lock()
+
+        def _slow_patch(coll_id, do_id, **kw):
+            with lock:
+                in_flight["now"] += 1
+                if in_flight["now"] > in_flight["peak"]:
+                    in_flight["peak"] = in_flight["now"]
+            _time.sleep(0.02)
+            with lock:
+                in_flight["now"] -= 1
+            return True
+
+        client.patch_data_object = MagicMock(side_effect=_slow_patch)
+        src_dos = [_make_src_do(400 + i, f"do-{i}") for i in range(20)]
+        src_to_dest = {
+            sd.do_id: {"dest_id": 8000 + i, "dest_app_id": f"app-{8000 + i}"}
+            for i, sd in enumerate(src_dos)
+        }
+        wired, failed = mffd_v15.v16_pass2_wire_edges(
+            src_dos, src_to_dest, step_dest_do_id=12345,
+            dest_client=client, coll_id=42,
+            step_key="tapelaying", workers=4,
+        )
+        self.assertEqual(wired, 20)
+        self.assertEqual(failed, 0)
+        self.assertGreater(
+            in_flight["peak"], 1,
+            f"workers=4 should run >1 in flight; peak was {in_flight['peak']}",
+        )
+
+    def test_pass1_retry_on_failure(self):
+        """First create attempt raises an exception; the in-pool retry
+        succeeds. The result map carries the src DO under its correct
+        src_do_id (the by-id side_effect is thread-safe)."""
+        import threading as _t
+        from unittest.mock import MagicMock
+        client = mffd_v15.ShepardClient.__new__(mffd_v15.ShepardClient)
+        client._base = "http://dest"
+
+        # Track attempts per src_do_id (the name carries the id).
+        attempts: dict[str, int] = {}
+        attempts_lock = _t.Lock()
+
+        def _flaky_create(coll_id, name, description="", attrs=None, **kw):
+            with attempts_lock:
+                attempts[name] = attempts.get(name, 0) + 1
+                n = attempts[name]
+            if name == "flaky" and n == 1:
+                raise ConnectionError("simulated network blip")
+            # Encode src_do_id in dest id for assertion.
+            src_id = int(attrs["source_do_id"])
+            return {"id": 10000 + src_id, "appId": f"app-{10000 + src_id}"}
+
+        client.create_data_object = MagicMock(side_effect=_flaky_create)
+        client._get = MagicMock(return_value=None)
+
+        src_dos = [
+            _make_src_do(501, "stable-a"),
+            _make_src_do(502, "flaky"),
+            _make_src_do(503, "stable-b"),
+        ]
+        result = mffd_v15.v16_pass1_create_dest_mirrors(
+            src_dos, client, coll_id=42, step_key="tapelaying",
+            state=None, src_coll_id=48297,
+            workers=4,
+        )
+        # Retry happened — flaky was called twice.
+        self.assertEqual(attempts.get("flaky"), 2,
+                         f"flaky should be retried exactly once; got {attempts}")
+        # All 3 src DOs landed in the map under their correct src_do_id.
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[501]["dest_id"], 10501)
+        self.assertEqual(result[502]["dest_id"], 10502)  # the flaky one
+        self.assertEqual(result[503]["dest_id"], 10503)
+
+    def test_preserve_hierarchy_workers_env_var_default(self):
+        """MFFD_PRESERVE_HIERARCHY_WORKERS env var sets the module-level
+        PRESERVE_HIERARCHY_WORKERS default. Module reload picks up the
+        env value at import time; default is 8."""
+        # The module has already been loaded with whatever env var was set
+        # at test-run time. Assert the constant is at least 1 (sanity)
+        # and matches the read-pattern we ship.
+        self.assertGreaterEqual(mffd_v15.PRESERVE_HIERARCHY_WORKERS, 1)
+        # When env is unset the module default is 8 — assert by re-reading
+        # the env var the same way the module does.
+        import os as _os
+        expected = max(1, int(_os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS", "8")))
+        self.assertEqual(mffd_v15.PRESERVE_HIERARCHY_WORKERS, expected)
 
 
 if __name__ == "__main__":

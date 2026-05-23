@@ -106,6 +106,8 @@ Environment variables
   LOG_DIR                       Log + state file directory.  Default: script directory
   PAGE_SIZE                     DataObjects per page when traversing.  Default: 50
   OPERATOR                      Your name/email for provenance attrs.  Default: (empty)
+  MFFD_PRESERVE_HIERARCHY       v16 tree replication mode.  "1" = ON (default), "0" = v15 flat fallback
+  MFFD_PRESERVE_HIERARCHY_WORKERS  Worker pool size for v16 Pass 1 + Pass 2 fan-out.  Default: 8
 """
 
 from __future__ import annotations
@@ -154,7 +156,16 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.0"
+IMPORT_SCRIPT_VERSION = "16.1"
+
+# v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
+# v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
+# both passes through ThreadPoolExecutor for ~8× speedup. Default 8 workers.
+# Bridge to BATCH-API (aidocs/16 row aa38c35d) which closes the gap properly
+# via bulk endpoints.
+PRESERVE_HIERARCHY_WORKERS: int = max(
+    1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS", "8"))
+)
 
 # v16 PRESERVE-HIERARCHY — sentinel for "parentId kwarg not supplied" on
 # patch_data_object(). Distinct from None, which is a LEGAL parentId value
@@ -2870,6 +2881,7 @@ def v16_pass1_create_dest_mirrors(
     source_user_info: dict | None = None,
     session_id: str = "",
     import_time: str = "",
+    workers: int | None = None,
 ) -> dict[int, dict[str, Any]]:
     """v16 Pass 1 — create one dest DO per source DO; populate src→dest map.
 
@@ -2882,10 +2894,25 @@ def v16_pass1_create_dest_mirrors(
     The dest DO is created with NAME + ATTRIBUTES + DESCRIPTION only.
     parentId + predecessorIds are wired in Pass 2 (forward refs work because
     Pass 1 completes the full src list before Pass 2 starts).
+
+    v16.1: when ``workers`` (or the env default ``MFFD_PRESERVE_HIERARCHY_WORKERS``)
+    is > 1, creates are fanned out across a ThreadPoolExecutor and the
+    function blocks until every future completes (ALL_COMPLETED) — preserving
+    the Pass 1 ordering invariant (every src_to_dest entry is present before
+    Pass 2 starts). With workers <= 1 the original serial path is used
+    (byte-for-byte v16.0 behaviour, preserved for the sequential test path).
     """
+    if workers is None:
+        workers = PRESERVE_HIERARCHY_WORKERS
     src_to_dest: dict[int, dict[str, Any]] = {}
-    created = resumed = failed = 0
-    for src_do in src_dos:
+    # Counts mutated from worker threads — guard with a lock. dict[int]=...
+    # single-key writes ARE GIL-protected on CPython, but a Lock makes the
+    # invariant explicit + portable to free-threaded builds.
+    _accum_lock = threading.Lock()
+    counts = {"created": 0, "resumed": 0, "failed": 0, "done": 0}
+    total = len(src_dos)
+
+    def _per_do(src_do: SourceDO) -> None:
         # Resume safety — persisted dest_id wins over a fresh POST.
         existing_id = state.get_dest_id(src_do.do_id) if state else None
         if existing_id:
@@ -2901,12 +2928,14 @@ def v16_pass1_create_dest_mirrors(
                         existing_app_id = r.json().get("appId") or ""
                     except Exception:
                         existing_app_id = ""
-            src_to_dest[src_do.do_id] = {
-                "dest_id": int(existing_id),
-                "dest_app_id": existing_app_id or "",
-            }
-            resumed += 1
-            continue
+            with _accum_lock:
+                src_to_dest[src_do.do_id] = {
+                    "dest_id": int(existing_id),
+                    "dest_app_id": existing_app_id or "",
+                }
+                counts["resumed"] += 1
+                counts["done"] += 1
+            return
 
         # Build per-leaf attrs — source provenance + caller context.
         leaf_attrs: dict[str, str] = {k: str(v) for k, v in (src_do.attributes or {}).items()}
@@ -2934,27 +2963,102 @@ def v16_pass1_create_dest_mirrors(
         if not leaf_name:
             leaf_name = f"src-do-{src_do.do_id}"
 
-        leaf = dest_client.create_data_object(
-            coll_id, leaf_name,
-            description=src_do.description or "",
-            attrs=leaf_attrs,
-        )
+        # v16.1 — wrap create in try/except so an exception in one worker
+        # never aborts the pool. `create_data_object` returning None on 4xx/
+        # 5xx is the existing terminal-failure signal (it already retries
+        # internally per its own machinery); a raised exception is the new
+        # mid-flight failure path that v16.1 retries once with backoff.
+        leaf = None
+        last_exc: Exception | None = None
+        for attempt in range(2):  # 1 try + 1 retry
+            try:
+                leaf = dest_client.create_data_object(
+                    coll_id, leaf_name,
+                    description=src_do.description or "",
+                    attrs=leaf_attrs,
+                )
+                last_exc = None
+                break
+            except Exception as exc:
+                last_exc = exc
+                if attempt == 0:
+                    time.sleep(backoff_delay(attempt))
+                    continue
+        if last_exc is not None:
+            with _accum_lock:
+                counts["failed"] += 1
+                counts["done"] += 1
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 EXCEPTION "
+                f"after retries for src_do_id={src_do.do_id} name={leaf_name!r}: "
+                f"{last_exc!r}  [v16-pass1-FAIL src_id={src_do.do_id}]"
+            )
+            return
         if not leaf or not leaf.get("id"):
-            failed += 1
+            with _accum_lock:
+                counts["failed"] += 1
+                counts["done"] += 1
             print(
                 f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 FAILED "
-                f"to create leaf for src_do_id={src_do.do_id} name={leaf_name!r}"
+                f"to create leaf for src_do_id={src_do.do_id} name={leaf_name!r}  "
+                f"[v16-pass1-FAIL src_id={src_do.do_id}]"
             )
-            continue
+            return
         new_id = int(leaf["id"])
         new_app_id = str(leaf.get("appId") or "")
-        src_to_dest[src_do.do_id] = {"dest_id": new_id, "dest_app_id": new_app_id}
-        created += 1
+        with _accum_lock:
+            src_to_dest[src_do.do_id] = {"dest_id": new_id, "dest_app_id": new_app_id}
+            counts["created"] += 1
+            counts["done"] += 1
         if state is not None:
+            # ImportState.set_dest_id is thread-safe via its RLock (v16-IMPL-5).
             state.set_dest_id(src_do.do_id, new_id, new_app_id)
+
+    _start = time.time()
+
+    def _report_progress() -> None:
+        done = counts["done"]
+        if done == 0 or done % 50 != 0:
+            return
+        elapsed = time.time() - _start
+        rate = (done / elapsed) if elapsed > 0 else 0.0
+        remaining = max(0, total - done)
+        eta_m = (remaining / rate / 60.0) if rate > 0 else 0.0
+        print(
+            f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] PASS 1 — "
+            f"created {done}/{total} mirrors (rate={rate:.1f}/s, eta={eta_m:.1f}m)"
+        )
+
+    if workers <= 1 or total <= 1:
+        # Sequential path — preserves v16.0 serial behaviour byte-for-byte.
+        for src_do in src_dos:
+            _per_do(src_do)
+            _report_progress()
+    else:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(
+            max_workers=workers,
+            thread_name_prefix=f"v16p1-{step_key}",
+        ) as executor:
+            futures = [executor.submit(_per_do, sd) for sd in src_dos]
+            # Drain via as_completed so progress reporting fires as work
+            # completes (not at the end). ALL_COMPLETED is implicit — we
+            # exhaust the iterator inside the `with`, and the context-mgr
+            # exit blocks on any stragglers.
+            for fut in as_completed(futures):
+                try:
+                    fut.result()
+                except Exception as exc:
+                    # Worker fn never raises (it catches + logs internally),
+                    # so this is belt-and-braces. Log + continue.
+                    print(
+                        f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 "
+                        f"unexpected worker exception: {exc!r}"
+                    )
+                _report_progress()
     print(
         f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 done — "
-        f"created={created} resumed={resumed} failed={failed}"
+        f"created={counts['created']} resumed={counts['resumed']} failed={counts['failed']}"
     )
     return src_to_dest
 
@@ -2966,6 +3070,7 @@ def v16_pass2_wire_edges(
     dest_client: ShepardClient,
     coll_id: int,
     step_key: str = "",
+    workers: int | None = None,
 ) -> tuple[int, int]:
     """v16 Pass 2 — PATCH each dest DO with parentId + predecessorIds via the
     src→dest map. Returns (wired, failed).
@@ -2979,12 +3084,23 @@ def v16_pass2_wire_edges(
       * Forward references in the source's predecessor list work because
         Pass 1 completes the full src list before Pass 2 starts (every
         intra-step src_do_id is already in the map).
+
+    v16.1: per-DO PATCH calls are independent (read-only src_to_dest +
+    independent target dest_id), so the pool can fan out freely. Default
+    workers from ``MFFD_PRESERVE_HIERARCHY_WORKERS``.
     """
-    wired = failed = 0
-    for src_do in src_dos:
+    if workers is None:
+        workers = PRESERVE_HIERARCHY_WORKERS
+    _accum_lock = threading.Lock()
+    counts = {"wired": 0, "failed": 0, "done": 0}
+    total = len(src_dos)
+
+    def _per_do(src_do: SourceDO) -> None:
         leaf = src_to_dest.get(src_do.do_id)
         if not leaf:
-            continue
+            with _accum_lock:
+                counts["done"] += 1
+            return
         src_parent = src_do.parentId
         if src_parent and src_parent in src_to_dest:
             parent_dest_id: int | None = int(src_to_dest[src_parent]["dest_id"])
@@ -2996,21 +3112,85 @@ def v16_pass2_wire_edges(
             for p in (src_do.predecessorIds or [])
             if p in src_to_dest
         ]
-        ok = dest_client.patch_data_object(
-            coll_id, int(leaf["dest_id"]),
-            parentId=parent_dest_id,
-            predecessorIds=pred_dest_ids if pred_dest_ids else None,
-        )
-        if ok:
-            wired += 1
-        else:
-            failed += 1
+        # v16.1 — wrap PATCH in try/except so an exception in one worker
+        # never aborts the pool. patch_data_object returning False is the
+        # existing terminal-failure signal.
+        ok = False
+        last_exc: Exception | None = None
+        for attempt in range(2):  # 1 try + 1 retry
+            try:
+                ok = dest_client.patch_data_object(
+                    coll_id, int(leaf["dest_id"]),
+                    parentId=parent_dest_id,
+                    predecessorIds=pred_dest_ids if pred_dest_ids else None,
+                )
+                last_exc = None
+                break
+            except Exception as exc:
+                last_exc = exc
+                if attempt == 0:
+                    time.sleep(backoff_delay(attempt))
+                    continue
+        if last_exc is not None:
+            with _accum_lock:
+                counts["failed"] += 1
+                counts["done"] += 1
+            if step_key:
+                print(
+                    f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 2 EXCEPTION "
+                    f"after retries for src_do_id={src_do.do_id}: {last_exc!r}"
+                )
+            return
+        with _accum_lock:
+            if ok:
+                counts["wired"] += 1
+            else:
+                counts["failed"] += 1
+            counts["done"] += 1
+
+    _start = time.time()
+
+    def _report_progress() -> None:
+        done = counts["done"]
+        if done == 0 or done % 50 != 0:
+            return
+        elapsed = time.time() - _start
+        rate = (done / elapsed) if elapsed > 0 else 0.0
+        remaining = max(0, total - done)
+        eta_m = (remaining / rate / 60.0) if rate > 0 else 0.0
+        if step_key:
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] PASS 2 — "
+                f"wired {done}/{total} edges (rate={rate:.1f}/s, eta={eta_m:.1f}m)"
+            )
+
+    if workers <= 1 or total <= 1:
+        for src_do in src_dos:
+            _per_do(src_do)
+            _report_progress()
+    else:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(
+            max_workers=workers,
+            thread_name_prefix=f"v16p2-{step_key}",
+        ) as executor:
+            futures = [executor.submit(_per_do, sd) for sd in src_dos]
+            for fut in as_completed(futures):
+                try:
+                    fut.result()
+                except Exception as exc:
+                    if step_key:
+                        print(
+                            f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 2 "
+                            f"unexpected worker exception: {exc!r}"
+                        )
+                _report_progress()
     if step_key:
         print(
             f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 2 done — "
-            f"wired={wired} failed={failed}"
+            f"wired={counts['wired']} failed={counts['failed']}"
         )
-    return wired, failed
+    return counts["wired"], counts["failed"]
 
 
 def v16_resolve_target(
