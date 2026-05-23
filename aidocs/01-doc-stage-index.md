@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 14 |
 | `idea` | 9 |
 | `feature-defined` | 63 |
-| `audited-by-personas` | 52 |
+| `audited-by-personas` | 53 |
 | `feedback-implemented` | 0 |
 | `tests-implemented` | 1 |
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **272** |
+| **total docs** | **273** |
 | **UNTAGGED** | **6** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -180,7 +180,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | — |
+| [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-23 | 2026-05-23 |
@@ -201,7 +201,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (52)
+## audited-by-personas (53)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -221,6 +221,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/ecosystem-tools.md`](agent-findings/ecosystem-tools.md) | Ecosystem Tools — Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/eu-machinery-regulation-2023-1230.md`](agent-findings/eu-machinery-regulation-2023-1230.md) | EU Machinery Regulation 2023/1230 — Shepard implications | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/garage-activation-runbook.md`](agent-findings/garage-activation-runbook.md) | Garage activation runbook — findings & gotchas | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | — |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | 2026-05-23 |
