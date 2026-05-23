@@ -87,6 +87,46 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 
 ---
 
+## 2026-05-23 batch 2 — from PROMPT1 / LOGSTORE1 / ADMIN-STALE-CH / ONT-AI-MAP1
+
+### PromptLog substrate + LLM observability
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [opentelemetry.io semantic-conventions/gen-ai](https://opentelemetry.io/docs/specs/semconv/gen-ai/) v1.38+ | OTel GenAI semantic conventions (`gen_ai.input.messages` etc.) | PROMPT1 §1 ADOPT | Wire format Shepard adopts instead of inventing one. v1.38 deprecated v1.36 fields — receiver needs both | skimmed |
+| 2026-05-23 | Procko 2024 — PROV-O for LLMs | PROV-O extension for LLM provenance | PROMPT1 §1 ontology decision | Confirms PROV-O converges as the LLM provenance shape | unread |
+| 2026-05-23 | PROV-AGENT 2025 + PROV-ML 2019 | PROV-O LLM agent provenance + ML lineage | PROMPT1 references | Multi-paper convergence on PROV-O for AI workflows | unread |
+| 2026-05-23 | [langfuse.com docs](https://langfuse.com/docs) | Langfuse substrate-split pattern (Postgres + object store + analytics) | PROMPT1 §1 storage pattern | Adopt pattern, NOT stack — realise on Shepard's Postgres+Garage+pgvector | skimmed |
+| 2026-05-23 | [promptfoo.dev](https://promptfoo.dev) | promptfoo eval harness CLI | PROMPT1 §1 ADOPT | Sidecar for prompt evaluation; OSS, MIT | unread |
+
+### Log substrate
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [docs.victoriametrics.com/victorialogs](https://docs.victoriametrics.com/victorialogs/) | VictoriaLogs — Apache-2.0, ~30 MB Go binary | LOGSTORE1 §6 ADOPT | Primary log substrate; 87% less memory than Loki (TrueFoundry 2025 benchmark) | skimmed |
+| 2026-05-23 | TrueFoundry 2025 benchmark | Loki vs VictoriaLogs memory comparison | LOGSTORE1 §6 reasoning | Decisive data — 87% memory reduction at identical workload | unread |
+| 2026-05-23 | Loki / Tempo / Quickwit / Parseable 2026 licensing | AGPLv3 across the board | LOGSTORE1 §3 reuse-survey | License-axis was the discriminator; sidecar-isolation defeats dep-review but operator-redistribution burden remains | unread |
+| 2026-05-23 | [vector.dev VRL](https://vector.dev/docs/reference/vrl/) | Vector Remap Language — pre-validation expressions | LOGSTORE1 §4 SHACL-shape pre-validation | How Shepard validates EventShape SHACL at ingest before Logs storage | unread |
+
+### Stale-channel admin + storage cleanup
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | TimescaleDB chunk docs + compression stats | Hypertable cleanup patterns | ADMIN-STALE-CH §3 detection algo | Cross-substrate set-difference using Postgres `REPEATABLE READ` + Cypher | unread |
+| 2026-05-23 | Prometheus issue #10598 | TSDB stale-series garbage collection patterns | ADMIN-STALE-CH §11 risks | Community discussion on tombstone problem post-deletion | unread |
+| 2026-05-23 | Cloudflare blog + Maxima FinOps + TechTarget | FinOps storage cost management | ADMIN-STALE-CH §1 motivation | Quantifies dataset retention cost — why this matters | unread |
+
+### LLM ontology alignment
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [arxiv.org/html/2503.21902v1](https://arxiv.org/html/2503.21902v1) — Babaei Giglou et al. 2025 | **OntoAligner v1.8.0** (Apache-2.0, TIB Hannover) | ONT-AI-MAP1 §3 ADOPT | **Released 2026-05-22**, day before survey. Supports MSE track exactly matching CHAMEO ↔ Material OWL. TIB = NFDI hub Shepard already aligned to | skimmed |
+| 2026-05-23 | [arxiv.org/abs/2409.14038](https://arxiv.org/abs/2409.14038) + [2503.21813](https://arxiv.org/pdf/2503.21813) — Lin, Zhou et al. | **OAEI-LLM hallucination benchmark** | ONT-AI-MAP1 §2 risk evidence | 5-18% false-positive + 20-35% false-negative; TBox alignment 2-3× worse than ABox. Justifies LLM-as-oracle pattern (not LLM-as-proposer) | unread |
+| 2026-05-23 | [doi.org/10.1093/database/baac035](https://doi.org/10.1093/database/baac035) — Matentzoglu et al. 2022 + OAEI 2024 synthesis | **SSSOM** spec + CANARD +45% F-measure with LLM embeddings | ONT-AI-MAP1 §8 SSSOM emission | W3C-blessed mapping serialisation; Shepard emits SSSOM for portability | unread |
+| 2026-05-23 | OLaLa (Hertling & Paulheim K-CAP 2023) | One of the first LLM ontology alignment works | ONT-AI-MAP1 §2 literature | Cited as origin of LLM-as-oracle pattern | unread |
+| 2026-05-23 | DeepOnto (He et al., SWJ 2024) | KRR-Oxford Python package for ontology engineering w/ deep learning | ONT-AI-MAP1 §3 ADOPT fallback | Backup option to OntoAligner; Apache-2.0 | unread |
+| 2026-05-23 | [github.com/AgreementMakerLight](https://github.com/AgreementMakerLight) (AML) | AML — long-running OAEI competitor | ONT-AI-MAP1 §3 reuse-survey | Long history; LogMap-style deterministic baseline | unread |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*
