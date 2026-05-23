@@ -700,6 +700,125 @@ v15.8 closes the gap).
   semantics — useful for debugging. The plugin should retain a `workers=1`
   mode flag for the same reason.
 
+### Pattern 17 — Source-user identity capture for cross-instance prov chain (`MFFD-IMPORT-USER-CAPTURE`, v15.9)
+
+**Source lines:** `mffd-import-v15.py` `ShepardClient.resolve_self`
+(JWT-`sub`-then-`/users`-fallback lookup); `ShepardClient.apply_source_user_headers`
+(Session header injection with ASCII coercion); module-level `SOURCE_USER_INFO`
+cache; per-DO attribute injection in `run_source_mode` (`base_attrs`
+expansion); telemetry event `source_user_resolved`. Tests:
+`test_user_capture.py` (19 cases — JWT decode, header coercion,
+resolve fallback chain, header injection).
+
+**Why it matters — attribution without it is useless to an auditor.**
+Until v15.8 every DataObject imported cross-instance carried
+`source_collection_id` but no human identity. A DIN EN 9100 chain-of-
+custody read as "some bytes arrived from cube3 collection 48297 on
+2026-05-23." That is not attribution; that is a metadata orphan.
+Pattern 17 forwards the identity along **three channels** so the
+dest's provenance machinery can light up immediately AND the
+attribution is queryable via search even without dest-side semantic
+plumbing:
+
+1. **Per-DO attributes** (`source_user_username` + `source_user_displayName`
+   + `source_user_email` + `source_user_instance`) — searchable,
+   exportable, visible in the UI without any plugin install.
+2. **Per-write headers** (`X-Source-User-Username`,
+   `X-Source-User-DisplayName`, `X-Source-User-Email`,
+   `X-Source-User-Instance`) on every POST/PUT/PATCH — consumed
+   automatically by `ProvenanceCaptureFilter` (PROV1a). Sibling
+   pattern: `X-AI-Agent` (Pattern 12). The header approach scales
+   without per-call-site threading because requests.Session default
+   headers apply to every call through the session.
+3. **Telemetry event** `source_user_resolved` (level=info on success,
+   level=warn on graceful skip) — gives operators a flag in the
+   runlog to confirm enrichment was active for a given import.
+
+**Adoption risk: LOW.** Pure read-side enrichment, no dest schema
+change, no breaking change. The ASCII header coercion
+(`_ascii_safe_header`) is necessary — requests/urllib3 encode header
+values as latin-1, so a DLR name like "Müller" would otherwise raise
+`UnicodeEncodeError` on the next write. The Session-default-headers
+strategy means a bug in v15.9 startup CAN'T leak into the per-DO
+loop (the headers either get set once or not at all; partial-state
+is impossible).
+
+**§3 link — pairs with PROV-USER-ENRICH (dest-side enrichment).**
+v15.9 ships only the READ + FORWARD half of the attribution loop.
+The CLOSE happens on the dest, where `ProvenanceCaptureFilter` must
+consume the `X-Source-User-*` headers and turn them into typed
+PROV-O triples on `:Activity` (`prov:wasAssociatedWith` an
+`:Agent` minted from the source identity, with `prov:atLocation`
+referring back to the source instance). That work is tracked as
+the `PROV-USER-ENRICH` backlog row. Without it the headers still
+land in the dest activity log, but only as opaque labels — the
+graph queries that close the audit chain need typed triples.
+
+**Mirror endpoint gap (CRITICAL for plugin SPI).** The original
+backlog spec called for a third channel: **minting a `:User` node
+on the dest** that mirrors the source user with `prov:wasDerivedFrom`
+to the source instance. Field probing on 2026-05-23 found the
+nuclide dest exposes neither `POST /v2/admin/users` (404) nor
+`POST /shepard/api/users` (405) — user creation flows through the
+OIDC/IDM substrate, not a public REST surface. v15.9 emits a
+diagnostic warning when it skips this step and points at the new
+`PROV-USER-MIRROR-ENDPOINT` backlog row for the design work needed.
+This pattern's mirror step is therefore **gated on dest having a
+User-mint endpoint** — current v5 + fork surface does not, so v15.9
+ships the read-side + header-forward only. The plugin SPI should
+make this seam explicit: `ImportSource.resolveSelf() → SourceUser`
+is mandatory; `ImportSink.mirrorSourceUser(SourceUser) → Boolean`
+is **optional** with the default impl being a no-op + warning.
+
+**Graceful degradation IS the design.** The Reluctant Senior would
+not forgive an import that died on a metadata polish step at hour 6.
+Three independent guards:
+
+  - `resolve_self()` returns `None` (not an exception) on any
+    failure — bad JWT, 404, 403, network blip, malformed JSON.
+  - `apply_source_user_headers(None)` is a no-op (returns False).
+  - The startup call site is wrapped in `try/except Exception`
+    with a counter + event, then continues.
+
+The contract: if the lookup fails, the import runs at v15.8
+semantics. If it succeeds, every DO gets enrichment. There is no
+partial / inconsistent middle state.
+
+**How it lands in the plugin:**
+
+- `ImportSource.resolveSelf() → SourceUser` (returns Optional<>,
+  not throws) — every concrete source implements this. For
+  `DLRv5Source` it's the JWT-sub + GET `/users/{sub}` walk; for
+  `GitSource` (when shipped) it's the commit-author identity per
+  default branch HEAD; for `LocalDropboxSource` it's null (no
+  remote identity).
+- `ImporterJob.headersForWrite()` returns the `X-Source-User-*`
+  header set; the plugin's HTTP client (the Quarkus REST client
+  pointing at dest) gets these as default headers on the
+  request context.
+- `ImporterJob.attributesForDataObject()` returns the
+  `source_user_*` map keyed for the dest's `DataObject.attributes`
+  setter — same shape as v15.9's `base_attrs` expansion.
+- The `ImportSink.mirrorSourceUser()` no-op + warning shape covers
+  the `PROV-USER-MIRROR-ENDPOINT` gap; once the dest exposes a
+  user-mint endpoint, the default impl swaps for a real call
+  without any source-side change.
+- Telemetry: a `source_user_resolved` gauge per import-job
+  parallels the v15.9 script-side counter, visible in the
+  `/v2/imports/{id}/status` shape.
+
+**Test obligations the plugin must port:**
+
+- JWT-sub decode handles UUID + username + missing-sub +
+  malformed cases (port `test_decode_jwt_sub_*`).
+- Header values are ASCII-coerced before being sent (port
+  `test_ascii_safe_header_*` + `test_apply_source_user_headers_handles_umlauts`).
+- Fallback chain: JWT-sub-404 → /users (no path), upstream
+  list-response bail, 403 returns None (port `test_resolve_self_*`).
+- `apply_source_user_headers(None)` is a no-op (port
+  `test_apply_source_user_headers_none_user_is_noop`) — the plugin
+  equivalent is "no `SourceUser` resolved → no header context".
+
 ## 3. What's different in the plugin vs the v15 script
 
 The v15 script is **single-tenant, single-source, single-collection**. The
