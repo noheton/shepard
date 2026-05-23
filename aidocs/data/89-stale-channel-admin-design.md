@@ -464,6 +464,32 @@ See `project_ai_human_collab_provenance.md`.
 
 ## §7 Safety + reversal story
 
+> **2026-05-23 design update — Path B chosen (user OK on persona-audit
+> ESCALATION-STALECH-1 CRITICAL):** v1 ships with **NO EN 9100 / FAIR
+> immunity gates**. The four immunity-claims below (audit-classified,
+> calibration, publication-state, ORCID-attribution) are documented
+> as **intended future behaviour** but the enforcement code does NOT
+> exist in this release. The persona audit at
+> `aidocs/agent-findings/persona-audit-admin-stale-ch-2026-05-23.md`
+> verified by grep that `PublicationStateService`, `publicationState`
+> field, `audit_classified` attribute, and `chameo:hasCalibration` are
+> all absent from the codebase.
+>
+> **Operator-visible consequence:** the tool is gated behind
+> `shepard.stale-channels.enabled=false` (default **OFF**). Admin must
+> explicitly opt in AND must understand that no FAIR / EN 9100 gates
+> are active — they bear the deletion-safety judgment until ONT1d +
+> RDM1 + `PublicationStateService` land in a future release.
+>
+> The HARD-REQ-1 race-window protection below remains unconditional
+> regardless of immunity gates — it prevents the *between-detection-
+> and-delete* race, which is a data-integrity issue independent of
+> immunity policy. HARD-REQ-1 must ship in v1.
+>
+> **Path A (operationalise the immunity gates) deferred** until
+> ONT1d + RDM1 + `PublicationStateService` land. New backlog row
+> `ADMIN-STALE-CH-PATH-A` queued to track the upgrade trigger.
+
 **Lens citation: ALL FOUR (API Scrutinizer + Manufacturing-Quality +
 RDM + Reluctant Senior).** Destructive operations consult all lenses.
 
