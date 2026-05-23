@@ -9,6 +9,7 @@ personas:
   - Reluctant Senior (Role 9) — secondary
   - Strategy Aligner (Role 6) — secondary
   - Digital Native (Role 10) — secondary
+  - RDM / FAIR Steward (Role 5) — addendum 2026-05-23 (§5b; closes §5.4 ESCALATION 1)
 backlog-id: LOGSTORE1
 ---
 
@@ -695,7 +696,323 @@ Aligner + Digital Native (same four, scoped to their own filings)."
 
 ---
 
-## §6 Provenance + process
+## §5b — RDM / FAIR steward (Role 5) addendum
+
+**Dispatched:** 2026-05-23, by a separate sub-agent run, in direct
+response to §5.4 **ESCALATION 1** of the primary audit (which asked
+"dispatch RDM now or defer?"). This addendum closes ESCALATION 1 with
+"dispatched now". The four-persona front-matter remains the canonical
+record of the primary audit; this § is appended as a fifth persona pass
+scoped to the FAIR / publication / retention dimension only.
+
+### §5b.0 Framing assumption (load-bearing)
+
+The dispatch puts the *external citation* scenario explicitly in scope:
+"a paper cites a specific F(AI)²R provenance trail" — i.e. an
+`audit`-tier log entry can be referenced from outside Shepard, by an
+external researcher, with the expectation that the entry resolves and
+its actor + subject attribution survive.
+
+This framing matters because it cascades the verdict:
+
+- **If** audit-tier events are externally citable → ORCID / ROR / PID
+  shape on the EventShape is a **structural MAJOR** change-request, not
+  a doc-edit. The wire shape and the SHACL model both need attribution
+  primitives that point outside Shepard's own appId namespace.
+- **If** audit-tier events are internal-only (i.e. the externally-cited
+  thing is always the parent `:Activity` resolved via PROV1h's existing
+  m4i renderer, and the log event is only ever evidence behind it) →
+  the FAIR-lens lifts, the addendum collapses to "no new findings,
+  inherits the `:Activity` chain's existing FAIR shape".
+
+The doc itself is ambiguous on this. §4 line 345-348's
+`prov:wasGeneratedBy` IRI suggests "events live behind activities", but
+§7.2's per-DataObject activity tab (the killer UI surface per F10) and
+§5's `audit` retention class + nightly Garage archive both suggest
+"events ARE first-class evidence, and audit-tier ones are durable
+enough to cite". The RDM lens treats the more demanding case as the
+canonical interpretation, since silently treating an externally-cited
+log entry as best-effort-only is a FAIR-killer that would only surface
+at the first paper retraction / DOI-revocation request.
+
+### §5b.1 Findings
+
+**F25 (CRITICAL, missing attribution primitive). The EventShape
+`shev:actor` field is structurally Shepard-local and cannot carry
+ORCID / ROR / DataCite-compatible attribution.** §4 line 316-319:
+`sh:pattern "^(system|plugin|user):[A-Za-z0-9_-]{1,128}$"`. The
+`user:<uuid>` case resolves to a Shepard `User` entity whose ORCID is
+*optional* and not surfaced in the log event. For a DIN EN 9100 audit
+trail referenced from an external paper, the citable signal needs to
+be the ORCID (per DataCite 4.5/4.6 contributor model [DC1, DC2] and
+the FAIR-pipeline / PROV-O attribution literature [FPP1]).
+
+The current shape forces the FAIR consumer to do a *Shepard-local*
+join (user UUID → ORCID lookup), which means the citation breaks the
+moment the Shepard instance is migrated, renamed, or replaced. *RDM
+voice:* "if my CV cites the audit-trail event that proves I supervised
+the rework decision on TR-006, that citation must resolve in 25 years
+without a Shepard instance running."
+
+**Fix:** EventShape gains two attribution slots:
+
+```turtle
+sh:property [
+    sh:path shev:actorOrcid ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https://orcid\\.org/[0-9X-]{19}$" ;
+    # optional; required when shev:actor starts with "user:"
+] ;
+sh:property [
+    sh:path shev:actorAffiliation ;
+    sh:nodeKind sh:IRI ;
+    sh:pattern "^https://ror\\.org/[a-z0-9]{9}$" ;
+    # optional; recommended for audit-tier events
+] ;
+```
+
+For `plugin:` / `system:` actors the ORCID slot is absent but the
+plugin SHOULD declare a `schema:softwareSourceCode` IRI + DOI in its
+manifest (analogous to CodeMeta — already cited in Unhide's harvester
+docs [UH1]). The wire shape per F4 stays minimal — the server derives
+`actorOrcid` from the authenticated user's profile + `actorAffiliation`
+from the institutional config when emit lands. This dovetails with
+the Strategy Aligner's F18 OTLP-equivalence column: ORCID + ROR map
+cleanly to OTLP Resource `service.namespace` + `service.instance.id`
+extensions.
+
+**F26 (CRITICAL, audit-tier archive format under-specified). §5 line
+514 says `audit` events go to "VictoriaLogs `audit` tenant + nightly
+export to Garage S3 (immutable)" and stops.** The unanswered FAIR
+questions are six: (a) bucket naming, (b) object naming, (c) format
+(NDJSON vs Parquet vs Iceberg snapshot), (d) per-object SHA-256 /
+fixity manifest, (e) Garage object-lock / WORM enforcement, (f) — the
+critical one — **can the archive be read with VictoriaLogs
+uninstalled?**
+
+That last sub-question is the bridge to the primary audit's
+ESCALATION-2 (VictoriaLogs maturity risk): from the FAIR lens, the
+operational maturity of VictoriaLogs matters far less than whether the
+archive format is VictoriaLogs-coupled. If the Garage objects are
+NDJSON + a sidecar manifest of fixity hashes, the substrate can be
+swapped without breaking external citations. If they're VictoriaLogs
+blob exports (`vlconverter` proprietary shape per [VL3] roadmap), the
+external citation breaks the moment the substrate swap happens. The
+Apache Iceberg pattern — snapshot manifest + Parquet data files +
+immutable history log [IB1] — is the *current best practice* for
+audit-trail-on-S3 and explicitly survives engine replacement.
+
+**Fix:** §5 grows a §"5.2 Audit archive shape" subsection committing
+to:
+
+```
+Bucket:      shepard-audit-log
+Object key:  audit/{YYYY}/{MM}/{DD}/{tenant}/{stream}/{event_id}.json
+             + audit/{YYYY}/{MM}/{DD}/manifest.json (per-day SHA-256 manifest)
+Format:      NDJSON, one event per line, sorted by timestamp
+Fixity:      SHA-256 per object + per-day rollup manifest signed
+             with the Shepard instance's deploy-key
+Object lock: Garage `s3:ObjectLockConfiguration` with
+             COMPLIANCE-mode retention (Garage 1.0+ supports this
+             per [GR1])
+Readable without VictoriaLogs: YES — NDJSON is plain text + the
+             per-day manifest enables independent fixity verification
+             via a 20-line Python script ship in shepard-tools/
+```
+
+The Parquet + Iceberg alternative is structurally stronger for query
+performance over the 25-year archive (Iceberg's per-snapshot
+audit-trail metadata is literally the use case [IB1, IB2]), but the
+operational overhead of an Iceberg catalogue at this stage is
+disproportionate to the ~50 events/hour audit volume the design
+expects. NDJSON is the right starting point; Iceberg becomes the
+migration target if audit volume scales 100×.
+
+**F27 (MAJOR, retention tier semantics under-specified for FAIR
+"keep forever" claim). §5 line 514 says `audit` TTL is "infinite".**
+The published-research repository floor per re3data [R3D1] is **25
+years** for DOI-assigned datasets, with RADAR-style providers offering
+5/10/15/25-year configurable retention. "Infinite" is operator-friendly
+language but not a contractual term that a DMP committee can sign off
+on. DataCite tombstone policy [DC3] is the structural pattern:
+DOIs *cannot* be deleted, but the resource behind them can be tombstoned;
+the tombstone itself is permanent metadata.
+
+For audit-tier log events the FAIR-survival contract should be:
+
+- **Default**: 25-year minimum retention (matches DataCite-DOI
+  expectation + re3data published-dataset floor).
+- **Tombstone-able**: an `audit`-tier event can be tombstoned (event
+  body redacted, retention metadata + actor attribution kept; the
+  Shepard backend serves a tombstone landing page at the event's IRI).
+- **Per-tenant override**: institutional / project-level overrides
+  upward to "operationally infinite" (Helmholtz EN 9100 audit
+  requirements). The admin endpoint in §8.1 line 676 PATCHes this.
+
+*RDM voice:* "the importer ran in 2026; in 2051 an EASA auditor asks
+for the chain — I need to know my system contracted to keep that, not
+'we figured it would still be around'."
+
+**Fix:** §5 retention table grows a `min_years` column; `audit` row
+becomes `min_years: 25, default: infinite, tombstone: supported`. The
+runtime knob lives in `:LogRetentionPolicy` (already proposed by F9 /
+LOGSTORE1-OPS2) but `audit`'s minimum cannot be dropped below 25
+years through the runtime knob — that's a deploy-time-only floor.
+
+**F28 (MAJOR, no path from audit log event to Unhide-harvestable
+record). §7 (Unhide design) defines `/v2/unhide/feed.jsonld` as
+publishing Collections + DataObjects as `schema:Dataset`. The log
+substrate has no harvest surface.** From the FAIR Findability axis
+this is a gap: an external researcher searching the Helmholtz KG for
+"all DLR-Augsburg AFP-process audit-trail evidence" cannot find the
+log events at all — only the parent Collections, which then link back
+in-Shepard. The KG never sees the audit trail itself as a citable
+node.
+
+For the F(AI)²R use case specifically (an AI-interaction provenance
+trail referenced from an EU AI Act Art. 50 disclosure [EUAI1] — flagged
+in the primary audit's F17 / LOGSTORE1-STR3), the Unhide harvester
+needs to find the trail as a first-class resource. The schema.org
+`Action` / `CreateAction` family [SO1] is the canonical shape: a log
+event is an `Action` with `agent` (ORCID), `object` (subject IRI),
+`startTime` + `endTime`, `result` (payload subset).
+
+**Fix:** add `GET /v2/unhide/feed.jsonld?include=audit-events` (or a
+sibling `/v2/unhide/audit-feed.jsonld`) exposing `audit`-tier events as
+`schema:Action` records with PID-resolvable IRIs. The IRI shape
+becomes `https://shepard.{deploy}/v2/logs/events/{event_id}` with a
+landing page that satisfies DataCite's landing-page expectation [DC4]
+(bibliographic citation, actor with ORCID, subject with PID, payload
+viewer). Without this, the audit substrate is FAIR-private — Findable
+only inside Shepard, defeating the F(AI)²R cross-institutional citation
+story.
+
+**F29 (MAJOR, plugin `retention: audit` declaration has no FAIR-policy
+review gate). §5 line 451-459 lets a plugin author declare
+`retention: audit` in their manifest without any institutional sign-off.**
+*RDM voice:* "any plugin that ships claims its events are
+25-year-permanent — but the institution carries the storage cost and
+the legal retention obligation. Operator must be able to *cap* plugin
+retention claims at install time."
+
+The Reluctant Senior's F9 (LOGSTORE1-OPS2) covers the per-plugin
+retention *override* but defaults to the plugin's manifest value. From
+the RDM lens the precedence should flip for the `audit` class
+specifically: **`audit` is operator-opt-in, not plugin-opt-in**. The
+plugin declares "I would like this to be audit-tier"; the operator
+configures whether that claim is honoured. The admin endpoint already
+exists per F9; the *default* needs to invert for the `audit` class
+only.
+
+**Fix:** the `:LogRetentionPolicy` Neo4j entity (F9 / LOGSTORE1-OPS2)
+gains an `audit_opt_in: Map<PluginId, Boolean>` field, default
+all-false. A plugin declaring `retention: audit` whose `audit_opt_in`
+is false has its events demoted to `ops-30d` (with an admin warning).
+The operator opt-in is a one-time install-time action surfaced in the
+admin UI when a new plugin registers an audit-tier emit shape.
+
+### §5b.2 Verdict: **ACCEPT-WITH-CHANGES** (escalation noted)
+
+The substrate choice and the SHACL EventShape pattern are sound; the
+FAIR-lens findings (F25-F29) are all closeable with structural
+additions, not a redesign. F25 and F26 are CRITICAL because they
+determine whether audit-tier events can be externally cited at all
+(F25) and whether the archive survives substrate replacement (F26);
+left unfixed, the design ships a substrate whose audit-tier promises
+the RDM lens cannot endorse. F27, F28, F29 are MAJOR because they
+fix table-stakes FAIR / publication ergonomics that an institutional
+DMP committee would otherwise reject.
+
+The verdict does *not* escalate to REJECT because every finding has a
+concrete, bounded fix; the design's structural choices (SHACL contract,
+plugin-declared emission, layered validation) accommodate the
+additions cleanly. But it also does not collapse to "doc-edits only" —
+F25 + F26 require model + schema work that lands before the audit-tier
+goes into production.
+
+The audit-tier × VictoriaLogs-maturity interaction (the dispatch's
+explicit report-back question) resolves cleanly: **the FAIR-relevant
+variable is archive-format coupling, not VictoriaLogs operational
+maturity**. If F26's Garage NDJSON + fixity-manifest commitment lands,
+VictoriaLogs maturity (primary audit's ESCALATION-2) is largely
+de-risked from the FAIR lens — the audit archive outlives any
+substrate swap. If F26 is deferred and Garage objects become
+VictoriaLogs blob exports, ESCALATION-2 escalates from "operator
+risk" to "external citation risk".
+
+**What would change my mind:** if the design re-scopes "audit"
+retention to "internal evidence behind `:Activity`" (i.e. the
+externally-cited thing is *always* the m4i-rendered Activity and the
+log event is never directly cited), F25 + F26 collapse to MINOR
+documentation tasks and F28 dissolves entirely. The framing assumption
+in §5b.0 would need to be the official one in the design doc; this
+RDM verdict would drop to **ACCEPT-WITH-CHANGES (doc-only)**.
+
+### §5b.3 Change requests (backlog rows)
+
+| ID | Description | Effort | Priority |
+|---|---|---|---|
+| LOGSTORE1-RDM1 | EventShape gains `shev:actorOrcid` (`https://orcid.org/...`) + `shev:actorAffiliation` (`https://ror.org/...`); required for `actor: user:*` on audit-tier events; server-derived from user profile per F4 | M | CRITICAL |
+| LOGSTORE1-RDM2 | §5 grow `5.2 Audit archive shape` — Garage bucket/object naming, NDJSON format, SHA-256 fixity manifest, Garage COMPLIANCE-mode object lock, 20-line Python verifier in `shepard-tools/`, explicit "readable without VictoriaLogs" commitment | M | CRITICAL |
+| LOGSTORE1-RDM3 | §5 retention table grows `min_years` column; `audit` becomes `min_years: 25, default: infinite, tombstone: supported`; tombstone endpoint `POST /v2/admin/logs/events/{id}:tombstone` redacts body but preserves attribution + retention metadata | M | MAJOR |
+| LOGSTORE1-RDM4 | `GET /v2/unhide/audit-feed.jsonld` exposes `audit`-tier events as `schema:Action` with PID-resolvable landing pages at `/v2/logs/events/{id}`; landing page satisfies DataCite landing-page contract (citation block + actor ORCID + subject PID + payload viewer) | L | MAJOR |
+| LOGSTORE1-RDM5 | `:LogRetentionPolicy` gains `audit_opt_in: Map<PluginId, Boolean>` default-false; plugin `retention: audit` honoured only when operator opts in; demote to `ops-30d` + admin warning otherwise; opt-in surfaced in admin UI at plugin registration | S | MAJOR |
+
+### §5b.4 External citations
+
+- [DC1] DataCite Metadata Schema 4.5 — Contributor / nameIdentifier with ORCID schemeURI + affiliation with ROR schemeURI. https://datacite-metadata-schema.readthedocs.io/en/4.5/properties/contributor/
+- [DC2] DataCite Metadata Schema 4.6 — Creator + Contributor model (current). https://datacite-metadata-schema.readthedocs.io/en/4.6/properties/contributor/
+- [DC3] DataCite — Best Practices for Tombstone Pages — withdrawn-resource handling without deleting the DOI. https://support.datacite.org/docs/tombstone-pages
+- [DC4] DataCite — DOI Persistence + landing page expectations. https://support.datacite.org/docs/doi-persistence
+- [FPP1] FAIR data pipeline: provenance-driven data management for traceable scientific workflows — Royal Society Phil Trans A 2022; PROV-O + ORCID propagation pattern. https://royalsocietypublishing.org/rsta/article/380/2233/20210300/112235/FAIR-data-pipeline-provenance-driven-data
+- [R3D1] RADAR @ re3data — published-dataset 25-year minimum retention + 5/10/15-year operator-configurable shorter tiers. https://www.re3data.org/repository/r3d100012330
+- [IB1] Apache Iceberg snapshot metadata + immutable audit trail — append/overwrite/delete with timestamp + actor per snapshot; SOX-audit-grade lineage. https://iceberg.apache.org/spec/
+- [IB2] Iceberg metadata explained — snapshots as audit-trail primitive (OLake 2025). https://olake.io/blog/2025/10/03/iceberg-metadata/
+- [UH1] Helmholtz Unhide harvester — schema.org JSON-LD + DataCite/sitemap/OAI-PMH ingestion paths. https://codebase.helmholtz.cloud/hmc/hmc-public/unhide/data_harvesting
+- [SO1] schema.org Action / CreateAction — agent + object + startTime/endTime + result; canonical shape for activity-as-resource publication. https://schema.org/Action
+- [EUAI1] EU AI Act Art. 50 — disclosure obligations for AI-generated content; effective Aug 2026 (cross-cited from `aidocs/agent-findings/easa-ai-regulatory-positioning.md`). https://artificialintelligenceact.eu/article/50/
+- [GR1] Garage 1.0+ S3 ObjectLock — COMPLIANCE-mode retention support. https://garagehq.deuxfleurs.fr/documentation/
+
+### §5b.5 Cross-references updated by this addendum
+
+- §5.4 **ESCALATION 1** of primary audit ("dispatch RDM now or
+  defer?") — closed by this addendum (dispatched 2026-05-23).
+- §5.4 **ESCALATION 2** of primary audit (VictoriaLogs maturity) —
+  interaction with FAIR lens resolved: archive-format coupling is the
+  relevant variable, not operational maturity. ESCALATION 2 *de-risks*
+  from FAIR lens iff LOGSTORE1-RDM2 lands.
+- §5.6 final one-liners table — extend with RDM row (see §5b.6 below).
+- §13 of `aidocs/integrations/94` — updated to "Five personas verdict
+  ACCEPT-WITH-CHANGES; 25 change requests filed (LOGSTORE1-API1..7 +
+  OPS1..5 + STR1..4 + DN1..4 + RDM1..5)" with the two CRITICAL flagged
+  separately.
+
+### §5b.6 Final persona one-liner (extends §5.6)
+
+| Persona | Verdict | Top change-request |
+|---|---|---|
+| RDM / FAIR Steward (Role 5) | ACCEPT-WITH-CHANGES (2 CRITICAL) | **LOGSTORE1-RDM2** — commit to Garage NDJSON + SHA-256 fixity manifest + COMPLIANCE-mode object lock; archive readable without VictoriaLogs; this single commitment also resolves ESCALATION-2 from the FAIR lens |
+
+### §5b.7 Process notes for this addendum
+
+- **Dispatched:** 2026-05-23, ~45 min budget, as ESCALATION-1 follow-up.
+- **External citations:** 11 (floor met; ≥ 3 per persona).
+- **Counter-evidence:** F25 disputes the implicit "Shepard user UUID is
+  enough" assumption; F26 disputes the "infinite retention is
+  operator-friendly enough" framing; F27 disputes the "audit means
+  forever" loose language by contrasting with DataCite-DOI 25-year
+  floor; F29 disputes the plugin-author-declares-audit precedence.
+- **Element anchors:** every finding cites §+line in the audited doc.
+- **Reading-list additions:** 3 entries (DataCite Schema 4.5/4.6
+  contributor model, Apache Iceberg audit-trail pattern, schema.org
+  Action vocabulary).
+- **What changes the verdict** sentence: §5b.2.
+- **Falsifiability statement:** included in §5b.2 (the "internal
+  evidence only" re-scoping path).
+
+---
+
+
 
 - **Lens-citation per finding.** F1-F24 each name the persona lens
   invoked (most also cross-cite a second persona's in-prompt take).

@@ -70,6 +70,9 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | [github.com/parseablehq/parseable](https://github.com/parseablehq/parseable) | Parseable — recent OSS log analytics (Rust) | LOGSTORE1 dispatch | S3-native, schema-on-write; could match Shepard's shape-driven log dimension | unread |
 | 2026-05-23 | [github.com/VictoriaMetrics/VictoriaLogs](https://docs.victoriametrics.com/victorialogs/) | VictoriaLogs — Loki-style with VictoriaMetrics lineage | LOGSTORE1 dispatch | Single binary, low operational cost | unread |
 | 2026-05-23 | [vector.dev](https://vector.dev/) | Vector — vendor-neutral log + metrics router (Rust) | LOGSTORE1 dispatch | Routes to any backend; could decouple emit shape from substrate choice | skimmed |
+| 2026-05-23 | [datacite-metadata-schema.readthedocs.io](https://datacite-metadata-schema.readthedocs.io/en/4.6/properties/contributor/) | DataCite Schema 4.5/4.6 — Contributor / nameIdentifier with ORCID + affiliation with ROR | LOGSTORE1 RDM addendum (F25) | Canonical attribution shape every FAIR-citable Shepard `audit`-tier event should map to; informs `shev:actorOrcid` + `shev:actorAffiliation` slots in EventShape | cited |
+| 2026-05-23 | [iceberg.apache.org/spec](https://iceberg.apache.org/spec/) + [olake.io blog](https://olake.io/blog/2025/10/03/iceberg-metadata/) | Apache Iceberg snapshot metadata as immutable audit trail | LOGSTORE1 RDM addendum (F26) | Best-practice audit-trail-on-S3 pattern; current target for Shepard's Garage NDJSON to migrate to if audit volume 100×; engine-replacement-survivable | cited |
+| 2026-05-23 | [schema.org/Action](https://schema.org/Action) | schema.org Action / CreateAction vocabulary | LOGSTORE1 RDM addendum (F28) | Canonical shape for publishing an audit-trail event as a citable Unhide-harvestable resource (agent + object + startTime/endTime + result) | cited |
 
 ### Storage + identity
 

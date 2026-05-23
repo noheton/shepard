@@ -1029,12 +1029,21 @@ stable (no committed date).
 - `aidocs/44-fork-vs-upstream-feature-matrix.md` gets a new
   `shepard-plugin-logs` row in the Dev-track plugins table.
 - Doc-stage: `audited-by-personas` (advanced 2026-05-23 per the
-  4-persona audit at
+  5-persona audit at
   `aidocs/agent-findings/persona-audit-logstore-2026-05-23.md`). All
-  four personas verdict ACCEPT-WITH-CHANGES; 20 change requests filed
-  (`LOGSTORE1-API1..7`, `LOGSTORE1-OPS1..5`, `LOGSTORE1-STR1..4`,
-  `LOGSTORE1-DN1..4`) must close before the next transition to
-  `feedback-implemented`. Re-check personas: same four (API
-  Scrutinizer + Reluctant Senior + Strategy Aligner + Digital Native),
+  five personas verdict ACCEPT-WITH-CHANGES; **25 change requests
+  filed (2 CRITICAL, 18 MAJOR, 5 MINOR)** — `LOGSTORE1-API1..7`,
+  `LOGSTORE1-OPS1..5`, `LOGSTORE1-STR1..4`, `LOGSTORE1-DN1..4`,
+  `LOGSTORE1-RDM1..5` — must close before the next transition to
+  `feedback-implemented`. The two **CRITICAL** rows are
+  `LOGSTORE1-RDM1` (EventShape needs ORCID/ROR attribution slots for
+  externally-citable audit-tier events) and `LOGSTORE1-RDM2` (audit
+  archive format on Garage must be VictoriaLogs-independent — NDJSON
+  + SHA-256 fixity manifest + COMPLIANCE-mode object lock, readable
+  without the substrate). The CRITICAL pair also resolves the primary
+  audit's ESCALATION-2 (VictoriaLogs maturity risk) from the FAIR
+  lens: archive-format coupling is the relevant variable, not
+  operational maturity. Re-check personas: same five (API Scrutinizer +
+  Reluctant Senior + Strategy Aligner + Digital Native + RDM),
   scoped to their own filings. Ascends to `tests-implemented` when the
   §11.1 criteria are met and the change requests are resolved.
