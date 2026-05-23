@@ -295,8 +295,8 @@ class TestVersionConstant(unittest.TestCase):
     Bumped each release: 15.8 → 15.9 (PROV-V15.9) → 15.11 (PROV-V15.11) → 15.12 (BUG-E) → 15.13 (PROGRESS-ETA + CONTAINED-COMPLETENESS) → 15.14 (BUG-F + BUG-G) → 15.15 (BUG-F2: one SD container per process step, not per ref-name) → 15.16 (RUNNER-UV: clearer preflight error + runner prefers `uv run --script`) → 15.17 (ENV-ALIAS + AUTH-PROBE: accept SHEPARD_BASE_URL/SHEPARD_TOKEN/SOURCE_URL/SOURCE_API_KEY env names; fail fast at startup if dest or source auth doesn't return 200) → 15.18 (IMPORT-SR2: semantic-repo endpoint now uses https:// URL shape, soft-fail on POST 4xx) → 16.0 (PRESERVE-HIERARCHY: 3-pass tree replication of cube3 source DOs — v15's flat ref-prefix shape is gated behind MFFD_PRESERVE_HIERARCHY=0 fallback) → 16.1 (parallelize Pass 1 + Pass 2 with worker fan-out) → 16.2 (PAGINATION-FIX: iter_data_objects no longer relies on the absent X-Total-Pages header, paginates until an empty page — v16.1 capped source enumeration at page 0 = ~100 DOs vs the ~30K-DO MFFD source).
     """
 
-    def test_version_is_16_2(self):
-        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.2")
+    def test_version_is_16_3(self):
+        self.assertEqual(mffd_v15.IMPORT_SCRIPT_VERSION, "16.3")
 
 
 # ── v16 PRESERVE-HIERARCHY tests ──────────────────────────────────────────────

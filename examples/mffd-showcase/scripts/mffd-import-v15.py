@@ -156,7 +156,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.2"
+IMPORT_SCRIPT_VERSION = "16.3"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -164,7 +164,11 @@ IMPORT_SCRIPT_VERSION = "16.2"
 # Bridge to BATCH-API (aidocs/16 row aa38c35d) which closes the gap properly
 # via bulk endpoints.
 PRESERVE_HIERARCHY_WORKERS: int = max(
-    1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS", "8"))
+    # v16.3 — handle BOTH unset (None) and empty-string ('') env var:
+    # `os.environ.get(k, "8")` returns '' when the var is set-but-empty
+    # (common when an empty `.env` line wins over the default). `or "8"`
+    # rescues both cases.
+    1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS") or "8")
 )
 
 # v16 PRESERVE-HIERARCHY — sentinel for "parentId kwarg not supplied" on
