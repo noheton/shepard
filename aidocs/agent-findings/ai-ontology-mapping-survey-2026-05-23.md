@@ -1030,10 +1030,22 @@ When all of these are met, the slice is done:
    expression, not a single class)?** SSSOM supports this via
    anonymous-class subjects but the implementations are uneven.
    Defer to v0.2.
-6. **Should LLM-as-oracle calls use the user's session AI provider
-   or the admin-configured one?** Default: admin (per
-   `project_ai_plugin_config.md`); revisit when per-user provider
-   credentials are mature.
+6. ~~**Should LLM-as-oracle calls use the user's session AI provider
+   or the admin-configured one?**~~ **RESOLVED 2026-05-23** — not a
+   design decision the ontology-mapping plugin needs to make. The AI
+   plugin's BYOK resolution chain (`aidocs/platform/86-ai-plugin-design.md
+   §4`) already handles both cases correctly:
+   `(1) User per-capability override in :UserPreferences →
+    (2) Instance :AiCapabilityConfig slot → (3) error`. The
+   ontology-mapping plugin declares
+   `@AiCapabilityRequirement(capability = STRUCTURED, hardDep = true)`
+   and calls `LlmProvider.complete(request)`; the chain auto-resolves.
+   `(:User)-[:wasAssociatedWith]->(:AiActivity)` provenance is written
+   regardless of which credentials were used (`§8`), so audit
+   accountability holds on both paths. Billing routes via LiteLLM
+   proxy (`§13`) which already does per-user/per-team/per-model cost
+   tracking. → Captured as backlog row `ONT-MAP-AI-DEP` for the
+   plugin's `@AiCapabilityRequirement` declaration.
 7. **Is there a sub-aidocs/ semantics doc home for this design?**
    Yes — `aidocs/semantics/99-ontology-mapping.md` (or next free
    number); follow-up PR.
