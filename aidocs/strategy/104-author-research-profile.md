@@ -17,10 +17,17 @@ supplies a thesis preamble, a funding-reviewer briefing, and a contributor
 
 ## §1 At-a-glance
 
+**Full name (per ORCID record):** Florian Benedikt Krebs
 **ORCID iD:** **`0000-0001-6033-801X`** — <https://orcid.org/0000-0001-6033-801X>
 **Scopus Author ID:** `16022558700`
+**IEEE Xplore Author ID:** `37085504634`
+**GitHub:** [`noheton`](https://github.com/noheton) (real-name + ORCID linkback verified 2026-05-23)
+**LinkedIn:** [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) (headline: "Deputy Head of Department, DLR")
+**ResearchGate:** unclaimed contribution stub at [`Florian-Krebs-75868717`](https://www.researchgate.net/scientific-contributions/Florian-Krebs-75868717)
+**DBLP:** *(not indexed as of 2026-05-23 — see §9 maintenance ask)*
 **Affiliation (current):** DLR Institute of Structures and Design — Leader, Flexible Automation Systems Group (since 2009-10)
-**Education:** Universität Augsburg, Diplom-Informatiker (Informatics)
+**Prior employment (per ORCID):** **KUKA Roboter GmbH, Augsburg — April 2008 to September 2009** (17-month industrial year at the vendor whose hardware later anchors every robot cell at ZLP)
+**Education (per ORCID):** Universität Augsburg, Diplom-Informatiker (Applied Computer Science), **2002–2008**
 **Public researcher URL:** <https://www.linkedin.com/in/florian-krebs/>
 **ORCID-listed work count (2026-05-23):** 28 works
 **Bibliography-cited Krebs works (2026-05-23):** see §5.0 below
@@ -59,6 +66,10 @@ in the project's primary-source archive (uploaded to AI working memory
 
 | Year | Artefact / contribution | Role | Co-authors | Citation |
 |---|---|---|---|---|
+| 2002–2008 | **Diplominformatiker, Universität Augsburg** — Diplom in Applied Computer Science (Angewandte Informatik); the formal-methods + cognitive-structures background that anchors the *ontology-first* design posture that surfaces later. Per ORCID. | (degree) | — | (ORCID employment record) |
+| 2008 | *Relational Cognitive Structures for Intelligent Agent and Robot Control* — IEEE SMC 2008, DOI 10.1109/ICSMC.2008.4811781. **Earliest peer-reviewed Krebs publication on ORCID; predates DLR employment by ~1 year; the deep-prior ontology signal arising from the Diplom-thesis era.** | co-author | (TBD — author list pending PDF verification) | [@krebsSmcRelationalCognitive2008] |
+| 2008-04 to 2009-09 | **KUKA Roboter GmbH, Augsburg** — 17-month industrial year at the vendor whose KUKA-KR-series robots later anchor every MFZ / FPC / T-AFP cell at ZLP. Per ORCID. The clean industrial-pedigree → research-substrate arc passes through here. | (employment) | — | (ORCID employment record) |
+| 2009-10 | **DLR Institute of Structures and Design (BT) — joined.** Per ORCID. | (employment) | — | (ORCID employment record) |
 | 2010 | *Steuerungskonzept der MFZ-Anlage* — earliest recovered primary source; 21 internal revisions; control-concept document for the Multi-Function Cell (MFZ) at ZLP | sole author | — | [@krebsMfzSteuerung2010] |
 | 2010 | *Themen Robotik für Programmpunkt 4* — 29-slide companion brief on robotics topics | sole author | — | [@krebsRobotikThemen2010] |
 | 2012 | Office-door "Wanted" poster (35-word satirical notice) — included only as a register-of-voice primary source for the reflexivity chapter | sole author | — | [@wantedFlo2012] |
@@ -169,6 +180,25 @@ the project's working memory. Krebs is not a co-author of the Welzmüller
 paper. The link is institutional (Shepard is the RDM stack at DLR
 Bremen as well as DLR Augsburg) rather than personal, and it documents
 Shepard's cross-institute reach.
+
+**The HMC technical cohort (Jejkal, Pfeil, Schweikert, Pirogov, Barranco,
+Koch, Günther, Curdt, Weinelt) — *surfaced 2026-05-23 via ORCID anchor.***
+The 2022 paper *"Realizing FAIR Digital Objects for the German Helmholtz
+Association of Research Centres"* [@krebsFairDigitalObjectsHelmholtz2022]
+(RIO 2022, DOI 10.3897/rio.8.e94758) places Krebs as 6th-named on a
+10-author HMC working-group paper led by **Thomas Jejkal (KIT-SCC, HMC
+PID-services lead)**. This is the highest-impact finding of the
+2026-05-23 ORCID-anchored library pass: prior to this pass, the
+profile carried Krebs's HMC alignment as *strategic* only (via Wiestler
++ Zachgo + the BMFTR PoF V framework letter). The corrected reading
+is *both strategic and technical* — Krebs has been a peer-reviewed
+co-author in the HMC PID + FAIR-DO working group since 2022. The HMC
+Phase 2 work-package commitments [@hmcPhase2WpKrebs2025] (WP-1
+export/import + PID, WP-2 semantic-features, WP-3 cross-DLR DM
+interoperability) therefore stand on a four-year pre-existing working
+relationship — not on a green-field promise. Full cluster detail in
+[`aidocs/strategy/103-research-network.md`](103-research-network.md) §3
+(Cluster J) and §4 narrative.
 
 **The DLR-internal management-and-funding-context network.** The
 bibliography also surfaces Krebs's network into DLR management and the
@@ -549,18 +579,13 @@ asks that would close specific evidence gaps in this profile. They are
 not blockers for the next pass; they would each strengthen one section
 above. The librarian (this AI assistant) will not invent answers.
 
-**Items the user could supply on request:**
+**Items the user could supply on request (status as of 2026-05-23 ORCID-anchor pass):**
 
-- **ORCID identifier** — none currently in our records; would
-  improve §5 cross-referencing and the online-presence sub-section.
-- **Google Scholar profile URL** — same effect; also a useful
-  citation-count check on the peer-reviewed list of §5.1.
-- **DLR institute-page URL** with Krebs's contact / role line — the
-  external-visibility counterpart to the `aidocs/strategy/87`
-  internal-positioning material.
-- **First DLR employment date / contractual position** — *omitted by
-  default per the task's reflexivity-and-register guidance; include
-  only if the author explicitly chooses to.*
+- **ORCID identifier** — ~~none currently in our records~~ **resolved 2026-05-23: `0000-0001-6033-801X` (Florian Benedikt Krebs)** anchored in §1. Replaces 28+ items of "need to verify" across the library.
+- **Google Scholar profile URL** — *no personal-profile page found on Google Scholar (only search-result hits). Krebs has not created a Scholar profile.* Worth ~10 minutes for the citation-count tracking; with ORCID and IEEE Xplore IDs already in hand, the Scholar profile claim is trivial.
+- **DLR institute-page URL** with Krebs's contact / role line — still pending. The LinkedIn URL <https://www.linkedin.com/in/florian-krebs/> + IEEE Xplore <https://ieeexplore.ieee.org/author/37085504634> partially cover the external-visibility gap.
+- **First DLR employment date / contractual position** — ~~omitted by default per the task's reflexivity-and-register guidance~~ **resolved 2026-05-23 via ORCID: 2009-10 onward, role "Leader of flexible automation systems group" (ORCID) / "Deputy Head of Department" (LinkedIn). Pre-DLR: KUKA Roboter GmbH 2008-04 to 2009-09.** The author has chosen to surface these via the public ORCID record.
+- **DBLP profile** *(new 2026-05-23)* — DBLP search for "Florian Krebs DLR" returned **no matches**. Krebs has multiple IEEE/IROS/CASE/ETFA/ICRA papers that would normally be DBLP-indexed. Self-claim flow at <https://dblp.org> takes ~5 minutes and would make Krebs's IEEE conference record discoverable through the canonical CS-academic citation graph. With ORCID as the anchor identifier, the claim is trivially attestable.
 - **A profile photograph** — needed only if the thesis register
   requires an author photo (PhD-thesis-front-matter convention
   varies by faculty); the avatar-moment in

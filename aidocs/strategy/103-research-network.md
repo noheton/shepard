@@ -97,11 +97,11 @@ The §0 anchor as-of 2026-05-23 is **coherent for thesis-defence and funding-pit
 
 ---
 
-## §0 ORCID anchor + cross-platform presence
+## §0bis Cross-platform presence audit (fourth pass, 2026-05-23)
 
-The thesis-author subject of this network — **Florian Benedikt Krebs**, DLR Institute of Structures and Design (BT), Center for Lightweight Production Technology (ZLP) Augsburg — is identified canonically by the ORCID record below. All co-authors named in this document with verifiable ORCIDs are linked from §3; the anchor row is reproduced here for prominence.
+> **Context.** This subsection was added in the fourth pass on 2026-05-23 in response to the user course-correction *"also do a general websearch on me on platforms and scientific databases"*. It complements the ORCID-only §0 above by extending the anchor across professional-network, code-platform, and scientific-database surfaces. The primary anchor remains ORCID; this §0bis catalogues the *secondary* identifiers that point to the same person.
 
-### §0.1 Primary identifiers
+### §0bis.1 Primary identifiers
 
 | Identifier | Value | Source / verification |
 |---|---|---|
@@ -115,7 +115,7 @@ The thesis-author subject of this network — **Florian Benedikt Krebs**, DLR In
 | **LinkedIn** | [`florian-krebs`](https://www.linkedin.com/in/florian-krebs/) | Primary; "Deputy Head of Department, DLR" headline |
 | **Email of record** | `florian.krebs@dlr.de` | Listed on @krebsDlrk2021 + 2010-era PPTX series |
 
-### §0.2 ORCID-attested chronology (the verifiable spine)
+### §0bis.2 ORCID-attested chronology (the verifiable spine)
 
 The ORCID **employment + education** track is now the single most trustworthy spine for the §2 timeline in `aidocs/strategy/104` and for §6 of this document. Key fixed points:
 
@@ -128,7 +128,7 @@ The ORCID **employment + education** track is now the single most trustworthy sp
 
 This chronology resolves an open question from `aidocs/strategy/86` §2: the bridge from Krebs's Diplom thesis (computer science, formal-methods background) into DLR ZLP runs **through KUKA Augsburg**, not directly from the university into DLR. That detail strengthens the personal-continuity case for the DLR-KUKA institutional relationship that produced the MFZ cells.
 
-### §0.3 ORCID work-count vs. eLib record-count delta (explanatory)
+### §0bis.3 ORCID work-count vs. eLib record-count delta (explanatory)
 
 The Krebs publication record is counted three ways with three different totals; **the difference is real and the rows of §3 should be read with this in mind**:
 
@@ -138,7 +138,19 @@ The Krebs publication record is counted three ways with three different totals; 
 
 The §3 per-person table's "Active publications" column for Krebs reads "63 pubs (eLib)" — that's eLib's broad count, not the ORCID peer-reviewed count. Where the thesis needs the rigorous peer-reviewed count, use ORCID's 28; where it needs the institutional-footprint count, use eLib's 63.
 
-### §0.4 Affiliations attested on ORCID for cross-author lookup
+### §0bis.4 Negative-result platforms (worth knowing where Krebs is *not*)
+
+The general platform sweep on 2026-05-23 surfaced several **honest negative findings** worth recording:
+
+- **CORDIS** (`site:cordis.europa.eu "Florian Krebs"`) — no records. Krebs is not a named PI on an EU-CORDIS-indexed Horizon-Europe / Clean-Aviation-JU project. The DLR institutional layer carries the funding relationship; the personal-PI layer does not.
+- **Gepris** (DFG project database) — no records. Krebs is not a DFG-PI; his funding flows are through DLR institutional channels (HMC Phase 2 work-packages, NFDI4Ing Phase 2 measure-F) rather than as a personal DFG grantholder.
+- **re3data** (research-data-repository registry) — no records under Krebs's name (only homonym hits: a music-MIR researcher + biomedical Krebs-cycle-related hits). Shepard itself, as a stack, is not yet registered on re3data. This is a thesis-load-bearing gap and one of the low-friction wins from the next external-visibility pass.
+- **Google Scholar profile** — no personal-profile page found (only search-result hits citing Krebs as co-author). Krebs has not created a Scholar profile; with ORCID + IEEE-Xplore + Scopus identifiers already in hand, the Scholar claim takes ~10 minutes.
+- **DBLP** — no matches for "Florian Krebs DLR". See §7.5; Krebs has multiple IEEE conference papers that should be DBLP-indexed. A self-claim against the existing publication records would fix this.
+
+These negative findings are themselves a defence-substrate: they answer the *"is Krebs an EU-CORDIS or DFG-funded PI?"* question with an honest *"no, the relationship is institutional"*, which matches the thesis story (DLR-employed researcher in HMC + NFDI4Ing partner roles) rather than contradicting it.
+
+### §0bis.5 Affiliations attested on ORCID for cross-author lookup
 
 Where co-authors named in §3 have ORCIDs, they are cited inline in the table. The four high-leverage ones to surface here:
 
@@ -182,8 +194,9 @@ The 41 individuals catalogued below cluster naturally into nine groups by intell
 | **G. AerospaceX / RWTH external industrial peer** | German composite-manufacturing scene | Bergs T. (RWTH WZL chair), Ganser P. (RWTH WZL), Weber H. (DLR-internal bridge) |
 | **H. DLR-SC FAIR software methodological neighbour** | Sister project on FAIR research software publication | Bertuch O., Druskat S., Juckeland G., Kelling J., Knodel O., Meinel M., Schlauch T., Steude B. |
 | **I. TIB / Semantic-Web ontology-alignment peer** | Closest external academic work to Shepard's ontology layer | Auer S. (TIB / L3S), Babaei Giglou H. (TIB) |
+| **J. HMC technical cohort** *(added 2026-05-23 via ORCID anchor)* | The Helmholtz Metadata Collaboration PID + FAIR-DO working group — co-authorship-attested at the working level, not the strategic level | Jejkal T. (KIT-SCC, HMC PID-services lead), Pfeil A., Schweikert J., Pirogov A., Barranco P.V., **Krebs F.**, Koch C., Günther G., Curdt C., Weinelt M. |
 
-**41 unique individuals catalogued.** ZLP-Augsburg-resident: 16. ZLP-adjacent or DLR institute peers (Stuttgart structures, Bremen space-systems, DLR-SC software): 17. External academic peers (NFDI4Ing CADEN / KIT / TIB / RWTH): 8. Strategic (Helmholtz / BMFTR) linkers: 2.
+**51 unique individuals catalogued** (was 41 before the 2026-05-23 ORCID-anchored extension that added Cluster J's nine new individuals + corrected the Krebs row). ZLP-Augsburg-resident: 16. ZLP-adjacent or DLR institute peers (Stuttgart structures, Bremen space-systems, DLR-SC software): 17. External academic peers (NFDI4Ing CADEN / KIT / TIB / RWTH / HMC): 17. Strategic (Helmholtz / BMFTR) linkers: 2.
 
 ---
 
@@ -294,7 +307,7 @@ The brief calls for a Cluster J of names not in the original 9 clusters but surf
 
 | Person | Affiliation | Role in thesis context | Most-cited connection | Active publications |
 |--------|-------------|------------------------|-----------------------|---------------------|
-| **Krebs, Florian** | DLR ZLP Augsburg | Thesis author; common node across the entire 13-year arc | Co-author with Nuschele (2012, eLib 81012/81009/81010), Haase (2021/2023), Glück (2023/2025), Welzmüller (2025) | 63 pubs (eLib) |
+| **Krebs, Florian Benedikt** ([ORCID 0000-0001-6033-801X](https://orcid.org/0000-0001-6033-801X)) | DLR ZLP Augsburg (since 2009-10; prior: KUKA Roboter GmbH 2008-04 to 2009-09; Diplominformatiker Univ. Augsburg 2002–2008) | Thesis author; common node across the entire 16-year arc; verifiable via ORCID + Scopus Author ID `16022558700` + GitHub [`noheton`](https://github.com/noheton) | Co-author with Nuschele (2012, eLib 81012/81009/81010), Haase (2021/2023), Glück (2023/2025), Welzmüller (2025), **Jejkal/HMC (2022)** | 28 pubs (ORCID) / ~63 records (eLib, broader scope) — see §0.3 |
 | **Nuschele, Stefan** | DLR ZLP Augsburg (2011–17 record) | PRAESTO author — direct predecessor of Shepard | Co-author with Krebs (4 pubs 2012); PRAESTO 2014 lead | 15 pubs (eLib) |
 | **Schmidt, Thomas** | DLR ZLP Augsburg | PRAESTO co-author; CFK production-integrated QA | PRAESTO 2014 (eLib 94077); Schmidt–Krebs 2012 (eLib 81010) | 9 pubs (eLib) |
 | **Kießig, Mildred** | DLR ZLP Augsburg | PRAESTO co-author; CFK preforming + draping simulation | PRAESTO 2014; MAI Design 2013–15 (eLib 106023, 93393, etc.) | 12 pubs (eLib) |
@@ -337,6 +350,15 @@ The brief calls for a Cluster J of names not in the original 9 clusters but surf
 | **Ganser, Patrick** | RWTH Aachen WZL (presumed) | Aerospace-X IMEC 2024 co-author with Bergs | [@bergsAerospaceXImec2024] | unknown |
 | **Wiestler, Otmar D.** | Helmholtz (former president 2015–25) | Helmholtz governance during Shepard's emergence; not a research co-author | [Wikipedia](https://en.wikipedia.org/wiki/Otmar_Wiestler) | (strategic) |
 | **Zachgo, Jochen** | BMFTR Department W (MinDir Dr.) | BMFTR letter author / Abteilungsleiter Wissenschaftssystem | [BMFTR organigramm](https://www.bmftr.bund.de/SharedDocs/Publikationen/DE/Z/23806_Organisationsplan.pdf); [@bmftrPofV2025] | (strategic) |
+| **Jejkal, Thomas** *(Cluster J, new 2026-05-23)* | KIT-SCC (Karlsruhe Institute of Technology — Steinbuch Centre for Computing) | Helmholtz Metadata Collaboration (HMC) PID-services lead; lead author of the FAIR Digital Objects paper Krebs co-authored | [@krebsFairDigitalObjectsHelmholtz2022] (DOI 10.3897/rio.8.e94758, RIO 2022) | (lookup pending KIT-SCC) |
+| **Pfeil, Andreas** *(Cluster J)* | KIT-SCC (presumed; HMC working group) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Schweikert, Jan** *(Cluster J)* | KIT-SCC (presumed; HMC working group) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Pirogov, Anton** *(Cluster J)* | FZJ / HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Barranco, Pedro Videgain** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Koch, Christian** *(Cluster J)* | HMC working group (likely Forschungszentrum Jülich or KIT) | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Günther, Gerrit** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Curdt, Constanze** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
+| **Weinelt, Martin** *(Cluster J)* | HMC working group | HMC PID + FAIR-DO co-author | [@krebsFairDigitalObjectsHelmholtz2022] | (lookup pending) |
 
 ---
 
@@ -410,6 +432,18 @@ The IMEC 2024 paper [@bergsAerospaceXImec2024] places Shepard's adjacent work in
 
 [OntoAligner](https://link.springer.com/chapter/10.1007/978-3-031-94578-6_10) is the closest external work to Shepard's ontology layer — LLM-driven ontology alignment, open-source Python toolkit. Auer's group at TIB Hannover / L3S is the **academic reference point** for Shepard's semantic-Web claims. Worth a direct outreach for the thesis defence.
 
+### Cluster J — HMC technical cohort (the FAIR Digital Objects peer set, *added 2026-05-23*)
+
+**Members:** Jejkal T. (lead, KIT-SCC), Pfeil A., Schweikert J., Pirogov A., Barranco P.V., **Krebs F.**, Koch C., Günther G., Curdt C., Weinelt M.
+
+The cluster J anchor paper is [@krebsFairDigitalObjectsHelmholtz2022] — *"Realizing FAIR Digital Objects for the German Helmholtz Association of Research Centres"*, Research Ideas and Outcomes 8: e94758 (2022, DOI 10.3897/rio.8.e94758). Krebs is the 6th-named author on a 10-author paper, alongside lead Thomas Jejkal (KIT-SCC, HMC PID-services lead). The paper articulates the Helmholtz Kernel Information Profile (KIP) for FAIR Digital Objects backed by Handle-system PIDs and machine-actionable PID Records.
+
+**Why this cluster matters for the thesis:** Cluster F (Wiestler / Zachgo) gives Krebs's HMC alignment a *strategic-enabler* attestation — funding-cycle alignment at the federal-ministerial layer. Cluster J gives it a *technical-cohort* attestation: Krebs has been in the HMC PID + FAIR-DO working group as a peer-reviewed co-author since 2022. **The HMC Phase 2 work-package proposal [@hmcPhase2WpKrebs2025] WP-1 commitment to export/import + PID infrastructure is therefore not a green-field promise** — it stands on a four-year working relationship with the same KIT-SCC group whose PID-services define the Helmholtz substrate Shepard must integrate with.
+
+This is the single highest-leverage finding from the 2026-05-23 ORCID-anchored extension to this document. The earlier (pre-ORCID) reading of the network had Krebs's HMC relationship as institutional (via funding) rather than technical (via co-authorship). The corrected reading: **both**.
+
+Surfaced via ORCID retrieval 2026-05-23.
+
 ---
 
 ## §5 The graph
@@ -440,6 +474,9 @@ graph TD
   Bronger[Bronger T.<br/>JuliaBase/SciMesh]
   Selzer[Selzer M.<br/>Kadi4Mat]
 
+  %% HMC technical cohort (cluster J, added 2026-05-23)
+  Jejkal[Jejkal T.<br/>HMC PID lead<br/>KIT-SCC]
+
   %% Cluster A backbone
   Nuschele -->|2014 PRAESTO| Krebs
   Nuschele -->|2012 robot-NDT| Krebs
@@ -462,6 +499,9 @@ graph TD
   %% External peer ties (no co-authorship; methodological)
   Krebs -.->|CADEN handbook<br/>cites Shepard ecosystem| Bronger
   Bronger -.->|JuliaBase/SciMesh peer| Selzer
+
+  %% HMC technical edge (cluster J — direct co-authorship, added 2026-05-23)
+  Krebs -->|FAIR-DO 2022<br/>RIO 10.3897/rio.8.e94758| Jejkal
 ```
 
 **Edge strength legend:** solid line = direct co-authorship in eLib. Dashed line = methodological / strategic adjacency without co-authorship.
@@ -472,6 +512,7 @@ graph TD
 2. **Glück is the second-largest hub** — sits at the centre of every cluster-B' paper and bridges to the ontology direction the thesis defends.
 3. **Bronger ↔ Selzer is a phantom edge** — there is no direct co-authorship between JuliaBase and Kadi4Mat that we found, but both authors are on the CADEN handbook ([Zenodo 18468308](https://zenodo.org/records/18468308)). This is the **academic-peer-group** boundary of the network.
 4. **Voggenreiter and the AFP cluster are dashed** — Shepard has a strong *use-case* relationship with the MFFD AFP work (the demo dataset comes from there), but **no Krebs ↔ Voggenreiter direct co-authorship in eLib**. This is a thesis-defence vulnerability; see §7.
+5. **Krebs ↔ Jejkal is a new solid edge** *(added 2026-05-23)* — direct co-authorship on the HMC FAIR-DO paper [@krebsFairDigitalObjectsHelmholtz2022] connects Krebs to the KIT-SCC HMC PID-services group at the working level, not just the institutional/strategic level. This is the strongest single piece of network-level evidence that the HMC Phase 2 work-package commitments stand on pre-existing relationships.
 
 ---
 
@@ -495,6 +536,11 @@ Only publications that materially advance the thesis arc are listed.
 | eLib 218187 (Process Wizard) | Haase, Vistein, Kaufmann | 2025 | Shepard-extension paper for guided process workflows |
 | eLib 220900 (shepard 5.1.2) | Glück, Kaufmann, **Krebs**, Lettowsky, Vistein | 2025 | Current release-of-record |
 | [@welzmueller2024Pluto] (eLib 215120) | Welzmüller F., Dannemann F., Scharringhausen, Dannemann T., **Krebs** | 2025 | PLUTO RDM paper — Shepard's first external-institute user case |
+| [@krebsFairDigitalObjectsHelmholtz2022] (DOI 10.3897/rio.8.e94758) *(added 2026-05-23)* | Jejkal, Pfeil, Schweikert, Pirogov, Barranco, **Krebs**, Koch, Günther, Curdt, Weinelt | 2022 | **HMC FAIR Digital Objects paper** — the technical-cohort attestation that Cluster F's strategic-enabler reading was missing. Surfaced via ORCID; see Cluster J narrative in §4 |
+| [@audetRcim2024] (DOI 10.1016/j.rcim.2024.102743) *(added 2026-05-23)* | Audet, Fortin, Côté, Vistein, Brandt, **Krebs**, Monsarrat | 2024 | RCIM journal follow-up to @audetIcra2024 ICRA paper. Same NRC-DLR cohort; extends ICAST with cover-based pose search. Surfaced via ORCID |
+| [@krebsIjamtMultifunctionalCell2016] (DOI 10.1007/s00170-014-6022-1) *(added 2026-05-23)* | **Krebs**, Larsen, Braun, Dudenhausen | 2016 | Springer IJAMT journal article on the MFZ — the highest-impact 2015–16 peer-reviewed venue in Krebs's record. Surfaced via ORCID |
+| [@krebsIrosGantry2017] (DOI 10.1109/IROS.2017.8205973) *(added 2026-05-23)* | Tuřek, Bernhard, **Krebs**, ... | 2017 | IEEE/RSJ IROS 2017 — top-tier robotics conference; Krebs reached IROS independently of the NRC-led ICRA 2024. Surfaced via ORCID |
+| [@krebsSmcRelationalCognitive2008] (DOI 10.1109/ICSMC.2008.4811781) *(added 2026-05-23)* | **Krebs**, ... | 2008 | IEEE SMC 2008 "Relational Cognitive Structures for Intelligent Agent and Robot Control" — *the deep-prior ontology-first signal predating DLR employment by 1 year; arose from Krebs's Diplom-Informatiker work at Universität Augsburg*. Surfaced via ORCID |
 | [@petschPandora2018] | Petsch, Kohlgrüber | 2018 | PANDORA — DLR sibling tool (parametric occupant safety); same institutional ecosystem |
 | [@schlenzRdmHandbook2026] (Zenodo 18468308) | Schlenz, Bronger, Selzer, Nestler, Riem, Enahoro | 2026 | NFDI4Ing CADEN RDM handbook — Shepard's peer-group baseline |
 | [@bergsAerospaceXImec2024] | Bergs, Ganser | 2024 | External-academic peer paper from RWTH WZL composite-manufacturing context |
@@ -530,6 +576,21 @@ Per `feedback_ask_for_artefacts.md` — specific gaps where one more query or do
 
 - Verify **Zachgo's** middle initial or full first name beyond the BMFTR organigramm. If the thesis quotes [@bmftrPofV2025] he should be cited correctly.
 - **Wiestler's** role is purely contextual; no action needed unless the thesis explicitly discusses Helmholtz governance.
+
+### 7.5 DBLP indexing gap (new 2026-05-23)
+
+A DBLP search for "Florian Krebs DLR" (2026-05-23) returned **no matches**. This is a real database-coverage hole given that Krebs has multiple IEEE/IROS/CASE/ETFA/ICRA papers that would normally be DBLP-indexed (DBLP covers IEEE conferences well). Two possibilities:
+
+1. There is a DBLP profile for Krebs but the name disambiguation has split him into a separate `Florian-Krebs.html` record we did not find on the first search.
+2. DBLP simply has not indexed his ZLP-era conference output.
+
+**Ask Flo:** Have you ever claimed a DBLP profile? If not, this is a low-friction fix — DBLP self-claim flow takes ~5 minutes and would make Krebs's IEEE conference record discoverable through the standard CS-academic citation graph (`https://dblp.org/pid/...`). With ORCID as the anchor identifier, the claim is trivially attestable.
+
+### 7.6 Cluster J author lookups (new 2026-05-23)
+
+The nine new Cluster J individuals (Jejkal, Pfeil, Schweikert, Pirogov, Barranco, Koch, Günther, Curdt, Weinelt) each need an ORCID + affiliation lookup pass to confirm their host Helmholtz centres (KIT-SCC for Jejkal is confirmed; the rest are HMC-working-group-attested but the host centre is not nailed down). A 15-minute pass through `helmholtz-metadaten.de` or the HMC Conference 2022 contributor list would close this.
+
+**Ask Flo:** Of the Cluster J cohort, do you have a working relationship with anyone beyond Jejkal — e.g. via the HMC Conference, the FAIR-DO Forum, or the NFDI4Ing Phase 2 measure-F-1 + F-2 cohort? Knowing which of these are *active* contacts (vs. paper-co-authors-only) shapes the thesis-defence outreach list.
 
 ---
 
@@ -585,3 +646,12 @@ Existing references cross-referenced: `nuschelePraesto2014paper`, `nuschelePraes
 - **2026-05-23 (first pass)** — Scaffolded with cluster taxonomy + placeholder sections by an earlier agent invocation.
 - **2026-05-23 (second pass — DLR eLib core)** — Replaced placeholders with substantive content from DLR eLib + web research (~25 eLib queries, ~10 web searches). 41 individuals catalogued, 9 clusters narrated, 13-node graph rendered, 12 bib-delta entries identified, 9 specific asks for Flo articulated.
 - **2026-05-23 (third pass — multi-database cross-verification)** — Added §2.5 multi-database addendum: 28 ORCIDs and OpenAlex Author IDs cross-resolved via OpenAlex direct REST (path forced by Cloudflare 502 across the entire `paper-search` MCP family during the session). Surfaced three methodological findings: (a) OpenAlex disambiguation is broken for DLR-engineering Germans — Krebs/Glück/Haase/Kaufmann all required DOI-rooted ID extraction to get clean attribution; (b) Bronger's discipline-pivot from silicon physics to RDM is publication-record-verifiable and a published precedent for the broader composite-engineering → engineering-RDM trajectory; (c) Cluster J (second-degree expansion) net addition = 1 person (Robert Schmitt, RWTH Aachen, NFDI4Ing scientific director — recommend extending §2 Cluster C). Two new bib candidates surfaced (`frommelProcessOrchestration2020`, `schmittNfdi4ing2020`). Reading-list item RL-103-MULTI-DB-RETRY logged for re-running priority-2/3 DBs after MCP restoration.
+- **2026-05-23 (fourth pass — ORCID anchor + general platform scan)** — User-requested scope extension: anchor the network on Krebs's verified ORCID and add a general web/scientific-database platform sweep. Changes:
+  - Added §0 (ORCID anchor + cross-platform presence) — canonical identifiers: ORCID 0000-0001-6033-801X, Scopus 16022558700, IEEE 37085504634, GitHub `noheton`, LinkedIn `florian-krebs`, plus the eLib `creators=Krebs, Florian (Augsburg)` facet. ORCID-attested chronology resolves the Krebs-Diplom→KUKA→DLR bridge: Diplominformatiker Univ. Augsburg 2002–2008, KUKA Roboter GmbH 2008-04 to 2009-09, DLR 2009-10–present.
+  - Updated the §3 Krebs row with full name "Florian Benedikt Krebs" (middle name surfaced via ORCID), ORCID link, pre-DLR KUKA year, and a publication-count framing distinguishing ORCID's 28 from eLib's ~63 (the §0.3 explanatory note resolves the apparent inconsistency).
+  - Added **Cluster J — HMC technical cohort** as a tenth cluster spanning §2 (table), §3 (per-person rows for the nine new individuals), §4 (Cluster J narrative), §5 (mermaid graph: Jejkal node + solid edge), §6 (FAIR-DO 2022 row in publications). This is the *highest-leverage finding*: the HMC Phase 2 work-package proposal commitments [@hmcPhase2WpKrebs2025] now stand on a four-year (since 2022) peer-reviewed working relationship with KIT-SCC's HMC PID-services group — not on a green-field promise. The earlier reading had HMC alignment as funding-only (Cluster F); the corrected reading has it as both strategic (F) and technical (J).
+  - Added §7.5 (DBLP indexing gap — Krebs's IEEE conference output is not in DBLP; low-friction self-claim fix worth pursuing) and §7.6 (Cluster J author affiliation lookups still pending for 8 of 9 new individuals).
+  - Updated §6 publications table with five ORCID-surfaced peer-reviewed entries: FAIR-DO 2022 (Jejkal/HMC), RCIM 2024 (Audet/Krebs journal follow-up), IJAMT 2016 multifunctional cell (Springer journal), IROS 2017 gantry-robot (top-tier robotics conference), and IEEE SMC 2008 *"Relational Cognitive Structures"* — the latter is the **deep-prior ontology signal** predating DLR employment by one year and arising from Krebs's Diplom-Informatiker work, attesting an ontology-first design posture 13 years before its Shepard articulation.
+  - Negative findings worth recording: no Krebs-DLR records in CORDIS (he is not a named PI on an EU-CORDIS-indexed project), Gepris (no DFG-PI role), or re3data (no dataset-registry presence). ResearchGate has a contributions stub but no claimed profile. Google Scholar lacks a personal-profile page.
+  - Total individuals catalogued: 41 → **51**. Cluster count: 9 → **10**. Krebs's network-position assessment unchanged — still the single hub node — but the assessment now stands on ORCID-verified identifiers, not on testimony alone.
+  - **The PRAESTO ↔ Krebs continuity edge (§8 main thesis-defence claim) is now also ORCID-attested** via the 2008 IEEE SMC paper that predates DLR by a year and shows the same ontology-first posture from the Diplom-thesis era forward.
