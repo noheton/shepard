@@ -317,6 +317,51 @@ all display modes and can land in parallel with any of the above.
 
 ---
 
+### §8a Design ancestry — the 2023-01-24 Krebs spatial-concept deck
+
+The earliest recovered primary source for spatial payloads as a first-class Shepard
+container is the Krebs-authored *Shepard SPATIAL* deck dated 2023-01-24 [@krebsShepardSpatialConcept2023]
+(10 slides, `dc:creator: Krebs, Florian`, slide-1 explicit date *Florian Krebs, BT, 24.1.2023*).
+The deck pre-dates the present design's `GeometryAnnotation` / `DataBinding` framing
+by ~3 years and frames the same problem at the **API + storage** layer rather than the
+**geometry-annotation** layer. It is the design ancestor — not a duplicate.
+
+Five claims from the 2023 deck that survive in the present design:
+
+1. **Spatial as a first-class kind alongside timeseries and files** (slide 2 architecture
+   diagram already names *Time series · GIT · Files · Structured Documents* over a
+   graph DB; slide 3 proposes spatial as a fourth *Frontend / API Extension /
+   Processing / Data storage* lane). The present design's plugin-SPI shape
+   (`aidocs/platform/47`) is the realisation.
+2. **Mandatory + optional payload schema** (slide 4): mandatory `coordinates (x,y,z)`,
+   the **actual measurement data** (scalar; 1D/nD array; serialised JSON); optional
+   `timestamp`, `orientation (Euler angles)`, `operational metadata`
+   (coordinate system, track/run number, layer). The present `DataBinding.location`
+   + `DataBinding.payload` separation maps onto this.
+3. **Three operation classes** (slide 5): `POST /store` for live capture; `POST /import`
+   for a-posteriori capture from neutral formats; `GET /select` for retrieval with
+   *k-nearest / bounding-sphere / bounding-box / by-timestamp / by-metadata* query
+   surfaces + downsampling + coordinate-transform options. The present §5 reverse-
+   lookup API mirrors the *by-metadata* and *by-location* shapes.
+4. **Container as the permission boundary** (slide 10): *"Analogous to timeseries;
+   each container is its own 'database' / 'table'; permissions [...]"*. The present
+   design inherits the per-container permission model.
+5. **Spatio-temporal as the outlook layer** (slide 9): the 2023 deck named
+   *spatio-temporal* as the next step beyond pure spatial — *"Join classic timeseries
+   and spatial data"* (slide 8). The present design's time-scrubber + live-mode
+   (`§4`) is the operationalisation; the MFFD AFP TCP thermal-trail acceptance test
+   (M1-VIEWS-AS-SHAPES-WAVE, `aidocs/strategy/100` Layer 2) is the concrete demonstrator.
+
+**Cited path shape (slide 4):** the deck already proposed a URL shape of the form
+`col/do T123[scanDir:right]/spatialRef → payload`. The fork's actual v2 surface ended
+up with `/v2/spatial-containers/{id}` + `DataBinding` on `GeometryAnnotation` — the
+spirit (collection → data-object → spatial-reference → payload) is preserved; the
+spelling is more REST-conventional.
+
+This puts the spatial design lineage on a three-anchor chain analogous to the iDMS→
+Shepard chain in `aidocs/strategy/86`: **2023-01-24 (Krebs design deck) → 2026-05
+(this design doc) → plugin-spatial implementation (task #79 in `aidocs/16`)**.
+
 ### §9 See also
 
 - `aidocs/data/78-cad-geometry-annotator.md` — 3D Geometry & FEM Annotator (`shepard-plugin-cad`,

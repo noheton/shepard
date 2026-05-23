@@ -1917,3 +1917,63 @@
 %   the duplicate ETFA 2015 entry, the duplicate ICSMC 2008 entry --- ORCID lists
 %   journal-article + conference-paper variants of each; one canonical entry suffices.
 % ============================================================
+
+% ============================================================
+% Thesis Librarian pass 2026-05-23 (second pass) — DaMaST + HoKiTEP arc + Haase iDMS-workshop + Krebs spatial-concept
+% Five new entries integrating five artefacts uploaded 2026-05-23.
+% Authorship verification per pptx core.xml metadata (dc:creator + dcterms:created/modified)
+% and PDF metadata (pdfinfo CreationDate). See commit message for full provenance trail.
+% ============================================================
+
+@unpublished{krebsDamastIntro2025,
+  author       = {Krebs, Florian},
+  title        = {{Intro DaMaST --- Data Management for Space Transport}},
+  year         = {2025},
+  month        = nov,
+  howpublished = {7-slide internal briefing, DLR ZLP Augsburg, last modified 2025-11-24. Filename \texttt{20251124\_Intro\_Damast.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs. Authorship verified via pptx \texttt{docProps/core.xml} (\texttt{dc:creator: Krebs, Florian}; \texttt{dcterms:created: 2025-11-03}; \texttt{dcterms:modified: 2025-11-24}).},
+  note         = {Primary source for \texttt{aidocs/strategy/95-damast-space-transport-data-management.md}. Names DLR space-transport-cluster Vorhaben 2025 (use-case selection: STORT + LUMEN; user-requirement interviews across AS/BT/RA/RB/RY institutes; 2025 proposal failure attributed to ``komplexe Interaktionen'' + ``offene Fragen bzgl. Governance''; extension to Vorhaben 2026) and Vorhaben 2026 (goal: technology demonstrator DataHub = \texttt{shepard} + \texttt{databus} + MOSS; proposal target $\sim$6/26, full proposal $\sim$10/26). Slide-5 alignment statement: ``1:1 was in NFDI (und auch HMC) aufgebaut werden soll, aber anderer Use-Case''. Slide-6 ZLP rationale: establishing Shepard in DLR Raumtransport area is a stated strategic objective.},
+  category     = {dlr_internal}
+}
+
+@unpublished{hokitepPresentation2022,
+  author       = {{DLR ZLP Augsburg}},
+  title        = {{Erweiterungsszenario ZLP Augsburg --- KI-Produktionsnetzwerk / HoKiTeP}},
+  year         = {2022},
+  month        = jul,
+  howpublished = {5-slide PDF, institutional ZLP Augsburg, created 2022-07-12. Filename \texttt{Pr\_sentation\_HoKiTeP.pdf}. Uploaded to AI working memory 2026-05-23 by F.~Krebs. PDF metadata carries no named author (\texttt{pdfinfo} confirms absence of Author field); content is institutional ZLP-Augsburg argumentation for a Bavarian \emph{Gro\ss ger\"ate-Investitionsantrag}.},
+  note         = {Primary source for \texttt{aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md} \S 1. Names HoKiTeP-the-cell (\emph{Hoch-Kinematisierte Technologie-Entwicklungs-Plattform}) as the new building extension's flagship cell type: industrial robots on linear axes + autonomous mobile units cooperating \emph{im Team} for Lot-Size-1 / Changeover manufacturing, chainable into existing robot cells for multi-step processes. Funding context: regional Bavarian \emph{KI-Produktionsnetzwerk} initiative, $\sim$\,\texteuro8\,M from Freistaat Bayern; extension also adds Co-Working-Space + F\"ugelabor + workshops + storage. Slide 4 threads the project into seven strategy layers (DLR-Strategie 2030, Luftfahrt-Leitkonzepte, HGF POF-4, Bayerische Luftfahrtstrategie 2030, BDLI Technologiestrategie 2020, BMWi I4.0 Leitbild 2030, EU Clean Aviation SRIA, EASA AI Roadmap). Slide 5 future use-cases: panel assembly, fuselage-barrel assembly, cabin-element integration, flying-taxi assembly.},
+  category     = {dlr_internal}
+}
+
+@unpublished{hokitepZlpUseCase2025,
+  author       = {Krebs, Florian},
+  title        = {{ZLP joint use-case (HoKiTeP HAP 2 + 13 sibling projects)}},
+  year         = {2025},
+  month        = dec,
+  howpublished = {6-slide internal orchestration deck, DLR ZLP Augsburg, last modified 2025-12-05. Filename \texttt{HoKiTEP\_\_\_ZLP\_joint\_usecase.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs. Authorship verified via pptx \texttt{docProps/core.xml} (\texttt{dc:creator: Krebs, Florian}; \texttt{dcterms:created: 2025-12-03}; \texttt{dcterms:modified: 2025-12-05}).},
+  note         = {Primary source for \texttt{aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md} \S 2. Maps a Halle-43 production-hall process chain (CFRP skin manufacture $\rightarrow$ QS $\rightarrow$ Stringer/Spante $\rightarrow$ NDT $\rightarrow$ Assembly\,\&\,System-Installation $\rightarrow$ QS $\rightarrow$ final NDT, target part a small \emph{vorausger\"ustetes Demo-Schale} enabling iteration) to fourteen named project funding lines: ZLP, NFDI4Ing 2, HMC 2, ASPIRO, HOKITEP HAP 2, HEMERA, HERA, INTEGRA, DICADEMORE, ODIX/ForInfPro, GREATER, FRAME H2, HERFUSE, DaMaST. Load-bearing assignment (slide 3): the data-management \& analytics layer of the joint use-case is assigned to NFDI4Ing 2, HMC 2, ODIX/ForInfPro, and DaMaST --- precisely the four Shepard-bearing projects this library already integrates. Focus areas: process chaining (\`a la Protec NSR), digitale Durchg\"angigkeit, geometric precision (``No Shim''). Slides 4--6 (Balkenplan / Zulieferungen Projekte) are present but largely image-based; project-scheduling detail not extracted.},
+  category     = {dlr_internal}
+}
+
+@unpublished{haaseShepardArchOverview2022,
+  author       = {Haase, Tobias},
+  title        = {{Workshop -- Datenmanagement mit dem iDMS / Architecture Overview: Welcome to shepard}},
+  year         = {2022},
+  month        = mar,
+  howpublished = {5-slide internal workshop deck, DLR ZLP Augsburg, created 2021-02-01, last modified 2022-03-18. Filename \texttt{shepard\_adapt.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs. Authorship verified via pptx \texttt{docProps/core.xml} (\texttt{dc:creator: Haase, Tobias}; \texttt{dc:title: Workshop -- Datenmanagement mit dem iDMS}; \texttt{dcterms:created: 2021-02-01}; \texttt{dcterms:modified: 2022-03-18}; \texttt{Company: DLR}).},
+  note         = {Primary source for \texttt{aidocs/strategy/86} \S 4.6. \textbf{Direct iDMS$\rightarrow$Shepard bridge artefact in Tobias Haase's hand}: the file's original title is an iDMS workshop deck (2021-02) but the first slide already reads ``Architecture Overview: Welcome to shepard'' --- caught mid-stride in the naming transition (last-modified 2022-03-18, four months after the 2021-12 Zenodo Shepard release [@haaseShepard2021]). Five load-bearing content claims: (1)~the acronym \emph{storage for heterogeneous product and research data} is fixed by 2021-02; (2)~the 2020 iDMS four-payload architecture (Time series + GIT + Files + Structured Documents over a graph DB with REST API + Web Interface) survives verbatim into the deck's slide 1; (3)~the Project/Experiment/Step entity model of [@krebsIdms2020] is re-rendered as Collection/DataObject/DataObjectReference/Dataset (slide 2); (4)~Containers as ``enclosed boxes'' with per-container permission boundary (slide 3); (5)~explicit API-as-primary-contract claim --- Web-UI is the recommended-against path, Python/Java/C++ client libraries are the recommended interaction shape (slide 4). Slide 5 names ``Currently plans for machine-actionable RDM-policies to automatically validate input. Also versioning capabilities are being looked at in planned projects'' --- both items now operationalised in this fork (SHACL substrate + VersionableEntity).},
+  category     = {dlr_internal}
+}
+
+@unpublished{krebsShepardSpatialConcept2023,
+  author       = {Krebs, Florian},
+  title        = {{Shepard SPATIAL --- adding support for ``spatial data''}},
+  year         = {2023},
+  month        = jan,
+  howpublished = {10-slide internal design deck, DLR ZLP Augsburg (BT), 2023-01-24. Filename \texttt{shepard\_spatial\_concept.pptx}. Uploaded to AI working memory 2026-05-23 by F.~Krebs. Authorship verified via pptx \texttt{docProps/core.xml} (\texttt{dc:creator: Krebs, Florian}). Slide-1 explicit authoring date: ``Florian Krebs, BT, 24.1.2023''. The pptx file-system \texttt{dcterms:created: 2021-06-11} reflects a cloned template, not the authoring date; slide-1 date is authoritative.},
+  note         = {Primary source for \texttt{aidocs/data/81-spatial-data-binding.md} \S 8a. \textbf{Design ancestor} of plugin-spatial (\texttt{aidocs/16} task \#79) and of the current spatial DataBinding design. Five claims that survive in present design: (1)~Spatial as a first-class kind alongside time-series / GIT / files / structured documents (slide-2 architecture diagram, slide-3 four-lane extension shape: Frontend / API Extension / Processing / Data storage); (2)~Payload schema (slide 4): mandatory \emph{coordinates (x,y,z)} + \emph{measurement data} (scalar; 1D/nD array; serialised JSON); optional \emph{timestamp}, \emph{orientation (Euler angles)}, \emph{operational metadata} (coordinate system, track/run number, layer); (3)~Three operation classes (slide 5): \texttt{POST /store} for live capture, \texttt{POST /import} for a-posteriori capture, \texttt{GET /select} for retrieval with k-nearest / bounding-sphere / bounding-box / by-timestamp / by-metadata queries + downsampling + coordinate-transform; (4)~Container as the permission boundary (slide 10) analogous to timeseries containers; (5)~Spatio-temporal as the outlook layer (slide 8 ``Join classic timeseries and spatial data''; slide 9 ``Outlook: Spatio-temporal data''). Slide 4 even sketches the URL shape: \texttt{col/do T123[scanDir:right]/spatialRef $\rightarrow$ payload}.},
+  category     = {dlr_internal}
+}
+% ============================================================
+% End Thesis Librarian 2026-05-23 second-pass additions (5 entries)
+% ============================================================

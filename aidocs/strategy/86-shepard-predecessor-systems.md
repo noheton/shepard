@@ -1124,6 +1124,73 @@ predecessors of shepard:
   it into iDMS.
 - **Oven importer** — ZLP autoclave / furnace logs.
 
+### 4.6 The Haase "Architecture Overview" deck (2021–2022) — direct iDMS→Shepard bridge primary source
+
+A five-slide deck filed in this fork's working memory as `shepard_adapt.pptx`
+turns out, on metadata inspection (`dc:creator: Haase, Tobias`;
+`dc:title: Workshop – Datenmanagement mit dem iDMS`; created 2021-02-01;
+modified 2022-03-18) [@haaseShepardArchOverview2022], to be a **Haase-authored
+iDMS workshop deck**, not a Krebs intro deck. It is filed under a `shepard_*`
+filename because the deck title slide already reads *"Architecture Overview:
+Welcome to shepard"* and the deck has clearly been **adapted in place** from
+iDMS-workshop material to early-Shepard introduction material between
+2021-02 and 2022-03. This is the **direct artefactual evidence** of the
+iDMS-to-Shepard naming transition in Tobias Haase's hand.
+
+Five load-bearing observations from the deck content:
+
+1. **The acronym is fixed in 2021-02-style.** Slide 1: *"shepard = storage
+   for heterogeneous product and research data"* — the canonical expansion
+   the README still carries today.
+2. **The 2020 iDMS architecture survives almost verbatim.** Slide 1's
+   architecture box names *Time series · GIT · Files · Structured Documents*
+   over a *Graph-based Organizational Database* with *REST API* and *Web
+   Interface* — the same four payload columns + graph spine + REST surface
+   that the 2020 final iDMS presentation ([krebsIdms2020](#9-references))
+   carried, transcribed into Haase's 2021-02 deck.
+3. **The "process-oriented dataflow" framing is the model contract.**
+   Slide 2: *"shepard's data model allows to capture and organize
+   process-oriented dataflows in a common data model"*; *"Collections
+   consist of organized (e.g. hierarchical) data objects"*; *"Data objects
+   may belong to multiple collections (through data object references)"*;
+   *"Data objects refer to datasets (e.g. timeseries, files or structured
+   data)"*. This is the **Project / Experiment / Step** entity model of
+   iDMS slide 17, re-rendered as **Collection / DataObject / DataObject-
+   Reference / Dataset**. The renaming is shallow; the model is the same.
+4. **Containers as "enclosed boxes" — the permission boundary.** Slide 3
+   crystallises the container model: *"Containers allow users to store
+   data … an enclosed box that contains data related to each other …
+   different containers for different types of data … References point to
+   one or more datasets within a single container … Permissions apply per
+   container."* This is the per-container permission model the fork
+   inherits.
+5. **The API-as-primary-contract claim.** Slide 4: *"Completely manual
+   (using Web-UI) — usually not recommended! (error-prone and inefficient)
+   — Scripted interaction (e.g. using python client library; java and c++
+   also available) … Fully automated and integrated in 'foreign' tools."*
+   The 2022 Haase position is **explicit**: the Web-UI is the
+   recommended-against path; the API is the contract. This pre-dates
+   the v2 API discipline this fork now enforces.
+
+**Bridge-artefact value.** The deck closes the lineage hand-off that
+the 2020 iDMS final presentation [krebsIdms2020](#9-references) opens.
+Between Krebs's 2020-11-04 deck (still naming the system *CUBE iDMS*)
+and the 2021-12-01 Zenodo Shepard release [@haaseShepard2021], this
+Haase workshop deck is the **only primary source the library now holds
+that catches the naming transition mid-stride** — the architecture is
+already named "shepard" by 2022-03 but the model is a transcription
+of iDMS. It strengthens the doc 86 §5 lineage claim with first-party
+artefactual evidence in Haase's hand, parallel to Krebs's iDMS deck
+in §4.
+
+The deck also names a feature still listed as in-flight under the
+2022-03 modification: *"Currently plans for machine-actionable
+RDM-policies to automatically validate input. Also versioning
+capabilities are being looked at in planned projects."* (slide 5)
+— the SHACL-substrate work (`aidocs/semantics/95` / `98`) and
+versionable-entity work (now shipped) are the realisation of those
+two 2022 plan items.
+
 ## 5. The lineage
 
 ```
