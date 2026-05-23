@@ -21,6 +21,59 @@ This document is the operator reference for the live script. The companion
 user-facing task page is
 [`docs/help/importing-from-dlr-cube3.md`](../../../docs/help/importing-from-dlr-cube3.md).
 
+## What's new in v15.9 (2026-05-23) — source-side user identity capture
+
+Per the `MFFD-IMPORT-USER-CAPTURE` backlog row in
+[aidocs/16-dispatcher-backlog.md](../../../aidocs/16-dispatcher-backlog.md).
+Pattern 17 in [aidocs/integrations/95](../../../aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md).
+
+**Why this exists.** Until v15.8 every imported DataObject on the dest
+carried `source_collection_id` but no human identity — the chain of
+custody read as "some bytes arrived from cube3 collection 48297 on
+2026-05-23." A DIN EN 9100 auditor would not accept that as
+attribution. v15.9 closes the gap on the read side: on startup the
+script asks the source `GET /shepard/api/users/{jwt-sub}` (decoding
+JWT `sub` as the username candidate), captures
+`{username, firstName, lastName, email, effectiveDisplayName}`, and
+forwards that identity to the dest along three channels:
+
+1. **Per-DO attribute set.** Every step DataObject created on dest
+   carries `source_user_username` + `source_user_displayName` +
+   `source_user_email` + `source_user_instance` in its `attributes`
+   dict. Searchable, exportable, visible in the UI.
+2. **Per-write headers.** `X-Source-User-Username`,
+   `X-Source-User-DisplayName`, `X-Source-User-Email`,
+   `X-Source-User-Instance` are injected into the DEST session's
+   default headers once at startup, so EVERY POST / PUT / PATCH the
+   script makes carries them. The dest `ProvenanceCaptureFilter`
+   (PROV1a) consumes them automatically — no schema change required.
+3. **Telemetry event.** A `source_user_resolved` event lands in the
+   dest runlog (`structuredDataContainer/593753`) with username /
+   display name / has-email flag for diagnostic recall.
+
+**Graceful degradation.** Any failure of the source-user lookup (404
+when the JWT sub doesn't match a username, 403 when the JWT lacks
+read perms for `/users`, network blip, malformed JWT, missing fields
+on the upstream response) drops the script back to the v15.8
+behaviour — no enrichment, but no crash. The Reluctant Senior would
+not forgive an import that died on a metadata polish step at hour 6.
+
+**No dest-side mirror yet.** The original backlog row spec called
+for a third channel: minting a `:User` node on the dest that mirrors
+the source user with `prov:wasDerivedFrom` to the source instance.
+Field probing on 2026-05-23 found the nuclide dest exposes neither
+`POST /v2/admin/users` (404) nor `POST /shepard/api/users` (405) —
+user creation flows through the OIDC/IDM substrate, not a public
+REST surface. v15.9 documents the gap, emits a telemetry event when
+it skips, and points operators at the new `PROV-USER-MIRROR-ENDPOINT`
+backlog row for the design work needed to close it. Sibling row
+`PROV-USER-ENRICH` (dest-side filter that turns the header set into
+PROV-O triples on `:Activity`) covers the consumption half.
+
+**The running v15.8 script self-updates to v15.9 at the next graceful
+boundary** (typically when `run_source_mode` returns at the end of a
+step) once the v15.9 manifest is published in `fileContainer/473932`.
+
 ## What's new in v15.8 (2026-05-23) — two performance fixes
 
 Per the diagnostic [`aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md`](../../../aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md).
@@ -261,10 +314,12 @@ timestamp,measurement,device,location,symbolicName,field,value
 fields. Every value is rewritten to replace each with `_`, so a host like
 `cube3.intra.dlr.de` becomes `cube3_intra_dlr_de`.
 
-Counter names emitted by v15.8:
+Counter names emitted by v15.9:
 `dos_processed`, `ts_points_imported`, `files_uploaded`, `structured_imported`,
 `errors`, `retries`, `redeploys_survived`, `selfupdate_checks`,
-`telemetry_flush_errors`.
+`telemetry_flush_errors`,
+`source_user_resolved` (v15.9 — `1.0` on successful capture, `0.0` on
+graceful-degradation skip; gauge-shaped, one sample per import startup).
 
 **Events → `structuredDataContainer/593753`** (one row per flush, envelope
 carrying the batch):

@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.8"
+IMPORT_SCRIPT_VERSION = "15.9"
 
 # Self-update mechanism (IMPORT-SU1): the running script polls a JSON manifest
 # in dest Shepard. On newer version → sha256-verified download → checkpoint
@@ -201,6 +201,13 @@ IMPORT_TIME = datetime.datetime.now(datetime.timezone.utc).isoformat()
 SOURCE_SHEPARD_URL = os.environ.get("SOURCE_SHEPARD_URL", SHEPARD_URL)
 SOURCE_SHEPARD_API_KEY = os.environ.get("SOURCE_SHEPARD_API_KEY", SHEPARD_API_KEY)
 OPERATOR = os.environ.get("OPERATOR", "")
+
+# v15.9 MFFD-IMPORT-USER-CAPTURE — populated once at startup by main()
+# after a successful source-side `resolve_self()`. Read by attribute
+# builders (`base_attrs` in run_source_mode) so every dest DO carries
+# source_user_* attrs. Stays None when the source-user lookup fails
+# (graceful degradation — script continues, just without enrichment).
+SOURCE_USER_INFO: dict | None = None
 
 
 # ── v15 concurrency + resilience primitives (aidocs/93 §5) ───────────────────
@@ -703,6 +710,166 @@ class ShepardClient:
         total = r.headers.get("X-Total-Count", "?")
         print(f"  source ok  : {self._base}  (collections visible: {total})")
         return True
+
+    # ── v15.9 MFFD-IMPORT-USER-CAPTURE — source-side user identity ────────────
+    #
+    # Resolves the User the script's API key belongs to on this client's
+    # `_base` instance. JWT `sub` is the username candidate (cube3:
+    # literal "kreb_fl"; nuclide: a UUID). Strict v5.4.0 upstream exposes
+    # GET /shepard/api/users/{username} — that's the canonical lookup.
+    # The dest fork additionally exposes GET /shepard/api/users (no path
+    # arg) returning the caller's User; we use this as a "/users/me"
+    # fallback when the JWT-sub strategy fails.
+    #
+    # Returned dict shape (subset — upstream v5 schema, plus fork extras):
+    #   {username, firstName?, lastName?, email?, subscriptionIds[],
+    #    appId?, orcid?, effectiveDisplayName?}
+    # Returns None on any failure — the script MUST remain functional
+    # when source user info is unfetchable (e.g. JWT lacks read perms,
+    # source has stripped /users endpoint, network blip). The dest-side
+    # mirror + ProvenanceCaptureFilter consumption are best-effort
+    # enrichment, never a blocker.
+
+    @staticmethod
+    def _decode_jwt_sub(jwt: str) -> str | None:
+        """Pure helper: extract the `sub` claim from a JWT body.
+
+        Returns None on any decode error (malformed JWT, missing sub,
+        non-string sub). Pure — no network, no logging.
+        """
+        if not jwt or not isinstance(jwt, str):
+            return None
+        parts = jwt.split(".")
+        if len(parts) < 2:
+            return None
+        body = parts[1]
+        # base64url padding (JWT bodies omit '=' per RFC 7515)
+        padding = "=" * (-len(body) % 4)
+        try:
+            import base64 as _b64
+            decoded = _b64.urlsafe_b64decode(body + padding)
+            import json as _json
+            claims = _json.loads(decoded.decode("utf-8"))
+        except Exception:
+            return None
+        sub = claims.get("sub")
+        if not sub or not isinstance(sub, str):
+            return None
+        return sub
+
+    @staticmethod
+    def _ascii_safe_header(value: str) -> str:
+        """Coerce a header value to ASCII (requests/urllib3 encode as latin-1).
+
+        DLR display names with umlauts ('Müller') would otherwise raise
+        UnicodeEncodeError on every write. Non-ASCII is replaced with '?'.
+        Empty values become empty strings (caller decides whether to send).
+        """
+        if not value:
+            return ""
+        return value.encode("ascii", "replace").decode("ascii")
+
+    def resolve_self(self, api_key_for_jwt_decode: str = "") -> dict | None:
+        """Look up the User whose API key this client carries.
+
+        Strategy (graceful degradation):
+          1. Decode JWT `sub` from the api_key_for_jwt_decode (or
+             self._s.headers["X-API-KEY"] if no arg given), then
+             GET /shepard/api/users/{sub}. This is the canonical v5
+             surface and works against strict cube3 upstream.
+          2. If (1) returns 404 or the sub is empty, try
+             GET /shepard/api/users (no path arg) — on the nuclide
+             fork this returns the caller's User (current user-self).
+             Strict upstream returns a LIST here; we detect that
+             (response is `[...]` not `{...}`) and bail.
+          3. On any other failure (403 = no read perm, network, etc.),
+             return None. The caller must handle None — never crash.
+
+        Always returns the decoded JSON dict on success, or None.
+        """
+        jwt = api_key_for_jwt_decode or self._s.headers.get("X-API-KEY", "")
+        # urllib3 sends headers as bytes; the Session-stored value is str.
+        # Strategy 1: JWT-sub lookup.
+        sub = self._decode_jwt_sub(jwt) if isinstance(jwt, str) else None
+        if sub:
+            try:
+                r = self._request_with_retry(
+                    "GET", f"{self._base}/shepard/api/users/{sub}",
+                    timeout=15, deadline_s=30.0,
+                )
+                if r is not None and r.ok:
+                    try:
+                        body = r.json()
+                        if isinstance(body, dict) and body.get("username"):
+                            return body
+                    except Exception:
+                        pass
+                # 404 = JWT sub doesn't match a username (e.g. SSO-derived);
+                # fall through to /users (no path) fork-compat fallback.
+            except Exception:
+                pass
+        # Strategy 2: /users (no path arg) — fork "self" endpoint.
+        try:
+            r = self._request_with_retry(
+                "GET", f"{self._base}/shepard/api/users",
+                timeout=15, deadline_s=30.0,
+            )
+            if r is not None and r.ok:
+                try:
+                    body = r.json()
+                    # Fork shape: single dict. Upstream shape: list. Bail on list.
+                    if isinstance(body, dict) and body.get("username"):
+                        return body
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return None
+
+    def apply_source_user_headers(self, source_user: dict | None,
+                                  source_instance_url: str = "") -> bool:
+        """Inject X-Source-User-* headers into the Session default headers.
+
+        Once set, every subsequent write (POST/PUT/PATCH) through self._s
+        carries these headers — ProvenanceCaptureFilter on the dest reads
+        them automatically (no per-call-site threading needed).
+
+        Headers added (only when the source field is non-empty):
+          - X-Source-User-Username       — e.g. "kreb_fl"
+          - X-Source-User-DisplayName    — "First Last" or username fallback
+          - X-Source-User-Email          — RFC 5322 mail address
+          - X-Source-User-Instance       — origin shepard URL
+
+        All values pass through _ascii_safe_header so requests/urllib3
+        latin-1 encoding never raises on umlaut names.
+
+        Returns True when at least one header was set; False otherwise.
+        Idempotent — safe to call multiple times (later calls overwrite).
+        """
+        if not source_user:
+            return False
+        username = source_user.get("username") or ""
+        first = source_user.get("firstName") or ""
+        last = source_user.get("lastName") or ""
+        email = source_user.get("email") or ""
+        display = source_user.get("effectiveDisplayName") or ""
+        if not display:
+            display = f"{first} {last}".strip() or username
+
+        applied = False
+        if username:
+            self._s.headers["X-Source-User-Username"] = self._ascii_safe_header(username)
+            applied = True
+        if display:
+            self._s.headers["X-Source-User-DisplayName"] = self._ascii_safe_header(display)
+            applied = True
+        if email:
+            self._s.headers["X-Source-User-Email"] = self._ascii_safe_header(email)
+            applied = True
+        if source_instance_url:
+            self._s.headers["X-Source-User-Instance"] = self._ascii_safe_header(source_instance_url)
+            applied = True
+        return applied
 
     # ── Source collection traversal ───────────────────────────────────────────
 
@@ -2436,6 +2603,27 @@ def run_source_mode(
         }
         if original_name_for_alt:
             base_attrs["source_name"] = original_name_for_alt
+        # v15.9 MFFD-IMPORT-USER-CAPTURE — every step DO carries source-user
+        # attrs when resolved at startup. Absent fields are skipped (no
+        # attribute with empty value). The trio source_user_username +
+        # source_user_displayName + source_user_email pairs with the
+        # ProvenanceCaptureFilter dest-side enrichment (PROV-USER-ENRICH
+        # backlog row) for the full attribution chain.
+        if SOURCE_USER_INFO:
+            su_user = SOURCE_USER_INFO.get("username") or ""
+            su_first = SOURCE_USER_INFO.get("firstName") or ""
+            su_last = SOURCE_USER_INFO.get("lastName") or ""
+            su_email = SOURCE_USER_INFO.get("email") or ""
+            su_display = SOURCE_USER_INFO.get("effectiveDisplayName") or ""
+            if not su_display:
+                su_display = f"{su_first} {su_last}".strip() or su_user
+            if su_user:
+                base_attrs["source_user_username"] = su_user
+            if su_display:
+                base_attrs["source_user_displayName"] = su_display
+            if su_email:
+                base_attrs["source_user_email"] = su_email
+            base_attrs["source_user_instance"] = SOURCE_SHEPARD_URL
 
         dest_do = ensure_dest_do(
             dest_client,
@@ -4072,6 +4260,73 @@ def main() -> None:
         tee.close()
         sys.stdout = tee._stdout  # type: ignore[attr-defined]
         sys.exit(1)
+
+    # ── v15.9 MFFD-IMPORT-USER-CAPTURE — resolve source-side user identity ────
+    # Run once at startup, after dest warmup is OK so the failure can be
+    # event-logged into dest telemetry. Failure is NEVER fatal: the script
+    # ships rich per-DO attribution when the lookup succeeds, and plain
+    # `source_collection_id` when it doesn't. Per advisor: wrap in a
+    # top-level try/except so a bug in the new code path can't kill the
+    # 8 hour MFFD import.
+    global SOURCE_USER_INFO
+    if cross_instance and SOURCE_SHEPARD_URL and SOURCE_SHEPARD_API_KEY \
+            and not args.bootstrap and not args.verify_imported:
+        try:
+            print(f"\n=== Source user identity capture (v15.9) ===")
+            print(f"  source: {SOURCE_SHEPARD_URL}")
+            _su_client = ShepardClient(SOURCE_SHEPARD_URL, SOURCE_SHEPARD_API_KEY, "")
+            su_info = _su_client.resolve_self(api_key_for_jwt_decode=SOURCE_SHEPARD_API_KEY)
+            if su_info:
+                SOURCE_USER_INFO = su_info
+                su_name = (
+                    su_info.get("effectiveDisplayName")
+                    or f"{su_info.get('firstName','')} {su_info.get('lastName','')}".strip()
+                    or su_info.get("username", "?")
+                )
+                su_email = su_info.get("email") or "(no email)"
+                print(f"  ✓ resolved : {su_name} <{su_email}>")
+                print(f"    username : {su_info.get('username','?')}")
+                # Apply X-Source-User-* headers to the DEST session so every
+                # write carries them; ProvenanceCaptureFilter consumes
+                # automatically (no per-call-site threading required).
+                applied = dest_client.apply_source_user_headers(
+                    su_info, source_instance_url=SOURCE_SHEPARD_URL
+                )
+                if applied:
+                    print(f"  ✓ dest session now sends X-Source-User-* on every write")
+                telemetry.event(
+                    "info", "source_user_resolved",
+                    username=su_info.get("username", ""),
+                    display_name=su_name,
+                    has_email=bool(su_info.get("email")),
+                    source_instance=SOURCE_SHEPARD_URL,
+                )
+                telemetry.counter("source_user_resolved", 1.0)
+            else:
+                print(f"  [warn] source user lookup returned no result")
+                print(f"  [warn] continuing without source_user_* enrichment "
+                      f"(see PROV-USER-ENRICH backlog row)")
+                telemetry.event(
+                    "warn", "source_user_unresolved",
+                    source_instance=SOURCE_SHEPARD_URL,
+                    reason="resolve_self returned None",
+                )
+                telemetry.counter("source_user_resolved", 0.0)
+        except Exception as _su_exc:
+            # Per advisor: top-level guard. ANY failure (network, JSON, JWT
+            # decode, attribute missing) drops back to the no-enrichment
+            # path. Never crash the import on a metadata enrichment.
+            print(f"  [warn] source user capture failed: {_su_exc!r}")
+            print(f"  [warn] continuing without source_user_* enrichment")
+            try:
+                telemetry.event(
+                    "warn", "source_user_capture_error",
+                    exc=type(_su_exc).__name__,
+                    msg=str(_su_exc)[:200],
+                )
+                telemetry.counter("source_user_resolved", 0.0)
+            except Exception:
+                pass
 
     # v15.3 IMPORT-Q7-VERIFY (in-script) — fetch ONE of each data type from
     # SOURCE before mass-importing. Catches the 0-byte-source failure mode
