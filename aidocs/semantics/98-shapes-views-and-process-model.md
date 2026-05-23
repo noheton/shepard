@@ -1,5 +1,5 @@
 ---
-stage: fragment
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 ---
 
@@ -355,6 +355,89 @@ The shape becomes a single `ProcessParameterShape` reused across all
 seven process steps. Adding the next welder's 32 channels is a TTL
 edit, not 32 new OWL classes.
 
+#### 3.1.1 Three AFP worked examples
+
+The instance + taxonomy pattern is validated against the three
+parameters that drive the MFFD AFP demo (and the
+`project_trace3d_view.md` Trace3D acceptance test). Each is a
+`ProcessParameter` *individual*, not a *class*; the only thing that
+changes between them is the `parameterType` SKOS code and the QUDT
+unit. The same `ProcessParameterShape` validates all three.
+
+**Example 1 — consolidation force** (AFP roller pressing the ply
+onto the substrate):
+
+```turtle
+mffd:ind-consolidation-force-tr-q1-ply-5
+  a mffd:ProcessParameter ;
+  mffd:parameterType mffd:ConsolidationForceParameterType ;
+  mffd:hasValue [
+    a qudt:QuantityValue ;
+    qudt:numericValue "382.6"^^xsd:decimal ;
+    qudt:hasUnit unit:N
+  ] ;
+  prov:wasGeneratedBy <activity-iri-afp-ply-5> ;
+  prov:atTime "2026-05-22T14:08:31.42Z"^^xsd:dateTime ;
+  shepard:onChannel "afp/consolidation_force" .
+```
+
+Q1 anomaly signal lives here: nominal ≈ 450 N, ply-5 drops to ~380 N
+(captured in `examples/mffd-showcase/seed.py`). The instance pattern
+makes "show me every consolidation_force reading on this campaign
+under nominal" a single SPARQL filter, not a 16-class union query.
+
+**Example 2 — TCP (tool centre point) temperature**:
+
+```turtle
+mffd:ind-tcp-temp-tr-q1-ply-5-t08200ms
+  a mffd:ProcessParameter ;
+  mffd:parameterType mffd:TCPTemperatureParameterType ;
+  mffd:hasValue [
+    a qudt:QuantityValue ;
+    qudt:numericValue "423.7"^^xsd:decimal ;
+    qudt:hasUnit unit:DEG_C
+  ] ;
+  prov:wasGeneratedBy <activity-iri-afp-ply-5> ;
+  prov:atTime "2026-05-22T14:08:31.420Z"^^xsd:dateTime ;
+  shepard:onChannel "afp/tcp_temperature_c" .
+```
+
+TCP-temp is the load-bearing channel for the Trace3D view (X/Y/Z +
+value → color-mapped 3D path). The instance is the natural join
+target between `ProcessStep`, the TCP timeseries channel, and the
+3D position recording. The `shepard:onChannel` link binds it to the
+TimescaleDB row without going through the 5-tuple — gated on
+TS-IDc (task #58) but already structurally correct here.
+
+**Example 3 — ply count** (discrete integer per AFP track):
+
+```turtle
+mffd:ind-ply-count-tr-q1-track-3
+  a mffd:ProcessParameter ;
+  mffd:parameterType mffd:PlyCountParameterType ;
+  mffd:hasValue [
+    a qudt:QuantityValue ;
+    qudt:numericValue "16"^^xsd:integer ;
+    qudt:hasUnit unit:UNITLESS
+  ] ;
+  prov:wasGeneratedBy <activity-iri-afp-track-3> ;
+  shepard:expectedValue "16"^^xsd:integer ;   # contract: 16 plies per track
+  shepard:tolerancePolicy mffd:PlyCountToleranceExactMatch .
+```
+
+`PlyCount` is the discrete counter that the NDT gate compares against
+the design intent (`shepard:expectedValue`). The instance pattern lets
+the `:PlyCountToleranceExactMatch` policy be a SHACL constraint on
+the parameter, not on the parent process step — closer to the data,
+easier to audit.
+
+All three reuse the same `ProcessParameterShape`. The IOF-style
+instance + parameterType taxonomy collapses the 16 → 40+ class
+problem to a controlled-vocabulary lookup; the QUDT round-trip
+(§1.6) survives intact because the value sits inside a typed
+`qudt:QuantityValue` blank node, not bare on the `hasValue`
+predicate.
+
 (The SOSA `sosa:Observation` pattern was considered but deferred —
 overkill for discrete per-step parameters; right answer for the
 high-rate sensor side and the timeseries-appId migration tracked in
@@ -396,12 +479,251 @@ edge with a different style (orange, "rework" label) than the
 normal grey lineage edge. The lineage graph view becomes
 auditor-defensible.
 
+#### 3.2.1 Walking the rework chain — concrete queries
+
+The point of the typed predicate is that **an auditor query is one
+line**, not a graph traversal with text-classification heuristics.
+
+**SPARQL — every rework retry on a campaign**:
+
+```sparql
+PREFIX shepard: <http://semantics.dlr.de/shepard-upper#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?retry ?original ?ncr WHERE {
+  ?retry shepard:reworkOf ?original .
+  ?original mffd:inCampaign <campaign-iri> .
+  OPTIONAL { ?retry mffd:resolvesNCR ?ncr }
+}
+ORDER BY ?original
+```
+
+**SPARQL — the full lineage including reworks** (predecessor chain
+PLUS rework retries, both surface in one walk because they are
+sub-properties of `prov:wasRevisionOf`):
+
+```sparql
+SELECT ?ancestor (COUNT(?step) AS ?depth) WHERE {
+  <do-current> prov:wasRevisionOf+ ?ancestor .
+  ?step prov:wasRevisionOf ?ancestor .
+}
+GROUP BY ?ancestor ORDER BY ?depth
+```
+
+**Cypher — the equivalent walk through the named-individual graph
+projection** (when the SPARQL graph is materialised into Neo4j for
+fast lineage UI rendering):
+
+```cypher
+MATCH path = (do:DataObject {shepardId:$id})-[:REWORK_OF*1..10]->(ancestor)
+RETURN path, length(path) AS depth
+```
+
+The `REWORK_OF` edge label is the Neo4j projection of
+`shepard:reworkOf`. The `*1..10` bound matches the EN 9100 §8.7.1
+practical reality that a single physical part rarely sees more than
+~10 rework cycles before scrap.
+
+**Cypher — separating rework from normal predecessor lineage in the
+graph UI** (this is the query the
+`CollectionLineageGraph.vue` component uses to colour-code rework
+edges orange):
+
+```cypher
+MATCH (do:DataObject {collectionId:$cid})
+OPTIONAL MATCH (do)-[r:REWORK_OF]->(orig)
+OPTIONAL MATCH (do)-[p:PREDECESSOR_OF]->(prev)
+   WHERE NOT (do)-[:REWORK_OF]->(prev)
+RETURN do, collect(DISTINCT {edge:'rework', node:orig}) AS rework,
+            collect(DISTINCT {edge:'normal', node:prev}) AS normal
+```
+
+The `WHERE NOT (do)-[:REWORK_OF]->(prev)` clause is load-bearing — it
+suppresses the inferred edge that would otherwise show on the
+`prov:wasRevisionOf` super-property and double-render the connection.
+
 ### 3.3 NCRShape, CalibrationCertificateShape, NDTGateShape, SignOffShape, LedgerAnchorShape
 
 The IME/AQE review confirmed all five concepts are structurally
 present in the shipped catalogue. The fix is **not** "add new
 node-types" but **"enforce the invariants in SHACL"**. The catalogue
 today describes the right shapes; it does not say what must hold.
+
+#### 3.3.0 Structural shape definitions
+
+Before the four invariant rules, each of the five quality concepts
+ships as a `sh:NodeShape` against `:targetClass`. These shapes are
+the structural layer; the §3.3.1–§3.3.4 SPARQL rules are the
+semantic layer constraining them.
+
+**NCRShape** — non-conformance report (EN 9100 §8.7):
+
+```turtle
+shepard:NCRShape
+  a sh:NodeShape ;
+  sh:targetClass shepard:NCR ;
+  sh:property [ sh:path shepard:ncrId ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^NCR-[0-9]{4}-[0-9]{4,}$" ] ;
+  sh:property [ sh:path shepard:finding ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:minLength 10 ] ;
+  sh:property [ sh:path shepard:severity ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "MINOR" "MAJOR" "CRITICAL" ) ] ;
+  sh:property [ sh:path shepard:rootCause ;
+                sh:datatype xsd:string ] ;
+  sh:property [ sh:path shepard:correctiveAction ;
+                sh:datatype xsd:string ] ;
+  sh:property [ sh:path shepard:ncrStatus ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "OPEN" "UNDER_REVIEW" "DISPOSITIONED"
+                        "CLOSED" "REJECTED" ) ] ;
+  sh:property [ sh:path shepard:ncrDisposition ;
+                sh:node shepard:DispositionConceptShape ] ;
+  sh:property [ sh:path shepard:raisedAgainst ;
+                sh:class shepard:DataObject ;
+                sh:minCount 1 ] ;
+  sh:property [ sh:path prov:wasAssociatedWith ;
+                sh:class shepard:User ;
+                sh:minCount 1 ;
+                rdfs:comment "EN 9100 §8.7: approval authority binding." ] ;
+  sh:property [ sh:path shepard:partSegregated ;
+                sh:datatype xsd:boolean ] .
+```
+
+**CalibrationCertificateShape** — measurement-equipment calibration
+record (EN 9100 §7.1.5 — control of monitoring and measuring
+resources):
+
+```turtle
+shepard:CalibrationCertificateShape
+  a sh:NodeShape ;
+  sh:targetClass shepard:CalibrationCertificate ;
+  sh:property [ sh:path shepard:certId ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:equipment ;
+                sh:class shepard:MeasurementEquipment ;
+                sh:minCount 1 ] ;
+  sh:property [ sh:path shepard:calibratedAt ;
+                sh:datatype xsd:dateTime ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:validUntil ;
+                sh:datatype xsd:dateTime ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:calibrationLab ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ;
+                rdfs:comment "ISO 17025 accredited lab name." ] ;
+  sh:property [ sh:path shepard:certificateDocument ;
+                sh:class shepard:FileReference ;
+                sh:minCount 1 ;
+                rdfs:comment "Scanned PDF or DataMatrix." ] ;
+  sh:property [ sh:path shepard:traceability ;
+                sh:datatype xsd:string ;
+                rdfs:comment "Reference to national standard (PTB/NIST)." ] .
+```
+
+**NDTGateShape** — non-destructive testing decision point:
+
+```turtle
+shepard:NDTGateShape
+  a sh:NodeShape ;
+  sh:targetClass shepard:NDTGate ;
+  sh:property [ sh:path shepard:ndtMethod ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "UT" "RT" "PT" "MT" "ET" "VT" "TT" )
+                rdfs:comment "ISO 9712 / NAS 410 method codes." ] ;
+  sh:property [ sh:path shepard:ndtResult ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "PASS" "FAIL" "INDETERMINATE" "PENDING" ) ] ;
+  sh:property [ sh:path shepard:inspector ;
+                sh:class shepard:QualifiedInspector ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:inspectedAt ;
+                sh:datatype xsd:dateTime ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:hasCalibrationCert ;
+                sh:node shepard:CalibrationCertificateShape ;
+                sh:minCount 1 ] ;
+  sh:property [ sh:path shepard:raisedNCR ;
+                sh:node shepard:NCRShape ;
+                rdfs:comment "Mandatory iff ndtResult = FAIL; see §3.3.1." ] ;
+  sh:property [ sh:path shepard:inspectionReport ;
+                sh:class shepard:FileReference ] .
+```
+
+**SignOffShape** — approval action by a qualified agent (EN 9100
+§7.5.3.1 / Part 21 (G) — controlled documents):
+
+```turtle
+shepard:SignOffShape
+  a sh:NodeShape ;
+  sh:targetClass shepard:SignOff ;
+  sh:property [ sh:path prov:wasAssociatedWith ;
+                sh:class shepard:User ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                rdfs:comment "The signing agent." ] ;
+  sh:property [ sh:path prov:hadRole ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "creator" "curator" "verifier" "approver"
+                        "quality-manager" ) ] ;
+  sh:property [ sh:path prov:atTime ;
+                sh:datatype xsd:dateTime ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path prov:used ;
+                sh:minCount 1 ;
+                rdfs:comment "The DataObject / NCR / Gate being signed off." ] ;
+  sh:property [ sh:path shepard:signatureKey ;
+                sh:datatype xsd:string ;
+                rdfs:comment "Detached PGP / X.509 signature; optional." ] ;
+  sh:property [ sh:path shepard:signOffStatement ;
+                sh:datatype xsd:string ] .
+```
+
+**LedgerAnchorShape** — distributed-ledger tamper-evidence anchor
+(per `aidocs/95 Part 16`, Bloxberg / OpenTimestamps anchoring of
+critical sign-offs):
+
+```turtle
+shepard:LedgerAnchorShape
+  a sh:NodeShape ;
+  sh:targetClass shepard:LedgerAnchor ;
+  sh:property [ sh:path shepard:ledgerType ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:in ( "BLOXBERG" "OPENTIMESTAMPS" "ETHEREUM" ) ] ;
+  sh:property [ sh:path shepard:contentHash ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                sh:pattern "^[0-9a-f]{64}$" ;
+                rdfs:comment "SHA-256 of the canonicalised JSON-LD." ] ;
+  sh:property [ sh:path shepard:anchorTxId ;
+                sh:datatype xsd:string ;
+                sh:minCount 1 ; sh:maxCount 1 ;
+                rdfs:comment "On-chain transaction / OTS receipt id." ] ;
+  sh:property [ sh:path shepard:anchoredAt ;
+                sh:datatype xsd:dateTime ;
+                sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path shepard:anchors ;
+                sh:minCount 1 ;
+                rdfs:comment "The SignOff / DataObject / Collection being anchored." ] ;
+  sh:property [ sh:path shepard:verificationUrl ;
+                sh:datatype xsd:anyURI ;
+                rdfs:comment "Public block-explorer link for human verification." ] .
+```
+
+These five structural shapes are the **as-shaped** layer; the
+SHACL-SPARQL rules below are the **as-constrained** layer. A valid
+NCR satisfies *both* — the property shape (structural) AND the
+inter-shape rules in §3.3.1–§3.3.4 (semantic).
 
 The four invariants that take the catalogue from "data-entry form"
 to "control system":
@@ -483,20 +805,124 @@ The IME/AQE review pointed out the current 4-state `ncrStatus` enum
 (`OPEN | IN_PROGRESS | CLOSED | REJECTED`) drops the §8.7.1
 distinction between rework / repair / scrap / regrade /
 use-as-is/concession. **An auditor cares about which disposition was
-chosen**.
+chosen** because the §8.7.1 dispositions are not synonyms — they
+have distinct controlled-document trails (rework requires re-test,
+repair requires concession approval, use-as-is requires a deviation,
+scrap requires material-disposal record).
+
+**Standard citation.** EN 9100:2018 §8.7.1 ("Control of nonconforming
+output") enumerates the dispositions an organisation shall apply
+when controlling non-conforming output: rework, repair, scrap,
+regrade, return-to-supplier, use-as-is/concession. The same wording
+appears in AS9100D §8.7.1 (the harmonised US/EU baseline). EASA Part
+21 (G) §21.A.139(b)(2) requires the disposition decision to be
+retained for the life of the controlled article.
+
+#### 3.4.1 Two-axis vocabulary
 
 **Fix (this doc).** Two-axis vocabulary:
 
-- `shepard:ncrStatus ∈ {OPEN, UNDER_REVIEW, DISPOSITIONED, CLOSED, REJECTED}`
-- `shepard:ncrDisposition ∈ {REWORK, REPAIR, SCRAP, REGRADE, USE_AS_IS}`
-  mandatory iff status = DISPOSITIONED.
+- `shepard:ncrStatus ∈ {OPEN, UNDER_REVIEW, DISPOSITIONED, CLOSED, REJECTED}` — lifecycle.
+- `shepard:ncrDisposition` — the §8.7.1 choice; mandatory iff
+  status = DISPOSITIONED.
 
 SHACL rule: `if ncrStatus = DISPOSITIONED then ncrDisposition minCount 1`.
+
+#### 3.4.2 SKOS concept scheme
+
+The disposition vocabulary ships as a SKOS concept scheme so it
+round-trips to other RDM tools (Kadi4Mat, openBIS, m4i exporters)
+and so the labels can be localised (DE/EN) without changing IRIs.
+
+```turtle
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix shepard:<http://semantics.dlr.de/shepard-upper#> .
+
+shepard:NCRDispositionScheme
+  a skos:ConceptScheme ;
+  skos:prefLabel "EN 9100 §8.7.1 non-conformance dispositions"@en ;
+  rdfs:seeAlso <https://www.iso.org/standard/72687.html> ;  # EN 9100:2018
+  skos:hasTopConcept
+    shepard:DispositionUseAsIs ,
+    shepard:DispositionRepair ,
+    shepard:DispositionRework ,
+    shepard:DispositionScrap ,
+    shepard:DispositionReturnToSupplier ,
+    shepard:DispositionConcession ,
+    shepard:DispositionReturnToVendor .
+
+shepard:DispositionUseAsIs
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "USE_AS_IS" ;
+  skos:prefLabel "Use as is"@en , "Verwenden wie hergestellt"@de ;
+  skos:definition "Accept the non-conforming output without rework or repair; a deviation/concession must be on file."@en ;
+  rdfs:seeAlso <https://www.iso.org/obp/ui/#iso:std:iso:9000:ed-4:v1:en:term:3.12.5> .
+
+shepard:DispositionRepair
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "REPAIR" ;
+  skos:prefLabel "Repair"@en , "Reparieren"@de ;
+  skos:definition "Action to make non-conforming output acceptable for the intended use; the resulting part is NOT fully in design spec."@en .
+
+shepard:DispositionRework
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "REWORK" ;
+  skos:prefLabel "Rework"@en , "Nacharbeit"@de ;
+  skos:definition "Action to bring non-conforming output back into full conformance with design spec; result must re-pass all gates."@en .
+
+shepard:DispositionScrap
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "SCRAP" ;
+  skos:prefLabel "Scrap"@en , "Ausschuss"@de ;
+  skos:definition "Non-conforming output rejected and disposed of; physical segregation required (EN 9100 §8.7.1)."@en .
+
+shepard:DispositionRegrade
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "REGRADE" ;
+  skos:prefLabel "Regrade"@en , "Herabstufung"@de ;
+  skos:definition "Reclassify the output for a less demanding use; original design intent abandoned."@en .
+
+shepard:DispositionReturnToSupplier
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "RETURN_TO_SUPPLIER" ;
+  skos:prefLabel "Return to supplier"@en , "Lieferantenrückgabe"@de ;
+  skos:definition "Non-conforming purchased material returned to the originating supplier for credit / replacement."@en .
+
+shepard:DispositionConcession
+  a skos:Concept ;
+  skos:inScheme shepard:NCRDispositionScheme ;
+  skos:notation "CONCESSION" ;
+  skos:prefLabel "Concession / deviation"@en , "Konzession"@de ;
+  skos:definition "Documented permission to depart from a specification for a limited quantity or time; customer approval recorded."@en .
+```
+
+The shape that consumes the scheme:
+
+```turtle
+shepard:DispositionConceptShape
+  a sh:NodeShape ;
+  sh:targetNode shepard:NCRDispositionScheme ;
+  sh:property [ sh:path skos:inScheme ;
+                sh:hasValue shepard:NCRDispositionScheme ] .
+
+# Referenced from NCRShape (§3.3.0):
+#   sh:property [ sh:path shepard:ncrDisposition ;
+#                 sh:node shepard:DispositionConceptShape ]
+```
 
 The UI surfaces the disposition as a single dropdown with quick-buttons
 ("Mark rework" / "Mark scrap") for the common cases; the SHACL rule
 fails forms that pick a disposition without committing the parent
-status, and vice versa.
+status, and vice versa. Localisation is automatic via `skos:prefLabel`
+`@de` / `@en` — the operator's i18n choice determines which label
+the dropdown surfaces, while the IRI behind it remains stable for
+audit queries.
 
 ---
 
@@ -507,6 +933,12 @@ surfaced. Each is a one-or-two-PR scope; collectively they define
 the slice this doc commits us to ship.
 
 ### 4.1 RDM-blocking: license, accessRights, embargo
+
+> *"`dcterms:license` field is absent from `:DataObject` and
+> `:Collection`. […] FAIR R1.1 says '(meta)data are released with a
+> clear and accessible data usage license.' […] MFFD is industry-IP
+> gated; PLUTO is mission-data gated; both need this from day one."*
+> — `persona-review-rdm.md` §4 (line 104)
 
 The RDM review scored Shepard at **FAIR 6/12 today**. The single
 biggest gap is `dcterms:license` — every competitor (Kadi4Mat,
@@ -570,6 +1002,13 @@ RO-Crate.
 
 ### 4.4 Embedding storage (AI-blocking)
 
+> *"Where do the vectors live? Postgres pgvector? Neo4j as a list
+> property? Separate vector DB? Not decided. […] Recommend: native
+> `EmbeddingReference` as a new payload-kind sibling to
+> TimeseriesReference / FileReference, backed by pgvector (Shepard
+> already uses Postgres). Channel identity [is] the agent IRI"* —
+> `persona-review-ai-opportunities.md` §Q2 (line 88, 168, 240)
+
 The AI Opportunities review surfaced the storage shape as the
 blocker for AI1d (similarity search). **Decision (this doc):**
 
@@ -585,6 +1024,14 @@ This unblocks AI1d, AI1f (NL search reranking), and any
 retrieval-augmented LLM workflow.
 
 ### 4.5 Hybrid attribute bucket (Reluctant Senior gate)
+
+> *"The shape vocabulary is the wrong level of abstraction for me on
+> day one. I don't want to learn SHACL, IRIs, or `sh:group`. My 40
+> TB has no migration path described. […] My `material_roll_change`
+> stays a literal string attribute on the DataObject; the shape
+> engine ignores it; the search index finds it. New work uses
+> typed shape properties."* —
+> `persona-review-reluctant-senior.md` §6–§7 (lines 266–286)
 
 The Reluctant Senior review identified the **conversion-killer**:
 the trio implies every attribute must resolve to a SHACL property
@@ -610,6 +1057,13 @@ This single decision is what takes the Reluctant Senior from "no" to
 
 ### 4.6 Single-`shepardId` channel reads (Digital Native gate)
 
+> *"That's 5 lines of plumbing and zero rows. The actual data fetch
+> is another POST to `/v2/sql/timeseries` (P10) with hand-written
+> SQL — no v2 GET endpoint reads channel rows by appId yet.
+> `get_channel_data` exists as an MCP tool but requires the 5-tuple
+> `{measurement, device, location, symbolicName, field}`."* —
+> `persona-review-digital-native.md` §1 (line 44)
+
 The Digital Native review's 5-line test still fails because
 `get_channel_data` (REST + MCP) requires the 5-tuple `{measurement,
 device, location, symbolicName, field}`. The fix is gated on the
@@ -623,6 +1077,12 @@ takes `focusShepardId`; never a 5-tuple.
 
 ### 4.7 Sampling-params provenance (AI / EASA gate)
 
+> *"Today `X-AI-Agent`, `X-AI-Prompt-Hash`, `X-AI-Verification`
+> capture *who* and *what prompt*; they do **not** capture *how*
+> (temperature, top-p, top-k, seed, sampler). […] For REBAR +
+> FAIR4ML you need the model card."* —
+> `persona-review-ai-opportunities.md` §3 (lines 142–175)
+
 Per §1.4 — additive `X-AI-*` headers extend TPL9b. Required because:
 
 - EASA Learning Assurance evidence packs via REBAR need
@@ -633,12 +1093,26 @@ Per §1.4 — additive `X-AI-*` headers extend TPL9b. Required because:
 
 ### 4.8 Inspector independence + cert validity (IME/AQE gate)
 
+> *"Independence not enforced. No SHACL rule
+> `inspector != hasProcessStep/operator`. An operator can
+> self-inspect their own work and the validator passes. This is the
+> textbook §7.5.3 finding. […] No qualification check. […] A
+> trainee can sign off a Level III determination."* —
+> `persona-review-ime-aqe.md` §2 EN 9100 table (line 92)
+
 Per §3.3.2 and §3.3.3 — both invariants land as SHACL-SPARQL
 constraints. Without these the catalogue fails an EN 9100 §7.5.3 and
 §7.1.5 lead-audit. Sister rules to the NDT-FAIL ⇒ NCR and
 NCR-closure-anchored invariants in §3.3.
 
 ### 4.9 Namespace canonicalisation (Ontologist gate)
+
+> *"Three incompatible namespace decisions for `fair2r:`, `mffd:`,
+> and the upper `shepard:` ontology […] `fair2r:StatisticalPass` and
+> [its analytics-ts mirror] are sibling concepts in different
+> namespaces — an OWL DL reasoner would flag the
+> Continuant-as-Activity coercion."* —
+> `persona-review-ontologist.md` §3 (lines 48, 97, 137)
 
 The Ontologist review surfaced three diverged namespaces in
 production (`fair2r:`, `mffd:`, `shepard:` — each with at least two
@@ -667,9 +1141,214 @@ The plugin override path (a registry in `shepard-plugin-ai`) exists
 for richer prompts but is not the default. This is the move that
 turns "ontology drives the UI" into "ontology drives the AI surface".
 
+### 4.11 API surface discipline (API Scrutinizer gate)
+
+> *"Seven concept proposals […] zero survived […]. `ViewShape` as a
+> distinct entity: **CUT** — it's a `:ShepardTemplate` with
+> `templateKind = VIEW_RECIPE`. […] `ViewProvider` SPI as a
+> code-shipping plugin extension point: **CHANGE** — if 95% of
+> views are SHACL-driven renderers, there is no SPI seam."* —
+> `persona-review-api-scrutinizer.md` table (lines 59–60, 78–80)
+
+The §2 collapse is direct execution of this verdict; this gate row
+exists so the verdict is auditable when the next "we need a new
+top-level resource for X" design doc lands. The recurring failure
+mode is *"X feels different enough to warrant its own surface"* — the
+gate question stays "can this be a `templateKind` enum value or a
+SHACL shape on an existing surface?"
+
 ---
 
-## 5. Forks the doc still needs to resolve
+## 5. Companion docs cross-reference table
+
+This section makes the **SSOT split** between docs 95 and 98
+explicit. Both docs live; neither is redundant; the split is by
+*level of abstraction*, not by topic.
+
+**Canonical-for-what.** Doc 95 is canonical for *the substrate
+theory* — shape-as-template, shape-as-view, shape-as-agent-contract,
+named individuals, upper-ontology alignment, plugin contribution
+model, AI provenance vocabulary. Doc 98 is canonical for *the
+MFFD-grounded application* — process parameters as instances,
+rework lineage, NCR/NDT/Calibration/SignOff/Ledger structural
+shapes, EN 9100 SHACL invariants, persona-derived blocking
+constraints, hybrid attribute bucket.
+
+When in doubt: "is this a generic ontology / shape / view claim?" →
+doc 95. "Is this an MFFD process model or persona-gated
+requirement?" → doc 98.
+
+| Doc 98 section | Topic | Companion in doc 95 | Canonical owner |
+|---|---|---|---|
+| §1.1 `/v2/templates?kind=...` catalogue | Catalogue URL | §4 Worked example, §6 list/detail views | **98** (refines decision) |
+| §1.2 `POST /v2/shapes/render` | Render endpoint | §5 (Shapes as views) | **98** (defines endpoint) |
+| §1.3 Named individuals (typed predicate split) | Identity registry | §7 Part 4 — Named individuals | **95** (theory); 98 cites the fix |
+| §1.4 F(AI)²R as SHACL invariant + sampling params | AI provenance | §14e Part 15 — AI provenance | **95** (full vocab); 98 ships the extension |
+| §1.5 Composition pattern ("Lego") | `sh:node` mini-shapes | §8 Part 5 — Composition | **95** (canonical) |
+| §1.6 QUDT unit round-trip | Units on values, not classes | (not in 95) | **98** (canonical fix) |
+| §2.1 `templateKind = VIEW_RECIPE` | View concept collapse | §5 Part 2 — Shapes as views | **98** (collapse verdict) |
+| §2.2 Render pipeline | SHACL focus-node projection | §5 | **98** (mechanism) |
+| §2.3 Custom renderers via SRI URL | Render-hint extension | §11 Plugin contribution model | **98** (URL+SRI decision) |
+| §2.4 Workspace = saved view + filter + layout | Per-user override | §5 (lateral) | **98** (concept resolution) |
+| §2.5 Default landing = table not tabs | Default-view choice | §5 list columns | **98** (verdict) |
+| §3.1 Process parameters as instances + AFP examples | IOF instance pattern | §14d network-shaped data | **98** (MFFD-specific) |
+| §3.2 `shepard:reworkOf` predicate + queries | Typed rework lineage | §11 Part 8 — graph relationship | **98** (vocab + queries) |
+| §3.3 NCR/NDT/Cal/SignOff/Ledger shapes | Structural quality shapes | §8 mini-shape library | **98** (structural defs) |
+| §3.3.1–3.3.4 SHACL-SPARQL invariants | Quality rules | (not in 95) | **98** (canonical) |
+| §3.4 Disposition SKOS scheme | EN 9100 §8.7.1 dispositions | (not in 95) | **98** (canonical) |
+| §4.1 license / accessRights / embargo | FAIR R1.1 fix | §16 strategic positioning | **98** (commitment) |
+| §4.2 PID strategy (Handle / DOI / Databus) | Three-tier PID | (lateral; aidocs/66 KIP) | **98** (resolution) |
+| §4.3 Canonical export-shape mapping | SSOT for plugin exports | (will land as aidocs/99) | aidocs/99 (sibling) |
+| §4.4 EmbeddingReference payload-kind | AI similarity substrate | §14e (lateral) | **98** (decision); aidocs/47 SPI |
+| §4.5 Hybrid attribute bucket | Literal-vs-typed split | §11 "lossy long-tail" admission | **98** (formal resolution) |
+| §4.6 `shepardId` channel reads | 5-tuple → appId | §7 named individuals | aidocs/87 (TS migration); 98 commits contract |
+| §4.7 `X-AI-*` sampling-params headers | Reproducibility metadata | §14e Part 15 | **98** (header extension) |
+| §4.8 Inspector independence + cert validity | EN 9100 invariants | (not in 95) | **98** (canonical) |
+| §4.9 Namespace canonicalisation | Frozen IRI bases | (will land as aidocs/97) | aidocs/97 (sibling) |
+| §4.10 Shape-driven prompt templates | AI ergonomic surface | §14e Part 15 | **98** (annotation property) |
+| §4.11 API surface discipline | Discipline gate | §1 What this design is | **98** (gate restatement) |
+| §6 Reuse survey | SHACL / block-editor / view UI / form-gen reuse | (not in 95) | **98** (canonical, this doc) |
+| §7 Forks (NEEDS-CLARIFICATION 1–10) | Open decisions | §17 Open questions / non-goals | **98** (forks list) |
+| §8 Migration / roll-out | Phased plan | §15 Implementation slices | **98** (sequenced plan) |
+
+**The split test.** If a future doc needs a generic claim about
+"shapes power the agent contract", cite **95 §6**. If it needs a
+specific claim about "the AFP TCP-temp process parameter is a
+QUDT-typed instance", cite **98 §3.1.1**. If it cites both, the
+linkage table above states which is canonical for the cited claim.
+
+---
+
+## 6. Reuse survey
+
+Per `feedback_reuse_before_reimplement.md` — *every design doc §1
+= reuse survey*. The §1 of this doc is the substrate decision; this
+§6 is the implementation-substrate survey, deferred until the
+structural shape definitions are concrete enough to choose between
+candidates with eyes open. **For every candidate the call is
+BUILD-ON / ADOPT-AS-DEPENDENCY / BUILD-OWN with reasoning.**
+
+### 6.1 SHACL validator / SPARQL engine
+
+The render endpoint (`POST /v2/shapes/render`, §1.2) and the
+SHACL-SPARQL invariants (§3.3.1–§3.3.4) both depend on a JVM-side
+SHACL implementation.
+
+| Candidate | Licence | Active? | Maturity | Fit for §1.2 + §3.3 |
+|---|---|---|---|---|
+| **Apache Jena SHACL** (`jena-shacl`) | Apache-2.0 | Yes — 5.x current | Production; W3C SHACL-1 complete | **BUILD-ON.** Shepard already runs Jena under `de.dlr.shepard.v2.shapes.validator.JenaShaclValidator`. SHACL-SPARQL constraints fully supported. Same artefact powers `/v2/shapes/validate`; renderer reuses it with a projection adapter. |
+| TopBraid SHACL Java | Apache-2.0 | Maintained (slow) | Reference impl; SHACL Compact + Advanced features | ADOPT only if Compact-Syntax / SHACL-AF rules become load-bearing. Less integration with Jena's SPARQL stack — would mean two graph-IO paths. |
+| Eclipse RDF4J SHACL | BSD-3 | Yes | Production-quality | Rejected — would add a second RDF stack (RDF4J `Model` vs Jena `Model`). Shepard's `OntologyContributor` plumbing (`aidocs/65`) is Jena-native; a switch costs more than it saves. |
+| pyshacl | Apache-2.0 | Yes | Production | Wrong runtime — pyshacl is Python. Useful for plugin authors validating shapes in CI; not for the JVM render endpoint. |
+
+**Decision (this doc).** **Apache Jena SHACL** as the validator for
+`POST /v2/shapes/render` (BUILD-ON). The SPARQL-based invariants in
+§3.3 are validated using `JenaShaclValidator.shaclValidate(model,
+shapes)` returning a `sh:ValidationReport`. This is exactly the path
+the shipped `/v2/shapes/validate` already takes. Choosing anything
+else means re-doing the Jena adapter work for no engineering win.
+
+### 6.2 Block editor (block-based form runtime)
+
+Per `project_block_editor.md` — "each block is a typed Shepard
+individual". The block-editor is the runtime that turns a SHACL
+shape into a form (template kind) AND a renderable view (view-recipe
+kind).
+
+| Candidate | Licence | Stars / activity | Schema model | Fit |
+|---|---|---|---|---|
+| **BlockNote** | MPL-2.0 | ~17k stars, very active 2025–26; TipTap-based | TipTap JSON Schema for block content + custom block types | **BUILD-ON.** Block content is JSON; custom block types are TS classes. A `shepard:CustomBlock` per shape `sh:NodeShape` is the natural fit. Vue 3 + Vuetify-compatible via render-prop. |
+| editor.js | Apache-2.0 | ~30k stars, active | Tool-per-block model; opinionated JSON output | ADOPT possible — sturdy ecosystem. Disadvantage: tool API is older, less ergonomic for typed-block authoring. |
+| TipTap (raw) | MIT | ~30k stars | ProseMirror-based; block-as-node | Reject for views, BUILD-ON for inline text. TipTap is the *substrate* under BlockNote; using it raw means re-inventing block-management UX. |
+| Lexical (Meta) | MIT | ~20k stars | Tree-of-nodes, JSON | ADOPT only if richer-text features (collaborative cursors, suggestions) become load-bearing. Today, overkill. |
+| Slate.js | MIT | ~30k stars | Flat node array | Mature but lower-level; more glue for typed blocks. |
+
+**Decision (this doc).** **BlockNote as the primary block editor**
+(ADOPT-AS-DEPENDENCY). Each SHACL `sh:NodeShape` ships a BlockNote
+custom block type via the `shepard:customRendererURL +
+shepard:customRendererSRI` mechanism (§2.3). For shapes with no
+custom block, the generic Vuetify renderer (driven by `sh:group` /
+`sh:order` / `dash:editor`) renders a default form-block. The
+block-editor runtime is **not** the only renderer — the table view
+(§2.5) bypasses BlockNote entirely.
+
+### 6.3 Saved-view UI pattern
+
+The §2.4 workspace = `(templateAppId, filterSpec, columnPrefs,
+layoutPrefs)`. The reuse question: does any existing OSS pattern
+match this shape?
+
+| Reference | Licence | View abstraction | Match to `:ShepardTemplate templateKind=VIEW_RECIPE`? |
+|---|---|---|---|
+| Notion | Proprietary | Saved query + per-user column / sort / group | **Conceptual reference only.** Closest UX match; we cannot use the code. The view-as-saved-query pattern is the directly transferable idea. |
+| Linear | Proprietary | Filters as URL state + saved "views" | Conceptual reference. Their `View` object is field-for-field analogous to our `:ShepardTemplate templateKind=VIEW_RECIPE` — same triple (filter, sort, group). |
+| Coda | Proprietary | View per page; per-user filters | Conceptual reference. |
+| **Outline** (getoutline) | BSD-3 | Collections + documents; minimal "view" concept | Read for the search-and-filter UI idioms; structurally too document-focused to lift directly. |
+| **AppFlowy** | AGPL-3.0 | Database views (grid / board / calendar) per-table | **Closest match in OSS.** Their `View` is a saved JSON tuple with filter + sort + group + visible columns. **Cannot adopt directly** (AGPL is incompatible with Shepard's licence posture; see aidocs/34 licence policy). Read for the data shape only. |
+| Affine | MIT | Block + database hybrid | Recent; the database view is similar to AppFlowy. Licence-compatible. Watch for maturity. |
+| Refine.dev | MIT | Saved filters + column prefs in admin panels | Library-shaped (React); not a direct view abstraction. Useful prior art for the column-pref persistence pattern. |
+| ag-grid (community) | MIT | Table state + filter / sort / column prefs save | **ADOPT-AS-DEPENDENCY for the table view.** Column state (visibility, order, width, sort, filter) round-trips to JSON. This is the §2.5 default landing view's table engine. |
+
+**Decision (this doc).** **BUILD-OWN for the `:ShepardTemplate
+templateKind=VIEW_RECIPE` abstraction** (it is a SHACL-derived
+artefact, not a generic database view) **+ ADOPT-AS-DEPENDENCY for
+ag-grid community as the table-view rendering library**. The view
+*concept* is ours (shape-driven); the table *widget* is a mature
+library we have no reason to re-invent. Per-user column prefs land
+as a small JSON column on the `:UserPreference` Neo4j node, scoped
+by `(userId, templateAppId)`.
+
+### 6.4 SHACL-to-UI form generators
+
+This is the closest direct prior-art class: take a SHACL shape, emit
+a form.
+
+| Candidate | Licence | Status | Fit |
+|---|---|---|---|
+| **shacl-form** (Universität Mannheim) | MIT | Active 2024–25 | **ADOPT-AS-INSPIRATION.** Vue-native; SHACL `sh:property` → form field mapping with `dash:editor` widget hints. Architecture matches §2.2 render pipeline. Their renderer + our `shepard:onChannel` / `dash:editor` vocab is the simplest path to a working v1. |
+| dash-form (TopQuadrant) | Proprietary | Production (commercial) | Reject. Reference implementation of `dash:editor` hint vocabulary — we adopt the *hint vocabulary* (W3C DASH), not the implementation. |
+| **uvl/uvl-form** | MIT | Lightweight; less mature | Candidate for a fallback if shacl-form proves too heavy. |
+| Formly (`@ngx-formly`) | MIT | Angular-only | Reject (wrong framework). |
+| react-jsonschema-form | Apache-2.0 | Active; JSON-Schema-based | Adapter pattern: convert SHACL → JSON-Schema at render time. Possible but lossy (SHACL Advanced features don't round-trip). |
+| JSON Forms (`jsonforms.io`) | MIT | Active; supports Vue via wrapper | Vue support is recent and community-maintained. Watch but don't adopt v1. |
+
+**Decision (this doc).** **BUILD-OWN renderer using the DASH vocab
+contract** (form-generator code is small enough to control; the
+external library risk for a v1.0 feature is real) **+ adopt the
+DASH editor hint vocabulary as-is from the W3C draft** (no
+reinvention of widget names). Shacl-form's source is the reference
+implementation we read while building; the actual library may be too
+opinionated for our Vuetify 3 + Composition-API constraint.
+
+Rationale for not adopting shacl-form directly: their renderer hard-
+codes Bootstrap CSS; the Vuetify 3 retheme is the same code-volume
+as a from-scratch Vue 3 SHACL→form renderer using the
+`useShape(templateAppId)` composable shape that matches existing
+Shepard composables. Net: build-own is cheaper than fork-and-port.
+
+### 6.5 Summary verdict table
+
+| Concern | Call | Library |
+|---|---|---|
+| SHACL validation + SPARQL constraints | BUILD-ON | Apache Jena SHACL (already shipped) |
+| Block editor runtime | ADOPT-AS-DEPENDENCY | BlockNote (MPL-2.0) |
+| Table view widget | ADOPT-AS-DEPENDENCY | ag-grid community (MIT) |
+| Saved-view abstraction | BUILD-OWN | (`:ShepardTemplate templateKind=VIEW_RECIPE`) |
+| Form generator | BUILD-OWN | adopt W3C DASH vocab + read shacl-form as ref |
+| Render-hint vocabulary | ADOPT-AS-DEPENDENCY | W3C DASH (`dash:`) |
+| QUDT units | ADOPT-AS-DEPENDENCY | QUDT 2.x vocab |
+| Provenance vocab | ADOPT-AS-DEPENDENCY | PROV-O, m4i, f(ai)²r |
+
+**Net architectural posture.** Three BUILD-ON / ADOPT calls cover
+the heavy lifting (Jena, BlockNote, ag-grid). Two BUILD-OWN calls
+are surgical — the view-recipe abstraction (it's our SSOT
+contribution) and the form generator (it's small and the existing
+candidates are framework-mismatched). Every other piece is library
+adoption.
+
+---
+
+## 7. Forks the doc still needs to resolve
 
 These are the open decisions where the persona reviews disagree, or
 where the lean is genuinely close to 50/50. Each follows the
@@ -953,9 +1632,9 @@ implementation commits.
 
 ---
 
-## 6. Migration / roll-out
+## 8. Migration / roll-out
 
-### 6.1 Two-phase ordered
+### 8.1 Two-phase ordered
 
 **Phase 1 — Additive (no breaking changes).**
 
@@ -1025,7 +1704,7 @@ fail-fast (abort startup on error).
     (IN_PROGRESS → DISPOSITIONED with disposition = unknown;
     operator runbook documents the manual fix-up).
 
-### 6.2 Coordination with active tasks
+### 8.2 Coordination with active tasks
 
 - **Task #58 (5-tuple → shepardId)** — §4.6 commits this doc's new
   surface to single-`shepardId` identity. Implementation gated on
@@ -1040,7 +1719,7 @@ fail-fast (abort startup on error).
   flips from `📐 designed` (this doc) → `🚧 in-flight` → `✓ shipped`
   per the standard CLAUDE.md rule.
 
-### 6.3 The trio-collapse philosophy
+### 8.3 The trio-collapse philosophy
 
 The `:ShepardTemplate` collapse target is the substrate — every
 "new view concept" must land as a `templateKind` enum value or it
@@ -1059,7 +1738,7 @@ zero survived, every one folded into an existing primitive.
 
 ---
 
-## 7. Cross-references
+## 9. Cross-references
 
 **Substrate (must read first):**
 
