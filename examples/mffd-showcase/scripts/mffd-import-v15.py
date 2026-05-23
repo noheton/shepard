@@ -148,7 +148,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "15.6"
+IMPORT_SCRIPT_VERSION = "15.7"
 
 # Self-update mechanism (IMPORT-SU1): the running script polls a JSON manifest
 # in dest Shepard. On newer version → sha256-verified download → checkpoint
@@ -3803,12 +3803,12 @@ def main() -> None:
         last_from = prior_state.get("last_execv_from")
         last_to = prior_state.get("last_execv_to")
         if last_from and last_to and last_to == IMPORT_SCRIPT_VERSION:
-            print(f"[v15.4] resumed after self-update v{last_from} → v{last_to}")
+            print(f"[v{IMPORT_SCRIPT_VERSION}] resumed after self-update v{last_from} → v{last_to}")
             telemetry.event("info", "process_started_after_execv",
                             from_version=last_from, to_version=last_to)
             telemetry.counter("redeploys_survived", 0)  # mark counter exists
         else:
-            print(f"[v15.4] resumed from checkpoint (last saved {prior_state.get('last_saved_at')})")
+            print(f"[v{IMPORT_SCRIPT_VERSION}] resumed from checkpoint (last saved {prior_state.get('last_saved_at')})")
             telemetry.event("info", "process_started_with_checkpoint",
                             checkpoint_age_s=None)
     else:
@@ -3820,23 +3820,54 @@ def main() -> None:
         pid=os.getpid(),
     )
     updater = SelfUpdater(IMPORT_SCRIPT_VERSION, dest_client, telemetry)
+
+    # v15.7 IMPORT-SIGHUP — ignore SIGHUP so terminal-disconnect / SSH-drop
+    # doesn't kill the import. tmux/nohup remain the proper deployment shape,
+    # but this catches the operator who forgot. SIGTERM + SIGINT remain the
+    # canonical "stop the script" signals.
+    try:
+        import signal as _signal_v157
+        _signal_v157.signal(_signal_v157.SIGHUP, _signal_v157.SIG_IGN)
+        print(f"[v{IMPORT_SCRIPT_VERSION}] SIGHUP ignored — terminal disconnect won't kill the import")
+    except (AttributeError, ValueError, OSError) as _exc:
+        # SIGHUP not available (Windows) or not main thread — non-fatal.
+        print(f"[v{IMPORT_SCRIPT_VERSION}] could not install SIGHUP handler: {_exc}")
+
     if SELFUPDATE_ENABLED:
         updater.start()
-        print(f"[v15.4] self-updater started (heartbeat={HEARTBEAT_S}s, "
+        print(f"[v{IMPORT_SCRIPT_VERSION}] self-updater started (heartbeat={HEARTBEAT_S}s, "
               f"manifest=fileContainer/{MANIFEST_CONTAINER_ID}/{MANIFEST_NAME_PREFIX}*.json)")
     else:
-        print(f"[v15.4] self-updater DISABLED (MFFD_SELFUPDATE=0)")
+        print(f"[v{IMPORT_SCRIPT_VERSION}] self-updater DISABLED (MFFD_SELFUPDATE=0)")
 
-    # Background flusher: telemetry every HEARTBEAT_S seconds. Daemon so it
-    # dies with the process; nothing we emit at-flush is load-bearing.
+    # v15.7 IMPORT-TLOOP — Background flusher with self-heal. The loop now
+    # catches BaseException (incl. silent SystemExit / unraisable handler
+    # results) and increments a `telemetry_loop_errors` counter. If the
+    # loop dies entirely we re-spawn it once (a single self-heal so we
+    # don't hide a real bug).
+    _tel_loop_restarts = {"n": 0}
     def _telemetry_loop() -> None:
-        while not updater.stop_event.is_set():
-            if updater.stop_event.wait(float(HEARTBEAT_S)):
-                return
-            try:
-                telemetry.flush()
-            except Exception as exc:
-                print(f"  [telemetry] background flush error: {exc!r}", flush=True)
+        nonlocal_n = _tel_loop_restarts  # bind for nested usage
+        try:
+            while not updater.stop_event.is_set():
+                if updater.stop_event.wait(float(HEARTBEAT_S)):
+                    return
+                try:
+                    telemetry.flush()
+                except BaseException as exc:  # incl. SystemExit, KeyboardInterrupt
+                    print(f"  [telemetry] background flush error: {exc!r}", flush=True)
+                    try:
+                        telemetry.counter("telemetry_flush_errors")
+                    except Exception:
+                        pass
+        except BaseException as exc:
+            print(f"  [telemetry] LOOP CRASHED: {exc!r}", flush=True)
+            if nonlocal_n["n"] == 0:
+                nonlocal_n["n"] = 1
+                print(f"  [telemetry] self-heal: re-spawning loop", flush=True)
+                threading.Thread(target=_telemetry_loop, daemon=True,
+                                 name="TelemetryFlusher-respawn").start()
+
     _tel_thread = threading.Thread(target=_telemetry_loop, daemon=True,
                                    name="TelemetryFlusher")
     if SELFUPDATE_ENABLED:
@@ -4122,7 +4153,7 @@ def main() -> None:
             pass
         updater.stop()
         if updater.update_event.is_set() and updater.pending_path:
-            print(f"\n[v15.4] applying pending self-update → v{updater.pending_version}…", flush=True)
+            print(f"\n[v{IMPORT_SCRIPT_VERSION}] applying pending self-update → v{updater.pending_version}…", flush=True)
             apply_pending_update(updater, telemetry, checkpoint)
             # If apply_pending_update returns, execv failed — fall through
             # and exit normally so the wrapper script (if any) can restart.

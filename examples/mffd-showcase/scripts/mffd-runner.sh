@@ -25,6 +25,30 @@ if [[ ! -f "${PY_SCRIPT}" ]]; then
 fi
 
 ATTEMPT=0
+# v15.7 RUNNER-CLD — crash-loop detection. If the script restarts >5 times in
+# 60 seconds with non-clean exit, the runner stops instead of spinning. Saves
+# you from hammering the dest API on a real config error that exit-code 1
+# couldn't classify.
+CRASH_WINDOW_S=60
+CRASH_MAX=5
+CRASH_TIMES=()
+crash_loop_check() {
+  local now=$(/usr/bin/date +%s)
+  local cutoff=$((now - CRASH_WINDOW_S))
+  local kept=()
+  for t in "${CRASH_TIMES[@]}"; do
+    if [[ "$t" -ge "$cutoff" ]]; then kept+=("$t"); fi
+  done
+  CRASH_TIMES=("${kept[@]}")
+  CRASH_TIMES+=("$now")
+  if [[ "${#CRASH_TIMES[@]}" -ge "$CRASH_MAX" ]]; then
+    echo "[runner] CRASH-LOOP detected: ${#CRASH_TIMES[@]} restarts in ${CRASH_WINDOW_S}s"
+    echo "[runner] Stopping. Check the log + fix root cause. Re-run when ready."
+    return 1
+  fi
+  return 0
+}
+
 while true; do
   ATTEMPT=$((ATTEMPT + 1))
   echo "[runner] attempt #${ATTEMPT} → ${PY_SCRIPT} $*"
@@ -63,7 +87,9 @@ while true; do
       break
       ;;
     *)
-      # Anything else: probably transient (network, redeploy, OOM). Retry.
+      # Anything else: probably transient (network, redeploy, OOM). Retry —
+      # unless the crash-loop detector says we've been here too often.
+      if ! crash_loop_check; then break; fi
       echo "[runner] non-zero exit ${EC} — backoff 30s then retry"
       sleep 30
       ;;
