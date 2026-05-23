@@ -236,7 +236,131 @@ is sparse [@dlrZlpShepard], but the internal positioning document is
 explicit. The thesis can cite both as primary sources: external
 visibility lags internal commitment.
 
-## 5. Regional and policy context — the Bavarian dataspace agenda
+A second internal artefact, the 29-slide **DLR ZLP Augsburg —
+Data Driven Intelligence** deck [@zlpDataDrivenIntelligence2025],
+sharpens the institutional naming. Its §4 ("Digital strategy
+building blocks") arranges the centre's digital ambitions in a
+concentric stack — *Data management → Analytics → Standardisation
+→ Exchange* — and puts data management at the centre, labelled
+explicitly as the *"backbone of data-driven processes and culture"*.
+Shepard is named on the next slide as the integrated data
+management system, with the centre's gloss
+*"s* torage for *he* terogeneous *p* roduct *a* nd *r* esearch
+*d* ata"* and the goal phrase **active research data** picked out
+in red — a deliberate distinction from passive archive systems.
+The portfolio sentence and the Data-Driven-Intelligence stack
+make the same institutional claim from two angles: Shepard is the
+substrate, and the substrate is what makes the data-driven posture
+possible at all.
+
+## 5. The epistemology behind "data-driven" — the DIKW commitment
+
+The Data-Driven-Intelligence deck spends an entire slide on what
+"data-driven" actually means at ZLP [@zlpDataDrivenIntelligence2025],
+and the answer is methodologically load-bearing for the thesis.
+The deck reproduces the **DIKW pyramid** (Data → Information →
+Knowledge → Wisdom → Decisions) and accompanies it with three
+short claims:
+
+1. *"Data-driven enables analytical justification of decisions."*
+2. *"But data alone is not enough — context and meaning need to be
+   captured as well."*
+3. *"Data + context + meaning → enables powerful and targeted
+   analytics."*
+
+That triplet is precisely the design principle Shepard operationalises:
+the substrate is not a data lake (data without context) and not an
+ontology server (context without data), but the binding layer where
+sensor traces, process metadata, and ontology-grounded meaning are
+linked into the same graph and queried together. The thesis's
+methodological chapter (`project_thesis_idea.md` §5) takes the DIKW
+commitment as the philosophical premise that justifies Shepard's
+architectural decisions: multi-substrate by *type* (DIKW levels
+have different storage needs), graph-organised by *context*
+(annotations attach to nodes), ontology-grounded by *meaning*
+(SHACL templates + m4i + IOF as the semantic substrate).
+
+The Industry-4.0-to-5.0 comparison table on the next slide
+[@zlpDataDrivenIntelligence2025] reinforces this in a second
+register: the move from "use of data and analytics to optimise
+processes" (4.0) to "creation of sustainable, environmentally
+friendly manufacturing processes" combined with "importance of
+human interaction and collaboration" (5.0) is the institutional
+expression of the same shift the thesis describes from a
+*human-out-of-the-loop* RDM (data warehouse) to a *human-and-AI-
+in-the-loop* substrate (collaboration-aware provenance, dataset
+forging, f(ai)²r predicates). Shepard's design is on the 5.0 side
+of that table; the deck records the institutional endorsement.
+
+## 6. The data-capture interface — what the substrate has to talk to
+
+The Data-Driven-Intelligence deck includes two architecture
+diagrams that show *how the substrate connects to the shop floor*,
+and they are the most precise statement of Shepard's integration
+requirements that exists outside the codebase itself
+[@zlpDataDrivenIntelligence2025]:
+
+- **Slide 9 — the canonical Shepard architecture.** A two-tier
+  diagram: a *Shopfloor* layer (multiple `Dev` boxes, OPC UA,
+  Edge Collector) connects via HTTP to a *REST API* fronting a
+  *Graph organisational database*, which in turn fans out via
+  database-specific interfaces to five storage substrates (Time
+  series, Git, Files, Structured Documents, "…"). A separate
+  *Web Interface* connects to the same REST API and is annotated
+  with *Custom Analytics*. The slide records four basic design
+  considerations spelled out by the deck verbatim: highly modular
+  design; web-based management UI; REST API for complex analytics;
+  specific data store per data type — and explicitly *"no
+  one-size-fits-all"*. The closing **key concept** sentence — *"each
+  data element is related to a vertex in the graph-based
+  organisational database"* — is the architectural premise Shepard's
+  Neo4j-anchored design (`aidocs/data/00-model-inventory.md`)
+  derives from.
+- **Slide 10 — the (raw) data-capture interface view.** A
+  protocol-explicit diagram: PLC Cell, KRC4 (Kuka robot
+  controller), PLC MTLH, TPS Controller, and a sensor *Head* are
+  connected via Cell ProfiNet (`PN_C`), AFPT ProfiNet (`PN_D`),
+  AFPT EtherCAT (`EC_S`, `EC_M`), Safety, fast UDP, ADS, OPC UA,
+  REST, and TCP/IP. A bottom *Data collection* bar bundles two
+  Context Provider + OPC Router blocks (each with UA + REST), and
+  the entire assembly funnels into a single purple Shepard
+  cylinder. This is the **shop-floor reality** Shepard's plugin SPI
+  has to keep speaking with: not a clean REST world but a polyglot
+  industrial-protocol substrate where the substrate's value is
+  precisely its ability to absorb the protocol diversity into one
+  graph.
+- **Slide 11 — data contextualization.** The third figure draws
+  the *process-context* attachment: PLC Cell + PLC MTLH + KRC4
+  feed timeseries (e.g. OPC UA) into a *Data Aggregator*; a
+  separate *Context Provider* tracks which process step is active
+  by observing the *leading component*; the Context Provider plus
+  the TPS Controller (which produces event-oriented artefacts —
+  images, point-clouds) all converge on the REST API. The slide's
+  annotation summarises the design: *continuous data acquisition*
+  (prevents out-of-context data loss); *contextualization through
+  observation of the leading component*; *contextualized storage
+  of event-oriented artefacts*; *analytics access via the same
+  REST surface where results return* (Jupyter, Grafana). This is
+  the architectural commitment that *context is not metadata an
+  operator types in later; context is captured at ingestion by a
+  named subsystem with a defined responsibility*.
+
+Together the three slides form the **architecture-chapter figure
+triplet** for the thesis (§3 of the outline in
+`project_thesis_idea.md`): the high-level data-flow shape (slide
+9), the shop-floor protocol reality (slide 10), and the
+context-capture pattern (slide 11). The companion case-study
+slide on the MFFD AFP demonstrator (slide 12) shows the same
+architecture in operation — a live `shepard_cube2-IR Image`
+heat-map rendered next to the AFP robot photo — and is a
+candidate figure for the §6 evaluation chapter. The GTlab/ADAPT
+slide (slide 14) records a second use-case beyond MFFD —
+Shepard as the data-storage backend for model-based systems
+engineering on a turbine pre-design platform — which the
+discussion chapter can cite as evidence the substrate generalises
+across domains.
+
+## 7. Regional and policy context — the Bavarian dataspace agenda
 
 ZLP Augsburg is one site in a wider Bavarian data-infrastructure
 landscape, and a 2026 expert panel on data-spaces convened in Bavaria
@@ -274,7 +398,7 @@ explicitly demanding the shape Shepard already has, and that this
 alignment is not coincidental — both responses derive from the same
 2024–2026 European-sovereignty turn.
 
-## 6. The strategic outlook: ZEUS and the move toward hydrogen-class structures
+## 8. The strategic outlook: ZEUS and the move toward hydrogen-class structures
 
 The portfolio's closing section names the next research front as
 **ZEUS**: thermoplastic technologies adapted to the specific
@@ -296,7 +420,7 @@ admin-configurable extension is not. That is the architectural
 defence Shepard's plugin-first stance ([`aidocs/platform/47`](../platform/47-dev-experience-and-plugin-system.md))
 has to make against the ZEUS-horizon objection.
 
-## 7. What this chapter establishes for the thesis
+## 9. What this chapter establishes for the thesis
 
 In the eventual thesis, this material answers four questions a reader
 will arrive with:
@@ -327,7 +451,7 @@ takes those four answers as given and starts to design against them.
 
 ## Primary sources
 
-The institutional positioning above is grounded in three primary
+The institutional positioning above is grounded in four primary
 sources uploaded by the author to the AI working memory of this
 project on 2026-05-23:
 
@@ -337,6 +461,12 @@ project on 2026-05-23:
   itself; PDF metadata records only the renderer ("Skia/PDF m147 Google
   Docs Renderer"). It is cited here as an institutional position
   statement, not as a personally-authored work.
+- @zlpDataDrivenIntelligence2025 — *DLR ZLP Augsburg — Data Driven
+  Intelligence* (PDF, 29 pages, generated 2025-01-27). Institutional
+  presentation deck. The thesis-figure triplet of §6 (slides 9, 10,
+  11) and the DIKW slide of §5 (slide 7) are drawn from this source.
+  Slides 8 and 12--14 record the digital-strategy stack, the MFFD
+  case-study figure, and the GTlab/ADAPT second use-case.
 - @bayernFachpanel2026 — *Ergebnis Fachpanel: Aufbau und Nutzung von
   Datenräumen, 20.03.2026* (PPTX, 16 slides). Bavarian dataspace
   expert panel.

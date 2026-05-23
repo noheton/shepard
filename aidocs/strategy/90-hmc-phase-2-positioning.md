@@ -151,6 +151,52 @@ MFFD AFP campaign round-tripped through RO-Crate to InvenioRDM
   Collection?" is a one-click question that needs a one-click
   answer.
 
+### The Pub-Service shape (Krebs whiteboard sketch, 2026-05-23)
+
+The concrete shape of the publication pipeline this WP needs to
+deliver is recorded in a whiteboard sketch by the WP-author
+[@krebsFederationSketches2026, sketch B]. The sketch traces a
+single data flow from a Shepard `Sammlung V1` (collection) through
+an attached `meta.json` (carrying a `DL-Lin…` licence annotation)
+into a *Pub Service* component, which then branches to three
+downstream targets: **Databus** (the dbpedia/databus + MOSS
+federation substrate, cf.\ §5), **S3** (object storage —
+Garage per ADR-0024), and **InvenioRDM** (the publication
+repository). An `md5` checksum is noted on the collection node,
+and an `FDM Institution` header in the right margin records the
+institutional owner of the publication act (in DLR ZLP's
+deployment: the centre itself).
+
+Three commitments are encoded in this sketch that this WP makes
+operational:
+
+1. **Publication is a separate service, not a Shepard endpoint.**
+   The Pub Service is named as a distinct component, which lets
+   the publication logic — licence checks, PID minting, format
+   conversion, target routing — accumulate without bloating
+   Shepard core. This aligns with the plugin-first rule
+   (`aidocs/platform/47`): the publication seam is exactly the
+   shape `shepard-plugin-publisher` would take.
+2. **Multi-target by design.** The sketch shows three downstream
+   branches, not one. The WP's deliverable is not "Shepard to
+   InvenioRDM" or "Shepard to Databus" specifically; it is the
+   *router* shape that lets an operator pick the target by
+   licence, audience, or institutional policy. This anticipates
+   `aidocs/integrations/67-unhide-publish-plugin.md` (the
+   Helmholtz Unhide harvest seam already shipped) being one such
+   target alongside Databus and InvenioRDM.
+3. **Integrity travels with the publication.** The `md5` notation
+   on the collection node makes the integrity hash a first-class
+   part of the meta-record, not a post-hoc audit artefact. A
+   reviewer downstream can verify that the bits she retrieved
+   from S3 match the bits Shepard published.
+
+This sketch is a **thesis architecture-chapter figure candidate**
+for §3 / §6 of the outline in `project_thesis_idea.md`. The
+physical original needs to be re-uploaded as a file artefact for
+PDF embedding; the description here is sufficient for the WP-1
+scoping conversation.
+
 ---
 
 ## 4. WP-2: Shepard semantic features extensions development

@@ -202,6 +202,19 @@ session adds a row. Entries graduate to bib / backlog / decommissioned as approp
 | 2026-05-23 | [FOAF 0.1 — mbox property](http://xmlns.com/foaf/0.1/) | `foaf:mbox` for email attribution | `aidocs/frontend/100 §2 + §6` | Canonical predicate for the `source_created_by_email` attr migration; the mailto link from the author chip tooltip aligns with FOAF practice | skimmed |
 | 2026-05-23 | [SKOS 2009 — Recommendation](https://www.w3.org/TR/skos-reference/) | Light-weight knowledge organization — fits the instance-registry name+url+institute mapping shape | `aidocs/frontend/100 §5` `useInstanceRegistry` | The `:InstanceRegistry` Neo4j singleton entries could be SKOS Concepts with `skos:prefLabel` (institute name) + `skos:exactMatch` (URL) + `skos:inScheme` (`<dlr-shepard-network>`) — bigger semantic web hook than ad-hoc fields | unread |
 
+### Management-context + compliance-frame (2026-05-23 batch 5+6)
+
+| Date | Source | Topic | Surface | Why interesting | Status |
+|---|---|---|---|---|---|
+| 2026-05-23 | [QMH-DLR-VA014 Open Science](https://intranet.dlr.de/) | DLR Open Science directive — mitgeltende Unterlage to SE-Rahmenrichtlinie | `aidocs/strategy/93 §3` COMP-SE-MAP | Needs to be pulled from DLR intranet QMH portal; mapping Shepard's compliance against it line-by-line | unread |
+| 2026-05-23 | [QMH-DLR-VA015 Forschungsdatenmanagement (FDM)](https://intranet.dlr.de/) | DLR FDM directive — directly Shepard-shaped territory | `aidocs/strategy/93 §3` COMP-SE-MAP | Shepard IS one of the FDM substrates — line-by-line mapping is the strongest evidence for the SE-Rahmenrichtlinie Mitgeltende-Unterlagen audit lens | unread |
+| 2026-05-23 | EU AI HLEG Ethics Guidelines for Trustworthy AI (2019) | The seven value-pairs (Menschenzentrierung + Gemeinwohl etc.) the DLR KI-Leitfaden builds on | `aidocs/strategy/93 §2 + §6.B` | Original source for the seven values; cite when DLR Leitfaden alone is not specific enough | unread |
+| 2026-05-23 | [Federal Government AI Strategy](https://www.ki-strategie-deutschland.de/) | Bundesregierung AI-Strategie — co-anchor of the DLR Leitfaden | `aidocs/strategy/93 §2` | Federal context for the DLR-level Leitbild + Leitfaden positioning | unread |
+| 2026-05-23 | [OECD AI Principles](https://oecd.ai/en/ai-principles) | OECD Council Recommendation on AI — co-anchor of the DLR Leitfaden | `aidocs/strategy/93 §2` | Already cited via oecdAiScience2024; the principles set itself (not the 2024 in-science update) is the value-pair source | skimmed |
+| 2026-05-23 | [BSI C5 catalogue](https://www.bsi.bund.de/EN/Topics/CloudComputing/Compliance_Criteria_Catalogue/Compliance_Criteria_Catalogue_node.html) | German federal cloud-provider compliance criteria | `aidocs/strategy/93 §6.E` COMP-HETZNER-CERT | Verification target for the Hetzner deployment — Cloud-Strategie §"Empfehlungen" suggests preferring BSI C5–certified providers | unread |
+| 2026-05-23 | [Hetzner ISO 27001 / BSI C5 certifications](https://www.hetzner.com/legal/) | Hetzner's published certification status | `aidocs/strategy/93 §6.E` COMP-HETZNER-CERT | One concrete look-up: which Hetzner DCs / services hold which cert? Needs verification before citing in deploy docs | unread |
+| 2026-05-23 | [DSGVO Art. 5 + Art. 17](https://gdpr-info.eu/) | GDPR storage-limitation + right-to-erasure | `aidocs/strategy/93 §6.E` COMP-DSGVO-RETENTION | Ties Shepard's SM1 storage management design to a concrete legal obligation; concrete retention-windows-per-payload-kind is the gap | skimmed |
+
 ## Decommissioned
 
 *(Nothing yet — entries land here when re-read and judged not-relevant.)*

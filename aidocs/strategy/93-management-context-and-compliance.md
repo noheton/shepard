@@ -356,7 +356,7 @@ Two evaluation rhythms apply:
 - **Project-specific evaluations** — Fachpanel-style reviews at the
   programme / project level (FORInFPro, MFFD, NFDI4Ing F-1, HMC2
   WPs each have their own cadence). The 2026-03-20 Fachpanel
-  artefact [@dlrFachpanel20260320] is one such review point;
+  artefact [@bayernFachpanel2026] is one such review point;
   the strategic-context discussion that the panel surfaces is the
   evidence that Shepard's roadmap is **shaped by** rather than
   parallel to the funding-evaluation rhythm.
@@ -546,7 +546,7 @@ PR:
   Nutzungsszenarien*, v1.0 (2019-09-26).
 - `dlrDatenstrategieV60_2026` — DLR, *Datenstrategie des DLR*, v60
   working draft (2026-05-23).
-- `dlrFachpanel20260320` — DLR, *Ergebnis Fachpanel 2026-03-20*
+- `bayernFachpanel2026` — DLR, *Ergebnis Fachpanel 2026-03-20*
   (already cited in earlier docs).
 
 Cross-cited (already in bib): `krebsGenKi2026`, `oecdAiScience2024`.

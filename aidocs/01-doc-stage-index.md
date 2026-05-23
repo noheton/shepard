@@ -32,7 +32,7 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 37 |
 | `concept` | 14 |
-| `idea` | 8 |
+| `idea` | 9 |
 | `feature-defined` | 55 |
 | `audited-by-personas` | 52 |
 | `feedback-implemented` | 0 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 41 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **260** |
+| **total docs** | **261** |
 | **UNTAGGED** | **5** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -116,7 +116,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-23 |
 
-## idea (8)
+## idea (9)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -125,6 +125,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | — |
 | [`aidocs/strategy/75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
@@ -160,7 +161,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/84-process-orchestrator-plugin.md`](integrations/84-process-orchestrator-plugin.md) | 84 — shepard-plugin-process-orchestrator | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/92-mffd-real-data-import-strategy.md`](integrations/92-mffd-real-data-import-strategy.md) | 92 — MFFD real-data import strategy | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
-| [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | — |
+| [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
@@ -180,8 +181,8 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/90-hmc-phase-2-positioning.md`](strategy/90-hmc-phase-2-positioning.md) | 90 — HMC Phase 2 positioning: Shepard's pre-committed work-packages at DLR ZLP | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/91-forinfpro-semantically-driven-analytics.md`](strategy/91-forinfpro-semantically-driven-analytics.md) | ForInfPro and the semantically-driven analytics use case | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/92-aerospace-x-regulatory-context.md`](strategy/92-aerospace-x-regulatory-context.md) | 92 — Aerospace-X and the aerospace regulatory context | 2026-05-23 | — |
-| [`aidocs/strategy/93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — institutional stack, governance frame, compliance gates | 2026-05-23 | — |
+| [`aidocs/strategy/92-aerospace-x-regulatory-context.md`](strategy/92-aerospace-x-regulatory-context.md) | 92 — Aerospace-X and the aerospace regulatory context | 2026-05-23 | 2026-05-23 |
+| [`aidocs/strategy/93-management-context-and-compliance.md`](strategy/93-management-context-and-compliance.md) | Shepard inside the DLR management context — institutional stack, governance frame, compliance gates | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/00-energy-estimation-log.md`](sustainability/00-energy-estimation-log.md) | 00 — Energy + CO₂ estimation log per commit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/sustainability/01-methodology.md`](sustainability/01-methodology.md) | 01 — Energy / CO₂ estimation methodology | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/73-personal-landing-page.md`](ux/73-personal-landing-page.md) | 73 — Personal Landing Page | 2026-05-23 | 2026-05-23 |
