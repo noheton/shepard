@@ -110,12 +110,29 @@ public class SearchDAO {
   }
 
   private String emitCollectionReturnPart(String collectionVariable, PaginationHelper pagination) {
+    // UI-011e (2026-05-24): Use EVERYTHING-depth-1 instead of ESSENTIAL so the
+    // search response hydrates the `(:Collection)-[:has_dataobject]->(:DataObject)`
+    // neighborhood. ESSENTIAL only walks `:Permission` / `:User`, so the resulting
+    // `CollectionIO.dataObjectIds[]` was always empty on the wire — the frontend
+    // `/collections` listing therefore showed `# DOs = 0` for every collection,
+    // including MFFD-Dropbox (8514 DOs) and LUMEN (17 DOs).
+    //
+    // The non-search list path (`CollectionDAO.findAllCollectionsByShepardId` →
+    // `CollectionV2Rest.list` → `GET /v2/collections`) already uses EVERYTHING via
+    // the default `getReturnPart(entity)` overload and returns correct counts in
+    // production. Aligning the search projection with that precedent fixes the bug
+    // without changing the wire shape (the field has always been advertised; it
+    // just carried [] when it should have carried ids).
+    //
+    // The other `emit*ReturnPart` helpers (containers, users, user groups)
+    // intentionally stay on ESSENTIAL: their list cells don't expose nested-entity
+    // counts the way `# DOs` does for collections.
     return (
       (pagination != null ? " " + CypherQueryHelper.getPaginationPart(pagination) : "") +
       " WITH " +
       collectionVariable +
       " " +
-      CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.ESSENTIAL)
+      CypherQueryHelper.getReturnPart(collectionVariable, Neighborhood.EVERYTHING)
     );
   }
 

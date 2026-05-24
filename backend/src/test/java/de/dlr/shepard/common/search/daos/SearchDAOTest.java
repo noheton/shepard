@@ -36,12 +36,45 @@ public class SearchDAOTest extends BaseTestCase {
 
   @Test
   public void findCollectionsTest() {
+    // UI-011e (2026-05-24): collection search now uses EVERYTHING-depth-1
+    // (not ESSENTIAL) so `(:Collection)-[:has_dataobject]->(:DataObject)` is
+    // hydrated and `CollectionIO.dataObjectIds[]` carries the real ids on the
+    // search response. Container / User / UserGroup helpers (asserted in
+    // sibling tests below) intentionally stay on ESSENTIAL.
     var collections = List.of(new Collection(1L));
     String query =
-      "Match bla WITH col MATCH path=(col)-[*0..1]->(n) WHERE n:Permission OR n:User RETURN col, nodes(path), relationships(path)";
+      "Match bla WITH col MATCH path=(col)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL " +
+      "RETURN col, nodes(path), relationships(path)";
     when(session.query(Collection.class, query, Collections.emptyMap())).thenReturn(collections);
     var actual = dao.findCollections(selection("Match bla"), null, "col");
     assertEquals(collections, actual);
+  }
+
+  @Test
+  public void findCollectionsHydratesDataObjects_UI011e() {
+    // UI-011e (2026-05-24): regression guard — the search Cypher must walk the
+    // full neighborhood (depth 1, EVERYTHING) so DataObjects attached to the
+    // matched Collections come back on the OGM session and the IO mapper can
+    // populate `dataObjectIds[]`. If a future refactor flips this back to
+    // ESSENTIAL, this test fires before users see `# DOs = 0` again.
+    var collection = new Collection(1L);
+    var dataObjects = new java.util.ArrayList<de.dlr.shepard.context.collection.entities.DataObject>();
+    dataObjects.add(new de.dlr.shepard.context.collection.entities.DataObject(11L));
+    dataObjects.add(new de.dlr.shepard.context.collection.entities.DataObject(12L));
+    dataObjects.add(new de.dlr.shepard.context.collection.entities.DataObject(13L));
+    collection.setDataObjects(dataObjects);
+
+    String expectedCypher =
+      "Match bla WITH col MATCH path=(col)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL " +
+      "RETURN col, nodes(path), relationships(path)";
+    when(session.query(Collection.class, expectedCypher, Collections.emptyMap()))
+      .thenReturn(List.of(collection));
+
+    var actual = dao.findCollections(selection("Match bla"), null, "col");
+    assertEquals(1, actual.size());
+    // The DAO returns Collections with their dataObjects neighborhood populated
+    // by the OGM session; the IO layer extracts the ids from this list.
+    assertEquals(3, actual.get(0).getDataObjects().size());
   }
 
   @Test
