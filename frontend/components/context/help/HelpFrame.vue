@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useDisplay } from "vuetify";
 import {
   DOC_SECTIONS,
   findDocPage,
@@ -58,33 +57,35 @@ watch(
   { immediate: true },
 );
 
-// ── Mobile drawer ────────────────────────────────────────────────────────────
+// ── Drawer state ─────────────────────────────────────────────────────────────
+// Layout shown/hidden is driven by CSS media queries (Vuetify d-* utilities) to
+// avoid the SSR/hydration mismatch that bit BUG #139 in collection.vue. The
+// drawer's open/close is still client state.
 
-const { mobile } = useDisplay();
 const drawerOpen = ref(false);
-
-watch(mobile, m => {
-  if (!m) drawerOpen.value = false;
-});
 
 function navigate(page: string) {
   router.push({ path: "/help", query: { page } });
-  if (mobile.value) drawerOpen.value = false;
+  drawerOpen.value = false;
 }
 </script>
 
 <template>
   <v-container fluid class="pa-0 fill-height align-start">
-    <!-- Mobile: hamburger button -->
+    <!-- Mobile (< md): hamburger button. CSS-only visibility via d-md-none. -->
     <v-app-bar-nav-icon
-      v-if="mobile"
-      class="ma-2"
+      class="ma-2 d-md-none"
       @click="drawerOpen = !drawerOpen"
     />
 
-    <v-row no-gutters class="fill-height">
-      <!-- Sidebar — permanent on md+, drawer on mobile -->
-      <v-col v-if="!mobile" cols="12" md="3" lg="2" class="help-sidebar pa-4">
+    <v-row no-gutters class="fill-height flex-nowrap">
+      <!-- Sidebar — visible on md+ only, via CSS media query. -->
+      <v-col
+        cols="12"
+        md="3"
+        lg="2"
+        class="help-sidebar pa-4 d-none d-md-block"
+      >
         <HelpSidebar
           :sections="DOC_SECTIONS"
           :active-page="activePage"
@@ -92,8 +93,12 @@ function navigate(page: string) {
         />
       </v-col>
 
-      <!-- Mobile navigation drawer -->
-      <v-navigation-drawer v-if="mobile" v-model="drawerOpen" temporary>
+      <!-- Mobile navigation drawer (always in markup; hidden via d-md-none). -->
+      <v-navigation-drawer
+        v-model="drawerOpen"
+        temporary
+        class="d-md-none"
+      >
         <div class="pa-4">
           <HelpSidebar
             :sections="DOC_SECTIONS"
@@ -103,9 +108,15 @@ function navigate(page: string) {
         </div>
       </v-navigation-drawer>
 
-      <!-- Content area -->
-      <v-col cols="12" :md="mobile ? 12 : 9" :lg="mobile ? 12 : 10" class="pa-6">
-        <div v-if="mobile" class="d-flex align-center mb-4">
+      <!-- Content area — full width below md, 9 cols at md, 10 at lg+. -->
+      <v-col
+        cols="12"
+        md="9"
+        lg="10"
+        class="pa-6"
+        style="min-width: 0"
+      >
+        <div class="d-md-none d-flex align-center mb-4">
           <v-btn
             variant="text"
             prepend-icon="mdi-menu"
