@@ -30,7 +30,9 @@ public class CollectionTest extends BaseTestCase {
       .withPrefabValues(FileContainer.class, new FileContainer(1L), new FileContainer(2L))
       .withPrefabValues(Permissions.class, new Permissions(1L), new Permissions(2L))
       // appId is L2a-additive; not part of equals (legacy id remains canonical).
-      .withIgnoredFields("appId")
+      // heroImageUrl is a fork addition (task #131); presentational metadata
+      // that doesn't define entity equality.
+      .withIgnoredFields("appId", "heroImageUrl")
       .verify();
   }
 

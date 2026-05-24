@@ -191,6 +191,7 @@ this section is the inventory snapshot's pointer.
 | 2026-05-23 | `6cffbaef` | **GH-INFRA1** — `.github/*` only, no inventory delta. |
 | 2026-05-23 | `f34bbf8b` | **ORIGIN-MYTH** — Pages-only, no inventory delta. |
 | 2026-05-23 | (this commit) | **OBS-MFFD1** — `scripts/mffd-import-stats-collector.py` + systemd unit pair + `docs/help/observing-an-import.md`. **No schema change**: writes to existing `TimeseriesContainer` 590324 + `DataObject` 590344 inside the live MFFD-Dropbox collection. Recursive self-observability: Shepard's own ingest counters live in Shepard's own TS substrate. |
+| 2026-05-24 | (this commit, LIC1) | **LIC1** — completes FAIR-1. `:AbstractDataObject` `license: String` (SPDX expression) + `accessRights: String` (enum stored as String: `OPEN \| RESTRICTED \| CLOSED \| EMBARGOED`) were already declared in V57 (NOOP, schema-free Neo4j properties). LIC1 adds the wire-level enum hint on the OpenAPI `@Schema`, 14 Jackson serialisation tests pinning NON_NULL omission + round-trip on Collection + DataObject IOs, and the frontend chip / input components + FAIR strip on both detail pages. **No new label, no new constraint, no new migration.** Both fields stay `@JsonInclude(NON_NULL)`-omitted on the wire when unset (verified by the v5 fixture corpus). |
 
 **Honest summary of this session's inventory impact:** **zero new
 Neo4j labels, zero new Postgres tables, zero new Mongo collections,
