@@ -71,6 +71,10 @@ public class CollectionService {
     toCreate.setStatus(collection.getStatus());
     toCreate.setName(collection.getName());
     toCreate.setHeroImageUrl(collection.getHeroImageUrl());
+    // LIC1 (FAIR-1): copy license + accessRights so newly created collections
+    // can carry them. The fields are nullable; null means "not yet declared".
+    toCreate.setLicense(collection.getLicense());
+    toCreate.setAccessRights(collection.getAccessRights());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
@@ -208,6 +212,12 @@ public class CollectionService {
     old.setStatus(collection.getStatus());
     old.setName(collection.getName());
     old.setHeroImageUrl(collection.getHeroImageUrl());
+    // LIC1 (FAIR-1): persist license + accessRights on update. PUT is full-
+    // replace (existing behaviour) so null incoming = wipe; the PATCH path
+    // (RFC 7396 merge) above this method already produces a merged IO before
+    // calling here, so a PATCH that omits the keys leaves them untouched.
+    old.setLicense(collection.getLicense());
+    old.setAccessRights(collection.getAccessRights());
 
     if (collection.getDefaultFileContainerId() != null) {
       FileContainer fileContainer = fileContainerService.getContainer(collection.getDefaultFileContainerId());
