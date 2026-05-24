@@ -22,47 +22,20 @@
  * `loginAsTolerant` helper to ride out the live Keycloak / NextAuth
  * sign-in redirect-loop sensitivity.
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-async function loginAsTolerant(page: Page, username: string, password: string) {
-  await page.goto("/", { waitUntil: "domcontentloaded" }).catch(() => {});
-  const signOut = page.locator("text=SIGN OUT");
-  if (await signOut.first().isVisible().catch(() => false)) return;
-  const KC = process.env.KEYCLOAK_HOST || "https://shepard-auth.nuclide.systems";
-  const REALM = "shepard-demo";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      await page.goto("/auth/signIn", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
-      if (await signOut.first().isVisible().catch(() => false)) return;
-      await page
-        .getByRole("button", { name: /sign in|login/i })
-        .first()
-        .click({ timeout: 5_000 });
-      await page.waitForURL(`${KC}/realms/${REALM}/**`, { timeout: 10_000 });
-      await page.fill("#username", username);
-      await page.fill("#password", password);
-      await page.click('[type="submit"]');
-      await page.waitForURL(/shepard\.nuclide\.systems(?!.*error)/, { timeout: 15_000 });
-      await page.waitForSelector("text=SIGN OUT", { timeout: 10_000 });
-      return;
-    } catch (e) {
-      if (attempt === 2) {
-        await loginAs(page, username, password);
-        return;
-      }
-      await page.waitForTimeout(1500);
-    }
-  }
-}
+// Local `loginAsTolerant` removed 2026-05-24 — folded into the shared
+// `loginAs` helper (E2E-AUTH-TOLERANT-LOGIN). The shared helper now
+// covers SSO-cookie-hot, cookie-cold, and the NextAuth sign-in
+// redirect-loop retry that this spec originally worked around locally.
 
 test.describe("RDM-005: Metadata Completeness Score widget", () => {
   test.use({ viewport: { width: 1600, height: 900 } });
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {
-    await loginAsTolerant(page, "alice", "alice-demo");
+    await loginAs(page, "alice", "alice-demo");
   });
 
   test("widget visible on /collections/42 (LUMEN) with score chip", async ({ page }) => {

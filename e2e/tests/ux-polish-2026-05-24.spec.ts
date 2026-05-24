@@ -19,6 +19,7 @@
  *   through `?q=<query>`.
  */
 import { test, expect } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
 const USERNAME = process.env.DEMO_USER || "flo";
 const PASSWORD = process.env.DEMO_PASSWORD || "flo-demo";
@@ -28,61 +29,13 @@ const SECOND_COLLECTION_ID = Number(
   process.env.SECOND_COLLECTION_ID ?? 661923,
 );
 
-/**
- * Tolerant login: covers two real-world cases the live Keycloak puts us in:
- *
- * 1. Cookies cleared / fresh session → sign-in form appears → fill + submit.
- * 2. Keycloak SSO cookie still hot → sign-in button immediately bounces
- *    back to / via the OIDC callback (no form shown).
- *
- * The vanilla `loginAs(page)` assumes case 1 only and times out on case 2
- * with a redirect-loop trace. We poll for "SIGN OUT" as the success
- * indicator and short-circuit when the form isn't shown.
- */
-async function tolerantLogin(page: import("@playwright/test").Page): Promise<void> {
-  await page.goto("/auth/signIn", { waitUntil: "domcontentloaded" });
-  const signOutVisible = await page
-    .getByText(/sign out/i)
-    .first()
-    .isVisible()
-    .catch(() => false);
-  if (signOutVisible) return;
-
-  const signInBtn = page.getByRole("button", { name: /sign in|login/i }).first();
-  if (await signInBtn.isVisible().catch(() => false)) {
-    await signInBtn.click();
-  }
-
-  // Race: either the Keycloak form appears (case 1) or we land back on the
-  // app with "SIGN OUT" (case 2 — SSO cookie hot).
-  try {
-    await page.waitForURL(/realms\/shepard-demo/, { timeout: 5_000 });
-    await page.fill("#username", USERNAME);
-    await page.fill("#password", PASSWORD);
-    await page.click('[type="submit"]');
-  } catch {
-    // Case 2 path — no form needed.
-  }
-
-  // Be patient: against the live Keycloak, nuxt-auth's status sometimes
-  // needs a couple of redirects before the layout shows SIGN OUT.
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const ok = await page
-      .waitForSelector("text=SIGN OUT", { timeout: 10_000 })
-      .then(() => true)
-      .catch(() => false);
-    if (ok) return;
-    // Nudge: if we're stuck on /auth/signIn, hit / once more.
-    if (page.url().includes("/auth/signIn")) {
-      await page.goto("/", { waitUntil: "domcontentloaded" });
-    }
-  }
-  throw new Error("tolerantLogin: SIGN OUT never appeared");
-}
+// Local `tolerantLogin` removed 2026-05-24 — folded into the shared
+// `loginAs` helper (E2E-AUTH-TOLERANT-LOGIN). Helper now handles
+// both cookie-hot (case 2) and cookie-cold (case 1) paths.
 
 test.describe("UX polish bundle 2026-05-24", () => {
   test.beforeEach(async ({ page }) => {
-    await tolerantLogin(page);
+    await loginAs(page, USERNAME, PASSWORD);
   });
 
   test("Pattern A: no red error toast flashes on cold load of /collections/42", async ({ page }) => {

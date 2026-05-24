@@ -91,25 +91,42 @@ wait-for-health:
 
 # Post-deploy smoke test. Defaults to localhost; for prod:
 #   FRONTEND_URL=https://shepard.nuclide.systems BACKEND_URL=https://shepard-api.nuclide.systems make smoke
-smoke:
+#
+# **Hard prerequisite**: `build-backend` runs first. Surfaced by
+# CRIT-SMOKE-NOT-CATCHING-BUILD-BREAK (2026-05-24): smoke against a stale
+# running image was reporting 25/25 PASS even while `mvn clean compile` was
+# broken on main, hiding the build break for an entire session. Coupling the
+# compile to smoke guarantees a green smoke means the source actually builds.
+#
+# Trade-off: this also triggers a local Maven build when smoking PROD via
+# `FRONTEND_URL=https://... BACKEND_URL=https://... make smoke`. If you want
+# pure prod-probing without rebuilding, invoke the script directly:
+#   FRONTEND_URL=... BACKEND_URL=... ./infrastructure/smoke-test.sh
+smoke: build-backend
 	@$(COMPOSE_DIR)/smoke-test.sh
 
 # Per `feedback_deploy_after_visible_features.md`: build → image → redeploy → smoke-test.
 # All three redeploy targets chain through wait-for-health + smoke so a green
 # `make redeploy` is genuine confidence the deploy worked, not just an image swap.
 
+# `--force-recreate` per service: surfaced independently by Pattern-D agent
+# (CRIT-WORKTREE-DOCKER-CACHE) and UX-bundle agent (MK-REDEPLOY-FORCE-RECREATE)
+# on 2026-05-24. Without it, `docker compose up -d --no-build` keeps the
+# existing container alive even when its image tag was just rebuilt, so the
+# frontend (or backend) continues to serve the OLD code while smoke +
+# `curl /` both report 200. Always recreate the targeted service.
 redeploy-backend: preflight-env image-backend
-	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
 
 redeploy-frontend: preflight-env image-frontend
-	cd $(COMPOSE_DIR) && docker compose up -d --no-build frontend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate frontend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
 
 redeploy: preflight-env image-backend image-frontend
-	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend frontend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
 
@@ -118,7 +135,7 @@ redeploy: preflight-env image-backend image-frontend
 # expect a partial state. Anything you'd call `redeploy` for in normal work
 # should stay on `redeploy` — the verify is the safety net.
 redeploy-fast: preflight-env image-backend image-frontend
-	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
+	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend frontend
 
 check-images:
 	@echo "Backend  image: $$(docker images $(BACKEND_IMAGE)  --format '{{.CreatedAt}}')"
