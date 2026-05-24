@@ -32,6 +32,7 @@ const activeDocPage = computed<DocPage>(
 const renderedHtml = ref<string>("");
 const isLoading = ref(false);
 const fetchError = ref<string | null>(null);
+const contentRoot = ref<HTMLElement | null>(null);
 
 async function loadPage(fetchPath: string) {
   isLoading.value = true;
@@ -44,6 +45,10 @@ async function loadPage(fetchPath: string) {
     }
     const raw = await res.text();
     renderedHtml.value = renderDocMarkdown(raw);
+    // Reset search filter visibility for the new page.
+    await nextTick();
+    applySearchFilter();
+    scrollToHashIfPresent();
   } catch (err) {
     fetchError.value = String(err);
   } finally {
@@ -68,6 +73,85 @@ function navigate(page: string) {
   router.push({ path: "/help", query: { page } });
   drawerOpen.value = false;
 }
+
+// ── In-page search (UI-013) ─────────────────────────────────────────────────
+// Filter is a DOM-level toggle: each <section class="doc-section"> carries a
+// data-search-text attribute (precomputed during render). On query change we
+// add/remove a `doc-section--hidden` class. No re-render = no jank.
+
+const searchQuery = ref("");
+const matchCount = ref(0);
+const totalSections = ref(0);
+
+function applySearchFilter() {
+  const root = contentRoot.value;
+  if (!root) return;
+  const sections = root.querySelectorAll<HTMLElement>(".doc-section");
+  totalSections.value = sections.length;
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) {
+    sections.forEach(s => s.classList.remove("doc-section--hidden"));
+    matchCount.value = sections.length;
+    return;
+  }
+  let matched = 0;
+  sections.forEach(s => {
+    const text = s.dataset.searchText || "";
+    if (text.includes(q)) {
+      s.classList.remove("doc-section--hidden");
+      matched += 1;
+    } else {
+      s.classList.add("doc-section--hidden");
+    }
+  });
+  matchCount.value = matched;
+}
+
+watch(searchQuery, () => applySearchFilter());
+
+function clearSearch() {
+  searchQuery.value = "";
+}
+
+// ── Anchor / hash scroll (UI-013) ───────────────────────────────────────────
+// When the user clicks an in-page anchor (#slug) or arrives with a hash in
+// the URL, scroll to the matching heading. Native browser scroll runs before
+// async markdown loads, so we re-trigger after fetch completes.
+
+function scrollToHashIfPresent() {
+  if (!process.client) return;
+  const hash = route.hash;
+  if (!hash || hash.length < 2) return;
+  const id = hash.slice(1);
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// Intercept clicks on .doc-heading-anchor so we update the URL hash + scroll
+// smoothly without a full route reload.
+function onContentClick(ev: MouseEvent) {
+  const target = ev.target as HTMLElement | null;
+  if (!target) return;
+  const anchor = target.closest<HTMLAnchorElement>(".doc-heading-anchor");
+  if (!anchor) return;
+  const href = anchor.getAttribute("href") || "";
+  if (!href.startsWith("#")) return;
+  ev.preventDefault();
+  const id = href.slice(1);
+  // Update URL hash without re-fetching the page.
+  router.replace({
+    path: "/help",
+    query: route.query,
+    hash: `#${id}`,
+  });
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Watch hash changes (e.g. user pastes a URL or clicks browser back).
+watch(() => route.hash, () => scrollToHashIfPresent());
 </script>
 
 <template>
@@ -127,6 +211,34 @@ function navigate(page: string) {
           </v-btn>
         </div>
 
+        <!-- In-page search (UI-013) — filters the current page's sections. -->
+        <div class="help-search-bar mb-4" data-testid="help-search-bar">
+          <v-text-field
+            v-model="searchQuery"
+            data-testid="help-search-input"
+            density="compact"
+            variant="outlined"
+            hide-details
+            clearable
+            prepend-inner-icon="mdi-magnify"
+            :placeholder="`Search in this page (${totalSections} sections)`"
+            @click:clear="clearSearch"
+          />
+          <div
+            v-if="searchQuery"
+            class="text-caption text-medium-emphasis mt-1"
+            data-testid="help-search-status"
+          >
+            <template v-if="matchCount > 0">
+              {{ matchCount }} of {{ totalSections }} sections match
+            </template>
+            <template v-else>
+              No sections match — try a different term, or
+              <a href="#" data-testid="help-search-clear" @click.prevent="clearSearch">clear search</a>.
+            </template>
+          </div>
+        </div>
+
         <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
 
         <v-alert
@@ -139,7 +251,13 @@ function navigate(page: string) {
 
         <!-- Rendered markdown -->
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="doc-content" v-html="renderedHtml" />
+        <div
+          ref="contentRoot"
+          class="doc-content"
+          data-testid="help-content"
+          v-html="renderedHtml"
+          @click="onContentClick"
+        />
       </v-col>
     </v-row>
   </v-container>
@@ -150,6 +268,10 @@ function navigate(page: string) {
   border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   min-height: 100%;
   background-color: rgb(var(--v-theme-treeview));
+}
+
+.help-search-bar {
+  max-width: 860px;
 }
 </style>
 
@@ -233,6 +355,39 @@ function navigate(page: string) {
     border: none;
     border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     margin: 1.5rem 0;
+  }
+
+  // ── Anchor links on headings (UI-013) ────────────────────────────────────
+  .doc-heading {
+    position: relative;
+    scroll-margin-top: 80px; // offset for sticky app bar
+
+    .doc-heading-anchor {
+      position: absolute;
+      left: -1.25em;
+      top: 0;
+      width: 1em;
+      text-align: right;
+      opacity: 0;
+      transition: opacity 0.12s ease-in;
+      text-decoration: none;
+      color: rgba(var(--v-theme-on-surface), 0.4);
+      font-weight: normal;
+      &:hover {
+        color: rgb(var(--v-theme-primary));
+        opacity: 1;
+      }
+    }
+
+    &:hover .doc-heading-anchor,
+    &:focus-within .doc-heading-anchor {
+      opacity: 1;
+    }
+  }
+
+  // ── Section-collapse for search (UI-013) ─────────────────────────────────
+  .doc-section--hidden {
+    display: none;
   }
 }
 </style>

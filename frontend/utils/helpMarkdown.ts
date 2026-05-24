@@ -61,7 +61,7 @@ export function slugify(text: string): string {
   const slug = (text || "")
     .toLowerCase()
     .normalize("NFKD")
-    // strip combining marks (accents)
+    // strip combining marks (accents) — U+0300..U+036F
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
@@ -217,11 +217,55 @@ function preprocessMarkdown(raw: string): string {
 // ── Public API ──────────────────────────────────────────────────────────────
 
 /**
+ * Wrap each H2-introduced run of content in `<section class="doc-section"
+ * data-search-text="…">` so HelpFrame's in-page search can hide non-matching
+ * sections by toggling a CSS class without re-rendering the markdown.
+ *
+ * Content before the first H2 stays unwrapped (intro block, always visible).
+ * H1 stays out of any section (it's the page title).
+ */
+export function wrapSectionsForSearch(html: string): string {
+  // Split on H2 boundaries. The opening <h2 id="..." class="doc-heading"> from
+  // our renderer is the anchor. We split conservatively: any <h2 …>.
+  // First chunk = pre-H2 intro; subsequent chunks each start with an <h2>.
+  // No H2 anywhere → nothing to wrap.
+  if (!/<h2\b/i.test(html)) return html;
+  const parts = html.split(/(?=<h2\b)/i);
+  if (parts.length === 0) return html;
+  const first = parts[0] ?? "";
+  // Normalise: if the first part starts with <h2>, there's no intro block.
+  const startsWithH2 = /^<h2\b/i.test(first);
+  const intro = startsWithH2 ? "" : first;
+  const sections = startsWithH2 ? parts : parts.slice(1);
+  const wrapped = sections
+    .map(section => {
+      // Build the search-text payload from the section's plain text.
+      // First, strip the heading-anchor `#` link entirely so it doesn't
+      // pollute the search corpus. Then strip remaining tags and
+      // collapse whitespace.
+      const plain = section
+        .replace(/<a\b[^>]*class="doc-heading-anchor"[^>]*>[\s\S]*?<\/a>/g, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      // Escape double-quotes for the data attribute.
+      const safe = plain.replace(/"/g, "&quot;");
+      return `<section class="doc-section" data-search-text="${safe}">${section}</section>`;
+    })
+    .join("");
+  return intro + wrapped;
+}
+
+/**
  * Render a raw docs/*.md string to HTML ready for v-html.
  */
 export function renderDocMarkdown(raw: string): string {
+  // Reset the slug registry so anchors don't collide across page renders.
+  slugRegistry.reset();
   const preprocessed = preprocessMarkdown(raw);
-  return marked.parse(preprocessed) as string;
+  const html = marked.parse(preprocessed) as string;
+  return wrapSectionsForSearch(html);
 }
 
 // ── Doc page catalogue ──────────────────────────────────────────────────────

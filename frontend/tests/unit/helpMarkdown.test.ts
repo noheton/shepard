@@ -4,6 +4,9 @@ import {
   findDocPage,
   DOC_SECTIONS,
   ALL_DOC_PAGES,
+  slugify,
+  SlugRegistry,
+  wrapSectionsForSearch,
 } from "../../utils/helpMarkdown";
 
 // ── renderDocMarkdown ──────────────────────────────────────────────────────
@@ -184,5 +187,147 @@ describe("ALL_DOC_PAGES", () => {
     expect(findDocPage("help/annotate-container")).toBeDefined();
     expect(findDocPage("help/delete-container-with-references")).toBeDefined();
     expect(findDocPage("help/minter-epic-quickstart")).toBeDefined();
+  });
+});
+
+// ── slugify (UI-013) ───────────────────────────────────────────────────────
+
+describe("slugify", () => {
+  it("lowercases and dasherises", () => {
+    expect(slugify("Hello World")).toBe("hello-world");
+  });
+
+  it("strips punctuation", () => {
+    expect(slugify("What's new?")).toBe("what-s-new");
+  });
+
+  it("collapses repeated separators", () => {
+    expect(slugify("foo   bar___baz")).toBe("foo-bar-baz");
+  });
+
+  it("trims leading and trailing dashes", () => {
+    expect(slugify("--foo bar--")).toBe("foo-bar");
+  });
+
+  it("falls back to 'section' on empty input", () => {
+    expect(slugify("")).toBe("section");
+    expect(slugify("!!!")).toBe("section");
+  });
+
+  it("handles common heading shapes from real docs", () => {
+    expect(slugify("Collections")).toBe("collections");
+    expect(slugify("DataObjects & references")).toBe("dataobjects-references");
+    expect(slugify("REST API surface")).toBe("rest-api-surface");
+  });
+});
+
+// ── SlugRegistry (UI-013) ──────────────────────────────────────────────────
+
+describe("SlugRegistry", () => {
+  it("returns the base slug for the first occurrence", () => {
+    const r = new SlugRegistry();
+    expect(r.next("Setup")).toBe("setup");
+  });
+
+  it("disambiguates collisions with numeric suffixes", () => {
+    const r = new SlugRegistry();
+    expect(r.next("Setup")).toBe("setup");
+    expect(r.next("Setup")).toBe("setup-2");
+    expect(r.next("Setup")).toBe("setup-3");
+  });
+
+  it("treats different texts that slugify identically as collisions", () => {
+    const r = new SlugRegistry();
+    expect(r.next("File reference")).toBe("file-reference");
+    expect(r.next("File Reference")).toBe("file-reference-2");
+  });
+
+  it("reset() clears the collision counter", () => {
+    const r = new SlugRegistry();
+    r.next("Setup");
+    r.next("Setup");
+    r.reset();
+    expect(r.next("Setup")).toBe("setup");
+  });
+});
+
+// ── Heading anchor rendering (UI-013) ──────────────────────────────────────
+
+describe("renderDocMarkdown — heading anchors", () => {
+  it("adds id + anchor link to H2 headings", () => {
+    const html = renderDocMarkdown("## Collections");
+    expect(html).toContain('id="collections"');
+    expect(html).toContain('class="doc-heading"');
+    expect(html).toContain('href="#collections"');
+    expect(html).toContain("doc-heading-anchor");
+  });
+
+  it("adds id + anchor to H3 headings", () => {
+    const html = renderDocMarkdown("### REST API surface");
+    expect(html).toContain('id="rest-api-surface"');
+    expect(html).toContain('href="#rest-api-surface"');
+  });
+
+  it("does NOT add an anchor to H1 (page title)", () => {
+    const html = renderDocMarkdown("# Page Title");
+    expect(html).toContain("<h1>");
+    expect(html).not.toContain("doc-heading-anchor");
+  });
+
+  it("disambiguates duplicate H2 slugs within one page", () => {
+    const html = renderDocMarkdown("## Setup\n\nfoo\n\n## Setup\n\nbar");
+    expect(html).toContain('id="setup"');
+    expect(html).toContain('id="setup-2"');
+  });
+
+  it("resets the slug counter between renderDocMarkdown calls", () => {
+    const a = renderDocMarkdown("## Setup");
+    const b = renderDocMarkdown("## Setup");
+    expect(a).toContain('id="setup"');
+    expect(a).not.toContain('id="setup-2"');
+    expect(b).toContain('id="setup"');
+    expect(b).not.toContain('id="setup-2"');
+  });
+});
+
+// ── wrapSectionsForSearch (UI-013) ─────────────────────────────────────────
+
+describe("wrapSectionsForSearch", () => {
+  it("wraps each H2-introduced run in a <section data-search-text>", () => {
+    const html =
+      '<p>intro</p><h2 id="a" class="doc-heading">Alpha</h2><p>some content</p>' +
+      '<h2 id="b" class="doc-heading">Beta</h2><p>more</p>';
+    const out = wrapSectionsForSearch(html);
+    expect(out).toContain('<p>intro</p>');
+    expect(out).toContain('<section class="doc-section" data-search-text="');
+    // Two H2s → two sections
+    expect((out.match(/<section class="doc-section"/g) || []).length).toBe(2);
+  });
+
+  it("returns input unchanged when no H2 headings are present", () => {
+    const html = "<p>just a paragraph</p>";
+    expect(wrapSectionsForSearch(html)).toBe(html);
+  });
+
+  it("includes lowercased section text in data-search-text", () => {
+    const html =
+      '<h2 id="x" class="doc-heading">My Heading</h2><p>Some BODY copy</p>';
+    const out = wrapSectionsForSearch(html);
+    expect(out).toContain('data-search-text="my heading some body copy"');
+  });
+
+  it("escapes double-quotes in section text for the attribute", () => {
+    const html = '<h2 id="x" class="doc-heading">Foo</h2><p>has "quotes"</p>';
+    const out = wrapSectionsForSearch(html);
+    // The attribute itself must close cleanly.
+    expect(out).toMatch(/data-search-text="foo has &quot;quotes&quot;"/);
+  });
+
+  it("integrates end-to-end with renderDocMarkdown", () => {
+    const md = "intro paragraph\n\n## First\n\nfoo body\n\n## Second\n\nbar body";
+    const html = renderDocMarkdown(md);
+    expect(html).toContain("doc-section");
+    expect(html).toContain('data-search-text="first foo body"');
+    expect(html).toContain('data-search-text="second bar body"');
   });
 });
