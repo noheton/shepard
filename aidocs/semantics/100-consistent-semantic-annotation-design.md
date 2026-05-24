@@ -237,18 +237,28 @@ Data Model export per
 Both are produced by the same renderer at `/v2/annotations/{appId}.ttl`
 content-negotiated.
 
-### 3.4 The legacy `attributes` map is one of these
+### 3.4 The `attributes` map is the pragmatic predecessor of this primitive
 
 The `attributes: Map<String,String>` field on `:AbstractDataObject` +
-`:Collection` is **structurally an under-typed instance of this
-primitive**. Every `attributes||<key>` property today is a (subject,
-predicate, value) triple — the same shape as `:SemanticAnnotation`,
-just missing the typing (`expected_object_type`), the vocabulary
-control (`vocabularyId`), the provenance back-pointer
-(`sourceActivityAppId`), the validity window, and the queryability via
-SPARQL. The 90+ keys NEO-AUDIT-005 catalogued (`material`, `bench`,
-`propellant`, `v16_pass1`, `source_*`, the brief LIC1-pre-shipment
-`license` collision) are all annotations in everything but name.
+`:Collection` is the **pragmatic open-typed predecessor** of the
+typed primitive in §3.1. It was the right shape for upstream
+shepard when no ontology was loaded and time-to-first-annotation
+mattered more than vocabulary discipline — researchers could attach
+any key:value to any entity and keep moving. That shape carried the
+fork to MFFD scale.
+
+It pays a cost we can now afford to retire. Every `attributes||<key>`
+property is structurally a (subject, predicate, value) triple — the
+same shape as `:SemanticAnnotation`, without the typing
+(`expected_object_type`), the vocabulary control (`vocabularyId`),
+the provenance back-pointer (`sourceActivityAppId`), the validity
+window, or the queryability via SPARQL. The 90+ keys NEO-AUDIT-005
+catalogued (`material`, `bench`, `propellant`, `v16_pass1`,
+`source_*`, the brief LIC1-pre-shipment `license` collision) are
+exactly the data the typed primitive serves — they were already doing
+the work of annotations; the migration is about giving them the type
+discipline + provenance + queryability the open-typed predecessor
+couldn't.
 
 This is the structural reason for the §11 migration. It also has a
 basic-mode UX implication called out explicitly in §5.0 below: there
