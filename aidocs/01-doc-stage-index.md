@@ -38,9 +38,9 @@ section and the `upgrade-overlay` section.
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 59 |
-| `decommissioned` | 47 |
+| `decommissioned` | 48 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **317** |
+| **total docs** | **318** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -168,7 +168,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/data/85-coordinate-frame-tree.md`](data/85-coordinate-frame-tree.md) | aidocs/85 — Coordinate Frame Tree (CST1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/86-scene-drive-and-replay.md`](data/86-scene-drive-and-replay.md) | aidocs/86 — Scene Drive, Data Linking, and Replay (DR1 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/89-stale-channel-admin-design.md`](data/89-stale-channel-admin-design.md) | 89 — Stale timeseries channel admin tool (ADMIN-STALE-CH) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | — |
+| [`aidocs/data/90-spatial-as-temporal-sweep.md`](data/90-spatial-as-temporal-sweep.md) | aidocs/90 — Spatial as temporal sweep (v6 SSOT) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/frontend/01-user-research-findings-2024.md`](frontend/01-user-research-findings-2024.md) | User research findings — 2024-06/07 interview round | 2026-05-23 | 2026-05-23 |
 | [`aidocs/frontend/100-cross-instance-prov-ui.md`](frontend/100-cross-instance-prov-ui.md) | 100 — Cross-instance provenance: client-side rendering design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/66-hmc-kip-integration.md`](integrations/66-hmc-kip-integration.md) | 66 — HMC Kernel Information Profile integration | 2026-05-23 | 2026-05-23 |
@@ -184,6 +184,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/92-mffd-real-data-import-strategy.md`](integrations/92-mffd-real-data-import-strategy.md) | 92 — MFFD real-data import strategy | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
+| [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | — |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
@@ -191,7 +192,6 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/69-runtime-plugin-cdi.md`](platform/69-runtime-plugin-cdi.md) | 69 — Runtime plugin CDI integration (deferred PM1b3) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/86-ai-plugin-design.md`](platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/88-quarkus-mcp-server-migration.md`](platform/88-quarkus-mcp-server-migration.md) | 88 — Native Quarkus MCP Server: Replacing the Python Sidecar | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
@@ -360,7 +360,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/39-templates-design.md`](workflows/39-templates-design.md) | Templates — Implementation Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/64-provenance-architecture.md`](workflows/64-provenance-architecture.md) | 64 — Provenance architecture (what's shipped + where it's going) | 2026-05-23 | 2026-05-23 |
 
-## decommissioned (47)
+## decommissioned (48)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -411,3 +411,4 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md`](archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md) | UX Auditor — Feature Proposals | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md`](archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md) | V1COMPAT.0 Phase 1 — live validation findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/platform/68-v2-baseline-v1-compat-layer.md`](archive/platform/68-v2-baseline-v1-compat-layer.md) | V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/86-ai-plugin-design.md`](platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | 2026-05-23 |
