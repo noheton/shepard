@@ -155,7 +155,15 @@ function formatBitrate(
 <template>
   <div class="d-flex flex-column ga-4">
     <div class="d-flex align-center justify-space-between">
-      <h5 class="text-h5">Video References</h5>
+      <h5 class="text-h5">
+        Video References
+        <!-- UX Pattern D: low-emphasis count badge so the user knows how many
+             entries this section holds without expanding / scrolling. -->
+        <span
+          class="text-low-emphasis ml-1"
+          data-testid="video-references-count"
+        >({{ references.length }})</span>
+      </h5>
       <UploadFilesButton
         v-if="canUpload"
         :accept="VIDEO_ACCEPT"
