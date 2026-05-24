@@ -169,4 +169,59 @@ chain drift — in which case the readiness check legitimately reports DOWN
 
 ## Live verification
 
-(filled in after deploy — see commit body for the curl output)
+After `make redeploy-backend` against the nuclide deploy, the new readiness
+check appears as one of five entries in `/shepard/api/healthz/ready`,
+reporting UP / outcome=VALID:
+
+```bash
+$ curl -fsS https://shepard-api.nuclide.systems/shepard/api/healthz/ready \
+    | jq '.checks[] | select(.name == "neo4j-migration-chain-readiness")'
+{
+  "name": "neo4j-migration-chain-readiness",
+  "status": "UP",
+  "data": {
+    "outcome": "VALID",
+    "checkedAtEpochMs": 1779619029080,
+    "maxStalenessMs": 30000
+  }
+}
+```
+
+Aggregate response shows 5 checks (was 4 pre-deploy), aggregate status UP:
+
+```bash
+$ curl -fsS https://shepard-api.nuclide.systems/shepard/api/healthz/ready \
+    | jq '.status, (.checks | length), [.checks[].name]'
+"UP"
+5
+[
+  "neo4j-readiness",
+  "neo4j-migration-chain-readiness",
+  "postgis-readiness",
+  "mongodb-readiness",
+  "timescaledb-readiness"
+]
+```
+
+The `VALID` outcome confirms the live Neo4j chain — including the manually
+spliced V61 from the UI-020 fix — matches the deployed backend's classpath
+exactly. If the splice had missed (wrong checksum, wrong chain wiring), this
+check would have flipped DOWN with `outcome=DIFFERENT_CONTENT` and the
+runbook's §2 would have caught it.
+
+Smoke suite: 25/25 PASS after redeploy.
+
+Integration test (`MigrationChainInspectorIT`) — runs end-to-end against a
+Neo4j 5 testcontainer in 29 s; 2/2 tests pass:
+
+```text
+Applied migration 10 ("create node").
+Applied migration 11 ("more").
+Applied migration 1 ("create node").
+Applied migration 2 ("more").
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+```
+
+The mismatched-chain scenario (drop a `V99__never_applied.cypher` into the
+locations dir without applying it → inspect → DOWN with pending=[99]) is
+exercised in `inspect_returnsDownWithPendingWhenExtraMigrationAdded`.
