@@ -153,6 +153,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Cursor pagination across paginated endpoints | mixed/missing | TBD | 📐 (queued, L6) | `aidocs/13` / `aidocs/18` |
 | Search-as-you-type with tree/graph view | basic search page | TBD | 📐 (queued, L4) | `aidocs/13` / `aidocs/14` |
 | Saved searches / search history | none | TBD | 📐 (queued) | `aidocs/13` |
+| **UI-002 — Global header-search dropdown** (debounced multi-kind type-ahead) | header field exists but no dropdown — typing produces no results, no loading, no empty-state | `HeaderBar.vue` wired to new `useGlobalSearch` composer (composes existing `useCollectionSearch` + `useDataObjectSearch` (now optional `collectionId` ⇒ global mode) + `useContainerSearch`). 300ms debounce; three sectioned result lists (Collections / Data objects / Containers) with kind chips, each row clickable to detail route; explicit loading / empty / error states; footer link to Advanced Search; keyboard nav (Down to results, Enter to advanced page, Esc to close). 10 Vitest tests + 4 Playwright e2e tests (live). | **✓ ↑** (UI-002) | `aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md` |
 
 ## 7. Semantic annotations / knowledge graph
 

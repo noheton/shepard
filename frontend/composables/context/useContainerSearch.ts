@@ -90,12 +90,17 @@ export function useContainerSearch(
     containerSearchResults.value = [];
   }
 
-  const startSearch = () => {
+  /**
+   * Trigger a search. Returns the underlying Promise so callers that
+   * compose multiple searches (e.g. `useGlobalSearch`) can observe
+   * completion / rejection. Legacy callers that don't await still work.
+   */
+  const startSearch = (): Promise<void> => {
     if (!searchString.value) {
       resetResultList();
-      return;
+      return Promise.resolve();
     }
-    searchContainersByQuery(searchString.value);
+    return searchContainersByQuery(searchString.value);
   };
 
   return {

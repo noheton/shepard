@@ -84,14 +84,19 @@ export function useCollectionSearch(
     collectionSearchResults.value = [];
   }
 
-  const startSearch = () => {
+  /**
+   * Trigger a search. Returns the underlying Promise so callers that
+   * compose multiple searches (e.g. `useGlobalSearch`) can observe
+   * completion / rejection. Legacy callers that don't await still work.
+   */
+  const startSearch = (): Promise<void> => {
     const trimmedSearchString = searchString.value.trim();
     if (trimmedSearchString === "") {
       resetResultList();
-      return;
+      return Promise.resolve();
     }
 
-    searchCollectionsByQuery(trimmedSearchString);
+    return searchCollectionsByQuery(trimmedSearchString);
   };
 
   return {
