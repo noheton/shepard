@@ -1,0 +1,22 @@
+{
+  "/publish": {
+    "status": 404,
+    "finalUrl": "https://shepard.nuclide.systems/publish"
+  },
+  "/admin/publish": {
+    "status": 404,
+    "finalUrl": "https://shepard.nuclide.systems/admin/publish"
+  },
+  "/admin/publications": {
+    "status": 404,
+    "finalUrl": "https://shepard.nuclide.systems/admin/publications"
+  },
+  "/publications": {
+    "status": 404,
+    "finalUrl": "https://shepard.nuclide.systems/publications"
+  },
+  "/admin": {
+    "status": 200,
+    "finalUrl": "https://shepard.nuclide.systems/admin"
+  }
+}
