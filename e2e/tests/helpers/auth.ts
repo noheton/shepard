@@ -1,6 +1,9 @@
 import type { Page, BrowserContext } from "@playwright/test";
 
-const KC = process.env.KEYCLOAK_HOST || "http://192.168.1.49:8082";
+// Default to the public Keycloak host; per-spec env overrides remain supported
+// for local-only setups. Two recent UI-013 + UI-018 agents both flagged the
+// previous internal-IP default as stale (their specs override per-file).
+const KC = process.env.KEYCLOAK_HOST || "https://shepard-auth.nuclide.systems";
 const REALM = "shepard-demo";
 
 /** Full OIDC browser login. Returns when the app's home page is loaded. */
