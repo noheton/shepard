@@ -14,11 +14,15 @@ defineProps<{
     class="rounded mb-1"
   >
     <!-- Data object's own semantic annotations, shown inline so users
-         scanning the linked-by list can spot tagged datasets at a glance. -->
+         scanning the linked-by list can spot tagged datasets at a glance.
+         UI-016: cap visible chips at 3 — repeating tags across rows (e.g. the
+         same `bench` / `propellant` / `test_engineer` triple on every TR-00x)
+         dominate the row otherwise. Click "+N more" to expand inline. -->
     <div class="dataobject-annotations">
       <SemanticAnnotationList
         :annotated="new AnnotatedDataObject(dataObject.collectionId, dataObject.id)"
         :can-delete="false"
+        :limit="3"
       />
     </div>
     <template #append>

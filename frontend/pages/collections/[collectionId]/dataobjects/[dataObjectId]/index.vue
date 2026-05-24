@@ -137,16 +137,35 @@ watch(dataObject, () => {
                 :entity-name="dataObject.name"
               />
             </v-row>
-            <!-- Always-visible: Description with inline edit. -->
-            <section class="page-section">
+            <!-- Always-visible: Description with inline edit. UI-017: when
+                 edit is engaged, the surrounding section gets an outline + a
+                 small "Editing description" label so the user can see at a
+                 glance WHICH panel they are editing (the editor pops below the
+                 head, so the visual cue closes the affordance gap). -->
+            <section
+              class="page-section description-section"
+              :class="{ 'description-editing': descEditActive }"
+              :data-testid="
+                descEditActive ? 'description-editing' : 'description-static'
+              "
+            >
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Description</div>
+                <span
+                  v-if="descEditActive"
+                  class="text-caption text-primary editing-label"
+                  data-testid="description-editing-label"
+                >
+                  <v-icon size="x-small" class="mr-1">mdi-pencil-outline</v-icon>
+                  Editing description
+                </span>
                 <v-btn
                   v-if="isAllowedToEditCollection && !descEditActive"
                   variant="text"
                   density="comfortable"
                   size="small"
                   prepend-icon="mdi-pencil-outline"
+                  aria-label="Edit description"
                   @click="startDescEdit"
                 >Edit</v-btn>
               </div>
@@ -350,5 +369,24 @@ watch(dataObject, () => {
   gap: 8px;
   margin-bottom: 8px;
   padding-left: 32px;
+}
+// UI-017: visual cue for inline description edit. A subtle 2px primary-tinted
+// outline + soft tint frames the section being edited so the user can see
+// what's editable without hunting for the editor.
+.description-section {
+  border-radius: 6px;
+  transition: outline-color 120ms ease, background-color 120ms ease;
+  outline: 2px solid transparent;
+}
+.description-editing {
+  outline: 2px solid rgba(var(--v-theme-primary), 0.4);
+  background-color: rgba(var(--v-theme-primary), 0.03);
+  padding: 8px 0;
+}
+.editing-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 </style>
