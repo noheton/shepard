@@ -25,7 +25,7 @@ export function useV1DeprecationMiddleware(): Middleware {
     if (context && context.response && context.response.headers) {
       recordResponse(context.response.headers);
     }
-    // No return → leave the response untouched.
+    // No return → leave the response untouched (the runtime accepts void).
   }
 
   return { post };

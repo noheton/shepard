@@ -305,6 +305,7 @@ watch(collection, () => {
                   <div class="pt-4">
                     <CollectionLabJournalEntryList
                       :collection-id="routeParams.collectionId"
+                      :collection-app-id="collectionAppId"
                       :data-object-map="dataObjectsMap"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />

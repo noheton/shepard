@@ -1,47 +1,45 @@
 <script lang="ts" setup>
 import {
   CollectionApi,
-  LabJournalEntryApi,
   type LabJournalEntry,
   type Roles,
 } from "@dlr-shepard/backend-client";
 import { useShepardApi } from "~/composables/common/api/useShepardApi";
+import { useFetchCollectionLabJournalEntries } from "~/composables/context/useFetchCollectionLabJournalEntries";
 import LabJournalExistingEntry from "~/components/context/lab-journal/LabJournalExistingEntry.vue";
 
 interface CollectionLabJournalEntryListProps {
   collectionId: number;
+  collectionAppId: string | null;
   dataObjectMap: Map<number, string>;
 }
 
 const props = defineProps<CollectionLabJournalEntryListProps>();
 const emit = defineEmits(["numberOfEntriesChanged"]);
+
+// UI-020 — bulk fetch in a single round-trip via
+// GET /v2/collections/{collectionAppId}/lab-journal-entries instead of one
+// GET /shepard/api/labJournalEntries?dataObjectId=N per DataObject. The old
+// fan-out collapsed at MFFD-Dropbox scale (8500 DOs → 8500 concurrent
+// requests → browser socket exhaustion + thousands of console errors).
+const collectionAppIdRef = computed(() => props.collectionAppId);
+const { entries: fetched } = useFetchCollectionLabJournalEntries(collectionAppIdRef);
+
+// Local mutable copy the template renders. Kept separate so onLabJournalDeleted
+// can splice without re-fetching, mirroring pre-UI-020 behaviour.
 const entries = ref<LabJournalEntry[] | undefined>(undefined);
 const userRoles = ref<Roles | undefined>(undefined);
 
-async function fetchLabJournalEntries(dataObjectIds: number[]) {
-  if (dataObjectIds.length === 0) {
-    entries.value = [];
+watch(fetched, value => {
+  if (value === undefined) {
+    entries.value = undefined;
+    return;
   }
-
-  const promiseList = dataObjectIds.map(dataObjectId =>
-    useShepardApi(LabJournalEntryApi)
-      .value.getLabJournalsByCollection({ dataObjectId })
-      .catch(error => {
-        handleError(error, "getLabJournals");
-        return null;
-      }),
+  entries.value = [...value].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
-
-  try {
-    const results = await Promise.all(promiseList);
-    entries.value = results
-      .filter(response => response !== null)
-      .flat()
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  } catch (error) {
-    handleError(error, "getLabJournals");
-  }
-}
+  emit("numberOfEntriesChanged", entries.value.length);
+});
 
 async function fetchRoles() {
   useShepardApi(CollectionApi)
@@ -61,7 +59,14 @@ async function onLabJournalDeleted(deletedLabjournalIndex: number) {
   }
 }
 
-fetchLabJournalEntries(Array.from(props.dataObjectMap.keys()));
+// Resolve a display name for a DataObject id. The bulk endpoint may surface
+// entries from DataObjects the parent map did not pre-fetch (e.g. paginated
+// listings); fall back to the numeric id so the row still renders without
+// crashing on a missing map entry.
+function dataObjectName(dataObjectId: number): string {
+  return props.dataObjectMap.get(dataObjectId) ?? `#${dataObjectId}`;
+}
+
 fetchRoles();
 </script>
 
@@ -72,7 +77,7 @@ fetchRoles();
       :key="'lab-journal-' + entry.id"
       :collection-id="collectionId"
       :data-object-id="entry.dataObjectId"
-      :data-object-name="props.dataObjectMap.get(entry.dataObjectId)!"
+      :data-object-name="dataObjectName(entry.dataObjectId)"
       :lab-journal="entry"
       :user-roles="userRoles"
       @deleted="onLabJournalDeleted(index)"

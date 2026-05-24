@@ -5,6 +5,7 @@ export * from './CollectionWatchesApi';
 export * from './AdminMetricsApi';
 export * from './AdminPermissionAuditApi';
 export * from './CollectionContainersApi';
+export * from './CollectionLabJournalEntriesApi';
 export * from './DataObjectV2Api';
 export * from './ShepardTemplateApi';
 export * from './CollectionTemplateApi';
