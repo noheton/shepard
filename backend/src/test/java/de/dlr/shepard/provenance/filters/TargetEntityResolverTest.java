@@ -24,15 +24,15 @@ class TargetEntityResolverTest {
 
   @Test
   void emptyPathReturnsEmpty() {
-    assertTrue(TargetEntityResolver.resolve(null).isEmpty());
-    assertTrue(TargetEntityResolver.resolve("").isEmpty());
-    assertTrue(TargetEntityResolver.resolve("   ").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic(null).isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("   ").isEmpty());
   }
 
   @Test
   void pathWithoutTrailingUuidReturnsEmpty() {
-    assertTrue(TargetEntityResolver.resolve("/v2/collections").isEmpty());
-    assertTrue(TargetEntityResolver.resolve("/v2/provenance/activities").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("/v2/collections").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("/v2/provenance/activities").isEmpty());
   }
 
   @Test
@@ -40,12 +40,12 @@ class TargetEntityResolverTest {
     // The deprecated static resolver has no DAO access, so numeric ids
     // can't be resolved to appIds — return empty. The instance form
     // (TargetEntityResolverInstanceTest) covers the real fix.
-    assertTrue(TargetEntityResolver.resolve("/shepard/api/collections/42").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("/shepard/api/collections/42").isEmpty());
   }
 
   @Test
   void v2CollectionPath() {
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve("/v2/collections/" + UUID1);
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic("/v2/collections/" + UUID1);
     assertTrue(r.isPresent());
     assertEquals("Collection", r.get().kind());
     assertEquals(UUID1, r.get().appId());
@@ -53,7 +53,7 @@ class TargetEntityResolverTest {
 
   @Test
   void v2DataObjectPath() {
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve("/v2/dataobjects/" + UUID1);
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic("/v2/dataobjects/" + UUID1);
     assertTrue(r.isPresent());
     assertEquals("DataObject", r.get().kind());
   }
@@ -61,7 +61,7 @@ class TargetEntityResolverTest {
   @Test
   void v2KebabCaseDataObjectPath() {
     // Kebab-case is the v2 convention: /v2/collections/<C>/data-objects/<D>
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve("/v2/data-objects/" + UUID1);
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic("/v2/data-objects/" + UUID1);
     assertTrue(r.isPresent());
     assertEquals("DataObject", r.get().kind());
     assertEquals(UUID1, r.get().appId());
@@ -69,8 +69,8 @@ class TargetEntityResolverTest {
 
   @Test
   void leadingSlashIsOptional() {
-    Optional<TargetEntityResolver.TargetRef> a = TargetEntityResolver.resolve("/v2/collections/" + UUID1);
-    Optional<TargetEntityResolver.TargetRef> b = TargetEntityResolver.resolve("v2/collections/" + UUID1);
+    Optional<TargetEntityResolver.TargetRef> a = TargetEntityResolver.resolveStatic("/v2/collections/" + UUID1);
+    Optional<TargetEntityResolver.TargetRef> b = TargetEntityResolver.resolveStatic("v2/collections/" + UUID1);
     assertEquals(a, b);
   }
 
@@ -124,7 +124,7 @@ class TargetEntityResolverTest {
     // the Collection's UUID as the appId (last-UUID logic) — wrong target.
     String coll = "018f9c5a-7e26-7000-a000-000000000010";
     String dobj = "018f9c5a-7e26-7000-a000-000000000020";
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve(
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic(
       "/v2/collections/" + coll + "/dataobjects/" + dobj
     );
     assertTrue(r.isPresent());
@@ -137,7 +137,7 @@ class TargetEntityResolverTest {
     // /v2/timeseries-references/<id>/detect-anomalies — tail segment is a verb
     // (no id), walk left to (timeseries-references, <id>).
     String ref = "018f9c5a-7e26-7000-a000-000000000030";
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve(
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolveStatic(
       "/v2/timeseries-references/" + ref + "/detect-anomalies"
     );
     assertTrue(r.isPresent());
@@ -148,6 +148,6 @@ class TargetEntityResolverTest {
   @Test
   void uuidWithoutHyphensIsNotMatched() {
     // Strict RFC 4122 hyphen-canonical only.
-    assertTrue(TargetEntityResolver.resolve("/v2/collections/018f9c5a7e267000a000000000000001").isEmpty());
+    assertTrue(TargetEntityResolver.resolveStatic("/v2/collections/018f9c5a7e267000a000000000000001").isEmpty());
   }
 }

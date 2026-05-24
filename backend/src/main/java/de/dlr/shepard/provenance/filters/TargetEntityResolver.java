@@ -82,7 +82,7 @@ public class TargetEntityResolver {
    *     for back-compat with tests; it returns empty for numeric ids.
    */
   @Deprecated
-  public static Optional<TargetRef> resolve(String path) {
+  public static Optional<TargetRef> resolveStatic(String path) {
     return PathTargetParser.parse(path).flatMap(raw -> {
       if (raw.isNumeric()) return Optional.empty();
       return Optional.of(new TargetRef(raw.kind(), raw.idString()));
