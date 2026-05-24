@@ -6,6 +6,7 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.v2.labjournal.daos.CollectionLabJournalEntriesDAO;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -107,6 +108,20 @@ public class CollectionLabJournalEntriesRest {
     List<LabJournalEntry> entries = entriesDAO.findByCollectionAppId(collectionAppId);
     List<LabJournalEntryIO> ios = new ArrayList<>(entries.size());
     for (LabJournalEntry e : entries) {
+      // Defensive: skip orphan entries whose owning DataObject didn't hydrate.
+      // The DAO Cypher now projects a depth-1 neighbourhood so the incoming
+      // has_labjournalentry edge from DataObject populates the back-reference;
+      // if a row somehow still lacks it (orphan node from a partial migration,
+      // OGM hydration drift), skipping is correct — closes BUG-LJ-V1-COLL-ID
+      // belt-and-braces. The DAO fix is the primary defence.
+      if (e.getDataObject() == null) {
+        Log.warnf(
+          "Skipping orphan LabJournalEntry (appId=%s) with null DataObject in collection %s",
+          e.getAppId(),
+          collectionAppId
+        );
+        continue;
+      }
       ios.add(new LabJournalEntryIO(e));
     }
     return Response.ok(ios).build();
