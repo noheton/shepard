@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 14 |
 | `idea` | 10 |
 | `feature-defined` | 79 |
-| `audited-by-personas` | 57 |
+| `audited-by-personas` | 58 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 59 |
 | `decommissioned` | 48 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **318** |
+| **total docs** | **319** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -184,7 +184,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/integrations/92-mffd-real-data-import-strategy.md`](integrations/92-mffd-real-data-import-strategy.md) | 92 — MFFD real-data import strategy | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/95-shepard-plugin-importer-patterns-from-v15.md`](integrations/95-shepard-plugin-importer-patterns-from-v15.md) | 95 — shepard-plugin-importer: patterns from v15.x MFFD field experience | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/96-metrology-spatial-analyzer.md`](integrations/96-metrology-spatial-analyzer.md) | 96 — Metrology integration: Spatial Analyzer + Leica trackers as a Shepard payload kind | 2026-05-23 | 2026-05-23 |
-| [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | — |
+| [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md) | 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability | 2026-05-24 | 2026-05-24 |
 | [`aidocs/platform/103-v1-compat-plugin-extraction.md`](platform/103-v1-compat-plugin-extraction.md) | `shepard-plugin-v1-compat` — design for extracting the | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/103a-v1-compat-marker-plugin.md`](platform/103a-v1-compat-marker-plugin.md) | `shepard-plugin-v1-compat` — **Phase 1 marker plugin** design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/30-mcp-plugin-design.md`](platform/30-mcp-plugin-design.md) | 30 — shepard-plugin-mcp: Full-Parity MCP Endpoint | 2026-05-23 | 2026-05-23 |
@@ -219,7 +219,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (57)
+## audited-by-personas (58)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -242,6 +242,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | — |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md`](agent-findings/ogm-hydration-audit-2026-05-24.md) | OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24) | 2026-05-24 | — |
 | [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md`](agent-findings/persona-audit-promptlog-2026-05-23.md) | Persona audit — PromptLog design (aidocs/semantics/99) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-audit-views-as-shapes-2026-05-23.md`](agent-findings/persona-audit-views-as-shapes-2026-05-23.md) | Persona audit — views-as-shapes design (docs 95 + 98) | 2026-05-23 | 2026-05-23 |
@@ -411,4 +412,4 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md`](archive/agent-findings-sessions-2026-05/ux-auditor-proposals.md) | UX Auditor — Feature Proposals | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md`](archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md) | V1COMPAT.0 Phase 1 — live validation findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/platform/68-v2-baseline-v1-compat-layer.md`](archive/platform/68-v2-baseline-v1-compat-layer.md) | V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/86-ai-plugin-design.md`](platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | 2026-05-23 |
+| [`aidocs/platform/86-ai-plugin-design.md`](platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | 2026-05-24 |
