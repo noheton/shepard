@@ -126,6 +126,7 @@ Test unauthorized handling:
 
 - **Did not touch**: `components/layout/HeaderBar.vue` or anything under `composables/context/` — both reserved for the parallel agent working on UI-2026-05-24-002 (header search dropdown).
 - **Other agent's WIP**: `frontend/composables/context/useGlobalSearch.ts` + `frontend/tests/unit/useGlobalSearch.test.ts` are theirs and trigger `vue-tsc` advisory output during build. They are not blocking (the nuxt build itself succeeded).
+- **Commit landed under another agent's message.** A coincidental parallel commit (`80935cd0` "backlog: UI-006/007/009/015 shipped") absorbed all of this fix's files because the staging happened to overlap. The code on `main` is exactly what was tested live; the commit-message attribution is just imperfect. Files contained: `SectionIndexLanding.vue`, `UnauthorizedView.vue`, `sectionLanding.ts`, `sectionLanding.test.ts`, the three `pages/{me,admin,about}/index.vue` edits, the e2e spec, and this report. No further commit was needed.
 
 ## Backlog / deferred
 
