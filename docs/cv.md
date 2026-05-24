@@ -4,7 +4,7 @@ title: Curriculum Vitae
 description: Curriculum Vitae of Florian Benedikt Krebs — research engineer, DLR Institute of Structures and Design, Center for Lightweight Production Technology (ZLP) Augsburg.
 stage: deployed
 last-stage-change: 2026-05-23
-last-maintained: 2026-05-23
+last-maintained: 2026-05-24
 maintenance-policy: auto-maintained from ORCID + LinkedIn + GitHub + DLR eLib; updated whenever a new verified artefact lands in the bibliography
 audience: visitor, contributor, reviewer
 hero: true
@@ -25,6 +25,7 @@ hero_lede: Research engineer · DLR Institute of Structures and Design · Center
 
 ## Contact
 
+- **Full name** — Florian Benedikt Krebs (b. 4 February 1982, Donauwörth)
 - **Affiliation** — Deutsches Zentrum für Luft- und Raumfahrt (DLR), Institute of Structures and Design (BT) — Center for Lightweight Production Technology (ZLP), Augsburg
 - **Email** — `florian.krebs@dlr.de`
 - **ORCID** — [`0000-0001-6033-801X`](https://orcid.org/0000-0001-6033-801X)
@@ -55,12 +56,20 @@ Structures and Design, ZLP Augsburg. Deputy Head of Department.
 |---|---|
 | **2009-10 – present** | DLR Institute of Structures and Design, ZLP Augsburg — Leader of Flexible Automation Systems Group; Deputy Head of Department |
 | **2008-04 – 2009-09** | KUKA Roboter GmbH, Augsburg — Industrial year at the robotics vendor whose KR-series robots later anchor every MFZ / FPC / T-AFP cell at ZLP |
+| **2007-10 – 2008-03** | *Studentische Hilfskraft*, Lehrstuhl für Multimedia-Konzepte und Anwendungen, Universität Augsburg — paid tutorial assistant at the chair where the Diplomarbeit lab work was based |
+| **2005-04 – 2008-03** | Student lab contributor (volunteer + later paid), same chair — multi-agent robotics framework: developed the server components; independently built an interactive simulation environment for hardware-free testing of robot-control intelligence |
 
-Per ORCID employment record.
+Per ORCID employment record + primary-source Empfehlungsschreiben by Dr. M.E. Müller (2008).
 
 ## Education
 
-**Diplom-Informatiker** (Applied Computer Science, *Angewandte Informatik*) — **Universität Augsburg**, 2002–2008. (Per ORCID. The pre-Bologna 5-year German *Diplom* degree.)
+**Diplom-Informatiker** (Angewandte Informatik / Applied Computer Science) — **Universität Augsburg**, 2002–2008. Pre-Bologna 5-year German *Diplom*. Nebenfach: **Philosophy** (Logik / Sprachphilosophie, Erkenntnistheorie / Kognitionswissenschaften, Philosophie des Geistes, Ethik / Praktische Philosophie).
+
+**Diplomarbeit** (24 May 2008, advisor Dr. Martin Eric Müller, Lehrstuhl für Multimedia-Konzepte und Anwendungen, Univ. Augsburg) — *Entwicklung eines Systems zur Implementierung von Layered Module Architekturen* (PARIA). A modular reactive-agent runtime in Java 1.6, grounded in Rodney Brooks's Subsumption Architecture (1986), with first-class **Layered Module Architectures** as the original contribution (strong typing, arbitrary module functions, immediate inhibition / suppression). The runtime includes a `setSnapshotBehavior(...)` API on the architecture root and propagated + instant **Snapshot** primitives — a precursor to provenance-by-snapshot design choices that recur in the present shepard work.
+
+## Recognition
+
+- **Studienstiftung des deutschen Volkes** — nominated 2006 by Dr. Martin Eric Müller (Univ. Augsburg) on the basis of three years of lab contribution and academic record. Germany's most selective national merit scholarship.
 
 ## Selected projects
 
