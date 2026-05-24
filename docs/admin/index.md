@@ -33,6 +33,7 @@ plugin author, see [the plugin docs convention]({{ '/reference/plugins/' | relat
 | [Authentication]({{ '/admin/auth/' | relative_url }}) | OIDC + API-key model, role mapping, instance-admin role, audit trail. |
 | [Observability]({{ '/admin/observability/' | relative_url }}) | Health endpoints, Prometheus scrape, bundled Grafana dashboard, k6 performance scripts, self-observability TS substrate. |
 | [Security]({{ '/admin/security/' | relative_url }}) | CI security gates (SpotBugs, CodeQL, OWASP, Trivy, gitleaks), SBOM, secret rotation. |
+| **Operator runbooks** ([`docs/admin/runbooks/`](https://github.com/noheton/shepard/tree/main/docs/admin/runbooks)) | One-page recovery + diagnosis runbooks for specific failure modes. Currently: **migration-chain-integrity** (Neo4j readiness DOWN with `INCOMPLETE_MIGRATIONS`); **restore-tsdb-container-neo4j-shadow** (re-establish Neo4j `HasAppId` + `appId` for orphaned TS containers); **docker-bind-mount-inode-drift** (Caddy/`.env` edits not visible to the container after `caddy reload`). |
 
 Maintainer-facing pages — cutting a release, the GitHub Projects board — live
 under `docs/ops/`; they are not part of the admin guide. See

@@ -115,6 +115,20 @@ function formatPlain(c: CitationInput): string {
  * `language = {en}` is omitted — Shepard collections may be multilingual
  * and we don't carry a language field yet. License lands in the `note`
  * field (biblatex `@dataset` has no canonical license slot).
+ *
+ * Parser compatibility note (Digital Native persona §6, 2026-05-24):
+ * `@dataset` is a biblatex entry type. Classic BibTeX engines + the
+ * widely-deployed `bibtexparser` Python library v1.x do not recognise
+ * it and silently produce an empty entry list. Workarounds for users
+ * hitting this:
+ *   - `bibtexparser >= 2.0.0b9` (rewritten parser; accepts `@dataset`)
+ *   - `biblatex` engine (LaTeX side; native support)
+ *   - Manually rename `@dataset{...}` → `@misc{...}` for v1 parsers;
+ *     the field set is identical so no information is lost
+ * Documented in `docs/help/api-access.md` once shipped. Not changing
+ * the output here — `@dataset` is the correct semantic shape per
+ * https://www.bibtex.com/e/dataset-entry/ and users should upgrade
+ * tooling rather than have the citation lie.
  */
 function formatBibtex(c: CitationInput): string {
   const key = bibtexKey(c.url, c.year);
