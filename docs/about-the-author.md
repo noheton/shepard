@@ -99,8 +99,8 @@ Kognitionswissenschaften**, **Philosophie des Geistes**, and **Ethik /
 Praktische Philosophie**. The specific seminar palette, with
 lecturers and grades, recovered from primary-source archive:
 
-- *"Natur, Ordnung, Geist"* — Vorlesung, **Dr. Martin E. Müller**.
-  *(Same Müller who later supervised the Diplomarbeit — see below.)*
+- *"Natur, Ordnung, Geist"* — Vorlesung,
+  **Prof. Dr. phil. Severin Müller** (Uni Augsburg philosophy faculty).
 - *"Philosophie des Geistes — Grundlagen der Erkenntnistheorie,
   Künstlichen Intelligenz, Wissenschaftstheorie"* — Vorlesung,
   **Klaus Mainzer**.
@@ -126,8 +126,19 @@ AI-collaborative thesis method operates on.
 
 The Diplomarbeit project (2007–2008) was **PARIA** — *"Entwicklung
 eines Systems zur Implementierung von Layered Module Architekturen"*,
-supervised by **Dr. Martin E. Müller** at the *Lehrstuhl für
-Multimedia-Konzepte und Anwendungen* at Universität Augsburg.
+supervised by **Dr. Martin Eric Müller** at the **Lehrstuhl für
+Multimedia-Konzepte und ihre Anwendungen, Universität Augsburg**
+(today at [H-BRS](https://www2.inf.h-brs.de/~mmuell2m/), adjunct
+at Uni Augsburg). The Diplom was not an isolated project but the
+culmination of three years of lab work at that chair: Krebs first
+met Müller in the *Künstliche Intelligenz* lecture in SoSe 2005,
+joined the chair's multi-agent robotics framework as the developer
+responsible for the **server components**, and independently
+built a **fully transparent interactive simulation environment**
+so the robot-control intelligence could be developed and tested
+without hardware in the loop. The lab role was paid as a
+*Hilfskraft* in WS 2007/2008; Müller had earlier nominated Krebs
+for the **Studienstiftung des deutschen Volkes** in 2006.
 Technically: a modular reactive-agent runtime grounded in **Rodney
 Brooks's Subsumption Architecture** (1986), implemented on a Lego
 Mindstorms RCX substrate with Java-API design discipline
@@ -147,14 +158,16 @@ DLR work has its first production-shape here.
 Three threads surfaced by the UNAS-archive deep-dive that warrant
 further primary-source work in subsequent dossier rounds:
 
-1. **The Müller bridge.** Dr. Martin E. Müller appears at *both*
-   ends of the Diplom — as lecturer of *Natur, Ordnung, Geist* in
-   the philosophy minor *and* as Diplomarbeit advisor for the
-   Brooks-subsumption project. A single supervisor straddling the
-   technical / philosophical tracks is an unusual configuration
-   worth tracing: it suggests the technical and philosophical
-   currents are not just intellectually but also institutionally
-   coupled in the author's training.
+1. **Two Müllers, not one.** An earlier dossier round
+   misidentified the *Natur, Ordnung, Geist* lecturer as the
+   Diplomarbeit advisor and built a "single supervisor bridging
+   philosophy and engineering" narrative on it. Primary-source
+   correction: those are two distinct people — **Prof. Dr. phil.
+   Severin Müller** on the philosophy side, **Dr. Martin Eric
+   Müller** (CS, Lehrstuhl Multimedia-Konzepte 2005-2008) on the
+   advisor side. The dual training in philosophy and Brooks-school
+   engineering is real, but it came via two separate teachers, not
+   one institutional joint.
 
 2. **Brooks → AI-collaborative method, the load-bearing arc.** The
    Diplomarbeit argues *reactive* agent architectures outperform
