@@ -7,6 +7,7 @@ import SubscriptionsPane from "~/components/context/user/SubscriptionsPane.vue";
 import GitCredentialsPane from "~/components/context/user/GitCredentialsPane.vue";
 import McpPane from "~/components/context/user/McpPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
+import SemanticPane from "~/components/context/user/SemanticPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 
 useHead({
@@ -54,6 +55,13 @@ const landingCards = [
     title: "AI Settings",
     description: "Personal LLM provider config — base URL, model, API key (placeholder).",
   },
+  // ----- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 -----
+  {
+    fragment: UserFragments.SEMANTIC,
+    icon: "mdi-library-outline",
+    title: "Semantic",
+    description: "Browse vocabularies, run SPARQL queries, validate shapes, compare snapshots.",
+  },
 ];
 </script>
 
@@ -75,5 +83,7 @@ const landingCards = [
       v-if="routeFragment === UserFragments.AI_SETTINGS"
       slug="ai-settings"
     />
+    <!-- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 — moved from top-level header -->
+    <SemanticPane v-if="routeFragment === UserFragments.SEMANTIC" />
   </PaneLayout>
 </template>

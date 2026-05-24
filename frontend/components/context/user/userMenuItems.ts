@@ -8,6 +8,10 @@ export enum UserFragments {
   MCP = "mcp",
   // ----- placeholder fragments (no-UI-gap roll-out 2026-05-24) -----
   AI_SETTINGS = "ai-settings",
+  // ----- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 -----
+  // moved here from the top-level header link per user choice;
+  // standalone /semantic/* routes remain valid for bookmarking + sharing
+  SEMANTIC = "semantic",
 }
 
 export const UserMenuEntries: MenuEntry[] = [
@@ -41,5 +45,11 @@ export const UserMenuEntries: MenuEntry[] = [
     name: "AI Settings",
     fragment: UserFragments.AI_SETTINGS,
     icon: "mdi-robot-outline",
+  },
+  // ----- SEMA-NAV-PLACEMENT-DECISION option (b) 2026-05-24 -----
+  {
+    name: "Semantic",
+    fragment: UserFragments.SEMANTIC,
+    icon: "mdi-library-outline",
   },
 ];
