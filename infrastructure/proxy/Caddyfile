@@ -5,6 +5,15 @@
 #   https://shepard-auth.nuclide.systems → 192.168.1.49:8082 → keycloak directly
 #
 # All vhosts are served over plain HTTP; Zoraxy provides TLS.
+#
+# Digital Native persona finding 2026-05-24 §0: programmatic API callers
+# arriving with X-API-KEY / Bearer at the main hostname got bounced to NextAuth
+# signin (because the catch-all routed to the Nuxt frontend, which 302s
+# unauthenticated requests). Researchers should be able to curl the main
+# hostname with their API key and have it work. Routes below add that:
+# /v2/*, /shepard/api/*, /shepard/doc/* now bypass the frontend and reach
+# the backend directly. The backend's existing auth filters (JWTFilter +
+# ApiKeyFilter + McpAuthFilter) enforce auth — Caddy just forwards.
 
 {
 	auto_https off
@@ -25,6 +34,25 @@
 				write_timeout 24h
 			}
 		}
+	}
+
+	# v2 development surface (this fork's additions) — direct to backend so
+	# programmatic callers can authenticate with X-API-KEY / Bearer at this
+	# hostname instead of hopping through NextAuth.
+	handle /v2/* {
+		reverse_proxy backend:8080
+	}
+
+	# Upstream-compat surface (frozen byte-for-byte against shepard 5.2.0) —
+	# the canonical API path. Same passthrough story as /v2/*.
+	handle /shepard/api/* {
+		reverse_proxy backend:8080
+	}
+
+	# OpenAPI + Swagger UI live under /shepard/doc/*. Researchers using
+	# generators like openapi-generator-cli want the spec at the public host.
+	handle /shepard/doc/* {
+		reverse_proxy backend:8080
 	}
 
 	handle {
