@@ -145,6 +145,20 @@ export interface DataObject {
      * @memberof DataObject
      */
     readonly videoStreamReferenceCount?: number;
+    /**
+     * LIC1 (FAIR-1) — SPDX license identifier expression (e.g. "CC-BY-4.0",
+     * "MIT", "Apache-2.0") or "PROPRIETARY". Nullable.
+     * @type {string}
+     * @memberof DataObject
+     */
+    license?: string | null;
+    /**
+     * LIC1 (FAIR-1) — Access-rights enum: OPEN | RESTRICTED | CLOSED | EMBARGOED.
+     * Nullable.
+     * @type {string}
+     * @memberof DataObject
+     */
+    accessRights?: string | null;
 }
 
 /**
@@ -197,6 +211,8 @@ export function DataObjectFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'fileBundleCount': json['fileBundleCount'] ?? 0,
         'structuredDataReferenceCount': json['structuredDataReferenceCount'] ?? 0,
         'videoStreamReferenceCount': json['videoStreamReferenceCount'] ?? 0,
+        'license': json['license'] == null ? undefined : json['license'],
+        'accessRights': json['accessRights'] == null ? undefined : json['accessRights'],
     };
 }
 
@@ -212,6 +228,8 @@ export function DataObjectToJSON(value?: Omit<DataObject, 'id'|'createdAt'|'crea
         'attributes': value['attributes'],
         'predecessorIds': value['predecessorIds'],
         'parentId': value['parentId'],
+        'license': value['license'],
+        'accessRights': value['accessRights'],
     };
 }
 
