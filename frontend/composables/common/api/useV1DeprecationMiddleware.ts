@@ -19,7 +19,7 @@ import { useV1Deprecation } from "~/composables/context/useV1Deprecation";
 export function useV1DeprecationMiddleware(): Middleware {
   const { recordResponse } = useV1Deprecation();
 
-  function post(context: ResponseContext): Promise<Response | void> | void {
+  async function post(context: ResponseContext): Promise<Response | void> {
     // The generated runtime's Response is a standard Fetch Response,
     // so headers are accessible via the Headers interface.
     if (context && context.response && context.response.headers) {
