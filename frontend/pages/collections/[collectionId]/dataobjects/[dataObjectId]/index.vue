@@ -85,6 +85,21 @@ watch(dataObject, () => {
     title: dataObject.value?.name + " | shepard",
   });
 });
+
+// LIC1 (FAIR-1): defensive computed accessors mirroring the collection
+// detail page — the generated client model may not yet expose these fields
+// even though the wire payload carries them.
+const dataObjectLicense = computed<string | null>(() => {
+  if (!dataObject.value) return null;
+  const raw = (dataObject.value as unknown as { license?: string | null }).license;
+  return raw ?? null;
+});
+const dataObjectAccessRights = computed<string | null>(() => {
+  if (!dataObject.value) return null;
+  const raw = (dataObject.value as unknown as { accessRights?: string | null })
+    .accessRights;
+  return raw ?? null;
+});
 </script>
 
 <template>
@@ -124,6 +139,22 @@ watch(dataObject, () => {
               <TitleAndMetadataDisplay
                 :entity="dataObject"
                 id-label="Data Object ID"
+              />
+            </v-row>
+            <!-- LIC1: FAIR metadata strip — license + accessRights. Same
+                 affordance pattern as the Collection detail page. -->
+            <v-row
+              v-if="dataObjectLicense || dataObjectAccessRights"
+              no-gutters
+              class="pb-3 ga-2 align-center"
+            >
+              <LicenseChip
+                v-if="dataObjectLicense"
+                :license="dataObjectLicense"
+              />
+              <AccessRightsChip
+                v-if="dataObjectAccessRights"
+                :access-rights="dataObjectAccessRights"
               />
             </v-row>
             <v-row

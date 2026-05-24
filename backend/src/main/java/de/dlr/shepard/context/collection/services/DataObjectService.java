@@ -98,6 +98,9 @@ public class DataObjectService {
     toCreate.setPredecessors(predecessors);
     toCreate.setCreatedAt(dateHelper.getDate());
     toCreate.setCreatedBy(user);
+    // LIC1 (FAIR-1): copy license + accessRights on create. Both nullable.
+    toCreate.setLicense(dataObject.getLicense());
+    toCreate.setAccessRights(dataObject.getAccessRights());
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
     created = dataObjectDAO.createOrUpdate(created);
@@ -317,6 +320,11 @@ public class DataObjectService {
     old.setStatus(dataObject.getStatus());
     old.setParent(newParent);
     old.setPredecessors(newPredecessors);
+    // LIC1 (FAIR-1): persist license + accessRights on update. Mirrors the
+    // same pattern in CollectionService — PUT is full-replace, PATCH merges
+    // upstream before reaching here.
+    old.setLicense(dataObject.getLicense());
+    old.setAccessRights(dataObject.getAccessRights());
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
     DataObject updated = dataObjectDAO.createOrUpdate(old);

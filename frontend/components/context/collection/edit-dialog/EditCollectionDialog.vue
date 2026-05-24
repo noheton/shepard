@@ -52,6 +52,18 @@ watch(updatedCollection, () => form.value?.validate(), { deep: true });
             />
           </v-col>
         </v-row>
+        <!-- LIC1 (FAIR-1): license + accessRights. Visible in BOTH basic and
+             advanced mode — these are FAIR-mandatory fields for funder
+             review (DFG, EU Horizon Europe, Clean Aviation JU). Hiding them
+             in basic mode would defeat their purpose. -->
+        <v-row>
+          <v-col cols="12" md="6" class="pb-0">
+            <LicenseInput v-model:license="updatedCollection.license" />
+          </v-col>
+          <v-col cols="12" md="6" class="pb-0">
+            <AccessRightsInput v-model:access-rights="updatedCollection.accessRights" />
+          </v-col>
+        </v-row>
         <!-- Hero image URL — advanced mode only (not shown in basic mode).
              Advanced mode is a strict superset: this field is not shown in
              basic mode, but when the user enables advanced mode they see

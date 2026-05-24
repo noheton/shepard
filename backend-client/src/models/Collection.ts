@@ -106,6 +106,20 @@ export interface Collection {
      * @memberof Collection
      */
     heroImageUrl?: string | null;
+    /**
+     * LIC1 (FAIR-1) — SPDX license identifier expression (e.g. "CC-BY-4.0",
+     * "MIT", "Apache-2.0") or "PROPRIETARY". Nullable.
+     * @type {string}
+     * @memberof Collection
+     */
+    license?: string | null;
+    /**
+     * LIC1 (FAIR-1) — Access-rights enum: OPEN | RESTRICTED | CLOSED | EMBARGOED.
+     * Nullable.
+     * @type {string}
+     * @memberof Collection
+     */
+    accessRights?: string | null;
 }
 
 /**
@@ -147,6 +161,8 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'incomingIds': json['incomingIds'],
         'defaultFileContainerId': json['defaultFileContainerId'] == null ? undefined : json['defaultFileContainerId'],
         'heroImageUrl': json['heroImageUrl'] == null ? undefined : json['heroImageUrl'],
+        'license': json['license'] == null ? undefined : json['license'],
+        'accessRights': json['accessRights'] == null ? undefined : json['accessRights'],
     };
 }
 
@@ -162,6 +178,8 @@ export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'crea
         'attributes': value['attributes'],
         'defaultFileContainerId': value['defaultFileContainerId'],
         'heroImageUrl': value['heroImageUrl'],
+        'license': value['license'],
+        'accessRights': value['accessRights'],
     };
 }
 
