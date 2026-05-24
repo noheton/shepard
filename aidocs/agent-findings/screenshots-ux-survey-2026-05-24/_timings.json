@@ -1,0 +1,240 @@
+[
+  {
+    "page": "collections-index",
+    "viewport": "4k",
+    "scale": "list",
+    "domContentLoadedMs": 362,
+    "visualMs": 530,
+    "loadEventMs": 2103,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "collection-detail",
+    "viewport": "4k",
+    "scale": "LUMEN-15",
+    "domContentLoadedMs": 488,
+    "visualMs": 990,
+    "loadEventMs": 1580,
+    "errorCount": 2,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "page": "collections-search",
+    "viewport": "4k",
+    "scale": "search-MFFD",
+    "domContentLoadedMs": 400,
+    "visualMs": 648,
+    "loadEventMs": 2090,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "collection-detail",
+    "viewport": "4k",
+    "scale": "MFFD-661923",
+    "domContentLoadedMs": 325,
+    "visualMs": 4067,
+    "loadEventMs": 5635,
+    "errorCount": 2,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "page": "containers-index",
+    "viewport": "4k",
+    "scale": "list",
+    "domContentLoadedMs": 241,
+    "visualMs": 426,
+    "loadEventMs": 955,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "containers-index",
+    "viewport": "4k",
+    "scale": "browse",
+    "domContentLoadedMs": 235,
+    "visualMs": 407,
+    "loadEventMs": 951,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "container-sd",
+    "viewport": "4k",
+    "scale": "via-row-click",
+    "domContentLoadedMs": 0,
+    "errorCount": 0,
+    "notes": [
+      "url=https://shepard.nuclide.systems/containers/structureddata/645003"
+    ]
+  },
+  {
+    "page": "container-spatial",
+    "viewport": "4k",
+    "scale": "bogus",
+    "domContentLoadedMs": 149,
+    "visualMs": 258,
+    "loadEventMs": 761,
+    "errorCount": 7,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching roles: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Error while fetching spatial data container: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Response returned an error code",
+      "Response returned an error code"
+    ]
+  },
+  {
+    "page": "error-bogus-collection",
+    "viewport": "4k",
+    "scale": "n/a",
+    "domContentLoadedMs": 370,
+    "visualMs": 486,
+    "loadEventMs": 1153,
+    "errorCount": 19,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 99999999 is null or deleted\"}"
+    ]
+  },
+  {
+    "page": "collections-index",
+    "viewport": "fhd",
+    "scale": "list",
+    "domContentLoadedMs": 300,
+    "visualMs": 500,
+    "loadEventMs": 2280,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "collection-detail",
+    "viewport": "fhd",
+    "scale": "LUMEN-15",
+    "domContentLoadedMs": 401,
+    "visualMs": 880,
+    "loadEventMs": 1402,
+    "errorCount": 2,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "page": "collections-search",
+    "viewport": "fhd",
+    "scale": "search-MFFD",
+    "domContentLoadedMs": 317,
+    "visualMs": 545,
+    "loadEventMs": 2134,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "collection-detail",
+    "viewport": "fhd",
+    "scale": "MFFD-661923",
+    "domContentLoadedMs": 359,
+    "visualMs": 5673,
+    "loadEventMs": 6226,
+    "errorCount": 2,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()"
+    ]
+  },
+  {
+    "page": "containers-index",
+    "viewport": "fhd",
+    "scale": "list",
+    "domContentLoadedMs": 242,
+    "visualMs": 414,
+    "loadEventMs": 944,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "containers-index",
+    "viewport": "fhd",
+    "scale": "browse",
+    "domContentLoadedMs": 219,
+    "visualMs": 388,
+    "loadEventMs": 924,
+    "errorCount": 1,
+    "notes": [
+      "Hydration completed but contains mismatches."
+    ]
+  },
+  {
+    "page": "container-sd",
+    "viewport": "fhd",
+    "scale": "via-row-click",
+    "domContentLoadedMs": 0,
+    "errorCount": 0,
+    "notes": [
+      "url=https://shepard.nuclide.systems/containers/structureddata/645003"
+    ]
+  },
+  {
+    "page": "container-spatial",
+    "viewport": "fhd",
+    "scale": "bogus",
+    "domContentLoadedMs": 139,
+    "visualMs": 237,
+    "loadEventMs": 740,
+    "errorCount": 7,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while fetching spatial data container: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Error while fetching roles: {\"status\":404,\"exception\":\"\",\"message\":\"HTTP 404 Not Found\"}",
+      "Response returned an error code",
+      "Response returned an error code"
+    ]
+  },
+  {
+    "page": "error-bogus-collection",
+    "viewport": "fhd",
+    "scale": "n/a",
+    "domContentLoadedMs": 319,
+    "visualMs": 411,
+    "loadEventMs": 1035,
+    "errorCount": 19,
+    "notes": [
+      "Hydration completed but contains mismatches.",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Failed to load resource: the server responded with a status of 404 ()",
+      "Error while getAllDataObjects: {\"status\":404,\"exception\":\"\",\"message\":\"ID ERROR - Collection with id 99999999 is null or deleted\"}"
+    ]
+  }
+]
