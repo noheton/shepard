@@ -1577,3 +1577,29 @@ work pack while ingest still runs (none touch the destination data).
 | NEO-AUDIT-2026-05-24-013-DEFERRED | **APOC plugin install (`NEO4J_PLUGINS=["apoc","n10s"]` + container restart).** Synthesis §6 Pass-1 candidate — moved here because the Neo4j restart it requires would interrupt the active MFFD ingest. Promote to ✅ when ingest drains. | XS | gated-on-ingest-pause | Re-pickup when MFFD ingest signals done. |
 | TS-AUDIT-2026-05-24-005-DEFERRED | **`pg_stat_statements` extension + Flyway V1.12 migration.** Synthesis §6 Pass-1 candidate — moved here because the `shared_preload_libraries` change requires Postgres restart, which would interrupt MFFD TS writes. Promote to ✅ when ingest drains. | XS | gated-on-ingest-pause | Re-pickup when MFFD ingest signals done. |
 | LIM-DOCKER-BIND-MOUNT-INODE | **Single-file Docker bind mounts track inode-at-mount-time, not path-at-runtime.** Surfaced 2026-05-24 by CADDY-API-PASSTHROUGH: editing the host file via Claude's Write tool (atomic temp-file + rename) changes the inode, so the container view goes stale and Caddy reloads see the old file. The fix is `docker compose restart <service>` (or use `docker cp` to overwrite in-place). Affected files in this repo: `infrastructure/proxy/Caddyfile`, `infrastructure/.env`. **Operator runbook follow-up:** add a one-page note to `docs/admin/runbooks/` and a guard rail in the OPS hygiene set (smoke probe should detect "container file does not match host file"). | XS | queued | Operator-facing follow-up. Filed by CADDY-API-PASSTHROUGH-2026-05-24. |
+
+## AI-V6-* — `shepard-plugin-ai` v6 capability surface (local-first by default)
+
+SSOT: [`aidocs/integrations/97-shepard-plugin-ai-design.md`](integrations/97-shepard-plugin-ai-design.md). Headline commitment: every AI capability ships with **zero external dependencies as the default**. Tier 0 (TEI CPU sidecar + `jina-embeddings-v2-base-de`) ships in the default compose; Tiers 1–3 (GPU sidecar / networked GPU / cloud SAIA-OpenAI-Azure) are admin opt-ins behind `:AIConfig.allowExternal=true`. Supersedes `aidocs/platform/86-ai-plugin-design.md` (decommissioned; body preserved as reference).
+
+| ID | Item | Size | Status | Notes |
+|---|---|---|---|---|
+| AI-V6-001 | v0 plugin scaffold realignment + TEI sidecar declaration (PM1f) | M | queued | Pair with `PM1f-MIGRATION-AI-2026-05-24` |
+| AI-V6-002 | pgvector schema migration (`shepard_ai`, models registry, `embeddings_768`) | S | queued | Gated on synthesis T2 PG-collapse decision |
+| AI-V6-003 | `LocalTeiEmbeddingProvider` adapter + WireMock tests | S | queued | Healthcheck-with-probe-embed included |
+| AI-V6-004 | `OpenAiCompatibleEmbeddingProvider` (gated by `allowExternal=true`) | S | queued | Same wire for SAIA / GWDG / OpenAI / Azure |
+| AI-V6-005 | `:AIConfig` singleton + admin REST + CLI parity (`shepard-admin ai embeddings`) | M | queued | A3b pattern; merges existing `:AiGlobalConfig` from 86 |
+| AI-V6-006 | Embedding backfill orchestration with resume + `:Activity` batch capture | M | queued | Per-row capture opt-in via `:AIConfig.captureBatchPerRowActivity` |
+| AI-V6-007 | `search_by_embedding` MCP tool + REST `/v2/search/embedding` | S | queued | Cite-back UUIDs in response |
+| AI-V6-008 | "Find similar" frontend affordance (DataObject + LabJournal + Collection detail) | M | queued (v1) | Vue 3 + Vuetify 3 ranked-list component |
+| AI-V6-009 | `ChatProvider` SPI design + Phase 2 adapter shipment | L | designed (v2) | Sketched in aidocs/97 §9; full design doc when first consumer (Wiki-writer) blocks |
+| AI-V6-010 | **pgvector + embedding-pipeline readiness audit** (closes synthesis-§7-shaped blind spot) | M | queued | **Must complete before v0 ships** — substrate-direct probes per `feedback_db_audit_snappy.md` |
+| AI-V6-011 | CLAUDE.md standing-rule formalisation: "Always: ship a working local default for every AI capability" | XS | queued | Same PR as v0 ships |
+| AI-V6-012 | **Realign existing `plugins/ai/` scaffold to v6 local-default** — split `endpointUrl` semantics; default `transport=LOCAL_TEI`; make `apiKey` optional | M | queued | Without this, MUST-Tier-0 isn't real — out-of-box TEXT today is unusable. Filed by aidocs/97 §14 #9 |
+| AI-V6-013 | Parallel-model swap workflow (run both old + new `model_id`; cut-over via `:AIConfig`; GC old rows after grace) | M | queued (v1) | Read-path filters on `:AIConfig.embeddingModelId` |
+| AI-V6-014 | Staleness-sweep background job (`source_hash` mismatch → re-embed queue) | S | queued (v1) | Configurable cadence; default daily |
+| AI-V6-015 | Cross-language consistency documentation + translation-then-embed pattern | XS | queued | `docs/reference.md` addendum |
+| AI-V6-PGVECTOR-RLS-DESIGN | PG RLS predicate calling Neo4j FDW OR materialised permission view | L | design open | v1+ work; race in v0's app-layer post-filter is acceptable for now |
+| AI-V6-FUTURE-MULTIMODAL | Image embeddings (CLIP-style) + audio + multimodal — `embeddings_512` per-dim table | L | future | Out of v6 scope; flag for Phase 3 |
+| PM1f-MIGRATION-AI-2026-05-24 | Fold AI sidecar into the PM1f sidecar-declaration migration alongside spatial + hdf5 | S | queued | Synthesis AP-X10 closes for AI in the same PR; bundles cleanly with `PM1f-MIGRATION-SPATIAL-HDF5-2026-05-24` |
+| PM1g-SIDECAR-MEMLIMIT-ENFORCEMENT | `SidecarsAssembler` rejects `SidecarSpec` without explicit `mem_limit` | S | queued | STACK-AUDIT-001 hygiene; applies to all PM1f users (spatial + hdf5 + AI + future plugins) |
