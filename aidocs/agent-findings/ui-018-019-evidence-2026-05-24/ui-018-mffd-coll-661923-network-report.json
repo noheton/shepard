@@ -1,0 +1,1203 @@
+{
+  "test": "UI-2026-05-24-018",
+  "label": "mffd-coll-661923",
+  "target": {
+    "collection": 661923,
+    "dataObject": null
+  },
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "probeDurationMs": 28806,
+  "totalRequests": 8684,
+  "totalApiRequests": 8541,
+  "verdict": "CLOSED",
+  "lineageProvSuspects": [],
+  "otherHighFreqShapes": [
+    {
+      "shape": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries",
+      "count": 8514,
+      "urls": [
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662034",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662032",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=663844",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662036",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680353"
+      ]
+    }
+  ],
+  "top10ShapesByFrequency": [
+    {
+      "shape": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries",
+      "count": 8514,
+      "urls": [
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662034",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662032",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=663844",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662036",
+        "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680353"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/shepard/api/collections/:id/roles",
+      "count": 4,
+      "urls": [
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/shepard/api/collections/:id",
+      "count": 3,
+      "urls": [
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/shepard/api/collections/:id/dataObjects",
+      "count": 3,
+      "urls": [
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects?parentId=-1",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects?parentId=-1",
+        "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+      "count": 2,
+      "urls": [
+        "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+        "https://shepard-api.nuclide.systems/v2/users/me/preferences"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/v2/me/role-in/019e55f3-75fb-7ef3-84fc-:idb63ea",
+      "count": 2,
+      "urls": [
+        "https://shepard-api.nuclide.systems/v2/me/role-in/019e55f3-75fb-7ef3-84fc-6238566b63ea",
+        "https://shepard-api.nuclide.systems/v2/me/role-in/019e55f3-75fb-7ef3-84fc-6238566b63ea"
+      ]
+    },
+    {
+      "shape": "https://shepard.nuclide.systems/api/auth/session",
+      "count": 1,
+      "urls": [
+        "https://shepard.nuclide.systems/api/auth/session"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/v2/instance/identity",
+      "count": 1,
+      "urls": [
+        "https://shepard-api.nuclide.systems/v2/instance/identity"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/v2/instance/capabilities",
+      "count": 1,
+      "urls": [
+        "https://shepard-api.nuclide.systems/v2/instance/capabilities"
+      ]
+    },
+    {
+      "shape": "https://shepard-api.nuclide.systems/v2/notifications/count",
+      "count": 1,
+      "urls": [
+        "https://shepard-api.nuclide.systems/v2/notifications/count"
+      ]
+    }
+  ],
+  "dataObjectByIdGetCount": 0,
+  "referenceOrPayloadCount": 2,
+  "collectionListCount": 0,
+  "consoleErrors": [
+    "Hydration completed but contains mismatches.",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES",
+    "Failed to load resource: net::ERR_INSUFFICIENT_RESOURCES"
+  ],
+  "allApiUrls": [
+    {
+      "method": "GET",
+      "url": "https://shepard.nuclide.systems/api/auth/session",
+      "status": 200,
+      "t": 357
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/instance/identity",
+      "status": 200,
+      "t": 398
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/instance/capabilities",
+      "status": 200,
+      "t": 398
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/notifications/count",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/versionz",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects?parentId=-1",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects?parentId=-1",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/roles",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/users/me/preferences",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/dataObjects",
+      "status": 200,
+      "t": 455
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/me/role-in/019e55f3-75fb-7ef3-84fc-6238566b63ea",
+      "status": 200,
+      "t": 2802
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/me/role-in/019e55f3-75fb-7ef3-84fc-6238566b63ea",
+      "status": 200,
+      "t": 4542
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/collections/019e55f3-75fb-7ef3-84fc-6238566b63ea/watches",
+      "status": 200,
+      "t": 6402
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/users/me",
+      "status": 200,
+      "t": 6402
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections/661923/semanticAnnotations",
+      "status": 200,
+      "t": 6402
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/v2/collections/019e55f3-75fb-7ef3-84fc-6238566b63ea/data-objects?page=0&size=25",
+      "status": 200,
+      "t": 6402
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662034",
+      "status": 200,
+      "t": 14724
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662032",
+      "status": 200,
+      "t": 14724
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=663844",
+      "status": 200,
+      "t": 14724
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=662036",
+      "status": 200,
+      "t": 14724
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680353",
+      "status": 200,
+      "t": 14725
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=677879",
+      "status": 200,
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=677488",
+      "status": 200,
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=677181",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=676814",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=676442",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=676012",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=675702",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=675379",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=675070",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=674942",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=674765",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=674479",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=674248",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=674058",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=673537",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=673148",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=672766",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=672514",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=672259",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=671861",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=671579",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=671222",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=671085",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=671024",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=670547",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=670153",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669976",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669877",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669774",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669586",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669494",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=669288",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=668702",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=668388",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=668325",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=668231",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=667560",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=667242",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=666876",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=666499",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=666170",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=665862",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=665466",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=665073",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=664672",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=664433",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=663936",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=678766",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679185",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679581",
+      "t": 14753
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679981",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680350",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=678350",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=661949",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680343",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680348",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680345",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680346",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680342",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680067",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680064",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680066",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680061",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680062",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680060",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680057",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680056",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680052",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680049",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680048",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680047",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680044",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680045",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680042",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680040",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680036",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680032",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680033",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680031",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680028",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680029",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680023",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680027",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680021",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680019",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680017",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680015",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680011",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680013",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680008",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680006",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680005",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680001",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680002",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679999",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679997",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679991",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679996",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679990",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679994",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679982",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679983",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679986",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679980",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=679979",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680074",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680079",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680076",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680078",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680081",
+      "t": 14754
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680082",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680083",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680086",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680089",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680094",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680092",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680095",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680097",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680098",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680100",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680102",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680108",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680105",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680110",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680111",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680113",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680114",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680116",
+      "t": 14755
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680122",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680118",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680126",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680123",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680128",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680129",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680130",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680133",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680134",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680139",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680141",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680138",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680144",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680145",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680146",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680149",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680150",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680153",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680157",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680155",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680160",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680161",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680162",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680165",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680167",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680168",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680171",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680172",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680175",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680177",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680179",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680181",
+      "t": 14757
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680183",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680184",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680188",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680187",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680192",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680193",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680197",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680196",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680199",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680200",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680203",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680207",
+      "t": 14758
+    },
+    {
+      "method": "GET",
+      "url": "https://shepard-api.nuclide.systems/shepard/api/labJournalEntries?dataObjectId=680204",
+      "t": 14758
+    }
+  ],
+  "allApiUrlsTruncated": true,
+  "consoleErrorsTruncated": "shown 50 of 8304"
+}

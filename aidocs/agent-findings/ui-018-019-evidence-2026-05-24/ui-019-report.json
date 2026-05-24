@@ -1,0 +1,42 @@
+{
+  "test": "UI-2026-05-24-019",
+  "runAt": "2026-05-24T07:17:57.580Z",
+  "testName": "UI-019-test-do-DELETE-ME-1779607064644",
+  "verdict": "CLEAN",
+  "mutationCallsObserved": [],
+  "newObjectAppearedAfterCancel": false,
+  "dialogPhaseConsoleErrors": [],
+  "dialogPhaseNetworkErrors": [],
+  "allConsoleErrors": [
+    {
+      "phase": "page-load",
+      "entry": "Hydration completed but contains mismatches."
+    },
+    {
+      "phase": "page-load",
+      "entry": "Hydration completed but contains mismatches."
+    },
+    {
+      "phase": "page-load",
+      "entry": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "phase": "page-load",
+      "entry": "Hydration completed but contains mismatches."
+    },
+    {
+      "phase": "post-cancel-verify",
+      "entry": "Hydration completed but contains mismatches."
+    }
+  ],
+  "allNetworkErrors": [
+    {
+      "phase": "page-load",
+      "entry": {
+        "url": "https://shepard-api.nuclide.systems/v2/users/019e3ce1-d236-7fc1-99da-db826ee4ca64/avatar",
+        "status": 404,
+        "method": "GET"
+      }
+    }
+  ]
+}
