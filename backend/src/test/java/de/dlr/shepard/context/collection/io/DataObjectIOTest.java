@@ -20,7 +20,19 @@ public class DataObjectIOTest {
 
   @Test
   public void equalsContract() {
-    EqualsVerifier.simple().forClass(DataObjectIO.class).withIgnoredFields("revision").verify();
+    // `revision` is excluded per VersionableEntity convention.
+    // The four `*Count` fields are derived (computed in the constructor from
+    // the references stream) and deliberately not part of equals/hashCode;
+    // EqualsVerifier needs them on the ignore list to avoid false positives.
+    EqualsVerifier.simple()
+        .forClass(DataObjectIO.class)
+        .withIgnoredFields(
+            "revision",
+            "timeseriesReferenceCount",
+            "fileBundleCount",
+            "structuredDataReferenceCount",
+            "videoStreamReferenceCount")
+        .verify();
   }
 
   @Test
