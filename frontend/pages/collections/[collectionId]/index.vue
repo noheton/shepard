@@ -263,6 +263,13 @@ watch(collection, () => {
               </div>
             </section>
 
+            <!-- RDM-001: "Cite this dataset" card. Renders an APA / BibTeX /
+                 RIS / CSL JSON citation built from fields already on the
+                 Collection wire shape (name, createdBy, createdAt year,
+                 license post-LIC1, canonical URL). Highest-visibility spot
+                 for the funder-reviewing-the-dataset persona. -->
+            <CiteThisCard :collection="collection" />
+
             <!-- Always-visible: Semantic Annotation chips. Out of the
                  collapsibles so users see the tags at a glance. -->
             <section class="page-section">
