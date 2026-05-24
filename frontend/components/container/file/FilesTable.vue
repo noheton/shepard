@@ -13,13 +13,16 @@ const emit = defineEmits<{
   (e: "download-file" | "delete-file", value: ShepardFile): void;
 }>();
 
+// UI-015: the `header.createdAt` slot below wraps the column title in a
+// `text-no-wrap` span so the two-word "Created at" stays on one line and
+// doesn't push every row half a line down.
 const headers = computed(() => [
   ...(props.containerAppId
     ? [{ title: "", key: "thumbnail", sortable: false, width: "64px" }]
     : []),
   { title: "Name", key: "filename", sortable: true, width: "38%" },
   { title: "Oid", key: "oid", sortable: true, width: "28%" },
-  { title: "Created at", key: "createdAt", sortable: true },
+  { title: "Created at", key: "createdAt", sortable: true },
   { title: "", value: "actions" },
 ]);
 
@@ -63,10 +66,15 @@ const openHistory = (file: ShepardFile) => {
           v-if="item.oid"
           :container-app-id="containerAppIdDefined"
           :oid="item.oid"
+          :filename="item.filename"
         />
       </template>
       <template #[`item.oid`]="{ item }: { item: ShepardFile }">
         <CopyTextButton :text="item.oid" />
+      </template>
+      <!-- UI-015: keep "Created at" on one line -->
+      <template #[`header.createdAt`]="{ column }">
+        <span class="text-no-wrap">{{ column.title }}</span>
       </template>
       <template #[`item.createdAt`]="{ item }: { item: ShepardFile }">
         {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}

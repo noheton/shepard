@@ -34,6 +34,26 @@ describe("renderDocMarkdown", () => {
     expect(html).toContain("/help?page=reference%2Fapi");
   });
 
+  it("rewrites /assets/ paths to /docs/assets/ (UI-007)", () => {
+    // The Jekyll-source docs reference site-relative `/assets/img/foo.jpg`,
+    // but inside the in-app /help route the docs are mounted at /docs/, so
+    // those paths must be rewritten to /docs/assets/img/foo.jpg.
+    const raw =
+      "Hero: ![Aircraft]({{ '/assets/img/photo-aircraft.jpg' | relative_url }})";
+    const html = renderDocMarkdown(raw);
+    expect(html).toContain("/docs/assets/img/photo-aircraft.jpg");
+    expect(html).not.toContain('src="/assets/img/photo-aircraft.jpg"');
+  });
+
+  it("leaves non-asset relative_url paths unchanged", () => {
+    const raw =
+      "See [reference]({{ '/reference/api' | relative_url }}) and [more]({{ '/getting-started' | relative_url }})";
+    const html = renderDocMarkdown(raw);
+    // Should NOT have been double-prefixed with /docs/.
+    expect(html).not.toContain("/docs/reference/api");
+    expect(html).not.toContain("/docs/getting-started");
+  });
+
   it("drops {{ site.* }} variables", () => {
     const raw = "Built by {{ site.author }} using {{ site.title }}";
     const html = renderDocMarkdown(raw);

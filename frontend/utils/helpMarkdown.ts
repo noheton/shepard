@@ -46,9 +46,73 @@ function jekyllPathToPage(href: string): string | null {
   return null;
 }
 
+// ── Heading slug helper (UI-013) ───────────────────────────────────────────
+
+/**
+ * Convert a heading's text into a URL-fragment-safe slug.
+ * - lowercase
+ * - non-alphanumeric → "-"
+ * - collapse repeated "-"
+ * - trim leading/trailing "-"
+ *
+ * Empty result falls back to "section".
+ */
+export function slugify(text: string): string {
+  const slug = (text || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    // strip combining marks (accents)
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "section";
+}
+
+/**
+ * Collision-aware slug generator. Tracks used slugs and disambiguates
+ * duplicates with a numeric suffix.
+ */
+export class SlugRegistry {
+  private used = new Map<string, number>();
+  reset() {
+    this.used.clear();
+  }
+  next(text: string): string {
+    const base = slugify(text);
+    const count = this.used.get(base) ?? 0;
+    this.used.set(base, count + 1);
+    return count === 0 ? base : `${base}-${count + 1}`;
+  }
+}
+
+// Module-level registry — reset before each renderDocMarkdown call so slugs
+// don't bleed between pages.
+const slugRegistry = new SlugRegistry();
+
 // ── Custom marked renderer ─────────────────────────────────────────────────
 
 const renderer = new marked.Renderer();
+
+// Anchored headings (UI-013). Each H2/H3/H4 gets an id="<slug>" and a
+// hoverable `#` link. H1 stays unlinked (it's the page title).
+// Note: marked v9 passes (text, level, raw).
+renderer.heading = (text: string, level: number, raw: string) => {
+  if (level <= 1) {
+    return `<h${level}>${text}</h${level}>`;
+  }
+  // `text` is already HTML-rendered (e.g. inline code, emphasis). Strip tags
+  // for the slug source — raw is the original markdown, which is cleaner.
+  const slugSource = (raw || text).replace(/<[^>]+>/g, "");
+  const slug = slugRegistry.next(slugSource);
+  // The anchor link itself sits before the heading text; CSS reveals it on
+  // heading hover. aria-hidden so screen readers don't read "hash".
+  return (
+    `<h${level} id="${slug}" class="doc-heading">` +
+    `<a class="doc-heading-anchor" href="#${slug}" aria-hidden="true" tabindex="-1">#</a>` +
+    `${text}` +
+    `</h${level}>`
+  );
+};
 
 // Open external links in a new tab; rewrite internal Jekyll doc links.
 // Note: marked v9 passes individual arguments (href, title, text).
@@ -99,13 +163,27 @@ function stripFrontmatter(raw: string): string {
 }
 
 /**
- * Resolve `{{ '/some/path' | relative_url }}` → `/some/path`
+ * Resolve `{{ '/some/path' | relative_url }}` → `/some/path`.
+ *
+ * Jekyll-source docs reference site-relative paths (e.g. `/assets/img/photo-aircraft.jpg`),
+ * but when the in-app /help route serves them, the docs live mounted at `/docs/...`
+ * (see `frontend/public/docs/assets/img/`). Rewrite a leading `/assets/...` to
+ * `/docs/assets/...` so the hero photos and bg-title images resolve. UI-007.
  */
 function resolveRelativeUrl(text: string): string {
   return text.replace(
     /\{\{\s*['"]([^'"]+)['"]\s*\|\s*relative_url\s*\}\}/g,
-    (_match, path: string) => path,
+    (_match, path: string) => rewriteDocsAssetPath(path),
   );
+}
+
+/**
+ * Rewrite Jekyll-root asset paths to the in-app /docs/ mount.
+ * Idempotent: a path already starting with `/docs/` is returned unchanged.
+ */
+function rewriteDocsAssetPath(path: string): string {
+  if (path.startsWith("/assets/")) return `/docs${path}`;
+  return path;
 }
 
 /**

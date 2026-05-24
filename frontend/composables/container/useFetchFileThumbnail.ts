@@ -10,6 +10,40 @@
 
 export type ThumbnailSize = 64 | 200 | 400;
 
+/**
+ * UI-009: ShepardFile does not currently expose a mimeType, so callers
+ * infer image-ness from the filename extension. Callers should gate
+ * thumbnail fetches on this check to avoid the per-row `GET …/thumbnail?size=64`
+ * → 404 noise documented in the UI Scrutinizer evidence.
+ *
+ * Coverage: all extensions the backend's thumbnail generator currently
+ * supports plus common image formats; any non-match falls back to the
+ * generic file icon.
+ */
+const IMAGE_EXTENSIONS = new Set([
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "bmp",
+  "svg",
+  "avif",
+  "tif",
+  "tiff",
+  "ico",
+  "heic",
+  "heif",
+]);
+
+export function isImageFilename(name: string | null | undefined): boolean {
+  if (!name) return false;
+  const dotIdx = name.lastIndexOf(".");
+  if (dotIdx < 0 || dotIdx === name.length - 1) return false;
+  const ext = name.slice(dotIdx + 1).toLowerCase();
+  return IMAGE_EXTENSIONS.has(ext);
+}
+
 function v2BaseUrl(): string {
   const config = useRuntimeConfig().public;
   const explicit = config.backendV2ApiUrl as string | undefined;

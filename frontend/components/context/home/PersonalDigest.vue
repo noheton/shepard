@@ -5,6 +5,7 @@ import {
 } from "~/composables/context/useFetchRecentCollections";
 import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
 import { useWatchedCollections } from "~/composables/context/useWatchedCollections";
+import { renderInlineDescription } from "~/utils/inlineDescription";
 
 const router = useRouter();
 
@@ -222,7 +223,13 @@ function relativeTime(date: Date | null | undefined): string {
               class="collection-digest-card d-flex flex-column"
             >
               <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
-                <div class="collection-name-clamp flex-grow-1">{{ collection.name }}</div>
+                <div
+                  class="collection-name-clamp flex-grow-1"
+                  data-testid="collection-card-title"
+                  :title="collection.name"
+                >
+                  {{ collection.name }}
+                </div>
                 <v-btn
                   icon
                   variant="text"
@@ -237,12 +244,13 @@ function relativeTime(date: Date | null | undefined): string {
                 </v-btn>
               </v-card-title>
               <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
+                <!-- eslint-disable-next-line vue/no-v-html -->
                 <div
                   v-if="collection.description"
                   class="text-body-2 text-medium-emphasis description-clamp"
-                >
-                  {{ collection.description }}
-                </div>
+                  data-testid="collection-card-description"
+                  v-html="renderInlineDescription(collection.description)"
+                />
                 <div v-else class="text-body-2 text-disabled font-italic">
                   No description
                 </div>
@@ -341,7 +349,13 @@ function relativeTime(date: Date | null | undefined): string {
               class="collection-digest-card d-flex flex-column"
             >
               <v-card-title class="text-body-1 font-weight-medium pt-4 px-4 pb-0 d-flex align-center">
-                <div class="collection-name-clamp flex-grow-1">{{ collection.name }}</div>
+                <div
+                  class="collection-name-clamp flex-grow-1"
+                  data-testid="collection-card-title"
+                  :title="collection.name"
+                >
+                  {{ collection.name }}
+                </div>
                 <v-btn
                   icon
                   variant="text"
@@ -357,12 +371,13 @@ function relativeTime(date: Date | null | undefined): string {
               </v-card-title>
 
               <v-card-text class="flex-grow-1 px-4 pt-2 pb-2">
+                <!-- eslint-disable-next-line vue/no-v-html -->
                 <div
                   v-if="collection.description"
                   class="text-body-2 text-medium-emphasis description-clamp"
-                >
-                  {{ collection.description }}
-                </div>
+                  data-testid="collection-card-description"
+                  v-html="renderInlineDescription(collection.description)"
+                />
                 <div v-else class="text-body-2 text-disabled font-italic">
                   No description
                 </div>
@@ -464,6 +479,15 @@ function relativeTime(date: Date | null | undefined): string {
   overflow: hidden;
   line-height: 1.4;
   word-break: break-word;
+  /* UI-006: the title is a flex child via `flex-grow-1`; without an explicit
+   * `min-width: 0` it cannot shrink below its intrinsic content width, which
+   * defeats the -webkit-line-clamp ellipsis. The result is mid-word truncation
+   * with no `…`. Setting `min-width: 0` re-enables shrink-to-fit, restoring the
+   * ellipsis behaviour. */
+  min-width: 0;
+  /* Cap the per-line text and add an ellipsis when only one line fits the
+   * available width — belt-and-braces with the line-clamp above. */
+  text-overflow: ellipsis;
 }
 
 .description-clamp {
