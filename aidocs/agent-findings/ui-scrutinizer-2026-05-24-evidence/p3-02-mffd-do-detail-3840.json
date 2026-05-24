@@ -1,0 +1,16 @@
+{
+  "url": "/collections/661923/dataobjects/661928",
+  "finalUrl": "https://shepard.nuclide.systems/collections/661923/dataobjects/661928",
+  "title": "TapeLaying-skeleton | shepard",
+  "viewport": {
+    "w": 3840,
+    "h": 2160
+  },
+  "consoleErrors": [
+    "Hydration completed but contains mismatches."
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 6332
+}

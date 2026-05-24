@@ -1,0 +1,17 @@
+{
+  "url": "/containers",
+  "finalUrl": "https://shepard.nuclide.systems/containers",
+  "title": "Containers | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [
+    "Hydration completed but contains mismatches."
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 3711,
+  "notes": "Containers top-level"
+}

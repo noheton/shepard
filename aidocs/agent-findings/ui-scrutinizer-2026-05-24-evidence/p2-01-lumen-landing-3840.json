@@ -1,0 +1,23 @@
+{
+  "url": "/collections/42",
+  "finalUrl": "https://shepard.nuclide.systems/collections/42",
+  "title": "LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) | shepard",
+  "viewport": {
+    "w": 3840,
+    "h": 2160
+  },
+  "consoleErrors": [
+    "Hydration completed but contains mismatches.",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/collections/019e30b0-99a2-79e7-b7d8-c15396095b42/watches/me",
+      "status": 404,
+      "statusText": ""
+    }
+  ],
+  "networkFailed": [],
+  "durationMs": 4260
+}

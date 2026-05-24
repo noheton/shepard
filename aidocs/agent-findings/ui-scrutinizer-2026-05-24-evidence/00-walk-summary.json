@@ -1,0 +1,211 @@
+{
+  "startedAt": "2026-05-24T05:53:28.485Z",
+  "lumenColl": 42,
+  "mffdColl": 661923,
+  "captures": {
+    "p1-home": {
+      "url": "/",
+      "finalUrl": "https://shepard.nuclide.systems/",
+      "title": "shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2759,
+      "consoleErrorCount": 23,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 12,
+      "notes": "Authenticated home / personal digest"
+    },
+    "p1-home-4k": {
+      "url": "/",
+      "finalUrl": "https://shepard.nuclide.systems/",
+      "title": "shepard",
+      "viewport": {
+        "w": 3840,
+        "h": 2160
+      },
+      "durationMs": 3190,
+      "consoleErrorCount": 21,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 11
+    },
+    "p1-collections": {
+      "url": "/collections",
+      "finalUrl": "https://shepard.nuclide.systems/collections",
+      "title": "Collections | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 3713,
+      "consoleErrorCount": 19,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 10,
+      "notes": "Top-level collections list"
+    },
+    "p1-collections-4k": {
+      "url": "/collections",
+      "finalUrl": "https://shepard.nuclide.systems/collections",
+      "title": "Collections | shepard",
+      "viewport": {
+        "w": 3840,
+        "h": 2160
+      },
+      "durationMs": 3699,
+      "consoleErrorCount": 19,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 10
+    },
+    "p1-containers": {
+      "url": "/containers",
+      "finalUrl": "https://shepard.nuclide.systems/containers",
+      "title": "Containers | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 3711,
+      "consoleErrorCount": 19,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 10,
+      "notes": "Containers top-level"
+    },
+    "p1-search": {
+      "url": "/search",
+      "finalUrl": "https://shepard.nuclide.systems/search",
+      "title": "Search | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 3128,
+      "consoleErrorCount": 18,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 10,
+      "notes": "Advanced search page"
+    },
+    "p1-help": {
+      "url": "/help",
+      "finalUrl": "https://shepard.nuclide.systems/help",
+      "title": "Help | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2867,
+      "consoleErrorCount": 18,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 10,
+      "notes": "In-app help"
+    },
+    "p1-about": {
+      "url": "/about",
+      "finalUrl": "https://shepard.nuclide.systems/about",
+      "title": "About | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2654,
+      "consoleErrorCount": 14,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 7
+    },
+    "p1-me": {
+      "url": "/me",
+      "finalUrl": "https://shepard.nuclide.systems/me",
+      "title": "Profile | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2694,
+      "consoleErrorCount": 14,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 7,
+      "notes": "Profile / settings"
+    },
+    "p1-admin": {
+      "url": "/admin",
+      "finalUrl": "https://shepard.nuclide.systems/me",
+      "title": "Profile | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2677,
+      "consoleErrorCount": 14,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 7,
+      "notes": "Admin page (alice may be unauthorized)"
+    },
+    "p1-config": {
+      "url": "/configuration",
+      "finalUrl": "https://shepard.nuclide.systems/me",
+      "title": "Profile | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 2696,
+      "consoleErrorCount": 14,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 7
+    },
+    "p2-lumen": {
+      "url": "/collections/42",
+      "finalUrl": "https://shepard.nuclide.systems/collections/42",
+      "title": "LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 4279,
+      "consoleErrorCount": 14,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 7,
+      "notes": "LUMEN collection landing (synthetic showcase)"
+    },
+    "p2-lumen-4k": {
+      "url": "/collections/42",
+      "finalUrl": "https://shepard.nuclide.systems/collections/42",
+      "title": "LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) | shepard",
+      "viewport": {
+        "w": 3840,
+        "h": 2160
+      },
+      "durationMs": 4260,
+      "consoleErrorCount": 12,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 6
+    },
+    "p2-mffd": {
+      "url": "/collections/661923",
+      "finalUrl": "https://shepard.nuclide.systems/collections/661923",
+      "title": "MFFD-Dropbox | shepard",
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "durationMs": 5325,
+      "consoleErrorCount": 10,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 5,
+      "notes": "MFFD-Dropbox collection landing (scale stress)"
+    },
+    "p2-mffd-4k": {
+      "url": "/collections/661923",
+      "finalUrl": "https://shepard.nuclide.systems/collections/661923",
+      "title": "MFFD-Dropbox | shepard",
+      "viewport": {
+        "w": 3840,
+        "h": 2160
+      },
+      "durationMs": 5300,
+      "consoleErrorCount": 8,
+      "consoleWarningCount": 1,
+      "networkErrorCount": 4
+    }
+  }
+}

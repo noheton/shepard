@@ -1,0 +1,14 @@
+{
+  "url": "/collections",
+  "finalUrl": "https://shepard.nuclide.systems/collections",
+  "title": "Collections | shepard",
+  "viewport": {
+    "w": 3840,
+    "h": 2160
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 3699
+}

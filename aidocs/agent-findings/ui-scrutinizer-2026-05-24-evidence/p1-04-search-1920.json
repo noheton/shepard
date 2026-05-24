@@ -1,0 +1,15 @@
+{
+  "url": "/search",
+  "finalUrl": "https://shepard.nuclide.systems/search",
+  "title": "Search | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 3128,
+  "notes": "Advanced search page"
+}

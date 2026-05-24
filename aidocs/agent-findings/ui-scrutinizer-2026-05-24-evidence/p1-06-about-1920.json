@@ -1,0 +1,14 @@
+{
+  "url": "/about",
+  "finalUrl": "https://shepard.nuclide.systems/about",
+  "title": "About | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 2654
+}

@@ -1,0 +1,26 @@
+{
+  "mainsCount": 1,
+  "mains": [
+    {
+      "tag": "MAIN",
+      "cls": "v-main bg-canvas",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 3840,
+        "h": 4080.28125
+      },
+      "childCount": 1,
+      "innerHTMLLen": 86436,
+      "textPreview": " Collection LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) Editor Contents TR-001 TR-002 TR-003 TR-004 TR-005 TR-006 TR-007 TR-008 TR-009 TR-010 TR-011 TR-012 TR-013 TR-014 TR-015 Publicat"
+    }
+  ],
+  "window": {
+    "innerWidth": 3840,
+    "innerHeight": 2160,
+    "scrollX": 0,
+    "scrollY": 0,
+    "docScrollWidth": 3840,
+    "docScrollHeight": 4080
+  }
+}

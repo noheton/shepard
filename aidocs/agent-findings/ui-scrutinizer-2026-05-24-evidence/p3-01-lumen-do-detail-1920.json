@@ -1,0 +1,17 @@
+{
+  "url": "/collections/42/dataobjects/45",
+  "finalUrl": "https://shepard.nuclide.systems/collections/42/dataobjects/45",
+  "title": "TR-001 | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [
+    "Hydration completed but contains mismatches."
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 6303,
+  "notes": "LUMEN DO 45"
+}

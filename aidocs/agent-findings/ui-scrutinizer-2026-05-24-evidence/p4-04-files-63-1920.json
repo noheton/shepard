@@ -1,0 +1,61 @@
+{
+  "url": "/containers/files/63",
+  "finalUrl": "https://shepard.nuclide.systems/containers/files/63",
+  "title": "lumen-inspired-artifacts | shepard",
+  "durationMs": 6173,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a08635f4ca5671cad172845/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a0863734ca5671cad172879/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a0863584ca5671cad172837/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a08635f4ca5671cad17284c/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a0863584ca5671cad17283a/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a08636c4ca5671cad172868/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a0863734ca5671cad172876/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a08636c4ca5671cad17286b/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a0863664ca5671cad17285a/thumbnail?size=64",
+      "status": 404
+    },
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e30b0-a8c8-7b68-ae91-4b0e1e6d1e7d/payload/6a08635f4ca5671cad172848/thumbnail?size=64",
+      "status": 404
+    }
+  ]
+}

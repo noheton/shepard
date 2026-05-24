@@ -1,0 +1,15 @@
+{
+  "url": "/me",
+  "finalUrl": "https://shepard.nuclide.systems/me",
+  "title": "Profile | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 2694,
+  "notes": "Profile / settings"
+}

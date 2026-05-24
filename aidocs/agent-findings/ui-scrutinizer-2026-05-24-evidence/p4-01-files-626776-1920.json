@@ -1,0 +1,16 @@
+{
+  "url": "/containers/files/626776",
+  "finalUrl": "https://shepard.nuclide.systems/containers/files/626776",
+  "title": "RoboDK — MFFD AFP simulations | shepard",
+  "durationMs": 6196,
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/file-containers/019e53e3-38e6-79ab-97f6-189d09cd6f18/payload/da2e2788-ebac-4bdb-9ff4-a3e677186ed5/thumbnail?size=64",
+      "status": 404
+    }
+  ]
+}

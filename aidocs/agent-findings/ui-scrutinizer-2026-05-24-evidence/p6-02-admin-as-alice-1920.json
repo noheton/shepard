@@ -1,0 +1,15 @@
+{
+  "url": "/admin",
+  "finalUrl": "https://shepard.nuclide.systems/me",
+  "title": "Profile | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [],
+  "durationMs": 3170,
+  "notes": "alice is non-admin; should see UNAUTHORIZED, but currently silently bounces to /me"
+}

@@ -1,0 +1,23 @@
+{
+  "url": "/",
+  "finalUrl": "https://shepard.nuclide.systems/",
+  "title": "shepard",
+  "viewport": {
+    "w": 3840,
+    "h": 2160
+  },
+  "consoleErrors": [
+    "Hydration completed but contains mismatches.",
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "consoleWarnings": [],
+  "networkErrors": [
+    {
+      "url": "https://shepard-api.nuclide.systems/v2/users/019e3ce1-d236-7fc1-99da-db826ee4ca64/avatar",
+      "status": 404,
+      "statusText": ""
+    }
+  ],
+  "networkFailed": [],
+  "durationMs": 3190
+}

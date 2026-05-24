@@ -1,0 +1,20 @@
+{
+  "url": "/admin",
+  "finalUrl": "https://shepard.nuclide.systems/admin",
+  "title": "Admin | shepard",
+  "viewport": {
+    "w": 1920,
+    "h": 1080
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "networkErrors": [],
+  "networkFailed": [
+    {
+      "url": "https://shepard-api.nuclide.systems/shepard/api/collections?page=0&size=30&orderBy=updatedAt&orderDesc=true",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "durationMs": 4162,
+  "notes": "Admin landing as admin user"
+}
