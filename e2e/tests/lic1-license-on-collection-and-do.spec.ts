@@ -28,6 +28,21 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
   test("license + accessRights persist + display on a Collection", async ({
     page,
   }) => {
+    // Diagnostic: capture PATCH/PUT bodies so an interceptor proves
+    // whether the wire actually carried license + accessRights.
+    const writeBodies: Array<{ method: string; url: string; body: unknown }> = [];
+    page.on("request", req => {
+      const m = req.method();
+      if (m === "PATCH" || m === "PUT" || m === "POST") {
+        const u = req.url();
+        if (u.includes("/collections/") && !u.includes("/auth/")) {
+          let body: unknown = null;
+          try { body = req.postDataJSON(); } catch { body = req.postData(); }
+          writeBodies.push({ method: m, url: u, body });
+        }
+      }
+    });
+
     // ── 1. create throw-away collection ───────────────────────────────────
     await page.goto("/collections");
     await page.waitForLoadState("networkidle");
@@ -85,15 +100,17 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     }
     await expect(licenseField).toBeVisible({ timeout: 5_000 });
 
+    // v-autocomplete commits on option-click, not on Enter alone. Type
+    // char-by-char to trigger the filter (the dropdown opens as you type),
+    // then click the matching .v-list-item-title. `.fill()` blasts the
+    // value too quickly and the option list never updates.
     await licenseField.click();
-    await licenseField.fill("MIT");
-    // Commit via autocomplete option click if shown; fallback to Enter.
-    const mitOption = page.locator(".v-list-item-title").filter({ hasText: /^MIT$/ });
-    if (await mitOption.count()) {
-      await mitOption.first().click();
-    } else {
-      await licenseField.press("Enter");
-    }
+    await licenseField.pressSequentially("MIT", { delay: 40 });
+    await page
+      .locator(".v-list-item-title")
+      .filter({ hasText: /^MIT$/ })
+      .first()
+      .click();
 
     // Close any open autocomplete overlay from the license-pick by clicking
     // an empty area in the dialog before reaching for the next field.
@@ -112,6 +129,20 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
       .first()
       .click();
     await expect(editDialog).toBeHidden({ timeout: 10_000 });
+
+    // Wire-shape assertion: the PUT body MUST carry license + accessRights.
+    // Earlier discovery: the generated backend-client's CollectionToJSON
+    // strip-allowlisted fields, dropping these silently (now patched in
+    // backend-client/src/models/Collection.ts). This assertion pins that the
+    // wire actually carries the values we set in the UI.
+    const collectionPut = writeBodies.find(
+      w => w.method === "PUT" && /\/collections\/\d+$/.test(w.url),
+    );
+    expect(collectionPut, "PUT /collections/{id} must have been observed").toBeDefined();
+    expect(collectionPut?.body).toMatchObject({
+      license: "MIT",
+      accessRights: "RESTRICTED",
+    });
 
     // ── 4. reload and assert chips are visible ───────────────────────────
     await page.goto(detailUrl);
@@ -175,14 +206,14 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     await page.waitForURL(/\/dataobjects\/[0-9a-f-]+/, { timeout: 10_000 });
     const doUrl = page.url();
 
-    // Edit the DO: open the sidebar context menu for this DataObject
-    // (mdi-dots-horizontal on the DO sidebar row) → "Edit" item. Dialog
-    // title is `Edit "<dataObjectName>"`. Hover-reveal first (same pattern
-    // as the collection sidebar item).
+    // Edit the DO: the DataObject lives in the sidebar's tree (not the
+    // .sidebar-item card). The CollectionSidebarItemContextMenu is wrapped
+    // in DisplayChildrenOnHover — hover the selected treeitem row first,
+    // then click the now-visible context-menu trigger.
     await page
-      .locator(".sidebar-item, .sidebar-item-focused")
-      .filter({ visible: true })
-      .last()
+      .getByRole("treeitem")
+      .filter({ hasText: doName })
+      .first()
       .hover();
     const doMenuBtns = page
       .locator("button:has(.mdi-dots-horizontal)")
@@ -207,13 +238,12 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     await expect(licField).toBeVisible({ timeout: 5_000 });
 
     await licField.click();
-    await licField.fill("MIT");
-    const mitOpt = page.locator(".v-list-item-title").filter({ hasText: /^MIT$/ });
-    if (await mitOpt.count()) {
-      await mitOpt.first().click();
-    } else {
-      await licField.press("Enter");
-    }
+    await licField.pressSequentially("MIT", { delay: 40 });
+    await page
+      .locator(".v-list-item-title")
+      .filter({ hasText: /^MIT$/ })
+      .first()
+      .click();
     await editDoDialog
       .getByRole("button", { name: /save|update/i })
       .first()
