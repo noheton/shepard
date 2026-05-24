@@ -107,6 +107,34 @@ class CollectionLabJournalEntriesRestTest {
     assertThat(body.get(0).getJournalContent()).isEqualTo("newer");
   }
 
+  /**
+   * BUG-LJ-V1-COLL-ID regression — an entry whose {@code DataObject} back-reference
+   * failed to hydrate must be skipped (with a WARN log) rather than NPE on
+   * {@code LabJournalEntryIO}'s constructor. The DAO's Cypher fix is the primary
+   * defence; this test pins the resource-level safety net so a future hydration
+   * regression cannot resurface the HTTP 500.
+   */
+  @Test
+  void list_skipsOrphanEntryWithNullDataObjectInsteadOf500() {
+    LabJournalEntry orphan = new LabJournalEntry();
+    orphan.setId(99L);
+    orphan.setContent("orphan");
+    // Intentionally do NOT call setDataObject — simulates the pre-fix
+    // hydration miss.
+    when(entriesDAO.findByCollectionAppId(COLL_APP_ID))
+      .thenReturn(List.of(
+        buildEntry(11L, 101L, "hydrated", new Date(2_000_000L)),
+        orphan
+      ));
+    var r = resource.list(COLL_APP_ID, sc);
+    assertThat(r.getStatus()).isEqualTo(200);
+    @SuppressWarnings("unchecked")
+    var body = (List<LabJournalEntryIO>) r.getEntity();
+    // The orphan is skipped; only the hydrated entry survives.
+    assertThat(body).hasSize(1);
+    assertThat(body.get(0).getDataObjectId()).isEqualTo(101L);
+  }
+
   @Test
   void list_returns200WithEmptyListWhenNoEntries() {
     when(entriesDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of());

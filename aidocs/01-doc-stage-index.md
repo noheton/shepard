@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 14 |
 | `idea` | 10 |
-| `feature-defined` | 69 |
+| `feature-defined` | 70 |
 | `audited-by-personas` | 54 |
 | `feedback-implemented` | 1 |
-| `tests-implemented` | 3 |
-| `deployed` | 57 |
+| `tests-implemented` | 4 |
+| `deployed` | 58 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **301** |
+| **total docs** | **304** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -135,11 +135,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (69)
+## feature-defined (70)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md`](agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md) | RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix | 2026-05-24 | 2026-05-24 |
@@ -274,15 +275,16 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 |---|---|---|---|
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
-## tests-implemented (3)
+## tests-implemented (4)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md`](agent-findings/bug-lj-v1-coll-id-fix-2026-05-24.md) | BUG-LJ-V1-COLL-ID — fix report | 2026-05-24 | — |
 | [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (57)
+## deployed (58)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -303,11 +305,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/lic1-shipped-2026-05-24.md`](agent-findings/lic1-shipped-2026-05-24.md) | LIC1 shipped — license + accessRights end-to-end (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md`](agent-findings/mffd-import-slowness-diagnose-2026-05-23.md) | MFFD cube3 import slowness — diagnostic | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ops-cleanup-2026-05-24.md`](agent-findings/ops-cleanup-2026-05-24.md) | ops-cleanup-2026-05-24 — un-ignore neo4j migrations + worktree env bootstrap | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ops-hygiene-bundle-2026-05-24.md`](agent-findings/ops-hygiene-bundle-2026-05-24.md) | OPS hygiene bundle — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ops-migration-healthcheck-2026-05-24.md`](agent-findings/ops-migration-healthcheck-2026-05-24.md) | ops-migration-healthcheck-2026-05-24 — readiness gate on Neo4j migration-chain integrity | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-audit-admin-stale-ch-2026-05-23.md`](agent-findings/persona-audit-admin-stale-ch-2026-05-23.md) | Persona audit — ADMIN-STALE-CH (Stale timeseries channel admin tool) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/plugin-docs-gap-audit-2026-05-23.md`](agent-findings/plugin-docs-gap-audit-2026-05-23.md) | Plugin documentation gap audit — 2026-05-23 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md`](agent-findings/rdm-001-cite-this-dataset-2026-05-24.md) | RDM-001 — "Cite this dataset" card on Collection landing (2026-05-24) | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | — |
+| [`aidocs/agent-findings/rdm-005-metadata-completeness-2026-05-24.md`](agent-findings/rdm-005-metadata-completeness-2026-05-24.md) | RDM-005 — Metadata Completeness Score widget (live) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-005-watches-me-silenced-2026-05-24.md`](agent-findings/ui-005-watches-me-silenced-2026-05-24.md) | UI-005 — silence `/watches/me` 404 spam on collection landing | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-006-007-009-015-home-polish-2026-05-24.md`](agent-findings/ui-006-007-009-015-home-polish-2026-05-24.md) | Home + file-row polish pass — UI-006/007/009/015 | 2026-05-24 | 2026-05-24 |
