@@ -76,6 +76,55 @@ export function toShortDateString(date: Date | null) {
 }
 
 /**
+ * Produce a short, plain-text preview of a markdown-authored description
+ * suitable for inline rendering in a list-row cell.
+ *
+ * Strips the most common markdown markers (headings, emphasis, inline code,
+ * links, list bullets, blockquotes, fenced-code fences) and collapses
+ * whitespace, then clamps to `maxChars` with a trailing ellipsis when
+ * truncation occurs. Returns "" for null/undefined/empty input so callers
+ * can branch on `.length` for the placeholder.
+ *
+ * This is intentionally lossy: full markdown render in a single table cell
+ * is visually noisy and breaks at small widths. For the full description,
+ * the user clicks through to the detail page where `DescriptionDisplay`
+ * renders the real markdown.
+ */
+export function descriptionPreview(
+  raw: string | null | undefined,
+  maxChars = 120,
+): string {
+  if (!raw) return "";
+  let text = raw;
+  // Drop fenced code blocks entirely.
+  text = text.replace(/```[\s\S]*?```/g, " ");
+  // Drop HTML tags.
+  text = text.replace(/<[^>]*>/g, " ");
+  // Markdown image: ![alt](url) → alt
+  text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1");
+  // Markdown link: [text](url) → text
+  text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
+  // Bold/italic/strike markers (** __ ~~ * _).
+  text = text.replace(/(\*\*|__|~~|[*_])/g, "");
+  // Inline code backticks.
+  text = text.replace(/`+/g, "");
+  // Heading hashes at line start.
+  text = text.replace(/^\s{0,3}#{1,6}\s+/gm, "");
+  // Blockquote markers at line start.
+  text = text.replace(/^\s{0,3}>\s?/gm, "");
+  // List bullets / ordered markers at line start.
+  text = text.replace(/^\s{0,3}([-+*]|\d+\.)\s+/gm, "");
+  // Collapse whitespace.
+  text = text.replace(/\s+/g, " ").trim();
+  if (text.length <= maxChars) return text;
+  // Truncate at a word boundary when possible.
+  const cut = text.slice(0, maxChars);
+  const lastSpace = cut.lastIndexOf(" ");
+  const truncated = lastSpace > maxChars * 0.6 ? cut.slice(0, lastSpace) : cut;
+  return truncated.replace(/[\s.,;:!?-]+$/, "") + "…";
+}
+
+/**
  * Gets current date in the following format: YYYYMMDD
  * @returns string
  */
