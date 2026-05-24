@@ -156,18 +156,13 @@ public class MigrationChainReadinessCheck implements HealthCheck {
   }
 
   /**
-   * Test seam: inject a Migrations instance + bypass init. The
-   * inspector keeps its default extractor (which talks to the live
-   * library types) so any test using this overload must pass a mock
-   * Migrations that throws — or use {@link #forTest(Migrations,
-   * ReadinessConfig, MigrationChainInspector)} to fully control
-   * chain decomposition.
+   * Test seam — inject a Migrations instance, ReadinessConfig, and
+   * inspector + bypass init(). The inspector is required (no 2-arg
+   * convenience overload) because the default extractor talks to the
+   * library's sealed {@code ac.simons.neo4j.migrations.core.MigrationChain};
+   * tests must supply an extractor that returns a controlled
+   * {@link MigrationChainInspector.ChainSnapshot}.
    */
-  static MigrationChainReadinessCheck forTest(Migrations migrations, ReadinessConfig config) {
-    return forTest(migrations, config, new MigrationChainInspector());
-  }
-
-  /** Test seam with explicit inspector — used to bypass sealed library types. */
   static MigrationChainReadinessCheck forTest(
     Migrations migrations,
     ReadinessConfig config,

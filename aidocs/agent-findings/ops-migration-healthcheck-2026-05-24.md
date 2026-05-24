@@ -211,6 +211,27 @@ runbook's §2 would have caught it.
 
 Smoke suite: 25/25 PASS after redeploy.
 
+### A note on the task spec's manual `V99__never_applied.cypher` step
+
+The task's manual-verification step ("deliberately add a junk
+`V99__never_applied.cypher` to the classpath locally + rebuild + curl
+`/q/health/ready` — assert DOWN") is **infeasible at runtime as stated**:
+the backend's `MigrationsRunner.apply()` runs at startup *before* any
+readiness probe can fire. Given a `V99` on the classpath, `apply()` either
+applies it (chain becomes VALID, readiness UP — not the asserted DOWN), or
+fail-fasts (`MigrationsException` aborts startup, no readiness response at
+all). The state the readiness check is meant to catch — a chain mutated
+out-of-band relative to the running backend's classpath — cannot be reached
+just by adding a file.
+
+The IT (`MigrationChainInspectorIT.inspect_returnsDownWithPendingWhenExtraMigrationAdded`)
+is the correct substitution: it exercises the exact code path against real
+Neo4j, simulating the out-of-band mutation by adding the `V99` file to the
+locations dir *after* `apply()` already ran on the 2-step chain. That's the
+post-startup drift scenario the readiness check guards.
+
+### Integration test results
+
 Integration test (`MigrationChainInspectorIT`) — runs end-to-end against a
 Neo4j 5 testcontainer in 29 s; 2/2 tests pass:
 
