@@ -51,20 +51,27 @@ A `shepard-plugin-spatial` that gets this right is **the v6
 flagship capability** — the one feature that demos in 30 seconds
 and that no other tool can match in a quarter.
 
-**The use-case catalogue (8 rows that justify one substrate):**
+**The use-case catalogue (15 rows that justify one substrate).** Rows 9–15 added 2026-05-24 after the user observation that **ultrasonic B/C/D-scans are structurally identical to the brush-sweep shape** — same `(time, anchor, profile, measurements)` rows, different VIEW_RECIPE rendering. The 15-row catalogue lands manufacturing-process recording (1, 2, 7, 14) AND NDT inspection (3, 9–13, 15) on one substrate; this is the v6 differentiator versus every European RDM platform we surveyed.
 
 | # | Use case | Profile shape per timestep | Typical rate | Anchor source | Vendor reference |
 |---|---|---|---|---|---|
 | 1 | AFP head sweep (TCP footprint + thermal) | `LINESTRINGZ` (~50 pts) or `POLYGONZ` (compaction roller contact) | 5–50 Hz | AFP robot encoders | Coriolis, MAG/Cincinnati, Mikrosam |
 | 2 | Robot welding torch path | `POINTZ` (TCP) or `TUBE_CENTERLINE` (tool centerline) | 50–250 Hz | KUKA RSI / Fanuc | Standard ROS-Industrial |
-| 3 | Ultrasonic NDT line scan (PAUT) | `LINESTRINGZ` along probe footprint | 20–500 Hz | Encoder + arm pose | Olympus OmniScan X3, GE Krautkramer |
+| 3 | Ultrasonic NDT line scan (encoded probe) | `LINESTRINGZ` along probe footprint | 20–500 Hz | Encoder + arm pose | Olympus OmniScan X3, GE Krautkramer |
 | 4 | Laser line profilometer | `LINESTRINGZ` (64–3200 vertices per profile) | 1–64 kHz profile rate | Mounting stage encoder | Keyence LJ-X8000 series [^keyence] |
 | 5 | Lidar slice from moving platform | `MULTIPOINTZ` (~16–128 returns per slice) | 5–20 Hz slice | Vehicle / robot pose | Velodyne, Ouster, Hesai |
 | 6 | CT slice reconstruction | `POLYGONZ` or `TIN_Z` (per-slice mesh) | sub-Hz (reconstruction) | Stage Z position | Zeiss METROTOM, GE phoenix |
 | 7 | AFP debulking patch inspection | `POLYGONZ` patches (irregular) | per-patch (event) | Inspection grid | GOM ATOS Q, ZEISS T-SCAN |
 | 8 | Structured-light scanner pass | `MULTIPOINTZ` (5k–200k pts per fringe-set) | 0.5–5 Hz fringe | Scanner head pose | GOM ATOS, HP 3D Structured Light |
+| 9 | **Ultrasonic B-scan** (1D-linear A-scan sweep) | `LINESTRINGZ` (A-scan amplitude vs time-of-flight, ~512–4096 vertices) | 10–500 Hz | 1D encoder along weld / panel | Olympus OmniScan, Sonatest VEO+ |
+| 10 | **Ultrasonic C-scan** (2D raster of A-scans) | `LINESTRINGZ` per grid cell (A-scan amplitude) | 5–50 Hz per cell | 2D raster path encoder | Olympus OmniScan, USL, Eddyfi |
+| 11 | **PAUT sector scan** (phased-array beam steering) | `LINESTRINGZ` per beam angle (A-scan per ray) | 20–500 Hz | Probe pose + beam angle θ (in `orientation` JSONB) | Olympus OmniScan X3, Zetec, Eddyfi |
+| 12 | **TOFD pair scan** (tip-diffraction) | `LINESTRINGZ` (TOFD trace, time-of-flight vs amplitude) | 10–200 Hz | Encoder + paired-transducer offsets (in `orientation`) | Olympus OmniScan, Sonatest VEO+ |
+| 13 | **Eddy-current testing (ET) sweep** | `LINESTRINGZ` (2-element re/im impedance vector) or `MULTIPOINTZ` (multi-frequency) | 50–1000 Hz | 1D/2D encoder, hand-held probe pose | Olympus NORTEC 600, Eddyfi Ectane |
+| 14 | **Acoustic-emission (AE) hit-localisation** | `MULTIPOINTZ` (waveforms per sensor + hit metadata) | event-driven (1–1000 Hz hit rate) | Computed hit position from static sensor array | MISTRAS, Vallen, Physical Acoustics |
+| 15 | **DIC (digital image correlation) strain field** | `TIN_Z` or `MULTIPOINTZ` (strain tensor per surface element) | 1–100 Hz frame | Static surface mesh; frame = time | GOM ARAMIS, LaVision StrainMaster |
 
-All eight collapse to one shape: `(time, profile_kind, profile_geometry, measurements, anchor_frame)`. v6 is the structural recognition that this is one substrate, not eight.
+All fifteen collapse to one shape: `(time, profile_kind, profile_geometry, anchor, orientation?, measurements, anchor_frame)`. v6 is the structural recognition that this is one substrate, not fifteen — and that **manufacturing-process recording and NDT inspection are the same problem under different render modes**. See §7 for the canonical render-mode list (Trace3D brush, B-scan position×ToF image, C-scan top-down heatmap, D-scan voxel field, PAUT radial fan, ET impedance plane) and §13 for the `SPATIAL-V6-NDT-VIEW-RECIPES` row that ships the four canonical NDT VIEW_RECIPEs as v1 work.
 
 **Three-line elevator pitch.** A scanning-profile, robot-trajectory, or NDT line-scan stream lands as one container. Trace3D (the SHACL VIEW_RECIPE) renders the sequence as a swept ruled surface — a *brush stroke* through 3D space. Frame-handshake with `shepard-plugin-cad` puts the as-designed CAD model under the brush so the engineer sees as-designed and as-measured in one canvas, time-scrubbable, color-coded by any bound measurement channel.
 
@@ -666,6 +673,53 @@ Per `feedback_always_write_tests.md`:
 - **Frontend**: Vitest in `frontend/components/spatial/__tests__/BrushTrace.spec.ts`. Mocks the JSON-frame stream; asserts BufferGeometry vertex count matches expectation; asserts color-map application.
 - **Playwright** (per `feedback_validate_via_ui.md` + `feedback_ux_playwright.md`): one e2e visiting the MFFD-Q1-AFP-Ply-5 view at 4K viewport, asserting the canvas renders within budget and the hot-zone tooltip resolves.
 
+### 9.6 Sibling acceptance test: synthetic UT C-scan on planted defect
+
+Added 2026-05-24 to close the "we built it for AFP and it also does inspection" claim with evidence. Substrate-orthogonal to 9.1–9.5 — same plugin, same schema, same write path, different VIEW_RECIPE rendering.
+
+**Generator.** New `examples/mffd-showcase/scripts/gen_ut_cscan.py` invoked from `seed.py` when `--with-ut-cscan` flag is present:
+
+- 200×200 raster of A-scans across a 200mm × 200mm flat CFRP panel (Δ=1mm raster step)
+- Each A-scan = 2048-sample `LINESTRINGZ` (amplitude vs time-of-flight, normalised 0..1, with Hanning-window envelope)
+- **Planted defect**: an 8mm-diameter delamination-shaped flat-bottom hole centred at (100mm, 100mm), depth-of-flight = ~12µs (mid-laminate); A-scans within the defect zone show a strong reflection at the defect-of-flight time slot
+- `anchor`: position in `:CoordinateFrame {name:"mffd-panel-cfrp-300x300", frameType:"PART_NOMINAL"}`
+- `orientation`: probe-down quaternion (z-axis aligned with panel normal)
+- `measurements` (closed-vocab via `MFFDUTAScanShape`):
+  - `gate_amplitude` (double, normalised 0..1, the C-scan reduction — max amplitude in the defect time-window)
+  - `gate_start_us` (double, microseconds — start of A-scan time gate)
+  - `gate_end_us` (double, microseconds — end of A-scan time gate)
+  - `probe_frequency_mhz` (double, ~5 MHz nominal for CFRP NDT)
+  - `coupling_quality` (double, 0..1, optional; surrogate for wetting)
+
+Total rows: 40 000 A-scans × 2048 samples ≈ 82 M sample-points (~120 MB raw; <6 MB after TimescaleDB compression per the §6 ratio).
+
+**Container create.** Same shape as 9.2; `profileKindAllowed=["line"]`, `measurementSchemaAppId=shape-mffd-ut-ascan`.
+
+**VIEW_RECIPE.** New `shepard:UltrasonicCScanShape` (per §7 NDT VIEW_RECIPE family, also added 2026-05-24):
+
+```turtle
+mffd-views:Q1UTCScanPanel a shepard:UltrasonicCScanShape ;
+    shepard:traceSource         spatial-container:mffd-q1-ut-cscan-panel ;
+    shepard:brushMode           "projection-heatmap" ;
+    shepard:valueChannel        "gate_amplitude" ;
+    shepard:gradientStops       "viridis" ;
+    shepard:thresholdAmplitude  0.6 ;
+    shepard:cadOverlayAppId     cad-reference:mffd-panel-cfrp-300x300-step .
+```
+
+**Expected output + acceptance.** 2D top-down heatmap of the panel; defect appears as a high-amplitude (red) circular cluster centred at (100, 100); CAD overlay underneath at 0.3 opacity. Click on the hot zone → tooltip shows `gate_amplitude=0.92`, defect position, A-scan thumbnail.
+
+| Criterion | Target |
+|---|---|
+| Heatmap render time (40k cells) | <2s cache-hit |
+| Defect-cluster centroid match to planted (100, 100) | within 1mm |
+| Threshold-segmented defect-area estimate | within 10% of planted ~50mm² |
+| Heatmap pan/zoom frame rate | ≥30 fps |
+
+**Test obligations.** One additional Playwright e2e at `e2e/spatial/ut-cscan-defect-detection.spec.ts` — asserts the cluster centroid + area estimates via a tiny image-analysis assertion against the rendered canvas at 4K viewport.
+
+**Why this sibling test matters.** Without it, the v6 capability story stops at "we did AFP head sweep, this is one customer use case." With it, the story becomes "the same substrate covers ultrasonic NDT inspection too, with one render-mode change" — and the catalogue in §1 is no longer aspirational.
+
 ---
 
 ## §10 — v0 / v1 / v2 milestone breakdown
@@ -786,6 +840,8 @@ The following rows file in `aidocs/16-dispatcher-backlog.md` under a new section
 | `SPATIAL-V6-009` | **ICP alignment endpoint** — `POST /v2/spatial-containers/{appId}/align-to-cad/{cadAppId}` reusing CAD plugin's Open3D sidecar; writes CST1 `[:ALIGNED_TO]` edge. | M | queued (v1) | aidocs/90 §8.3 + aidocs/83 PC1b. |
 | `SPATIAL-V6-010` | **PostGIS-substrate audit dispatch** — substrate-direct audit prompt on the new schema BEFORE code lands; mirror of TS audit shape; reviews EXPLAIN plans on the seeded MFFD dataset. | M | queued (gate v0) | aidocs/90 §11 row 6; synthesis §7 audit-fleet gap. |
 | `SPATIAL-V6-011` | **Docs trinity refresh** — `plugins/spatial/docs/{reference,quickstart,install}.md` updated to v6 schema, endpoints, BrushTraceShape, and frame-handshake. | S | queued | aidocs/90 §10 v0 docs gate. |
+| `SPATIAL-V6-NDT-VIEW-RECIPES` | **Ship the four canonical NDT VIEW_RECIPE shapes** — `shepard:UltrasonicBScanShape` (position × ToF 2D image), `shepard:UltrasonicCScanShape` (top-down heatmap with `valueChannel=gate_amplitude`), `shepard:UltrasonicDScanShape` (3D voxel field reusing the ruled-surface brush), `shepard:PautSectorScanShape` (radial fan at fixed anchor + beam-angle from `orientation`). Each is a thin SHACL-shape file under `plugins/spatial/src/main/resources/shapes/ndt/` + a Vue 3 viewer component peer of `BrushTraceView.vue`. Covers the §1 NDT row family (3, 9–13) added 2026-05-24 and the §9.6 UT C-scan acceptance test's render path. | M | queued (v1) | aidocs/90 §1 NDT extension + §9.6 + §7 VIEW_RECIPE list. Acceptance: the §9.6 UT C-scan e2e passes against `UltrasonicCScanShape`; sibling B-scan + PAUT smoke tests pass against minimal synthetic fixtures. |
+| `SPATIAL-V6-PAUT-ORIENTATION-EXTENSION` | **Document the `orientation` JSONB schema extension for beam-steering NDT** — PAUT carries `beamSteer: {angleDeg: float, skewDeg: float}` alongside the existing pose quaternion; TOFD carries `pairOffsetMm: {transmitter: [dx,dy,dz], receiver: [dx,dy,dz]}`. No schema change (JSONB is open); convention captured in `MFFDUTAScanShape` SHACL companion + `plugins/spatial/docs/reference.md` NDT section. | XS | queued | aidocs/90 §1 NDT row 11 + 12 footnote; pairs with `SPATIAL-V6-NDT-VIEW-RECIPES`. |
 
 **Reconciliation with existing `PLUGIN-SPATIAL-AUDIT-2026-05-24-*` rows:**
 
