@@ -1,0 +1,62 @@
+{
+  "workflow": "wf14-home-to-lumen-one-click",
+  "runAt": "2026-05-24T08:59:19.013Z",
+  "totalSteps": 5,
+  "clicks": 1,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 11034,
+  "elapsedSeconds": 11,
+  "persona": "researcher-frequent-collection",
+  "phase": 1,
+  "frequency": "very-high",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Home",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 788,
+      "screenshot": "wf14-home-to-lumen-one-click-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "\"Could not load\" visible? false",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "LUMEN link on home: 1",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 4,
+      "label": "Click LUMEN from home",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 2075,
+      "screenshot": "wf14-home-to-lumen-one-click-step-04.png"
+    },
+    {
+      "n": 5,
+      "label": "Landed at: https://shepard.nuclide.systems/collections/42",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

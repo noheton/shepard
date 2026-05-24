@@ -1,0 +1,52 @@
+{
+  "workflow": "wf01d-find-tr004-url-guess",
+  "runAt": "2026-05-24T08:17:33.950Z",
+  "totalSteps": 4,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 2,
+  "elapsedMs": 5722,
+  "elapsedSeconds": 5.7,
+  "persona": "power-user-url-guess",
+  "phase": 1,
+  "steps": [
+    {
+      "n": 1,
+      "label": "Try /search?q= URL guess",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/search?q=TR-004",
+      "pageTransition": true,
+      "durationMs": 819,
+      "screenshot": "wf01d-find-tr004-url-guess-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "/search URL result: https://shepard.nuclide.systems/search?q=TR-004; body excerpt: Deutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)\nHome\nCollections\nContainers\nSign Out\nNotifications\nMark all read\nNo notifications\nAdvanced Search\nQuery\nCollection\nQuery Type*\nSearch Query*\nUse Code view\nSearch\nReset\nResults\nID\n\t\nName\n\nNo data available",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/search?q=TR-004",
+      "urlAfter": "https://shepard.nuclide.systems/search?q=TR-004",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Try /collections/42 (knows the id)",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/search?q=TR-004",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 1224,
+      "screenshot": "wf01d-find-tr004-url-guess-step-03.png"
+    },
+    {
+      "n": 4,
+      "label": "Landed: https://shepard.nuclide.systems/collections/42; title: LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic) | shepard",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

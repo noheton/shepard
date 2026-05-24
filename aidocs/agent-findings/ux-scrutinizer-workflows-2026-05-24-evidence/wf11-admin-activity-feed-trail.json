@@ -1,0 +1,99 @@
+{
+  "workflow": "wf11-admin-activity-feed",
+  "runAt": "2026-05-24T08:30:15.164Z",
+  "totalSteps": 9,
+  "clicks": 1,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 15954,
+  "elapsedSeconds": 16,
+  "persona": "admin",
+  "phase": 4,
+  "frequency": "medium",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Land on admin home",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 1866,
+      "screenshot": "wf11-admin-activity-feed-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Activity-link affordance count from home: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Open /admin landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": true,
+      "durationMs": 777,
+      "screenshot": "wf11-admin-activity-feed-step-03.png"
+    },
+    {
+      "n": 4,
+      "label": "/admin body excerpt: Deutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)\nHome\nCollections\nContainers\nAdmin\nSign Out\nNotifications\nMark all read\nNo notifications\nAdmin\nFeature Toggles\nPlugins\nInstance Health\nStorage Overview\nTemplates\nSemantic Repositories\nUser Groups\nResearch Organization\nPermission Audit Log\nUnhide\nLegacy v1\nAdministration\n\nInstance configuration, plugins, integrations, and audit trails.\n\nFeature Toggles\nFlip runtime feature flags without a restart.\nPlugins\nInspect installed plugins, their versions, and health.\nInstance Health\nSelf-observability metrics: ingest rates, payload kinds, substrates.\nStorage Overview\nPer-substrate capacity, orphans, and retention policy state.\nTemplates\nInstance-wide DataObject and Collection templates.\nSemantic Repositories\nManage ontologies seeded into the internal Fuseki store.\nUser Groups\nGroup memberships that drive permission inheritance.\nResearch Organization\nThis instance's ROR ID — surfaces in FAIR exports.\nPermission Audit Log\nWho granted, revoked, or changed permissions, when.\nUnhide\nHelmholtz Unhide publish-and-harvest integration config.\nLegacy v1\nv1 surface deprecation knobs and per-operator sunset state.",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 5,
+      "label": "/admin visible nav items: []",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 6,
+      "label": "Audit/activity nav link count under /admin: 1",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 7,
+      "label": "Click activity/audit nav link",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 37,
+      "screenshot": "wf11-admin-activity-feed-step-07.png"
+    },
+    {
+      "n": 8,
+      "label": "After activity click URL: https://shepard.nuclide.systems/admin#permission-audit-log",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin#permission-audit-log",
+      "urlAfter": "https://shepard.nuclide.systems/admin#permission-audit-log",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 9,
+      "label": "Activity rows visible: 8",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin#permission-audit-log",
+      "urlAfter": "https://shepard.nuclide.systems/admin#permission-audit-log",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

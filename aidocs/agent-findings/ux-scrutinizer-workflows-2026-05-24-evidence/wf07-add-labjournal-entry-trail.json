@@ -1,0 +1,25 @@
+{
+  "workflow": "wf07-add-labjournal-entry",
+  "runAt": "2026-05-24T08:11:59.384Z",
+  "totalSteps": 1,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 3431,
+  "elapsedSeconds": 3.4,
+  "persona": "researcher",
+  "phase": 2,
+  "frequency": "medium",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open LUMEN collection",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 851,
+      "screenshot": "wf07-add-labjournal-entry-step-01.png"
+    }
+  ]
+}

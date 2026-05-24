@@ -1,0 +1,109 @@
+{
+  "workflow": "wf04-find-mffd-layup-dos",
+  "runAt": "2026-05-24T08:49:33.527Z",
+  "totalSteps": 10,
+  "clicks": 1,
+  "typingSteps": 1,
+  "pageTransitions": 2,
+  "elapsedMs": 17363,
+  "elapsedSeconds": 17.4,
+  "persona": "researcher",
+  "phase": 2,
+  "frequency": "high",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open MFFD-Dropbox collection landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": true,
+      "durationMs": 989,
+      "screenshot": "wf04-find-mffd-layup-dos-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Initial visible row-ish elements: 55",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Filter-input candidates: 1",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 4,
+      "label": "Click filter input",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 585,
+      "screenshot": "wf04-find-mffd-layup-dos-step-04.png"
+    },
+    {
+      "n": 5,
+      "label": "Type 'Layup'",
+      "kind": "type",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 3095,
+      "screenshot": "wf04-find-mffd-layup-dos-step-05.png"
+    },
+    {
+      "n": 6,
+      "label": "Visible rows after 'Layup' filter: 57",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 7,
+      "label": "Sample of visible rows: [\"Home\",\"Collections\",\"Containers\",\"Help\",\"About\",\"API Docs\",\"Toggle theme\",\"TapeLaying-skeleton \",\"BridgeWelding-skeleton \",\"WikiDump-2026-05-23 \",\"ImportScripts \",\"WarmupProbe-2026-05-23 \",\"Tapelaying-2026-05-23 \",\"Track 243 (Run 30238) \",\"Track 241 (Run 30236) \"]",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/collections/661923",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 8,
+      "label": "Open advanced search",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/collections/661923",
+      "urlAfter": "https://shepard.nuclide.systems/search",
+      "pageTransition": true,
+      "durationMs": 706,
+      "screenshot": "wf04-find-mffd-layup-dos-step-08.png"
+    },
+    {
+      "n": 9,
+      "label": "Advanced search has Query Type selector: true",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/search",
+      "urlAfter": "https://shepard.nuclide.systems/search",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 10,
+      "label": "Advanced search advertises \"Use Code view\" / JSON: false",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/search",
+      "urlAfter": "https://shepard.nuclide.systems/search",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

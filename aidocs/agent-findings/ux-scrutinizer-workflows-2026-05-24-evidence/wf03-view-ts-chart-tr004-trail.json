@@ -1,0 +1,43 @@
+{
+  "workflow": "wf03-view-ts-chart-tr004",
+  "runAt": "2026-05-24T08:11:34.337Z",
+  "totalSteps": 3,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 3437,
+  "elapsedSeconds": 3.4,
+  "persona": "researcher",
+  "phase": 2,
+  "frequency": "very-high",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open LUMEN collection landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 860,
+      "screenshot": "wf03-view-ts-chart-tr004-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "TR-004 occurrences on landing: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "TR-004 not visible on collection landing — workflow blocked at click 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

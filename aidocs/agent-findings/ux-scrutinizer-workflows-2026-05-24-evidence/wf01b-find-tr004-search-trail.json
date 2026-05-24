@@ -1,0 +1,81 @@
+{
+  "workflow": "wf01b-find-tr004-search",
+  "runAt": "2026-05-24T08:17:16.727Z",
+  "totalSteps": 7,
+  "clicks": 2,
+  "typingSteps": 1,
+  "pageTransitions": 0,
+  "elapsedMs": 3639,
+  "elapsedSeconds": 3.6,
+  "persona": "researcher-via-search",
+  "phase": 1,
+  "steps": [
+    {
+      "n": 1,
+      "label": "Land on app home, logged in",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 1755,
+      "screenshot": "wf01b-find-tr004-search-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Click header search input",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 41,
+      "screenshot": "wf01b-find-tr004-search-step-02.png"
+    },
+    {
+      "n": 3,
+      "label": "Type 'TR-004' into search",
+      "kind": "type",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 1534,
+      "screenshot": "wf01b-find-tr004-search-step-03.png"
+    },
+    {
+      "n": 4,
+      "label": "Search dropdown results (top 20): [\"Home\",\"Collections\",\"Containers\",\"Help\",\"About\",\"API Docs\",\"Toggle theme\",\"DATA OBJECTS\\nAnomaly Investigation — TR-004 Fuel Turbopump\\ndataobject\\nTR-004\\ndataobject\\nAdvanced search for \\\"TR-004\\\" →\",\"Anomaly Investigation — TR-004 Fuel Turbopump\\ndataobject\",\"TR-004\\ndataobject\",\"Advanced search for \\\"TR-004\\\" →\"]",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 5,
+      "label": "Press Enter to submit search",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 20,
+      "screenshot": "wf01b-find-tr004-search-step-05.png"
+    },
+    {
+      "n": 6,
+      "label": "After-submit URL: https://shepard.nuclide.systems/",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 7,
+      "label": "Result page first 1500 chars: Deutsches Zentrum für Luft- und Raumfahrt e.V. (DLR)\nHome\nCollections\nContainers\nSign Out\nNotifications\nMark all read\nNo notifications\nA\nGood morning, Alice Researcher.\n4 collections, sorted by last update.\nBrowse all\nNew collection\nRecent collections\nLUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic)\nSynthetic showcase dataset for shepard. NOT REAL DLR/LUMEN data. Loosely inspired by the DLR LUMEN demonstrator at Lampoldshausen (https://www.dlr.de/en/ra/research-transfer/projects/project-archive/liquid-upper-stage-demonstrator-engine-lumen). All numerical values are deterministic synthetic outputs of data/generate.py (numpy.random.default_rng(2024)). Used to exercise shepard's feature surface end-to-end.\n17 objects\nD\n7d ago\nHome energy & environment (live)\nLive MQTT-ingested home telemetry — solar inverter, smart-plug energy, and indoor environment. Data flows in continuously through the home-showcase collector (see examples/home-showcase/collector.py). Distinct from the LUMEN hot-fire showcase, which uses synthetic deterministic data.\n3 objects\nD\n5d ago\nAI Exchange\nCollection to exchange data\n12 objects\nF\n2d ago\nMFFD-Dropbox\nMFFD manufacturing dropbox — real process data from DLR Augsburg ZLP. Session 2026-05-23. Bootstrapped at 2026-05-23T17:47:58.764595+00:00. Source: https://backend.bt-au-cube3.intra.dlr.de Created by mffd-dropbox-import.py --bootstrap.\n8514 objects\nF\n12h ago\nBrowse all collections\n DATA OBJECTS\nAnomaly Investigation — TR-004 Fuel Turbopump\ndatao",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

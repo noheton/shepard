@@ -1,0 +1,25 @@
+{
+  "workflow": "wf08-edit-annotation",
+  "runAt": "2026-05-24T08:12:03.963Z",
+  "totalSteps": 1,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 3409,
+  "elapsedSeconds": 3.4,
+  "persona": "data-steward",
+  "phase": 2,
+  "frequency": "high",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open LUMEN collection",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 835,
+      "screenshot": "wf08-edit-annotation-step-01.png"
+    }
+  ]
+}

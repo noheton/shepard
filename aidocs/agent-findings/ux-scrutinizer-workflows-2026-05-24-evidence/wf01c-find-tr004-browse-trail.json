@@ -1,0 +1,79 @@
+{
+  "workflow": "wf01c-find-tr004-browse",
+  "runAt": "2026-05-24T08:17:26.978Z",
+  "totalSteps": 7,
+  "clicks": 1,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 9191,
+  "elapsedSeconds": 9.2,
+  "persona": "researcher-via-browse",
+  "phase": 1,
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open collections list",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": true,
+      "durationMs": 858,
+      "screenshot": "wf01c-find-tr004-browse-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "After 8s settle, \"Could not load\" still visible? false",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "LUMEN row count: 1",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 4,
+      "label": "Click LUMEN collection row",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/collections",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": false,
+      "durationMs": 31,
+      "screenshot": "wf01c-find-tr004-browse-step-04.png"
+    },
+    {
+      "n": 5,
+      "label": "Arrived at: https://shepard.nuclide.systems/collections",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 6,
+      "label": "TR-004 element count on collection page: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections",
+      "urlAfter": "https://shepard.nuclide.systems/collections",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 7,
+      "label": "TR-004 not visible on collection landing — pagination or accordion needed",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

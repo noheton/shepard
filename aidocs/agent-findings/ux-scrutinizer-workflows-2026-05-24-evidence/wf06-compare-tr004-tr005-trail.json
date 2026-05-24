@@ -1,0 +1,43 @@
+{
+  "workflow": "wf06-compare-tr004-tr005",
+  "runAt": "2026-05-24T08:11:54.917Z",
+  "totalSteps": 3,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 3391,
+  "elapsedSeconds": 3.4,
+  "persona": "researcher-investigation",
+  "phase": 2,
+  "frequency": "high",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open LUMEN collection landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 817,
+      "screenshot": "wf06-compare-tr004-tr005-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Compare-affordance count: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Assuming no native Compare → measuring linear cost: visit TR-004, take note, back, visit TR-005, mental diff",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

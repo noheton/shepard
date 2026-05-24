@@ -1,0 +1,61 @@
+{
+  "workflow": "wf01a-anonymous-first-contact",
+  "runAt": "2026-05-24T08:17:11.853Z",
+  "totalSteps": 5,
+  "clicks": 1,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 1131,
+  "elapsedSeconds": 1.1,
+  "persona": "anonymous-visitor",
+  "phase": 1,
+  "steps": [
+    {
+      "n": 1,
+      "label": "Land on root URL as anonymous visitor",
+      "kind": "goto",
+      "urlBefore": "about:blank",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": true,
+      "durationMs": 933,
+      "screenshot": "wf01a-anonymous-first-contact-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Title: \"shepard\"",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Visible top-30 CTAs: [{\"text\":\"\",\"href\":\"https://shepard.nuclide.systems/\",\"tag\":\"A\"},{\"text\":\"Home\",\"href\":\"https://shepard.nuclide.systems/\",\"tag\":\"A\"},{\"text\":\"Collections\",\"href\":\"https://shepard.nuclide.systems/collections\",\"tag\":\"A\"},{\"text\":\"Containers\",\"href\":\"https://shepard.nuclide.systems/containers\",\"tag\":\"A\"},{\"text\":\"\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"\",\"href\":\"https://shepard.nuclide.systems/me#profile\",\"tag\":\"A\"},{\"text\":\"\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"Sign In\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"\",\"href\":\"https://www.dlr.de/\",\"tag\":\"A\"},{\"text\":\"Mark all read\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"\",\"href\":null,\"tag\":\"BUTTON\"},{\"text\":\"Developed by\",\"href\":\"https://www.dlr.de/\",\"tag\":\"A\"},{\"text\":\"Go to Collections\",\"href\":\"https://shepard.nuclide.systems/collections\",\"tag\":\"A\"},{\"text\":\"Go to Containers\",\"href\":\"https://shepard.nuclide.systems/containers\",\"tag\":\"A\"},{\"text\":\"API Docs\",\"href\":\"https://shepard-api.nuclide.systems/shepard/do",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 4,
+      "label": "Click first visible link to /collections",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 49,
+      "screenshot": "wf01a-anonymous-first-contact-step-04.png"
+    },
+    {
+      "n": 5,
+      "label": "Result URL: https://shepard.nuclide.systems/",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

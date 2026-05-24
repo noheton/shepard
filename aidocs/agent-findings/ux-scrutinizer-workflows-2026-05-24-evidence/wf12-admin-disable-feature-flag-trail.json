@@ -1,0 +1,71 @@
+{
+  "workflow": "wf12-admin-disable-feature-flag",
+  "runAt": "2026-05-24T08:30:25.382Z",
+  "totalSteps": 6,
+  "clicks": 1,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 8994,
+  "elapsedSeconds": 9,
+  "persona": "instance-admin",
+  "phase": 4,
+  "frequency": "low",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open /admin landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": true,
+      "durationMs": 784,
+      "screenshot": "wf12-admin-disable-feature-flag-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Feature-flag link count under /admin: 1",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Click feature-flags link",
+      "kind": "click",
+      "urlBefore": "https://shepard.nuclide.systems/admin",
+      "urlAfter": "https://shepard.nuclide.systems/admin",
+      "pageTransition": false,
+      "durationMs": 24,
+      "screenshot": "wf12-admin-disable-feature-flag-step-03.png"
+    },
+    {
+      "n": 4,
+      "label": "Feature-flags URL: https://shepard.nuclide.systems/admin#feature-toggles",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "urlAfter": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 5,
+      "label": "Switch/checkbox toggles visible: 4",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "urlAfter": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 6,
+      "label": "Visible feature-flag rows (first 20): [\"Home\",\"Collections\",\"Containers\",\"Admin\",\"Help\",\"About\",\"API Docs\",\"Toggle theme\",\"spatial-data\\nEnables PostGIS spatial data containers and references (shepard.infrastructure.spatial.\",\"versioning\\nEnables collection versioning (shepard.features.versioning.enabled).\"]",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "urlAfter": "https://shepard.nuclide.systems/admin#feature-toggles",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}

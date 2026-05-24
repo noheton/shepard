@@ -1,0 +1,88 @@
+{
+  "workflow": "wf05-bulk-annotate-3-dos",
+  "runAt": "2026-05-24T08:11:50.436Z",
+  "totalSteps": 8,
+  "clicks": 0,
+  "typingSteps": 0,
+  "pageTransitions": 1,
+  "elapsedMs": 3904,
+  "elapsedSeconds": 3.9,
+  "persona": "data-steward",
+  "phase": 2,
+  "frequency": "medium",
+  "steps": [
+    {
+      "n": 1,
+      "label": "Open LUMEN collection landing",
+      "kind": "goto",
+      "urlBefore": "https://shepard.nuclide.systems/",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": true,
+      "durationMs": 805,
+      "screenshot": "wf05-bulk-annotate-3-dos-step-01.png"
+    },
+    {
+      "n": 2,
+      "label": "Visible checkboxes on collection landing: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 3,
+      "label": "Bulk/select affordance count: 0",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 4,
+      "label": "FINDING: no checkbox affordance for multi-select on DataObjects → bulk-annotate requires N visits to N DO detail pages",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 5,
+      "label": "TR-001 not visible — would need pagination/expansion",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 6,
+      "label": "TR-002 not visible — would need pagination/expansion",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 7,
+      "label": "TR-003 not visible — would need pagination/expansion",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    },
+    {
+      "n": 8,
+      "label": "Total clicks to set up annotation on 3 DOs: 0 (NOT counting the form-fill itself per DO)",
+      "kind": "note",
+      "urlBefore": "https://shepard.nuclide.systems/collections/42",
+      "urlAfter": "https://shepard.nuclide.systems/collections/42",
+      "pageTransition": false,
+      "durationMs": 0
+    }
+  ]
+}
