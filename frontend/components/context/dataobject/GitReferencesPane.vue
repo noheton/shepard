@@ -103,7 +103,15 @@ const urlSuggestions = computed(() =>
 <template>
   <div class="d-flex flex-column ga-4">
     <div class="d-flex align-center justify-space-between">
-      <h5 class="text-h5">Git References</h5>
+      <h5 class="text-h5">
+        Git References
+        <!-- UX Pattern D: low-emphasis count badge so the user knows how many
+             entries this section holds without expanding / scrolling. -->
+        <span
+          class="text-low-emphasis ml-1"
+          data-testid="git-references-count"
+        >({{ gitReferences.length }})</span>
+      </h5>
       <v-btn
         color="primary"
         variant="flat"

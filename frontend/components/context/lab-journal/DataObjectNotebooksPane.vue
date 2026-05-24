@@ -3,8 +3,17 @@ import { useFetchNotebooks } from "~/composables/context/useFetchNotebooks";
 import { useJupyterPreference } from "~/composables/context/useJupyterPreference";
 
 const props = defineProps<{ dataObjectAppId: string }>();
+const emit = defineEmits(["numberOfEntriesChanged"]);
 
 const { notebooks, isLoading } = useFetchNotebooks(props.dataObjectAppId);
+
+// UX Pattern D: surface the count to the parent panel title (low-emphasis
+// badge in the v-expansion-panel-title). Mirrors the lab-journal pattern.
+watch(
+  notebooks,
+  list => emit("numberOfEntriesChanged", list?.length ?? 0),
+  { immediate: true },
+);
 const { preferredJupyterUrl, isSaving, save } = useJupyterPreference();
 
 const jupyterUrlInput = ref("");

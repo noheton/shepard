@@ -29,6 +29,16 @@ const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
 } = useCounter();
+// UX Pattern D: counts surfaced on every reference-bearing panel/section so the
+// title alone tells the user whether the panel is worth expanding.
+const {
+  counter: numberOfNotebookEntries,
+  updateCount: onNotebookCountChanged,
+} = useCounter();
+const numberOfSemanticAnnotations = ref<number | undefined>(undefined);
+function onAnnotationsLoaded(annotations: { length: number }) {
+  numberOfSemanticAnnotations.value = annotations.length;
+}
 const dataObjectApi = useShepardApi(DataObjectApi);
 
 const showAttributeEditDialog = ref(false);
@@ -231,7 +241,17 @@ const dataObjectAccessRights = computed<string | null>(() => {
             <!-- Always-visible: Semantic Annotation chips. -->
             <section class="page-section">
               <div class="page-section-head">
-                <div class="text-h5 text-textbody1">Semantic Annotations</div>
+                <div class="text-h5 text-textbody1">
+                  Semantic Annotations
+                  <!-- UX Pattern D: low-emphasis count badge — matches the
+                       ExpansionPanelItem convention so the section title is
+                       scannable without expanding/scrolling. -->
+                  <span
+                    v-if="numberOfSemanticAnnotations !== undefined"
+                    class="text-low-emphasis ml-1"
+                    data-testid="semantic-annotations-count"
+                  >({{ numberOfSemanticAnnotations }})</span>
+                </div>
                 <AddAnnotationButton
                   v-if="isAllowedToEditCollection"
                   :annotated="
@@ -244,6 +264,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                   new AnnotatedDataObject(collection.id, dataObject.id)
                 "
                 :can-delete="!!isAllowedToEditCollection"
+                @annotations="onAnnotationsLoaded"
               />
             </section>
 
@@ -348,9 +369,13 @@ const dataObjectAccessRights = computed<string | null>(() => {
                 </ExpansionPanelItem>
                 <ExpansionPanelItem
                   v-if="dataObject.appId"
+                  :count="numberOfNotebookEntries"
                   title="Jupyter Notebooks"
                 >
-                  <DataObjectNotebooksPane :data-object-app-id="dataObject.appId" />
+                  <DataObjectNotebooksPane
+                    :data-object-app-id="dataObject.appId"
+                    @number-of-entries-changed="onNotebookCountChanged"
+                  />
                 </ExpansionPanelItem>
                 <!-- Provenance: two views — a structured time-based log
                      (default, easier to read) and the force-directed
