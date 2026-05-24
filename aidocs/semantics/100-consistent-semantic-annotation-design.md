@@ -237,7 +237,36 @@ Data Model export per
 Both are produced by the same renderer at `/v2/annotations/{appId}.ttl`
 content-negotiated.
 
-### 3.4 "Everything is annotatable"
+### 3.4 The `attributes` map is the pragmatic predecessor of this primitive
+
+The `attributes: Map<String,String>` field on `:AbstractDataObject` +
+`:Collection` is the **pragmatic open-typed predecessor** of the
+typed primitive in §3.1. It was the right shape for upstream
+shepard when no ontology was loaded and time-to-first-annotation
+mattered more than vocabulary discipline — researchers could attach
+any key:value to any entity and keep moving. That shape carried the
+fork to MFFD scale.
+
+It pays a cost we can now afford to retire. Every `attributes||<key>`
+property is structurally a (subject, predicate, value) triple — the
+same shape as `:SemanticAnnotation`, without the typing
+(`expected_object_type`), the vocabulary control (`vocabularyId`),
+the provenance back-pointer (`sourceActivityAppId`), the validity
+window, or the queryability via SPARQL. The 90+ keys NEO-AUDIT-005
+catalogued (`material`, `bench`, `propellant`, `v16_pass1`,
+`source_*`, the brief LIC1-pre-shipment `license` collision) are
+exactly the data the typed primitive serves — they were already doing
+the work of annotations; the migration is about giving them the type
+discipline + provenance + queryability the open-typed predecessor
+couldn't.
+
+This is the structural reason for the §11 migration. It also has a
+basic-mode UX implication called out explicitly in §5.0 below: there
+is **one** annotation primitive, **one** UI button, **one** mental
+model — the legacy "Add attribute" affordance + the legacy
+"Add annotation" affordance collapse into the same dialog from v0.
+
+### 3.5 "Everything is annotatable"
 
 The subject of an annotation is any entity with an `appId`. The list
 today: `DataObject`, `Collection`, `BasicReference` (all subclasses),
@@ -377,11 +406,45 @@ captured automatically); no new wiring.
 
 ## §5 — The UI affordance (ease-of-use focus)
 
-This section is load-bearing for axis #1 — the basic-mode default
-must be three clicks. The existing `AddAnnotationDialog.vue` (320
-lines, IRI-typed autocomplete with `SemanticRepository` picker per
-side) is the predecessor; this design simplifies the default and
-demotes the picker to advanced mode.
+### 5.0 One concept, one button — collapse "Add attribute" into "Annotate"
+
+The legacy UI has two buttons for what §3.4 named as the same
+underlying concept: **"Add attribute"** (the free-text key-value
+affordance writing to `:DataObject.attributes||*`) and
+**"Add annotation"** (the existing IRI-typed `AddAnnotationDialog.vue`
+writing to `:Annotation`). Researchers experience this as **two
+near-identical dialogs that pick different storage paths for the
+same act of describing a thing**. The collapse is non-optional:
+**from v0 there is one button — "Annotate" — that opens the §5.1
+three-click dialog**. The `:SemanticAnnotation` substrate from §3
+absorbs both legacy paths.
+
+The shape:
+
+- **Basic mode**: one "Annotate" button per entity. No second button,
+  no escape hatch. The 3-click dialog covers 100% of the legacy
+  use cases.
+- **Advanced mode**: the same "Annotate" button is the default. A
+  secondary "Add legacy raw attribute" menu item exists under an
+  advanced disclosure, labelled with a deprecation tag pointing at
+  §11 Phase 2/3. Writes via this path land in the legacy
+  `:DataObject.attributes||*` map AND in `:SemanticAnnotation` via
+  the §11 Phase 2 dual-write — equivalent on the read side, but the
+  raw-attribute affordance disappears entirely at Phase 3.
+- **Backward chips**: existing `:DataObject.attributes||*` entries
+  render as chips alongside `:SemanticAnnotation` chips in v0
+  (visually-indistinguishable display + identical edit/delete flow);
+  the storage difference is invisible to the user.
+
+This is the structural fix for what the user flagged as "two
+buttons, one concept" — and it ships in v0 (SEMA-V6-017), not
+deferred to the §11 substrate migration. The substrate migration
+follows underneath; the UX collapse leads.
+
+The existing `AddAnnotationDialog.vue` (320 lines, IRI-typed
+autocomplete with `SemanticRepository` picker per side) is the
+predecessor; this design simplifies the default and demotes the
+picker to advanced mode.
 
 ### 5.1 The three-click default flow (basic mode)
 
@@ -791,6 +854,12 @@ times — a transient ingest marker that should have been
 
 ### 11.1 Three phases
 
+**The UI collapse leads the substrate migration.** Per §5.0, the
+basic-mode UI ships the unified "Annotate" button in v0 (SEMA-V6-017),
+before any of the substrate phases below land. Researchers get the
+unified mental model immediately ("one button, one concept") while the
+storage layer catches up underneath through the three phases.
+
   - **Phase 1** (this design, v0): introduce the evolved
     `:SemanticAnnotation` with new columns + the polymorphic
     `/v2/annotations/*` REST + the MCP tools + the 3-click UI. Existing
@@ -798,7 +867,10 @@ times — a transient ingest marker that should have been
     `subjectKind`/`subjectAppId` from their `:HAS_ANNOTATION` edge
     source label; `sourceMode='human'` for all; `vocabularyId` inferred
     from `propertyRepository`. Existing `AbstractDataObject.attributes`
-    bag UNTOUCHED.
+    bag UNTOUCHED on the substrate side; the legacy "Add attribute"
+    button is removed from the basic-mode UI in v0 even though the
+    storage is still bifurcated (advanced-mode escape hatch carries
+    the legacy raw-attribute write path with a deprecation tag).
   - **Phase 2** (v1): write-time dual-write. When a user adds a
     free-text attribute via the legacy UI/API, a sibling
     `:SemanticAnnotation` with `predicateIri='shepard:legacyAttribute',

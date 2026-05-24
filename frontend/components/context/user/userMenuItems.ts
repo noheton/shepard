@@ -6,6 +6,8 @@ export enum UserFragments {
   SUBSCRIPTIONS = "subscriptions",
   GIT_CREDENTIALS = "git-credentials",
   MCP = "mcp",
+  // ----- placeholder fragments (no-UI-gap roll-out 2026-05-24) -----
+  AI_SETTINGS = "ai-settings",
 }
 
 export const UserMenuEntries: MenuEntry[] = [
@@ -33,5 +35,11 @@ export const UserMenuEntries: MenuEntry[] = [
     name: "Git Credentials",
     fragment: UserFragments.GIT_CREDENTIALS,
     icon: "mdi-source-repository",
+  },
+  // ----- placeholder menu entry (no-UI-gap roll-out 2026-05-24) -----
+  {
+    name: "AI Settings",
+    fragment: UserFragments.AI_SETTINGS,
+    icon: "mdi-robot-outline",
   },
 ];

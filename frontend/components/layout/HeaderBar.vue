@@ -26,6 +26,10 @@
       <v-btn class="nav-item d-none d-md-inline-flex" to="/" exact>Home</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/collections">Collections</v-btn>
       <v-btn class="nav-item d-none d-md-inline-flex" to="/containers">Containers</v-btn>
+      <!-- Top-level semantic substrate link (no-UI-gap roll-out 2026-05-24).
+           Promotes the new /semantic browser (vocabularies + SPARQL) to a
+           first-class destination per aidocs/semantics/100. -->
+      <v-btn class="nav-item d-none d-md-inline-flex" to="/semantic">Semantic</v-btn>
       <v-btn
         v-if="isInstanceAdmin"
         class="nav-item d-none d-md-inline-flex"
@@ -324,6 +328,7 @@
       <v-list-item title="Home" to="/" prepend-icon="mdi-home-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Collections" to="/collections" prepend-icon="mdi-folder-multiple-outline" @click="mobileDrawerOpen = false" />
       <v-list-item title="Containers" to="/containers" prepend-icon="mdi-database-outline" @click="mobileDrawerOpen = false" />
+      <v-list-item title="Semantic" to="/semantic" prepend-icon="mdi-library-outline" @click="mobileDrawerOpen = false" />
       <v-list-item
         v-if="isInstanceAdmin"
         title="Admin"

@@ -6,6 +6,7 @@ import {
 import SubscriptionsPane from "~/components/context/user/SubscriptionsPane.vue";
 import GitCredentialsPane from "~/components/context/user/GitCredentialsPane.vue";
 import McpPane from "~/components/context/user/McpPane.vue";
+import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 
 useHead({
@@ -46,6 +47,13 @@ const landingCards = [
     title: "Git Credentials",
     description: "Personal access tokens for git providers used by importers.",
   },
+  // ----- placeholder card (no-UI-gap roll-out 2026-05-24) -----
+  {
+    fragment: UserFragments.AI_SETTINGS,
+    icon: "mdi-robot-outline",
+    title: "AI Settings",
+    description: "Personal LLM provider config — base URL, model, API key (placeholder).",
+  },
 ];
 </script>
 
@@ -62,5 +70,10 @@ const landingCards = [
     <McpPane v-if="routeFragment === UserFragments.MCP" />
     <SubscriptionsPane v-if="routeFragment === UserFragments.SUBSCRIPTIONS" />
     <GitCredentialsPane v-if="routeFragment === UserFragments.GIT_CREDENTIALS" />
+    <!-- placeholder pane (no-UI-gap roll-out 2026-05-24) -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === UserFragments.AI_SETTINGS"
+      slug="ai-settings"
+    />
   </PaneLayout>
 </template>
