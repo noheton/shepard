@@ -19,9 +19,8 @@
  *   - an invalid ORCID surfaces an inline error before save
  */
 import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
 
-const KC = process.env.KEYCLOAK_HOST || "https://shepard-auth.nuclide.systems";
-const REALM = "shepard-demo";
 const USER = process.env.E2E_USER || "alice";
 const PASS = process.env.E2E_PASS || "alice-demo";
 
@@ -31,24 +30,10 @@ const VALID_ORCID = "0000-0002-1825-0097"; // canonical orcid.org example
 const VALID_ORCID_ALT = "0000-0002-1694-233X"; // valid example with `X` check digit
 const INVALID_ORCID = "abc";
 
-async function loginAs(
-  page: import("@playwright/test").Page,
-  username: string,
-  password: string,
-) {
-  await page.goto("/auth/signIn");
-  await page
-    .getByRole("button", { name: /sign in|login/i })
-    .first()
-    .click();
-  await page.waitForURL(`${KC}/realms/${REALM}/**`, { timeout: 20_000 });
-  await page.fill("#username", username);
-  await page.fill("#password", password);
-  await page.click('[type="submit"]');
-  await page.waitForURL(/shepard\.nuclide\.systems(?!.*error)/, {
-    timeout: 20_000,
-  });
-}
+// Local `loginAs` removed 2026-05-24 — folded into the shared
+// `loginAs` helper (E2E-AUTH-TOLERANT-LOGIN). The shared helper
+// is tolerant of the SSO-cookie-hot bounce that this spec's local
+// version didn't cover.
 
 async function clearOrcid(page: import("@playwright/test").Page) {
   // Set ORCID back to empty so subsequent test runs start from a known

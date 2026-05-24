@@ -18,59 +18,13 @@
  * permissions vary by browser context. The unit tests
  * (`frontend/tests/unit/citation.test.ts`) cover the formatter shape.
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
-/**
- * Tolerant login: on the second-and-later runs inside the same browser
- * context Keycloak holds an SSO session and skips the password prompt
- * entirely, bouncing the user straight back to the app. The shared
- * `loginAs` helper's `waitForURL(KC)` then times out.
- *
- * Also: the live shepard.nuclide.systems NextAuth flow has a known
- * sign-in redirect-loop sensitivity (also surfaced by LIC1 e2e) where
- * a partially-initialised session bounces /auth/signIn → / → /auth/signIn.
- * We retry the click-then-wait-for-KC cycle a few times before giving up.
- */
-async function loginAsTolerant(page: Page, username: string, password: string) {
-  // First check: are we already authenticated?
-  await page.goto("/", { waitUntil: "domcontentloaded" }).catch(() => {});
-  const signOut = page.locator("text=SIGN OUT");
-  if (await signOut.first().isVisible().catch(() => false)) return;
-  // Retry the full login dance up to 3 times to ride out the
-  // sign-in redirect loop.
-  const KC = process.env.KEYCLOAK_HOST || "https://shepard-auth.nuclide.systems";
-  const REALM = "shepard-demo";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      await page.goto("/auth/signIn", { waitUntil: "domcontentloaded" });
-      // Wait for the page to settle (no more redirects for a moment).
-      await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
-      // If we already bounced back into the app, we're done.
-      if (await signOut.first().isVisible().catch(() => false)) return;
-      await page
-        .getByRole("button", { name: /sign in|login/i })
-        .first()
-        .click({ timeout: 5_000 });
-      await page.waitForURL(`${KC}/realms/${REALM}/**`, { timeout: 10_000 });
-      await page.fill("#username", username);
-      await page.fill("#password", password);
-      await page.click('[type="submit"]');
-      await page.waitForURL(/shepard\.nuclide\.systems(?!.*error)/, { timeout: 15_000 });
-      await page.waitForSelector("text=SIGN OUT", { timeout: 10_000 });
-      return;
-    } catch (e) {
-      if (attempt === 2) {
-        // Last attempt → defer to the shared helper for a final try
-        // and let its error propagate naturally for diagnostics.
-        await loginAs(page, username, password);
-        return;
-      }
-      // brief settle before next attempt
-      await page.waitForTimeout(1500);
-    }
-  }
-}
+// Local `loginAsTolerant` removed 2026-05-24 — folded into the shared
+// `loginAs` helper (E2E-AUTH-TOLERANT-LOGIN). The shared helper now
+// covers SSO-cookie-hot, cookie-cold, and the NextAuth sign-in
+// redirect-loop retry that this spec originally worked around locally.
 
 test.describe("RDM-001: Cite this dataset card", () => {
   // Match the LIC1 viewport — the collection sidebar collapses below 1280px.
@@ -82,7 +36,7 @@ test.describe("RDM-001: Cite this dataset card", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {
-    await loginAsTolerant(page, "alice", "alice-demo");
+    await loginAs(page, "alice", "alice-demo");
   });
 
   test("card heading visible on /collections/42 (LUMEN)", async ({ page }) => {
