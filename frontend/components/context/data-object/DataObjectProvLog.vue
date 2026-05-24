@@ -28,7 +28,8 @@
 
     <EmptyListIcon
       v-else-if="visibleRows.length === 0"
-      label="No matching provenance events yet"
+      :label="emptyLabel"
+      :hint="emptyHint"
     />
 
     <v-table v-else density="compact" class="prov-log">
@@ -111,6 +112,10 @@ import {
   type ActivityIO,
 } from "@dlr-shepard/backend-client";
 import { useV2ShepardApi } from "~/composables/common/api/useV2ShepardApi";
+import {
+  emptyStateHint,
+  emptyStateLabel,
+} from "~/utils/provenanceEmptyState";
 
 const props = defineProps<{
   targetAppId: string;
@@ -213,6 +218,18 @@ const visibleRows = computed(() => {
     );
   });
 });
+
+/**
+ * RDM-2026-05-24-004 closure: when the response is genuinely empty
+ * (no Activity rows targeting this entity at all), explain *why* —
+ * provenance capture is currently scoped to write verbs and only
+ * resolves entities whose appId lands as the tail segment of a v2
+ * path. Historic v1-id traffic against this DO will not surface
+ * here until PROV-V1-NUMERIC-LOOKUP ships. Filter-induced empties
+ * keep the original copy so the user knows the filter is the cause.
+ */
+const emptyLabel = computed(() => emptyStateLabel(activities.value.length));
+const emptyHint = computed(() => emptyStateHint(activities.value.length));
 
 onMounted(() => void load());
 </script>
