@@ -309,6 +309,36 @@ library's bootstrap migration).
 
 ---
 
+## A note on out-of-order `installedOn` timestamps
+
+When you run `MATCH (m:__Neo4jMigration) RETURN m ORDER BY m.version DESC`
+you may see rows where a numerically-higher version was applied **before** a
+numerically-lower one — e.g. V63 stamped `2026-05-22T15:38`, V61 stamped
+`2026-05-22T15:39+1 day`. This is **working as intended**, not a sign of
+chain corruption.
+
+The migrations library applies versions forward-only on every restart. If a
+new migration is spliced in late (V61 here was added to `main` two days after
+V62 + V63 had already been applied to the live database), the next restart
+applies the missing version with the current wall-clock timestamp. The chain
+itself stays valid — every version is applied exactly once with the right
+checksum — but the `installedOn` axis no longer monotonically tracks the
+`version` axis.
+
+The readiness check (`MigrationChainReadinessCheck`) validates **versions
+applied + checksums** against the classpath; it does **not** validate
+timestamp ordering. If you need a "what was applied when" timeline, query
+`installedOn` ascending and the picture is correct.
+
+**Why this is intentional.** The forward-only-from-current-state behaviour
+is the library's correct response to late-arriving chain splices — refusing
+to apply V61 because V63 was applied first would lock the deploy out of any
+past-tense fix that lands on `main` after a partial deploy. Operator
+action: none; this is documentation of expected behaviour. Filed by
+NEO-AUDIT-2026-05-24-014.
+
+---
+
 ## Provenance
 
 - Closes: `aidocs/16` row OPS-MIGRATION-HEALTHCHECK (2026-05-24).
