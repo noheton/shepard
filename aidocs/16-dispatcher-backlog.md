@@ -1346,7 +1346,8 @@ PromptLog substrate is the canonical f(ai)²r consumer in the fork).
 Source: `aidocs/agent-findings/ui-scrutinizer-2026-05-24.md` (19 findings total). Status as of 2026-05-24:
 - UI-001 **shipped** (commit `5913ca20` — `fix(layout): BUG #139` collection layout SSR/hydration)
 - UI-002 **shipped** (commit `14301bc6` — `feat(header-search)` debounced multi-kind dropdown)
-- UI-003, UI-004 **in flight** (SectionIndexLanding + Unauthorized view agent dispatched)
+- UI-003 **shipped** (commit `80935cd0` body actually carries the UI-003/004 files; commit `85c1602b` clarifies the attribution drift)
+- UI-004 **shipped** (same commit; Option A — URL-stable Unauthorized view)
 - UI-005..UI-019 — queued below
 
 | ID | description | effort | status | notes |
