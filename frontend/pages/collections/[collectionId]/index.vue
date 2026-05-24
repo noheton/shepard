@@ -139,9 +139,14 @@ useHead({
   <div style="max-width: 1400px">
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
-        <!-- Feature B: Hero banner — only rendered when heroImageUrl is set. -->
+        <!-- Feature B: Hero banner — only rendered when heroImageUrl is set.
+             #metadata-heroimage-edit doubles as the RDM-005 deep-link target;
+             when no hero image is set we render a thin placeholder
+             carrying the anchor so the completeness-widget jump still
+             lands on something user-visible. -->
         <v-col v-if="collection.heroImageUrl" cols="12" class="pa-0">
           <v-img
+            id="metadata-heroimage-edit"
             :src="collection.heroImageUrl"
             height="220"
             cover
@@ -151,6 +156,14 @@ useHead({
               <!-- Graceful 404 handling: simply show nothing when the image fails. -->
             </template>
           </v-img>
+        </v-col>
+        <v-col v-else cols="12" class="pa-0">
+          <div
+            id="metadata-heroimage-edit"
+            class="hero-image-placeholder text-caption text-medium-emphasis"
+          >
+            No hero image set — add one via the Edit Collection dialog.
+          </div>
         </v-col>
         <v-col cols="12">
           <Breadcrumbs
@@ -177,9 +190,13 @@ useHead({
             <!-- LIC1: FAIR metadata strip — license + accessRights. Shown only
                  when at least one is set; null means undeclared and we
                  deliberately don't show "—" here (the edit dialog is the
-                 affordance to set them). -->
+                 affordance to set them).
+                 #metadata-license-edit doubles as the RDM-005 deep-link
+                 target — the completeness widget scrolls here on the
+                 "Add license" / "Set access rights" actions. -->
             <v-row
               v-if="collectionLicense || collectionAccessRights"
+              id="metadata-license-edit"
               no-gutters
               class="pb-3 ga-2 align-center"
             >
@@ -192,6 +209,17 @@ useHead({
                 :access-rights="collectionAccessRights"
               />
             </v-row>
+            <!-- RDM-005 deep-link anchor — also placed unconditionally so
+                 the scrollIntoView target exists even when both fields
+                 are unset (the most common "needs fixing" state). -->
+            <div
+              v-else
+              id="metadata-license-edit"
+              class="pb-1 text-caption text-medium-emphasis"
+            >
+              No license or access-rights set — use the Edit dialog above
+              to add them.
+            </div>
             <v-row
               no-gutters
               class="justify-end pb-2 ga-2 align-center"
@@ -228,7 +256,10 @@ useHead({
             </v-row>
             <!-- Always-visible: Description with inline edit. Lives outside the
                  collapsibles so users don't have to click to read it. -->
-            <section class="page-section">
+            <section
+              id="metadata-description-section"
+              class="page-section"
+            >
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Description</div>
                 <v-btn
@@ -275,9 +306,20 @@ useHead({
                  for the funder-reviewing-the-dataset persona. -->
             <CiteThisCard :collection="collection" />
 
+            <!-- RDM-005: Metadata completeness score widget. 0–100 score
+                 with red/amber/green chip + per-check breakdown driving
+                 operators to fill the FAIR R1.1 / R1.3 gaps the prior
+                 13 UI improvements left untouched. Pure frontend — feeds
+                 off the wire shape + three cheap fetches (annotations,
+                 lab journal, creator ORCID). -->
+            <MetadataCompletenessCard :collection="collection" />
+
             <!-- Always-visible: Semantic Annotation chips. Out of the
                  collapsibles so users see the tags at a glance. -->
-            <section class="page-section">
+            <section
+              id="metadata-annotations-section"
+              class="page-section"
+            >
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Semantic Annotations</div>
                 <AddAnnotationButton
@@ -294,7 +336,10 @@ useHead({
             <!-- Always-visible: flat, searchable DataObjects list. The
                  #24 "Collection-scale navigation" entry point — user
                  can answer "where is X" without opening collapsibles. -->
-            <section class="page-section">
+            <section
+              id="metadata-dataobjects-section"
+              class="page-section"
+            >
               <div class="page-section-head">
                 <div class="text-h5 text-textbody1">Data Objects</div>
                 <v-btn
@@ -347,7 +392,7 @@ useHead({
                   :count="numberOfLabJournalEntries"
                   title="Lab Journal"
                 >
-                  <div class="pt-4">
+                  <div id="metadata-labjournal-section" class="pt-4">
                     <CollectionLabJournalEntryList
                       :collection-id="routeParams.collectionId"
                       :collection-app-id="collectionAppId"
@@ -437,5 +482,8 @@ useHead({
 .collection-hero-banner {
   border-radius: 4px;
   margin-bottom: 8px;
+}
+.hero-image-placeholder {
+  padding: 6px 4px;
 }
 </style>
