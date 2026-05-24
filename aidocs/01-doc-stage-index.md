@@ -30,17 +30,17 @@ section and the `upgrade-overlay` section.
 
 | stage | count |
 |---|---|
-| `fragment` | 39 |
+| `fragment` | 38 |
 | `concept` | 14 |
 | `idea` | 10 |
-| `feature-defined` | 80 |
+| `feature-defined` | 81 |
 | `audited-by-personas` | 58 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 59 |
-| `decommissioned` | 48 |
+| `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **320** |
+| **total docs** | **321** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -57,7 +57,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/83-github-features-leverage.md`](strategy/83-github-features-leverage.md) | GitHub features — what shepard uses, deliberately skips, and why | 2026-05-23 |
 
-## fragment (39)
+## fragment (38)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -90,7 +90,6 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/A3c-namespace-migration.md`](platform/A3c-namespace-migration.md) | A3c: infrastructure-vs-feature toggle namespace split | 2026-05-23 | 2026-05-23 |
 | [`aidocs/reference/v5-openapi-summary.md`](reference/v5-openapi-summary.md) | v5 source — OpenAPI 5.4.0 summary (legacy-compat ground truth) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/13-search-improvements.md`](semantics/13-search-improvements.md) | Search — Improvements & Unification Proposal | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/70-competitor-landscape-and-feature-ideas.md`](strategy/70-competitor-landscape-and-feature-ideas.md) | aidocs/70 — Competitor landscape & feature ideas for shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/71-fork-adoption-as-upstream.md`](strategy/71-fork-adoption-as-upstream.md) | aidocs/71 — Fork adoption as upstream: feasibility, verification, and cost-benefit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/73-dlr-stakeholder.md`](strategy/73-dlr-stakeholder.md) | aidocs/73 — shepard: Stakeholder brief for DLR | 2026-05-23 | 2026-05-23 |
@@ -135,7 +134,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (80)
+## feature-defined (81)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -194,6 +193,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/88-quarkus-mcp-server-migration.md`](platform/88-quarkus-mcp-server-migration.md) | 88 — Native Quarkus MCP Server: Replacing the Python Sidecar | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | — |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
@@ -202,7 +202,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/104-author-research-profile.md`](strategy/104-author-research-profile.md) | Author research profile — Florian Krebs, DLR ZLP Augsburg | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/105-postgres-multitenant-decision.md`](strategy/105-postgres-multitenant-decision.md) | aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED | 2026-05-24 | — |
+| [`aidocs/strategy/105-postgres-multitenant-decision.md`](strategy/105-postgres-multitenant-decision.md) | aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/strategy/87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | 88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
@@ -362,7 +362,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/39-templates-design.md`](workflows/39-templates-design.md) | Templates — Implementation Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/64-provenance-architecture.md`](workflows/64-provenance-architecture.md) | 64 — Provenance architecture (what's shipped + where it's going) | 2026-05-23 | 2026-05-23 |
 
-## decommissioned (48)
+## decommissioned (49)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -414,3 +414,4 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md`](archive/agent-findings-sessions-2026-05/v1-compat-live-validation.md) | V1COMPAT.0 Phase 1 — live validation findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/archive/platform/68-v2-baseline-v1-compat-layer.md`](archive/platform/68-v2-baseline-v1-compat-layer.md) | V2 baseline + `/shepard/api/` as compat layer — Design (V2BASE) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/86-ai-plugin-design.md`](platform/86-ai-plugin-design.md) | `shepard-plugin-ai` — AI Platform Design (superseded) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/semantics/14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic Annotations — Improvements & Knowledge-Graph Path (DECOMMISSIONED) | 2026-05-24 | 2026-05-23 |

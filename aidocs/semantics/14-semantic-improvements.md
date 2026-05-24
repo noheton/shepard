@@ -1,9 +1,24 @@
 ---
-stage: fragment
-last-stage-change: 2026-05-23
+stage: decommissioned
+last-stage-change: 2026-05-24
+superseded-by: aidocs/semantics/100-consistent-semantic-annotation-design.md
 ---
 
-# Semantic Annotations — Improvements & Knowledge-Graph Path
+# Semantic Annotations — Improvements & Knowledge-Graph Path (DECOMMISSIONED)
+
+> **Superseded** by [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](100-consistent-semantic-annotation-design.md)
+> (2026-05-24). The "extending annotations to all payload kinds via bridge
+> nodes" approach (§2 of this doc, with `AnnotatableFile` /
+> `AnnotatableStructuredData` / `AnnotatableSpatial` siblings to the
+> existing `AnnotatableTimeseries`) is replaced by the canonical-primitive
+> approach: any entity with an `appId` is annotatable via a typed subject
+> reference; the bridge-node sprawl is sunset (per aidocs/100 §11.3) when
+> `:Timeseries.appId` and `:ShepardFile.appId` are populated universally
+> (TS-IDc + the relevant file-storage migration). The GUI improvements
+> here (§3 IRI-paste demotion + search-as-you-type) are absorbed into
+> aidocs/100 §5; the triplestore-as-vocabulary path is absorbed into
+> aidocs/100 §4 (vocabularies layer over the already-shipped n10s
+> substrate). Retained as historical context; do not implement against it.
 
 **Scope.** Forward-looking design note for shepard's semantic-annotation
 layer. Covers (a) extending annotations from "timeseries-only inside a
