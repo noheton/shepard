@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.AuthTokens;
@@ -65,6 +66,16 @@ public class MigrationChainInspectorIT {
   static void closeDriver() {
     if (driver != null) {
       driver.close();
+    }
+  }
+
+  @BeforeEach
+  void wipeDatabase() {
+    // The Neo4j container is class-scoped; reset all state between
+    // tests so each scenario gets a fresh chain. Deletes both the
+    // __Neo4jMigration chain and any sentinel nodes the tests create.
+    try (var session = driver.session()) {
+      session.run("MATCH (n) DETACH DELETE n").consume();
     }
   }
 
