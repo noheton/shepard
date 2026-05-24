@@ -11,6 +11,7 @@ import PluginsAdminPane from "~/components/context/admin/PluginsAdminPane.vue";
 import PermissionAuditLogPane from "~/components/context/admin/PermissionAuditLogPane.vue";
 import UnhideAdminPane from "~/components/context/admin/UnhideAdminPane.vue";
 import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue";
+import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
 import UnauthorizedView from "~/components/layout/UnauthorizedView.vue";
 
@@ -106,6 +107,55 @@ const landingCards = [
     title: "Legacy v1",
     description: "v1 surface deprecation knobs and per-operator sunset state.",
   },
+  // --- placeholder cards (no-UI-gap roll-out 2026-05-24) ---
+  {
+    fragment: AdminFragments.FILE_MIGRATION,
+    icon: "mdi-database-arrow-right-outline",
+    title: "File migration",
+    description: "Move file payloads between storage backends (placeholder).",
+  },
+  {
+    fragment: AdminFragments.SQL_TIMESERIES,
+    icon: "mdi-database-search-outline",
+    title: "SQL timeseries",
+    description: "Runtime caps for the SQL-over-HTTP bulk-read endpoint.",
+  },
+  {
+    fragment: AdminFragments.NOTIFICATIONS_ADMIN,
+    icon: "mdi-bell-cog-outline",
+    title: "Notifications",
+    description: "Configure SMTP / Matrix / in-app delivery (placeholder).",
+  },
+  {
+    fragment: AdminFragments.INSTANCE_ADMINS,
+    icon: "mdi-shield-crown-outline",
+    title: "Instance admins",
+    description: "Grant or revoke the instance-admin role (placeholder).",
+  },
+  {
+    fragment: AdminFragments.USERS_ORCID,
+    icon: "mdi-account-key-outline",
+    title: "User ORCID",
+    description: "Admin override of a user's ORCID iD (placeholder).",
+  },
+  {
+    fragment: AdminFragments.USERS_GIT,
+    icon: "mdi-source-branch-plus",
+    title: "User git credentials",
+    description: "Issue or rotate git-host credentials on behalf of users.",
+  },
+  {
+    fragment: AdminFragments.AI_CONFIG,
+    icon: "mdi-robot-outline",
+    title: "AI configuration",
+    description: "Per-instance LLM fallback (designed; ships with AI1a).",
+  },
+  {
+    fragment: AdminFragments.BACKUP,
+    icon: "mdi-backup-restore",
+    title: "Backup",
+    description: "Nightly pg_dump + Wal-G policy (designed; ships PG-COLLAPSE-002).",
+  },
 ];
 </script>
 
@@ -150,5 +200,38 @@ const landingCards = [
     />
     <UnhideAdminPane v-if="routeFragment === AdminFragments.UNHIDE" />
     <AdminLegacyV1Pane v-if="routeFragment === AdminFragments.LEGACY_V1" />
+    <!-- placeholder panes (no-UI-gap roll-out 2026-05-24) -->
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.FILE_MIGRATION"
+      slug="file-migration"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.SQL_TIMESERIES"
+      slug="sql-timeseries"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.NOTIFICATIONS_ADMIN"
+      slug="notifications-admin"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.INSTANCE_ADMINS"
+      slug="instance-admins"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.USERS_ORCID"
+      slug="users-orcid"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.USERS_GIT"
+      slug="users-git"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.AI_CONFIG"
+      slug="ai-config"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.BACKUP"
+      slug="backup"
+    />
   </PaneLayout>
 </template>
