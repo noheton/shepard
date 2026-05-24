@@ -180,18 +180,37 @@ function formatRis(c: CitationInput): string {
 
 /**
  * Render CSL JSON per citationstyles.org. `"type": "dataset"` is the CSL
- * type for a research dataset. We put the whole author string in
- * `family` and leave `given` absent — splitting `"alice"` or `"Krebs,
- * F."` into family/given would be lossy heuristics; downstream CSL
- * processors handle a family-only author gracefully (no "F. Alice", no
- * "Alice, F.").
+ * type for a research dataset.
+ *
+ * Authors are split on the first comma when the input looks like
+ * `"Family, Given"` (a common APA shape) so downstream CSL processors —
+ * Pandoc, Zotero, citation.js — render `Given Family` correctly. Bare
+ * usernames (`"alice"`, `"flo"`) and comma-less display names stay
+ * family-only by design: the alternative would be lossy heuristics on a
+ * single token. Digital Native persona §6 (2026-05-24) flagged the prior
+ * pure-family-only shape as producing `{family: "Krebs, F."}`, which
+ * Pandoc renders as the literal string `"Krebs, F."` instead of the
+ * intended `"F. Krebs"`.
  */
+function parseCslAuthor(raw: string): { family: string; given?: string } {
+  const cleaned = raw.trim();
+  // Match exactly one comma separating family (left) from given (right).
+  // Anything more pathological (multiple commas, e.g. "Smith, Jr., John")
+  // falls through to family-only — the CSL spec accepts that and
+  // downstream processors render it verbatim.
+  const m = cleaned.match(/^([^,]+),\s+(.+)$/);
+  if (m && m[1] && m[2]) {
+    return { family: m[1].trim(), given: m[2].trim() };
+  }
+  return { family: cleaned };
+}
+
 function formatCslJson(c: CitationInput): string {
   const obj: Record<string, unknown> = {
     type: "dataset",
     title: c.title,
     author: (c.authors.length > 0 ? c.authors : ["Anonymous"])
-      .map(a => ({ family: a.trim() }))
+      .map(a => parseCslAuthor(a))
       .filter(o => o.family.length > 0),
     issued: { "date-parts": [[c.year]] },
     publisher: c.repository,

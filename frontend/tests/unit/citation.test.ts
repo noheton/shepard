@@ -204,13 +204,28 @@ describe("CSL JSON format", () => {
     expect(parsed.type).toBe("dataset");
   });
 
-  it("encodes authors as {family} objects (no `given` heuristic)", () => {
+  it("splits 'Family, Given' authors into {family, given} for Pandoc/Zotero/citation.js compatibility", () => {
+    // Digital Native persona §6 (2026-05-24): the prior shape produced
+    // {family: "Krebs, F."} with the literal comma, which Pandoc renders
+    // verbatim instead of as "F. Krebs". Splitting on the first ", "
+    // restores standard CSL semantics.
     const out = formatCitation(baseInput({ authors: MULTI_AUTHORS }), "csl-json");
     const parsed = JSON.parse(out);
     expect(parsed.author).toHaveLength(3);
-    expect(parsed.author[0]).toEqual({ family: "Krebs, F." });
-    expect(parsed.author[1]).toEqual({ family: "Müller, M." });
-    expect(parsed.author[2]).toEqual({ family: "Weber, S." });
+    expect(parsed.author[0]).toEqual({ family: "Krebs", given: "F." });
+    expect(parsed.author[1]).toEqual({ family: "Müller", given: "M." });
+    expect(parsed.author[2]).toEqual({ family: "Weber", given: "S." });
+  });
+
+  it("keeps comma-less authors (bare usernames, display names) as family-only", () => {
+    // Bare-username path: 'alice' → family: 'alice' with no given,
+    // since splitting on a single token would be a lossy heuristic.
+    const out = formatCitation(baseInput({ authors: ["alice", "Florian Krebs"] }), "csl-json");
+    const parsed = JSON.parse(out);
+    expect(parsed.author).toEqual([
+      { family: "alice" },
+      { family: "Florian Krebs" },
+    ]);
   });
 
   it("encodes year + accessed-date as CSL date-parts", () => {
