@@ -16,10 +16,12 @@ onContainerUpdated(() => {
 });
 fetchData();
 
-watch(containerAccessor.spatialData, () => {
-  useHead({
-    title: containerAccessor.spatialData.value?.name + " | shepard",
-  });
+// UX Pattern F (2026-05-24): reactive title — call useHead once with a getter.
+useHead({
+  title: () =>
+    containerAccessor.spatialData.value?.name
+      ? `${containerAccessor.spatialData.value.name} (Spatial Data) — shepard`
+      : "Spatial Data Container — shepard",
 });
 </script>
 <template>

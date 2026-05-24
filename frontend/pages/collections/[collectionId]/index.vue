@@ -123,10 +123,15 @@ const collectionAccessRights = computed<string | null>(() => {
 const { isPluginEnabled } = useInstanceCapabilities();
 const isUnhideEnabled = computed(() => isPluginEnabled("unhide"));
 
-watch(collection, () => {
-  useHead({
-    title: collection.value?.name + " | shepard",
-  });
+// UX Pattern F (2026-05-24): call useHead once at top-level with a reactive
+// title getter. Calling useHead INSIDE a watch creates a fresh head entry on
+// every fetch + leaves the initial paint with a stale/generic title until the
+// first watch fires. The function form below makes the title reactive.
+useHead({
+  title: () =>
+    collection.value?.name
+      ? `${collection.value.name} — shepard`
+      : "Collection — shepard",
 });
 </script>
 

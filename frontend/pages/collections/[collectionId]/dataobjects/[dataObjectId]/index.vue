@@ -80,10 +80,17 @@ async function saveDescEdit() {
   }
 }
 
-watch(dataObject, () => {
-  useHead({
-    title: dataObject.value?.name + " | shepard",
-  });
+// UX Pattern F (2026-05-24): reactive title with collection breadcrumb.
+// Pattern: "<DataObject.name> · <Collection.name> — shepard" so the
+// browser-tab strip stays readable with multiple DOs open.
+useHead({
+  title: () => {
+    const doName = dataObject.value?.name;
+    const collName = collection.value?.name;
+    if (doName && collName) return `${doName} · ${collName} — shepard`;
+    if (doName) return `${doName} — shepard`;
+    return "DataObject — shepard";
+  },
 });
 
 // LIC1 (FAIR-1): defensive computed accessors mirroring the collection

@@ -191,17 +191,40 @@ const { mobile } = useDisplay();
       class="px-6 mt-6 mb-2 d-flex"
       style="justify-content: space-between; width: 100%; align-items: center"
     >
+      <!-- UX Pattern E (2026-05-24): promote the sidebar tree as the sibling
+           navigator. Users were missing that this tree IS the way to jump
+           between sibling DataObjects (including chevron-expand into
+           investigation sub-trees). The tooltip surfaces that affordance
+           without changing layout. -->
       <div
-        class="text-textbody1 text-overline"
+        class="text-textbody1 text-overline d-flex align-center"
         style="
           text-overflow: ellipsis;
           overflow: hidden;
           white-space: nowrap;
           flex-shrink: 1;
           min-width: 0;
+          gap: 4px;
         "
+        data-testid="collection-sidebar-contents-header"
       >
-        Contents
+        <span>Contents</span>
+        <v-tooltip location="bottom" max-width="280">
+          <template #activator="{ props: tipProps }">
+            <v-icon
+              v-bind="tipProps"
+              size="x-small"
+              color="textbody1"
+              icon="mdi-information-outline"
+              style="opacity: 0.6; cursor: help"
+              aria-label="How to navigate the collection tree"
+            />
+          </template>
+          <span>
+            Click any DataObject to jump between siblings. Use the chevron
+            to expand sub-trees (e.g. investigation children).
+          </span>
+        </v-tooltip>
       </div>
       <v-btn
         v-if="isAllowedToEditCollection"

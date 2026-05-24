@@ -86,7 +86,53 @@ async function parseResponseError(error: ResponseError): Promise<ErrorType> {
   return errorObject;
 }
 
+/**
+ * UX Pattern A (2026-05-24): suppress two classes of "false-alarm" errors
+ * that were lighting up the red toast on every cold-load workflow:
+ *
+ * 1. **AbortError / cancellation** — when a route changes during an
+ *    in-flight fetch, Nuxt aborts the previous request. The original
+ *    promise rejects with a DOMException("AbortError") or a TypeError
+ *    "Failed to fetch" that the user has no way to act on.
+ *
+ * 2. **401 Unauthorized** — `useAuthRefreshMiddleware` already handles
+ *    401s by silently refreshing the token (and on second 401, redirecting
+ *    to sign-in). Showing a red toast in addition is duplicate noise and
+ *    confuses users into thinking data is missing when it's just an auth
+ *    blip during page bootstrap.
+ *
+ * Both are still logged to the browser console at WARN so a developer
+ * debugging a real silent-401 can still see them; only the visible toast
+ * is suppressed.
+ */
+function isAbortLike(e: unknown): boolean {
+  if (e instanceof DOMException && e.name === "AbortError") return true;
+  if (e instanceof Error) {
+    if (e.name === "AbortError") return true;
+    // Browsers throw "TypeError: Failed to fetch" when the request is
+    // aborted mid-flight (route change, page unload, etc).
+    if (e.name === "TypeError" && /Failed to fetch|NetworkError/i.test(e.message)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isUnauthorized(e: unknown): boolean {
+  return isResponseError(e) && e.response.status === 401;
+}
+
 export function handleError(e: unknown, situation: string) {
+  if (isAbortLike(e)) {
+    log.warn(`Suppressed abort while ${situation}`);
+    return;
+  }
+  if (isUnauthorized(e)) {
+    // The auth-refresh middleware already handles 401s (refresh + retry,
+    // then signIn on second 401). A red toast on top of that is noise.
+    log.warn(`Suppressed 401 toast while ${situation} (auth middleware handles it)`);
+    return;
+  }
   if (isString(e)) {
     errorBus.emit({ error: e, situation });
   } else if (isResponseError(e)) {

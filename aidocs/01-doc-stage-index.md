@@ -36,11 +36,11 @@ section and the `upgrade-overlay` section.
 | `feature-defined` | 69 |
 | `audited-by-personas` | 53 |
 | `feedback-implemented` | 1 |
-| `tests-implemented` | 2 |
-| `deployed` | 52 |
+| `tests-implemented` | 3 |
+| `deployed` | 55 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **294** |
+| **total docs** | **298** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -273,14 +273,15 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 |---|---|---|---|
 | [`aidocs/agent-findings/rdm-002-orcid-input-2026-05-24.md`](agent-findings/rdm-002-orcid-input-2026-05-24.md) | RDM-002 — ORCID input on `/me/profile` (FAIR R1) | 2026-05-24 | 2026-05-24 |
 
-## tests-implemented (2)
+## tests-implemented (3)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/prov-resolver-fix-2026-05-24.md`](agent-findings/prov-resolver-fix-2026-05-24.md) | PROV-RESOLVER-PATHWALK + PROV-V1-NUMERIC-LOOKUP — fix report | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-003-004-section-landing-fix-2026-05-24.md`](agent-findings/ui-003-004-section-landing-fix-2026-05-24.md) | UI-2026-05-24-003 + UI-2026-05-24-004 fix — section index landings + Unauthorized view | 2026-05-24 | 2026-05-24 |
 | [`aidocs/integrations/93-mffd-import-v15-requirements.md`](integrations/93-mffd-import-v15-requirements.md) | 93 — MFFD real-data import (v15) requirements | 2026-05-23 | 2026-05-23 |
 
-## deployed (52)
+## deployed (55)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -301,18 +302,20 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/lic1-shipped-2026-05-24.md`](agent-findings/lic1-shipped-2026-05-24.md) | LIC1 shipped — license + accessRights end-to-end (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/mffd-import-slowness-diagnose-2026-05-23.md`](agent-findings/mffd-import-slowness-diagnose-2026-05-23.md) | MFFD cube3 import slowness — diagnostic | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ops-cleanup-2026-05-24.md`](agent-findings/ops-cleanup-2026-05-24.md) | ops-cleanup-2026-05-24 — un-ignore neo4j migrations + worktree env bootstrap | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ops-migration-healthcheck-2026-05-24.md`](agent-findings/ops-migration-healthcheck-2026-05-24.md) | ops-migration-healthcheck-2026-05-24 — readiness gate on Neo4j migration-chain integrity | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-audit-admin-stale-ch-2026-05-23.md`](agent-findings/persona-audit-admin-stale-ch-2026-05-23.md) | Persona audit — ADMIN-STALE-CH (Stale timeseries channel admin tool) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/plugin-docs-gap-audit-2026-05-23.md`](agent-findings/plugin-docs-gap-audit-2026-05-23.md) | Plugin documentation gap audit — 2026-05-23 | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md`](agent-findings/rdm-001-cite-this-dataset-2026-05-24.md) | RDM-001 — "Cite this dataset" card on Collection landing (2026-05-24) | 2026-05-24 | — |
+| [`aidocs/agent-findings/rdm-001-cite-this-dataset-2026-05-24.md`](agent-findings/rdm-001-cite-this-dataset-2026-05-24.md) | RDM-001 — "Cite this dataset" card on Collection landing (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-002-header-search-fix-2026-05-24.md`](agent-findings/ui-002-header-search-fix-2026-05-24.md) | UI-002 — Header-search dropdown fix (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-005-watches-me-silenced-2026-05-24.md`](agent-findings/ui-005-watches-me-silenced-2026-05-24.md) | UI-005 — silence `/watches/me` 404 spam on collection landing | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-006-007-009-015-home-polish-2026-05-24.md`](agent-findings/ui-006-007-009-015-home-polish-2026-05-24.md) | Home + file-row polish pass — UI-006/007/009/015 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-011-collections-list-fix-2026-05-24.md`](agent-findings/ui-011-collections-list-fix-2026-05-24.md) | UI-011 — Collections list page column enrichment | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/ui-011e-do-count-fix-2026-05-24.md`](agent-findings/ui-011e-do-count-fix-2026-05-24.md) | UI-011e — `# DOs` column shows 0 everywhere on `/collections` — fix | 2026-05-24 | — |
+| [`aidocs/agent-findings/ui-011e-do-count-fix-2026-05-24.md`](agent-findings/ui-011e-do-count-fix-2026-05-24.md) | UI-011e — `# DOs` column shows 0 everywhere on `/collections` — fix | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-013-help-search-anchors-2026-05-24.md`](agent-findings/ui-013-help-search-anchors-2026-05-24.md) | UI-2026-05-24-013 — in-page help search + per-heading anchors (CLOSED) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-016-017-polish-2026-05-24.md`](agent-findings/ui-016-017-polish-2026-05-24.md) | UI-016 + UI-017 cosmetic polish — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-020-labjournal-bulk-fix-2026-05-24.md`](agent-findings/ui-020-labjournal-bulk-fix-2026-05-24.md) | UI-020 — Lab-journal bulk fetch closes per-DataObject N+1 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-021-sd-list-fix-2026-05-24.md`](agent-findings/ui-021-sd-list-fix-2026-05-24.md) | UI-021 — `/containers/structureddata` "shows 0 rows" — close as WAI/misreport | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/ux-polish-bundle-2026-05-24.md`](agent-findings/ux-polish-bundle-2026-05-24.md) | UX polish bundle — 2026-05-24 | 2026-05-24 | — |
 | [`aidocs/case-study-2026-05-19.md`](case-study-2026-05-19.md) | Case Study: One Month of AI-Assisted Fork Development | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/00-model-inventory.md`](data/00-model-inventory.md) | 00 — Model inventory (SSOT) | 2026-05-23 | 2026-05-24 |
 | [`aidocs/data/37-lab-journal-and-jupyter-design.md`](data/37-lab-journal-and-jupyter-design.md) | Lab Journal Reassessment + Jupyter Feasibility — Design | 2026-05-23 | 2026-05-23 |

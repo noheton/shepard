@@ -99,10 +99,12 @@ function onDownload(structuredData: StructuredData) {
 
 fetchData();
 
-watch(containerAccessor.container, () => {
-  useHead({
-    title: containerAccessor.container.value?.name + " | shepard",
-  });
+// UX Pattern F (2026-05-24): reactive title — call useHead once with a getter.
+useHead({
+  title: () =>
+    containerAccessor.container.value?.name
+      ? `${containerAccessor.container.value.name} (Structured Data) — shepard`
+      : "Structured Data Container — shepard",
 });
 </script>
 
