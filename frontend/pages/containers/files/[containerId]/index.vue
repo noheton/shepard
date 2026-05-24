@@ -46,10 +46,12 @@ const uploadFile = async (file: File): Promise<ShepardFile> => {
 };
 fetchData();
 
-watch(containerAccessor.fileContainer, () => {
-  useHead({
-    title: containerAccessor.fileContainer.value?.name + " | shepard",
-  });
+// UX Pattern F (2026-05-24): reactive title — call useHead once with a getter.
+useHead({
+  title: () =>
+    containerAccessor.fileContainer.value?.name
+      ? `${containerAccessor.fileContainer.value.name} (Files) — shepard`
+      : "File Container — shepard",
 });
 </script>
 <template>

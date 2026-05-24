@@ -193,7 +193,7 @@
             <v-divider class="my-1" />
             <v-list-item
               density="compact"
-              :to="{ path: '/search' }"
+              :to="{ path: '/search', query: { q: search.query.value } }"
               data-testid="header-search-advanced"
               @click="closeDropdown"
             >
@@ -597,9 +597,11 @@ function onEnterPressed() {
   // Enter on the input ⇒ jump to Advanced Search with the current text.
   // (We don't auto-pick the first result because that's surprising for
   // a multi-kind dropdown; the v-list arrow-key path is the navigator.)
-  if (search.query.value.trim() === "") return;
+  // UX bonus (2026-05-24): pass the query as `?q=` so /search prefills + runs.
+  const q = search.query.value.trim();
+  if (q === "") return;
   closeDropdown();
-  void router.push({ path: "/search" });
+  void router.push({ path: "/search", query: { q } });
 }
 </script>
 

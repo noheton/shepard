@@ -42,3 +42,7 @@ Relationships are set when creating or editing a dataset:
 3. Set the **Parent** or **Predecessors** fields.
 
 Changes appear in the lineage graph after the panel refreshes.
+
+## Jumping between sibling datasets
+
+The **left sidebar** on every collection page is also the **sibling navigator**: click any dataset in the tree to jump straight to it, and use the **chevron** (`›`) next to a dataset to expand its children (for example, an anomaly's investigation sub-tree). Hover the small **information icon** next to the *Contents* header for a reminder of this shortcut.

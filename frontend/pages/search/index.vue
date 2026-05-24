@@ -20,6 +20,7 @@ import CollectionPrefillableInput from "~/components/context/search/input-compon
 import DataObjectPrefillableInput from "~/components/context/search/input-components/DataObjectPrefillableInput.vue";
 import type { QueryContainerType } from "~/components/context/search/input-components/QueryTypeInput.vue";
 import { clearQueryParams } from "~/utils/helpers";
+import { searchQueryFromParams } from "~/utils/searchQueryFromParams";
 
 const initialJson = JSON.stringify(
   {
@@ -199,15 +200,21 @@ function getAllQueryParam() {
     ? JSON.parse(traversalRules)
     : [];
 
-  const searchQuery = params.get("searchQuery");
-  jsonQuery.value = searchQuery ? searchQuery : initialJson;
+  // UX bonus (2026-05-24): support `?q=<text>` as the simple free-text param
+  // the header-search dropdown's "See all results" link uses.
+  // `searchQuery` (structured JSON form) wins when both are present.
+  const { jsonQuery: derivedJson, shouldRun } = searchQueryFromParams(
+    params,
+    initialJson,
+  );
+  jsonQuery.value = derivedJson;
 
   if (
     queryType ||
     collectionId ||
     dataObjectId ||
     traversalRules ||
-    searchQuery
+    shouldRun
   ) {
     if (isJsonQueryValid.value) handleSearch();
   }
@@ -220,6 +227,7 @@ function removeAllQueryParams() {
     "dataObjectId",
     "traversalRules",
     "searchQuery",
+    "q",
   ].forEach(qp => removeQueryParam(qp));
 }
 
