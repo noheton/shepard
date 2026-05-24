@@ -31,7 +31,7 @@ HEALTH_TIMEOUT ?= 120
 
 .PHONY: build-backend build-plugins image-backend build-frontend image-frontend \
         deploy redeploy-backend redeploy-frontend redeploy redeploy-fast \
-        wait-for-health smoke check-images integration-test
+        wait-for-health smoke check-images integration-test preflight-env
 
 # ADR-0023 two-pass dance: backend install (no plugins) → plugins install → backend package.
 # Required whenever a plugin module changes; safe to run even when only backend changed.
@@ -55,7 +55,20 @@ build-frontend:
 image-frontend: build-frontend
 	docker build -t $(FRONTEND_IMAGE) ./frontend
 
-deploy:
+# Preflight check: docker compose reads $(COMPOSE_DIR)/.env. Agent worktrees
+# don't inherit it from the canonical checkout, so all deploy targets gate on
+# this check. If you see the actionable message below, run
+# `scripts/setup-worktree.sh` from the worktree root to bootstrap the symlink.
+# Surfaced by OPS-WORKTREE-ENV (2026-05-24).
+preflight-env:
+	@if [ ! -e "$(COMPOSE_DIR)/.env" ]; then \
+	  echo "ERROR: $(COMPOSE_DIR)/.env not found." >&2; \
+	  echo "       Run: scripts/setup-worktree.sh" >&2; \
+	  echo "       (symlinks the canonical /opt/shepard/infrastructure/.env into this worktree.)" >&2; \
+	  exit 1; \
+	fi
+
+deploy: preflight-env
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
 
 # Poll the backend health endpoint until it reports UP, or fail after HEALTH_TIMEOUT seconds.
@@ -85,17 +98,17 @@ smoke:
 # All three redeploy targets chain through wait-for-health + smoke so a green
 # `make redeploy` is genuine confidence the deploy worked, not just an image swap.
 
-redeploy-backend: image-backend
+redeploy-backend: preflight-env image-backend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
 
-redeploy-frontend: image-frontend
+redeploy-frontend: preflight-env image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build frontend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
 
-redeploy: image-backend image-frontend
+redeploy: preflight-env image-backend image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
 	@$(MAKE) wait-for-health
 	@$(MAKE) smoke
@@ -104,7 +117,7 @@ redeploy: image-backend image-frontend
 # when the smoke test is the thing you're iterating on, or when you knowingly
 # expect a partial state. Anything you'd call `redeploy` for in normal work
 # should stay on `redeploy` — the verify is the safety net.
-redeploy-fast: image-backend image-frontend
+redeploy-fast: preflight-env image-backend image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build backend frontend
 
 check-images:

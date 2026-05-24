@@ -115,10 +115,14 @@ build/
 **/target/
 
 # Runtime data volumes (Docker bind-mounts — never commit database files)
-mongodb/
-neo4j/
-infrastructure/neo4j/
-timescaledb/
+# Root-anchored with leading `/` so source-tree paths like
+# `backend/src/main/resources/neo4j/migrations/` are NOT silently excluded.
+# History: a bare `neo4j/` pattern previously caused V54/V55 migrations to
+# be ghosted from the repo (see OPS-MIGRATIONS-GITIGNORED, 2026-05-24).
+/mongodb/
+/neo4j/
+/infrastructure/neo4j/
+/timescaledb/
 
 # Caddy runtime state (TLS certs, config snapshots)
 caddy/config/
