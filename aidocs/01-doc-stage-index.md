@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 14 |
 | `idea` | 10 |
-| `feature-defined` | 75 |
-| `audited-by-personas` | 55 |
+| `feature-defined` | 76 |
+| `audited-by-personas` | 56 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 58 |
 | `decommissioned` | 47 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **310** |
+| **total docs** | **312** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -135,7 +135,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (75)
+## feature-defined (76)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -144,14 +144,15 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/garage-and-docker-stack-audit-2026-05-24.md`](agent-findings/garage-and-docker-stack-audit-2026-05-24.md) | Garage S3 + Docker stack audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md`](agent-findings/mffd-v16-ui-screenshots-2026-05-23/README.md) | MFFD v16 UI screenshots — first live look at the digital-thread tree | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | — |
+| [`aidocs/agent-findings/mongodb-substrate-audit-2026-05-24.md`](agent-findings/mongodb-substrate-audit-2026-05-24.md) | MongoDB substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-digital-native-gh-pm-2026-05-23.md`](agent-findings/persona-digital-native-gh-pm-2026-05-23.md) | Persona: Digital Native Researcher — GH-PM audit (2026-05-23) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/plugin-design-audit-2026-05-24.md`](agent-findings/plugin-design-audit-2026-05-24.md) | Plugin design audit — Spatial + Tables + HDF5, 2026-05-24 | 2026-05-24 | — |
 | [`aidocs/agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md`](agent-findings/postgres-pgbouncer-substrate-audit-2026-05-24.md) | Postgres + PgBouncer substrate audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md`](agent-findings/rdm-004-provenance-empty-fix-2026-05-24.md) | RDM-2026-05-24-004 — Provenance panel empty: root-cause + Bucket D fix | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/rdm-scrutinizer-2026-05-24.md`](agent-findings/rdm-scrutinizer-2026-05-24.md) | RDM Scrutinizer — FAIR + DMP + Publication Readiness, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/research-network-orcid-anchor-2026-05-23.md`](agent-findings/research-network-orcid-anchor-2026-05-23.md) | Findings — ORCID anchor + general platform sweep for Florian Krebs (DLR ZLP Augsburg) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/tib-hannover-outreach-2026-05-23.md`](agent-findings/tib-hannover-outreach-2026-05-23.md) | TIB Hannover outreach — Step 1 ("Used by" entry) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | — |
+| [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
@@ -215,7 +216,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (55)
+## audited-by-personas (56)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -241,8 +242,9 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/persona-audit-ontology-mapping-2026-05-23.md`](agent-findings/persona-audit-ontology-mapping-2026-05-23.md) | Persona audit — AI-assisted ontology mapping survey (round 1) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-audit-promptlog-2026-05-23.md`](agent-findings/persona-audit-promptlog-2026-05-23.md) | Persona audit — PromptLog design (aidocs/semantics/99) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-audit-views-as-shapes-2026-05-23.md`](agent-findings/persona-audit-views-as-shapes-2026-05-23.md) | Persona audit — views-as-shapes design (docs 95 + 98) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/persona-manufacturing-quality-2026-05-24.md`](agent-findings/persona-manufacturing-quality-2026-05-24.md) | Persona audit — Industrial Manufacturing & Quality Engineer (live, 2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-rdm-gh-pm-2026-05-23.md`](agent-findings/persona-rdm-gh-pm-2026-05-23.md) | Persona review — Research Data Manager / FAIR Steward | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/persona-reluctant-senior-2026-05-24.md`](agent-findings/persona-reluctant-senior-2026-05-24.md) | Reluctant Senior Researcher — re-walk on live, 2026-05-24 | 2026-05-24 | — |
+| [`aidocs/agent-findings/persona-reluctant-senior-2026-05-24.md`](agent-findings/persona-reluctant-senior-2026-05-24.md) | Reluctant Senior Researcher — re-walk on live, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-review-ai-opportunities.md`](agent-findings/persona-review-ai-opportunities.md) | Persona Review — Analytics & AI Opportunities Specialist | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-review-api-scrutinizer.md`](agent-findings/persona-review-api-scrutinizer.md) | API Scrutinizer — review of the `/v2/views` + view-shapes proposal | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/persona-review-digital-native.md`](agent-findings/persona-review-digital-native.md) | Persona Review: Digital Native Researcher (2026-05-22) | 2026-05-23 | 2026-05-23 |
