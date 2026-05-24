@@ -1,11 +1,22 @@
 package de.dlr.shepard.provenance.filters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Back-compat unit tests for the deprecated static surface of
+ * {@link TargetEntityResolver}. The instance-form tests (covering the
+ * PROV-V1-NUMERIC-LOOKUP path) live in {@link TargetEntityResolverInstanceTest}
+ * and the parser internals live in {@link PathTargetParserTest}.
+ *
+ * <p>Pre-RDM-004 these assertions covered the production resolver; post-fix
+ * they cover only the deprecated static API kept for callers that haven't
+ * migrated to the CDI bean.
+ */
 class TargetEntityResolverTest {
 
   // Canonical UUID v7 example — the f4b6a3 generator's shape.
@@ -22,7 +33,13 @@ class TargetEntityResolverTest {
   void pathWithoutTrailingUuidReturnsEmpty() {
     assertTrue(TargetEntityResolver.resolve("/v2/collections").isEmpty());
     assertTrue(TargetEntityResolver.resolve("/v2/provenance/activities").isEmpty());
-    // Legacy numeric-id paths (the /shepard/api/ surface) — not UUIDs, no match.
+  }
+
+  @Test
+  void v1NumericPathReturnsEmptyOnStaticSurface() {
+    // The deprecated static resolver has no DAO access, so numeric ids
+    // can't be resolved to appIds — return empty. The instance form
+    // (TargetEntityResolverInstanceTest) covers the real fix.
     assertTrue(TargetEntityResolver.resolve("/shepard/api/collections/42").isEmpty());
   }
 
@@ -42,6 +59,15 @@ class TargetEntityResolverTest {
   }
 
   @Test
+  void v2KebabCaseDataObjectPath() {
+    // Kebab-case is the v2 convention: /v2/collections/<C>/data-objects/<D>
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve("/v2/data-objects/" + UUID1);
+    assertTrue(r.isPresent());
+    assertEquals("DataObject", r.get().kind());
+    assertEquals(UUID1, r.get().appId());
+  }
+
+  @Test
   void leadingSlashIsOptional() {
     Optional<TargetEntityResolver.TargetRef> a = TargetEntityResolver.resolve("/v2/collections/" + UUID1);
     Optional<TargetEntityResolver.TargetRef> b = TargetEntityResolver.resolve("v2/collections/" + UUID1);
@@ -52,39 +78,71 @@ class TargetEntityResolverTest {
   void pluralMappingCoversKnownTypes() {
     assertEquals("Collection", TargetEntityResolver.plural("collections"));
     assertEquals("DataObject", TargetEntityResolver.plural("dataobjects"));
-    assertEquals("FileBundle", TargetEntityResolver.plural("filebundles"));
-    assertEquals("FileBundle", TargetEntityResolver.plural("filereferences"));
+    assertEquals("DataObject", TargetEntityResolver.plural("data-objects"));
+    assertEquals("FileBundle", TargetEntityResolver.plural("bundles"));
+    assertEquals("FileReference", TargetEntityResolver.plural("filereferences"));
+    assertEquals("FileReference", TargetEntityResolver.plural("file-references"));
     assertEquals("FileGroup", TargetEntityResolver.plural("filegroups"));
-    assertEquals("TimeseriesReference", TargetEntityResolver.plural("timeseries"));
-    assertEquals("VideoReference", TargetEntityResolver.plural("videos"));
+    assertEquals("TimeseriesReference", TargetEntityResolver.plural("timeseriesreferences"));
+    assertEquals("TimeseriesReference", TargetEntityResolver.plural("timeseries-references"));
+    assertEquals("VideoReference", TargetEntityResolver.plural("videoreferences"));
+    assertEquals("VideoReference", TargetEntityResolver.plural("video-references"));
     assertEquals("ApiKey", TargetEntityResolver.plural("apikeys"));
     assertEquals("LabJournalEntry", TargetEntityResolver.plural("lab-journal-entries"));
     assertEquals("CollectionProperties", TargetEntityResolver.plural("properties"));
     assertEquals("ShepardTemplate", TargetEntityResolver.plural("templates"));
+    assertEquals("Snapshot", TargetEntityResolver.plural("snapshots"));
+    assertEquals("Watch", TargetEntityResolver.plural("watches"));
+    assertEquals("Notification", TargetEntityResolver.plural("notifications"));
   }
 
   @Test
-  void unknownPluralFallsBackToTitleCasedSingular() {
-    // E.g. /v2/things/{uuid} — never heard of "thing", so resolver yields "Thing".
-    assertEquals("Thing", TargetEntityResolver.plural("things"));
-    assertEquals("Story", TargetEntityResolver.plural("stories"));
+  void unknownPluralReturnsNullNotTitleCased() {
+    // PROV-RESOLVER-PATHWALK behaviour change — the old resolver title-cased
+    // unknown plurals so any path ending in /things/{uuid} stamped
+    // targetKind=Thing. With right-to-left walk that fallback would pollute
+    // targetKind on verb-shaped segments (/payload, /diff, /detect-anomalies).
+    // Unknown plurals must now return null.
+    assertNull(TargetEntityResolver.plural("things"));
+    assertNull(TargetEntityResolver.plural("stories"));
+    assertNull(TargetEntityResolver.plural("payload"));
+    assertNull(TargetEntityResolver.plural("diff"));
+    assertNull(TargetEntityResolver.plural("detect-anomalies"));
   }
 
   @Test
   void caseInsensitivePluralLookup() {
     assertEquals("Collection", TargetEntityResolver.plural("COLLECTIONS"));
     assertEquals("DataObject", TargetEntityResolver.plural("DataObjects"));
+    assertEquals("DataObject", TargetEntityResolver.plural("Data-Objects"));
   }
 
   @Test
-  void nestedPathTakesLastUuid() {
-    // /v2/collections/{coll-uuid}/dataobjects/{do-uuid} → target is the DataObject
+  void nestedPathTakesDeepestUuidPair() {
+    // /v2/collections/{coll-uuid}/dataobjects/{do-uuid} → target is the DataObject.
+    // RDM-004 bucket B fix: previously this stamped the DataObject KIND but
+    // the Collection's UUID as the appId (last-UUID logic) — wrong target.
     String coll = "018f9c5a-7e26-7000-a000-000000000010";
     String dobj = "018f9c5a-7e26-7000-a000-000000000020";
-    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve("/v2/collections/" + coll + "/dataobjects/" + dobj);
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve(
+      "/v2/collections/" + coll + "/dataobjects/" + dobj
+    );
     assertTrue(r.isPresent());
     assertEquals("DataObject", r.get().kind());
     assertEquals(dobj, r.get().appId());
+  }
+
+  @Test
+  void verbSuffixPathLandsOnDeepestPair() {
+    // /v2/timeseries-references/<id>/detect-anomalies — tail segment is a verb
+    // (no id), walk left to (timeseries-references, <id>).
+    String ref = "018f9c5a-7e26-7000-a000-000000000030";
+    Optional<TargetEntityResolver.TargetRef> r = TargetEntityResolver.resolve(
+      "/v2/timeseries-references/" + ref + "/detect-anomalies"
+    );
+    assertTrue(r.isPresent());
+    assertEquals("TimeseriesReference", r.get().kind());
+    assertEquals(ref, r.get().appId());
   }
 
   @Test
