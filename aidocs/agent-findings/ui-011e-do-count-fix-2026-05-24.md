@@ -132,4 +132,69 @@ The UX Scrutinizer's own report hedged: *"One-line backend issue (the listing en
 
 ## Post-deploy verification
 
-(Filled in by the redeploy step; see commit message + worklog for live curl + smoke result.)
+### Smoke test (`make redeploy-backend`)
+
+```
+──────────────────────────────────────────────
+PASS: 25    FAIL: 0
+All checks passed.
+```
+
+### Live curl — search endpoint with fresh alice token (post-fix)
+
+```
+$ TOKEN=$(curl -fsS -X POST "https://shepard-auth.nuclide.systems/realms/shepard-demo/protocol/openid-connect/token" \
+    -d "grant_type=password" -d "client_id=frontend-dev" \
+    -d "username=alice" -d "password=alice-demo" | jq -r .access_token)
+
+$ BODY='{"searchParams":{"query":"{\"OR\":[{\"property\":\"name\",\"value\":\"\",\"operator\":\"contains\"},{\"property\":\"createdBy\",\"value\":\"\",\"operator\":\"contains\"},{\"property\":\"id\",\"value\":0,\"operator\":\"eq\"}]}"}}'
+
+$ curl -fsS -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -X POST -d "$BODY" \
+    "https://shepard-api.nuclide.systems/shepard/api/search/collections?size=200&page=0" \
+    | jq '.results[] | select(.name | test("LUMEN|MFFD-Dropbox|Home|AI Exchange")) | {name, id, doCount: (.dataObjectIds|length)}'
+
+{
+  "name": "MFFD-Dropbox",
+  "id": 661923,
+  "doCount": 8514
+}
+{
+  "name": "AI Exchange",
+  "id": 493423,
+  "doCount": 12
+}
+{
+  "name": "Home energy & environment (live)",
+  "id": 720,
+  "doCount": 3
+}
+{
+  "name": "LUMEN-Inspired Hotfire Test Campaign — Q3 2024 (synthetic)",
+  "id": 42,
+  "doCount": 17
+}
+```
+
+Pre-fix the same query returned `doCount: 0` for every result.
+
+### Playwright e2e (live)
+
+```
+$ cd e2e && ./node_modules/.bin/playwright test ui-011e-do-count-shows.spec.ts \
+    --reporter=list --workers=1 --retries=2
+
+Running 2 tests using 1 worker
+  ✓ 1 [chromium] › tests/ui-011e-do-count-shows.spec.ts:29:7 › LUMEN row's # DOs cell shows a non-zero count (2.8s)
+  ✓ 2 [chromium] › tests/ui-011e-do-count-shows.spec.ts:57:7 › MFFD-Dropbox row's # DOs cell shows a non-zero count (4.0s)
+  2 passed (7.8s)
+```
+
+The LUMEN test walks the `# DOs` cell of the LUMEN row and asserts it shows
+> 0; the MFFD-Dropbox test does the same with > 100. The first iteration of
+the test scoped `/collections` directly and tried a textbox-fallback to find
+the row when not on page 1 — but the page-1 fallback accidentally hit the
+global header search (`/advanced-search`), not the in-page filter. Fixed by
+navigating to `/collections?searchText=<name>` directly — the URL param is
+the same one `CollectionSearchField.vue` writes, and it routes through
+`SearchApi.searchCollections` (the same path the fix targeted).
+

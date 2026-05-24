@@ -27,23 +27,19 @@ test.describe("UI-011e — # DOs column shows a real count", () => {
   });
 
   test("LUMEN row's # DOs cell shows a non-zero count", async ({ page }) => {
-    await page.goto("/collections");
+    // The collections list is paginated and ordered by createdAt desc, so the
+    // LUMEN showcase (created on first deploy) is rarely on page 1. Use the
+    // in-page search filter via the URL `searchText` query param — this is
+    // wired by `CollectionSearchField.vue` and translates to the
+    // `SearchApi.searchCollections` query the fix actually touched. Avoid the
+    // global header search (it navigates to /advanced-search, which is a
+    // different surface).
+    await page.goto("/collections?searchText=LUMEN");
     await page.waitForLoadState("networkidle");
 
-    // Find the LUMEN showcase row — its name link contains "LUMEN".
     const lumenRow = page.locator("tr", {
       has: page.locator("td", { hasText: /LUMEN/i }).first(),
     }).first();
-
-    // If the LUMEN row isn't on page 1, search for it.
-    if ((await lumenRow.count()) === 0) {
-      const searchField = page.getByRole("textbox").first();
-      if (await searchField.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await searchField.fill("LUMEN");
-        await searchField.press("Enter");
-        await page.waitForLoadState("networkidle");
-      }
-    }
 
     await expect(lumenRow).toBeVisible({ timeout: 10_000 });
 
@@ -59,29 +55,15 @@ test.describe("UI-011e — # DOs column shows a real count", () => {
   });
 
   test("MFFD-Dropbox row's # DOs cell shows a non-zero count", async ({ page }) => {
-    await page.goto("/collections");
+    await page.goto("/collections?searchText=MFFD");
     await page.waitForLoadState("networkidle");
 
-    // MFFD-Dropbox is the large real-data collection — find it by name.
-    let mffdRow = page.locator("tr", {
+    const mffdRow = page.locator("tr", {
       has: page.locator("td", { hasText: /MFFD-Dropbox/i }).first(),
     }).first();
 
-    if ((await mffdRow.count()) === 0) {
-      const searchField = page.getByRole("textbox").first();
-      if (await searchField.isVisible({ timeout: 2_000 }).catch(() => false)) {
-        await searchField.fill("MFFD");
-        await searchField.press("Enter");
-        await page.waitForLoadState("networkidle");
-        mffdRow = page.locator("tr", {
-          has: page.locator("td", { hasText: /MFFD-Dropbox/i }).first(),
-        }).first();
-      }
-    }
-
     // Tolerate environments where the MFFD-Dropbox collection isn't seeded:
-    // skip rather than fail, but still assert the column works for whatever
-    // large collection is present.
+    // skip rather than fail. The LUMEN test above still proves the fix works.
     if ((await mffdRow.count()) === 0) {
       test.skip(true, "MFFD-Dropbox collection not present on this instance.");
       return;
