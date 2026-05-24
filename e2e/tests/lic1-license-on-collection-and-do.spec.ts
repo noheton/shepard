@@ -7,21 +7,20 @@
  *  - Same for DataObject.
  *  - Set `accessRights = RESTRICTED` on the collection, assert persistence.
  *
- * Strategy: create a throw-away test collection (mirroring the pattern in
- * `collections.spec.ts`), then open its detail page and exercise the Edit
- * dialog twice — once setting license, once setting accessRights. We do the
- * DataObject leg by creating one inside the same collection via the Create
- * dialog and confirming the chips render after edit.
- *
- * The "save + reload + still shows" assertion is the load-bearing one — it
- * proves the wire round-trip (frontend → REST → Neo4j → REST → frontend) and
- * that the LIC1 V57 NOOP-migration + AbstractDataObject + AbstractDataObjectIO
- * + chip components are all wired together correctly.
+ * Selectors validated against the live Vuetify 3 / Nuxt 3 source:
+ *   - Edit dialog title is `Edit "<name>"` (NOT "Edit Collection").
+ *   - Collection landing's create-DO button label is "New DataObject".
+ *   - Create-Data-Object dialog title is exactly "Create Data Object".
  */
 import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 
 test.describe("LIC1 — license + accessRights on Collection + DataObject", () => {
+  // Collection layout (frontend/layouts/collection.vue) hides the sidebar
+  // below the `lg` breakpoint (1280px). Default Playwright viewport is
+  // 1280x720; some buffer prevents border-edge flakiness.
+  test.use({ viewport: { width: 1600, height: 900 } });
+
   test.beforeEach(async ({ page }) => {
     await loginAs(page, "alice", "alice-demo");
   });
@@ -46,26 +45,49 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     // ── 2. open the collection's detail page ─────────────────────────────
     await page.getByText(collName).first().click();
     await page.waitForLoadState("networkidle");
-    // Collection detail URL pattern: /collections/<appId>
     await expect(page).toHaveURL(/\/collections\/[0-9a-f-]+/);
     const detailUrl = page.url();
 
-    // ── 3. open Edit dialog and set license + accessRights ───────────────
-    await page.getByRole("button", { name: /edit/i }).first().click();
+    // ── 3. open Edit dialog (title is `Edit "<name>"`) and set license ───
+    // The Collection Edit dialog is opened via the sidebar context menu
+    // (`mdi-dots-horizontal`) → "Edit" item, not via a direct Edit button
+    // on the landing (the visible "Edit" button on the landing belongs to
+    // the inline description editor — UI-017).
+    // The menu button is hover-revealed (showContextMenuButton flag); hover
+    // the sidebar collection row first, then click.
+    await page
+      .locator(".sidebar-item, .sidebar-item-focused")
+      .filter({ visible: true })
+      .first()
+      .hover();
+    const collMenuBtn = page
+      .locator("button:has(.mdi-dots-horizontal)")
+      .filter({ visible: true })
+      .first();
+    await collMenuBtn.click({ force: true });
+    await page
+      .locator(".v-overlay__content .v-list-item:has-text('Edit')")
+      .first()
+      .click();
     const editDialog = page.locator(".v-overlay__content").filter({
-      hasText: /edit collection/i,
+      hasText: new RegExp(`Edit "${collName}"`, "i"),
     });
     await expect(editDialog).toBeVisible({ timeout: 5_000 });
 
-    // License input is a v-autocomplete; AccessRights is a v-select. Both are
-    // identified by their visible label. The autocomplete accepts free-text
-    // input so we simply type "MIT" then commit by pressing Enter (the SPDX
-    // list is curated; MIT is on it).
-    const licenseField = editDialog.getByLabel(/license/i);
+    // The dialog is a stepper; the LIC1 fields land in the "Additional
+    // Information" step (step 2). We click Next until license + accessRights
+    // labels become visible (defensive; works whether they're step 2 or 3).
+    const licenseField = editDialog.getByLabel(/license/i).first();
+    for (let i = 0; i < 4 && !(await licenseField.isVisible().catch(() => false)); i++) {
+      const nextBtn = editDialog.getByRole("button", { name: /^next$/i });
+      if (await nextBtn.count()) await nextBtn.first().click();
+      await page.waitForTimeout(200);
+    }
+    await expect(licenseField).toBeVisible({ timeout: 5_000 });
+
     await licenseField.click();
     await licenseField.fill("MIT");
-    // Wait for the autocomplete listbox + click the MIT option if rendered,
-    // otherwise commit the typed value with Enter.
+    // Commit via autocomplete option click if shown; fallback to Enter.
     const mitOption = page.locator(".v-list-item-title").filter({ hasText: /^MIT$/ });
     if (await mitOption.count()) {
       await mitOption.first().click();
@@ -73,15 +95,22 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
       await licenseField.press("Enter");
     }
 
-    const accessField = editDialog.getByLabel(/access[- ]?rights/i);
-    await accessField.click();
+    // Close any open autocomplete overlay from the license-pick by clicking
+    // an empty area in the dialog before reaching for the next field.
+    await page.keyboard.press("Escape");
+    const accessField = editDialog.getByLabel(/access[- ]?rights/i).first();
+    await accessField.click({ force: true });
     await page
       .locator(".v-list-item-title")
       .filter({ hasText: /^RESTRICTED$/i })
       .first()
       .click();
 
-    await editDialog.getByRole("button", { name: /save|update/i }).click();
+    // Save: dialog uses "Update" (common Vuetify edit-action label) or "Save".
+    await editDialog
+      .getByRole("button", { name: /save|update/i })
+      .first()
+      .click();
     await expect(editDialog).toBeHidden({ timeout: 10_000 });
 
     // ── 4. reload and assert chips are visible ───────────────────────────
@@ -89,7 +118,9 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     await page.waitForLoadState("networkidle");
     // FAIR strip: LicenseChip shows the SPDX id; AccessRightsChip shows the
     // enum value verbatim (uppercase).
-    await expect(page.getByText("MIT").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("MIT", { exact: true }).first()).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(
       page.getByText(/RESTRICTED/i).first(),
     ).toBeVisible({ timeout: 10_000 });
@@ -98,7 +129,7 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
   test("license persists on a DataObject inside the collection", async ({
     page,
   }) => {
-    // Reuse the same create-coll → create-DO → edit-DO flow.
+    // Reuse the create-coll → create-DO → edit-DO flow.
     await page.goto("/collections");
     await page.waitForLoadState("networkidle");
     const collName = `lic1-e2e-do-${Date.now()}`;
@@ -114,23 +145,21 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     await page.getByText(collName).first().click();
     await page.waitForLoadState("networkidle");
 
-    // Create a DataObject inside this collection.
+    // Create a DataObject inside this collection (button label "New DataObject").
     const doName = `lic1-do-${Date.now()}`;
     await page
-      .getByRole("button", { name: /create.*data.?object|new.*data.?object/i })
+      .getByRole("button", { name: /new\s*data\s*object/i })
       .first()
       .click();
     const createDoDialog = page
       .locator(".v-overlay__content")
-      .filter({ hasText: /create.*data.?object/i });
+      .filter({ hasText: /Create Data Object/i });
     await expect(createDoDialog).toBeVisible({ timeout: 5_000 });
     await createDoDialog.locator("input").first().fill(doName);
     await createDoDialog
       .getByRole("button", { name: /next|create/i })
       .first()
       .click();
-    // Two-step wizard mirrors collection create; if a second "Create" button
-    // is exposed, click it.
     const finalCreate = createDoDialog.getByRole("button", {
       name: "Create",
       exact: true,
@@ -138,20 +167,45 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     if (await finalCreate.count()) {
       await finalCreate.click();
     }
+    await expect(createDoDialog).toBeHidden({ timeout: 10_000 });
 
-    // Navigate to the new DataObject detail page.
+    // Navigate to the new DataObject. It appears in the panel below; click its name.
     await expect(page.getByText(doName).first()).toBeVisible({ timeout: 10_000 });
     await page.getByText(doName).first().click();
     await page.waitForURL(/\/dataobjects\/[0-9a-f-]+/, { timeout: 10_000 });
     const doUrl = page.url();
 
-    // Edit and set license.
-    await page.getByRole("button", { name: /edit/i }).first().click();
-    const editDoDialog = page
-      .locator(".v-overlay__content")
-      .filter({ hasText: /edit.*data.?object/i });
+    // Edit the DO: open the sidebar context menu for this DataObject
+    // (mdi-dots-horizontal on the DO sidebar row) → "Edit" item. Dialog
+    // title is `Edit "<dataObjectName>"`. Hover-reveal first (same pattern
+    // as the collection sidebar item).
+    await page
+      .locator(".sidebar-item, .sidebar-item-focused")
+      .filter({ visible: true })
+      .last()
+      .hover();
+    const doMenuBtns = page
+      .locator("button:has(.mdi-dots-horizontal)")
+      .filter({ visible: true });
+    await doMenuBtns.last().click({ force: true });
+    await page
+      .locator(".v-overlay__content .v-list-item:has-text('Edit')")
+      .first()
+      .click();
+    const editDoDialog = page.locator(".v-overlay__content").filter({
+      hasText: new RegExp(`Edit "${doName}"`, "i"),
+    });
     await expect(editDoDialog).toBeVisible({ timeout: 5_000 });
-    const licField = editDoDialog.getByLabel(/license/i);
+
+    // Step through to find the license field.
+    const licField = editDoDialog.getByLabel(/license/i).first();
+    for (let i = 0; i < 4 && !(await licField.isVisible().catch(() => false)); i++) {
+      const nextBtn = editDoDialog.getByRole("button", { name: /^next$/i });
+      if (await nextBtn.count()) await nextBtn.first().click();
+      await page.waitForTimeout(200);
+    }
+    await expect(licField).toBeVisible({ timeout: 5_000 });
+
     await licField.click();
     await licField.fill("MIT");
     const mitOpt = page.locator(".v-list-item-title").filter({ hasText: /^MIT$/ });
@@ -160,12 +214,17 @@ test.describe("LIC1 — license + accessRights on Collection + DataObject", () =
     } else {
       await licField.press("Enter");
     }
-    await editDoDialog.getByRole("button", { name: /save|update/i }).click();
+    await editDoDialog
+      .getByRole("button", { name: /save|update/i })
+      .first()
+      .click();
     await expect(editDoDialog).toBeHidden({ timeout: 10_000 });
 
     // Reload and assert.
     await page.goto(doUrl);
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText("MIT").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("MIT", { exact: true }).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
