@@ -77,6 +77,7 @@ promote the row in the relevant section to **✓**, and mark the matrix Snapshot
 | Parallel DB connectivity checks (startup + recovery) | sequential per-DB | `DbConnectivityWarmer` (startup) + `DbRecoveryScheduler` (recovery tick) both use Java 21 virtual threads; total wait = `max(latencies)` not `sum(latencies)` | **✓ ↑** | P1 |
 | Flyway startup retry ceiling (Mongo/JDBC audit) | unbounded default (Flyway `connect-retries-interval=120s`) | `quarkus.flyway.connect-retries=10` + `connect-retries-interval=PT5S`; ≈50s ceiling aligned with Neo4j gate | **✓ ↑** | A1d (commit `e1c3635`) / `aidocs/17` |
 | Migration progress monitoring endpoint | none | `GET /migrations/progress` (P3) | **✓ ↑** | P3 (commit `7cc74b8`) |
+| Readiness check verifies Neo4j migration-chain integrity | none — readiness ping only checks connectivity | `neo4j-migration-chain-readiness` SmallRye check (`/shepard/api/healthz/ready`) asserts every classpath `V**` is APPLIED with a matching checksum on the live DB; delegates to `Migrations.validate()` + `Migrations.info(COMPARE)` (same code paths that gate `apply()`); cached per `shepard.health.readiness.max-staleness`; operator runbook `docs/admin/runbooks/migration-chain-integrity.md` with worked example for the UI-020 V61 splice | **✓ ↑** | OPS-MIGRATION-HEALTHCHECK (2026-05-24) / `aidocs/agent-findings/ops-migration-healthcheck-2026-05-24.md` |
 
 ## 2. Configuration / feature toggles
 
