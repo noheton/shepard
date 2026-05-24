@@ -36,6 +36,9 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   @Inject
   ProvenanceService provenance;
 
+  @Inject
+  TargetEntityResolver targetEntityResolver;
+
   @ConfigProperty(name = "shepard.provenance.capture-reads", defaultValue = "false")
   boolean captureReads;
 
@@ -69,7 +72,9 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     String summary = method + " /" + (path == null ? "" : path);
     String actionKind = actionKindFor(method);
 
-    var target = TargetEntityResolver.resolve(path);
+    // Right-to-left path walk + numeric-id resolution (PROV-RESOLVER-PATHWALK
+    // + PROV-V1-NUMERIC-LOOKUP, closes RDM-2026-05-24-004 buckets B + C).
+    var target = targetEntityResolver.resolve(path);
     String targetKind = target.map(TargetEntityResolver.TargetRef::kind).orElse(null);
     String targetAppId = target.map(TargetEntityResolver.TargetRef::appId).orElse(null);
 
