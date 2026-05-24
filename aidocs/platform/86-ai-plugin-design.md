@@ -1,11 +1,23 @@
 ---
-stage: feature-defined
-last-stage-change: 2026-05-23
+stage: decommissioned
+last-stage-change: 2026-05-24
+superseded-by: aidocs/integrations/97-shepard-plugin-ai-design.md
 ---
 
-# `shepard-plugin-ai` — AI Platform Design
+# `shepard-plugin-ai` — AI Platform Design (superseded)
 
-**Status:** 📐 Designed — 2026-05-20  
+> **Decommissioned 2026-05-24.** Superseded by
+> [`aidocs/integrations/97-shepard-plugin-ai-design.md`](../integrations/97-shepard-plugin-ai-design.md)
+> for the v6 reframe. The capability registry (§3), the layered call-stack
+> (§5), the three-layer prompt-injection defence (§6), the MCP loopback (§7),
+> the `:AiActivity` provenance shape (§8), and the BYOK resolution chain (§4)
+> carry forward unchanged. What v6 inverts is the **deployment default**:
+> 86 recommended a LiteLLM proxy in front of OpenAI as the recommended
+> deployment; v6 ships a TEI sidecar in front of an open-weights model as
+> the **MUST-Tier-0** default and reframes LiteLLM as a Tier 3 multi-provider
+> recommendation. The rest of this doc is preserved for reference.
+
+**Status:** 📐 Designed — 2026-05-20  (decommissioned 2026-05-24)
 **Author:** design session fkrebs + Claude  
 **Depends on:** plugin SPI (`aidocs/platform/47`), provenance model (PROV1a), notification system (NTF1)  
 **First consumer:** `shepard-plugin-wiki-writer`
