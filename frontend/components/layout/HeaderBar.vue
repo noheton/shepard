@@ -235,10 +235,49 @@
           <v-icon>mdi-bell-outline</v-icon>
         </v-badge>
       </v-btn>
+      <!-- RDM-002: render the user's avatar (with ORCID-badge overlay when
+           the user has an ORCID configured + opted in) instead of the plain
+           account icon. The badge is the single most discoverable place
+           shepard signals "this is a FAIR-attributed researcher" — it must
+           show on the header, not just inside /me/profile. Falls back to
+           the account icon for unauthenticated visitors and to initials for
+           authenticated users without an uploaded avatar. -->
       <v-btn
-        icon="mdi-account-outline"
         :to="{ path: '/me', hash: '#profile' }"
-      />
+        class="header-avatar-btn"
+        variant="text"
+        data-testid="header-user-avatar-btn"
+      >
+        <div class="header-avatar-wrapper">
+          <v-avatar v-if="isSignedIn" size="36" color="primary" data-testid="header-user-avatar">
+            <v-img
+              v-if="!headerAvatarError && headerUserAppId"
+              :src="headerAvatarUrl"
+              cover
+              @error="headerAvatarError = true"
+            />
+            <span v-else class="text-body-2 font-weight-medium">
+              {{ headerInitial }}
+            </span>
+          </v-avatar>
+          <v-icon v-else>mdi-account-outline</v-icon>
+          <span
+            v-if="isSignedIn && headerUserOrcid && headerShowOrcidBadge"
+            class="header-orcid-badge"
+            :title="`ORCID: ${headerUserOrcid}`"
+            data-testid="header-user-orcid-badge"
+          >
+            <svg viewBox="0 0 256 256" width="14" height="14" aria-label="ORCID iD" role="img">
+              <circle cx="128" cy="128" r="128" fill="#A6CE39" />
+              <g fill="#FFFFFF">
+                <rect x="83" y="105" width="14" height="78" />
+                <circle cx="90" cy="88" r="9" />
+                <path d="M115 105 h35 c25 0 41 18 41 39 0 22 -18 39 -41 39 h-35 z M129 117 v54 h19 c20 0 28 -14 28 -27 0 -16 -10 -27 -28 -27 z" />
+              </g>
+            </svg>
+          </span>
+        </div>
+      </v-btn>
       <v-btn class="d-none d-md-inline-flex" icon="mdi-theme-light-dark" @click="toggleTheme" />
       <v-btn :prepend-icon="authIcon" class="d-none d-md-inline-flex" @click="handleAuth()">
         {{ isSignedIn ? "Sign Out" : "Sign In" }}
@@ -330,6 +369,8 @@ import type { MyContainerSearchResult } from "~/composables/context/useContainer
 import { useInstanceIdentity } from "~/composables/context/useInstanceIdentity";
 import { useInstanceCapabilities } from "~/composables/context/useInstanceCapabilities";
 import { useFetchNotifications } from "~/composables/context/useFetchNotifications";
+import { useFetchUserProfile } from "~/composables/context/useFetchUserProfile";
+import { useShowOrcidBadge } from "~/composables/context/useShowOrcidBadge";
 
 const { status, signOut, signIn, data } = useAuth();
 
@@ -380,6 +421,42 @@ watch(
 );
 
 onUnmounted(() => stopPolling());
+
+// RDM-002: header avatar + ORCID badge.
+// useFetchUserProfile runs unconditionally — it gracefully no-ops for
+// anonymous visitors (the call simply errors and `user` stays
+// undefined), which keeps the unauthenticated header path simple.
+const { user: profileUser } = useFetchUserProfile();
+const { showOrcidBadge: headerShowOrcidBadge } = useShowOrcidBadge();
+const headerAvatarError = ref(false);
+
+const headerUserAppId = computed<string | undefined>(() => {
+  // `appId` is a fork extension not in the auto-generated User type.
+  const raw = (profileUser.value as unknown as { appId?: string | null } | undefined)
+    ?.appId;
+  return raw ?? undefined;
+});
+
+const headerUserOrcid = computed<string | undefined>(() => profileUser.value?.orcid ?? undefined);
+
+const headerInitial = computed<string>(() => {
+  const u = profileUser.value;
+  const name = u?.effectiveDisplayName ?? u?.username ?? "?";
+  return name.charAt(0).toUpperCase();
+});
+
+function headerV2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit;
+  return (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
+}
+
+const headerAvatarUrl = computed<string>(() => {
+  const id = headerUserAppId.value;
+  if (!id) return "";
+  return `${headerV2BaseUrl()}/v2/users/${id}/avatar`;
+});
 
 // Mobile navigation drawer state
 const mobileDrawerOpen = ref(false);
@@ -576,6 +653,35 @@ function onEnterPressed() {
     font-size: 11px;
     opacity: 0.7;
   }
+}
+
+// RDM-002: header avatar + ORCID badge overlay. Visible-at-glance signal
+// that this user is FAIR-attributed (ORCID set + opted into the badge).
+.header-avatar-btn {
+  // The button frame is 64px tall (toolbar height) but we don't want the
+  // avatar growing with it — keep the v-avatar at 36px regardless.
+  min-width: 0;
+  padding: 0 8px;
+}
+.header-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-orcid-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  pointer-events: none; // the parent v-btn is the click target
 }
 
 // DLR institutional mark — subordinate to the shepard wordmark, with a

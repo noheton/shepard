@@ -5,6 +5,7 @@ import { useJupyterPreference } from "~/composables/context/useJupyterPreference
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
 import { useShowOrcidBadge } from "~/composables/context/useShowOrcidBadge";
 import { useOrcidProfile } from "~/composables/context/useOrcidProfile";
+import { isValidOrcid } from "~/utils/orcidFormat";
 
 const { user, isLoading } = useFetchUserProfile();
 const { patchMe, isSaving } = usePatchMe();
@@ -92,7 +93,9 @@ async function deleteAvatar() {
   avatarKey.value++;
 }
 
-const editDialog = ref(false);
+// RDM-002: Inline Identity form — promoted from the old Edit dialog.
+// Surfacing ORCID + DisplayName directly on the page closes the
+// discoverability gap the RDM Scrutinizer flagged (FAIR R1).
 const editOrcid = ref<string>("");
 const editDisplayName = ref<string>("");
 
@@ -106,13 +109,36 @@ watch(
   { immediate: true },
 );
 
-function openEdit() {
-  editOrcid.value = user.value?.orcid ?? "";
-  editDisplayName.value = user.value?.displayName ?? "";
-  editDialog.value = true;
-}
+// Hydrate inline editors from server state whenever the user payload
+// arrives or is replaced (e.g. after a successful patchMe round-trip).
+watch(
+  user,
+  (u) => {
+    editOrcid.value = u?.orcid ?? "";
+    editDisplayName.value = u?.displayName ?? "";
+  },
+  { immediate: true },
+);
 
-async function saveEdit() {
+const orcidInputError = computed<string | null>(() => {
+  const v = editOrcid.value.trim();
+  if (v === "") return null;
+  return isValidOrcid(v)
+    ? null
+    : "Not a valid ORCID (NNNN-NNNN-NNNN-NNNX with mod 11-2 checksum).";
+});
+
+const identityDirty = computed<boolean>(() => {
+  const currentOrcid = user.value?.orcid ?? "";
+  const currentDisplayName = user.value?.displayName ?? "";
+  return (
+    editOrcid.value.trim() !== currentOrcid ||
+    editDisplayName.value.trim() !== currentDisplayName
+  );
+});
+
+async function saveIdentity() {
+  if (orcidInputError.value) return;
   const updated = await patchMe({
     orcid: editOrcid.value.trim() === "" ? null : editOrcid.value.trim(),
     displayName:
@@ -122,7 +148,6 @@ async function saveEdit() {
   });
   if (updated) {
     user.value = updated;
-    editDialog.value = false;
   }
 }
 
@@ -135,15 +160,6 @@ async function saveJupyterUrl() {
   <div class="d-flex flex-column ga-4">
     <div class="d-flex align-center justify-space-between">
       <h4 class="text-h4">Profile</h4>
-      <v-btn
-        v-if="user && !isLoading"
-        variant="tonal"
-        size="small"
-        prepend-icon="mdi-pencil"
-        @click="openEdit"
-      >
-        Edit
-      </v-btn>
     </div>
 
     <!-- U1e: avatar (+ ORCID badge overlay when set & opt-in) -->
@@ -219,10 +235,6 @@ async function saveJupyterUrl() {
           <th>Username</th>
           <td>{{ user.username }}</td>
         </tr>
-        <tr v-if="user.effectiveDisplayName">
-          <th>Display Name</th>
-          <td>{{ user.effectiveDisplayName }}</td>
-        </tr>
         <tr>
           <th>First Name</th>
           <td>{{ user.firstName }}</td>
@@ -235,22 +247,88 @@ async function saveJupyterUrl() {
           <th>E-Mail</th>
           <td>{{ user.email }}</td>
         </tr>
-        <tr>
-          <th>ORCID</th>
+        <tr v-if="user.effectiveDisplayName && user.effectiveDisplayName !== user.displayName">
+          <th>Resolved display name</th>
           <td>
-            <a
-              v-if="user.orcid"
-              :href="`https://orcid.org/${user.orcid}`"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {{ user.orcid }}
-            </a>
-            <span v-else class="text-disabled">Not set</span>
+            {{ user.effectiveDisplayName }}
+            <span class="text-caption text-medium-emphasis ms-1">
+              (derived — overridable below)
+            </span>
           </td>
         </tr>
       </tbody>
     </v-table>
+
+    <!-- RDM-002: Identity — inline editable Display Name + ORCID.
+         Previously gated behind an Edit dialog; the RDM Scrutinizer
+         flagged the field as effectively missing because nothing on
+         the page surface indicated an ORCID was editable. Moving the
+         input inline closes the FAIR R1 gap (rich author metadata)
+         and keeps the avatar badge consistent with what the user just
+         typed without requiring an explicit Save round-trip through
+         a modal. -->
+    <div v-if="user && !isLoading" class="d-flex flex-column ga-2" data-testid="profile-identity-section">
+      <h5 class="text-h5">Identity</h5>
+      <v-text-field
+        v-model="editDisplayName"
+        label="Display name"
+        placeholder="How you want your name to appear"
+        hint="Overrides first/last name in the UI. Leave blank to use your name."
+        persistent-hint
+        variant="outlined"
+        density="comfortable"
+        clearable
+        data-testid="profile-display-name-input"
+      />
+      <v-text-field
+        v-model="editOrcid"
+        label="ORCID"
+        placeholder="0000-0000-0000-0000"
+        :error-messages="orcidInputError ? [orcidInputError] : []"
+        persistent-hint
+        variant="outlined"
+        density="comfortable"
+        clearable
+        data-testid="profile-orcid-input"
+      >
+        <template #details>
+          <span class="text-caption">
+            Find or register at
+            <a
+              href="https://orcid.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >orcid.org</a>. 16-digit ISO 7064 mod 11-2 identifier — used for
+            author attribution in RO-Crate exports and provenance.
+          </span>
+        </template>
+      </v-text-field>
+      <div class="d-flex align-center ga-2">
+        <v-btn
+          color="primary"
+          variant="flat"
+          density="comfortable"
+          :loading="isSaving"
+          :disabled="isSaving || !identityDirty || !!orcidInputError"
+          data-testid="profile-identity-save"
+          @click="saveIdentity"
+        >
+          Save identity
+        </v-btn>
+        <span
+          v-if="user.orcid"
+          class="text-caption text-medium-emphasis"
+          data-testid="profile-orcid-current"
+        >
+          Currently set:
+          <a
+            :href="`https://orcid.org/${user.orcid}`"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ user.orcid }}</a>
+        </span>
+      </div>
+    </div>
 
     <!-- ORCID public profile data — keywords + recent works -->
     <div v-if="user && user.orcid && !isLoading" class="d-flex flex-column ga-2">
@@ -356,42 +434,6 @@ async function saveJupyterUrl() {
       </p>
     </div>
 
-    <!-- Edit dialog -->
-    <v-dialog v-model="editDialog" max-width="480">
-      <v-card>
-        <v-card-title>Edit Profile</v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="editDisplayName"
-            label="Display Name"
-            hint="Overrides first/last name in the UI. Leave blank to use your name."
-            persistent-hint
-            class="mb-4"
-          />
-          <v-text-field
-            v-model="editOrcid"
-            label="ORCID"
-            placeholder="0000-0002-1825-0097"
-            hint="16-digit identifier from orcid.org. Leave blank to clear."
-            persistent-hint
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" :disabled="isSaving" @click="editDialog = false">
-            Cancel
-          </v-btn>
-          <v-btn
-            variant="tonal"
-            color="primary"
-            :loading="isSaving"
-            @click="saveEdit"
-          >
-            Save
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
