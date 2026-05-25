@@ -74,11 +74,11 @@
     <surefire-plugin.version>3.5.5</surefire-plugin.version>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-    <quarkus.platform.version>3.27.2</quarkus.platform.version>
+    <quarkus.platform.version>3.35.4</quarkus.platform.version>
     <junit.version>5.10.5</junit.version>
-    <mockito.version>5.22.0</mockito.version>
+    <mockito.version>5.23.0</mockito.version>
     <assertj.version>3.27.7</assertj.version>
-    <picocli.version>4.7.6</picocli.version>
+    <picocli.version>4.7.7</picocli.version>
   </properties>
 
   <dependencyManagement>
@@ -190,7 +190,7 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-ogm-core</artifactId>
-      <version>5.0.3</version>
+      <version>5.0.6</version>
       <scope>provided</scope>
     </dependency>
 
@@ -198,7 +198,7 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.44</version>
+      <version>1.18.46</version>
       <scope>provided</scope>
     </dependency>
 
