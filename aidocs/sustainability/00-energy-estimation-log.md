@@ -344,7 +344,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `878e3338` | 2026-05-20 | code | 16k | 4k | 2.00 | 20 | 5 | 27.00 | 9.80 | LOW | fix(UI): align collection page section headers with content edge |
 | `ee50a8f1` | 2026-05-20 | code | 45k | 15k | 6.67 | 20 | 5 | 31.67 | 11.50 | LOW | feat(UX): warn on expired session and prompt re-auth (#49) |
 | `dc43bfdc` | 2026-05-26 | code | 150k | 45k | 22.22 | 20 | 5 | 47.22 | 17.14 | LOW | feat(sema-v6): SEMA-V6-001/002/003 — SemanticAnnotation v6 columns, Vocab... |
-| (pending) | 2026-05-26 | code | 60k | 20k | 9.44 | 20 | 5 | 34.44 | 12.50 | LOW | fix(data-objects): MFG5 — enforce DataObject status as closed enum + transition guard |
+| `bf5985a9` | 2026-05-26 | code | 60k | 20k | 9.44 | 20 | 5 | 34.44 | 12.50 | LOW | fix(data-objects): MFG5 — enforce DataObject status as closed enum + transition guard |
 | (pending) | 2026-05-26 | code | 18k | 5k | 2.17 | 5 | 2 | 9.17 | 3.33 | LOW | fix(importer-plugin): IMPL3 — fail-fast startup guard for default credentials in prod mode |
 | `04efd5a9` | 2026-05-26 | doc | 12k | 4k | 1.78 | 0 | 0 | 1.78 | 0.65 | LOW | docs(db): DB-DOC1 — database overview reference + troubleshooting task page |
 | *(IMP1-TODO)* | 2026-05-26 | code | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | feat(import): IMP1 — collection-scoped annotation query for import context |
