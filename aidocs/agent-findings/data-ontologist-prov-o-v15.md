@@ -5,6 +5,12 @@ last-stage-change: 2026-05-23
 
 # PROV-O fragment design for v15 MFFD batch import
 
+> **SSOT:** This is a v15-import-specific PROV-O fragment design (2026-05-22).
+> The canonical PROV-O architecture for Shepard is
+> [`aidocs/workflows/64-provenance-architecture.md`](../workflows/64-provenance-architecture.md).
+> The f(ai)²r vocabulary reference is `https://github.com/noheton/f-ai-r/blob/main/doc/provenance.ttl`.
+> Read this doc for the exact Turtle fragment shape used by the v15 MFFD batch importer.
+
 **Audience:** v15 author (Claude Opus 4.7 acting on behalf of fkrebs@nucli.de).
 **Goal:** every batch (every 100 DOs or 5 min) emits one Turtle fragment to
 `POST /v2/semantic/{repoAppId}/import` (n10s-backed INTERNAL repo per

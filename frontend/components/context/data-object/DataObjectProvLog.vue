@@ -24,7 +24,7 @@
       />
     </div>
 
-    <v-progress-linear v-if="loading" indeterminate />
+    <v-progress-linear v-if="loading" indeterminate aria-label="Loading provenance log" />
 
     <EmptyListIcon
       v-else-if="visibleRows.length === 0"

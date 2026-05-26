@@ -5,6 +5,13 @@ last-stage-change: 2026-05-23
 
 # Provenance and Data Lineage — Design Exploration
 
+> **SSOT:** This is a design exploration (2026-05-07). The design shipped as the PROV1
+> series; the live reference is
+> [`aidocs/workflows/64-provenance-architecture.md`](64-provenance-architecture.md).
+> The intermediate concept design is
+> [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](55-provenance-and-activity-overhaul.md).
+> Read this doc for the original rationale and the OpenLineage vs. PROV-O deliberation.
+
 **Snapshot date.** 2026-05-07.
 
 **Scope.** Forward-looking design note for capturing, storing, querying

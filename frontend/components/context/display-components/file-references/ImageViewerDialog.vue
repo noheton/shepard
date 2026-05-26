@@ -45,7 +45,7 @@ loadImageFile();
 <template>
   <InformationDialog v-model:show-dialog="showDialog" title="Image Content">
     <template #text>
-      <v-img :src="imageUrl" max-height="400px" />
+      <v-img :src="imageUrl" max-height="400px" alt="Image preview" />
     </template>
   </InformationDialog>
 </template>

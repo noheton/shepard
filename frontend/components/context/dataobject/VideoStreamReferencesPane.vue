@@ -245,7 +245,7 @@ function formatBitrate(
               </v-chip>
             </div>
 
-            <div v-if="annotationsFor(ref.appId).isLoading.value" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
+            <div v-if="annotationsFor(ref.appId).isLoading.value" role="status" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
               <v-progress-circular indeterminate size="14" width="2" />
               Loading annotations…
             </div>

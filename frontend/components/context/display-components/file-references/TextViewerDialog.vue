@@ -89,9 +89,10 @@ loadTextFile();
       <!-- Loading -->
       <div
         v-if="viewState === 'loading'"
+        role="status"
         class="d-flex justify-center align-center py-8"
       >
-        <v-progress-circular indeterminate color="primary" />
+        <v-progress-circular indeterminate color="primary" aria-label="Loading file content" />
       </div>
 
       <!-- Too large -->

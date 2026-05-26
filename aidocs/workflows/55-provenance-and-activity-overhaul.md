@@ -5,6 +5,13 @@ last-stage-change: 2026-05-23
 
 # Provenance and Activity Overhaul — Design
 
+> **SSOT:** This is the concept design (2026-05-12). The design shipped as the PROV1
+> series; the live reference is
+> [`aidocs/workflows/64-provenance-architecture.md`](64-provenance-architecture.md).
+> The earlier exploration is
+> [`aidocs/workflows/30-provenance-and-lineage-design.md`](30-provenance-and-lineage-design.md).
+> Read this doc for the detailed `:Activity` schema decisions and dashboard design.
+
 **Scope.** Pivot the long-implicit "activity log" idea into a
 **first-class provenance surface** backed by the W3C PROV-O
 vocabulary (already pre-seeded per `aidocs/48`), with a

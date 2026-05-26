@@ -1,0 +1,102 @@
+package de.dlr.shepard.v2.shapes.resources;
+
+import de.dlr.shepard.v2.shapes.io.PredicateVocabularyEntryIO;
+import de.dlr.shepard.v2.shapes.repositories.PredicateVocabularyRepository;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.util.List;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+/**
+ * {@code GET /v2/shapes/predicates} — read-only view of the
+ * {@code predicate_vocabulary} substrate-routing table.
+ *
+ * <p><b>What it does.</b> Returns the full predicate-vocabulary table
+ * that maps {@code shepard:} predicate URIs to their authoritative
+ * storage substrate (Neo4j, TimescaleDB, Postgres, Garage). Optionally
+ * filtered by substrate via the {@code ?substrate=} query param.
+ *
+ * <p><b>Why it exists.</b> The SHACL shape write path (PR-5) uses this
+ * table to route each predicate to the correct store. Exposing it as a
+ * REST endpoint lets:
+ * <ul>
+ *   <li>Frontend shape editors discover which fields live where.</li>
+ *   <li>MCP tools and external clients (Python, CLI) introspect the
+ *       vocabulary without reading the migration SQL directly.</li>
+ *   <li>Plugin authors verify that newly coined predicates have been
+ *       registered before shipping a shape that uses them.</li>
+ * </ul>
+ *
+ * <p><b>Access.</b> Any authenticated user — the vocabulary is
+ * read-only metadata, not user data.
+ *
+ * <p><b>Status codes.</b>
+ * <ul>
+ *   <li>{@code 200} — vocabulary returned (may be empty if the table
+ *       is unpopulated, e.g. on a fresh install before migrations).</li>
+ *   <li>{@code 401} — not authenticated.</li>
+ * </ul>
+ *
+ * <p><b>Cross-references.</b>
+ * <ul>
+ *   <li>{@code aidocs/semantics/98 §1.3} — predicate-key registry design</li>
+ *   <li>{@code db/migration/V1.16.0__Add_predicate_vocabulary.sql} — seed data</li>
+ *   <li>{@link ShapesValidateRest} — sibling validate endpoint</li>
+ *   <li>{@link ShapesRenderRest} — sibling render endpoint</li>
+ * </ul>
+ */
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/v2/shapes")
+@RequestScoped
+@Tag(name = "Shapes (v2)")
+public class ShapesPredicatesRest {
+
+  @Inject
+  PredicateVocabularyRepository repository;
+
+  @GET
+  @Path("/predicates")
+  @RolesAllowed("authenticated")
+  @Operation(
+    summary = "List the shepard: predicate vocabulary with substrate routing.",
+    description = "Returns the predicate_vocabulary table entries mapping each known " +
+    "shepard: predicate URI to its authoritative storage substrate " +
+    "(neo4j | timescaledb | postgres | garage). " +
+    "Optionally filtered by substrate. " +
+    "Read-only — the table is populated by Flyway migrations."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Vocabulary entries, ordered by predicate_uri. Empty list when no entries are registered.",
+    content = @Content(schema = @Schema(implementation = PredicateVocabularyEntryIO[].class))
+  )
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  public Response predicates(
+    @Parameter(
+      description = "Filter by substrate: neo4j | timescaledb | postgres | garage. " +
+      "Omit to return the full vocabulary.",
+      required = false
+    )
+    @QueryParam("substrate") String substrate
+  ) {
+    List<PredicateVocabularyEntryIO> entries;
+    if (substrate != null && !substrate.isBlank()) {
+      entries = repository.findBySubstrate(substrate.trim());
+    } else {
+      entries = repository.findAll();
+    }
+    return Response.ok(entries).build();
+  }
+}

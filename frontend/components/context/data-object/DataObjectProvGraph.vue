@@ -207,8 +207,8 @@ const chartOption = computed(() => {
 
 <template>
   <div>
-    <div v-if="loading" class="d-flex justify-center pa-6">
-      <v-progress-circular indeterminate size="24" />
+    <div v-if="loading" role="status" class="d-flex justify-center pa-6">
+      <v-progress-circular indeterminate size="24" aria-label="Loading provenance graph" />
     </div>
     <div v-else>
       <div class="d-flex flex-wrap align-center ga-1 mb-2 text-caption text-medium-emphasis">

@@ -5,6 +5,16 @@ last-stage-change: 2026-05-23
 
 # Timeseries Schema — Migration from Upstream
 
+> **SSOT split:** This doc is the operator-facing runbook for upgrading the
+> TimescaleDB schema from upstream 5.2.0.
+>
+> - For **schema tuning rationale** (index choices, compression policy, chunk skipping):
+>   [`aidocs/data/68-timeseries-data-model-tuning.md`](68-timeseries-data-model-tuning.md) is canonical.
+> - For the **5-tuple → appId channel-identity migration** (V1.11.0 planned):
+>   [`aidocs/platform/87-timeseries-appid-migration.md`](../platform/87-timeseries-appid-migration.md) is canonical.
+> - For the **admin upgrade ledger** entry covering these schema changes:
+>   [`aidocs/34-upstream-upgrade-path.md`](../34-upstream-upgrade-path.md) §Timeseries schema.
+
 **Audience:** Operators upgrading from upstream `gitlab.com/dlr-shepard/shepard 5.2.0`
 to this fork, specifically for the timeseries (TimescaleDB) schema changes.
 

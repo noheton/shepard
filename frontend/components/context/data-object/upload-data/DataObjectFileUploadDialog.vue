@@ -334,7 +334,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
 
           <div v-if="!uploading" class="d-flex flex-column ga-1">
             <div class="d-flex justify-space-between align-center">
-              <span class="text-textbody text-subtitle-2">
+              <span class="text-textbody1 text-subtitle-2">
                 Storage Location
               </span>
               <v-switch
@@ -384,7 +384,7 @@ watch(isCreatingNewFileContainer, (creating: boolean) => {
 
           <div v-if="createReference && !uploading" class="d-flex flex-column ga-2">
             <div class="d-flex ga-2 align-center">
-              <span class="text-textbody text-subtitle-2">Reference Name</span>
+              <span class="text-textbody1 text-subtitle-2">Reference Name</span>
               <Tooltip>
                 <div>
                   This is the name that will appear in your list of file

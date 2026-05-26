@@ -5,6 +5,11 @@ last-stage-change: 2026-05-23
 
 # SHACL changeover (non-TS scope) — implementation log
 
+> **SSOT:** This is an implementation log for the SHACL foundation PRs (2026-05-22).
+> The canonical design for SHACL templates, named individuals, and ontology-driven UI
+> is [`aidocs/semantics/95-shacl-templates-and-individuals.md`](../semantics/95-shacl-templates-and-individuals.md).
+> Read this doc for the specific PRs landed, deferred items, and implementation decisions.
+
 **Status.** Foundation slice landed on a worktree branch. PR-1 + PR-3
 + PR-4 implemented + tested + tracker-updated. PR-2 (n10s ↔ Jena
 substrate), PR-5 (predicate lift), PR-6–8 (NCR / AFP / welding shape

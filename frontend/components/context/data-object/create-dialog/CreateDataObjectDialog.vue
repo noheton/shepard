@@ -192,7 +192,18 @@ async function createDataObject() {
         </v-row>
         <v-row>
           <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-1">Relationships</div>
+            <div class="text-subtitle-1 d-flex align-center ga-1">
+              Relationships
+              <v-tooltip
+                text="Parent organises this data object within a hierarchy. Predecessors link to prior data objects in a process chain — e.g. the test run that a re-test supersedes."
+                max-width="320"
+                location="top"
+              >
+                <template #activator="{ props: tip }">
+                  <v-icon v-bind="tip" size="16" color="medium-emphasis" icon="mdi-help-circle-outline" />
+                </template>
+              </v-tooltip>
+            </div>
           </v-col>
         </v-row>
         <v-row class="mt-1">
@@ -215,7 +226,18 @@ async function createDataObject() {
       <template #form-content-step-2>
         <v-row>
           <v-col class="pt-9 pb-1">
-            <div class="text-subtitle-1">Attributes</div>
+            <div class="text-subtitle-1 d-flex align-center ga-1">
+              Attributes
+              <v-tooltip
+                text="Key–value pairs that describe this data object. Use controlled vocabulary keys where possible (e.g. propellant, testStand, operatorId) so data objects can be filtered and compared."
+                max-width="320"
+                location="top"
+              >
+                <template #activator="{ props: tip }">
+                  <v-icon v-bind="tip" size="16" color="medium-emphasis" icon="mdi-help-circle-outline" />
+                </template>
+              </v-tooltip>
+            </div>
           </v-col>
         </v-row>
         <!-- LIC1 (FAIR-1): license + accessRights. Step 2 alongside the other
