@@ -18,6 +18,12 @@ useHead({ title: "Shape render playground | shepard" });
 // ── inputs ────────────────────────────────────────────────────────────────────
 const templateAppId   = ref("");
 const focusShepardId  = ref("");
+
+// When navigated from a TimeseriesReference via ViewRecipeBuilderDialog, these
+// are set from query params and the template form is hidden.
+const fromReference   = ref(false);
+const refStartNs      = ref<number | null>(null);
+const refEndNs        = ref<number | null>(null);
 const containerId     = ref(""); // numeric TS container ID (legacy v1 path)
 const colormapName    = ref<ColormapName>("inferno");
 const windowHours     = ref(1);
@@ -134,9 +140,9 @@ async function renderTrace() {
   renderError.value = null;
   tracePoints.value = [];
 
-  const now      = Date.now() * 1_000_000;
-  const startNs  = now - windowHours.value * 3_600_000_000_000;
-  const endNs    = now;
+  const now     = Date.now() * 1_000_000;
+  const startNs = refStartNs.value ?? (now - windowHours.value * 3_600_000_000_000);
+  const endNs   = refEndNs.value   ?? now;
 
   const byRole = new Map<string, Binding>();
   for (const b of bindings.value) {
@@ -195,6 +201,37 @@ const canRender = computed(() =>
   bindings.value.some(b => b.role === "y" && b.parsed) &&
   bindings.value.some(b => b.role === "z" && b.parsed),
 );
+
+// ── bootstrap from query params (ViewRecipeBuilderDialog → this page) ─────────
+onMounted(() => {
+  const q = useRoute().query;
+  if (!q.roles || !q.containerId) return;
+
+  try {
+    const roles = JSON.parse(atob(String(q.roles))) as Record<string, {
+      measurement: string; device: string; location: string;
+      symbolicName: string; field: string;
+    }>;
+    bindings.value = Object.entries(roles).map(([role, ch]) => ({
+      role,
+      channelSelector: JSON.stringify(ch),
+      unit: null,
+      required: role !== "value",
+      status: "DIRECT",
+      parsed: ch,
+    }));
+  } catch {
+    return;
+  }
+
+  containerId.value    = String(q.containerId);
+  refStartNs.value     = q.startNs ? Number(q.startNs) : null;
+  refEndNs.value       = q.endNs   ? Number(q.endNs)   : null;
+  colormapName.value   = (q.colormap as ColormapName | undefined) ?? "inferno";
+  fromReference.value  = true;
+
+  void renderTrace();
+});
 </script>
 
 <template>
@@ -209,8 +246,24 @@ const canRender = computed(() =>
       </p>
     </div>
 
+    <!-- ── from-reference banner (replaces the template form) ──────────────── -->
+    <v-alert
+      v-if="fromReference"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+      prepend-icon="mdi-cube-outline"
+    >
+      Rendering from a Timeseries Reference · container {{ containerId }}
+      <span v-if="refStartNs && refEndNs" class="text-caption ml-2">
+        ({{ new Date(refStartNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }}
+        → {{ new Date(refEndNs / 1e6).toISOString().slice(0, 19).replace("T", " ") }} UTC)
+      </span>
+    </v-alert>
+
     <!-- ── input form ─────────────────────────────────────────────────────── -->
-    <v-row class="mb-2">
+    <v-row v-if="!fromReference" class="mb-2">
       <v-col cols="12" md="5">
         <v-text-field
           v-model="templateAppId"
