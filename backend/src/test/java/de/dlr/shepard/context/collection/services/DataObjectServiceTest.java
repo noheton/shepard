@@ -6,13 +6,16 @@ import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aUser;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.auth.permission.daos.PermissionsDAO;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.users.daos.UserDAO;
 import de.dlr.shepard.auth.users.entities.User;
@@ -65,6 +68,9 @@ public class DataObjectServiceTest {
 
   @InjectMock
   PermissionsService permissionsService;
+
+  @InjectMock
+  PermissionsDAO permissionsDAO;
 
   @Inject
   DataObjectService service;
@@ -649,5 +655,83 @@ public class DataObjectServiceTest {
     ).thenReturn(true);
 
     assertDoesNotThrow(() -> service.deleteDataObject(1005L, dataObject.getShepardId()));
+  }
+
+  /**
+   * ANTI-REGRESSION for BUG-148 (2026-05-24).
+   *
+   * <p>BUG-148 was a misdiagnosis: a future agent attempted to "fix" DataObject creation by seeding
+   * a direct {@code :Permissions} node on each new DataObject. That "fix" is WRONG.
+   *
+   * <p>The correct design:
+   * <ul>
+   *   <li>DataObjects have NO direct {@code :Permissions} node — {@code permissionsDAO.findByEntityNeo4jId}
+   *       must never be called to create/attach Permissions during {@code DataObjectService.createDataObject}.
+   *   <li>Access is inherited from the parent Collection via
+   *       {@code PermissionsService.isAccessAllowedForDataObjectAppId} (lines 321-338) and the 3-arg
+   *       fallback overload (lines 285-298).
+   *   <li>V90__Tighten_orphan_permissions_backfill.cypher removes any Permissions nodes incorrectly
+   *       attached by V14 to DataObject/BasicReference nodes in production.
+   * </ul>
+   *
+   * <p>If this test starts failing it means someone has added per-DO Permissions seeding inside
+   * {@code DataObjectService}. That is the bug. Fix the code, not this test.
+   */
+  @Test
+  public void dataObjectHasNoDirectPermissionsNode_inheritedFromCollection() {
+    // Arrange: set up a Collection + parent DataObject as createDataObject requires.
+    Date date = new Date(23);
+    Version version = new Version(new UUID(1L, 2L));
+    Collection collection = aCollection().id(2L).shepardId(25L).build();
+    collection.setVersion(version);
+    DataObject parent = aDataObject().id(3L).shepardId(35L).inCollection(collection).build();
+    DataObjectIO input = new DataObjectIO() {
+      {
+        setAttributes(Map.of("a", "b"));
+        setDescription("anti-regression DO");
+        setName("BUG-148-guard");
+        setParentId(parent.getShepardId());
+      }
+    };
+    DataObject created = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b"));
+        setDescription("anti-regression DO");
+        setName("BUG-148-guard");
+        setCreatedAt(date);
+        setCreatedBy(defaultUser);
+        setCollection(collection);
+        setParent(parent);
+        setId(99L);
+      }
+    };
+    DataObject createdWithShepardId = new DataObject() {
+      {
+        setAttributes(Map.of("a", "b"));
+        setDescription("anti-regression DO");
+        setName("BUG-148-guard");
+        setCreatedAt(date);
+        setCreatedBy(defaultUser);
+        setCollection(collection);
+        setParent(parent);
+        setId(99L);
+        setShepardId(99L);
+      }
+    };
+
+    when(dao.findByShepardId(parent.getShepardId())).thenReturn(parent);
+    when(dateHelper.getDate()).thenReturn(date);
+    when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
+    when(dao.createOrUpdate(any())).thenReturn(created).thenReturn(createdWithShepardId);
+    when(userService.getCurrentUser()).thenReturn(defaultUser);
+
+    // Act: create a DataObject via the service layer.
+    service.createDataObject(collection.getShepardId(), input);
+
+    // Assert: DataObjectService must NEVER call permissionsDAO.createOrUpdate during DataObject
+    // creation. DataObjects inherit permissions from their parent Collection — they have no
+    // direct :Permissions node. If this verify fails, someone has added per-DO Permissions
+    // seeding and broken the Collection-level inheritance walk (BUG-148 regression).
+    verify(permissionsDAO, never()).createOrUpdate(any());
   }
 }
