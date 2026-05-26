@@ -1,68 +1,60 @@
 <script setup lang="ts">
-// /semantic/sparql — minimal SPARQL playground. Backed by N1f
-// (GET/POST /v2/semantic/{repoAppId}/sparql). Read-only enforcement
-// happens server-side via SparqlQueryValidator.
-//
-// First version: a textarea + Run button + JSON result dump. The
-// repository selector is a free-text input until SemanticRepositoryPane
-// exposes a "default repo" hint — most installs run a single internal
-// repo (id often "internal").
+// /semantic/sparql — SPARQL playground for all authenticated users.
+// Backed by N1f (POST /v2/semantic/{repoAppId}/sparql).
+// Read-only enforcement happens server-side via SparqlQueryValidator.
 //
 // Design: aidocs/semantics/100 §5; backlog row N1f.
+// Admin version at /admin#sparql-playground uses the same composable.
 
+import type { SparqlBinding } from "~/composables/context/admin/useSparqlPlayground";
+import { useSparqlPlayground } from "~/composables/context/admin/useSparqlPlayground";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
 useHead({ title: "SPARQL playground | shepard" });
 
 const route = useRoute();
-const repoId = ref<string>("internal");
-const query = ref<string>(
-  (route.query.query as string | undefined) ??
-    "SELECT * WHERE { ?s ?p ?o } LIMIT 25",
-);
-const result = ref<unknown>(null);
-const error = ref<string | null>(null);
-const isLoading = ref(false);
 
-async function runQuery() {
-  isLoading.value = true;
-  error.value = null;
-  result.value = null;
-  try {
-    const { data: auth } = useAuth();
-    const config = useRuntimeConfig().public;
-    const explicit = config.backendV2ApiUrl as string | undefined;
-    const v2Base =
-      explicit && explicit.length > 0
-        ? explicit
-        : (config.backendApiUrl as string).replace(/\/shepard\/api\/?$/, "");
-    const url =
-      v2Base +
-      `/v2/semantic/${encodeURIComponent(repoId.value)}/sparql?query=` +
-      encodeURIComponent(query.value);
-    const headers: Record<string, string> = {
-      Accept: "application/sparql-results+json",
-    };
-    if (auth.value?.accessToken) {
-      headers["Authorization"] = `Bearer ${auth.value.accessToken}`;
-    }
-    const res = await fetch(url, { headers });
-    const body = await res.text();
-    if (!res.ok) {
-      error.value = `${res.status} ${res.statusText}\n${body}`;
-      return;
-    }
-    try {
-      result.value = JSON.parse(body);
-    } catch {
-      result.value = body;
-    }
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    isLoading.value = false;
-  }
+const {
+  repoId,
+  query,
+  isLoading,
+  error,
+  results,
+  rowCount,
+  runQuery,
+  resetQuery,
+} = useSparqlPlayground();
+
+// Seed query from URL param if provided (?query=...)
+if (route.query.query) {
+  query.value = route.query.query as string;
 }
+
+// ─── Table rendering ───────────────────────────────────────────────────────
+
+const tableHeaders = computed(() => {
+  if (!results.value || !results.value.head.vars.length) return [];
+  return results.value.head.vars.map((v: string) => ({
+    title: `?${v}`,
+    key: v,
+    sortable: true,
+  }));
+});
+
+const tableItems = computed<Record<string, string>[]>(() => {
+  if (!results.value) return [];
+  return results.value.results.bindings.map((binding: SparqlBinding) => {
+    const row: Record<string, string> = {};
+    for (const v of results.value!.head.vars) {
+      const cell = binding[v];
+      row[v] = cell ? cell.value : "";
+    }
+    return row;
+  });
+});
+
+// Toggle between table view and raw JSON
+const showRaw = ref(false);
 </script>
 
 <template>
@@ -73,58 +65,141 @@ async function runQuery() {
       </NuxtLink>
       <h4 class="text-h4">SPARQL playground</h4>
       <p class="text-body-1 text-medium-emphasis">
-        Read-only SELECT / ASK queries against the internal n10s-managed
-        graph. INSERT, DELETE, UPDATE, DROP, etc. are rejected server-side
-        by <code>SparqlQueryValidator</code>.
+        Read-only <code>SELECT</code> / <code>ASK</code> queries against the
+        internal n10s-managed graph. Mutation forms are rejected server-side.
+        Admin version available at
+        <NuxtLink to="/admin#sparql-playground">/admin#sparql-playground</NuxtLink>.
       </p>
     </div>
 
     <v-text-field
       v-model="repoId"
-      label="Repository ID"
+      label="Repository ID (appId)"
       density="compact"
       variant="outlined"
       hint="Default is `internal` (the n10s-backed in-process store)."
       persistent-hint
       class="mb-3"
+      style="max-width: 440px"
     />
+
     <v-textarea
       v-model="query"
       label="SPARQL query"
       variant="outlined"
-      rows="6"
+      :rows="8"
       auto-grow
-      class="mb-2"
+      class="mb-1 sparql-editor"
+      @keydown.ctrl.enter.prevent="runQuery"
     />
-    <v-btn color="primary" :loading="isLoading" @click="runQuery">
-      <v-icon start>mdi-play</v-icon> Run query
-    </v-btn>
+    <div class="text-caption text-medium-emphasis mb-3">
+      Tip: press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run.
+    </div>
 
-    <v-alert v-if="error" type="error" class="mt-3" variant="tonal">
-      <pre class="text-caption">{{ error }}</pre>
+    <div class="d-flex ga-2 mb-3">
+      <v-btn color="primary" :loading="isLoading" prepend-icon="mdi-play" @click="runQuery">
+        Run query
+      </v-btn>
+      <v-btn variant="text" :disabled="isLoading" prepend-icon="mdi-refresh" @click="resetQuery">
+        Reset
+      </v-btn>
+    </div>
+
+    <!-- Error -->
+    <v-alert v-if="error" type="error" class="mt-3" variant="tonal" closable @click:close="error = null">
+      <pre class="text-caption sparql-error-pre">{{ error }}</pre>
     </v-alert>
-    <v-card v-if="result" variant="outlined" class="mt-3">
-      <v-card-title class="text-subtitle-1">Result</v-card-title>
-      <v-card-text>
-        <pre class="text-caption sparql-result">{{ JSON.stringify(result, null, 2) }}</pre>
-      </v-card-text>
-    </v-card>
+
+    <!-- ASK result (boolean) -->
+    <v-alert
+      v-else-if="results && results.head && !results.head.vars.length"
+      :type="(results as any).boolean === true ? 'success' : 'warning'"
+      variant="tonal"
+      class="mt-3"
+    >
+      ASK result: <strong>{{ (results as any).boolean }}</strong>
+    </v-alert>
+
+    <!-- SELECT results -->
+    <template v-else-if="results && results.head && results.head.vars.length">
+      <div class="d-flex align-center ga-3 mt-3 mb-1">
+        <span class="text-caption text-medium-emphasis">
+          {{ rowCount }} row{{ rowCount !== 1 ? "s" : "" }} returned
+        </span>
+        <v-btn-toggle v-model="showRaw" density="compact" variant="outlined" size="small">
+          <v-btn :value="false" size="small">Table</v-btn>
+          <v-btn :value="true" size="small">JSON</v-btn>
+        </v-btn-toggle>
+      </div>
+
+      <!-- Table view -->
+      <v-card v-if="!showRaw" variant="outlined">
+        <v-data-table
+          :headers="tableHeaders"
+          :items="tableItems"
+          :items-per-page="25"
+          density="compact"
+          class="sparql-results-table"
+        >
+          <template
+            v-for="h in tableHeaders"
+            :key="h.key"
+            #[`item.${h.key}`]="{ item }"
+          >
+            <span class="sparql-cell" :title="item[h.key] ?? ''">{{ item[h.key] ?? "" }}</span>
+          </template>
+        </v-data-table>
+      </v-card>
+
+      <!-- Raw JSON view -->
+      <v-card v-else variant="outlined">
+        <v-card-text>
+          <pre class="text-caption sparql-result">{{ JSON.stringify(results, null, 2) }}</pre>
+        </v-card-text>
+      </v-card>
+    </template>
 
     <PlaceholderImplStatus
       backend="shipped"
       backlog-row="N1f"
       design-doc="aidocs/semantics/100-consistent-semantic-annotation-design.md"
       endpoint="/v2/semantic/{repoAppId}/sparql"
-      notes="Backend live since N1f shipped. UI is intentionally minimal — full editor / autocomplete is queued."
+      notes="Backend live since N1f shipped. Table rendering shipped in #64. Full editor / autocomplete queued."
     />
   </v-container>
 </template>
 
 <style scoped>
+.sparql-editor :deep(textarea) {
+  font-family: "Fira Code", "JetBrains Mono", "Courier New", Courier, monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+.sparql-results-table :deep(td),
+.sparql-results-table :deep(th) {
+  font-size: 0.8125rem;
+}
+
+.sparql-cell {
+  display: inline-block;
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .sparql-result {
   max-height: 500px;
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.sparql-error-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
 }
 </style>

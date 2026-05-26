@@ -26,6 +26,7 @@ export * from './ReferenceApi';
 export * from './SearchApi';
 export * from './SemanticAnnotationApi';
 export * from './SemanticRepositoryApi';
+export * from './SemanticSparqlApi';
 export * from './SpatialDataContainerApi';
 export * from './SpatialDataReferenceApi';
 export * from './StructuredDataContainerApi';
