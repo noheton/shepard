@@ -45,7 +45,7 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
 </script>
 
 <template>
-  <div style="max-width: 1200px; margin: auto">
+  <PageShell>
     <v-container width="100%" fluid>
       <v-row>
         <v-col cols="12" class="py-14">
@@ -212,5 +212,5 @@ const { advancedMode, isSaving, setAdvancedMode } = useAdvancedMode();
       v-model:show-dialog="showCreateDialog"
       @collection-created="(id: number) => router.push(collectionsPath + id)"
     />
-  </div>
+  </PageShell>
 </template>

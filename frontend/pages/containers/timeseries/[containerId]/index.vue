@@ -114,7 +114,7 @@ useHead({
 </script>
 
 <template>
-  <div style="max-width: 1200px; margin: auto">
+  <PageShell>
     <v-container fluid>
       <v-row v-if="!!containerAccessor.container.value" no-gutters>
         <v-col cols="12">
@@ -312,7 +312,7 @@ useHead({
         </ExpansionPanelItem>
       </ExpansionPanels>
     </v-container>
-  </div>
+  </PageShell>
 </template>
 
 <style lang="scss" scoped>

@@ -58,7 +58,8 @@ useHead({
 });
 </script>
 <template>
-  <v-container fluid style="max-width: 1200px; margin: auto">
+  <PageShell>
+  <v-container fluid>
     <v-row v-if="!!containerAccessor.fileContainer.value" no-gutters>
       <v-col cols="12">
         <Breadcrumbs
@@ -176,4 +177,5 @@ useHead({
       </ExpansionPanelItem>
     </ExpansionPanels>
   </v-container>
+  </PageShell>
 </template>

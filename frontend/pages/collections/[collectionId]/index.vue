@@ -18,7 +18,7 @@ const {
 } = useCounter();
 
 const collectionId = routeParams.value.collectionId;
-const { collection, isAllowedToEditCollection } =
+const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
   useFetchCollection(collectionId);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
@@ -205,7 +205,7 @@ useHead({
 </script>
 
 <template>
-  <div style="max-width: 1400px">
+  <PageShell>
     <v-container class="pa-0 fill-height" fluid>
       <v-row v-if="!!collection" no-gutters>
         <!-- Feature B: Hero banner — only rendered when heroImageUrl is set.
@@ -557,9 +557,10 @@ useHead({
           </v-container>
         </v-col>
       </v-row>
+      <NotFoundPanel v-else-if="isCollectionError" />
       <CenteredLoadingSpinner v-else />
     </v-container>
-  </div>
+  </PageShell>
 </template>
 
 <style lang="scss" scoped>

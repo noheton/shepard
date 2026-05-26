@@ -390,6 +390,8 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `32e2ac04` | 2026-05-26 | code | 8k | 2k | 0.56 | 5 | 2 | 7.56 | 2.74 | LOW | fix(video): add picocli provided dep to video plugin pom (CLI compile fix #1) |
 | `77b20ff4` | 2026-05-26 | code | 10k | 3k | 0.83 | 5 | 2 | 7.83 | 2.84 | LOW | fix(video): add shepard-admin provided dep to video plugin pom (CLI compile fix #2) |
 | `08b2a196` | 2026-05-26 | chore | 2k | 1k | 0.14 | 0 | 0 | 0.14 | 0.05 | LOW | chore: stage package-lock.json (three + uplot + @types/three deps from Trace3D + uPlot waves) |
+| *(pending)* | 2026-05-26 | code | 22k | 7k | 2.39 | 0 | 2 | 4.39 | 1.59 | LOW | fix(frontend): UX-ERR-STATE-COLLECTION-MISSING + UX-PAGE-SHELL-RESPONSIVE-WIDTH — NotFoundPanel, PageShell, isError on useFetchCollection, 6 pages updated |
+| *(pending)* | 2026-05-26 | code | 30k | 8k | 7.98 | 10 | 2 | 19.98 | 7.25 | LOW | feat(ux): UX-DOPANEL-TOTAL-COUNT — Content-Range + X-Total-Count headers, countByCollectionByShepardIds DAO, listDataObjectsWithCount client, "Showing X–Y of Z" + jump-to-page in CollectionDataObjectsPanel |
 
 ---
 
@@ -493,4 +495,6 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added TS-AUDIT-003/005 entry (CHECK constraint + pg_stat_statements migrations). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added VID1c, TS-fixes, AAS1l cherry-pick, video-pom-fix ×2, package-lock entries. | Claude Sonnet 4.6 |
 | 2026-05-26 | Backfilled hash for TS-AUDIT-003/005 (`5bcebdd67`); added M4I-b entry (`5c851329b`). | Claude Sonnet 4.6 |
+| 2026-05-26 | Added UX-ERR-STATE + UX-PAGE-SHELL entry (NotFoundPanel + PageShell + 6 pages). | Claude Sonnet 4.6 |
+| 2026-05-26 | Added UX-DOPANEL-TOTAL-COUNT entry (Content-Range header + Showing X-Y of Z + page jump). | Claude Sonnet 4.6 |
 

@@ -6,8 +6,12 @@ const containerId = routeParams.value.containerId;
 const urlSegment = containerTypeUrlPathSegmentMappings.SPATIALDATA;
 
 const containerAccessor = new SpatialDataContainerAccessor(containerId);
+const isFetchError = ref(false);
 const fetchData = () => {
-  containerAccessor.fetchData();
+  isFetchError.value = false;
+  containerAccessor.fetchData().catch(() => {
+    isFetchError.value = true;
+  });
   containerAccessor.fetchRoles();
 };
 
@@ -25,7 +29,8 @@ useHead({
 });
 </script>
 <template>
-  <v-container fluid style="max-width: 1200px; margin: auto">
+  <PageShell>
+    <v-container fluid class="pa-0">
     <v-row v-if="!!containerAccessor.spatialData.value" no-gutters>
       <v-col cols="12">
         <Breadcrumbs
@@ -65,6 +70,8 @@ useHead({
         </v-container>
       </v-col>
     </v-row>
+    <NotFoundPanel v-else-if="isFetchError" />
     <CenteredLoadingSpinner v-else />
-  </v-container>
+    </v-container>
+  </PageShell>
 </template>
