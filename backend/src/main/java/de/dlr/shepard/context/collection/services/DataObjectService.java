@@ -16,6 +16,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
+import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteService;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
 import io.quarkus.logging.Log;

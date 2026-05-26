@@ -439,6 +439,7 @@ namespace; core enforces the shape.
 | **Playwright screenshot pipeline** capturing against a CI-booted compose stack, committing PNGs to `docs/assets/screenshots/` | none | TBD; closes 9-month-old screenshot-placeholder backlog | 📐 (queued, D1b) | `aidocs/49 §3` |
 | Task-shaped help pages for casual users | none | Partial: `upload-data`, `create-from-template`, `publish-data-object`, `publish-to-helmholtz-unhide`, `monitor-collection-activity`, `timeseries-plotting`, `collection-lineage`, `provenance-tracing`, `annotate-container`, `delete-container-with-references`, `minter-epic-quickstart` shipped under `docs/help/` and registered in `helpMarkdown.ts` | **🚧 ↑** (D1c partial) | `aidocs/49 §2.2` + `docs/help/` |
 | Version-stamped in-app docs ("Help for shepard X.Y") | n/a | TBD | 📐 (queued, D1d) | `aidocs/49 §2.3` |
+| **Operator runbook library** — 10 numbered single-page copy-paste runbooks at `docs/admin/runbooks/01-10-*.md` + README index | none | Shipped 2026-05-26: cube hotpatch (01), orphan payload wipe (02), API key rotation (03), Neo4j restore (04), TimescaleDB restore (05), Garage S3 restore (06), add instance-admin (07), enable plugin (08), permission repair (09), cut a release (10). Plus 3 pre-existing (`migration-chain-integrity`, `restore-tsdb-container-neo4j-shadow`, `docker-bind-mount-inode-drift`). | **✓ ↑** | ADMIN-RUNBOOKS-LIBRARY (`aidocs/16`) |
 
 ## 16a. Experiment orchestration
 
