@@ -7,6 +7,7 @@ import io.quarkiverse.mcp.server.McpException;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
@@ -117,7 +118,7 @@ public class McpToolSupport {
       throw e;
     } catch (NotAuthorizedException e) {
       throw new McpException("Authentication required: " + safeMsg(e), AUTH_REQUIRED);
-    } catch (ForbiddenException e) {
+    } catch (ForbiddenException | InvalidAuthException e) {
       throw new McpException("Permission denied: " + safeMsg(e), FORBIDDEN);
     } catch (NotFoundException | IllegalArgumentException e) {
       // Caller-fixable: bad id, wrong shape, etc.
