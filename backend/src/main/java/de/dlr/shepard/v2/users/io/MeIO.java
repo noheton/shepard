@@ -43,7 +43,11 @@ public record MeIO(
 
   @Schema(readOnly = true, required = true,
     description = "Number of collections the caller is currently watching (CW1).")
-  int watchedCollectionCount
+  int watchedCollectionCount,
+
+  @Schema(required = true,
+    description = "PROV1l — when true, identity is omitted from :Activity records (GDPR opt-out). Default false.")
+  boolean anonymizeInProvenance
 ) {
   public static MeIO from(UserIO user, int watchedCollectionCount) {
     return new MeIO(
@@ -55,7 +59,8 @@ public record MeIO(
       user.getOrcid(),
       user.getDisplayName(),
       user.getEffectiveDisplayName(),
-      watchedCollectionCount
+      watchedCollectionCount,
+      user.isAnonymizeInProvenance()
     );
   }
 }

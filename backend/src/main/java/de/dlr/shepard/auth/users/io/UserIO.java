@@ -79,6 +79,16 @@ public class UserIO {
   @Schema(readOnly = true, required = true)
   private UUID[] apiKeyIds;
 
+  /**
+   * PROV1l — GDPR consent surface. When {@code true}, the
+   * provenance capture filter omits this user's identity from
+   * {@code :Activity} records. Defaults to {@code false}.
+   * Settable via {@code PATCH /v2/users/me}.
+   */
+  @Schema(required = true,
+    description = "PROV1l — when true, identity is omitted from :Activity records (GDPR opt-out). Default false.")
+  private boolean anonymizeInProvenance;
+
   public UserIO(User user) {
     this.username = user.getUsername();
     this.appId = user.getAppId();
@@ -90,5 +100,6 @@ public class UserIO {
     this.effectiveDisplayName = DisplayNameResolver.effectiveDisplayName(user);
     this.subscriptionIds = user.getSubscriptions().stream().map(Subscription::getId).toArray(Long[]::new);
     this.apiKeyIds = user.getApiKeys().stream().map(ApiKey::getUid).toArray(UUID[]::new);
+    this.anonymizeInProvenance = user.isAnonymizeInProvenance();
   }
 }

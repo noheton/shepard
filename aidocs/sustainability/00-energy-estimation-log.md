@@ -444,4 +444,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added IMP1-TODO closure entry (import context annotation query).       | Claude Sonnet 4.6 |
 | 2026-05-26 | Added PROV1j entry (provenanceMode on DataObject + v2 IO surface).     | Claude Sonnet 4.6 |
 | 2026-05-26 | Added SEMA-V6-011 entry (SEMA-V6 field population + import-key filter). | Claude Sonnet 4.6 |
+| 2026-05-26 | Added PROV1l entry (anonymizeInProvenance GDPR consent toggle).         | Claude Sonnet 4.6 |
 

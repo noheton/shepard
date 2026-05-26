@@ -134,11 +134,22 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
     // Best-effort — failure here must not prevent the activity row from landing.
     String mirroredUserAppId = resolveMirroredUserAppId(request, principal.getName());
 
+    // PROV1l — GDPR consent surface: if the user has opted out of identity
+    // inclusion, suppress both the direct username and the cross-instance
+    // mirroredUserAppId so no personal identifier reaches the :Activity node
+    // or the WAS_ASSOCIATED_WITH graph edge (wireEdges already guards null).
+    // Best-effort: if the user lookup fails we default to non-anonymized.
+    String capturedUsername = resolveAgentUsername(principal.getName());
+    if (capturedUsername == null) {
+      // User opted out — suppress cross-instance attribution too.
+      mirroredUserAppId = null;
+    }
+
     provenance.record(
       actionKind,
       targetKind,
       targetAppId,
-      principal.getName(),
+      capturedUsername,
       summary,
       method,
       path,
@@ -147,6 +158,35 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
       endedAtMillis,
       mirroredUserAppId
     );
+  }
+
+  /**
+   * PROV1l — Resolve the agent username to include in the {@code :Activity}
+   * record, honouring the user's {@code anonymizeInProvenance} preference.
+   *
+   * <p>Returns the JWT principal name when identity capture is enabled (the
+   * default). Returns {@code null} when the user has opted out, so neither
+   * the {@code agentUsername} property nor the
+   * {@code :Activity-[:WAS_ASSOCIATED_WITH]->:User} graph edge is written.
+   *
+   * <p>Best-effort: if the {@code :User} node cannot be loaded (e.g. DB
+   * hiccup on first-login race), we default to non-anonymized behaviour and
+   * log at WARN — the safe default preserves the existing audit trail rather
+   * than silently dropping identity.
+   *
+   * @param principalName the JWT principal username
+   * @return the username to use in the activity row, or {@code null} to anonymize
+   */
+  String resolveAgentUsername(String principalName) {
+    try {
+      User user = userDAO.find(principalName);
+      if (user != null && user.isAnonymizeInProvenance()) {
+        return null;
+      }
+    } catch (RuntimeException e) {
+      Log.warnf(e, "PROV1l: failed to load :User for anonymizeInProvenance check — defaulting to identity capture for %s", principalName);
+    }
+    return principalName;
   }
 
   /**

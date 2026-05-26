@@ -67,6 +67,23 @@ public class User implements HasId, HasAppId {
   @Property("preferencesJson")
   private String preferencesJson;
 
+  /**
+   * PROV1l — GDPR consent surface. When {@code true}, the
+   * {@link de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter}
+   * omits the caller's identity ({@code agentUsername}) from captured
+   * {@code :Activity} nodes. The activity is still recorded (for audit
+   * volume / rate metrics) but without the personal identifier.
+   *
+   * <p>Defaults to {@code false} (identity included, matching the
+   * existing behaviour). A user opts in via
+   * {@code PATCH /v2/users/me} with {@code {"anonymizeInProvenance": true}}.
+   *
+   * <p>Neo4j schemaless — no migration needed. Old nodes simply lack
+   * the property and OGM returns the Java default ({@code false}).
+   */
+  @Property("anonymizeInProvenance")
+  private boolean anonymizeInProvenance = false;
+
   @ToString.Exclude
   @Relationship(type = Constants.SUBSCRIBED_BY, direction = Direction.INCOMING)
   private List<Subscription> subscriptions = new ArrayList<>();
@@ -110,7 +127,7 @@ public class User implements HasId, HasAppId {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + Objects.hash(displayName, email, firstName, lastName, orcid, preferencesJson, username);
+    result = prime * result + Objects.hash(anonymizeInProvenance, displayName, email, firstName, lastName, orcid, preferencesJson, username);
     result = prime * result + HasId.hashcodeHelper(apiKeys);
     result = prime * result + HasId.hashcodeHelper(subscriptions);
     result = prime * result + HasId.hashcodeHelper(gitCredentials);
@@ -126,6 +143,7 @@ public class User implements HasId, HasAppId {
       HasId.areEqualSetsByUniqueId(apiKeys, other.apiKeys) &&
       HasId.areEqualSetsByUniqueId(subscriptions, other.subscriptions) &&
       HasId.areEqualSetsByUniqueId(gitCredentials, other.gitCredentials) &&
+      anonymizeInProvenance == other.anonymizeInProvenance &&
       Objects.equals(displayName, other.displayName) &&
       Objects.equals(email, other.email) &&
       Objects.equals(firstName, other.firstName) &&

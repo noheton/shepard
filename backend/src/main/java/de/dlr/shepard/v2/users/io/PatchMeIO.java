@@ -36,4 +36,21 @@ public class PatchMeIO {
     "then redacted-username). Null = leave unchanged."
   )
   private String displayName;
+
+  /**
+   * PROV1l — GDPR consent surface. When {@code true}, the provenance
+   * capture filter omits this user's identity ({@code agentUsername})
+   * from captured {@code :Activity} records. The activity is still
+   * recorded — only the personal identifier is suppressed.
+   *
+   * <p>{@code null} = leave unchanged (RFC 7396 merge-patch semantics).
+   * {@code true} = opt in to anonymisation. {@code false} = opt out
+   * (restore default identity capture).
+   */
+  @Schema(
+    nullable = true,
+    description = "PROV1l (GDPR opt-out): when true, identity is omitted from provenance :Activity records. " +
+    "Null = leave unchanged. Default server-side is false."
+  )
+  private Boolean anonymizeInProvenance;
 }
