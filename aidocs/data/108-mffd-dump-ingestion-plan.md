@@ -184,7 +184,7 @@ Preamble: `n_profileFrames,3` / `total_profiles,<N>`
 
 ### 3.2 Track DataObject structure
 
-A single Track DataObject and its attached containers:
+A single Track DataObject with its four reference groups (matching the legacy importer's `create_file_reference` call pattern):
 
 ```
 Track-NNNN  (DataObject)
@@ -200,51 +200,72 @@ Track-NNNN  (DataObject)
 │    tps_sensor_width_px: 2048
 │    tps_fps: 180.603
 │
-├─ FSDSet → TimeseriesContainer
-│    channels:
-│      "PosX"     (mm, robot TCP X)
-│      "PosY"     (mm, robot TCP Y)
-│      "PosZ"     (mm, robot TCP Z)
-│      "VAxis"    (mm, lay direction)
-│      "IOS"      (int, I/O status)
-│      "GPR"      (int, GPR register)
-│    timestamp source: ChronoTimeInUs × 1000 → ns
-│    row key: Packet (0-based)
+├─ [FileRef group 1] "TPS raw data"
+│   ├─ FSDSet.csv         → TimeseriesContainer (per-track, new design — see note)
+│   │    channels (9 total):
+│   │      "PosX"   (mm, robot TCP X position)
+│   │      "PosY"   (mm, robot TCP Y position)
+│   │      "PosZ"   (mm, robot TCP Z position)
+│   │      "PosA"   (deg, robot TCP roll  / Euler A)
+│   │      "PosB"   (deg, robot TCP pitch / Euler B)
+│   │      "PosC"   (deg, robot TCP yaw   / Euler C)
+│   │      "VAxis"  (mm, lay direction along tool axis)
+│   │      "IOS"    (int, I/O status word)
+│   │      "GPR"    (int, GPR register)
+│   │    timestamp source: ChronoTimeInUs × 1000 → ns
+│   │    row key: Packet (0-based integer)
+│   │    NOTE: 0-byte in dump for most tracks; full data from N: drive
+│   ├─ CameraConfig.csv  → StructuredDataReference (INI key-value, ~4 KB)
+│   │    content: calibration polynomials, robot variables, track parameters
+│   │    preserved: yes (non-zero in dump)
+│   └─ ProfileSet.csv    → StructuredDataReference ("brush data")
+│        columns (13): timeStamp, triggerCoord, triggerStatus, frameCnt,
+│                      DAC, ADC, INT_idx, AOI_idx, AOI_ys, AOI_dy,
+│                      AOI_xs, AOI_trsh, AOI_alg
+│        row key: frameCnt - 1 = Packet
+│        NOTE: 0-byte in dump for most tracks
 │
-├─ PointCloud → SpatialContainer   [shepard-plugin-spatial / SP1]
-│    columns: X, Y, Z (mm), R, G, B
-│    spatial CRS: robot base frame
-│    row key: Packet (0-based) = FSD row key
-│    NOTE: 0-byte in dump for most tracks; full data from N: drive
+├─ [FileRef group 2] "TPS 3D pointclouds"
+│   └─ PointCloud.csv   → SpatialContainer  [shepard-plugin-spatial / SP1]
+│        columns: X, Y, Z (mm), R, G, B (no header row)
+│        spatial CRS: robot base frame (mm)
+│        row key: Packet (0-based) = FSD row key (co-registered)
+│        NOTE: 0-byte in dump for most tracks; full data from N: drive
 │
-├─ ProfileSet.tif → FileContainer
-│    format: TIFF, 2048 px wide, height = scan line count
-│    row N = Packet N = same scanner position as FSD row N
-│    preserved: yes (non-zero in dump for inspected tracks)
+├─ [FileRef group 3] "TPS intermediate evaluation files"
+│   └─ ProfileSet.tif   → FileContainer
+│        format: TIFF, 2048 px wide, height = scan line count
+│        content: laser line profile image — TIF row N = scan line N = Packet N
+│        preserved: yes (non-zero in dump for inspected tracks)
 │
-├─ BrushData (ProfileSet.csv) → StructuredDataReference
-│    columns: timeStamp, triggerCoord, triggerStatus, frameCnt,
-│             DAC, ADC, INT_idx, AOI_idx, AOI_ys, AOI_dy, AOI_xs, AOI_trsh, AOI_alg
-│    row key: frameCnt - 1 = Packet
-│    NOTE: 0-byte in dump for most tracks
-│
-└─ CameraConfig (INI) → StructuredDataReference or DataObject attribute
-     format: INI / key-value
-     content: sensor calibration polynomials, robot variables, track parameters
-     size: ~4 KB per track
-     preserved: yes (non-zero in dump)
+└─ [FileRef group 4] "Robot program"
+    └─ <track>.src       → FileContainer
+         format: KUKA KRL program (.src)
+         content: robot motion program for this track
+         preserved: yes (non-zero in dump)
 ```
 
-**Cross-reference diagram:**
+**Co-registration diagram** — all four groups share `Packet` as join key:
 
 ```
-Packet (0-based)
+Packet (0-based integer)
     │
-    ├─ FSDSet row N        → ChronoTimeInUs × 1e3 = ns timestamp
-    ├─ PointCloud row N    → X/Y/Z (mm) with RGB classification
-    ├─ ProfileSet.tif row N → 2048-px laser profile cross-section image row
-    └─ BrushData row N     → AOI_ys (tape height in pixels), trigger metadata
+    ├─ FSDSet row N       → ChronoTimeInUs × 1e3 = absolute ns timestamp
+    │                        + 9 channels (TCP position + orientation + flags)
+    ├─ PointCloud row N   → X/Y/Z surface point (mm) + RGB classification
+    ├─ ProfileSet.tif row N → 2048-px laser cross-section image row
+    └─ BrushData row N    → AOI_ys (tape height px), trigger/AOI metadata
 ```
+
+> **Legacy shared-container note:** The DLR cube importer (`/tmp/mffd_importer/main.py`)
+> stored ALL tracks' FSD channels in a SINGLE shared TimescaleDB container (ID 6603)
+> and created a `TimeseriesReference` per track with a time window `[fsd_start_ns,
+> fsd_stop_ns]`. The 4,883 `ts-NNNNN` entries in the dump are those references —
+> all point to container 6603, which itself was 0-byte in the export.
+> **The new dump-based ingestion will use per-track containers** (one `TimeseriesContainer`
+> per track). This is cleaner for querying, avoids the shared-container contention,
+> and aligns with the `TS-IDc` / appId migration design. The time-window model is
+> not replicated.
 
 ---
 
@@ -412,19 +433,29 @@ Same as Phase 4. 9 files total in dump = just the directory entry.
 
 **DB prep prerequisite:** Chunk interval and space partitioning (Phase 1 above) must be applied first.
 
-### 6.3 Thermal camera (ThermoCam)
+### 6.3 Stringer welding process video (high value, N: drive only)
+
+**Source:** N: drive `Stringer_schweissungen/` — **138 `.mp4` files** (process video of CRW head during resistance welding). Not in dump. Confirmed accessible from DLR systems.
+
+**Shepard shape:** `VideoReference` → `FileContainer`. One video per welding pass (same granularity as SVDX scope files). The video and SVDX data for the same pass are co-temporal and should be co-located on the same weld-seam DataObject.
+
+**N: drive mount prerequisite:** backlog item MFFD-NDRIVE-01 — set up N: drive mount on DLR cube before this step is reachable. Once mounted, ingest via a `VideoBatchImporter` (or manual upload for a pilot subset).
+
+**Value:** Process video + simultaneous temperature/force scope data (SVDX) for the same weld seam is the strongest multi-modal quality-assurance record in the MFFD dataset.
+
+### 6.4 Thermal camera (ThermoCam)
 
 **Source:** N: drive `ThermoCam/` — 7.9 GB. Likely `.avi` or `.mp4` + metadata.
 
 **Action needed:** Manual inspection of N: drive to enumerate actual files. Possible Shepard shape: VideoReference (existing) or FileReference.
 
-### 6.4 Test evaluation data (Testauswertung)
+### 6.5 Test evaluation data (Testauswertung)
 
 **Source:** `.mp4` video (901 MB), `.svdx` (255 MB), `.txt` (50 MB), `.avi`. Post-processing results and summary videos.
 
 **Shape:** FileReference (video), SVDX → TS after conversion, `.txt` → lab journal entries or StructuredData.
 
-### 6.5 AAS (Asset Administration Shell) integration
+### 6.6 AAS (Asset Administration Shell) integration
 
 **tool_sources** contains 5 AAS repositories: `aas-environment-starter`, `aas-models`, `aas-webviewer`, `faaast_aas_host`, `AasxPackageExplorer`.
 
@@ -562,7 +593,7 @@ These are the analysis opportunities grounded in the actual data:
 2. **SVDX transfer:** The stringer and welding SVDX files are on the N: drive. Can they be transferred to the UNAS mount? Estimated size: ~350 GB total.
 3. **NDT outcomes:** Is there a structured record of NDT pass/fail per weld seam? The Confluence wiki export may have this as a table — worth parsing.
 4. **AAS packages:** Where are the AASX files for the AFP robot and CRW machine? Are they in `tool_sources/aas-models/`?
-5. **MFFD_Demonstrator_Recursive_Tree.json ownership:** This was generated as a Windows PowerShell script output (`N:\Messdaten\...` paths). Is the full N: drive accessible via UNAS or is it on a separate DLR Augsburg NAS?
+5. **N: drive access:** Confirmed accessible from DLR systems (user 2026-05-26). Backlog item MFFD-NDRIVE-01 tracks setting up the mount on the DLR cube for scripted ingest. `MFFD_Demonstrator_Recursive_Tree.json` is a PowerShell tree dump of `N:\Messdaten\MFFD_Demonstrator\` — use it as the inventory reference for Phase 7 planning.
 
 ---
 
