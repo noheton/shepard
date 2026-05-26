@@ -88,6 +88,74 @@ async function downloadRoCrate() {
   }
 }
 
+// TPL14 — Regulatory Evidence Pack (REP) export.
+// Calls POST /v2/collections/{appId}/export/regulatory-evidence,
+// decodes the inline Base64 bag, and triggers a browser download.
+// Auth: uses the same Bearer-token pattern as all other /v2/ callers
+// (see useStructuredDataContainerLinkedDataObjects, useFetchPayloadVersions, …).
+const isRepExporting = ref(false);
+
+function repV2BaseUrl(): string {
+  const config = useRuntimeConfig().public;
+  const explicit = config.backendV2ApiUrl as string | undefined;
+  if (explicit && explicit.length > 0) return explicit.replace(/\/$/, "");
+  return (config.backendApiUrl as string)
+    .replace(/\/shepard\/api\/?$/, "")
+    .replace(/\/$/, "");
+}
+
+async function downloadRepExport() {
+  if (isRepExporting.value || !collectionAppId.value) return;
+  isRepExporting.value = true;
+  try {
+    const { data: session } = useAuth();
+    const accessToken = session.value?.accessToken;
+    if (!accessToken) {
+      handleError(new Error("Not authenticated"), "downloading Regulatory Evidence Pack");
+      return;
+    }
+    const url = `${repV2BaseUrl()}/v2/collections/${collectionAppId.value}/export/regulatory-evidence`;
+    const httpResponse = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+      },
+    });
+    if (!httpResponse.ok) {
+      handleError(new Error(`HTTP ${httpResponse.status}`), "downloading Regulatory Evidence Pack");
+      return;
+    }
+    const response = (await httpResponse.json()) as {
+      bagBase64?: string;
+      fileName?: string;
+      downloadUrl?: string;
+      status?: string;
+    };
+    const fileName = response.fileName ?? `${collectionAppId.value}-rep.bag.zip`;
+    if (response.bagBase64) {
+      const binary = atob(response.bagBase64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/zip" });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } else if (response.downloadUrl) {
+      window.open(response.downloadUrl, "_blank");
+    }
+  } catch (e) {
+    handleError(e, "downloading Regulatory Evidence Pack");
+  } finally {
+    isRepExporting.value = false;
+  }
+}
+
 // PROV1d: the activity sparkline dashboard is keyed by Collection appId
 // (the L2 native identifier; backend `/v2/provenance/stats` rejects the
 // legacy numeric id). The generated `Collection` model doesn't yet
@@ -247,6 +315,20 @@ useHead({
                 @click="downloadRoCrate"
               >
                 Download as RO-Crate
+              </v-btn>
+              <!-- TPL14: Regulatory Evidence Pack (REP) export.
+                   Builds a BagIt bag with RO-Crate + PROV-O for regulatory
+                   submissions (EN 9100, EASA, Clean Aviation). -->
+              <v-btn
+                v-if="collectionAppId"
+                prepend-icon="mdi-certificate-outline"
+                variant="tonal"
+                color="warning"
+                :loading="isRepExporting"
+                :title="'Download BagIt Regulatory Evidence Pack (RO-Crate + PROV-O)'"
+                @click="downloadRepExport"
+              >
+                Regulatory Evidence Pack
               </v-btn>
               <PublishButton
                 v-if="collectionAppId && isAllowedToEditCollection"

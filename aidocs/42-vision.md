@@ -271,6 +271,16 @@ These work the same way across every primitive:
 - **RO-Crate export.** Selective (`aidocs/31`) — choose which
   payload kinds, redact specific fields, optionally include
   permissions / annotations / versions. Reproducible (post-V2d).
+- **Regulatory Evidence Pack (REP) export** *(TPL14 shipped, 2026-05-26)*. One
+  click on the Collection page builds a BagIt 1.0 (RFC 8493) bag containing
+  an RO-Crate 1.1 descriptor for every DataObject *and* a standalone PROV-O
+  JSON-LD provenance graph of every recorded activity — the file a researcher
+  attaches to an EN 9100, EASA, or Clean Aviation regulatory submission to
+  prove *what data existed, when, and who touched it*. Cryptographic checksums
+  (`manifest-sha256.txt` + `tagmanifest-sha256.txt`) make the bag
+  tamper-evident; the PROV-O graph is verifiable with any W3C-conformant
+  JSON-LD processor.
+  `POST /v2/collections/{appId}/export/regulatory-evidence` → `{bagBase64, fileName, exportedAt, …}`.
 - **API keys** with optional `validUntil` expiry (L5, shipped) —
   you can hand a campaign-lead key to a sub-team without forever
   granting access.

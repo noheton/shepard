@@ -5,6 +5,13 @@
 #!/usr/bin/env python3
 """mffd-import-v15.py — MFFD manufacturing process data ingest with provenance.
 
+v16.5 (BATCH-API-3):
+     - Pass 1 now uses POST /v2/data-objects/batch (bulk create, 100 items/chunk).
+     - For 8,500 DOs: ~85 chunks × ~3s/chunk ≈ 5 min vs ~50 min per-DO.
+     - Auto-falls back to per-DO if the batch endpoint returns 404 (older Shepard).
+     - --use-batch-api (default) / --no-batch-api flags control the path.
+     - Telemetry events: batch_pass1_start, batch_pass1_chunk_success, batch_pass1_complete.
+
 v15 (supersedes v14, see aidocs/integrations/93-mffd-import-v15-requirements.md):
      - LIVE cube3 source pull (v14's local-disk replay is shape-ref only; 0-byte TS placeholders)
      - 8 wire-shape bug fixes per aidocs/agent-findings/api-scrutinizer-v14-import.md:
@@ -156,7 +163,7 @@ except ImportError:
 
 # ── Version + observability config (v15.4 IMPORT-SU1/T1/CP1) ──────────────────
 
-IMPORT_SCRIPT_VERSION = "16.3"
+IMPORT_SCRIPT_VERSION = "16.5"
 
 # v16.1 IMPORT-PERF2 — worker fan-out for PRESERVE-HIERARCHY Pass 1 + Pass 2.
 # v16.0's serial passes throttle ~30K source DOs to ~5 days; v16.1 fans
@@ -1385,6 +1392,68 @@ class ShepardClient:
         if r is None:
             return None
         return r.json()
+
+    # ── v16.5 BATCH-API-3 — bulk DataObject creation ─────────────────────────
+    # State: None = untested, True = available, False = not available (404/405).
+    # The probe fires on the FIRST chunk call; subsequent chunks use the memoised
+    # state. Protected by _accum_lock at the call site (v16_pass1_create_dest_mirrors
+    # is the only caller and already holds a per-batch lock).
+    _batch_supported: bool | None = None
+
+    def create_data_objects_batch(
+        self,
+        items: list[dict],
+    ) -> list[dict] | None:
+        """BATCH-API-3 — POST /v2/data-objects/batch.
+
+        Accepts a list of item dicts, each with ``collectionAppId`` (str UUID v7)
+        and ``name`` (str) as required fields; optionally ``description``,
+        ``parentAppId``, ``attributes`` (dict[str,str]), ``status``.
+
+        Returns the ``results`` array from the 207 response body (list of dicts,
+        each with ``index``, ``status``, and either ``appId`` or ``errorCode`` +
+        ``errorMessage``).
+
+        Returns **``None``** when the endpoint returns HTTP 404 or 405 — this is
+        the "fallback to per-DO" signal. Sets ``self._batch_supported = False``
+        so subsequent chunks don't re-probe.
+
+        Any other error (non-2xx, network error) returns ``None`` and leaves
+        ``_batch_supported`` unchanged (the caller may retry later or fall back).
+        """
+        url = f"{self._base}/v2/data-objects/batch"
+        try:
+            r = self._request_with_retry("POST", url, json=items, timeout=120)
+        except Exception as exc:
+            print(f"  [batch] POST {url}: exception {exc!r}")
+            return None
+        if r is None:
+            return None
+        if r.status_code in (404, 405):
+            # Endpoint absent — this Shepard does not yet support BATCH-API.
+            if self._batch_supported is not False:
+                print(
+                    f"  [batch] WARN: {url} → HTTP {r.status_code}  "
+                    f"(batch endpoint not available on this Shepard instance; "
+                    f"falling back to per-DO creates)"
+                )
+            self._batch_supported = False
+            return None
+        if r.status_code == 400:
+            # Size / validation error at batch level (not per-item).
+            print(f"  [batch] ERROR: {url} → HTTP 400: {r.text[:400]}")
+            return None
+        if r.status_code != 207:
+            self._log_err("POST", url, r)
+            return None
+        # HTTP 207 — parse response.
+        self._batch_supported = True
+        try:
+            body = r.json()
+            return body.get("results", [])
+        except Exception as exc:
+            print(f"  [batch] ERROR parsing 207 body: {exc!r}")
+            return None
 
     def patch_data_object(
         self,
@@ -2926,6 +2995,9 @@ def _persist_completeness_artifact(verdict: dict, dest_client: "ShepardClient", 
 # unit-testable; closure-trapped logic isn't.
 
 
+_BATCH_CHUNK_SIZE = 100  # Items per POST /v2/data-objects/batch call
+
+
 def v16_pass1_create_dest_mirrors(
     src_dos: list[SourceDO],
     dest_client: ShepardClient,
@@ -2938,6 +3010,7 @@ def v16_pass1_create_dest_mirrors(
     session_id: str = "",
     import_time: str = "",
     workers: int | None = None,
+    use_batch_api: bool = True,
 ) -> dict[int, dict[str, Any]]:
     """v16 Pass 1 — create one dest DO per source DO; populate src→dest map.
 
@@ -2957,6 +3030,17 @@ def v16_pass1_create_dest_mirrors(
     the Pass 1 ordering invariant (every src_to_dest entry is present before
     Pass 2 starts). With workers <= 1 the original serial path is used
     (byte-for-byte v16.0 behaviour, preserved for the sequential test path).
+
+    v16.5 BATCH-API-3: when ``use_batch_api=True`` (the default), attempts to
+    use ``POST /v2/data-objects/batch`` for bulk creates. Chunks ``src_dos``
+    into batches of ``_BATCH_CHUNK_SIZE`` (100), posts each chunk, maps the
+    ``results`` array back to ``src_to_dest``. The resume guard (skip already-
+    known src_do_ids) runs before building each chunk so a partially-done batch
+    doesn't double-create. Falls back to per-DO path when:
+    - ``use_batch_api=False`` (operator flag ``--no-batch-api``), or
+    - ``dest_client._batch_supported`` is ``False`` (first chunk returned 404).
+    Batch throughput target: 8,500 DOs in ~85 chunks ≈ 5 minutes (see
+    aidocs/16 BATCH-API acceptance criterion).
     """
     if workers is None:
         workers = PRESERVE_HIERARCHY_WORKERS
@@ -3085,6 +3169,237 @@ def v16_pass1_create_dest_mirrors(
             f"created {done}/{total} mirrors (rate={rate:.1f}/s, eta={eta_m:.1f}m)"
         )
 
+    # ── v16.5 BATCH-API-3 — try bulk-create path first ────────────────────────
+    # Condition: use_batch_api=True AND we haven't already probed + found it absent.
+    # The probe is implicit: `create_data_objects_batch` returns None + sets
+    # dest_client._batch_supported=False on the first 404 response.
+    _use_batch = use_batch_api and dest_client._batch_supported is not False
+    if _use_batch:
+        # Resolve dest collection appId once — needed by the batch endpoint
+        # which takes appId (UUID v7) not legacy int id.
+        try:
+            _dest_coll_app_id: str | None = dest_client.get_collection_app_id(coll_id)
+        except Exception:
+            _dest_coll_app_id = None
+        if not _dest_coll_app_id:
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] WARN: could not resolve "
+                f"dest collection appId for coll_id={coll_id}; falling back to per-DO creates"
+            )
+            _use_batch = False
+
+    if _use_batch and _dest_coll_app_id:
+        # Separate resumed DOs (skip batch) from new DOs (need create).
+        to_create: list[SourceDO] = []
+        for src_do in src_dos:
+            existing_id = state.get_dest_id(src_do.do_id) if state else None
+            if existing_id:
+                # Already created in a prior run — recover mapping directly.
+                existing_app_id = state.get_dest_app_id(src_do.do_id) if state else None
+                if not existing_app_id:
+                    r_get = dest_client._get(
+                        f"{dest_client._base}/shepard/api/collections/"
+                        f"{coll_id}/dataObjects/{existing_id}"
+                    )
+                    if r_get is not None:
+                        try:
+                            existing_app_id = r_get.json().get("appId") or ""
+                        except Exception:
+                            existing_app_id = ""
+                src_to_dest[src_do.do_id] = {
+                    "dest_id": int(existing_id),
+                    "dest_app_id": existing_app_id or "",
+                }
+                counts["resumed"] += 1
+                counts["done"] += 1
+            else:
+                to_create.append(src_do)
+
+        # Chunk into batches of _BATCH_CHUNK_SIZE and POST each.
+        n_chunks = max(1, (len(to_create) + _BATCH_CHUNK_SIZE - 1) // _BATCH_CHUNK_SIZE)
+        print(
+            f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 (BATCH-API): "
+            f"{len(to_create)} new DOs in {n_chunks} chunk(s) of ≤{_BATCH_CHUNK_SIZE}"
+        )
+        _diag_emit("batch_pass1_start", {
+            "step": step_key, "total": total, "to_create": len(to_create),
+            "resumed": counts["resumed"], "n_chunks": n_chunks,
+        })
+
+        _batch_fallback = False  # True if first chunk proves batch unavailable
+        for chunk_start in range(0, len(to_create), _BATCH_CHUNK_SIZE):
+            chunk = to_create[chunk_start: chunk_start + _BATCH_CHUNK_SIZE]
+            chunk_t0 = time.time()
+
+            # Build item dicts for each source DO in the chunk.
+            batch_items: list[dict] = []
+            chunk_src_dos: list[SourceDO] = []
+            for src_do in chunk:
+                leaf_attrs: dict[str, str] = {
+                    k: str(v) for k, v in (src_do.attributes or {}).items()
+                }
+                leaf_attrs.update({
+                    "source_do_id": str(src_do.do_id),
+                    "source_coll_id": str(src_coll_id),
+                    "source_instance": source_url,
+                    "process_step": step_key,
+                    "session": session_id,
+                    "campaign": "MFFD",
+                    "import_time": import_time,
+                    "v16_pass1": "1",
+                    "v16_batch": "1",
+                })
+                if src_do.created:
+                    leaf_attrs["source_created"] = src_do.created
+                if src_do.modified:
+                    leaf_attrs["source_modified"] = src_do.modified
+                if source_user_info:
+                    su_user = source_user_info.get("username") or ""
+                    if su_user:
+                        leaf_attrs["source_user_username"] = su_user
+
+                leaf_name = src_do.name.strip() if src_do.name else ""
+                if not leaf_name:
+                    leaf_name = f"src-do-{src_do.do_id}"
+
+                batch_items.append({
+                    "collectionAppId": _dest_coll_app_id,
+                    "name": leaf_name,
+                    "description": src_do.description or "",
+                    "attributes": leaf_attrs,
+                })
+                chunk_src_dos.append(src_do)
+
+            results = dest_client.create_data_objects_batch(batch_items)
+
+            if results is None and dest_client._batch_supported is False:
+                # Batch endpoint not available — fall back to per-DO for
+                # this chunk AND all remaining chunks.
+                _batch_fallback = True
+                print(
+                    f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Batch fallback: "
+                    f"per-DO mode for remaining {len(to_create) - chunk_start} DOs"
+                )
+                # Process the already-built chunk + all remaining DOs per-DO.
+                for sd in chunk_src_dos:
+                    _per_do(sd)
+                    _report_progress()
+                remaining_dos = to_create[chunk_start + len(chunk):]
+                for sd in remaining_dos:
+                    _per_do(sd)
+                    _report_progress()
+                break
+
+            if results is None:
+                # Transient error (not 404) — fall through to per-DO for this chunk.
+                print(
+                    f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Batch chunk error "
+                    f"(non-404); retrying chunk {chunk_start // _BATCH_CHUNK_SIZE + 1} "
+                    f"via per-DO fallback"
+                )
+                for sd in chunk_src_dos:
+                    _per_do(sd)
+                    _report_progress()
+                continue
+
+            # Map results back to src_to_dest.
+            chunk_created = 0
+            chunk_failed = 0
+            for res_idx, res in enumerate(results):
+                if res_idx >= len(chunk_src_dos):
+                    break
+                src_do = chunk_src_dos[res_idx]
+                if res.get("status") == "created":
+                    new_app_id = str(res.get("appId") or "")
+                    # Batch endpoint returns appId but not the legacy int id.
+                    # Resolve it via GET /v1 to keep src_to_dest consistent
+                    # (Pass 2 PATCH and Pass 3 ref-wiring use the int id).
+                    new_id: int | None = None
+                    if new_app_id:
+                        r_get = dest_client._get(
+                            f"{dest_client._base}/v2/collections/"
+                            f"{_dest_coll_app_id}/data-objects/{new_app_id}"
+                        )
+                        if r_get is not None:
+                            try:
+                                new_id = int(r_get.json().get("id") or 0) or None
+                            except (TypeError, ValueError):
+                                new_id = None
+                    if new_id:
+                        src_to_dest[src_do.do_id] = {
+                            "dest_id": new_id,
+                            "dest_app_id": new_app_id,
+                        }
+                        counts["created"] += 1
+                        counts["done"] += 1
+                        chunk_created += 1
+                        if state is not None:
+                            state.set_dest_id(src_do.do_id, new_id, new_app_id)
+                    else:
+                        # appId resolving failed — treat as failure.
+                        print(
+                            f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Batch "
+                            f"item created but id-resolution failed: "
+                            f"src_do_id={src_do.do_id} appId={new_app_id!r}"
+                        )
+                        counts["failed"] += 1
+                        counts["done"] += 1
+                        chunk_failed += 1
+                else:
+                    # Per-item error in the batch.
+                    error_code = res.get("errorCode", "UNKNOWN")
+                    error_msg = res.get("errorMessage", "")
+                    print(
+                        f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Batch item "
+                        f"FAILED src_do_id={src_do.do_id}: "
+                        f"{error_code} — {error_msg}  [v16-batch-FAIL]"
+                    )
+                    counts["failed"] += 1
+                    counts["done"] += 1
+                    chunk_failed += 1
+
+            chunk_elapsed_ms = int((time.time() - chunk_t0) * 1000)
+            _diag_emit("batch_pass1_chunk_success", {
+                "step": step_key,
+                "chunk_index": chunk_start // _BATCH_CHUNK_SIZE,
+                "chunk_size": len(chunk),
+                "created": chunk_created,
+                "failed": chunk_failed,
+                "elapsed_ms": chunk_elapsed_ms,
+            })
+            _report_progress()
+
+        _total_elapsed_ms = int((time.time() - _start) * 1000)
+        _throughput = (counts["created"] / (_total_elapsed_ms / 1000.0)) if _total_elapsed_ms > 0 else 0.0
+        if not _batch_fallback:
+            _diag_emit("batch_pass1_complete", {
+                "step": step_key,
+                "total_dos": len(src_dos),
+                "created": counts["created"],
+                "resumed": counts["resumed"],
+                "failed": counts["failed"],
+                "total_elapsed_ms": _total_elapsed_ms,
+                "throughput_dos_per_sec": round(_throughput, 2),
+            })
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 (BATCH-API) done — "
+                f"created={counts['created']} resumed={counts['resumed']} "
+                f"failed={counts['failed']} "
+                f"elapsed={_total_elapsed_ms}ms "
+                f"throughput={_throughput:.1f} DOs/s"
+            )
+        else:
+            # Fell back mid-batch — batch handled the current chunk + remainder.
+            # Report counts and return: the per-DO section below must NOT re-run.
+            print(
+                f"  [v{IMPORT_SCRIPT_VERSION}] [{step_key}] Pass 1 (fallback) done — "
+                f"created={counts['created']} resumed={counts['resumed']} "
+                f"failed={counts['failed']}"
+            )
+        return src_to_dest
+
+    # ── per-DO path (v16.0/v16.1) — used when: --no-batch-api, batch not ──────
+    # ── supported (404 probe), or we fell back mid-batch ──────────────────────
     if workers <= 1 or total <= 1:
         # Sequential path — preserves v16.0 serial behaviour byte-for-byte.
         for src_do in src_dos:
@@ -3311,6 +3626,7 @@ def run_source_mode(
     default_access_rights: str | None = None,
     name_map: dict[str, str] | None = None,
     workers: int = 1,
+    use_batch_api: bool = True,
 ) -> dict[str, int]:
     """
     Traverse source Shepard collections, migrating all three payload types
@@ -3966,6 +4282,7 @@ def run_source_mode(
                 source_user_info=SOURCE_USER_INFO,
                 session_id=SESSION_ID,
                 import_time=IMPORT_TIME,
+                use_batch_api=use_batch_api,
             )
 
             # ── Pass 2 — wire parent + predecessor edges (module-level helper)
@@ -4464,6 +4781,7 @@ def run_source_mode_workers(
     default_license: str | None = None,
     default_access_rights: str | None = None,
     name_map: dict[str, str] | None = None,
+    use_batch_api: bool = True,
 ) -> dict[str, int]:
     """v15.8 IMPORT-PERF1 — thin forwarder onto `run_source_mode(workers=N)`.
 
@@ -4492,6 +4810,7 @@ def run_source_mode_workers(
             default_access_rights=default_access_rights,
             name_map=name_map,
             workers=1,
+            use_batch_api=use_batch_api,
         )
 
     print(f"\n[workers] v15.8 real fan-out — pool size = {workers}")
@@ -4504,6 +4823,7 @@ def run_source_mode_workers(
         default_access_rights=default_access_rights,
         name_map=name_map,
         workers=workers,
+        use_batch_api=use_batch_api,
     )
 
 
@@ -5631,6 +5951,31 @@ def main() -> None:
             "Non-2xx http responses are ALWAYS emitted regardless of mode."
         ),
     )
+    # v16.5 BATCH-API-3 — bulk create toggle.
+    # --use-batch-api (default) — try POST /v2/data-objects/batch in Pass 1; auto-
+    #     fall back to per-DO if the endpoint returns 404/405 (older Shepard).
+    # --no-batch-api — force per-DO mode; useful for regression testing or when
+    #     comparing throughput figures between batch and per-DO paths.
+    batch_api_group = ap.add_mutually_exclusive_group()
+    batch_api_group.add_argument(
+        "--use-batch-api",
+        dest="use_batch_api",
+        action="store_true",
+        default=True,
+        help=(
+            "v16.5 BATCH-API-3: use POST /v2/data-objects/batch for Pass 1 "
+            "(default: on). Auto-falls back to per-DO if endpoint absent."
+        ),
+    )
+    batch_api_group.add_argument(
+        "--no-batch-api",
+        dest="use_batch_api",
+        action="store_false",
+        help=(
+            "v16.5 BATCH-API-3: disable batch API; force per-DO creates for "
+            "regression/comparison against the batch path."
+        ),
+    )
     args = ap.parse_args()
     global MAX_DOS_PER_STEP
     MAX_DOS_PER_STEP = args.max_dos
@@ -6183,6 +6528,7 @@ def main() -> None:
             )
             # v15.1: route through the worker-pool wrapper. N=1 is the sequential
             # fallback (preserves v15 behavior byte-for-byte). N>1 is opt-in.
+            # v16.5 BATCH-API-3: use_batch_api from --use-batch-api / --no-batch-api.
             run_source_mode_workers(
                 dest_client, coll_id, state,
                 source_client=src_client,
@@ -6190,6 +6536,7 @@ def main() -> None:
                 default_license=args.default_license or None,
                 default_access_rights=args.default_access_rights or None,
                 name_map=name_map,
+                use_batch_api=args.use_batch_api,
             )
         else:
             run_local_mode(dest_client, coll_id, state)

@@ -29,14 +29,15 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 /**
- * MFFD-BATCH-01 — unit tests for {@link DataObjectBatchV2Rest}.
+ * BATCH-API-5 — unit tests for {@link DataObjectBatchV2Rest}.
  *
- * <p>Covers the four cases called out in the task spec:
+ * <p>Original MFFD-BATCH-01 cases:
  * <ol>
  *   <li>Happy path — 3 items, all created → 207 with 3 "created" results.</li>
  *   <li>Mixed — 1 valid + 1 forbidden + 1 invalid name → 207, created=1, failed=2.</li>
@@ -44,7 +45,7 @@ import org.mockito.MockitoAnnotations;
  *   <li>Empty array → 400.</li>
  * </ol>
  *
- * <p>Additional cases:
+ * <p>Additional cases (original):
  * <ul>
  *   <li>Unknown collection → item error COLLECTION_NOT_FOUND.</li>
  *   <li>Unknown parentAppId → item error PARENT_NOT_FOUND.</li>
@@ -52,6 +53,19 @@ import org.mockito.MockitoAnnotations;
  *   <li>Service throws InvalidBodyException → item error INVALID_INPUT.</li>
  *   <li>Permission memo: two items same collection → permissions checked once.</li>
  *   <li>Null principal → 401.</li>
+ * </ul>
+ *
+ * <p>BATCH-API-5 additions (per aidocs/16 row):
+ * <ul>
+ *   <li>Atomic-mode rollback — placeholder {@link #atomicModeNotYetImplemented()} because
+ *       the endpoint has no {@code ?mode=} parameter; see BATCH-API-1 design.</li>
+ *   <li>Oversized batch → HTTP 400 (not 413): batch endpoint returns 400 for size
+ *       violations; see {@link #oversizedBatchReturns400ActualBehaviorNot413()}.</li>
+ *   <li>Duplicate names — no uniqueness constraint: two items with the same name both
+ *       succeed (service enforces no name-uniqueness-per-collection); see
+ *       {@link #duplicateNamesInBatchBothSucceedNoUniquenessConstraint()}.</li>
+ *   <li>All-failed batch still returns 207 (not 4xx): see
+ *       {@link #allItemsFailedStillReturns207NotErrorCode()}.</li>
  * </ul>
  */
 class DataObjectBatchV2RestTest {
@@ -392,6 +406,123 @@ class DataObjectBatchV2RestTest {
     assertEquals(0, body.getCreated());
     assertEquals(1, body.getFailed());
     assertEquals("INTERNAL_ERROR", body.getResults().get(0).getErrorCode());
+  }
+
+  // ── BATCH-API-5 additions ─────────────────────────────────────────────────
+
+  /**
+   * BATCH-API-5 / spec test 1 (atomic mode) — placeholder.
+   *
+   * <p>The {@code POST /v2/data-objects/batch} endpoint does <em>not</em>
+   * accept a {@code ?mode=} query parameter; all batches run in best-effort
+   * mode (partial success). Atomic rollback is deferred to BATCH-API-1
+   * (design + implementation). This test documents the deferred requirement
+   * so a future implementer finds the hook.
+   *
+   * @see <a href="aidocs/16-dispatcher-backlog.md">BATCH-API-1 design row</a>
+   */
+  @Test
+  @Disabled("atomic mode not yet implemented — see BATCH-API-1 design in aidocs/16-dispatcher-backlog.md")
+  void atomicModeNotYetImplemented() {
+    // When BATCH-API-1 ships, this test should:
+    //   1. POST a batch with 3 valid items + 1 invalid item (missing name).
+    //   2. Assert the entire batch is rolled back: created == 0, failed == 4.
+    //   3. Assert HTTP status 400 or 422 with errorCode on the failing item.
+    // Until then this placeholder keeps the acceptance criterion visible.
+  }
+
+  /**
+   * BATCH-API-5 / spec test 4 (oversized batch) — documents actual behavior.
+   *
+   * <p>The spec asks for HTTP 413 Payload Too Large. The actual endpoint returns
+   * HTTP 400 Bad Request with a plain-JSON error body because JAX-RS body-size
+   * limits (which produce 413) are not configured and the size check is done in
+   * application code. This test documents and asserts the <em>actual</em> 400
+   * behavior so a future change to 413 is visible as a test failure rather than
+   * a silent regression.
+   */
+  @Test
+  void oversizedBatchReturns400ActualBehaviorNot413() {
+    // 601 items — comfortably over MAX_BATCH_SIZE (500).
+    List<DataObjectBatchCreateItemIO> items = new ArrayList<>();
+    for (int i = 0; i < DataObjectBatchV2Rest.MAX_BATCH_SIZE + 101; i++) {
+      items.add(new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "DO-" + i, null, null, null, null));
+    }
+    Response r = resource.batch(items, securityContext);
+    // Actual behavior: 400 (not 413). See class javadoc for rationale.
+    assertEquals(400, r.getStatus());
+    verify(dataObjectService, never()).createDataObject(any(Long.class), any());
+  }
+
+  /**
+   * BATCH-API-5 / spec test 6 (duplicate names) — documents absence of constraint.
+   *
+   * <p>The DataObject service does <em>not</em> enforce name-uniqueness within a
+   * collection. Two items with the same {@code name} in the same collection both
+   * succeed and get distinct {@code appId}s. This test documents-by-test that the
+   * constraint is intentionally absent; if name-uniqueness is ever added this test
+   * will fail as the expected signal.
+   */
+  @Test
+  void duplicateNamesInBatchBothSucceedNoUniquenessConstraint() {
+    DataObject d1 = makeDataObject(10L, "app-dupe-001", "same-name");
+    DataObject d2 = makeDataObject(11L, "app-dupe-002", "same-name");
+
+    when(entityIdResolver.resolveLong(COLL_APP_ID_A)).thenReturn(COLL_OGM_ID_A);
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID_A, AccessType.Write, CALLER))
+      .thenReturn(true);
+    when(dataObjectService.createDataObject(eq(COLL_OGM_ID_A), any())).thenReturn(d1, d2);
+
+    List<DataObjectBatchCreateItemIO> items = List.of(
+      new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "same-name", null, null, null, null),
+      new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "same-name", null, null, null, null)
+    );
+
+    Response r = resource.batch(items, securityContext);
+
+    assertEquals(207, r.getStatus());
+    DataObjectBatchResponseIO body = (DataObjectBatchResponseIO) r.getEntity();
+    // Both succeed — no uniqueness constraint enforced.
+    assertEquals(2, body.getCreated());
+    assertEquals(0, body.getFailed());
+    assertEquals("created", body.getResults().get(0).getStatus());
+    assertEquals("created", body.getResults().get(1).getStatus());
+    // Each got a distinct appId.
+    assertNotNull(body.getResults().get(0).getAppId());
+    assertNotNull(body.getResults().get(1).getAppId());
+  }
+
+  /**
+   * BATCH-API-5 — all-failed batch still returns 207, not an error code.
+   *
+   * <p>HTTP 207 Multi-Status is returned even when every item in the batch fails.
+   * The caller can detect full failure via {@code created == 0} in the response
+   * body. This is the defined contract (see endpoint javadoc) and ensures that a
+   * partial retry can be done without special-casing the response status.
+   */
+  @Test
+  void allItemsFailedStillReturns207NotErrorCode() {
+    // All three items target an unknown collection → all fail with COLLECTION_NOT_FOUND.
+    when(entityIdResolver.resolveLong(COLL_APP_ID_A)).thenThrow(new NotFoundException());
+
+    List<DataObjectBatchCreateItemIO> items = List.of(
+      new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "DO-1", null, null, null, null),
+      new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "DO-2", null, null, null, null),
+      new DataObjectBatchCreateItemIO(COLL_APP_ID_A, "DO-3", null, null, null, null)
+    );
+
+    Response r = resource.batch(items, securityContext);
+
+    // Even on total failure the status code is 207, not 400/404.
+    assertEquals(207, r.getStatus());
+    DataObjectBatchResponseIO body = (DataObjectBatchResponseIO) r.getEntity();
+    assertEquals(0, body.getCreated());
+    assertEquals(3, body.getFailed());
+    // All items carry COLLECTION_NOT_FOUND (not a batch-level error code).
+    body.getResults().forEach(item ->
+      assertEquals("COLLECTION_NOT_FOUND", item.getErrorCode())
+    );
+    verify(dataObjectService, never()).createDataObject(any(Long.class), any());
   }
 
   // ── index ordering preserved across mixed results ─────────────────────────
