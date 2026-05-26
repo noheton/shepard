@@ -16,6 +16,7 @@
  */
 import VideoPlayer from "~/components/common/VideoPlayer.vue";
 import UploadFilesButton from "~/components/container/UploadFilesButton.vue";
+import { xhrUploadMultipart, type XhrUploadOptions } from "~/composables/container/xhrUpload";
 import {
   type VideoStreamReferenceIO,
   useFetchVideoStreamReferences,
@@ -39,24 +40,23 @@ function v2BaseUrl(): string {
     .replace(/\/$/, "");
 }
 
-async function uploadVideo(file: File): Promise<void> {
+async function uploadVideo(
+  file: File,
+  options?: XhrUploadOptions,
+): Promise<void> {
   const { data: session } = useAuth();
   const accessToken = session.value?.accessToken;
   if (!accessToken) throw new Error("Not authenticated");
 
   const url = `${v2BaseUrl()}/v2/data-objects/${encodeURIComponent(props.dataObjectAppId)}/video-stream-references`;
-  const body = new FormData();
-  body.append("file", file);
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    body,
+  // Task #135 — route through XHR so the upload dialog can show progress + cancel.
+  await xhrUploadMultipart<unknown>({
+    url,
+    fieldName: "file",
+    file,
+    authorization: `Bearer ${accessToken}`,
+    options,
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Upload failed (HTTP ${res.status}): ${text.slice(0, 200)}`);
-  }
 }
 
 const { references, isLoading, fetchError, refresh, downloadUrl } =

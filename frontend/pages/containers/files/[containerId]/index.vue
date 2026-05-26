@@ -41,8 +41,11 @@ onContainerUpdated(() => {
   fetchData();
 });
 
-const uploadFile = async (file: File): Promise<ShepardFile> => {
-  return containerAccessor.uploadFile(file);
+const uploadFile = async (
+  file: File,
+  options?: import("~/composables/container/xhrUpload").XhrUploadOptions,
+): Promise<ShepardFile> => {
+  return containerAccessor.uploadFile(file, options);
 };
 fetchData();
 
@@ -84,8 +87,8 @@ useHead({
                 <UploadFilesButton
                   v-if="containerAccessor.isAllowedToEditData.value"
                   :upload-file="
-                    async file => {
-                      uploadFile(file);
+                    async (file, options) => {
+                      await uploadFile(file, options);
                     }
                   "
                 />
