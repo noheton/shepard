@@ -20,7 +20,15 @@ import { mapValues } from '../runtime';
  */
 export interface LabJournalEntry {
     /**
-     * 
+     * J1d — application-level identifier (UUID v7).
+     * Null for entries created before the L2a backfill ran.
+     * Required by GET /v2/lab-journal/{entryAppId}/history.
+     * @type {string}
+     * @memberof LabJournalEntry
+     */
+    readonly appId: string | null;
+    /**
+     *
      * @type {number}
      * @memberof LabJournalEntry
      */
@@ -67,6 +75,7 @@ export interface LabJournalEntry {
  * Check if a given object implements the LabJournalEntry interface.
  */
 export function instanceOfLabJournalEntry(value: object): value is LabJournalEntry {
+    if (!('appId' in value)) return false;
     if (!('dataObjectId' in value) || value['dataObjectId'] === undefined) return false;
     if (!('journalContent' in value) || value['journalContent'] === undefined) return false;
     if (!('id' in value) || value['id'] === undefined) return false;
@@ -87,6 +96,7 @@ export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boo
     }
     return {
         
+        'appId': json['appId'] ?? null,
         'dataObjectId': json['dataObjectId'],
         'journalContent': json['journalContent'],
         'id': json['id'],
@@ -97,7 +107,7 @@ export function LabJournalEntryFromJSONTyped(json: any, ignoreDiscriminator: boo
     };
 }
 
-export function LabJournalEntryToJSON(value?: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
+export function LabJournalEntryToJSON(value?: Omit<LabJournalEntry, 'appId'|'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'> | null): any {
     if (value == null) {
         return value;
     }

@@ -1,4 +1,4 @@
-/** Inferno and viridis colormaps for 3D trace rendering (TPL2b / Trace3D). */
+/** Inferno, viridis, plasma, heat, and cool colormaps for 3D trace rendering (TPL2b / Trace3D). */
 
 type RGB = [number, number, number];
 
@@ -26,7 +26,29 @@ const PLASMA_STOPS: [number, RGB][] = [
   [1.0,  [0.940, 0.975, 0.131]],
 ];
 
-export type ColormapName = "inferno" | "viridis" | "plasma";
+/**
+ * Classic "heat" gradient: blue (low) → cyan → yellow → red (high).
+ * Matches the task #142 Trace3DView colorScheme="heat" description:
+ * "red=high, blue=low".
+ */
+const HEAT_STOPS: [number, RGB][] = [
+  [0.0,  [0.000, 0.000, 1.000]],
+  [0.33, [0.000, 1.000, 1.000]],
+  [0.67, [1.000, 1.000, 0.000]],
+  [1.0,  [1.000, 0.000, 0.000]],
+];
+
+/**
+ * "Cool" gradient: cyan → blue-white → magenta.
+ * Mapped from Trace3DView colorScheme="cool".
+ */
+const COOL_STOPS: [number, RGB][] = [
+  [0.0,  [0.000, 1.000, 1.000]],
+  [0.5,  [0.600, 0.800, 0.900]],
+  [1.0,  [1.000, 0.000, 1.000]],
+];
+
+export type ColormapName = "inferno" | "viridis" | "plasma" | "heat" | "cool";
 
 function interpolateStops(stops: [number, RGB][], t: number): RGB {
   const clamped = Math.max(0, Math.min(1, t));
@@ -53,6 +75,8 @@ export function colormapRgb(t: number, name: ColormapName = "inferno"): RGB {
   const stops =
     name === "viridis" ? VIRIDIS_STOPS
     : name === "plasma" ? PLASMA_STOPS
+    : name === "heat"   ? HEAT_STOPS
+    : name === "cool"   ? COOL_STOPS
     : INFERNO_STOPS;
   return interpolateStops(stops, t);
 }

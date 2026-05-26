@@ -30,7 +30,7 @@ import {
 
 export interface CreateLabJournalRequest {
     dataObjectId: number;
-    labJournalEntry: Omit<LabJournalEntry, 'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
+    labJournalEntry: Omit<LabJournalEntry, 'appId'|'dataObjectId'|'id'|'createdAt'|'createdBy'|'updatedAt'|'updatedBy'>;
 }
 
 export interface DeleteLabJournalRequest {

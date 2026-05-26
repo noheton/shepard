@@ -28,6 +28,8 @@ const isEditing = ref<boolean>(false);
 const isExpanded = ref<boolean>(false);
 const isHovering = ref<boolean>(false);
 const showDeleteDialog = ref<boolean>(false);
+// J1d — edit history dialog
+const showHistoryDialog = ref<boolean>(false);
 
 async function startEditing(event: Event) {
   event.stopPropagation();
@@ -224,6 +226,21 @@ function fetchImage(fileContainerId: number, oid: string): Promise<Blob> {
       </span>
       <v-spacer />
       <span class="pr-2">
+        <!-- J1d — edit history button (visible on hover/expand when entry has an appId) -->
+        <v-tooltip text="View edit history" location="top">
+          <template #activator="{ props: tp }">
+            <v-icon
+              v-if="(isHovering || isExpanded) && model.appId"
+              v-bind="tp"
+              class="mr-4"
+              color="info"
+              icon="mdi-history"
+              size="24"
+              style="cursor: pointer"
+              @click.stop="showHistoryDialog = true"
+            />
+          </template>
+        </v-tooltip>
         <v-icon
           v-if="(isHovering || isExpanded) && isAllowedToEdit()"
           :disabled="isEditing"
@@ -249,6 +266,15 @@ function fetchImage(fileContainerId: number, oid: string): Promise<Blob> {
       v-if="showDeleteDialog"
       v-model:show-dialog="showDeleteDialog"
       @confirmed="deleteEntry"
+    />
+
+    <!-- J1d — edit history + diff dialog -->
+    <LabJournalHistoryDialog
+      v-if="showHistoryDialog && model.appId"
+      v-model:show-dialog="showHistoryDialog"
+      :entry-app-id="model.appId"
+      :current-content="model.journalContent"
+      :entry-label="title"
     />
 
     <LabJournalEntry

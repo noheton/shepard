@@ -44,6 +44,23 @@ public class LabJournalEntryIO {
   private String updatedBy;
 
   /**
+   * J1d — application-level identifier (UUID v7) of the {@code LabJournalEntry}.
+   *
+   * <p>Additive field — existing clients that ignore unknown JSON keys are
+   * unaffected. Appears on both the {@code /shepard/api/labJournalEntries}
+   * compat surface and the {@code /v2/} surface.
+   *
+   * <p>Required for the history endpoint:
+   * {@code GET /v2/lab-journal/{entryAppId}/history}.
+   *
+   * <p>May be {@code null} for entries created before L2a seeded appIds
+   * (pre-existing rows without a backfill pass).
+   */
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  @Schema(readOnly = true, nullable = true, example = "019506b4-dc55-7c92-b4e1-bf94db37e5b9")
+  private String appId;
+
+  /**
    * J1a — fixed constant indicating that all lab journal entries are interpreted
    * as CommonMark + GFM markdown by the render endpoint
    * ({@code GET /v2/lab-journal/{appId}/render}).
@@ -65,6 +82,7 @@ public class LabJournalEntryIO {
   public LabJournalEntryIO() {}
 
   public LabJournalEntryIO(LabJournalEntry labJournalEntry) {
+    this.appId = labJournalEntry.getAppId();
     this.dataObjectId = labJournalEntry.getDataObject().getShepardId();
     this.journalContent = labJournalEntry.getContent();
     this.id = labJournalEntry.getId();
