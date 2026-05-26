@@ -266,7 +266,7 @@ class SemanticAnnotationV2RestTest {
     UpdateAnnotationIO body = new UpdateAnnotationIO();
     body.setObjectLiteral("new-value");
 
-    Response r = resource.update(ANN_APP_ID, body, sc, null);
+    Response r = resource.update(ANN_APP_ID, body, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     AnnotationIO io = (AnnotationIO) r.getEntity();
     assertThat(io.getObjectLiteral()).isEqualTo("new-value");
@@ -282,7 +282,7 @@ class SemanticAnnotationV2RestTest {
     UpdateAnnotationIO body = new UpdateAnnotationIO();
     body.setConfidence(0.85);
 
-    Response r = resource.update(ANN_APP_ID, body, sc, null);
+    Response r = resource.update(ANN_APP_ID, body, sc);
     assertThat(r.getStatus()).isEqualTo(200);
     assertThat(((AnnotationIO) r.getEntity()).getConfidence()).isEqualTo(0.85);
   }
@@ -290,7 +290,7 @@ class SemanticAnnotationV2RestTest {
   @Test
   void update_returns404WhenMissing() {
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(null);
-    assertThat(resource.update(ANN_APP_ID, new UpdateAnnotationIO(), sc, null).getStatus()).isEqualTo(404);
+    assertThat(resource.update(ANN_APP_ID, new UpdateAnnotationIO(), sc).getStatus()).isEqualTo(404);
   }
 
   @Test
@@ -300,7 +300,7 @@ class SemanticAnnotationV2RestTest {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
 
-    assertThat(resource.update(ANN_APP_ID, new UpdateAnnotationIO(), sc, null).getStatus()).isEqualTo(403);
+    assertThat(resource.update(ANN_APP_ID, new UpdateAnnotationIO(), sc).getStatus()).isEqualTo(403);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -313,7 +313,7 @@ class SemanticAnnotationV2RestTest {
     body.setObjectLiteral("literal");
     body.setObjectIri("http://example.org/iri");
 
-    assertThat(resource.update(ANN_APP_ID, body, sc, null).getStatus()).isEqualTo(400);
+    assertThat(resource.update(ANN_APP_ID, body, sc).getStatus()).isEqualTo(400);
   }
 
   // ─── delete ──────────────────────────────────────────────────────────────
@@ -459,7 +459,7 @@ class SemanticAnnotationV2RestTest {
 
     UpdateAnnotationIO body = new UpdateAnnotationIO();
     body.setObjectLiteral("new-value");
-    Response r = resource.update(ANN_APP_ID, body, sc, null);
+    Response r = resource.update(ANN_APP_ID, body, sc);
 
     assertThat(r.getStatus()).isEqualTo(200);
     AnnotationIO io = (AnnotationIO) r.getEntity();

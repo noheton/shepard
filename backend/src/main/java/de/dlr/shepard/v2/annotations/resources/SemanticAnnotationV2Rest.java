@@ -411,9 +411,12 @@ public class SemanticAnnotationV2Rest {
   public Response update(
     @PathParam("appId") String appId,
     UpdateAnnotationIO body,
-    @Context SecurityContext sc,
-    @HeaderParam("X-AI-Agent") String aiAgentHeader
+    @Context SecurityContext sc
   ) {
+    // Note: X-AI-Agent header is not inspected on update — the "collaborative"
+    // sourceMode flip (human annotation later touched by AI → 🤝 "collaborative")
+    // is SEMA-V6-007 follow-up scope. See McpToolSupport.HEADER_AI_AGENT for the
+    // shared constant when that work lands.
     long startedAtMillis = System.currentTimeMillis();
     String caller = callerName(sc);
     if (caller == null) return unauthorized();
