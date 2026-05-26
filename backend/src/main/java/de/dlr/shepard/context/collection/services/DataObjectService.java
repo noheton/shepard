@@ -1,5 +1,7 @@
 package de.dlr.shepard.context.collection.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.users.entities.User;
@@ -14,12 +16,13 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
-import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
 import de.dlr.shepard.context.references.dataobject.daos.DataObjectReferenceDAO;
 import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference;
 import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteService;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
+import de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO;
+import de.dlr.shepard.v2.dataobject.io.TypedPredecessorIO;
 import de.dlr.shepard.v2.events.CollectionEventProducer;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
@@ -35,6 +38,9 @@ import java.util.stream.Collectors;
 
 @RequestScoped
 public class DataObjectService {
+
+  /** PROV1k — shared ObjectMapper for serialising/deserialising typedPredecessorsJson. */
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Inject
   DataObjectDAO dataObjectDAO;
@@ -96,11 +102,30 @@ public class DataObjectService {
     ) throw new InvalidBodyException(
       "when creating a new dataObject the list of successors must not be specified or be empty"
     );
-    List<DataObject> predecessors = findRelatedDataObjects(
-      collection.getShepardId(),
-      dataObject.getPredecessorIds(),
-      null
-    );
+    // PROV1k: resolve typed predecessors from v2 create body (overrides predecessorIds when present).
+    // The instanceof guard keeps the v1 create path completely unaffected.
+    List<TypedPredecessorIO> typedPredecessors = null;
+    if (dataObject instanceof CreateDataObjectV2IO v2ioForTyped) {
+      typedPredecessors = v2ioForTyped.getTypedPredecessors();
+    }
+
+    List<DataObject> predecessors;
+    String typedPredecessorsJson = null;
+    if (typedPredecessors != null && !typedPredecessors.isEmpty()) {
+      // Validate each entry and resolve to DataObject instances.
+      for (TypedPredecessorIO tp : typedPredecessors) {
+        tp.validate();
+      }
+      predecessors = resolveTypedPredecessors(collection.getShepardId(), typedPredecessors, null);
+      typedPredecessorsJson = serialiseTypedPredecessors(typedPredecessors);
+    } else {
+      predecessors = findRelatedDataObjects(
+        collection.getShepardId(),
+        dataObject.getPredecessorIds(),
+        null
+      );
+    }
+
     DataObject toCreate = new DataObject();
     toCreate.setAttributes(dataObject.getAttributes());
     toCreate.setDescription(dataObject.getDescription());
@@ -114,10 +139,24 @@ public class DataObjectService {
     // LIC1 (FAIR-1): copy license + accessRights on create. Both nullable.
     toCreate.setLicense(dataObject.getLicense());
     toCreate.setAccessRights(dataObject.getAccessRights());
+    // FAIR3: copy embargoEndDate on create. Nullable; only meaningful when accessRights=EMBARGOED.
+    toCreate.setEmbargoEndDate(dataObject.getEmbargoEndDate());
     // PROV1j (EU AI Act Art. 50): propagate provenanceMode from v2 create body when present.
     // The instanceof guard keeps the v1 create path unaffected (DataObjectIO has no such field).
     if (dataObject instanceof CreateDataObjectV2IO v2io) {
       toCreate.setProvenanceMode(v2io.getProvenanceMode());
+    }
+    // PROV1k: store serialised typed predecessors JSON (null when only legacy predecessorIds used).
+    toCreate.setTypedPredecessorsJson(typedPredecessorsJson);
+    // FAIR2: stamp createdByOrcid from User.orcid at creation time.
+    // Best-effort: never block creation if ORCID lookup fails.
+    try {
+      User creator = userService.getCurrentUser();
+      if (creator != null && creator.getOrcid() != null) {
+        toCreate.setCreatedByOrcid(creator.getOrcid());
+      }
+    } catch (Exception e) {
+      Log.warnf("FAIR2: failed to stamp createdByOrcid for %s: %s", user.getUsername(), e.getMessage());
     }
     DataObject created = dataObjectDAO.createOrUpdate(toCreate);
     created.setShepardId(created.getId());
@@ -344,11 +383,35 @@ public class DataObjectService {
       dataObject.getParentId(),
       dataObjectShepardId
     );
-    List<DataObject> newPredecessors = findRelatedDataObjects(
-      old.getCollection().getShepardId(),
-      dataObject.getPredecessorIds(),
-      dataObjectShepardId
-    );
+
+    // PROV1k: resolve typed predecessors from v2 update body (overrides predecessorIds when present).
+    List<TypedPredecessorIO> updateTypedPredecessors = null;
+    if (dataObject instanceof CreateDataObjectV2IO v2ioForTyped) {
+      updateTypedPredecessors = v2ioForTyped.getTypedPredecessors();
+    }
+
+    List<DataObject> newPredecessors;
+    String newTypedPredecessorsJson = null;
+    if (updateTypedPredecessors != null && !updateTypedPredecessors.isEmpty()) {
+      for (TypedPredecessorIO tp : updateTypedPredecessors) {
+        tp.validate();
+      }
+      newPredecessors = resolveTypedPredecessors(
+        old.getCollection().getShepardId(),
+        updateTypedPredecessors,
+        dataObjectShepardId
+      );
+      newTypedPredecessorsJson = serialiseTypedPredecessors(updateTypedPredecessors);
+    } else {
+      newPredecessors = findRelatedDataObjects(
+        old.getCollection().getShepardId(),
+        dataObject.getPredecessorIds(),
+        dataObjectShepardId
+      );
+      // On update: if no typed predecessors provided, clear the stored JSON
+      // (the untyped list becomes the authoritative source).
+      newTypedPredecessorsJson = null;
+    }
 
     old.setShepardId(old.getShepardId());
     old.setName(dataObject.getName());
@@ -357,11 +420,16 @@ public class DataObjectService {
     old.setStatus(dataObject.getStatus());
     old.setParent(newParent);
     old.setPredecessors(newPredecessors);
+    // PROV1k: update stored typed predecessors JSON.
+    old.setTypedPredecessorsJson(newTypedPredecessorsJson);
     // LIC1 (FAIR-1): persist license + accessRights on update. Mirrors the
     // same pattern in CollectionService — PUT is full-replace, PATCH merges
     // upstream before reaching here.
     old.setLicense(dataObject.getLicense());
     old.setAccessRights(dataObject.getAccessRights());
+    // FAIR3: persist embargoEndDate on update. Nullable.
+    // Note: createdByOrcid is NOT updated here — it is immutable after creation (FAIR2).
+    old.setEmbargoEndDate(dataObject.getEmbargoEndDate());
     old.setUpdatedAt(dateHelper.getDate());
     old.setUpdatedBy(user);
     DataObject updated = dataObjectDAO.createOrUpdate(old);
@@ -474,6 +542,69 @@ public class DataObjectService {
     );
 
     return dataObject;
+  }
+
+  /**
+   * PROV1k — resolve a list of {@link TypedPredecessorIO} entries to
+   * {@link DataObject} instances by looking up each {@code predecessorAppId}
+   * via {@link DataObjectDAO#findByAppId(String)}.
+   *
+   * <p>Validates:
+   * <ul>
+   *   <li>The DataObject with the given appId must exist and not be deleted.</li>
+   *   <li>It must belong to the same collection as the DataObject being created.</li>
+   *   <li>It must not be the DataObject itself (self-reference guard).</li>
+   * </ul>
+   *
+   * @param collectionShepardId the owning collection's shepardId
+   * @param typedPredecessors   non-null, non-empty list of typed predecessor entries
+   * @param dataObjectShepardId the DataObject being created/updated (null on create)
+   * @return resolved list of predecessor DataObjects (same order as input)
+   * @throws InvalidBodyException when any entry fails validation
+   */
+  private List<DataObject> resolveTypedPredecessors(
+    long collectionShepardId,
+    List<TypedPredecessorIO> typedPredecessors,
+    Long dataObjectShepardId
+  ) {
+    List<DataObject> result = new ArrayList<>(typedPredecessors.size());
+    for (TypedPredecessorIO tp : typedPredecessors) {
+      DataObject predecessor = dataObjectDAO.findByAppId(tp.predecessorAppId());
+      if (predecessor == null || predecessor.isDeleted()) {
+        throw new InvalidBodyException(
+          "TypedPredecessor: DataObject with appId '%s' could not be found."
+            .formatted(tp.predecessorAppId())
+        );
+      }
+      if (dataObjectShepardId != null && dataObjectShepardId.equals(predecessor.getShepardId())) {
+        throw new InvalidBodyException("Self references are not allowed.");
+      }
+      if (!predecessor.getCollection().getShepardId().equals(collectionShepardId)) {
+        throw new InvalidBodyException(
+          "Related data objects must belong to the same collection as the new data object"
+        );
+      }
+      result.add(predecessor);
+    }
+    return result;
+  }
+
+  /**
+   * PROV1k — serialise a list of {@link TypedPredecessorIO} to a JSON string
+   * for storage in {@code DataObject.typedPredecessorsJson}.
+   *
+   * <p>Best-effort: returns {@code null} on serialisation error (logged at WARN).
+   *
+   * @param typedPredecessors non-null list to serialise
+   * @return JSON string, or {@code null} on error
+   */
+  private String serialiseTypedPredecessors(List<TypedPredecessorIO> typedPredecessors) {
+    try {
+      return MAPPER.writeValueAsString(typedPredecessors);
+    } catch (JsonProcessingException e) {
+      Log.warnf("PROV1k: failed to serialise typedPredecessors — stored as null. %s", e.getMessage());
+      return null;
+    }
   }
 
   /**

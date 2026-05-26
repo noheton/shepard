@@ -101,6 +101,19 @@ public class PublishService {
     // NotFoundException if missing.
     verifyEntityKind(kind, entityAppId);
 
+    // FAIR3: reject RESTRICTED/EMBARGOED unless force=true.
+    // Reads accessRights directly from Neo4j so we don't depend on the OGM
+    // entity graph being loaded into the request session.
+    if (!force) {
+      String ar = readAccessRights(kind, entityAppId);
+      if ("RESTRICTED".equals(ar) || "EMBARGOED".equals(ar)) {
+        throw new IllegalStateException(
+          "Cannot publish entity with accessRights=" + ar +
+          " unless force=true. Set accessRights=OPEN or pass force=true."
+        );
+      }
+    }
+
     // Idempotency check — if not forced and a Publication already
     // exists, return the most-recent one without minting.
     if (!force) {
@@ -268,6 +281,28 @@ public class PublishService {
       );
     }
     return updated;
+  }
+
+  /**
+   * FAIR3 — read the {@code accessRights} property of the entity addressed by
+   * {@code (kind, entityAppId)} directly from Neo4j. Returns {@code null} when
+   * the property is absent (i.e. the entity has never had accessRights set).
+   *
+   * <p>Called before the idempotency check so a RESTRICTED/EMBARGOED entity
+   * is rejected fast, even if it has been published before (the caller holds
+   * the key via {@code force=true}).
+   */
+  String readAccessRights(PublishableKind kind, String entityAppId) {
+    Session session = session();
+    if (session == null) return null;
+    String query =
+      "MATCH (e:" + kind.neo4jLabel() + " {appId: $appId}) " +
+      "RETURN e.accessRights AS accessRights LIMIT 1";
+    var result = session.query(query, Map.of("appId", entityAppId));
+    var iter = result.iterator();
+    if (!iter.hasNext()) return null;
+    Object val = iter.next().get("accessRights");
+    return val != null ? String.valueOf(val) : null;
   }
 
   /**

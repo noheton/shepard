@@ -56,6 +56,34 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
   @Schema(nullable = true, enumeration = {"OPEN", "RESTRICTED", "CLOSED", "EMBARGOED"})
   private String accessRights;
 
+  /**
+   * FAIR2 — ORCID of the researcher who created this DataObject.
+   * Server-stamped at creation time from {@code User.orcid}; never accepted
+   * as input (read-only). Absent from the wire when null.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    readOnly = true,
+    description = "FAIR2: ORCID of the creator, stamped server-side at creation. " +
+      "Read-only — not accepted as input. Absent when null or creator had no ORCID set."
+  )
+  private String createdByOrcid;
+
+  /**
+   * FAIR3 — ISO-8601 date string (e.g. {@code "2027-12-31"}) after which the
+   * embargo lifts. Only meaningful when {@code accessRights=EMBARGOED}. Nullable;
+   * null means no specific end-date has been declared. User-provided (not server-
+   * stamped). Absent from the wire when null.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(
+    nullable = true,
+    description = "ISO-8601 date (e.g. '2027-12-31') after which the embargo lifts; " +
+      "only meaningful when accessRights=EMBARGOED."
+  )
+  private String embargoEndDate;
+
   protected AbstractDataObjectIO(AbstractDataObject dataObject) {
     super(dataObject);
     this.description = dataObject.getDescription();
@@ -63,6 +91,8 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
     this.status = dataObject.getStatus();
     this.license = dataObject.getLicense();
     this.accessRights = dataObject.getAccessRights();
+    this.createdByOrcid = dataObject.getCreatedByOrcid();
+    this.embargoEndDate = dataObject.getEmbargoEndDate();
   }
 
   @Override
@@ -76,7 +106,9 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
       Objects.equals(attributes, other.attributes) &&
       Objects.equals(status, other.status) &&
       Objects.equals(license, other.license) &&
-      Objects.equals(accessRights, other.accessRights)
+      Objects.equals(accessRights, other.accessRights) &&
+      Objects.equals(createdByOrcid, other.createdByOrcid) &&
+      Objects.equals(embargoEndDate, other.embargoEndDate)
     );
   }
 
@@ -84,7 +116,7 @@ public abstract class AbstractDataObjectIO extends BasicEntityIO {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(description, attributes, status, license, accessRights);
+    result = prime * result + Objects.hash(description, attributes, status, license, accessRights, createdByOrcid, embargoEndDate);
     return result;
   }
 }

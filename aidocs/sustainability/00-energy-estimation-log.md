@@ -351,6 +351,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | *(pending)* | 2026-05-26 | code | 35k | 12k | 4.50 | 10 | 3 | 17.50 | 6.35 | LOW | feat(prov): PROV1j — provenanceMode on DataObject + CreateDataObjectV2IO + X-AI-Agent auto-detect; 3 new tests; aidocs/34+44+energy updated |
 | *(pending)* | 2026-05-26 | code | 25k | 8k | 3.08 | 0 | 3 | 6.08 | 2.21 | LOW | feat(sema): SEMA-V6-011 — SEMA-V6 field population + import-key filter in attribute dual-write; 3 new tests (9 total); aidocs/16+34+energy updated |
 | (pending) | 2026-05-26 | code | 35k | 10k | 4.17 | 8 | 5 | 17.17 | 6.23 | LOW | feat(sema): SEMA-V6-014 — personal vocabulary minting + personalVocabulariesEnabled admin toggle |
+| *(pending)* | 2026-05-26 | code | 40k | 14k | 5.14 | 12 | 3 | 20.14 | 7.31 | LOW | feat(rdm): FAIR2+FAIR3 — createdByOrcid stamp + embargoEndDate + PublishService enforcement; 8 backend + 10 Vitest tests; V84 migration; aidocs/16+34+44+energy updated |
 
 ---
 
@@ -447,4 +448,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added SEMA-V6-011 entry (SEMA-V6 field population + import-key filter). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added PROV1l entry (anonymizeInProvenance GDPR consent toggle).         | Claude Sonnet 4.6 |
 | 2026-05-26 | Added SEMA-V6-014 entry (personal vocabulary minting + admin toggle).  | Claude Sonnet 4.6 |
+| 2026-05-26 | Added FAIR2+FAIR3 entry (createdByOrcid stamp + embargoEndDate + PublishService enforcement). | Claude Sonnet 4.6 |
 

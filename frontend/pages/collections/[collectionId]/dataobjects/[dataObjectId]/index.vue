@@ -25,6 +25,53 @@ const { dataReferences } = useDataReferencesByDataObject(
   dataObjectId,
 );
 const { relatedEntities } = useRelatedEntities(collectionId, dataObjectId);
+
+// PROV1k: fetch typed predecessor summaries from the v2 detail endpoint.
+// Best-effort: empty when the DataObject has no typed predecessors or backend
+// predates PROV1k. We watch dataObject.appId + collection.appId reactively.
+const typedPredecessorsRef = computed(() => {
+  if (!collection.value?.appId || !dataObject.value?.appId) return null;
+  return { collectionAppId: collection.value.appId, dataObjectAppId: dataObject.value.appId };
+});
+const typedPredecessors = ref<
+  Array<{
+    predecessorAppId: string;
+    predecessorId: number;
+    predecessorName: string;
+    predecessorStatus: string | null;
+    relationshipType: string;
+  }>
+>([]);
+watch(
+  typedPredecessorsRef,
+  async val => {
+    if (!val) return;
+    const { typedPredecessors: tpFetched } = useFetchTypedPredecessors(
+      val.collectionAppId,
+      val.dataObjectAppId,
+    );
+    watch(tpFetched, v => { typedPredecessors.value = v; }, { immediate: true });
+  },
+  { immediate: true },
+);
+
+/** Look up the stored relationship type for a predecessor by its numeric id. */
+function predecessorRelationshipType(predecessorId: number): string | null {
+  const match = typedPredecessors.value.find(tp => tp.predecessorId === predecessorId);
+  return match?.relationshipType ?? null;
+}
+
+/** PROV1k: Map of predecessor id → relationship type, passed to DataObjectRelationshipsTable. */
+const predecessorRelationshipTypesMap = computed<Map<number, string>>(() => {
+  const map = new Map<number, string>();
+  for (const tp of typedPredecessors.value) {
+    // Only add non-default types to keep the map sparse; the chip component handles null gracefully.
+    if (tp.relationshipType && tp.relationshipType !== "prov:wasInformedBy") {
+      map.set(tp.predecessorId, tp.relationshipType);
+    }
+  }
+  return map;
+});
 const {
   counter: numberOfLabJournalEntries,
   updateCount: onLabJournalCountChanged,
@@ -122,6 +169,68 @@ const dataObjectAccessRights = computed<string | null>(() => {
     .accessRights;
   return raw ?? null;
 });
+
+// FAIR2: createdByOrcid — server-stamped ORCID of the creating researcher.
+// Read-only; displayed as a badge linking to orcid.org.
+const dataObjectCreatedByOrcid = computed<string | null>(() => {
+  if (!dataObject.value) return null;
+  const raw = (dataObject.value as unknown as { createdByOrcid?: string | null })
+    .createdByOrcid;
+  return raw ?? null;
+});
+
+// FAIR3: embargoEndDate — user-provided ISO-8601 end date for embargoed datasets.
+// Editable when the user has Write permission on the collection.
+const dataObjectEmbargoEndDate = computed<string | null>(() => {
+  if (!dataObject.value) return null;
+  const raw = (dataObject.value as unknown as { embargoEndDate?: string | null })
+    .embargoEndDate;
+  return raw ?? null;
+});
+
+// FAIR3: inline editing state for embargoEndDate.
+const embargoEditActive = ref(false);
+const embargoDraft = ref("");
+const embargoSaving = ref(false);
+
+function startEmbargoEdit() {
+  embargoDraft.value = dataObjectEmbargoEndDate.value ?? "";
+  embargoEditActive.value = true;
+}
+
+function cancelEmbargoEdit() {
+  embargoEditActive.value = false;
+}
+
+async function saveEmbargoEdit() {
+  if (!dataObject.value) return;
+  embargoSaving.value = true;
+  try {
+    await dataObjectApi.value.updateDataObject({
+      collectionId,
+      dataObjectId,
+      dataObject: {
+        name: dataObject.value.name,
+        description: dataObject.value.description,
+        status: (dataObject.value as unknown as { status?: string }).status,
+        attributes: dataObject.value.attributes ?? {},
+        parentId: dataObject.value.parentId,
+        predecessorIds: dataObject.value.predecessorIds ?? [],
+        // FAIR3: pass embargoEndDate through the update. Null/empty clears it.
+        ...(embargoDraft.value
+          ? { embargoEndDate: embargoDraft.value }
+          : { embargoEndDate: null }),
+      } as Parameters<typeof dataObjectApi.value.updateDataObject>[0]["dataObject"],
+    });
+    emitSuccess("Embargo end date updated");
+    handleDataObjectUpdate();
+    embargoEditActive.value = false;
+  } catch (e) {
+    handleError(e, "updating embargo end date");
+  } finally {
+    embargoSaving.value = false;
+  }
+}
 </script>
 
 <template>
@@ -163,12 +272,14 @@ const dataObjectAccessRights = computed<string | null>(() => {
                 id-label="Data Object ID"
               />
             </v-row>
-            <!-- LIC1: FAIR metadata strip — license + accessRights. Same
-                 affordance pattern as the Collection detail page. -->
+            <!-- LIC1/FAIR2/FAIR3: FAIR metadata strip — license + accessRights
+                 + embargoEndDate + createdByOrcid. Same affordance pattern
+                 as the Collection detail page. -->
             <v-row
-              v-if="dataObjectLicense || dataObjectAccessRights"
+              v-if="dataObjectLicense || dataObjectAccessRights || dataObjectEmbargoEndDate || dataObjectCreatedByOrcid"
               no-gutters
-              class="pb-3 ga-2 align-center"
+              class="pb-3 ga-2 align-center flex-wrap"
+              data-testid="fair-metadata-strip"
             >
               <LicenseChip
                 v-if="dataObjectLicense"
@@ -178,6 +289,89 @@ const dataObjectAccessRights = computed<string | null>(() => {
                 v-if="dataObjectAccessRights"
                 :access-rights="dataObjectAccessRights"
               />
+              <!-- FAIR3: embargoEndDate — shown when set; editable by Write users. -->
+              <span
+                v-if="dataObjectEmbargoEndDate && !embargoEditActive"
+                class="d-inline-flex align-center ga-1"
+                data-testid="embargo-end-date-display"
+              >
+                <v-chip
+                  size="small"
+                  color="warning"
+                  prepend-icon="mdi-lock-clock"
+                  :text="`Embargo ends: ${dataObjectEmbargoEndDate}`"
+                />
+                <v-btn
+                  v-if="isAllowedToEditCollection"
+                  icon="mdi-pencil-outline"
+                  variant="text"
+                  size="x-small"
+                  density="comfortable"
+                  aria-label="Edit embargo end date"
+                  data-testid="embargo-edit-btn"
+                  @click="startEmbargoEdit"
+                />
+              </span>
+              <!-- FAIR3 inline editor -->
+              <span
+                v-if="embargoEditActive"
+                class="d-inline-flex align-center ga-2"
+                data-testid="embargo-edit-form"
+              >
+                <v-text-field
+                  v-model="embargoDraft"
+                  label="Embargo end date (YYYY-MM-DD)"
+                  placeholder="2027-12-31"
+                  density="compact"
+                  hide-details
+                  style="max-width: 220px"
+                  data-testid="embargo-date-input"
+                />
+                <v-btn
+                  variant="flat"
+                  color="primary"
+                  size="small"
+                  :loading="embargoSaving"
+                  data-testid="embargo-save-btn"
+                  @click="saveEmbargoEdit"
+                >Save</v-btn>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  data-testid="embargo-cancel-btn"
+                  @click="cancelEmbargoEdit"
+                >Cancel</v-btn>
+              </span>
+              <!-- FAIR3: "Set embargo" affordance when EMBARGOED but no date yet -->
+              <v-btn
+                v-if="!dataObjectEmbargoEndDate && !embargoEditActive && dataObjectAccessRights === 'EMBARGOED' && isAllowedToEditCollection"
+                variant="tonal"
+                color="warning"
+                size="small"
+                prepend-icon="mdi-lock-clock"
+                data-testid="embargo-set-btn"
+                @click="startEmbargoEdit"
+              >Set embargo date</v-btn>
+              <!-- FAIR2: createdByOrcid — read-only ORCID badge -->
+              <a
+                v-if="dataObjectCreatedByOrcid"
+                :href="`https://orcid.org/${dataObjectCreatedByOrcid}`"
+                target="_blank"
+                rel="noopener"
+                class="do-orcid-badge"
+                :title="`Creator ORCID: ${dataObjectCreatedByOrcid} — click to view on orcid.org`"
+                data-testid="created-by-orcid-badge"
+              >
+                <svg viewBox="0 0 256 256" width="20" height="20" aria-label="ORCID iD" role="img">
+                  <circle cx="128" cy="128" r="128" fill="#A6CE39" />
+                  <g fill="#FFFFFF">
+                    <rect x="83" y="105" width="14" height="78" />
+                    <circle cx="90" cy="88" r="9" />
+                    <path d="M115 105 h35 c25 0 41 18 41 39 0 22 -18 39 -41 39 h-35 z M129 117 v54 h19 c20 0 28 -14 28 -27 0 -16 -10 -27 -28 -27 z" />
+                  </g>
+                </svg>
+                <span class="do-orcid-id">{{ dataObjectCreatedByOrcid }}</span>
+              </a>
             </v-row>
             <v-row
               v-if="dataObject.appId && isAllowedToEditCollection"
@@ -403,6 +597,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
                       isAllowedToEditCollection ?? false
                     "
                     :related-entities="relatedEntities"
+                    :predecessor-relationship-types="predecessorRelationshipTypesMap"
                   />
                   <template v-if="isAllowedToEditCollection" #append>
                     <ExpansionPanelTitleButton
@@ -495,5 +690,30 @@ const dataObjectAccessRights = computed<string | null>(() => {
   align-items: center;
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+/* FAIR2: creator ORCID badge on the DataObject detail page.
+   Same visual treatment as .orcid-badge in ProfilePane.vue. */
+.do-orcid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  border-radius: 4px;
+  padding: 2px 6px 2px 2px;
+  background: rgba(166, 206, 57, 0.12);
+  border: 1px solid rgba(166, 206, 57, 0.4);
+  cursor: pointer;
+  color: inherit;
+  font-size: 0.75rem;
+}
+.do-orcid-badge:hover {
+  background: rgba(166, 206, 57, 0.2);
+  border-color: #A6CE39;
+}
+.do-orcid-id {
+  font-family: monospace;
+  letter-spacing: 0.02em;
+  color: #4a7a1a;
 }
 </style>

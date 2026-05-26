@@ -2,6 +2,7 @@ package de.dlr.shepard.v2.dataobject.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -62,4 +63,42 @@ public class CreateDataObjectV2IO extends DataObjectIO {
   )
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private String provenanceMode;
+
+  /**
+   * PROV1k — typed predecessor relationships.
+   *
+   * <p>Optional alternative to (or complement of) the inherited {@code predecessorIds}
+   * long array. When present, each entry carries a PROV-O / FAIR²R relationship
+   * type alongside the predecessor's {@code appId} (UUID v7). The service resolves
+   * each {@code predecessorAppId} to a DataObject in the same collection and
+   * populates the untyped {@code predecessors} relationship list for backward
+   * compatibility.
+   *
+   * <p>Precedence rule: when {@code typedPredecessors} is non-null and non-empty,
+   * it <em>overrides</em> the {@code predecessorIds} long array — the typed list
+   * is the authoritative source for both the graph edges and the JSON property.
+   * Existing callers that only send {@code predecessorIds} are unaffected (this
+   * field is absent / null in their requests).
+   *
+   * <p>Validated by the service: each entry's {@code predecessorAppId} must be
+   * non-blank and in the same collection; {@code relationshipType} must be one of
+   * the allowed types or null (defaults to {@code "prov:wasInformedBy"}).
+   */
+  @Schema(
+    nullable = true,
+    description =
+      "PROV1k — typed predecessor relationships. " +
+      "When provided, overrides predecessorIds. " +
+      "Each entry must name a predecessorAppId (UUID v7, same collection) and an optional " +
+      "relationshipType ('prov:wasInformedBy' default, 'prov:wasRevisionOf', 'fair2r:repairs')."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<TypedPredecessorIO> typedPredecessors;
+
+
+  // NOTE: embargoEndDate is inherited from AbstractDataObjectIO (via DataObjectIO).
+  // It is user-provided and settable on create via the parent field.
+  //
+  // createdByOrcid is deliberately absent from this IO — it is server-stamped at
+  // create time from User.orcid and is never accepted as user input (FAIR2).
 }

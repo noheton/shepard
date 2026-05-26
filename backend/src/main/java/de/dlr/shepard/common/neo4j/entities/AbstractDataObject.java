@@ -40,6 +40,26 @@ public abstract class AbstractDataObject extends VersionableEntity {
   private String accessRights;
 
   /**
+   * FAIR2 — ORCID of the researcher who created this DataObject, stamped
+   * server-side at creation time from {@code User.orcid}. Nullable; null when
+   * the creating user has not set an ORCID at the time of creation, or for
+   * entities created before FAIR2 shipped. Survives user-account deletion so
+   * provenance is durable. Read-only for API callers (never accepted as input).
+   */
+  @org.neo4j.ogm.annotation.Property("createdByOrcid")
+  private String createdByOrcid;
+
+  /**
+   * FAIR3 — ISO-8601 date string (e.g. {@code "2027-12-31"}) after which the
+   * embargo lifts. Only meaningful when {@code accessRights=EMBARGOED}. Nullable;
+   * null means no specific end-date has been declared. The
+   * {@code PublishService.publish(...)} call rejects RESTRICTED/EMBARGOED entities
+   * unless {@code force=true}; this field is informational for the rejection message.
+   */
+  @org.neo4j.ogm.annotation.Property("embargoEndDate")
+  private String embargoEndDate;
+
+  /**
    * For testing purposes only
    *
    * @param id identifies the entity
