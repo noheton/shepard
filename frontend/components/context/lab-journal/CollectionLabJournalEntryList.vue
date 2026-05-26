@@ -12,6 +12,8 @@ interface CollectionLabJournalEntryListProps {
   collectionId: number;
   collectionAppId: string | null;
   dataObjectMap: Map<number, string>;
+  /** Lazy-load trigger: call once to populate (or refresh) the DataObject name map. */
+  fetchDataObjectMap?: () => Promise<void>;
 }
 
 const props = defineProps<CollectionLabJournalEntryListProps>();
@@ -68,6 +70,12 @@ function dataObjectName(dataObjectId: number): string {
 }
 
 fetchRoles();
+
+// Trigger the lazy data-object map fetch so the parent composable's TTL
+// cache is populated (or refreshed) when this component mounts.
+onMounted(() => {
+  props.fetchDataObjectMap?.();
+});
 </script>
 
 <template>

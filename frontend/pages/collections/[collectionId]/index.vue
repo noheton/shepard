@@ -21,7 +21,7 @@ const collectionId = routeParams.value.collectionId;
 const { collection, isAllowedToEditCollection, isLoading: isCollectionLoading, isError: isCollectionError } =
   useFetchCollection(collectionId);
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
-const { dataObjectsMap } = useFetchDataObjectMapByCollection(collectionId);
+const { dataObjectsMap, fetchMap: fetchDataObjectMap } = useFetchDataObjectMapByCollection(collectionId);
 const collectionApi = useShepardApi(CollectionApi);
 
 const showAttributeEditDialog = ref(false);
@@ -490,6 +490,7 @@ useHead({
                       :collection-id="routeParams.collectionId"
                       :collection-app-id="collectionAppId"
                       :data-object-map="dataObjectsMap"
+                      :fetch-data-object-map="fetchDataObjectMap"
                       @number-of-entries-changed="onLabJournalCountChanged"
                     />
                   </div>

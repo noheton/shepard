@@ -109,30 +109,36 @@ function onPageChange(page: number) {
     @update:sort-by="onSortBy"
   >
     <template #item="rowProps">
-      <v-data-table-row
-        v-bind="rowProps"
-        @click="
-          router.push(
-            containersPath +
-              containerTypeUrlPathSegmentMappings[
-                rowProps.item.type as ContainerFilterType
-              ] +
-              rowProps.item.id,
-          )
-        "
-      >
+      <v-data-table-row v-bind="rowProps">
         <template #[`item.id`]>
-          {{ rowProps.item.id }}
+          <NuxtLink
+            :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
+            style="display: block; color: inherit; text-decoration: none;"
+          >{{ rowProps.item.id }}</NuxtLink>
         </template>
         <template #[`item.name`]>
-          {{ rowProps.item.name }}
+          <NuxtLink
+            :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
+            style="display: block; color: inherit; text-decoration: none;"
+          >{{ rowProps.item.name }}</NuxtLink>
         </template>
         <template #[`item.type`]>
-          {{ ContainerTypeName[rowProps.item.type as ContainerFilterType] }}
+          <NuxtLink
+            :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
+            style="display: block; color: inherit; text-decoration: none;"
+          >{{ ContainerTypeName[rowProps.item.type as ContainerFilterType] }}</NuxtLink>
         </template>
-        <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
+        <template #[`item.createdBy`]>
+          <NuxtLink
+            :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
+            style="display: block; color: inherit; text-decoration: none;"
+          >{{ rowProps.item.createdBy }}</NuxtLink>
+        </template>
         <template #[`item.createdAt`]>
-          {{ toShortDateString(rowProps.item.createdAt) }}
+          <NuxtLink
+            :to="containersPath + containerTypeUrlPathSegmentMappings[rowProps.item.type as ContainerFilterType] + rowProps.item.id"
+            style="display: block; color: inherit; text-decoration: none;"
+          >{{ toShortDateString(rowProps.item.createdAt) }}</NuxtLink>
         </template>
       </v-data-table-row>
     </template>

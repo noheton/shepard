@@ -7,6 +7,7 @@ import { TooltipComponent, LegendComponent } from "echarts/components";
 import dagre from "@dagrejs/dagre";
 import type { DataObjectListItemV2 } from "@dlr-shepard/backend-client";
 import { useFetchAllDataObjects } from "~/composables/context/useFetchAllDataObjects";
+import { computeLineageState, type LineageState } from "~/utils/lineageState";
 
 if (process.client) {
   use([CanvasRenderer, GraphChart, TooltipComponent, LegendComponent]);
@@ -69,6 +70,23 @@ function dagreLayout(dos: DataObjectListItemV2[]): Map<number, { x: number; y: n
 
 const capped     = computed(() => dataObjects.value.length > NODE_CAP);
 const visibleDos = computed(() => dataObjects.value.slice(0, NODE_CAP));
+
+// "Has edges" = at least one visible DO carries a non-empty predecessorIds
+// list or a parentId that resolves inside the visible set.
+const hasEdges = computed<boolean>(() => {
+  const dos = visibleDos.value;
+  const visibleIds = new Set(dos.map(d => (d as any).id as number));
+  return dos.some(d => {
+    const preds: number[] = (d as any).predecessorIds ?? [];
+    if (preds.some((id: number) => visibleIds.has(id))) return true;
+    const parentId = (d as any).parentId as number | null;
+    return parentId != null && visibleIds.has(parentId);
+  });
+});
+
+const lineageState = computed<LineageState>(() =>
+  computeLineageState(loading.value, dataObjects.value, hasEdges.value),
+);
 
 const chartOption = computed(() => {
   const dos = visibleDos.value;
@@ -166,14 +184,23 @@ const chartOption = computed(() => {
 
 <template>
   <div>
-    <div v-if="loading" role="status" class="d-flex justify-center pa-8">
+    <!-- (a) Loading state -->
+    <div v-if="lineageState === 'loading'" role="status" class="d-flex justify-center pa-8">
       <v-progress-circular indeterminate aria-label="Loading lineage graph" />
     </div>
+    <!-- (b) No DataObjects at all -->
     <div
-      v-else-if="!dataObjects.length"
+      v-else-if="lineageState === 'no-dos'"
       class="pa-4 text-body-2 text-medium-emphasis"
     >
-      No datasets in this collection.
+      No datasets in this collection yet.
+    </div>
+    <!-- (c) DataObjects exist but no lineage edges defined -->
+    <div
+      v-else-if="lineageState === 'no-edges'"
+      class="pa-4 text-body-2 text-medium-emphasis"
+    >
+      Datasets exist but no lineage links are defined. Use Predecessor/Successor on a DataObject to connect them.
     </div>
     <div v-else>
       <v-alert
