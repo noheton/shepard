@@ -35,15 +35,20 @@ const isInstantiating = ref(false);
 
 if (props.collectionAppId) {
   isLoadingTemplates.value = true;
-  mode.value = "picker";
   useV2ShepardApi(CollectionTemplateApi)
     .value.listAllowedTemplates({ collectionAppId: props.collectionAppId })
     .then(templates => {
       allowedTemplates.value = templates;
-      if (templates.length === 0) mode.value = "form";
+      // Basic-mode users see the template picker first (templates are the
+      // predigested path for users who don't know which containers/annotations
+      // to add). Advanced-mode users go straight to the blank form and can
+      // opt into a template via the "Use template…" button.
+      if (templates.length > 0 && !advancedMode.value) {
+        mode.value = "picker";
+      }
     })
     .catch(() => {
-      mode.value = "form";
+      // stay on "form" — graceful degradation
     })
     .finally(() => {
       isLoadingTemplates.value = false;
@@ -122,7 +127,8 @@ async function createDataObject() {
 </script>
 
 <template>
-  <!-- Template picker: default when allowed templates exist -->
+  <!-- Template picker: default for basic-mode users when templates exist;
+       also reachable from the form via "Use template…" (advanced mode). -->
   <TemplatePickerDialog
     v-if="mode === 'picker'"
     v-model:show-dialog="showDialog"
@@ -145,6 +151,23 @@ async function createDataObject() {
       @submit="createDataObject"
     >
       <template #form-content-step-1>
+        <!-- Advanced-mode: offer template picker as an opt-in shortcut when
+             templates are available for this collection. Basic-mode users
+             land on the picker first (see script block) and come here only
+             after clicking "Skip template / create blank". -->
+        <v-row v-if="advancedMode && allowedTemplates.length > 0" class="pt-4 pb-0">
+          <v-col class="pb-0">
+            <v-btn
+              variant="tonal"
+              color="primary"
+              size="small"
+              prepend-icon="mdi-file-document-outline"
+              @click="mode = 'picker'"
+            >
+              Use template&hellip;
+            </v-btn>
+          </v-col>
+        </v-row>
         <v-row>
           <v-col class="pt-9 pb-1">
             <div class="text-subtitle-1">Properties</div>
