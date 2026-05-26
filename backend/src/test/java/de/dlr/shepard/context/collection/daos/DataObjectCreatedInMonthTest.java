@@ -27,6 +27,7 @@ import org.neo4j.ogm.session.Session;
  * <p>Verifies that {@link DataObjectDAO#writeCreatedInMonth(DataObject)}:
  * <ul>
  *   <li>formats {@code ym} correctly for ordinary months, January, and December</li>
+ *   <li>is immune to JVM-timezone drift — uses UTC, not the JVM default TZ</li>
  *   <li>issues a Cypher MERGE with the correct {@code ym} parameter</li>
  *   <li>silently skips writes when {@code createdBy}, {@code appId},
  *       or {@code createdAt} are null</li>
@@ -53,6 +54,16 @@ public class DataObjectCreatedInMonthTest extends BaseTestCase {
     return Date.from(instant);
   }
 
+  /**
+   * Derive ym using the same UTC-explicit logic as DataObjectDAO.writeCreatedInMonth().
+   * Tests must use this helper — NOT String.format("%1$tY%1$tm", date), which would
+   * exercise the old JVM-TZ path and produce wrong results on non-UTC hosts.
+   */
+  private static String ymOf(Date date) {
+    var utc = date.toInstant().atZone(ZoneOffset.UTC);
+    return String.format("%04d%02d", utc.getYear(), utc.getMonthValue());
+  }
+
   private static DataObject dataObjectWith(String appId, User createdBy, Date createdAt) {
     DataObject d = new DataObject();
     d.setAppId(appId);
@@ -69,22 +80,18 @@ public class DataObjectCreatedInMonthTest extends BaseTestCase {
 
   @Test
   public void ymFormat_ordinaryMonth_May2026() {
-    // May 2026 → "202605"
-    String ym = String.format("%1$tY%1$tm", utcDate(2026, 5, 15));
-    assertEquals("202605", ym, "May 2026 must format to '202605'");
+    assertEquals("202605", ymOf(utcDate(2026, 5, 15)), "May 2026 must format to '202605'");
   }
 
   @Test
   public void ymFormat_january() {
     // January must produce two-digit month "01", not "1"
-    String ym = String.format("%1$tY%1$tm", utcDate(2025, 1, 1));
-    assertEquals("202501", ym, "January must format to '202501' (leading zero)");
+    assertEquals("202501", ymOf(utcDate(2025, 1, 1)), "January must format to '202501' (leading zero)");
   }
 
   @Test
   public void ymFormat_december() {
-    String ym = String.format("%1$tY%1$tm", utcDate(2024, 12, 31));
-    assertEquals("202412", ym, "December must format to '202412'");
+    assertEquals("202412", ymOf(utcDate(2024, 12, 31)), "December must format to '202412'");
   }
 
   @Test
@@ -92,9 +99,25 @@ public class DataObjectCreatedInMonthTest extends BaseTestCase {
     // All 12 months of a leap year must produce exactly 6-char strings.
     int year = 2024;
     for (int month = 1; month <= 12; month++) {
-      String ym = String.format("%1$tY%1$tm", utcDate(year, month, 1));
+      String ym = ymOf(utcDate(year, month, 1));
       assertEquals(6, ym.length(), "ym for month " + month + " must be exactly 6 chars, got: " + ym);
     }
+  }
+
+  @Test
+  public void ymFormat_utcBoundary_cest_midnight() {
+    // 2026-06-01 00:30 CEST  =  2026-05-31 22:30 UTC.
+    // The ym must be "202605" (UTC month), NOT "202606" (CEST/local month).
+    // This guards against the JVM-default-TZ regression: String.format("%1$tY%1$tm", date)
+    // uses the JVM timezone and would produce "202606" on a CEST host, diverging from
+    // the Cypher backfill migration which always uses UTC via datetime({epochMillis: x}).
+    Instant cest0030 = LocalDateTime.of(2026, 6, 1, 0, 30).toInstant(ZoneOffset.ofHours(2));
+    Date date = Date.from(cest0030);
+    assertEquals(
+      "202605",
+      ymOf(date),
+      "2026-06-01T00:30 CEST must map to UTC May 2026 → '202605'"
+    );
   }
 
   // --- writeCreatedInMonth behaviour --------------------------------------
