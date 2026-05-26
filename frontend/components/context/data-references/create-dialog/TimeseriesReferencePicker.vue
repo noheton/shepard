@@ -15,40 +15,44 @@ const timeseriesReference = defineModel<TimeseriesRef | undefined>(
   },
 );
 
-const headers = [
-  { title: "Measurement", key: "measurement", sortable: true },
-  { title: "Device", key: "device", sortable: true },
-  { title: "Location", key: "location", sortable: true },
-  { title: "Symbolic Name", key: "symbolicName", sortable: true },
-  { title: "Field", key: "field", sortable: true },
-];
+type ChannelOption = {
+  title: string;
+  subtitle: string;
+  value: TimeseriesRefItem;
+};
 
-const selectedTimeseriesList = ref<TimeseriesRefItem[] | undefined>(undefined);
+const selectedChannels = ref<ChannelOption[]>([]);
 
 const startDate = ref();
 const endDate = ref();
 const startTime = ref();
 const endTime = ref();
 
-watch(
-  () => loading,
-  () => {
-    if (loading === false) selectedTimeseriesList.value = items;
-  },
-  { once: true },
-);
+const channelOptions = computed<ChannelOption[]>(() => {
+  if (!items) return [];
+  return items.map(item => ({
+    title: `${item.measurement} · ${item.field}`,
+    subtitle: `${item.device} / ${item.location} / ${item.symbolicName}`,
+    value: item,
+  }));
+});
 
-watch(selectedTimeseriesList, () => {
-  if (selectedTimeseriesList.value) {
-    if (timeseriesReference.value?.timeseries) {
-      timeseriesReference.value.timeseries = selectedTimeseriesList.value;
-      return;
+watch(selectedChannels, () => {
+  const selectedItems = selectedChannels.value.map(opt => opt.value);
+  if (selectedItems.length > 0) {
+    if (timeseriesReference.value?.timeseries !== undefined) {
+      timeseriesReference.value.timeseries = selectedItems;
+    } else {
+      timeseriesReference.value = {
+        start: 0,
+        end: 0,
+        timeseries: selectedItems,
+      };
     }
-    timeseriesReference.value = {
-      start: 0,
-      end: 0,
-      timeseries: selectedTimeseriesList.value,
-    };
+  } else {
+    if (timeseriesReference.value) {
+      timeseriesReference.value.timeseries = [];
+    }
   }
 });
 
@@ -66,6 +70,7 @@ watch([startDate, startTime], () => {
       };
   }
 });
+
 watch([endDate, endTime], () => {
   if (!!endDate.value && !!endTime.value) {
     const formattedEnd = Date.parse(endDate.value + " " + endTime.value) * 1e6;
@@ -84,29 +89,45 @@ watch([endDate, endTime], () => {
 
 <template>
   <v-row>
-    <v-data-table
-      v-model="selectedTimeseriesList"
-      sort-desc-icon="mdi-triangle-small-down"
-      sort-asc-icon="mdi-triangle-small-up"
-      density="compact"
-      :headers="headers"
-      :items="items"
-      :item-value="item => item"
-      :loading="loading"
-      fixed-header
-      style="max-height: 300px"
-      hover
-      hide-default-footer
-      show-select
-      select-strategy="all"
-    >
-      <template #bottom>
-        <v-divider :thickness="8" color="divider2" opacity="1" />
-      </template>
-    </v-data-table>
+    <v-col cols="12" class="pb-1">
+      <v-autocomplete
+        v-model="selectedChannels"
+        :items="channelOptions"
+        :loading="loading"
+        item-title="title"
+        item-value="value"
+        label="Channels* (type to filter by measurement or field)"
+        placeholder="e.g. vibration · value"
+        density="compact"
+        variant="outlined"
+        bg-color="canvas"
+        multiple
+        chips
+        closable-chips
+        clearable
+        no-data-text="No channels available in this container"
+        :return-object="true"
+      >
+        <template #chip="{ props: chipProps, item }">
+          <v-chip
+            v-bind="chipProps"
+            :text="item.raw.title"
+            size="small"
+          />
+        </template>
+        <template #item="{ props: itemProps, item }">
+          <v-list-item
+            v-bind="itemProps"
+            :title="item.raw.title"
+            :subtitle="item.raw.subtitle"
+            density="compact"
+          />
+        </template>
+      </v-autocomplete>
+    </v-col>
   </v-row>
   <v-row>
-    <div class="text-subtitle-1 pt-9 pb-5">Select Time Window (UTC)</div>
+    <div class="text-subtitle-1 pt-6 pb-5">Select Time Window (UTC)</div>
   </v-row>
   <v-row>
     <v-col cols="1" class="pa-0"><div class="pt-1">Start*:</div></v-col>
@@ -125,21 +146,3 @@ watch([endDate, endTime], () => {
     />
   </v-row>
 </template>
-
-<style scoped lang="scss">
-.v-table {
-  background-color: unset;
-
-  :deep(thead) > tr > th {
-    background-color: rgb(var(--v-theme-divider2)) !important;
-  }
-
-  :deep(tr):hover {
-    background-color: rgb(var(--v-theme-focus1));
-  }
-
-  :deep(.mdi) {
-    margin-left: 0.2em;
-  }
-}
-</style>
