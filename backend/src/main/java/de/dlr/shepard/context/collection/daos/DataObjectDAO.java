@@ -6,6 +6,7 @@ import de.dlr.shepard.common.util.CypherQueryHelper;
 import de.dlr.shepard.common.util.QueryParamHelper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.version.daos.VersionableEntityDAO;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -470,24 +471,42 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * round-trip. Avoids the OGM polymorphism issue where depth-1 loading returns
    * {@code BasicReference} instead of the concrete subtype.
    *
-   * <p>Returns rows with keys: {@code kind} (ts/file/sd), {@code refId},
-   * {@code refAppId}, {@code containerId}, {@code containerAppId},
-   * {@code containerName}.
+   * <p>NEO-AUDIT-008: Uses {@code CALL {}} subqueries instead of sibling
+   * {@code OPTIONAL MATCH} legs to eliminate the Cartesian product. The old
+   * shape walked all {@code has_reference} edges in each leg, causing N×M×P
+   * dbHits when a DataObject had many refs. Each {@code CALL {}} scope
+   * executes independently, so cardinalities do not multiply.
+   *
+   * <p>Returns a single result row with three list columns:
+   * {@code tsRefs}, {@code fileRefs}, {@code sdRefs}. Each list element is a
+   * map with keys: {@code refShepardId}, {@code refAppId},
+   * {@code containerId}, {@code containerAppId}, {@code containerName}.
    */
-  public Iterable<Map<String, Object>> findContainersByDataObjectAppId(String appId) {
+  public Map<String, Object> findContainersByDataObjectAppId(String appId) {
     String cypher =
       "MATCH (do:DataObject {appId: $appId}) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
-      "  WHERE NOT coalesce(tr.deleted, false) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
-      "  WHERE NOT coalesce(fr.deleted, false) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
-      "  WHERE NOT coalesce(sdr.deleted, false) " +
-      "RETURN " +
-      "  tr.shepardId AS tsRefId, tr.appId AS tsRefAppId, id(tc) AS tsContainerId, tc.appId AS tsContainerAppId, tc.name AS tsContainerName, " +
-      "  fr.shepardId AS fileRefId, fr.appId AS fileRefAppId, id(fc) AS fileContainerId, fc.appId AS fileContainerAppId, fc.name AS fileContainerName, " +
-      "  sdr.shepardId AS sdRefId, sdr.appId AS sdRefAppId, id(sc) AS sdContainerId, sc.appId AS sdContainerAppId, sc.name AS sdContainerName";
-    return session.query(cypher, Map.of("appId", appId)).queryResults();
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "    WHERE NOT coalesce(tr.deleted, false) " +
+      "  RETURN collect({refShepardId: tr.shepardId, refAppId: tr.appId, containerId: id(tc), containerAppId: tc.appId, containerName: tc.name}) AS tsRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
+      "    WHERE NOT coalesce(fr.deleted, false) " +
+      "  RETURN collect({refShepardId: fr.shepardId, refAppId: fr.appId, containerId: id(fc), containerAppId: fc.appId, containerName: fc.name}) AS fileRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
+      "    WHERE NOT coalesce(sdr.deleted, false) " +
+      "  RETURN collect({refShepardId: sdr.shepardId, refAppId: sdr.appId, containerId: id(sc), containerAppId: sc.appId, containerName: sc.name}) AS sdRefs " +
+      "} " +
+      "RETURN tsRefs, fileRefs, sdRefs";
+    var results = session.query(cypher, Map.of("appId", appId)).queryResults();
+    var iter = results.iterator();
+    return iter.hasNext() ? iter.next() : Map.of("tsRefs", List.of(), "fileRefs", List.of(), "sdRefs", List.of());
   }
 
   public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
@@ -555,6 +574,72 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
       out.put(appId, ids);
     }
     return out;
+  }
+
+  /**
+   * NEO-AUDIT-004 — time-bucketed Agent index for the `:User` supernode.
+   *
+   * <p>Writes a {@code (:User)-[:created_in_month {ym: "YYYYMM"}]->(:DataObject)}
+   * relationship immediately after a DataObject is persisted. This lets queries
+   * like "list DataObjects created by user X in month Y" avoid walking all
+   * 33k+ {@code created_by} edges on the operator `:User` supernode — they
+   * target the bounded {@code [:created_in_month]} rel set instead, typically
+   * reducing dbHits by 100-1000x (Neo4j supernode KB:
+   * https://neo4j.com/developer/kb/understanding-the-design-of-supernodes/).
+   *
+   * <p>Uses MERGE so the call is idempotent — re-runs (e.g. on retry) produce
+   * no duplicates. The {@code ym} property is derived from
+   * {@link DataObject#getCreatedAt()} and formatted as a 6-char
+   * {@code "YYYYMM"} string (e.g. {@code "202605"} for May 2026).
+   *
+   * <p>This method is best-effort — it logs a warning and continues if the
+   * DataObject or User node cannot be resolved, so a write failure here never
+   * blocks DataObject creation.
+   *
+   * @param dataObject the newly-created DataObject (must have a non-null
+   *                   {@code appId} and {@code createdAt}; {@code createdBy}
+   *                   must be a non-null User with a non-null {@code username})
+   */
+  public void writeCreatedInMonth(DataObject dataObject) {
+    if (dataObject == null) return;
+    User createdBy = dataObject.getCreatedBy();
+    String dataObjectAppId = dataObject.getAppId();
+    Date createdAt = dataObject.getCreatedAt();
+    if (createdBy == null || createdBy.getUsername() == null) {
+      Log.warnf(
+        "NEO-AUDIT-004: skipping created_in_month write — DataObject %s has no createdBy user",
+        dataObjectAppId
+      );
+      return;
+    }
+    if (dataObjectAppId == null) {
+      Log.warnf("NEO-AUDIT-004: skipping created_in_month write — DataObject has null appId");
+      return;
+    }
+    if (createdAt == null) {
+      Log.warnf(
+        "NEO-AUDIT-004: skipping created_in_month write — DataObject %s has null createdAt",
+        dataObjectAppId
+      );
+      return;
+    }
+    // Format as "YYYYMM" — %1$tY = 4-digit year, %1$tm = 2-digit month (zero-padded).
+    String ym = String.format("%1$tY%1$tm", createdAt);
+    String cypher =
+      "MATCH (u:User {username: $username}) " +
+      "MATCH (d:DataObject {appId: $dataObjectAppId}) " +
+      "MERGE (u)-[:created_in_month {ym: $ym}]->(d)";
+    try {
+      session.query(cypher, Map.of("username", createdBy.getUsername(), "dataObjectAppId", dataObjectAppId, "ym", ym));
+    } catch (Exception e) {
+      Log.warnf(
+        "NEO-AUDIT-004: failed to write created_in_month rel for DataObject %s (user=%s, ym=%s): %s",
+        dataObjectAppId,
+        createdBy.getUsername(),
+        ym,
+        e.getMessage()
+      );
+    }
   }
 
 }

@@ -114,6 +114,10 @@ public class DataObjectService {
     created = dataObjectDAO.createOrUpdate(created);
     versionService.attachToVersionOfVersionableEntityAndReturnVersion(collectionShepardId, created.getShepardId());
 
+    // NEO-AUDIT-004: write the time-bucketed Agent index (:User)-[:created_in_month {ym}]->(:DataObject).
+    // Best-effort — logged and swallowed on failure so creation is never blocked.
+    dataObjectDAO.writeCreatedInMonth(created);
+
     // CW1: notify collection watchers — best-effort, does not block creation.
     // Only notify for top-level DataObjects (no parent) to avoid flooding on
     // hierarchical ingestion workflows.
