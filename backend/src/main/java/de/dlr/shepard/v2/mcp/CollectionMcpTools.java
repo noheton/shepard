@@ -61,7 +61,7 @@ public class CollectionMcpTools {
       "                    Collection's contents\n" +
       "  id (long) — legacy numeric ID (for the upstream /shepard/api/… endpoints)\n" +
       "  name, description (free-text from the Collection owner)\n" +
-      "  status (lifecycle: DRAFT|IN_REVIEW|READY|PUBLISHED|ARCHIVED, or null)\n\n" +
+      "  status (lifecycle: DRAFT|IN_REVIEW|READY|PUBLISHED|ARCHIVED|FAILED|NCR_OPEN|REJECTED, or null)\n\n" +
       "Filtering: `name` does a case-insensitive substring match. With no " +
       "arguments, returns the first page (50 rows) ordered by the service-layer " +
       "default. Increase `size` (up to 200) before paging when scanning.\n\n" +

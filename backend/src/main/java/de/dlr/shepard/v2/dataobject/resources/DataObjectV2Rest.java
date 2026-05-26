@@ -151,7 +151,7 @@ public class DataObjectV2Rest {
       "DataObject page (may be empty). Each item includes `timeseriesCount`, `fileCount`, " +
       "`structuredDataCount`. When `?include=time-bounds` is set, `timeBoundsStart`/`timeBoundsEnd` " +
       "are also populated (null means no data yet). Use `?status=READY` (or DRAFT, IN_REVIEW, " +
-      "PUBLISHED, ARCHIVED) to filter server-side by lifecycle status.",
+      "PUBLISHED, ARCHIVED, FAILED, NCR_OPEN, REJECTED) to filter server-side by lifecycle status.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -324,7 +324,7 @@ public class DataObjectV2Rest {
       "  - `name` (string, required, non-blank).\n" +
       "  - `description` (string, optional, CommonMark + GFM).\n" +
       "  - `attributes` (string-to-string map, optional).\n" +
-      "  - `status` (optional, DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED).\n" +
+      "  - `status` (optional, DRAFT/IN_REVIEW/READY/PUBLISHED/ARCHIVED/FAILED/NCR_OPEN/REJECTED).\n" +
       "  - `provenanceMode` (optional, PROV1j / EU AI Act Art. 50): 'human', 'ai', " +
       "    or 'collaborative'. When omitted, auto-detected from the `X-AI-Agent` " +
       "    request header (present and non-blank → 'ai'; otherwise null).\n\n" +

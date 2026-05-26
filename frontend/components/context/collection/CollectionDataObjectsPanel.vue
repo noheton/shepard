@@ -54,9 +54,9 @@
           @click="navigateTo(row.id)"
         >
           <td>
-            <a href="#" class="reference-link" @click.prevent="navigateTo(row.id)">
+            <NuxtLink :to="`/collections/${props.collectionId}/dataobjects/${row.id}`" class="reference-link">
               {{ row.name }}
-            </a>
+            </NuxtLink>
           </td>
           <td>
             <v-chip v-if="row.status" :color="statusColor(row.status)" size="x-small" variant="flat">
@@ -184,7 +184,7 @@ const props = defineProps<{
 const router = useRouter();
 const collectionAppId = computed(() => props.collectionAppId ?? null);
 
-const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED"] as const;
+const STATUSES = ["DRAFT", "IN_REVIEW", "READY", "PUBLISHED", "ARCHIVED", "FAILED", "NCR_OPEN", "REJECTED"] as const;
 type Status = (typeof STATUSES)[number];
 
 const searchInput = ref("");
@@ -308,7 +308,16 @@ function navigateTo(dataObjectId: number) {
 }
 
 function statusColor(status: string): string {
-  return ({ DRAFT: "grey", IN_REVIEW: "warning", READY: "info", PUBLISHED: "success", ARCHIVED: "default" } as Record<string, string>)[status] ?? "grey";
+  return ({
+    DRAFT: "grey",
+    IN_REVIEW: "warning",
+    READY: "info",
+    PUBLISHED: "success",
+    ARCHIVED: "default",
+    FAILED: "red",
+    NCR_OPEN: "orange",
+    REJECTED: "deep-orange",
+  } as Record<string, string>)[status] ?? "grey";
 }
 
 function formatRelative(d: Date): string {

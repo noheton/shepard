@@ -497,4 +497,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Backfilled hash for TS-AUDIT-003/005 (`5bcebdd67`); added M4I-b entry (`5c851329b`). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added UX-ERR-STATE + UX-PAGE-SHELL entry (NotFoundPanel + PageShell + 6 pages). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added UX-DOPANEL-TOTAL-COUNT entry (Content-Range header + Showing X-Y of Z + page jump). | Claude Sonnet 4.6 |
+| 2026-05-26 | COMP-NCR-STATUS — extended status vocabulary (FAILED/NCR_OPEN/REJECTED): validation, OpenAPI enumerations, MCP descriptions, frontend chips + 2 unit tests. ~0.004 kWh / ~1.7 gCO₂e. | Claude Sonnet 4.6 |
 

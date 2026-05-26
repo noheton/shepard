@@ -149,6 +149,29 @@ class ImportValidationServiceTest {
     }
   }
 
+  // ─── COMP-NCR-STATUS: new non-conformance statuses ────────────────────────
+
+  @Test
+  void validatesNewNcrStatuses() {
+    for (String status : List.of("FAILED", "NCR_OPEN", "REJECTED")) {
+      setUp(); // reset mocks between iterations
+      ImportPlan plan = service.validate(singleDoManifest("do-1", "A", status), ALICE);
+      assertEquals("VALID", plan.getStatus(),
+        "Expected VALID for EN 9100 NCR status=" + status);
+      assertTrue(service.extractErrors(plan).isEmpty(),
+        "Expected no errors for EN 9100 NCR status=" + status);
+    }
+  }
+
+  @Test
+  void rejectsUnknownStatus() {
+    ImportPlan plan = service.validate(singleDoManifest("do-1", "A", "LIMBO"), ALICE);
+    assertEquals("INVALIDATED", plan.getStatus());
+    List<String> errors = service.extractErrors(plan);
+    assertTrue(errors.stream().anyMatch(e -> e.contains("Invalid status") && e.contains("LIMBO")),
+      "Expected error mentioning the unknown status value");
+  }
+
   // ─── Duplicate localRef ───────────────────────────────────────────────────
 
   @Test

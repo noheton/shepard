@@ -93,7 +93,7 @@ public class DataObjectBatchV2Rest {
       "`name` (non-blank string).\n\n" +
       "**Optional fields per item:** `description`, `parentAppId` (UUID v7 of an existing " +
       "DataObject to use as the hierarchical parent), `attributes` (string→string map), " +
-      "`status` (free-form string; suggested: DRAFT / IN_REVIEW / READY / PUBLISHED / ARCHIVED).\n\n" +
+      "`status` (free-form string; suggested: DRAFT / IN_REVIEW / READY / PUBLISHED / ARCHIVED / FAILED / NCR_OPEN / REJECTED).\n\n" +
       "**HTTP 400** is returned before any processing if the array is empty or exceeds 500 items.\n\n" +
       "**HTTP 207** is always returned for valid-sized batches, even when all items fail " +
       "(the `failed` counter reflects item-level failures; a genuine server error returns 500).\n\n" +
