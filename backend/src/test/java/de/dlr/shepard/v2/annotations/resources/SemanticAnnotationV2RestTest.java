@@ -12,6 +12,8 @@ import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.entities.SemanticConfig;
+import de.dlr.shepard.context.semantic.services.OntologyConfigService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
@@ -48,6 +50,9 @@ class SemanticAnnotationV2RestTest {
   EntityIdResolver entityIdResolver;
 
   @Mock
+  OntologyConfigService ontologyConfigService;
+
+  @Mock
   SecurityContext sc;
 
   @Mock
@@ -62,15 +67,22 @@ class SemanticAnnotationV2RestTest {
     resource.annotationDAO = annotationDAO;
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
+    resource.ontologyConfigService = ontologyConfigService;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
 
-    // Default: caller has Read+Write on the DataObject subject
+    // Default: caller has Read+Write+Manage on the DataObject subject
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(true);
+
+    // Default: policy singleton returns null (= 'author-or-manager' default)
+    SemanticConfig defaultConfig = new SemanticConfig();
+    when(ontologyConfigService.loadSingleton()).thenReturn(defaultConfig);
   }
 
   // ─── list ────────────────────────────────────────────────────────────────
@@ -302,7 +314,9 @@ class SemanticAnnotationV2RestTest {
 
   @Test
   void delete_returns204AndDeletes() {
+    // Caller is the author → permitted under default 'author-or-manager' policy.
     var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "v");
+    ann.setAgentUsername(CALLER);
     ann.setId(99L);
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
 
@@ -320,10 +334,12 @@ class SemanticAnnotationV2RestTest {
 
   @Test
   void delete_returns403WhenNoWritePermission_nonAuthor() {
+    // Caller is neither the author nor a manager → 403 under default policy.
     var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "v");
+    ann.setAgentUsername("other-user");  // not CALLER
     ann.setId(99L);
     when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
-    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Manage), eq(CALLER)))
       .thenReturn(false);
 
     assertThat(resource.delete(ANN_APP_ID, sc).getStatus()).isEqualTo(403);
@@ -334,6 +350,55 @@ class SemanticAnnotationV2RestTest {
   void delete_returns401WhenUnauthenticated() {
     when(sc.getUserPrincipal()).thenReturn(null);
     assertThat(resource.delete(ANN_APP_ID, sc).getStatus()).isEqualTo(401);
+  }
+
+  // ─── SEMA-V6-013: annotationDeletePolicy ─────────────────────────────────
+
+  @Test
+  void deleteAnnotation_byAuthor_allowedUnderDefaultPolicy() {
+    // Default policy (null = 'author-or-manager'): author can delete.
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "v");
+    ann.setAgentUsername(CALLER);
+    ann.setId(55L);
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+    // configService already returns default (null policy) from setUp
+
+    Response r = resource.delete(ANN_APP_ID, sc);
+    assertThat(r.getStatus()).isEqualTo(204);
+    verify(annotationDAO).deleteByNeo4jId(55L);
+  }
+
+  @Test
+  void deleteAnnotation_byNonAuthorNonManager_blockedUnderDefaultPolicy() {
+    // Default policy: non-author + non-manager → 403.
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "v");
+    ann.setAgentUsername("other-user");
+    ann.setId(56L);
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+    when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Manage), eq(CALLER)))
+      .thenReturn(false);
+
+    Response r = resource.delete(ANN_APP_ID, sc);
+    assertThat(r.getStatus()).isEqualTo(403);
+    verify(annotationDAO, never()).deleteByNeo4jId(anyLong());
+  }
+
+  @Test
+  void deleteAnnotation_withAuthorOnlyPolicy_blocksManager() {
+    // 'author-only' policy: manager who is not the author is blocked.
+    SemanticConfig cfg = new SemanticConfig();
+    cfg.setAnnotationDeletePolicy("author-only");
+    when(ontologyConfigService.loadSingleton()).thenReturn(cfg);
+
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "v");
+    ann.setAgentUsername("original-author");  // CALLER is not the author
+    ann.setId(57L);
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+    // Manage=true is already mocked in setUp (CALLER is a manager)
+
+    Response r = resource.delete(ANN_APP_ID, sc);
+    assertThat(r.getStatus()).isEqualTo(403);
+    verify(annotationDAO, never()).deleteByNeo4jId(anyLong());
   }
 
   // ─── turtle export ────────────────────────────────────────────────────────

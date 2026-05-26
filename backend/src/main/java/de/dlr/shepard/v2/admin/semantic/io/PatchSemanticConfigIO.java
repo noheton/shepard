@@ -35,4 +35,13 @@ public class PatchSemanticConfigIO {
 
   @Schema(description = "AI model identifier. Null = leave unchanged; empty string = clear.", nullable = true)
   private String suggestionModelId;
+
+  // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
+
+  @Schema(
+    description = "SEMA-V6-013 — annotation delete policy: 'author-or-manager', 'author-only', " +
+      "or 'manager-only'. Null = leave unchanged; empty string = clear (revert to default).",
+    nullable = true
+  )
+  private String annotationDeletePolicy;
 }

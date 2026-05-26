@@ -135,6 +135,16 @@ public class SemanticAnnotation implements HasId, HasAppId, Named {
   @Property("confidence")
   private Double confidence;
 
+  /**
+   * SEMA-V6-013 — username of the principal who created this annotation.
+   * Set from the authenticated caller at create time. Null on annotations
+   * created before this field was introduced; null means "no recorded author"
+   * — the author-only policy falls back to denying unless the annotation was
+   * created after this field landed. Never overwritten after creation.
+   */
+  @Property("agentUsername")
+  private String agentUsername;
+
   @ToString.Exclude
   @Relationship(type = Constants.PROPERTY_REPOSITORY)
   private SemanticRepository propertyRepository;

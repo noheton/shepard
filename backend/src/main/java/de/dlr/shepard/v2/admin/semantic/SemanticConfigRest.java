@@ -51,6 +51,11 @@ public class SemanticConfigRest {
 
   static final String PROBLEM_TYPE_AUTH = "/problems/auth.denied";
   static final String PROBLEM_TYPE_BAD_MODE = "/problems/semantic.config.bad-annotation-mode";
+  static final String PROBLEM_TYPE_BAD_DELETE_POLICY = "/problems/semantic.config.bad-annotation-delete-policy";
+
+  static final java.util.Set<String> VALID_DELETE_POLICIES = java.util.Set.of(
+    "author-or-manager", "author-only", "manager-only"
+  );
 
   @Inject
   OntologyConfigService configService;
@@ -147,6 +152,20 @@ public class SemanticConfigRest {
       }
     }
 
+    // Validate annotationDeletePolicy before loading singleton.
+    if (patch.getAnnotationDeletePolicy() != null && !patch.getAnnotationDeletePolicy().isBlank()) {
+      String policy = patch.getAnnotationDeletePolicy().trim().toLowerCase();
+      if (!VALID_DELETE_POLICIES.contains(policy)) {
+        return problem(
+          PROBLEM_TYPE_BAD_DELETE_POLICY,
+          "Invalid annotationDeletePolicy",
+          Status.BAD_REQUEST,
+          "annotationDeletePolicy must be one of 'author-or-manager', 'author-only', 'manager-only'; got: "
+            + patch.getAnnotationDeletePolicy()
+        );
+      }
+    }
+
     SemanticConfig cfg = configService.loadSingleton();
     String actor = callerName(securityContext);
 
@@ -173,6 +192,12 @@ public class SemanticConfigRest {
         patch.getSuggestionModelId().isBlank() ? null : patch.getSuggestionModelId()
       );
     }
+    if (patch.getAnnotationDeletePolicy() != null) {
+      // Empty string = clear (revert to default); otherwise normalise to lower-case.
+      cfg.setAnnotationDeletePolicy(
+        patch.getAnnotationDeletePolicy().isBlank() ? null : patch.getAnnotationDeletePolicy().trim().toLowerCase()
+      );
+    }
 
     long now = System.currentTimeMillis();
     cfg.setUpdatedAt(now);
@@ -180,8 +205,9 @@ public class SemanticConfigRest {
 
     SemanticConfig saved = configService.patchConfig(cfg);
     Log.infof(
-      "SemanticConfigRest: config updated by '%s' (preseedEnabled=%b, annotationMode=%s, suggestionEnabled=%b)",
-      actor, saved.isPreseedEnabled(), saved.getAnnotationMode(), saved.isSuggestionEnabled()
+      "SemanticConfigRest: config updated by '%s' (preseedEnabled=%b, annotationMode=%s, suggestionEnabled=%b, annotationDeletePolicy=%s)",
+      actor, saved.isPreseedEnabled(), saved.getAnnotationMode(), saved.isSuggestionEnabled(),
+      saved.getAnnotationDeletePolicy()
     );
     return Response.ok(SemanticConfigIO.from(saved)).build();
   }

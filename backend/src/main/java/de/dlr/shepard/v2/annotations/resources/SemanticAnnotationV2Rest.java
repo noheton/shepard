@@ -6,6 +6,7 @@ import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
+import de.dlr.shepard.context.semantic.services.OntologyConfigService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
@@ -84,6 +85,9 @@ public class SemanticAnnotationV2Rest {
 
   @Inject
   EntityIdResolver entityIdResolver;
+
+  @Inject
+  OntologyConfigService ontologyConfigService;
 
   // ─── LIST ──────────────────────────────────────────────────────────────────
 
@@ -334,6 +338,7 @@ public class SemanticAnnotationV2Rest {
     annotation.setUnitIRI(body.getUnitIri());
     annotation.setSourceMode(body.getSourceMode() != null ? body.getSourceMode() : "human");
     annotation.setSourceActivityAppId(body.getSourceActivityAppId());
+    annotation.setAgentUsername(caller);  // SEMA-V6-013: record the author username at creation
     annotation.setValidFromMillis(body.getValidFromMillis());
     annotation.setValidUntilMillis(body.getValidUntilMillis());
     annotation.setConfidence(body.getConfidence() != null ? body.getConfidence() : 1.0);
@@ -421,14 +426,17 @@ public class SemanticAnnotationV2Rest {
     summary = "Delete an annotation.",
     description =
       "Deletes the `:SemanticAnnotation` node identified by `appId`. " +
-      "Auth: caller must be able to Write the subject entity (annotation author or " +
-      "collection Write permission). Returns `204 No Content` on success.\n\n" +
+      "Auth is governed by the operator-configured `annotationDeletePolicy` in `:SemanticConfig`:\n\n" +
+      "- `'author-or-manager'` (default) — the annotation author OR any collection manager may delete.\n" +
+      "- `'author-only'` — only the annotation author may delete.\n" +
+      "- `'manager-only'` — only collection managers may delete.\n\n" +
+      "Returns `204 No Content` on success.\n\n" +
       "Note: this is a hard delete. For soft-delete (set `validUntilMillis`), use " +
       "`PUT /v2/annotations/{appId}` with `{\"validUntilMillis\": <now>}`."
   )
   @APIResponse(responseCode = "204", description = "Annotation deleted.")
   @APIResponse(responseCode = "401", description = "Authentication required.")
-  @APIResponse(responseCode = "403", description = "Caller cannot Write the subject entity or is not the annotation author.")
+  @APIResponse(responseCode = "403", description = "Caller is not permitted by the active annotationDeletePolicy.")
   @APIResponse(responseCode = "404", description = "No annotation with that appId.")
   public Response delete(
     @PathParam("appId") String appId,
@@ -440,16 +448,43 @@ public class SemanticAnnotationV2Rest {
     SemanticAnnotation annotation = annotationDAO.findByAnnotationAppId(appId);
     if (annotation == null) return notFound("annotation", appId);
 
-    // Check: caller must have Write access to the subject entity
-    Response gate = checkWriteAccessForSubject(annotation.getSubjectAppId(), annotation.getSubjectKind(), caller);
-    if (gate != null) return gate;
+    // Legacy row guard (no subject recorded): deny write.
+    if (blank(annotation.getSubjectAppId())) {
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Cannot delete annotation", Response.Status.FORBIDDEN,
+        "This annotation has no recorded subject (legacy row); use the v1 surface to delete it.");
+    }
+
+    // SEMA-V6-013: load active delete policy (null → default 'author-or-manager').
+    String policy = ontologyConfigService.loadSingleton().getAnnotationDeletePolicy();
+    if (policy == null || policy.isBlank()) {
+      policy = "author-or-manager";
+    }
+
+    boolean isAuthor = caller.equals(annotation.getAgentUsername());
+    // isManager: null return from checkAccessForSubject means access granted.
+    boolean isManager = checkAccessForSubject(
+      annotation.getSubjectAppId(), annotation.getSubjectKind(), AccessType.Manage, caller
+    ) == null;
+
+    boolean allowed;
+    switch (policy) {
+      case "author-only"     -> allowed = isAuthor;
+      case "manager-only"    -> allowed = isManager;
+      default                -> allowed = isAuthor || isManager;  // author-or-manager
+    }
+
+    if (!allowed) {
+      return problem(PROBLEM_TYPE_FORBIDDEN, "Delete not permitted", Response.Status.FORBIDDEN,
+        "Caller '" + caller + "' is not permitted to delete this annotation " +
+        "(policy='" + policy + "', isAuthor=" + isAuthor + ", isManager=" + isManager + ").");
+    }
 
     if (annotation.getId() == null) {
       Log.warnf("SemanticAnnotationV2Rest: annotation %s has null OGM id — cannot delete", appId);
       return notFound("annotation", appId);
     }
     annotationDAO.deleteByNeo4jId(annotation.getId());
-    Log.infof("SemanticAnnotationV2Rest: deleted annotation %s by %s", appId, caller);
+    Log.infof("SemanticAnnotationV2Rest: deleted annotation %s by %s (policy=%s)", appId, caller, policy);
     return Response.noContent().build();
   }
 
