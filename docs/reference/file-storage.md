@@ -329,6 +329,83 @@ Re-running migration is safe — files already on the target have
 Only files still at the source (unexpected failures, transient
 network errors) are touched on a re-run.
 
+## Per-file rollback (FS1e3)
+
+When a single file is found to have migrated incorrectly (a
+checksum mismatch noticed mid-run, an operator-side concern about
+a specific blob), the per-file rollback endpoint reverts that one
+row without disrupting the rest of the migration.
+
+```bash
+# Roll back one file by its :ShepardFile.appId (UUID v7):
+curl -X POST \
+  -H "Authorization: Bearer $SHEPARD_API_KEY" \
+  https://shepard.example/v2/admin/files/migrate/rollback/<appId>
+
+# Response:
+# {"appId":"...","status":"ROLLED_BACK"}
+```
+
+The endpoint requires the `instance-admin` role.
+
+### What rollback does
+
+1. Reads the file's bytes from the **current** adapter (the one
+   `providerId` points at after migration).
+2. Writes those bytes back to the **previous** adapter at the
+   preserved `previousLocator` — using the original oid as the
+   `assignedObjectKey`, which means the locator round-trips
+   identically on every adapter that honours `assignedObjectKey`
+   (S3, R2, B2, Wasabi, Garage). See the GridFS caveat below.
+3. Restores `providerId` to `previousProviderId` and clears all
+   four FS1e3 bookkeeping fields (`previousProviderId`,
+   `previousLocator`, `migratedAt`, `migrationHmac`). The row
+   becomes a normal never-migrated row again.
+
+The current-adapter bytes are **not deleted** by rollback. They
+become orphaned and will be catalogued by a future
+`sweep-orphans` verb (runbook §17.E). This is intentional — the
+migration-runbook §9.1 documents the trade-off explicitly: the
+operator can re-attempt the migration without re-uploading from
+the original source.
+
+### Rollback refusals
+
+- **404 Not Found** — no `:ShepardFile` with the given `appId`.
+- **409 Conflict** — the row exists but `previousProviderId` is
+  null. The file was either never migrated, or has already been
+  rolled back. Nothing to revert.
+- **500 Internal Server Error** — a storage-adapter operation
+  failed (network, credentials). Re-attempt after fixing the
+  upstream issue; rollback is idempotent on `:ShepardFile` state.
+
+### Rollback to GridFS (caveat)
+
+`GridFsFileStorage` does **not** currently honour
+`assignedObjectKey` — its `put()` mints a fresh ObjectId.
+Rolling back from S3 to GridFS therefore lands the bytes at a
+new GridFS oid that does not match `previousLocator`. The Neo4j
+row's `oid` and `providerId` end up consistent (both point at
+gridfs and the new key) but the round-trip is not byte-locator
+identical.
+
+For the nuclide.systems migration (Q6), this caveat does not
+apply — the planned flow is gridfs → S3 (Garage); rolling back
+proceeds S3 → S3 in tested rollback cases, and the gridfs side
+is treated as the safe-fallback restore-from-`mongodump`
+path. A future PR will extend `GridFsFileStorage.put()` to
+honour `assignedObjectKey` so the symmetry is restored.
+
+### Limitations of FS1e3
+
+This phase introduces rollback fields and the per-file rollback
+verb. It does **not** yet split today's fused Phase 1+2+4
+migration into separate verify/commit/rollback phases. The
+follow-up tickets — FS1e3c (verify), FS1e3d (commit), FS1e3e
+(bulk rollback) — land those phases as the migration-runbook
+(aidocs/data/46-gridfs-to-s3-migration-runbook.md §17.B) lays
+them out.
+
 ## Switching the active adapter
 
 `shepard.storage.provider` is **deploy-time only** per the

@@ -83,9 +83,68 @@ public class FileMigrationService {
     "f.filename AS filename, f.fileSize AS fileSize " +
     "ORDER BY f.oid";
 
-  /** Cypher to stamp the new provider after a successful file move. */
+  /**
+   * Cypher to stamp the new provider after a successful file move.
+   *
+   * <p>FS1e3 — single SET statement records the pre-migration state
+   * (previousProviderId, previousLocator) AND the swap (providerId)
+   * AND the audit timestamp (migratedAt) AND the future-proof
+   * integrity hash slot (migrationHmac). Cypher evaluates the SET
+   * left-to-right, so {@code f.previousProviderId = f.providerId} is
+   * captured BEFORE {@code f.providerId = $target} overwrites it.
+   * That preserves the "stamp before swap" invariant inside a single
+   * transaction — no race where a reader sees the new providerId
+   * without the previousProviderId trail.
+   *
+   * <p>The {@code migrationHmac} parameter is {@code null} today (no
+   * integrity hash is computed in this PR per the FS1e3 task spec's
+   * "no behaviour split yet — just record-keeping" rule). The field
+   * is future-proof for FS1e6's verify+report endpoint.
+   */
   static final String CYPHER_UPDATE =
-    "MATCH (f:ShepardFile {oid: $oid}) SET f.providerId = $target";
+    "MATCH (f:ShepardFile {oid: $oid}) " +
+    "SET f.previousProviderId = f.providerId, " +
+    "    f.previousLocator    = $sourceLocator, " +
+    "    f.migratedAt         = datetime(), " +
+    "    f.migrationHmac      = $hmac, " +
+    "    f.providerId         = $target";
+
+  /**
+   * Cypher to roll back a single file's storage-adapter pointer to
+   * its pre-migration state. Used by {@link #rollbackOne(String)}
+   * AFTER the bytes have been written back to the previous adapter.
+   *
+   * <p>FS1e3 — clears all four FS1e3 bookkeeping fields (matches
+   * runbook §9.1's {@code REMOVE} semantic — the rolled-back row
+   * becomes a normal never-migrated row again). The match predicate
+   * {@code f.previousProviderId IS NOT NULL} keeps the operation
+   * idempotent + refuses to roll back a row that has nothing to
+   * revert.
+   */
+  static final String CYPHER_ROLLBACK =
+    "MATCH (f:ShepardFile {appId: $appId}) " +
+    "WHERE f.previousProviderId IS NOT NULL " +
+    "SET f.providerId = f.previousProviderId " +
+    "REMOVE f.previousProviderId, f.previousLocator, " +
+    "       f.migratedAt, f.migrationHmac " +
+    "RETURN f.oid AS oid";
+
+  /**
+   * Cypher to fetch the rollback context for a single file (oid +
+   * containerMongoId + previousProviderId + previousLocator). Used by
+   * {@link #rollbackOne(String)} to read the previousX fields BEFORE
+   * mutating any state, so a refusal (no previousProviderId set) does
+   * not need any cleanup.
+   */
+  static final String CYPHER_FETCH_ROLLBACK_CTX =
+    "MATCH (fc:FileContainer)-[:file_in_container]->(f:ShepardFile {appId: $appId}) " +
+    "RETURN f.oid              AS oid, " +
+    "       fc.mongoId         AS containerMongoId, " +
+    "       f.filename         AS filename, " +
+    "       f.fileSize         AS fileSize, " +
+    "       f.providerId       AS currentProviderId, " +
+    "       f.previousProviderId AS previousProviderId, " +
+    "       f.previousLocator    AS previousLocator";
 
   @Inject
   FileStorageRegistry registry;
@@ -246,7 +305,14 @@ public class FileMigrationService {
     }
   }
 
-  private void migrateOne(
+  /**
+   * Migrate a single file's bytes from {@code sourceId} to
+   * {@code targetId}, then stamp the four FS1e3 bookkeeping fields
+   * on {@code :ShepardFile} and flip {@code providerId}. Package-
+   * private so the FS1e3 round-trip test can drive it without
+   * standing up a full Quarkus boot.
+   */
+  void migrateOne(
     Session neo4jSession,
     String sourceId,
     String targetId,
@@ -279,17 +345,177 @@ public class FileMigrationService {
       try { resp.stream().close(); } catch (IOException ignore) {}
     }
 
-    // Update Neo4j — flip providerId before deleting from source so a
-    // partial-failure re-run doesn't re-copy already-moved files.
+    // FS1e3 — Update Neo4j with a single stamp-and-swap SET. Cypher
+    // evaluates SET left-to-right, so previousProviderId captures the
+    // pre-swap providerId BEFORE the same statement overwrites it
+    // with $target. The migrationHmac slot stays null today — the
+    // FS1e6 verify+report endpoint will populate it on a future PR.
+    // Done before deleting from source so a partial-failure re-run
+    // doesn't re-copy already-moved files.
     Map<String, Object> params = new HashMap<>();
     params.put("oid", oid);
     params.put("target", targetId);
+    params.put("sourceLocator", srcLocator.locator());
+    params.put("hmac", null);
     neo4jSession.query(CYPHER_UPDATE, params);
 
-    // Delete from source (idempotent — missing key is fine)
+    // Delete from source (idempotent — missing key is fine).
+    // FS1e3 task spec: "no behaviour split yet — just record-keeping",
+    // so the delete stays. Per-file rollback (rollbackOne) re-puts
+    // bytes from the current adapter back to the previous adapter
+    // using previousLocator; it does not depend on the source still
+    // holding the original copy.
     source.delete(srcLocator);
 
     Log.debugf("FileMigrationService: moved oid=%s (%s → %s)", oid, sourceId, targetId);
+  }
+
+  /**
+   * FS1e3 — operator-facing per-file rollback. Reads the bytes from
+   * the file's <em>current</em> storage adapter ({@code providerId}),
+   * writes them back to the <em>previous</em> adapter
+   * ({@code previousProviderId}) at the preserved
+   * {@code previousLocator}, then clears the four FS1e3 bookkeeping
+   * fields and restores {@code providerId} to its pre-migration
+   * value.
+   *
+   * <p>Refusal semantics:
+   *
+   * <ul>
+   *   <li>If no {@code :ShepardFile {appId: $appId}} exists, throws
+   *       {@link IllegalArgumentException} ("unknown appId").</li>
+   *   <li>If the row exists but {@code previousProviderId} is null
+   *       (never migrated, or already rolled back), throws
+   *       {@link IllegalStateException} ("nothing to roll back").</li>
+   *   <li>If either adapter is missing or disabled, throws
+   *       {@link IllegalArgumentException} per {@link #findAdapter}.</li>
+   * </ul>
+   *
+   * <p>The current-adapter bytes are NOT deleted on rollback — they
+   * become orphaned. A future {@code sweep-orphans} verb (runbook
+   * §17.E) catalogues + removes them. The runbook §9.1 documents
+   * this trade-off explicitly.
+   *
+   * <p>Per-file rollback is intended for mid-migration error
+   * recovery: a single file failed verification or had a downstream
+   * consistency issue, and the operator wants to revert that one row
+   * without disrupting the wider migration. For a wider abort, see
+   * the planned {@code shepard-admin files migrate rollback} CLI
+   * verb (FS1e3+ follow-up).
+   *
+   * @param appId the {@code :ShepardFile.appId} — the v2 native
+   *              identifier (UUID v7). Not the legacy {@code oid};
+   *              the v2 admin surface keys by {@code appId} to
+   *              avoid leaking the GridFS-era identifier shape.
+   * @param session the Neo4j OGM session to drive the Cypher
+   *                statements through; overload {@link #rollbackOne(String)}
+   *                opens one from {@link NeoConnector#getInstance()}.
+   * @throws IllegalArgumentException if the appId is unknown
+   * @throws IllegalStateException if the row has nothing to roll back
+   * @throws StorageException if any adapter operation fails
+   */
+  public void rollbackOne(String appId, Session session) throws StorageException {
+    if (appId == null || appId.isBlank()) {
+      throw new IllegalArgumentException("appId must not be blank");
+    }
+    if (session == null) {
+      throw new IllegalStateException("Neo4j session unavailable for rollback");
+    }
+
+    // Read rollback context BEFORE any mutation so refusal is cheap.
+    var ctxResult = session.query(CYPHER_FETCH_ROLLBACK_CTX, Map.of("appId", appId));
+    Map<String, Object> ctx = null;
+    for (Map<String, Object> row : ctxResult) {
+      ctx = row;
+      break;
+    }
+    if (ctx == null) {
+      throw new IllegalArgumentException(
+        "Cannot roll back: no :ShepardFile with appId=" + appId + " found");
+    }
+
+    String oid = (String) ctx.get("oid");
+    String containerMongoId = (String) ctx.get("containerMongoId");
+    String filename = (String) ctx.get("filename");
+    Long fileSize = ctx.get("fileSize") instanceof Number n ? n.longValue() : null;
+    String currentProviderId = (String) ctx.get("currentProviderId");
+    String previousProviderId = (String) ctx.get("previousProviderId");
+    String previousLocator = (String) ctx.get("previousLocator");
+
+    if (previousProviderId == null || previousProviderId.isBlank()) {
+      throw new IllegalStateException(
+        "Cannot roll back :ShepardFile appId=" + appId +
+        ": previousProviderId is null (never migrated, or already rolled back)");
+    }
+    if (previousLocator == null || previousLocator.isBlank()) {
+      throw new IllegalStateException(
+        "Cannot roll back :ShepardFile appId=" + appId +
+        ": previousLocator is null (corrupt state — please file an issue)");
+    }
+
+    FileStorage current = findAdapter(currentProviderId);
+    FileStorage previous = findAdapter(previousProviderId);
+
+    // 1. Read bytes from the current (post-migration) adapter
+    StorageLocator currentLocator = buildLocator(currentProviderId, containerMongoId, oid);
+    StorageGetResponse resp = current.get(currentLocator);
+    String effectiveFilename = filename != null ? filename : oid;
+    Long sizeToStore = resp.sizeBytes() != null ? resp.sizeBytes() : fileSize;
+
+    // 2. Write back to the previous adapter using the preserved
+    //    oid as assignedObjectKey — adapters that honor it (e.g.
+    //    S3FileStorage) recreate the bytes at exactly the original
+    //    locator. Adapters that don't (e.g. GridFS minting a fresh
+    //    oid) introduce a known caveat documented in
+    //    docs/reference/file-storage.md §Rollback to GridFS.
+    StoragePutRequest putReq = new StoragePutRequest(
+      containerMongoId,
+      effectiveFilename,
+      resp.contentType(),
+      resp.stream(),
+      sizeToStore,
+      oid
+    );
+    try {
+      previous.put(putReq);
+    } finally {
+      try { resp.stream().close(); } catch (IOException ignore) {}
+    }
+
+    // 3. Restore providerId + clear the FS1e3 bookkeeping fields.
+    //    Atomic per the rollback Cypher (single MATCH + SET +
+    //    REMOVE). The match predicate {previousProviderId IS NOT
+    //    NULL} keeps this idempotent on a re-run.
+    session.query(CYPHER_ROLLBACK, Map.of("appId", appId));
+
+    Log.infof(
+      "FileMigrationService: rolled back oid=%s appId=%s (%s → %s); " +
+      "previous-adapter bytes orphan in '%s' until sweep-orphans runs",
+      oid, appId, currentProviderId, previousProviderId, currentProviderId);
+  }
+
+  /**
+   * Convenience overload — opens a Neo4j OGM session from
+   * {@link NeoConnector#getInstance()} and delegates to
+   * {@link #rollbackOne(String, Session)}. This is the entry point
+   * called from {@code FileMigrationRest}; the two-arg form is
+   * exposed for the FS1e3 round-trip unit test.
+   *
+   * @param appId the {@code :ShepardFile.appId}
+   * @throws IllegalArgumentException / IllegalStateException per the
+   *         two-arg overload
+   * @throws StorageException on adapter failure
+   */
+  public void rollbackOne(String appId) throws StorageException {
+    Session session = NeoConnector.getInstance().getNeo4jSession();
+    if (session == null) {
+      throw new IllegalStateException("Neo4j session unavailable for rollback");
+    }
+    try {
+      rollbackOne(appId, session);
+    } finally {
+      try { session.clear(); } catch (Exception ignore) {}
+    }
   }
 
   private long countPending(Session session, String sourceId) {
