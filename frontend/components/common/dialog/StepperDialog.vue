@@ -55,7 +55,6 @@ const { mobile } = useDisplay();
                 color="treeview"
                 @click="currentStep = 1"
               >
-                <!-- TODO: Better disabled color -->
                 Back
               </v-btn>
               <v-spacer />
