@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| DOC-STAGE2-pending | 2026-05-26 | code | 30k | 10k | 4.55 | 0 | 0 | 4.55 | 1.65 | LOW | fix(ci): DOC-STAGE2 — pre-commit hook + CI step for doc-stage index drift |
 | PROV1j-pending | 2026-05-26 | code | 90k | 30k | 13.55 | 20 | 5 | 38.55 | 14.01 | MEDIUM | feat(prov): PROV1j — X-AI-Agent header + _provenanceMode on Activity |
 | FAIR7-pending | 2026-05-26 | code | 60k | 20k | 9.00 | 20 | 5 | 34.00 | 12.34 | MEDIUM | feat(fair): FAIR7 — DMP snippet generator GET /v2/collections/{appId}/dmp-snippet |
 | TS-SEM-01-pending | 2026-05-26 | code | 100k | 35k | 18.50 | 20 | 5 | 43.50 | 15.80 | MEDIUM | feat(ts): TS-SEMANTIC-01 — dual-write channel_metadata to Neo4j SemanticAnnotation nodes |

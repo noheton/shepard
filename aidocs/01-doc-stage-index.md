@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 39 |
-| `concept` | 18 |
+| `concept` | 19 |
 | `idea` | 9 |
 | `feature-defined` | 92 |
 | `audited-by-personas` | 71 |
@@ -41,15 +41,7 @@ section and the `upgrade-overlay` section.
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
 | **total docs** | **350** |
-| **UNTAGGED** | **1** |
-
-## UNTAGGED (needs `stage:` front-matter)
-
-These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-stages.md`.
-
-| doc | title | last-touched |
-|---|---|---|
-| [`aidocs/data/46-gridfs-to-s3-migration-runbook.md`](data/46-gridfs-to-s3-migration-runbook.md) | GridFS → S3 (Garage) Migration — Operator Runbook | 2026-05-22 |
+| **UNTAGGED** | **0** |
 
 ## fragment (39)
 
@@ -95,13 +87,14 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (18)
+## concept (19)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/v5-metadata-enrichment-2026-05-23.md`](agent-findings/v5-metadata-enrichment-2026-05-23.md) | V5-METADATA-SURVEY — Metadata enrichment opportunities from v5 OpenAPI surface | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/45-gridfs-to-s3-evaluation.md`](data/45-gridfs-to-s3-evaluation.md) | GridFS → S3 — Evaluation | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/46-gridfs-to-s3-migration-runbook.md`](data/46-gridfs-to-s3-migration-runbook.md) | GridFS → S3 (Garage) Migration — Operator Runbook | 2026-05-26 | 2026-05-22 |
 | [`aidocs/data/50-experiment-orchestration.md`](data/50-experiment-orchestration.md) | Experiment Orchestration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-26 |

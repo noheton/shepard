@@ -1,0 +1,11 @@
+#!/bin/sh
+# Pre-commit hook: verify the aidocs doc-stage index is current and no
+# aidocs/**/*.md file is missing a stage: field.
+#
+# Install once via:
+#   bash scripts/install-hooks.sh
+#
+# Or manually:
+#   cp .git-hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+python3 scripts/regenerate-doc-stage-index.py --check

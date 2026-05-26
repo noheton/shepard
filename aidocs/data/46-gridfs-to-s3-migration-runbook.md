@@ -1,3 +1,8 @@
+---
+stage: concept
+last-stage-change: 2026-05-26
+---
+
 # GridFS → S3 (Garage) Migration — Operator Runbook
 
 **Scope.** Operator-facing runbook for migrating a Shepard install's
