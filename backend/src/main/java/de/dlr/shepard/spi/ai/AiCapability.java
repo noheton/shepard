@@ -26,4 +26,21 @@ public enum AiCapability {
 
   /** Structured output / JSON mode (e.g. function-calling models). */
   STRUCTURED,
+
+  /**
+   * Speech / audio-to-text — meeting recordings, lab-journal voice
+   * notes, video soundtracks. The slot can map to OpenAI Whisper,
+   * locally-hosted faster-whisper, or any compliant provider.
+   */
+  TRANSCRIPTION,
+
+  /**
+   * Safety / toxicity classification — a lightweight pre-filter for
+   * user-generated content that may flow into prompts. Returns
+   * category scores, not narrative text.
+   *
+   * <p>Optional capability; admins can leave this slot unconfigured
+   * if the institution's compliance posture doesn't require it.
+   */
+  MODERATION,
 }
