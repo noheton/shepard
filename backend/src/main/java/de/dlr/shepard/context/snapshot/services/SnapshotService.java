@@ -1,10 +1,13 @@
 package de.dlr.shepard.context.snapshot.services;
 
+import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.snapshot.daos.SnapshotDAO;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -26,16 +29,43 @@ import java.util.Map;
  * than loading the full OGM graph, so the creation cost is O(entities-in-scope)
  * Cypher rows regardless of the relationship depth.
  *
- * <p>Cross-references: {@code aidocs/41} §3.3 and §4; {@code aidocs/16} V2b.
+ * <p>PROV1i — after the snapshot and its entries are persisted, the service
+ * automatically emits a {@code rdf:type prov:Entity} {@link SemanticAnnotation}
+ * for the snapshot's {@code appId}. This makes every snapshot queryable via
+ * SPARQL as a {@code prov:Entity} without the import script having to do it
+ * manually. The typing is best-effort: a failure logs a WARN but does not
+ * roll back the snapshot (snapshot integrity is more important than the
+ * optional typing decoration).
+ *
+ * <p>Cross-references: {@code aidocs/41} §3.3 and §4; {@code aidocs/16} V2b,
+ * PROV1i.
  */
 @RequestScoped
 public class SnapshotService {
+
+  /** PROV1i — IRI for the {@code rdf:type} predicate. */
+  static final String RDF_TYPE_IRI = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
+
+  /** PROV1i — IRI for {@code prov:Entity}. */
+  static final String PROV_ENTITY_IRI = "http://www.w3.org/ns/prov#Entity";
+
+  /** PROV1i — human-readable label for the {@code rdf:type} predicate (snapshotted). */
+  static final String RDF_TYPE_LABEL = "rdf:type";
+
+  /** PROV1i — human-readable label for {@code prov:Entity} (snapshotted). */
+  static final String PROV_ENTITY_LABEL = "prov:Entity";
+
+  /** PROV1i — source tag identifying this annotation as system-generated. */
+  static final String SOURCE_SYSTEM = "system";
 
   @Inject
   SnapshotDAO snapshotDAO;
 
   @Inject
   CollectionDAO collectionDAO;
+
+  @Inject
+  SemanticAnnotationV2DAO semanticAnnotationV2DAO;
 
   /**
    * Creates a {@link Snapshot} for the Collection identified by
@@ -99,7 +129,56 @@ public class SnapshotService {
       snapshotDAO.createEntry(entry);
     }
 
+    // PROV1i — emit rdf:type prov:Entity for the new snapshot so it is
+    // queryable via SPARQL without the import script having to do it manually.
+    emitProvEntityTyping(snapshot);
+
     return snapshot;
+  }
+
+  /**
+   * PROV1i — creates a {@code rdf:type prov:Entity} {@link SemanticAnnotation}
+   * for the given snapshot. The annotation is best-effort: a failure is logged
+   * as WARN but does NOT prevent the snapshot from being returned to the caller.
+   *
+   * <p>The annotation uses:
+   * <ul>
+   *   <li>{@code subjectAppId} = snapshot's {@code appId}</li>
+   *   <li>{@code subjectKind} = {@code "Snapshot"}</li>
+   *   <li>{@code propertyIRI} = {@code http://www.w3.org/1999/02/22-rdf-syntax-ns#type}</li>
+   *   <li>{@code valueIRI} = {@code http://www.w3.org/ns/prov#Entity}</li>
+   *   <li>{@code source} = {@code "system"}</li>
+   *   <li>{@code sourceMode} = {@code "ai"} (system-generated, not human-authored)</li>
+   * </ul>
+   *
+   * @param snapshot the freshly persisted snapshot; must have a non-null {@code appId}.
+   */
+  void emitProvEntityTyping(Snapshot snapshot) {
+    if (snapshot == null || snapshot.getAppId() == null) {
+      Log.warn("PROV1i: snapshot or its appId is null — skipping prov:Entity typing");
+      return;
+    }
+    try {
+      SemanticAnnotation typing = new SemanticAnnotation();
+      typing.setAppId(AppIdGenerator.next());
+      typing.setSubjectAppId(snapshot.getAppId());
+      typing.setSubjectKind("Snapshot");
+      typing.setPropertyIRI(RDF_TYPE_IRI);
+      typing.setPropertyName(RDF_TYPE_LABEL);
+      typing.setValueIRI(PROV_ENTITY_IRI);
+      typing.setValueName(PROV_ENTITY_LABEL);
+      typing.setSource(SOURCE_SYSTEM);
+      typing.setSourceMode("ai");   // system-generated, not human-authored
+      typing.setConfidence(1.0);
+      semanticAnnotationV2DAO.createOrUpdate(typing);
+      Log.infof("PROV1i: emitted prov:Entity typing for snapshot %s", snapshot.getAppId());
+    } catch (Exception e) {
+      Log.warnf(
+        e,
+        "PROV1i: failed to emit prov:Entity typing for snapshot %s — snapshot persisted; typing skipped",
+        snapshot.getAppId()
+      );
+    }
   }
 
   /**

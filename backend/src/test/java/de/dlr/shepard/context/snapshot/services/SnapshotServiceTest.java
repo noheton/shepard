@@ -11,9 +11,11 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
 import de.dlr.shepard.context.collection.entities.Collection;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.snapshot.daos.SnapshotDAO;
 import de.dlr.shepard.context.snapshot.entities.Snapshot;
 import de.dlr.shepard.context.snapshot.entities.SnapshotEntry;
+import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,9 @@ class SnapshotServiceTest {
   @Mock
   CollectionDAO collectionDAO;
 
+  @Mock
+  SemanticAnnotationV2DAO semanticAnnotationV2DAO;
+
   SnapshotService service;
 
   Collection collection;
@@ -52,6 +57,11 @@ class SnapshotServiceTest {
     service = new SnapshotService();
     service.snapshotDAO = snapshotDAO;
     service.collectionDAO = collectionDAO;
+    service.semanticAnnotationV2DAO = semanticAnnotationV2DAO;
+
+    // PROV1i — best-effort typing must not interfere with existing tests
+    when(semanticAnnotationV2DAO.createOrUpdate(any(SemanticAnnotation.class)))
+      .thenAnswer(inv -> inv.getArgument(0));
 
     collection = new Collection();
     collection.setId(10L);
