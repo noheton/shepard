@@ -1,17 +1,20 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-27 ~00:35 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
-**Active arc:** MFFD showcase — Track A real data ingest pending redeploy; Track B synthetic seed DONE.
-**Status:** Wave 16 complete (all pushed, commit fbdb73724). Backend Maven build in progress (PID 3652168, Quarkus augmentation phase, ~60min elapsed, still running at 100% CPU nice=5). Track A: AFP export running on cube3; framewelding today. Track B: **SEED COMPLETE** — Collection 987758 on nuclide has 16 DOs + 8 TS refs + 5 structured + 5 file refs (commit 4b4554bd7). Awaiting backend redeploy to activate Wave 14/15/16 changes. TPL2b+c+d are ALL DONE on main (7d9884ed7, 643d271dc, 065094e04).
+**Updated:** 2026-05-27 ~01:00 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
+**Active arc:** MFFD showcase — Track A real data ingest pending backend redeploy; Track B synthetic seed DONE.
+**Status:** Wave 16 **FRONTEND LIVE** (smoke 30/30 ✓, commit 4574bba53 TypeScript fix). Backend build in progress (PID 3685510, started ~00:39 UTC, Quarkus augmentation phase). Track A: AFP export running on cube3; framewelding today. Track B: **SEED COMPLETE** — Collection 987758 on nuclide has 16 DOs + 8 TS refs + 5 structured + 5 file refs. Awaiting backend rebuild + redeploy to activate Wave 14/15/16 BACKEND changes.
 
 ---
 
 ## Immediate next action
 
-**Waiting on:** Maven build PID 3652168 to complete → `make image-backend && cd infrastructure && docker compose up -d --force-recreate shepard-backend && make wait-for-health && make smoke`. Then run `make redeploy-frontend` to activate PERF9 channel virtualization.
+**Waiting on:** Backend Maven build PID 3685510 to complete (running in bg via task b4dc2r8zr). Once jar is ready:
+```
+make image-backend && cd infrastructure && docker compose up -d --force-recreate shepard-backend && make wait-for-health && make smoke
+```
 
-**After redeploy:**
-1. Verify Wave 16 live: UX-PROV1 ancestor chain panel on MFFD synthetic Collection 987758, PERF9 TS channel list, PERF5 batch N+1 fix
+**After backend redeploy:**
+1. Verify Wave 16 backend live: UX-PROV1 predecessor-chain endpoint, PERF9 TS channel list, PERF5 batch N+1 fix
 2. Track A: task #145 — fix fileRef parser bug for 8462 MFFD-Dropbox DOs (needs fresh DLR JWT from user-side)
 3. task #146 — v1-compat Phase 1 follow-up (filter scope + DAO session timing + smoke gate)
 4. task #137 — Mutate MFFD-Dropbox collection (Confluence zip → per-page DOs + TOC)
