@@ -19,6 +19,7 @@ import de.dlr.shepard.context.references.dataobject.entities.DataObjectReference
 import de.dlr.shepard.context.semantic.services.AttributeAnnotationDualWriteService;
 import de.dlr.shepard.context.version.services.VersionService;
 import de.dlr.shepard.v2.collectionwatchers.services.CollectionWatcherService;
+import de.dlr.shepard.v2.events.CollectionEventProducer;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -63,6 +64,9 @@ public class DataObjectService {
 
   @Inject
   AttributeAnnotationDualWriteService attributeAnnotationDualWriteService;
+
+  @Inject
+  CollectionEventProducer collectionEventProducer;
 
   /**
    * Creates a DataObject
@@ -119,6 +123,15 @@ public class DataObjectService {
         collection.getName(),
         created.getName(),
         collection.getId()
+      );
+    }
+
+    // P13: emit SSE change-feed event for all subscribers of this Collection.
+    if (collection.getAppId() != null) {
+      collectionEventProducer.dataObjectCreated(
+        collection.getAppId(),
+        created.getAppId(),
+        user.getUsername()
       );
     }
 
@@ -337,6 +350,16 @@ public class DataObjectService {
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
 
+    // P13: emit SSE change-feed event for all subscribers of this Collection.
+    Collection updatedCollection = updated.getCollection();
+    if (updatedCollection != null && updatedCollection.getAppId() != null) {
+      collectionEventProducer.dataObjectUpdated(
+        updatedCollection.getAppId(),
+        updated.getAppId(),
+        user.getUsername()
+      );
+    }
+
     // TPL4: refresh synthetic SemanticAnnotation nodes from updated attributes when toggle is on.
     attributeAnnotationDualWriteService.backfillFromAttributes(updated);
 
@@ -356,7 +379,7 @@ public class DataObjectService {
    *                              on the collection
    */
   public void deleteDataObject(long collectionShepardId, long dataObjectShepardId) {
-    getDataObject(collectionShepardId, dataObjectShepardId);
+    DataObject toDelete = getDataObject(collectionShepardId, dataObjectShepardId);
     collectionService.assertIsAllowedToEditCollection(collectionShepardId);
 
     Date date = dateHelper.getDate();
@@ -364,6 +387,16 @@ public class DataObjectService {
 
     if (!dataObjectDAO.deleteDataObjectByShepardId(dataObjectShepardId, user, date)) {
       throw new InvalidRequestException("Could not delete DataObject with ShepardId %s".formatted(dataObjectShepardId));
+    }
+
+    // P13: emit SSE change-feed event for all subscribers of this Collection.
+    Collection deletedFromCollection = toDelete.getCollection();
+    if (deletedFromCollection != null && deletedFromCollection.getAppId() != null) {
+      collectionEventProducer.dataObjectDeleted(
+        deletedFromCollection.getAppId(),
+        toDelete.getAppId(),
+        user.getUsername()
+      );
     }
   }
 

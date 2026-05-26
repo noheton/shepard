@@ -21,6 +21,7 @@ import de.dlr.shepard.context.version.daos.VersionDAO;
 import de.dlr.shepard.context.version.entities.Version;
 import de.dlr.shepard.data.file.entities.FileContainer;
 import de.dlr.shepard.data.file.services.FileContainerService;
+import de.dlr.shepard.v2.events.CollectionEventProducer;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
@@ -50,6 +51,9 @@ public class CollectionService {
 
   @Inject
   FileContainerService fileContainerService;
+
+  @Inject
+  CollectionEventProducer collectionEventProducer;
 
   /**
    * Creates a Collection and stores it in Neo4J
@@ -228,6 +232,15 @@ public class CollectionService {
 
     Collection updated = collectionDAO.createOrUpdate(old);
     cutDeleted(updated);
+
+    // P13: emit SSE change-feed event for all subscribers of this Collection.
+    if (updated.getAppId() != null) {
+      collectionEventProducer.collectionUpdated(
+        updated.getAppId(),
+        userService.getCurrentUser().getUsername()
+      );
+    }
+
     return updated;
   }
 

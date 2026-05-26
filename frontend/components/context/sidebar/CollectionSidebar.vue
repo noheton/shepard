@@ -3,6 +3,7 @@ import { useTreeviewItems } from "./useTreeviewItems";
 import type { TreeviewItem } from "./treeviewItem";
 import { useDisplay } from "vuetify";
 import { useAdvancedMode } from "~/composables/context/useAdvancedMode";
+import { useCollectionEvents } from "~/composables/context/useCollectionEvents";
 
 const router = useRouter();
 const { routeParams } = useCollectionRouteParams();
@@ -25,6 +26,21 @@ const { advancedMode } = useAdvancedMode();
 const collectionAppId = computed<string | undefined>(() => {
   const raw = (collection.value as unknown as { appId?: string | null })?.appId;
   return raw ?? undefined;
+});
+
+// P13: SSE change-feed — refresh the sidebar when DataObjects are created or deleted.
+// The composable opens a fetch-based SSE stream (NOT native EventSource, which cannot
+// carry Authorization headers) and fires onEvent handlers for non-HEARTBEAT events.
+// We only react to structural changes (create/delete); updates just touch metadata and
+// don't change the treeview node list. The composable self-closes on unmount.
+const { onEvent: onCollectionEvent } = useCollectionEvents(collectionAppId);
+onCollectionEvent((event) => {
+  if (
+    event.eventType === "DATA_OBJECT_CREATED" ||
+    event.eventType === "DATA_OBJECT_DELETED"
+  ) {
+    void refreshItems();
+  }
 });
 
 // QW2: client-side text filter for data objects in the sidebar.

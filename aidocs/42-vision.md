@@ -436,9 +436,14 @@ Five typical entry points:
 - **Not a permissions-light publishing platform.** Every entity has
   ACLs; if you want anonymous global reads, you set a Collection
   PUBLIC explicitly.
-- **Not a real-time / OLTP system.** shepard reads happily; bulk
+- **Not a high-frequency OLTP system.** shepard reads happily; bulk
   writes have caps (`aidocs/29` P10 design quotes them). It's a
-  research-data store, not a trading system.
+  research-data store, not a trading system. Real-time change
+  notification is supported via the SSE change-feed
+  (`GET /v2/collections/{appId}/events`, P13) — DataObject create/
+  update/delete and Collection update events arrive within the same
+  HTTP request cycle; HEARTBEAT every 30 s keeps NAT/proxy connections
+  alive.
 
 ## Where it's going
 
