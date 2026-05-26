@@ -51,6 +51,7 @@ public class CollectionIOTest {
     assertThat(json).contains("\"heroImageUrl\":\"https://example.com/banner.png\"");
   }
 
+
   // ── LIC1 (FAIR-1): license + accessRights wire contract ────────────────
   //
   // Per CLAUDE.md §"API-version policy" the /shepard/api/... surface must stay

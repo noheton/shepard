@@ -1,8 +1,16 @@
-"""TS-IDc demonstration seed — AFP tool-centre-point (TCP) thermal trail.
+"""TS-IDc demonstration seed — AFP tool-centre-point (TCP) kinematics + orientation.
 
-Creates a single Collection, DataObject, and TimeseriesContainer with four
-channels (tcp_x, tcp_y, tcp_z, head_temp) representing a simulated AFP
-consolidation pass. The data is visible in the normal Shepard UI under
+Creates a single Collection, DataObject, and TimeseriesContainer with seven
+channels representing a simulated AFP consolidation pass:
+  tcp_x / tcp_y / tcp_z  — tool-centre-point position (metres)
+  head_temp              — pyrometer thermal profile (celsius)
+  rot_a / rot_b / rot_c  — KUKA Euler ZYX orientation (degrees)
+                           A = yaw (world Z), B = pitch (world Y), C = roll (world X)
+
+The rot_a/b/c channels bind to the Trace3D renderer's orientation roles:
+open the ViewRecipeBuilder in the UI → assign channels → Open Trace3D.
+
+The data is visible in the normal Shepard UI under
 Collections → "TS-IDc demo — AFP TCP thermal trail".
 
 The --demo flag exercises the TS-IDc endpoint after seeding:
@@ -77,6 +85,35 @@ CHANNELS: list[dict] = [
         "field":        "celsius",
         "valueType":    "Double",
     },
+    # KUKA Euler orientation angles (extrinsic ZYX convention):
+    #   rot_a = rotation around world Z (yaw)   — sweeps -180→+180 across the layup pass
+    #   rot_b = rotation around world Y (pitch) — small ±5° approach-angle oscillation
+    #   rot_c = rotation around world X (roll)  — small ±3° cross-path oscillation
+    # symbolicName matches the Trace3D renderer's rot_a/rot_b/rot_c role bindings.
+    {
+        "measurement": "kinematics",
+        "device":       "afp-robot",
+        "location":     "mould-1",
+        "symbolicName": "rot_a",
+        "field":        "degrees",
+        "valueType":    "Double",
+    },
+    {
+        "measurement": "kinematics",
+        "device":       "afp-robot",
+        "location":     "mould-1",
+        "symbolicName": "rot_b",
+        "field":        "degrees",
+        "valueType":    "Double",
+    },
+    {
+        "measurement": "kinematics",
+        "device":       "afp-robot",
+        "location":     "mould-1",
+        "symbolicName": "rot_c",
+        "field":        "degrees",
+        "valueType":    "Double",
+    },
 ]
 
 
@@ -93,6 +130,17 @@ def _generate_points(channel_key: str, n: int, t0_ns: int) -> list[tuple[int, fl
             v = 0.6 * math.sin(2 * math.pi * t * 3)
         elif channel_key == "tcp_z":
             v = 0.02 + t * 0.15      # 0 → 150 mm linear advance
+        elif channel_key == "rot_a":
+            # KUKA A: yaw around world Z — linear sweep -180° → +180° across pass.
+            # Simplified (task spec); physical tangent-derived yaw would be
+            # atan2(d(tcp_y)/dt, d(tcp_x)/dt) — equivalent at 1 rev/pass.
+            v = -180.0 + 360.0 * t
+        elif channel_key == "rot_b":
+            # KUKA B: pitch around world Y — ±5° layup approach-angle oscillation
+            v = 5.0 * math.sin(2 * math.pi * t * 7)
+        elif channel_key == "rot_c":
+            # KUKA C: roll around world X — ±3° cross-path oscillation
+            v = 3.0 * math.sin(2 * math.pi * t * 11)
         else:                         # head_temp — ramp / plateau / cool
             if t < 0.15:
                 v = 20 + (320 - 20) * (t / 0.15)
@@ -153,11 +201,12 @@ def _ensure_collection(v1: str, headers: dict) -> int:
     _, body = _req("POST", f"{v1}/collections", headers, {
         "name":        COLLECTION_NAME,
         "description": (
-            "Demonstration dataset for TS-IDc (TS-ID PR-3). "
-            "Contains one DataObject with a TimeseriesContainer holding four AFP "
-            "tool-centre-point channels (tcp_x/y/z + head_temp). "
-            "Each channel carries a stable `shepardId` (UUID) in addition to the "
-            "legacy 5-tuple — the PR-3 data endpoint accepts that UUID directly: "
+            "Demonstration dataset for TS-IDc (TS-ID PR-3) and Trace3D orientation rendering. "
+            "Contains one DataObject with a TimeseriesContainer holding seven AFP "
+            "tool-centre-point channels: tcp_x/y/z (position, metres), head_temp "
+            "(pyrometer, celsius), and rot_a/rot_b/rot_c (KUKA Euler ZYX orientation, "
+            "degrees). The rot_a/b/c channels bind directly to the Trace3D renderer's "
+            "orientation roles. Each channel carries a stable `shepardId` (UUID): "
             "GET /v2/timeseries-containers/{id}/channels/{shepardId}/data"
         ),
     })
@@ -174,7 +223,11 @@ def _ensure_dataobject(v1: str, headers: dict, cid: int) -> int:
             return do["id"]
     _, body = _req("POST", f"{v1}/collections/{cid}/dataObjects", headers, {
         "name":        DO_NAME,
-        "description": "AFP consolidation pass — synthetic TCP trajectory + pyrometer thermal profile.",
+        "description": (
+            "AFP consolidation pass — synthetic TCP trajectory + pyrometer thermal profile "
+            "+ KUKA Euler A/B/C orientation (extrinsic ZYX: A=yaw/worldZ, B=pitch/worldY, "
+            "C=roll/worldX). Channels rot_a/b/c bind to the Trace3D orientation roles."
+        ),
     })
     print(f"  OK    dataobject '{DO_NAME}' id={body['id']}")
     return body["id"]
