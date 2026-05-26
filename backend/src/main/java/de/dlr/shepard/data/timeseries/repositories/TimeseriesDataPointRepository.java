@@ -171,7 +171,6 @@ public class TimeseriesDataPointRepository {
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
-    assertNotIntegral(queryParams.getFunction());
     assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
     assertCorrectValueTypesForFillOption(queryParams.getFillOption(), valueType);
     assertTimeIntervalForFillOption(queryParams.getTimeSliceNanoseconds(), queryParams.getFillOption());
@@ -194,8 +193,14 @@ public class TimeseriesDataPointRepository {
     DataPointValueType valueType,
     TimeseriesDataPointsQueryParams queryParams
   ) {
-    assertNotIntegral(queryParams.getFunction());
     assertCorrectValueTypesForAggregation(queryParams.getFunction(), valueType);
+
+    if (
+      queryParams.getFunction().isPresent() &&
+      queryParams.getFunction().get() == AggregateFunction.INTEGRAL
+    ) {
+      return queryIntegralWhole(timeseriesId, valueType, queryParams.getStartTime(), queryParams.getEndTime());
+    }
 
     var query = buildSelectAggregationFunctionQueryObject(timeseriesId, valueType, queryParams);
 
@@ -274,7 +279,9 @@ public class TimeseriesDataPointRepository {
         case SPREAD -> aggregationString = "MAX(%s) - MIN(%s)".formatted(columnName, columnName);
         case MEDIAN -> aggregationString = "percentile_cont(0.5) WITHIN GROUP (ORDER BY %s)".formatted(columnName);
         case MODE -> aggregationString = "mode() WITHIN GROUP (ORDER BY %s)".formatted(columnName);
-        case INTEGRAL -> {}
+        // Midpoint-rule: ∫v dt ≈ AVG(v) × Δt per time_bucket.
+        // Cast to float8 so integer columns yield a numeric double result.
+        case INTEGRAL -> aggregationString = "AVG(%s)::float8 * :timeInNanoseconds".formatted(columnName);
       }
 
       // handle filling - by default bucket_gapfill uses NULL filloption
@@ -445,6 +452,62 @@ public class TimeseriesDataPointRepository {
     if (target <= 0 || windowNs <= 0) return 0L;
     long bucketNs = windowNs / ((long) target * 5);
     return bucketNs >= 1_000_000L ? bucketNs : 0L;
+  }
+
+  /**
+   * Computes the trapezoidal integral ∫v dt over [startNs, endNs] for the whole range,
+   * returning a single {@link TimeseriesDataPoint} at the midpoint timestamp.
+   *
+   * <p>Formula per pair of adjacent points (t_i, v_i) and (t_{i+1}, v_{i+1}):
+   * area = 0.5 × (v_i + v_{i+1}) × (t_{i+1} − t_i)
+   *
+   * <p>The result value is in nanosecond·value units (e.g. ns·°C for temperature).
+   * Returns a single-element list with value = 0.0 when no data points exist in the range.
+   *
+   * <p>Only valid for {@link DataPointValueType#Double} and {@link DataPointValueType#Integer};
+   * Boolean and String are rejected upstream by {@code assertCorrectValueTypesForAggregation}.
+   *
+   * @param timeseriesId the internal timeseries row ID
+   * @param valueType    the numeric column to integrate
+   * @param startNs      window start in nanoseconds since epoch (inclusive)
+   * @param endNs        window end in nanoseconds since epoch (inclusive)
+   * @return single-element list containing the integrated value at the midpoint timestamp
+   */
+  @SuppressWarnings("unchecked")
+  @Timed(value = "shepard.timeseries-data-point.integral-query")
+  List<TimeseriesDataPoint> queryIntegralWhole(
+    int timeseriesId,
+    DataPointValueType valueType,
+    long startNs,
+    long endNs
+  ) {
+    String col = getColumnName(valueType);
+    // Cast value column to float8 so integer series produce a double result,
+    // consistent with other numeric aggregation outputs.
+    String sql =
+      """
+      SELECT
+        (:startNs + :endNs) / 2 AS time,
+        COALESCE(SUM(0.5 * (v + v_next) * (t_next - t)), 0.0) AS value
+      FROM (
+        SELECT
+          time AS t,
+          %s::float8 AS v,
+          LEAD(time)          OVER (ORDER BY time) AS t_next,
+          LEAD(%s::float8)    OVER (ORDER BY time) AS v_next
+        FROM timeseries_data_points
+        WHERE timeseries_id = :timeseriesId
+          AND time >= :startNs
+          AND time <= :endNs
+      ) sub
+      WHERE t_next IS NOT NULL
+      """.formatted(col, col);
+    return entityManager
+      .createNativeQuery(sql, TimeseriesDataPoint.class)
+      .setParameter("startNs", startNs)
+      .setParameter("endNs", endNs)
+      .setParameter("timeseriesId", timeseriesId)
+      .getResultList();
   }
 
   private String getColumnName(DataPointValueType valueType) {
