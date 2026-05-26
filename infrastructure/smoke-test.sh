@@ -251,6 +251,14 @@ check "DELETE /v2/collections/0/watched-containers/0 (no auth → 401)" \
       "$BACKEND_URL/v2/collections/0/watched-containers/0" \
       "401,403" "" DELETE
 
+# TPL14 — Regulatory Evidence Pack export endpoints exist (401 without auth, not 404)
+check "POST /v2/collections/0/export/regulatory-evidence (no auth → 401)" \
+      "$BACKEND_URL/v2/collections/0/export/regulatory-evidence" \
+      "401,403" "" POST
+check "GET /v2/collections/0/export/regulatory-evidence/latest (no auth → 401)" \
+      "$BACKEND_URL/v2/collections/0/export/regulatory-evidence/latest" \
+      "401,403"
+
 echo ""
 echo "Demo seed success check"
 # Read the actual exit code of each seeder container from this deploy.
