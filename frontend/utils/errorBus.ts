@@ -122,6 +122,36 @@ function isUnauthorized(e: unknown): boolean {
   return isResponseError(e) && e.response.status === 401;
 }
 
+/**
+ * Deduplication window for identical errors fired by parallel API calls.
+ *
+ * Key: `situation:discriminator` where discriminator is the HTTP status code
+ * (for ResponseErrors) or the first 80 chars of the message (for other errors).
+ * Value: timestamp of the last emission.
+ *
+ * Module-level so all callers — across different composable instances — share
+ * the same window. 401s are already fully suppressed upstream; this catches
+ * the same non-401 error (e.g. 500 storm, 403 cascade, network blip) arriving
+ * from multiple parallel fetches on the same page.
+ */
+const _lastEmitTime = new Map<string, number>();
+const _DEDUP_WINDOW_MS = 1000;
+
+function isDuplicate(key: string): boolean {
+  const now = Date.now();
+  const prev = _lastEmitTime.get(key);
+  if (prev !== undefined && now - prev < _DEDUP_WINDOW_MS) {
+    return true;
+  }
+  _lastEmitTime.set(key, now);
+  return false;
+}
+
+/** Exposed for unit tests only — resets deduplication state. */
+export function _resetDedupStateForTests(): void {
+  _lastEmitTime.clear();
+}
+
 export function handleError(e: unknown, situation: string) {
   if (isAbortLike(e)) {
     log.warn(`Suppressed abort while ${situation}`);
@@ -134,8 +164,20 @@ export function handleError(e: unknown, situation: string) {
     return;
   }
   if (isString(e)) {
+    const key = `${situation}:${e.slice(0, 80)}`;
+    if (isDuplicate(key)) {
+      log.warn(`Suppressed duplicate toast while ${situation} (within ${_DEDUP_WINDOW_MS}ms window)`);
+      return;
+    }
     errorBus.emit({ error: e, situation });
   } else if (isResponseError(e)) {
+    // Deduplicate before the async parse to avoid wasted work and race conditions
+    // when multiple parallel calls fail with the same HTTP status.
+    const key = `${situation}:${e.response.status}`;
+    if (isDuplicate(key)) {
+      log.warn(`Suppressed duplicate ${e.response.status} toast while ${situation} (within ${_DEDUP_WINDOW_MS}ms window)`);
+      return;
+    }
     parseResponseError(e).then(parsedError => {
       log.error(
         "Error while " + situation + ": " + JSON.stringify(parsedError),
@@ -149,11 +191,22 @@ export function handleError(e: unknown, situation: string) {
     // Plain Error instance — preserve the message instead of dropping
     // everything to "Unknown error". Callers that throw `new Error("...")`
     // expect their message to surface to the user.
+    const msg = e.message || e.toString() || "Unknown error";
+    const key = `${situation}:${msg.slice(0, 80)}`;
+    if (isDuplicate(key)) {
+      log.warn(`Suppressed duplicate toast while ${situation} (within ${_DEDUP_WINDOW_MS}ms window)`);
+      return;
+    }
     errorBus.emit({
       situation,
-      error: e.message || e.toString() || "Unknown error",
+      error: msg,
     });
   } else {
+    const key = `${situation}:unknown`;
+    if (isDuplicate(key)) {
+      log.warn(`Suppressed duplicate toast while ${situation} (within ${_DEDUP_WINDOW_MS}ms window)`);
+      return;
+    }
     errorBus.emit({
       error: "Unknown error",
       situation: situation,
