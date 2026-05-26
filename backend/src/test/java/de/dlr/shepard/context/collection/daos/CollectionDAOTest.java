@@ -575,13 +575,27 @@ public class CollectionDAOTest extends BaseTestCase {
 
     doReturn(collection).when(spy).findByShepardId(11L);
     doReturn(updated).when(spy).createOrUpdate(updated);
+    // NEO-AUDIT-008: query rewritten to use CALL{} subqueries; match new shape exactly
     doReturn(true)
       .when(spy)
       .runQuery(
         """
-        MATCH (c:Collection {shepardId:11}) OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
-        OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
-        FOREACH (n in [c,d,r] | SET n.deleted = true)""",
+        MATCH (c:Collection {shepardId:11})
+        SET c.deleted = true
+        WITH c
+        CALL {
+          WITH c
+          MATCH (c)-[:has_dataobject]->(d:DataObject)
+          SET d.deleted = true
+          RETURN count(d) AS doCount
+        }
+        CALL {
+          WITH c
+          MATCH (c)-[:has_dataobject]->(d:DataObject)-[:has_reference]->(r:BasicReference)
+          SET r.deleted = true
+          RETURN count(r) AS refCount
+        }
+        RETURN doCount, refCount""",
         Collections.emptyMap()
       );
 

@@ -3,6 +3,7 @@ package de.dlr.shepard.context.collection.daos;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import de.dlr.shepard.context.collection.entities.DataObject;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.neo4j.ogm.model.Result;
 import org.neo4j.ogm.session.Session;
 
 public class DataObjectDAOTest extends BaseTestCase {
@@ -1810,5 +1813,101 @@ public class DataObjectDAOTest extends BaseTestCase {
 
     var result = spy.getDataObjectsByQuery("query");
     assertEquals(List.of(dataObject), result);
+  }
+
+  /**
+   * NEO-AUDIT-008 — verifies that {@code findContainersByDataObjectAppId} issues
+   * the CALL-subquery form of the Cypher (no sibling OPTIONAL MATCH legs) and
+   * returns the single-row map with {@code tsRefs}, {@code fileRefs}, and
+   * {@code sdRefs} list columns.
+   */
+  @Test
+  public void findContainersByDataObjectAppId_callSubqueryShape() {
+    String appId = "do-appid-1";
+
+    // Build the expected list entries for each kind
+    Map<String, Object> tsEntry = new LinkedHashMap<>();
+    tsEntry.put("refShepardId", 10L);
+    tsEntry.put("refAppId", "ts-ref-app-id");
+    tsEntry.put("containerId", 100L);
+    tsEntry.put("containerAppId", "ts-container-app-id");
+    tsEntry.put("containerName", "TS Container 1");
+
+    Map<String, Object> fileEntry = new LinkedHashMap<>();
+    fileEntry.put("refShepardId", 20L);
+    fileEntry.put("refAppId", "file-ref-app-id");
+    fileEntry.put("containerId", 200L);
+    fileEntry.put("containerAppId", "file-container-app-id");
+    fileEntry.put("containerName", "File Container 1");
+
+    Map<String, Object> sdEntry = new LinkedHashMap<>();
+    sdEntry.put("refShepardId", 30L);
+    sdEntry.put("refAppId", "sd-ref-app-id");
+    sdEntry.put("containerId", 300L);
+    sdEntry.put("containerAppId", "sd-container-app-id");
+    sdEntry.put("containerName", "SD Container 1");
+
+    // The DAO query returns a single row map with three list columns
+    Map<String, Object> resultRow = new LinkedHashMap<>();
+    resultRow.put("tsRefs", List.of(tsEntry));
+    resultRow.put("fileRefs", List.of(fileEntry));
+    resultRow.put("sdRefs", List.of(sdEntry));
+
+    Result mockResult = mock(Result.class);
+    when(mockResult.queryResults()).thenReturn(List.of(resultRow));
+
+    // The CALL-subquery Cypher (must match the production query exactly)
+    String expectedCypher =
+      "MATCH (do:DataObject {appId: $appId}) " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "    WHERE NOT coalesce(tr.deleted, false) " +
+      "  RETURN collect({refShepardId: tr.shepardId, refAppId: tr.appId, containerId: id(tc), containerAppId: tc.appId, containerName: tc.name}) AS tsRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
+      "    WHERE NOT coalesce(fr.deleted, false) " +
+      "  RETURN collect({refShepardId: fr.shepardId, refAppId: fr.appId, containerId: id(fc), containerAppId: fc.appId, containerName: fc.name}) AS fileRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
+      "    WHERE NOT coalesce(sdr.deleted, false) " +
+      "  RETURN collect({refShepardId: sdr.shepardId, refAppId: sdr.appId, containerId: id(sc), containerAppId: sc.appId, containerName: sc.name}) AS sdRefs " +
+      "} " +
+      "RETURN tsRefs, fileRefs, sdRefs";
+
+    when(session.query(expectedCypher, Map.of("appId", appId))).thenReturn(mockResult);
+
+    Map<String, Object> row = dao.findContainersByDataObjectAppId(appId);
+
+    verify(session).query(expectedCypher, Map.of("appId", appId));
+    assertEquals(List.of(tsEntry), row.get("tsRefs"));
+    assertEquals(List.of(fileEntry), row.get("fileRefs"));
+    assertEquals(List.of(sdEntry), row.get("sdRefs"));
+  }
+
+  /**
+   * NEO-AUDIT-008 — when no DataObject is found for the given appId, the DAO must
+   * return the empty-collections sentinel (all three keys present, all lists empty).
+   */
+  @Test
+  public void findContainersByDataObjectAppId_emptyWhenNoMatch() {
+    String appId = "do-appid-missing";
+
+    Result mockResult = mock(Result.class);
+    when(mockResult.queryResults()).thenReturn(Collections.emptyList());
+
+    when(session.query(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap()))
+      .thenReturn(mockResult);
+
+    Map<String, Object> row = dao.findContainersByDataObjectAppId(appId);
+
+    // Sentinel must have all three keys with empty lists — no NPE for callers
+    assertEquals(List.of(), row.get("tsRefs"));
+    assertEquals(List.of(), row.get("fileRefs"));
+    assertEquals(List.of(), row.get("sdRefs"));
   }
 }

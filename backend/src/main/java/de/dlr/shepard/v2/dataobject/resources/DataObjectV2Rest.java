@@ -674,47 +674,80 @@ public class DataObjectV2Rest {
    * returns {@code BasicReference} instances, so {@code instanceof
    * TimeseriesReference} always fails; this bypass is needed until the OGM
    * load depth is raised globally.
+   *
+   * <p>NEO-AUDIT-008: {@code findContainersByDataObjectAppId} now returns a
+   * single-row result with three list columns (one per ref kind), eliminating
+   * the Cartesian product of the old sibling-{@code OPTIONAL MATCH} shape.
+   * This method reads those lists directly.
    */
+  @SuppressWarnings("unchecked")
   private DataObjectDetailV2IO.Containers buildContainersFromCypher(String dataObjectAppId) {
     var timeseries = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
     var files = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
     var structuredData = new ArrayList<de.dlr.shepard.v2.dataobject.io.ContainerRefIO>();
 
-    for (Map<String, Object> row : dataObjectDAO.findContainersByDataObjectAppId(dataObjectAppId)) {
-      Object tsRefId = row.get("tsRefId");
-      if (tsRefId instanceof Number tsId) {
-        long containerId = row.get("tsContainerId") instanceof Number n ? n.longValue() : -1L;
-        timeseries.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
-          (String) row.get("tsContainerAppId"),
-          (String) row.get("tsContainerName"),
-          containerId,
-          tsId.longValue(),
-          (String) row.get("tsRefAppId")
-        ));
-      }
-      Object fileRefId = row.get("fileRefId");
-      if (fileRefId instanceof Number fileId) {
-        long containerId = row.get("fileContainerId") instanceof Number n ? n.longValue() : -1L;
-        files.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
-          (String) row.get("fileContainerAppId"),
-          (String) row.get("fileContainerName"),
-          containerId,
-          fileId.longValue(),
-          (String) row.get("fileRefAppId")
-        ));
-      }
-      Object sdRefId = row.get("sdRefId");
-      if (sdRefId instanceof Number sdId) {
-        long containerId = row.get("sdContainerId") instanceof Number n ? n.longValue() : -1L;
-        structuredData.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
-          (String) row.get("sdContainerAppId"),
-          (String) row.get("sdContainerName"),
-          containerId,
-          sdId.longValue(),
-          (String) row.get("sdRefAppId")
-        ));
+    Map<String, Object> row = dataObjectDAO.findContainersByDataObjectAppId(dataObjectAppId);
+
+    Object tsRefsRaw = row.get("tsRefs");
+    if (tsRefsRaw instanceof Iterable<?> tsRefList) {
+      for (Object entry : tsRefList) {
+        if (entry instanceof Map<?, ?> m) {
+          var ref = (Map<String, Object>) m;
+          Object refShepardId = ref.get("refShepardId");
+          if (refShepardId instanceof Number tsId) {
+            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+            timeseries.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+              (String) ref.get("containerAppId"),
+              (String) ref.get("containerName"),
+              containerId,
+              tsId.longValue(),
+              (String) ref.get("refAppId")
+            ));
+          }
+        }
       }
     }
+
+    Object fileRefsRaw = row.get("fileRefs");
+    if (fileRefsRaw instanceof Iterable<?> fileRefList) {
+      for (Object entry : fileRefList) {
+        if (entry instanceof Map<?, ?> m) {
+          var ref = (Map<String, Object>) m;
+          Object refShepardId = ref.get("refShepardId");
+          if (refShepardId instanceof Number fileId) {
+            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+            files.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+              (String) ref.get("containerAppId"),
+              (String) ref.get("containerName"),
+              containerId,
+              fileId.longValue(),
+              (String) ref.get("refAppId")
+            ));
+          }
+        }
+      }
+    }
+
+    Object sdRefsRaw = row.get("sdRefs");
+    if (sdRefsRaw instanceof Iterable<?> sdRefList) {
+      for (Object entry : sdRefList) {
+        if (entry instanceof Map<?, ?> m) {
+          var ref = (Map<String, Object>) m;
+          Object refShepardId = ref.get("refShepardId");
+          if (refShepardId instanceof Number sdId) {
+            long containerId = ref.get("containerId") instanceof Number n ? n.longValue() : -1L;
+            structuredData.add(new de.dlr.shepard.v2.dataobject.io.ContainerRefIO(
+              (String) ref.get("containerAppId"),
+              (String) ref.get("containerName"),
+              containerId,
+              sdId.longValue(),
+              (String) ref.get("refAppId")
+            ));
+          }
+        }
+      }
+    }
+
     return new DataObjectDetailV2IO.Containers(timeseries, files, structuredData);
   }
 }

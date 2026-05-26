@@ -115,11 +115,28 @@ public class CollectionDAO extends VersionableEntityDAO<Collection> {
     collection.setUpdatedAt(updatedAt);
     collection.setDeleted(true);
     createOrUpdate(collection);
+    // NEO-AUDIT-008: the old chained OPTIONAL MATCH created c × d × r row triples
+    // (1 collection × many DOs × many refs each), causing row explosion on large
+    // collections. Replaced with three CALL{} subqueries that each execute
+    // independently, so cardinalities never multiply across the three targets.
     String query =
       """
-      MATCH (c:Collection {shepardId:%d}) OPTIONAL MATCH (c)-[:has_dataobject]->(d:DataObject) \
-      OPTIONAL MATCH (d)-[:has_reference]->(r:BasicReference) \
-      FOREACH (n in [c,d,r] | SET n.deleted = true)""".formatted(shepardId);
+      MATCH (c:Collection {shepardId:%d})
+      SET c.deleted = true
+      WITH c
+      CALL {
+        WITH c
+        MATCH (c)-[:has_dataobject]->(d:DataObject)
+        SET d.deleted = true
+        RETURN count(d) AS doCount
+      }
+      CALL {
+        WITH c
+        MATCH (c)-[:has_dataobject]->(d:DataObject)-[:has_reference]->(r:BasicReference)
+        SET r.deleted = true
+        RETURN count(r) AS refCount
+      }
+      RETURN doCount, refCount""".formatted(shepardId);
     boolean result = runQuery(query, Collections.emptyMap());
     return result;
   }

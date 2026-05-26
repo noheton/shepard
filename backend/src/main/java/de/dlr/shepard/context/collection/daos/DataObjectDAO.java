@@ -470,24 +470,42 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
    * round-trip. Avoids the OGM polymorphism issue where depth-1 loading returns
    * {@code BasicReference} instead of the concrete subtype.
    *
-   * <p>Returns rows with keys: {@code kind} (ts/file/sd), {@code refId},
-   * {@code refAppId}, {@code containerId}, {@code containerAppId},
-   * {@code containerName}.
+   * <p>NEO-AUDIT-008: Uses {@code CALL {}} subqueries instead of sibling
+   * {@code OPTIONAL MATCH} legs to eliminate the Cartesian product. The old
+   * shape walked all {@code has_reference} edges in each leg, causing N×M×P
+   * dbHits when a DataObject had many refs. Each {@code CALL {}} scope
+   * executes independently, so cardinalities do not multiply.
+   *
+   * <p>Returns a single result row with three list columns:
+   * {@code tsRefs}, {@code fileRefs}, {@code sdRefs}. Each list element is a
+   * map with keys: {@code refShepardId}, {@code refAppId},
+   * {@code containerId}, {@code containerAppId}, {@code containerName}.
    */
-  public Iterable<Map<String, Object>> findContainersByDataObjectAppId(String appId) {
+  public Map<String, Object> findContainersByDataObjectAppId(String appId) {
     String cypher =
       "MATCH (do:DataObject {appId: $appId}) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
-      "  WHERE NOT coalesce(tr.deleted, false) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
-      "  WHERE NOT coalesce(fr.deleted, false) " +
-      "OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
-      "  WHERE NOT coalesce(sdr.deleted, false) " +
-      "RETURN " +
-      "  tr.shepardId AS tsRefId, tr.appId AS tsRefAppId, id(tc) AS tsContainerId, tc.appId AS tsContainerAppId, tc.name AS tsContainerName, " +
-      "  fr.shepardId AS fileRefId, fr.appId AS fileRefAppId, id(fc) AS fileContainerId, fc.appId AS fileContainerAppId, fc.name AS fileContainerName, " +
-      "  sdr.shepardId AS sdRefId, sdr.appId AS sdRefAppId, id(sc) AS sdContainerId, sc.appId AS sdContainerAppId, sc.name AS sdContainerName";
-    return session.query(cypher, Map.of("appId", appId)).queryResults();
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "    WHERE NOT coalesce(tr.deleted, false) " +
+      "  RETURN collect({refShepardId: tr.shepardId, refAppId: tr.appId, containerId: id(tc), containerAppId: tc.appId, containerName: tc.name}) AS tsRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(fr:FileBundleReference)-[:is_in_container]->(fc:FileContainer) " +
+      "    WHERE NOT coalesce(fr.deleted, false) " +
+      "  RETURN collect({refShepardId: fr.shepardId, refAppId: fr.appId, containerId: id(fc), containerAppId: fc.appId, containerName: fc.name}) AS fileRefs " +
+      "} " +
+      "CALL { " +
+      "  WITH do " +
+      "  OPTIONAL MATCH (do)-[:has_reference]->(sdr:StructuredDataReference)-[:is_in_container]->(sc:StructuredDataContainer) " +
+      "    WHERE NOT coalesce(sdr.deleted, false) " +
+      "  RETURN collect({refShepardId: sdr.shepardId, refAppId: sdr.appId, containerId: id(sc), containerAppId: sc.appId, containerName: sc.name}) AS sdRefs " +
+      "} " +
+      "RETURN tsRefs, fileRefs, sdRefs";
+    var results = session.query(cypher, Map.of("appId", appId)).queryResults();
+    var iter = results.iterator();
+    return iter.hasNext() ? iter.next() : Map.of("tsRefs", List.of(), "fileRefs", List.of(), "sdRefs", List.of());
   }
 
   public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
