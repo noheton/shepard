@@ -146,6 +146,47 @@ check "GET /shepard/api/collections (no auth → 401)" \
       "401,403"
 
 echo ""
+echo "v1-compat plugin: deprecation surface"
+# V1COMPAT.0 regression gate. The two JAX-RS filters in plugins/v1-compat/
+# are loaded via quarkus.index-dependency.shepard-plugin-v1-compat.*; without
+# @ApplicationScoped on the filter classes, Arc's build-time bean-removal
+# pass drops them and the deprecation headers + 410 gate become dead code
+# on a live deploy (see aidocs/agent-findings/v1-compat-live-validation.md
+# Verifications 1 + 3). If that regresses, this gate fails fast — instead
+# of the silent failure shape we hit in the live-validation run.
+#
+# The deprecation filter runs at Priorities.AUTHENTICATION + 1, so it
+# instruments responses on the successful path. Even on a 401 from a
+# protected v1 endpoint, the filter still fires on the response side —
+# JAX-RS response filters run regardless of whether the response was
+# produced by a resource method or an abortWith from a higher-priority
+# filter. (The gate filter runs at AUTHENTICATION - 100; when v1 is
+# disabled, its 410 abortWith also still triggers the deprecation
+# filter's response side — same mechanism.) The upshot: a no-auth GET
+# against any /shepard/api/... path must carry these three headers when
+# the v1-compat plugin is wired correctly.
+check_v1_header() {
+  local hdr="$1" expected="$2"
+  local got
+  got=$(curl -sS -o /dev/null -D - --max-time 10 "$BACKEND_URL/shepard/api/users" 2>/dev/null | tr -d '\r' | grep -i "^$hdr:")
+  if [ -n "$got" ] && echo "$got" | grep -qi "$expected"; then
+    echo "  ✓ $hdr present on /shepard/api/users"
+    PASS=$((PASS+1))
+  else
+    echo "  ✗ $hdr missing on /shepard/api/users (got: ${got:-<none>}) — v1-compat filter not registered?"
+    if [ "$VERBOSE" = "1" ]; then
+      echo "      Full response headers:"
+      curl -sS -o /dev/null -D - --max-time 10 "$BACKEND_URL/shepard/api/users" 2>/dev/null | sed 's/^/        /'
+    fi
+    FAIL=$((FAIL+1))
+    FAILED+=("v1-compat $hdr header")
+  fi
+}
+check_v1_header "Deprecation"      "true"
+check_v1_header "Link"             "successor-version"
+check_v1_header "X-Shepard-Legacy" "true"
+
+echo ""
 echo "Backend /v2/ surface (this fork's additive endpoints)"
 # 401 means the endpoint exists and demands auth — good.
 # 404 means the REST class is missing from the JAR — bad (regression).

@@ -3,10 +3,8 @@ package de.dlr.shepard.plugins.v1compat.services;
 import de.dlr.shepard.plugins.v1compat.daos.LegacyV1ConfigDAO;
 import de.dlr.shepard.plugins.v1compat.entities.LegacyV1Config;
 import io.quarkus.logging.Log;
-import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.RequestContextController;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -18,14 +16,24 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * <p>Responsibilities:
  *
  * <ol>
- *   <li><b>Seed on first start.</b> {@link #onStart(StartupEvent)}
- *       observes the Quarkus {@code StartupEvent}; if no
- *       {@code :LegacyV1Config} node exists yet, one is minted from
- *       the {@code shepard.legacy.v1.enabled} install-time default
- *       (default {@code true} — the v1 sunset philosophy is
- *       "default-on, operator decides when to flip"). The V63
- *       Cypher migration also seeds; the StartupEvent hook is the
- *       defence-in-depth path.</li>
+ *   <li><b>Lazy seed on first access.</b> The V63 Cypher migration
+ *       seeds the singleton at migration-runner time (before the
+ *       OGM session is opened), so under normal operation no
+ *       JVM-layer seed is needed. As defence-in-depth — for the
+ *       case where an admin deletes the migration row mid-flight,
+ *       or migrations are restored to a partial state —
+ *       {@link #current()} seeds on demand the first time it sees
+ *       an empty result. This intentionally avoids a
+ *       {@code @Observes StartupEvent} seed: that observer fires
+ *       <em>before</em> {@code NeoConnector.connect()} populates the
+ *       OGM session factory, and {@link LegacyV1ConfigDAO} (inherited
+ *       from {@code GenericDAO}) captures the {@code Session}
+ *       reference at construction time — so a startup-time seed
+ *       caches a {@code null} session into the
+ *       {@code @ApplicationScoped} DAO and every subsequent
+ *       admin-REST call NPEs forever (see
+ *       {@code aidocs/agent-findings/v1-compat-live-validation.md}
+ *       Verification 3 for the live-deploy reproduction).</li>
  *   <li><b>Hot-path read.</b> {@link #isEnabled()} returns the cached
  *       enabled state without hitting Neo4j on the hot v1-request
  *       path. The cache TTL is 5 s — short enough that an admin's
@@ -94,29 +102,6 @@ public class LegacyV1ConfigService {
     this.requestContextController = requestContextController;
     this.installDefaultEnabled = installDefaultEnabled;
     this.clock = clock;
-  }
-
-  /**
-   * Seed the singleton on first startup. Idempotent — re-running
-   * sees the existing row and returns. Mirrors {@code UnhideConfigService}
-   * exactly; same fail-soft posture (a seed failure logs a WARN but
-   * does not block startup — the {@link #isEnabled()} read falls
-   * back to the deploy-time default).
-   */
-  void onStart(@Observes StartupEvent event) {
-    boolean activated = requestContextController.activate();
-    try {
-      seedIfNeeded();
-    } catch (RuntimeException e) {
-      Log.warnf(
-        e,
-        "V1COMPAT.0: could not seed :LegacyV1Config on startup; admin actions will retry on first read"
-      );
-    } finally {
-      if (activated) {
-        requestContextController.deactivate();
-      }
-    }
   }
 
   /**

@@ -4,6 +4,7 @@ import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
 import io.quarkus.logging.Log;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.Priorities;
@@ -58,6 +59,7 @@ import jakarta.ws.rs.ext.Provider;
  * only to requests that get to the resource.
  */
 @Provider
+@ApplicationScoped
 @Priority(Priorities.AUTHENTICATION + 1)
 public class LegacyV1DeprecationFilter implements ContainerRequestFilter, ContainerResponseFilter {
 

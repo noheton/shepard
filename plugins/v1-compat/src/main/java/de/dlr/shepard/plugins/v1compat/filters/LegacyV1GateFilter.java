@@ -4,6 +4,7 @@ import de.dlr.shepard.common.exceptions.ProblemJson;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1ConfigService;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -37,6 +38,7 @@ import jakarta.ws.rs.ext.Provider;
  * legitimate callers during a Neo4j hiccup.
  */
 @Provider
+@ApplicationScoped
 @Priority(Priorities.AUTHENTICATION - 100)
 public class LegacyV1GateFilter implements ContainerRequestFilter {
 

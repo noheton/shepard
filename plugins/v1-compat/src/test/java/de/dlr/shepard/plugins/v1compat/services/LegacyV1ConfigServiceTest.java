@@ -14,7 +14,11 @@ import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.plugins.v1compat.daos.LegacyV1ConfigDAO;
 import de.dlr.shepard.plugins.v1compat.entities.LegacyV1Config;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.control.RequestContextController;
+import jakarta.enterprise.event.Observes;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -248,6 +252,47 @@ class LegacyV1ConfigServiceTest {
     assertNotNull(result);
     assertTrue(result.isEnabled(), "post-seed reflects deploy default true");
     verify(dao).createOrUpdate(any(LegacyV1Config.class));
+  }
+
+  // ─── regression: no startup-time seed (live-validation defect 2) ──────────
+
+  /**
+   * Regression for {@code aidocs/agent-findings/v1-compat-live-validation.md}
+   * Verification 3. The pre-fix service had an {@code @Observes
+   * StartupEvent} observer that called {@code seedIfNeeded()} too
+   * early — before {@code NeoConnector.connect()} populated the OGM
+   * session factory. The {@code LegacyV1ConfigDAO}, inheriting from
+   * {@code GenericDAO}, captures the {@code Session} reference at
+   * construction time and caches it (the DAO is {@code @ApplicationScoped}).
+   * The startup-time call instantiated the DAO with a {@code null}
+   * session forever, so every later admin-REST call NPE'd.
+   *
+   * <p>The fix is to drop the startup observer and let
+   * {@link LegacyV1ConfigService#current()} seed lazily on the first
+   * admin read — by which time {@code NeoConnector.connect()} has
+   * populated the session factory. This test pins that contract: if
+   * a future change re-introduces a {@code @Observes StartupEvent}
+   * observer on this class, the unit suite fails fast with a clear
+   * pointer at the live-validation report.
+   */
+  @Test
+  void service_hasNoStartupEventObserver() {
+    for (Method m : LegacyV1ConfigService.class.getDeclaredMethods()) {
+      for (Parameter p : m.getParameters()) {
+        boolean isStartupEvent = StartupEvent.class.equals(p.getType());
+        boolean isObserves = p.isAnnotationPresent(Observes.class);
+        if (isStartupEvent && isObserves) {
+          throw new AssertionError(
+            "LegacyV1ConfigService must NOT observe StartupEvent — the " +
+            "observer fires before NeoConnector.connect() populates the " +
+            "OGM session, which permanently corrupts the @ApplicationScoped " +
+            "DAO's cached session reference. Seed lazily via current() " +
+            "instead. See aidocs/agent-findings/v1-compat-live-validation.md. " +
+            "Offending method: " + m.getName()
+          );
+        }
+      }
+    }
   }
 
   @Test
