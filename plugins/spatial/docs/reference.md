@@ -47,3 +47,38 @@ Verify via:
 ```
 GET /v2/admin/plugins   # should include { "id": "spatial", "version": "1.0.0-SNAPSHOT" }
 ```
+
+## Vocabulary contribution — GeoTimeVocabularyProvider (SEMA-V6-009)
+
+The plugin ships a `GeoTimeVocabularyProvider` CDI bean
+(`@ApplicationScoped`) that implements the `SemanticVocabularyProvider`
+SPI.  At startup, `SemanticVocabularyRegistry` discovers it and makes
+its predicate definitions available to annotation pickers, SHACL shape
+generation, and SPARQL autocompletion.
+
+### Vocabulary namespace
+
+`http://www.opengis.net/ont/geosparql#` (GeoSPARQL)
+
+### Predicates contributed
+
+| Predicate IRI | Label | Expected value type | Description |
+|---------------|-------|---------------------|-------------|
+| `geosparql:hasGeometry` | has Geometry | IRI | Links a spatial feature to its geometry representation. |
+| `geosparql:asWKT` | as WKT | LITERAL | WKT (Well-Known Text) serialisation of a geometry. |
+| `geosparql:sfWithin` | Simple-Features Within | IRI | Topological containment (DE-9IM sfWithin). |
+| `time:hasBeginning` | has Beginning | IRI | OWL-Time: start instant of a temporal entity. |
+| `time:hasEnd` | has End | IRI | OWL-Time: end instant of a temporal entity. |
+
+`geosparql:` = `http://www.opengis.net/ont/geosparql#`
+`time:` = `http://www.w3.org/2006/time#`
+
+### No extra configuration required
+
+The vocabulary provider activates automatically whenever the spatial
+plugin is on the classpath.  No additional config keys are needed.
+The `SemanticVocabularyRegistry` logs a summary line at startup:
+
+```
+SemanticVocabularyRegistry: discovered 1 vocabulary provider(s): [http://www.opengis.net/ont/geosparql#]; 5 total predicate(s)
+```
