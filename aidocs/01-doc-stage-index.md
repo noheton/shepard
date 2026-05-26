@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 18 |
 | `idea` | 10 |
-| `feature-defined` | 87 |
-| `audited-by-personas` | 70 |
+| `feature-defined` | 89 |
+| `audited-by-personas` | 71 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 62 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **341** |
+| **total docs** | **344** |
 | **UNTAGGED** | **1** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -133,12 +133,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (87)
+## feature-defined (89)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/43-reverse-engineered-requirements.md`](43-reverse-engineered-requirements.md) | 43 — Reverse-engineered requirements (to be challenged) | 2026-05-24 | 2026-05-24 |
-| [`aidocs/agent-findings/185-v5-survey-bundle.md`](agent-findings/185-v5-survey-bundle.md) | v5 Survey Bundle (v15.10) | 2026-05-26 | — |
+| [`aidocs/agent-findings/185-v5-survey-bundle.md`](agent-findings/185-v5-survey-bundle.md) | v5 Survey Bundle (v15.10) | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -195,7 +195,9 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/63-architecture-decision-log.md`](platform/63-architecture-decision-log.md) | 63 — Architecture Decision Log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/69-runtime-plugin-cdi.md`](platform/69-runtime-plugin-cdi.md) | 69 — Runtime plugin CDI integration (deferred PM1b3) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/71-collection-watches-design.md`](platform/71-collection-watches-design.md) | Collection `:watches` Container — Design (WATCH1) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md`](platform/83-tpl1-tpl2-shapes-templates-views.md) | TPL1+TPL2: Shapes as Templates + Views — M1 milestone tracker | 2026-05-26 | — |
 | [`aidocs/platform/88-quarkus-mcp-server-migration.md`](platform/88-quarkus-mcp-server-migration.md) | 88 — Native Quarkus MCP Server: Replacing the Python Sidecar | 2026-05-23 | 2026-05-23 |
+| [`aidocs/platform/89-tpl9-fair2r-ai-provenance.md`](platform/89-tpl9-fair2r-ai-provenance.md) | TPL9 — f(ai)²r AI provenance capture (PROV-O extension for AI transparency) | 2026-05-26 | — |
 | [`aidocs/platform/91-appid-uri-scheme.md`](platform/91-appid-uri-scheme.md) | 91 — appId URI Scheme: HTTPS Persistent Identifiers | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/100-consistent-semantic-annotation-design.md`](semantics/100-consistent-semantic-annotation-design.md) | 100 — Consistent semantic annotation surface (UI-first + MCP CRUD) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
@@ -225,7 +227,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (70)
+## audited-by-personas (71)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -295,6 +297,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/vis-plugin-survey-addendum-cad-fem.md`](agent-findings/vis-plugin-survey-addendum-cad-fem.md) | Visualization plugin survey — addendum: CAD + FEM | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/vis-plugin-survey.md`](agent-findings/vis-plugin-survey.md) | Visualization plugin survey | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 | 2026-05-26 |
+| [`aidocs/ai-policy/147-oecd-ai-alignment.md`](ai-policy/147-oecd-ai-alignment.md) | Shepard AI design × authoritative policy alignment — 9-source × 4-band matrix | 2026-05-26 | — |
 | [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-23 |
