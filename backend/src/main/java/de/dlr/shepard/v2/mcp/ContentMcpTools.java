@@ -154,7 +154,12 @@ public class ContentMcpTools {
       "  propertyName, propertyIRI       — what is being described.\n" +
       "  valueName, valueIRI             — controlled-vocabulary value (may be null).\n" +
       "  numericValue, unitIRI           — quantitative value + unit (may be null).\n" +
-      "  propertyRepository, valueRepository — which ontology each IRI lives in.\n\n" +
+      "  propertyRepository, valueRepository — which ontology each IRI lives in.\n" +
+      "  subjectKind       — (v6) kind of the annotated entity (e.g. 'DataObject').\n" +
+      "  subjectAppId      — (v6) appId of the annotated entity.\n" +
+      "  vocabularyId      — (v6) appId of the controlling Vocabulary (may be null).\n" +
+      "  sourceMode        — (v6) 'human' | 'ai' | 'collaborative' (may be null).\n" +
+      "  confidence        — (v6) AI confidence in [0.0, 1.0] (may be null).\n\n" +
       "Returns an empty array if the DataObject has no annotations yet."
   )
   public String listAnnotations(
@@ -177,6 +182,12 @@ public class ContentMcpTools {
         row.put("unitIRI", a.getUnitIRI());
         row.put("propertyRepository", repoName(a.getPropertyRepository()));
         row.put("valueRepository", repoName(a.getValueRepository()));
+        // SEMA-V6-006 — v6 fields added to list_annotations response
+        row.put("subjectKind", a.getSubjectKind());
+        row.put("subjectAppId", a.getSubjectAppId());
+        row.put("vocabularyId", a.getVocabularyId());
+        row.put("sourceMode", a.getSourceMode());
+        row.put("confidence", a.getConfidence());
         result.add(row);
       }
       return support.toJson(result);

@@ -86,6 +86,46 @@ public class PredicateDAO extends GenericDAO<Predicate> {
     return out;
   }
 
+  /**
+   * SEMA-V6-006 — full-text search over predicate {@code label} and {@code uri}.
+   * Both fields are matched case-insensitively via {@code CONTAINS}; empty/null
+   * queries return all predicates. Optionally scoped to one vocabulary.
+   *
+   * @param q              search term (case-insensitive substring); null = match all
+   * @param vocabularyAppId optional vocabulary scope; null = all vocabularies
+   * @return matching predicates ordered by {@code label} ASC
+   */
+  public List<Predicate> searchByText(String q, String vocabularyAppId) {
+    boolean hasQ = q != null && !q.isBlank();
+    boolean hasVocab = vocabularyAppId != null && !vocabularyAppId.isBlank();
+
+    if (!hasQ && !hasVocab) {
+      return listAll();
+    }
+
+    StringBuilder sb = new StringBuilder("MATCH (p:Predicate) WHERE ");
+    Map<String, Object> params = new java.util.HashMap<>();
+
+    if (hasQ) {
+      sb.append("(toLower(p.label) CONTAINS toLower($q) OR toLower(p.uri) CONTAINS toLower($q))");
+      params.put("q", q);
+    }
+    if (hasQ && hasVocab) {
+      sb.append(" AND ");
+    }
+    if (hasVocab) {
+      sb.append("p.vocabularyAppId = $vid");
+      params.put("vid", vocabularyAppId);
+    }
+    sb.append(" RETURN p ORDER BY p.label ASC");
+
+    List<Predicate> out = new ArrayList<>();
+    for (Predicate p : findByQuery(sb.toString(), params)) {
+      out.add(p);
+    }
+    return out;
+  }
+
   @Override
   public Class<Predicate> getEntityType() {
     return Predicate.class;
