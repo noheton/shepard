@@ -78,6 +78,29 @@ public class Vocabulary implements HasId, HasAppId {
   @Property("enabled")
   private boolean enabled = true;
 
+  // ─── SEMA-V6-014 fields ──────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-014 — vocabulary kind.
+   * <ul>
+   *   <li>{@code null} / absent — system-seeded or operator-uploaded vocabulary (the pre-existing shape).</li>
+   *   <li>{@code "PERSONAL"} — user-minted personal vocabulary
+   *       ({@code urn:shepard:personal:<userAppId>:<name>}).</li>
+   * </ul>
+   * Stored as a plain string so future kinds can be added without migration.
+   */
+  @Property("type")
+  private String type;
+
+  /**
+   * SEMA-V6-014 — {@code appId} of the {@link de.dlr.shepard.auth.users.entities.User}
+   * who owns this vocabulary. Only set when {@link #type} is {@code "PERSONAL"};
+   * {@code null} for system and operator vocabularies. Enables
+   * owner-scoped listing without a graph relationship.
+   */
+  @Property("ownedByUserAppId")
+  private String ownedByUserAppId;
+
   /**
    * Epoch-millis when this row was first created. Set once on V72 seed;
    * for operator-added vocabularies, set on first save.
@@ -92,7 +115,7 @@ public class Vocabulary implements HasId, HasAppId {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uri, label, prefix, description, enabled, createdAt, appId);
+    return Objects.hash(id, uri, label, prefix, description, enabled, createdAt, appId, type, ownedByUserAppId);
   }
 
   @Override
@@ -106,6 +129,8 @@ public class Vocabulary implements HasId, HasAppId {
       Objects.equals(description, other.description) &&
       enabled == other.enabled &&
       Objects.equals(createdAt, other.createdAt) &&
-      Objects.equals(appId, other.appId);
+      Objects.equals(appId, other.appId) &&
+      Objects.equals(type, other.type) &&
+      Objects.equals(ownedByUserAppId, other.ownedByUserAppId);
   }
 }

@@ -36,6 +36,15 @@ public class PatchSemanticConfigIO {
   @Schema(description = "AI model identifier. Null = leave unchanged; empty string = clear.", nullable = true)
   private String suggestionModelId;
 
+  // ─── SEMA-V6-014 fields ──────────────────────────────────────────────────
+
+  @Schema(
+    description = "SEMA-V6-014 — when true, authenticated users may mint personal vocabularies " +
+      "at POST /v2/vocabularies/personal. Null = leave unchanged.",
+    nullable = true
+  )
+  private Boolean personalVocabulariesEnabled;
+
   // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
 
   @Schema(

@@ -129,6 +129,16 @@ public class SemanticConfig implements HasId, HasAppId {
   @Property("suggestionModelId")
   private String suggestionModelId;
 
+  // ─── SEMA-V6-014 fields ──────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-014 — when {@code true}, authenticated users may mint personal
+   * vocabularies at {@code POST /v2/vocabularies/personal}. Default: {@code false}
+   * (opt-in; operator enables once researchers need ad-hoc namespaces).
+   */
+  @Property("personalVocabulariesEnabled")
+  private boolean personalVocabulariesEnabled = false;
+
   // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
 
   /**

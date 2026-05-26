@@ -192,6 +192,9 @@ public class SemanticConfigRest {
         patch.getSuggestionModelId().isBlank() ? null : patch.getSuggestionModelId()
       );
     }
+    if (patch.getPersonalVocabulariesEnabled() != null) {
+      cfg.setPersonalVocabulariesEnabled(patch.getPersonalVocabulariesEnabled());
+    }
     if (patch.getAnnotationDeletePolicy() != null) {
       // Empty string = clear (revert to default); otherwise normalise to lower-case.
       cfg.setAnnotationDeletePolicy(
@@ -205,9 +208,10 @@ public class SemanticConfigRest {
 
     SemanticConfig saved = configService.patchConfig(cfg);
     Log.infof(
-      "SemanticConfigRest: config updated by '%s' (preseedEnabled=%b, annotationMode=%s, suggestionEnabled=%b, annotationDeletePolicy=%s)",
+      "SemanticConfigRest: config updated by '%s' (preseedEnabled=%b, annotationMode=%s, suggestionEnabled=%b, " +
+        "annotationDeletePolicy=%s, personalVocabulariesEnabled=%b)",
       actor, saved.isPreseedEnabled(), saved.getAnnotationMode(), saved.isSuggestionEnabled(),
-      saved.getAnnotationDeletePolicy()
+      saved.getAnnotationDeletePolicy(), saved.isPersonalVocabulariesEnabled()
     );
     return Response.ok(SemanticConfigIO.from(saved)).build();
   }

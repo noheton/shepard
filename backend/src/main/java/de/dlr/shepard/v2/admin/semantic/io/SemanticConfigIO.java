@@ -40,6 +40,11 @@ public class SemanticConfigIO {
   @Schema(description = "Identifier of the AI model used for annotation suggestions. Null = server default.", nullable = true)
   private String suggestionModelId;
 
+  // ─── SEMA-V6-014 fields ──────────────────────────────────────────────────
+
+  @Schema(description = "SEMA-V6-014 — when true, authenticated users may mint personal vocabularies. Default: false.")
+  private boolean personalVocabulariesEnabled;
+
   // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
 
   @Schema(
@@ -52,14 +57,15 @@ public class SemanticConfigIO {
   /** Map from entity. */
   public static SemanticConfigIO from(SemanticConfig c) {
     SemanticConfigIO io = new SemanticConfigIO();
-    io.appId                  = c.getAppId();
-    io.preseedEnabled         = c.isPreseedEnabled();
-    io.disabledBundles        = c.getDisabledBundles() == null ? List.of() : c.getDisabledBundles();
-    io.defaultVocabularyAppId = c.getDefaultVocabularyAppId();
-    io.annotationMode         = c.getAnnotationMode();
-    io.suggestionEnabled      = c.isSuggestionEnabled();
-    io.suggestionModelId      = c.getSuggestionModelId();
-    io.annotationDeletePolicy = c.getAnnotationDeletePolicy();
+    io.appId                       = c.getAppId();
+    io.preseedEnabled              = c.isPreseedEnabled();
+    io.disabledBundles             = c.getDisabledBundles() == null ? List.of() : c.getDisabledBundles();
+    io.defaultVocabularyAppId      = c.getDefaultVocabularyAppId();
+    io.annotationMode              = c.getAnnotationMode();
+    io.suggestionEnabled           = c.isSuggestionEnabled();
+    io.suggestionModelId           = c.getSuggestionModelId();
+    io.personalVocabulariesEnabled = c.isPersonalVocabulariesEnabled();
+    io.annotationDeletePolicy      = c.getAnnotationDeletePolicy();
     return io;
   }
 }
