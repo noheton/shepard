@@ -386,6 +386,42 @@ surfaces — if any one returns empty for a shipped feature,
 traceability is broken; fix the missing surface before shipping
 anything else.
 
+## Always: semantic annotations are first-class on every entity
+
+The UI's 3-click annotate affordance, the MCP CRUD tools, the SPARQL
+surface, and the SHACL validation all read from one canonical store
+(`:SemanticAnnotation`). New entity kinds — in-tree or plugin — **must be
+annotatable from day one**; the SPI seam is the `appId` itself.
+
+Rules:
+
+1. **Any new payload kind ships annotatable at zero cost.** No
+   annotation-specific code is needed — the `appId` is the handle.
+   The `AnnotationDialog` and all 10 MCP annotation tools work
+   immediately.
+2. **New vocabulary terms go through the `SemanticVocabularyProvider` SPI
+   or the admin upload path** — never as per-kind annotation entities
+   or inline Java `@Property` bags.
+3. **Every annotation write records a typed `:Activity`** (via
+   `ProvenanceService.record()`): `sourceMode` ∈ `human | ai |
+   collaborative`, `vocabularyId`, predicate, before+after value, and
+   — when `ai` — model identifier + confidence. The caller sets
+   `agentMode` on the annotation; the service captures the Activity.
+4. **The free-text `attributes` bag is a write-disabled escape hatch**
+   for pre-SEMA-V6-011 legacy keys. Never add new code that writes
+   to `:DataObject.attributes||*` (guarded by
+   `AttributesMapHasNoNewWritersTest`). Direct all new metadata to
+   `:SemanticAnnotation`.
+5. **Per-kind annotation entities are an anti-pattern.** `AnnotatableTimeseries`
+   is a known debt node from before this rule existed; do not create
+   siblings. The bridge-node approach accretes EAV bloat (NEO-AUDIT-005)
+   and breaks cross-cutting queryability (the FAIR-R1 promise).
+
+**Why:** cross-cutting queryability is the FAIR-R1 guarantee and the
+AI-substrate enabler. Per-kind shapes cause EAV bloat and bridge-node
+sprawl. The 2026-05-24 SEMA-V6 design (`aidocs/semantics/100`) is the
+canonical reference.
+
 ## Specialized agent roles
 
 Reusable prompt scaffolds for specialized review and design tasks. Copy the
