@@ -132,6 +132,7 @@ services:
 
   timescaledb:
     image: timescale/timescaledb:2.24.0-pg16
+    command: postgres -c timescaledb.max_tuples_decompressed_per_dml_transaction=0
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
