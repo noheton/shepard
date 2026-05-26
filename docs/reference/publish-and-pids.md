@@ -419,6 +419,67 @@ both as `<dependency>` items so Quarkus's build-time CDI scanner
 picks the `@Path` resources + `@ApplicationScoped` beans. See
 [plugins.md](/reference/plugins/) for the operator runbook.
 
+## Cite this dataset
+
+Every Collection landing page carries a **"Cite this dataset"** card
+(shipped in RDM-001, `frontend/components/context/collection/CiteThisCard.vue`).
+The card renders the Collection as a copy-paste-ready citation in four formats:
+
+| Tab | Format | Typical use |
+|---|---|---|
+| **Plain text** | APA 7th edition, e.g. `Krebs, F. (2024). LUMEN — Q3 2024 [Data set]. Shepard Research Data Platform. https://…` | Paper supplement, README |
+| **BibTeX** | `@dataset{shepard-42-2024, …}` | LaTeX / BibLaTeX |
+| **RIS** | `TY - DATA` record | EndNote, Zotero, Mendeley |
+| **CSL JSON** | `{"type": "dataset", …}` | Pandoc, Zotero, citation.js |
+
+The card is visible to all users who can view the Collection. It does not require a
+PID to be minted first — it uses the Collection's landing-page URL. If the Collection
+**has** a PID minted (see [Publish an entity](#rest-surface) above), the PID appears
+in the citation rather than the URL.
+
+The `license` field (SPDX) set on the Collection flows directly into the citation
+output. If no license is set, the license line is omitted — which is intentional:
+"no line" is preferable to implying the dataset is unlicensed when it's merely
+undeclared.
+
+## Metadata completeness score
+
+The Collection landing page also carries a **"Metadata completeness"** card
+(shipped in RDM-005, `frontend/components/context/collection/MetadataCompletenessCard.vue`).
+The card scores the Collection's FAIR metadata out of 100 and shows a
+per-check breakdown so a researcher can see exactly what to fix.
+
+### Score bands
+
+| Score | Colour | Meaning |
+|---|---|---|
+| < 50 | Red (`error`) | Not publication-ready |
+| 50 – 79 | Amber (`warning`) | Missing key FAIR fields |
+| ≥ 80 | Green (`success`) | DMP-grade |
+
+### Check breakdown
+
+| Check | Points | FAIR mapping |
+|---|---|---|
+| Collection has a name | 10 | DataCite §3 (Title) |
+| Description ≥ 50 characters | 15 | DataCite §17 + Zenodo completeness |
+| License (SPDX) set | 20 | DataCite §16, FAIR R1.1 |
+| Access rights set | 10 | DataCite §16, FAIR A1.2 |
+| Creator has ORCID | 10 | DataCite §2 (Creator PID) |
+| At least one semantic annotation | 10 | FAIR I1 + I2 |
+| At least one lab journal entry | 5 | FAIR R1.2 (provenance) |
+| Hero image set | 5 | Findability / discoverability |
+| Has at least one DataObject | 15 | FAIR F2 |
+| **Total** | **100** | |
+
+Each check row has an action button that either scrolls to the relevant section
+on the Collection page (description, license, annotations, hero image, lab journal,
+DataObjects) or opens `/me` for the ORCID check (which lives on the user profile).
+
+The score is conservative while data is loading — checks dependent on in-flight
+fetches (semantic annotations, lab journal count, creator ORCID) default to
+`false` until resolved, so the displayed score is never inflated.
+
 ## What's next
 
 - **KIP1c (ePIC plugin)** — real Handles, queued.

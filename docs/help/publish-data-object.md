@@ -168,6 +168,38 @@ endpoint stays public by design.
 | 404 (`kip.pid.not-found`) | Resolver hit, but no Publication with that PID exists at this instance. | The PID belongs to a different shepard, or the row was hard-deleted (KIP records are append-only — this is exceptional). |
 | 500 (`publish.minter.failed`) | The active Minter (ePIC / DataCite once KIP1c/d ship) returned an error. | Read the `detail` field — it's the upstream's reason. Retry, or check minter credentials. |
 
+## Status lifecycle
+
+Every DataObject and Collection carries a **status** field that signals where it
+sits in its review workflow. Status is independent of whether the entity has been
+published (PID minted) — you can mint a PID at any status.
+
+| Status | Meaning |
+|---|---|
+| `DRAFT` | Work in progress. Default on creation. Not considered final. |
+| `IN_REVIEW` | Sent for review by a colleague or approver. Read-only convention — shepard doesn't enforce write-locking. |
+| `READY` | Reviewed and approved. Ready for publication or downstream use. |
+| `PUBLISHED` | Publicly citable. Pair with a PID mint for a fully citable dataset. |
+| `ARCHIVED` | Superseded or retired. Kept for provenance; not the current working state. |
+
+Change status via the **Edit** dialog (pencil icon) on any entity — the status
+field is a dropdown visible in both basic and advanced mode. There is no automatic
+transition: you choose when to advance status and when to step back.
+
+**Typical progression:**
+
+```
+DRAFT  →  IN_REVIEW  →  READY  →  PUBLISHED
+                                      ↓
+                                   ARCHIVED
+```
+
+A rework loop (e.g. after an anomaly investigation) might look like:
+
+```
+PUBLISHED (TR-004)  →  DRAFT (investigation DO)  →  READY  →  PUBLISHED
+```
+
 ## Further reading
 
 - [Reference: Publishing and PIDs](/reference/publish-and-pids/) — full schema, every endpoint, every config knob.

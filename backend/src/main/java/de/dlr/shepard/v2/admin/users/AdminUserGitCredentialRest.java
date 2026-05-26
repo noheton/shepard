@@ -5,6 +5,7 @@ import de.dlr.shepard.auth.users.entities.GitCredential;
 import de.dlr.shepard.auth.users.services.UserService;
 import de.dlr.shepard.common.crypto.AesGcmCipher;
 import de.dlr.shepard.common.util.Constants;
+import io.quarkus.logging.Log;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -151,6 +152,7 @@ public class AdminUserGitCredentialRest {
     try {
       return Base64.getDecoder().decode(encryptionKey.get().trim());
     } catch (IllegalArgumentException e) {
+      Log.warn("shepard.secrets.encryption-key is present but not valid base64 — treating as absent");
       return null;
     }
   }

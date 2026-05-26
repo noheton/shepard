@@ -99,6 +99,23 @@ in step 2 (Attributes). Both forms use:
 On the Data Object detail page both values render as small chips
 below the title when set.
 
+## Time-bounds sparklines in the DataObjects list
+
+When a DataObject has `timeBoundsStart` and/or `timeBoundsEnd` set, the
+DataObjects panel on the Collection landing page renders a small SVG bar in the
+row, scaled across the collection's time window. Hovering the bar shows the
+human-readable start–end range.
+
+The sparkline column appears automatically when at least one DataObject in the
+list carries time-bound metadata. DataObjects without bounds render an empty slot
+in that column — they stay fully usable; the column just gives a quick visual
+overview of when each run's data was recorded.
+
+`timeBoundsStart` / `timeBoundsEnd` are ISO 8601 timestamps. Set them
+programmatically on PUT/PATCH or via the Edit dialog in the UI (they appear in
+the "Attributes" section of the dialog). Shepard does **not** infer them from
+timeseries payload automatically — set them explicitly.
+
 ## See also
 
 - `collections.md` — sibling page documenting the same fields at the
