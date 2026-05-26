@@ -55,7 +55,6 @@ const { mobile } = useDisplay();
                 color="treeview"
                 @click="currentStep = 1"
               >
-                <!-- TODO: Better disabled color -->
                 Back
               </v-btn>
               <v-spacer />
@@ -134,7 +133,8 @@ const { mobile } = useDisplay();
       color: rgb(var(--v-theme-low-emphasis));
     }
     .v-btn__overlay {
-      color: rgb(var(--v-theme-divider2));
+      background-color: rgb(var(--v-theme-divider2));
+      opacity: 0.4;
     }
   }
 }
