@@ -47,6 +47,15 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Graph-based permission checks against the Neo4j {@code :Permissions} node.
+ *
+ * <p><strong>F6 seam:</strong> {@link PolicyDecisionPoint} is the interface a future
+ * OPA/Cedar engine would implement. {@link GraphPolicyDecisionPoint} is the current
+ * production implementation that delegates back to this service. F1 will introduce
+ * {@code @Authz(action, resource)} annotations that replace the path-segment switch
+ * in {@link #isAllowed} with calls to {@code PolicyDecisionPoint.isAllowed}.
+ */
 @RequestScoped
 public class PermissionsService {
 
