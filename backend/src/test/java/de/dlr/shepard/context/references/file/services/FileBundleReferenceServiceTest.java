@@ -73,11 +73,11 @@ public class FileBundleReferenceServiceTest {
   @InjectMock
   UserService userService;
 
-  @Inject
-  FileBundleReferenceService service;
+  @InjectMock
+  FileContainerService fileContainerService;
 
   @Inject
-  FileContainerService fileContainerService;
+  FileBundleReferenceService service;
 
   private final long collectionId = 112200L;
 
@@ -186,17 +186,13 @@ public class FileBundleReferenceServiceTest {
       }
     };
     when(userService.getCurrentUser()).thenReturn(user);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(fileContainerService.getContainer(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
     when(fileDAO.find(container.getId(), "oid")).thenReturn(fileComplete);
     when(versionDAO.findVersionLightByNeo4jId(dataObject.getId())).thenReturn(version);
     when(dataObjectService.getDataObject(collectionId, dataObject.getShepardId())).thenReturn(dataObject);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
 
     FileBundleReference actual = service.createReference(collectionId, dataObject.getShepardId(), input);
     assertEquals(createdWithShepardId, actual);
@@ -252,11 +248,7 @@ public class FileBundleReferenceServiceTest {
       }
     };
     when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(fileContainerService.getContainer(container.getId())).thenReturn(container);
     when(dao.createOrUpdate(toCreate)).thenReturn(created);
     when(dao.createOrUpdate(createdWithShepardId)).thenReturn(createdWithShepardId);
     when(dateHelper.getDate()).thenReturn(date);
@@ -284,11 +276,8 @@ public class FileBundleReferenceServiceTest {
     };
     when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(fileContainerService.getContainer(container.getId()))
+      .thenThrow(new InvalidPathException("container is deleted"));
 
     assertThrows(InvalidBodyException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
@@ -311,11 +300,8 @@ public class FileBundleReferenceServiceTest {
 
     when(userService.getCurrentUser()).thenReturn(user);
     when(dataObjectService.getDataObject(dataObject.getShepardId())).thenReturn(dataObject);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(nullFileContainerId), eq(AccessType.Read), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(fileContainerDAO.findByNeo4jId(nullFileContainerId)).thenReturn(null);
+    when(fileContainerService.getContainer(nullFileContainerId))
+      .thenThrow(new InvalidPathException("container not found"));
 
     assertThrows(InvalidBodyException.class, () ->
       service.createReference(collectionId, dataObject.getShepardId(), input)
@@ -367,12 +353,7 @@ public class FileBundleReferenceServiceTest {
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
     when(userService.getCurrentUser()).thenReturn(user);
-    when(authenticationContext.getCurrentUserName()).thenReturn(user.getUsername());
-    when(
-      permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(user.getUsername()), anyLong())
-    ).thenReturn(true);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(fileService.getPayload(container.getMongoId(), fileOID)).thenReturn(result);
+    when(fileContainerService.getFile(container.getId(), fileOID)).thenReturn(result);
 
     NamedInputStream actual = service.getPayload(
       collectionId,
@@ -425,8 +406,6 @@ public class FileBundleReferenceServiceTest {
 
   @Test
   public void getPayloadByShepardIdTest_NotAllowed() {
-    String username = "Xrj§84eEi6fY?";
-
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
 
@@ -440,8 +419,8 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(20L), eq(AccessType.Read), eq(username), anyLong())).thenReturn(false);
+    when(fileContainerService.getFile(eq(container.getId()), eq("oid")))
+      .thenThrow(new InvalidAuthException("Not allowed"));
 
     assertThrows(InvalidAuthException.class, () ->
       service.getPayload(15L, dataObject.getShepardId(), ref.getShepardId(), "oid", null)
@@ -466,11 +445,8 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(authenticationContext.getCurrentUserName()).thenReturn(username);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(username), anyLong())).thenReturn(true);
-    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis1);
-    when(fileService.getPayload(container.getMongoId(), "oid2")).thenReturn(nis2);
+    when(fileContainerService.getFile(container.getId(), "oid1")).thenReturn(nis1);
+    when(fileContainerService.getFile(container.getId(), "oid2")).thenReturn(nis2);
 
     var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());
 
@@ -499,11 +475,8 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(authenticationContext.getCurrentUserName()).thenReturn(username);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(container.getId()), eq(AccessType.Read), eq(username), anyLong())).thenReturn(true);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
-    when(fileService.getPayload(container.getMongoId(), "oid1")).thenReturn(nis.getFirst());
-    when(fileService.getPayload(container.getMongoId(), "oid2")).thenThrow(new NotFoundException());
+    when(fileContainerService.getFile(container.getId(), "oid1")).thenReturn(nis.getFirst());
+    when(fileContainerService.getFile(container.getId(), "oid2")).thenThrow(new NotFoundException());
 
     var actual = service.getAllPayloads(collectionId, dataObject.getShepardId(), ref.getShepardId());
 
@@ -556,7 +529,6 @@ public class FileBundleReferenceServiceTest {
 
   @Test
   public void getAllPayloadsByShepardIdTest_NotAllowed() {
-    String username = "Xrj§84eEi6fY?";
     FileContainer container = new FileContainer(20L);
     container.setMongoId("mongoId");
     FileBundleReference ref = new FileBundleReference(1L);
@@ -569,8 +541,8 @@ public class FileBundleReferenceServiceTest {
     ref.setDataObject(dataObject);
 
     when(dao.findByShepardId(ref.getShepardId(), null)).thenReturn(ref);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(20L), eq(AccessType.Read), eq(username), anyLong())).thenReturn(false);
-    when(fileContainerDAO.findByNeo4jId(container.getId())).thenReturn(container);
+    when(fileContainerService.getContainer(container.getId()))
+      .thenThrow(new InvalidAuthException("Not allowed"));
 
     assertThrows(InvalidAuthException.class, () -> service.getAllPayloads(collectionId, dataObject.getShepardId(), 15L)
     );

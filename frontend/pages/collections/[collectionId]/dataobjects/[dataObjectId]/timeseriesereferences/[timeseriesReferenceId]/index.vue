@@ -75,7 +75,13 @@ function formatTsAnnotationRange(ann: { startNs: number; endNs: number }): strin
 
 const timeseriesDataTableItems = ref<TimeseriesDataTableItem[]>([]);
 const numberOfSelectedItems = ref<number>(0);
-const showDeleteDialog = ref<boolean>(false);
+const showDeleteDialog    = ref<boolean>(false);
+const showVisualize3D     = ref<boolean>(false);
+const canVisualize3D = computed(
+  () =>
+    (timeseriesReference.value?.timeseries?.length ?? 0) >= 3 &&
+    !!timeseriesReference.value?.timeseriesContainerId,
+);
 
 // Chart payload — fetched eagerly at setup time so the "Channel Overview"
 // panel is pre-populated. Must live here (not inside onMounted) because
@@ -339,6 +345,19 @@ watch(timeseriesReference, () => {
                  the TimeseriesContainer page. -->
             <ExpansionPanels class="mt-4 mb-2" :default-open="[0]">
               <ExpansionPanelItem title="Channel Overview">
+                <template #append>
+                  <v-btn
+                    v-if="canVisualize3D"
+                    size="small"
+                    variant="tonal"
+                    color="primary"
+                    prepend-icon="mdi-cube-outline"
+                    class="mr-2"
+                    @click.stop="showVisualize3D = true"
+                  >
+                    Visualize in 3D
+                  </v-btn>
+                </template>
                 <div
                   v-if="chartPayloadLoading || !chartPayloadFetched"
                   class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-4"
@@ -574,6 +593,14 @@ watch(timeseriesReference, () => {
       </v-row>
       <CenteredLoadingSpinner v-else />
     </v-container>
+    <ViewRecipeBuilderDialog
+      v-if="timeseriesReference && timeseriesReference.timeseriesContainerId"
+      v-model="showVisualize3D"
+      :container-id="timeseriesReference.timeseriesContainerId"
+      :channels="timeseriesReference.timeseries"
+      :start-ns="timeseriesReference.start"
+      :end-ns="timeseriesReference.end"
+    />
     <ConfirmDeleteDialog
       v-model:show-dialog="showDeleteDialog"
       @confirmed="deleteTimeseriesReference"

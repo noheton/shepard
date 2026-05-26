@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 38 |
 | `concept` | 14 |
 | `idea` | 10 |
-| `feature-defined` | 84 |
-| `audited-by-personas` | 62 |
+| `feature-defined` | 85 |
+| `audited-by-personas` | 63 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 60 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **329** |
+| **total docs** | **331** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -134,7 +134,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-23 |
 
-## feature-defined (84)
+## feature-defined (85)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -157,7 +157,8 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/ts-design-audit-2026-05-24.md`](agent-findings/ts-design-audit-2026-05-24.md) | TimescaleDB design audit — 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
-| [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | — |
+| [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |
+| [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-ingestion-plan.md) | MFFD Dump Ingestion Plan | 2026-05-26 | — |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-23 |
@@ -205,7 +206,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/104-author-research-profile.md`](strategy/104-author-research-profile.md) | Author research profile — Florian Krebs, DLR ZLP Augsburg | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/105-postgres-multitenant-decision.md`](strategy/105-postgres-multitenant-decision.md) | aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED | 2026-05-24 | 2026-05-24 |
-| [`aidocs/strategy/106-shepard-industrial-ai-role.md`](strategy/106-shepard-industrial-ai-role.md) | 106 — Shepard's Role in the Industrial-AI Value Chain | 2026-05-24 | — |
+| [`aidocs/strategy/106-shepard-industrial-ai-role.md`](strategy/106-shepard-industrial-ai-role.md) | 106 — Shepard's Role in the Industrial-AI Value Chain | 2026-05-24 | 2026-05-26 |
 | [`aidocs/strategy/87-dlr-zlp-positioning.md`](strategy/87-dlr-zlp-positioning.md) | DLR ZLP Augsburg — institutional positioning and the substrate Shepard serves | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/88-nfdi4ing-alignment.md`](strategy/88-nfdi4ing-alignment.md) | 88 — NFDI4Ing alignment: positioning Shepard inside the German engineering RDM federation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/89-genai-methodology-and-reflexivity.md`](strategy/89-genai-methodology-and-reflexivity.md) | Generative AI as research method — Krebs's stated position and this project's observed practice | 2026-05-23 | 2026-05-23 |
@@ -223,7 +224,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (62)
+## audited-by-personas (63)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -233,20 +234,21 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/api-annoyances.md`](agent-findings/api-annoyances.md) | API annoyances — running log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-scrutinizer-v14-import.md`](agent-findings/api-scrutinizer-v14-import.md) | API Scrutinizer — v14 → v15 import-script review | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/api-scrutinizer.md`](agent-findings/api-scrutinizer.md) | API Scrutinizer — Shepard /v2/ Findings | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/competitive-reassessment-2026-05-24.md`](agent-findings/competitive-reassessment-2026-05-24.md) | Competitive reassessment — post-V6-trinity verdict shift (2026-05-24) | 2026-05-24 | — |
+| [`aidocs/agent-findings/competitive-reassessment-2026-05-24.md`](agent-findings/competitive-reassessment-2026-05-24.md) | Competitive reassessment — post-V6-trinity verdict shift (2026-05-24) | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/data-ontologist-prov-o-v15.md`](agent-findings/data-ontologist-prov-o-v15.md) | PROV-O fragment design for v15 MFFD batch import | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/data-ontologist.md`](agent-findings/data-ontologist.md) | Data Ontologist — Discovery Findings | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md`](agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md) | DLR-BT simulation cluster — "unsere Simulanten" | 2026-05-24 | — |
+| [`aidocs/agent-findings/db-schema-recommendations.md`](agent-findings/db-schema-recommendations.md) | DB Schema Recommendations — Live Shepard Instance Audit | 2026-05-26 | 2026-05-26 |
+| [`aidocs/agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md`](agent-findings/dlr-bt-simulation-cluster-toso-2026-05-24.md) | DLR-BT simulation cluster — "unsere Simulanten" | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/dlr-ontology-catalog.md`](agent-findings/dlr-ontology-catalog.md) | DLR Ontology & Model Initiative Catalogue | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/docs-pages-refresh.md`](agent-findings/docs-pages-refresh.md) | GH Pages docs refresh — pre-push survey + fix log | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/easa-ai-regulatory-positioning.md`](agent-findings/easa-ai-regulatory-positioning.md) | EASA AI Regulatory Positioning for Shepard | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/easa-data-management-learning-assurance.md`](agent-findings/easa-data-management-learning-assurance.md) | EASA Data Management + Learning Assurance — deep dive (Shepard scope) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ecosystem-advocate.md`](agent-findings/ecosystem-advocate.md) | Ecosystem Advocate — Findings | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ecosystem-tools.md`](agent-findings/ecosystem-tools.md) | Ecosystem Tools — Findings | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/elib-bt-project-sweep-2026-05-24.md`](agent-findings/elib-bt-project-sweep-2026-05-24.md) | eLib BT-project sweep + 5 user-flagged papers — Braunschweig / Stuttgart / Augsburg deep-dive | 2026-05-24 | — |
+| [`aidocs/agent-findings/elib-bt-project-sweep-2026-05-24.md`](agent-findings/elib-bt-project-sweep-2026-05-24.md) | eLib BT-project sweep + 5 user-flagged papers — Braunschweig / Stuttgart / Augsburg deep-dive | 2026-05-24 | 2026-05-26 |
 | [`aidocs/agent-findings/eu-machinery-regulation-2023-1230.md`](agent-findings/eu-machinery-regulation-2023-1230.md) | EU Machinery Regulation 2023/1230 — Shepard implications | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/garage-activation-runbook.md`](agent-findings/garage-activation-runbook.md) | Garage activation runbook — findings & gotchas | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | — |
+| [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md`](agent-findings/ogm-hydration-audit-2026-05-24.md) | OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24) | 2026-05-24 | 2026-05-24 |
@@ -313,15 +315,15 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/00-index.md`](00-index.md) | aidocs — Index | 2026-05-23 | 2026-05-23 |
 | [`aidocs/100-ui-annoyances.md`](100-ui-annoyances.md) | 100 — Shepard UI annoyances (live captured) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/16-dispatcher-backlog.md`](16-dispatcher-backlog.md) | 16 — Dispatcher Backlog | 2026-05-23 | 2026-05-24 |
-| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-24 |
+| [`aidocs/34-upstream-upgrade-path.md`](34-upstream-upgrade-path.md) | Upstream upgrade path — `dlr-shepard/shepard 5.2.0` → `noheton/shepard main` | 2026-05-23 | 2026-05-26 |
 | [`aidocs/40-ecosystem.md`](40-ecosystem.md) | 40 — Shepard ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/41-synergy-sweep.md`](41-synergy-sweep.md) | 41 — Synergy sweep: collapse-where-generalisation-helps | 2026-05-23 | 2026-05-23 |
 | [`aidocs/42-vision.md`](42-vision.md) | shepard — Vision (for researchers) | 2026-05-23 | 2026-05-22 |
-| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-24 |
+| [`aidocs/44-fork-vs-upstream-feature-matrix.md`](44-fork-vs-upstream-feature-matrix.md) | Fork vs Upstream — Feature Matrix | 2026-05-23 | 2026-05-26 |
 | [`aidocs/97-shepard-pipelines.md`](97-shepard-pipelines.md) | 97 — Shepard-pipelines: modern REBAR, Shepard-native | 2026-05-23 | 2026-05-23 |
 | [`aidocs/99-api-annoyances.md`](99-api-annoyances.md) | 99 — Shepard API annoyances (structural clunkiness) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/audience-frontmatter-retrofit-2026-05-23.md`](agent-findings/audience-frontmatter-retrofit-2026-05-23.md) | Audience-persona front-matter retrofit (DOCS-3A9) | 2026-05-23 | 2026-05-23 |
-| [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | — |
+| [`aidocs/agent-findings/feature-synergy-hunt-2026-05-26.md`](agent-findings/feature-synergy-hunt-2026-05-26.md) | Feature & Synergy Hunt — 2026-05-26 | 2026-05-26 | 2026-05-26 |
 | [`aidocs/agent-findings/gh-pm-adoption-synthesis-2026-05-23.md`](agent-findings/gh-pm-adoption-synthesis-2026-05-23.md) | Synthesis — GH-PM (policy doc 85) adoption decisions | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/gh-pm-backfill-plan-2026-05-23.md`](agent-findings/gh-pm-backfill-plan-2026-05-23.md) | GH-PM5 backfill — plan + execution log (2026-05-23) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/lic1-shipped-2026-05-24.md`](agent-findings/lic1-shipped-2026-05-24.md) | LIC1 shipped — license + accessRights end-to-end (2026-05-24) | 2026-05-24 | 2026-05-24 |

@@ -190,6 +190,17 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/100-consistent-semantic-annotation-design.md",
     backend: "partial",
   },
+  {
+    slug: "shapes-render",
+    surface: "route",
+    title: "Shape render playground",
+    subtitle:
+      "Project a VIEW_RECIPE template's channel bindings onto a focus DataObject — the backend hook that drives Trace3D and other shape-driven renderers.",
+    endpoint: null,
+    backlogRow: "TPL2b",
+    designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
+    backend: "shipped",
+  },
 ];
 
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
