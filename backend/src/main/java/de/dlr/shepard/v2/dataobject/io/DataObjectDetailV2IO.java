@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
@@ -65,6 +66,51 @@ public class DataObjectDetailV2IO extends DataObjectIO {
    */
   @Schema(readOnly = true, nullable = true, description = "Parent DataObject summary, or null if top-level.")
   private DataObjectSummaryIO parentSummary;
+
+  /**
+   * API1 — appIds (UUID v7) of the {@code :TimeseriesReference} nodes attached to
+   * this DataObject. Use a value here to navigate to the linked timeseries container
+   * via {@code GET /v2/timeseries-containers/{appId}}. Null (omitted from JSON) when
+   * no timeseries references exist.
+   *
+   * <p>Unlike the parent-class {@link DataObjectIO#getReferenceIds()} long array —
+   * which mixes all reference node OGM IDs across all kinds — these per-kind appId
+   * lists are type-safe, stable across DB migrations, and directly usable by MCP
+   * agents and REST clients without further resolution.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description = "appIds (UUID v7) of TimeseriesReference nodes on this DataObject. " +
+      "Use with GET /v2/timeseries-containers/{appId} to reach the container. " +
+      "Null when none exist."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<String> timeseriesReferenceAppIds;
+
+  /**
+   * API1 — appIds (UUID v7) of the {@code :FileBundleReference} nodes. Null when none.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description = "appIds (UUID v7) of FileBundleReference nodes on this DataObject. " +
+      "Null when none exist."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<String> fileReferenceAppIds;
+
+  /**
+   * API1 — appIds (UUID v7) of the {@code :StructuredDataReference} nodes. Null when none.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description = "appIds (UUID v7) of StructuredDataReference nodes on this DataObject. " +
+      "Null when none exist."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<String> structuredDataReferenceAppIds;
 
   public DataObjectDetailV2IO(DataObject dataObject) {
     super(dataObject);
