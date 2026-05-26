@@ -375,6 +375,31 @@ export const DOC_SECTIONS: { header: string; pages: DocPage[] }[] = [
     header: "Reference",
     pages: [
       {
+        page: "reference/collections",
+        title: "Collections",
+        fetchPath: "/docs/reference/collections.md",
+      },
+      {
+        page: "reference/data-objects",
+        title: "Data objects",
+        fetchPath: "/docs/reference/data-objects.md",
+      },
+      {
+        page: "reference/import",
+        title: "Import",
+        fetchPath: "/docs/reference/import.md",
+      },
+      {
+        page: "reference/timeseries-reference",
+        title: "Timeseries reference",
+        fetchPath: "/docs/reference/timeseries-reference.md",
+      },
+      {
+        page: "reference/container-annotations",
+        title: "Container annotations",
+        fetchPath: "/docs/reference/container-annotations.md",
+      },
+      {
         page: "reference/api",
         title: "API",
         fetchPath: "/docs/reference/api.md",
