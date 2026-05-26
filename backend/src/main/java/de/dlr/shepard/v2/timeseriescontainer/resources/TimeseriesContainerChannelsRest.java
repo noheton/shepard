@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -109,7 +110,8 @@ public class TimeseriesContainerChannelsRest {
     description = "Resolves the single-field shepardId to the legacy 5-tuple internally " +
       "and returns data points for the requested time window. " +
       "Accepts optional LTTB downsampling via ?downsample=lttb&max_points=N. " +
-      "This endpoint supersedes the 5-tuple query params on the v1 surface for new integrations."
+      "This endpoint supersedes the 5-tuple query params on the v1 surface for new integrations.",
+    extensions = @Extension(name = "x-agent-hint", value = "Returns [{time, value}] array; time is nanoseconds since Unix epoch. Divide by 1e9 for seconds. Suitable for direct charting.")
   )
   @APIResponse(
     responseCode = "200",
@@ -157,7 +159,8 @@ public class TimeseriesContainerChannelsRest {
     description = "Accepts a list of shepardIds (max 200) plus a shared time window and returns " +
       "raw data points — one TimeseriesWithDataPoints entry per resolved channel. " +
       "Unknown IDs are silently skipped. No downsampling is applied; use the single-channel " +
-      "endpoint with ?downsample=lttb when a reduced point count is needed."
+      "endpoint with ?downsample=lttb when a reduced point count is needed.",
+    extensions = @Extension(name = "x-agent-hint", value = "Returns [{shepardId, dataPoints: [{time, value}]}]. Batch-fetch multiple channels in one call.")
   )
   @APIResponse(
     responseCode = "200",

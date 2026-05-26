@@ -35,6 +35,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -97,7 +98,8 @@ public class ImportV2Rest {
       "POST /v2/import/jobs to execute the import. " +
       "The commitId is bound to the collection state at validation time — " +
       "if the collection changes before the import runs, the jobs endpoint will reject the plan. " +
-      "Plans expire 24 hours after issuance."
+      "Plans expire 24 hours after issuance.",
+    extensions = @Extension(name = "x-agent-hint", value = "Dry-run import — returns validation errors without committing. Commit with sealImport using the returned commitId.")
   )
   @APIResponse(responseCode = "200", description = "Manifest valid — commitId issued")
   @APIResponse(responseCode = "401", description = "Authentication required")

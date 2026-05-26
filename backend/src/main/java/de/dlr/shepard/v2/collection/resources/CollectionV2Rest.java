@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -186,7 +187,8 @@ public class CollectionV2Rest {
       "'exists but you can't see it' is intentionally not done (timing-safe).\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/data-objects` for " +
       "the DataObject list, or `PATCH /v2/collections/{collectionAppId}` for " +
-      "an RFC 7396 merge-patch update."
+      "an RFC 7396 merge-patch update.",
+    extensions = @Extension(name = "x-agent-hint", value = "Top-level container. appId is the stable identifier for all v2 calls.")
   )
   @APIResponse(
     responseCode = "200",

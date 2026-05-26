@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
@@ -139,7 +140,8 @@ public class DataObjectV2Rest {
       "Auth: Read on the parent Collection. DataObjects inherit Collection " +
       "permissions; there is no per-DO permission gate.\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` " +
-      "to fetch a specific DataObject with full reference detail."
+      "to fetch a specific DataObject with full reference detail.",
+    extensions = @Extension(name = "x-agent-hint", value = "Returns paginated list. Use ?include=time-bounds for timeseries coverage bars. timeseriesCount/fileCount/structuredDataCount give reference counts per kind.")
   )
   @APIResponse(
     responseCode = "200",
