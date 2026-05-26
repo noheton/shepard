@@ -1,28 +1,27 @@
 # RESUME — current worklog
 
-**Updated:** 2026-05-22 ~21:30 UTC by claude-opus-4-7 with operator fkrebs@nucli.de
-**Active arc:** Substrate-split → MFFD Trace3D showcase (view-as-shapes → semantic-graph → MFFD demo).
-**Status:** TPL2a shipped on worktree (TemplateKind allow-list + VIEW_RECIPE meta-shape). v15 import work paused; will pick up after Trace3D demo lands. Three agents complete + 32-of-32 orphan findings archived this session.
+**Updated:** 2026-05-27 ~00:35 UTC by claude-sonnet-4-6 with operator fkrebs@nucli.de
+**Active arc:** MFFD showcase — Track A real data ingest pending redeploy; Track B synthetic seed DONE.
+**Status:** Wave 16 complete (all pushed, commit fbdb73724). Backend Maven build in progress (PID 3652168, Quarkus augmentation phase, ~60min elapsed, still running at 100% CPU nice=5). Track A: AFP export running on cube3; framewelding today. Track B: **SEED COMPLETE** — Collection 987758 on nuclide has 16 DOs + 8 TS refs + 5 structured + 5 file refs (commit 4b4554bd7). Awaiting backend redeploy to activate Wave 14/15/16 changes. TPL2b+c+d are ALL DONE on main (7d9884ed7, 643d271dc, 065094e04).
 
 ---
 
 ## Immediate next action
 
-**Active commit:** `78cc9881` on worktree `trace3d-views-as-shapes` — TPL2a (TemplateKind allow-list + meta-shape).
+**Waiting on:** Maven build PID 3652168 to complete → `make image-backend && cd infrastructure && docker compose up -d --force-recreate shepard-backend && make wait-for-health && make smoke`. Then run `make redeploy-frontend` to activate PERF9 channel virtualization.
 
-**Next slice (TPL2b):** `POST /v2/shapes/render` REST endpoint — stub that accepts `{templateAppId, focusShepardId, mediaType}` per aidocs/98 §1.2 and returns a renderer-agnostic projection. Pairs with `GET /v2/templates?kind=view` catalogue surface (already exists per ShepardTemplateRest).
-
-**Then TPL2c:** scaffold `plugins/trace3d/` module — pom + `Trace3DPluginManifest` + concrete Trace3D recipe TTL at `plugins/trace3d/shapes/trace3d-recipe.shacl.ttl` (binds role=x → tcp_x, role=y → tcp_y, role=z → tcp_z, role=color → tcp_temperature) + docs trio (`reference.md`, `quickstart.md`, `install.md`).
-
-**Then TPL2d:** frontend TresJS component (`frontend/components/views/Trace3DView.vue`) reading `POST /v2/shapes/render` output.
-
-**Then MFFD acceptance:** instantiate the recipe against a synthetic MFFD seed DataObject's AFP TCP channels; verify Q1 anomaly at ply 5 (+18°C temp spike) is visible as a hotspot on the 3D path.
+**After redeploy:**
+1. Verify Wave 16 live: UX-PROV1 ancestor chain panel on MFFD synthetic Collection 987758, PERF9 TS channel list, PERF5 batch N+1 fix
+2. Track A: task #145 — fix fileRef parser bug for 8462 MFFD-Dropbox DOs (needs fresh DLR JWT from user-side)
+3. task #146 — v1-compat Phase 1 follow-up (filter scope + DAO session timing + smoke gate)
+4. task #137 — Mutate MFFD-Dropbox collection (Confluence zip → per-page DOs + TOC)
 
 ## Hot artefacts (verify before recommending)
 
 | Artefact | ID | Notes |
 |---|---|---|
-| MFFD-Dropbox collection | 515365 / `019e4e56-ca63-76f3-9bf0-6681f7fe6d56` | dest on nuclide |
+| MFFD-Dropbox collection | 661923 / `019e55f3-75fb-7ef3-84fc-6238566b63ea` | dest on nuclide (v16 ingest target) |
+| MFFD Synthetic Showcase | 987758 | 16 DOs, full process chain, seeded 2026-05-27 |
 | ImportScripts DO | 515376 / `019e4e56-cc74-76ca-a811-9710d245e4c3` | self-uploaded by v14 |
 | mffd-dropbox-import.py v14 | appId `019e50bd-9cbd-73d9-8f86-80f58930aaf1`, md5 `2c67de6ba38fbbc9a4842d7a5ac5b4dc`, 78262 bytes, FileRef id 578453 | latest version |
 | MFFD-Dropbox cube source | tapelaying coll 48297, bridgewelding coll 163811 | on DLR cube3 |
