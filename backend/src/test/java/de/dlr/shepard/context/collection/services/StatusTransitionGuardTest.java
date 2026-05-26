@@ -4,6 +4,7 @@ import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aCollection;
 import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aDataObject;
 import static de.dlr.shepard.testing.fixtures.ShepardTestFixtures.aUser;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -107,28 +108,28 @@ public class StatusTransitionGuardTest {
   public void validateOnUpdate_publishedToDraft_throws409() {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
       () -> StatusTransitionGuard.validateOnUpdate("PUBLISHED", "DRAFT"));
-    assert ex.getResponse().getStatus() == 409;
+    assertEquals(409, ex.getResponse().getStatus());
   }
 
   @Test
   public void validateOnUpdate_publishedToInReview_throws409() {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
       () -> StatusTransitionGuard.validateOnUpdate("PUBLISHED", "IN_REVIEW"));
-    assert ex.getResponse().getStatus() == 409;
+    assertEquals(409, ex.getResponse().getStatus());
   }
 
   @Test
   public void validateOnUpdate_archivedToReady_throws409() {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
       () -> StatusTransitionGuard.validateOnUpdate("ARCHIVED", "READY"));
-    assert ex.getResponse().getStatus() == 409;
+    assertEquals(409, ex.getResponse().getStatus());
   }
 
   @Test
   public void validateOnUpdate_archivedToPublished_throws409() {
     WebApplicationException ex = assertThrows(WebApplicationException.class,
       () -> StatusTransitionGuard.validateOnUpdate("ARCHIVED", "PUBLISHED"));
-    assert ex.getResponse().getStatus() == 409;
+    assertEquals(409, ex.getResponse().getStatus());
   }
 
   @Test
@@ -187,7 +188,7 @@ public class StatusTransitionGuardTest {
 
     WebApplicationException ex = assertThrows(WebApplicationException.class,
       () -> service.updateDataObject(collection.getShepardId(), published.getShepardId(), input));
-    assert ex.getResponse().getStatus() == 409;
+    assertEquals(409, ex.getResponse().getStatus());
   }
 
   /**
@@ -214,7 +215,7 @@ public class StatusTransitionGuardTest {
       .build();
 
     when(dao.findByShepardId(draft.getShepardId())).thenReturn(draft);
-    when(dao.findByNeo4jId(any())).thenReturn(null);
+    when(dao.findByNeo4jId(anyLong())).thenReturn(null);
     when(dao.createOrUpdate(any())).thenReturn(updated);
     when(collectionService.getCollection(collection.getShepardId())).thenReturn(collection);
     when(userService.getCurrentUser()).thenReturn(defaultUser);
