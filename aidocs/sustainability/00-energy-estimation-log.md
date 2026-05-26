@@ -346,7 +346,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `dc43bfdc` | 2026-05-26 | code | 150k | 45k | 22.22 | 20 | 5 | 47.22 | 17.14 | LOW | feat(sema-v6): SEMA-V6-001/002/003 — SemanticAnnotation v6 columns, Vocab... |
 | (pending) | 2026-05-26 | code | 60k | 20k | 9.44 | 20 | 5 | 34.44 | 12.50 | LOW | fix(data-objects): MFG5 — enforce DataObject status as closed enum + transition guard |
 | (pending) | 2026-05-26 | code | 18k | 5k | 2.17 | 5 | 2 | 9.17 | 3.33 | LOW | fix(importer-plugin): IMPL3 — fail-fast startup guard for default credentials in prod mode |
-| (pending) | 2026-05-26 | doc | 12k | 4k | 1.78 | 0 | 0 | 1.78 | 0.65 | LOW | docs(db): DB-DOC1 — database overview reference + troubleshooting task page |
+| `04efd5a9` | 2026-05-26 | doc | 12k | 4k | 1.78 | 0 | 0 | 1.78 | 0.65 | LOW | docs(db): DB-DOC1 — database overview reference + troubleshooting task page |
 
 ---
 
