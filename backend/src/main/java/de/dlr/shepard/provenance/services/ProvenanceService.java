@@ -108,6 +108,43 @@ public class ProvenanceService {
     long endedAtMillis,
     String mirroredUserAppId
   ) {
+    return record(actionKind, targetKind, targetAppId, agentUsername, summary, method, path, status,
+      startedAtMillis, endedAtMillis, mirroredUserAppId, null, null);
+  }
+
+  /**
+   * PROV1j (activity-layer) — extended overload that additionally stamps
+   * {@code sourceMode} ({@code "human"} or {@code "ai"}) and {@code agentId}
+   * (the value of the {@code X-AI-Agent} request header) on the
+   * {@code :Activity} node.
+   *
+   * <p>Closes the EU AI Act Art. 50 per-artefact AI-visibility requirement
+   * at the audit-log layer. Pre-PROV1j activities that lack these properties
+   * are treated as {@code "human"} by consumers.
+   *
+   * <p>All other overloads delegate here with {@code sourceMode=null},
+   * {@code agentId=null}; callers that pass {@code null} for both get
+   * identical behaviour to the 11-param overload.
+   *
+   * @param sourceMode {@code "human"} or {@code "ai"} — {@code null} is
+   *                   treated as absent (pre-PROV1j rows)
+   * @param agentId    value of the {@code X-AI-Agent} header, or {@code null}
+   */
+  public Activity record(
+    String actionKind,
+    String targetKind,
+    String targetAppId,
+    String agentUsername,
+    String summary,
+    String method,
+    String path,
+    Integer status,
+    long startedAtMillis,
+    long endedAtMillis,
+    String mirroredUserAppId,
+    String sourceMode,
+    String agentId
+  ) {
     if (!enabled) return null;
     // NEO-AUDIT-015: app-layer validation — Community Edition cannot enforce
     // value constraints in the DB; reject unknown actionKind early.
@@ -126,6 +163,8 @@ public class ProvenanceService {
       a.setEndedAtMillis(endedAtMillis);
       a.setOriginInstance(originInstance);
       a.setMirroredUserAppId(mirroredUserAppId);
+      a.setSourceMode(sourceMode);
+      a.setAgentId(agentId);
       // PR-3 audit-chain stamp — best-effort, never blocks the write.
       hmacChainService.stamp(a);
       Activity saved = activityDAO.createOrUpdate(a);

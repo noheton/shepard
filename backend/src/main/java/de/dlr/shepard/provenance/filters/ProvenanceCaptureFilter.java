@@ -49,6 +49,9 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
   static final String PROP_STARTED_AT_MILLIS = "shepard.provenance.startedAtMillis";
 
+  /** PROV1j — request property key for the stashed X-AI-Agent header value. */
+  static final String PROP_AI_AGENT = "shepard.provenance.aiAgent";
+
   /**
    * SEMA-V6-007 — when a handler has already called {@link ProvenanceService#record}
    * directly (e.g. annotation create/update/delete, which need the returned Activity
@@ -72,6 +75,19 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   /** Header forwarded by the MFFD importer carrying the source Shepard instance URL. */
   static final String HDR_SOURCE_INSTANCE     = "X-Source-User-Instance";
 
+  /**
+   * PROV1j — EU AI Act Art. 50 per-artefact AI-visibility header.
+   * When present and non-blank on an inbound request, the caller is an AI agent.
+   * Value is the model/system identifier, e.g. {@code "claude-sonnet-4-6"}.
+   */
+  static final String HDR_AI_AGENT            = "X-AI-Agent";
+
+  /** PROV1j response header — reflects the captured sourceMode for THIS request. */
+  static final String HDR_PROV_MODE_RESPONSE  = "X-Provenance-Mode";
+
+  /** PROV1j response header — echoes the X-AI-Agent value that was captured. */
+  static final String HDR_AI_AGENT_CAPTURED   = "X-AI-Agent-Captured";
+
   @Inject
   ProvenanceService provenance;
 
@@ -93,6 +109,10 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   @Override
   public void filter(ContainerRequestContext request) throws IOException {
     request.setProperty(PROP_STARTED_AT_MILLIS, System.currentTimeMillis());
+    // PROV1j — stash the X-AI-Agent header value early so it is available
+    // during the response phase even if the JAX-RS routing overwrites headers.
+    String aiAgent = request.getHeaderString(HDR_AI_AGENT);
+    request.setProperty(PROP_AI_AGENT, aiAgent != null ? aiAgent : "");
   }
 
   @Override
@@ -145,6 +165,19 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
       mirroredUserAppId = null;
     }
 
+    // PROV1j — EU AI Act Art. 50: classify caller mode from X-AI-Agent header.
+    String aiAgent = resolveAiAgentHeader(request);
+    String sourceMode = (aiAgent != null) ? "ai" : "human";
+
+    // PROV1j — inject response headers on /v2/ paths only (the fork's dev surface).
+    // v1 /shepard/api/... paths are left untouched per the API-version policy.
+    if (path != null && path.startsWith("v2/")) {
+      response.getHeaders().add(HDR_PROV_MODE_RESPONSE, sourceMode);
+      if (aiAgent != null) {
+        response.getHeaders().add(HDR_AI_AGENT_CAPTURED, aiAgent);
+      }
+    }
+
     provenance.record(
       actionKind,
       targetKind,
@@ -156,8 +189,30 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
       status,
       startedAtMillis,
       endedAtMillis,
-      mirroredUserAppId
+      mirroredUserAppId,
+      sourceMode,
+      aiAgent
     );
+  }
+
+  /**
+   * PROV1j — read the {@code X-AI-Agent} header from the request.
+   *
+   * <p>Prefers the stashed request property (set during the request phase) to
+   * avoid re-reading a potentially-mutable headers map. Falls back to
+   * {@link ContainerRequestContext#getHeaderString} if the property is absent.
+   *
+   * @return the non-blank agent identifier, or {@code null} when absent/blank
+   */
+  String resolveAiAgentHeader(ContainerRequestContext request) {
+    Object stashed = request.getProperty(PROP_AI_AGENT);
+    String value;
+    if (stashed instanceof String s) {
+      value = s;
+    } else {
+      value = request.getHeaderString(HDR_AI_AGENT);
+    }
+    return (value != null && !value.isBlank()) ? value : null;
   }
 
   /**

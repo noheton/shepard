@@ -2,10 +2,12 @@ package de.dlr.shepard.data.timeseries.repositories;
 
 import de.dlr.shepard.data.timeseries.model.Timeseries;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
+import de.dlr.shepard.data.timeseries.services.TimeseriesSemanticDualWriteService;
 import io.micrometer.core.annotation.Timed;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
@@ -17,6 +19,9 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
 
   @PersistenceContext
   EntityManager entityManager;
+
+  @Inject
+  TimeseriesSemanticDualWriteService semanticDualWriteService;
 
   public Optional<TimeseriesEntity> findTimeseries(long containerId, Timeseries timeseries) {
     List<TimeseriesEntity> timeseriesList =
@@ -63,20 +68,23 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
    */
   @SuppressWarnings("unchecked")
   public void upsert(long containerId, TimeseriesEntity entity) {
-    // Step 1: insert the primary row, get the auto-generated id back via RETURNING
-    List<Number> ids = entityManager
+    // Step 1: insert the primary row, get the auto-generated id and shepard_id back via RETURNING
+    List<Object[]> rows = entityManager
       .createNativeQuery(
-        "INSERT INTO timeseries (container_id, value_type) VALUES (:c, :v) RETURNING id"
+        "INSERT INTO timeseries (container_id, value_type) VALUES (:c, :v) RETURNING id, shepard_id"
       )
       .setParameter("c", containerId)
       .setParameter("v", entity.getValueType().name())
       .getResultList();
 
-    if (ids.isEmpty()) {
+    if (rows.isEmpty()) {
       Log.warn("upsert: INSERT INTO timeseries returned no id — unexpected");
       return;
     }
-    int tsId = ids.get(0).intValue();
+    Object[] row = rows.get(0);
+    int tsId = ((Number) row[0]).intValue();
+    // shepard_id is a UUID in Postgres — comes back as a java.util.UUID or String depending on driver
+    String shepardId = row[1] != null ? row[1].toString() : null;
 
     // Step 2: insert channel_metadata; skip silently on 5-tuple conflict (race)
     int cmRows = entityManager
@@ -110,6 +118,19 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
       Log.infof(
         "upsert: created channel — container=%d measurement=%s field=%s symbolicName=%s",
         containerId, entity.getMeasurement(), entity.getField(), entity.getSymbolicName()
+      );
+      // TS-SEMANTIC-01: dual-write channel metadata to Neo4j SemanticAnnotation nodes.
+      // Best-effort — failure is caught inside the service and logged at WARN; Postgres
+      // write is never rolled back as a consequence.
+      semanticDualWriteService.dualWriteChannelMetadata(
+        containerId,
+        tsId,
+        shepardId,
+        entity.getMeasurement(),
+        entity.getField(),
+        entity.getDevice(),
+        entity.getLocation(),
+        entity.getSymbolicName()
       );
     }
   }

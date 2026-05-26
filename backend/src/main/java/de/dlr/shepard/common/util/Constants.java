@@ -254,4 +254,20 @@ public class Constants {
   public static final String ANNOTATION_SOURCE_ATTRIBUTES_BACKFILL = "attributes-backfill";
   /** Predicate IRI prefix for backfilled attribute annotations (TPL4 dual-write). */
   public static final String TPL4_ATTRIBUTE_PREDICATE_PREFIX = "urn:shepard:attribute:";
+
+  // TS-SEMANTIC-01 — timeseries channel metadata → Neo4j dual-write constants
+  /** Source tag written onto every channel-metadata dual-write annotation. */
+  public static final String ANNOTATION_SOURCE_TS_CHANNEL_METADATA = "ts-channel-metadata";
+  /** Source tag for the AnnotatableTimeseries subject kind label. */
+  public static final String SUBJECT_KIND_ANNOTATABLE_TIMESERIES = "AnnotatableTimeseries";
+  /** Predicate IRI for the 'measurement' channel-metadata field (mirrors sosa:observes intent). */
+  public static final String TS_PREDICATE_MEASUREMENT = "urn:shepard:channel:measurement";
+  /** Predicate IRI for the 'field' channel-metadata field. */
+  public static final String TS_PREDICATE_FIELD = "urn:shepard:channel:field";
+  /** Predicate IRI for the 'device' channel-metadata field. */
+  public static final String TS_PREDICATE_DEVICE = "urn:shepard:channel:device";
+  /** Predicate IRI for the 'location' channel-metadata field. */
+  public static final String TS_PREDICATE_LOCATION = "urn:shepard:channel:location";
+  /** Predicate IRI for the 'symbolicName' channel-metadata field. */
+  public static final String TS_PREDICATE_SYMBOLIC_NAME = "urn:shepard:channel:symbolicName";
 }

@@ -58,6 +58,32 @@ public class ActivityIO {
   )
   private String originInstance;
 
+  /**
+   * PROV1j (activity-layer) — EU AI Act Art. 50 per-artefact visibility.
+   * {@code "human"} when the caller sent no {@code X-AI-Agent} header;
+   * {@code "ai"} when the header was present and non-blank.
+   * {@code null} for activities captured before PROV1j shipped (treat as
+   * {@code "human"} at the consumer side).
+   */
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "PROV1j — agent mode: 'human' or 'ai'. Null for pre-PROV1j rows (treat as 'human')."
+  )
+  private String sourceMode;
+
+  /**
+   * PROV1j (activity-layer) — the value of the {@code X-AI-Agent} request
+   * header, when present. {@code null} when {@link #sourceMode} is
+   * {@code "human"} (header was absent or blank).
+   */
+  @Schema(
+    required = false,
+    nullable = true,
+    description = "PROV1j — AI agent identifier from X-AI-Agent header (e.g. 'claude-sonnet-4-6'). Null for human callers."
+  )
+  private String agentId;
+
   public static ActivityIO from(Activity a) {
     return new ActivityIO(
       a.getAppId(),
@@ -71,7 +97,9 @@ public class ActivityIO {
       a.getMethod(),
       a.getPath(),
       a.getStatus(),
-      a.getOriginInstance()
+      a.getOriginInstance(),
+      a.getSourceMode(),
+      a.getAgentId()
     );
   }
 
@@ -82,7 +110,7 @@ public class ActivityIO {
    * core PROV-O Activity surface.
    */
   public ActivityIO metadataOnly() {
-    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null);
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null, sourceMode, agentId);
   }
 
   /**
@@ -92,6 +120,6 @@ public class ActivityIO {
    * {@link #metadataOnly()} does.
    */
   public ActivityIO relationsOnly() {
-    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null);
+    return new ActivityIO(appId, actionKind, targetKind, targetAppId, agentUsername, summary, startedAtMillis, null, null, null, null, null, sourceMode, agentId);
   }
 }

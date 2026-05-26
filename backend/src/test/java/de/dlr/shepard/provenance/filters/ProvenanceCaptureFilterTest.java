@@ -18,6 +18,7 @@ import de.dlr.shepard.auth.users.services.MirroredUserEnrichmentCache;
 import de.dlr.shepard.provenance.services.ProvenanceService;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
@@ -87,6 +88,10 @@ class ProvenanceCaptureFilterTest {
     // Default: no X-Source-User-* headers present → mirroredUserAppId is null.
     when(request.getHeaderString(ProvenanceCaptureFilter.HDR_SOURCE_USERNAME)).thenReturn(null);
     when(enrichmentCache.get(any(), any())).thenReturn(Optional.empty());
+    // PROV1j: default — no X-AI-Agent header stashed
+    when(request.getProperty(ProvenanceCaptureFilter.PROP_AI_AGENT)).thenReturn(null);
+    // PROV1j: response.getHeaders() must return a real map so the filter can inject headers.
+    when(response.getHeaders()).thenReturn(new MultivaluedHashMap<>());
   }
 
   @Test
@@ -113,7 +118,9 @@ class ProvenanceCaptureFilterTest {
       eq(201),
       anyLong(),
       anyLong(),
-      isNull()  // no X-Source-User-* headers → mirroredUserAppId is null
+      isNull(),    // no X-Source-User-* headers → mirroredUserAppId is null
+      eq("human"), // PROV1j: no X-AI-Agent → human
+      isNull()     // PROV1j: agentId null
     );
   }
 
@@ -124,7 +131,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test
@@ -146,6 +153,8 @@ class ProvenanceCaptureFilterTest {
       eq(200),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -157,7 +166,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test
@@ -168,7 +177,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test
@@ -179,7 +188,7 @@ class ProvenanceCaptureFilterTest {
 
     filter.filter(request, response);
 
-    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any());
+    verify(provenance, never()).record(any(), any(), any(), any(), any(), any(), any(), anyInt(), anyLong(), anyLong(), any(), any(), any());
   }
 
   @Test
@@ -202,6 +211,8 @@ class ProvenanceCaptureFilterTest {
       eq(200),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -229,6 +240,8 @@ class ProvenanceCaptureFilterTest {
       eq(200),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -256,6 +269,8 @@ class ProvenanceCaptureFilterTest {
       eq(201),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -283,6 +298,8 @@ class ProvenanceCaptureFilterTest {
       eq(201),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -327,6 +344,8 @@ class ProvenanceCaptureFilterTest {
       eq(201),
       anyLong(),
       anyLong(),
+      isNull(),
+      eq("human"),
       isNull()
     );
   }
@@ -357,7 +376,9 @@ class ProvenanceCaptureFilterTest {
       eq(201),
       anyLong(),
       anyLong(),
-      isNull()               // mirroredUserAppId also suppressed
+      isNull(),              // mirroredUserAppId also suppressed
+      eq("human"),
+      isNull()
     );
   }
 
@@ -396,7 +417,9 @@ class ProvenanceCaptureFilterTest {
       eq(200),
       anyLong(),
       anyLong(),
-      isNull()               // mirroredUserAppId also suppressed
+      isNull(),              // mirroredUserAppId also suppressed
+      eq("human"),
+      isNull()
     );
   }
 

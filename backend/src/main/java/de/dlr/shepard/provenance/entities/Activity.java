@@ -209,6 +209,32 @@ public class Activity implements HasId, HasAppId {
   @Property("ledgerAnchor")
   private String ledgerAnchor;
 
+  /**
+   * PROV1j (activity-layer) — EU AI Act Art. 50 per-artefact visibility.
+   *
+   * <p>Indicates the agent mode of the caller that triggered this activity:
+   * <ul>
+   *   <li>{@code "human"} — no {@code X-AI-Agent} header present (default)</li>
+   *   <li>{@code "ai"}    — {@code X-AI-Agent} header present and non-blank</li>
+   * </ul>
+   *
+   * <p>Schema-free Neo4j property — pre-PROV1j {@code :Activity} nodes simply
+   * have no {@code sourceMode} property (reads back as {@code null}).
+   * No migration required.
+   */
+  @Property("sourceMode")
+  private String sourceMode;
+
+  /**
+   * PROV1j (activity-layer) — the value of the {@code X-AI-Agent} request
+   * header, when present. Identifies the AI agent model or system (e.g.
+   * {@code "claude-sonnet-4-6"}, {@code "gpt-4o"}). {@code null} when the
+   * caller did not send the header (i.e. when {@link #sourceMode} is
+   * {@code "human"}).
+   */
+  @Property("agentId")
+  private String agentId;
+
   public Activity(
     String actionKind,
     String targetKind,
