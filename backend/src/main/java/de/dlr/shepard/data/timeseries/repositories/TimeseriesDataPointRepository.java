@@ -496,6 +496,91 @@ public class TimeseriesDataPointRepository {
   }
 
   /**
+   * Threshold above which the {@code timeseries_hourly} continuous aggregate
+   * is preferred over raw-point queries: one hour expressed in nanoseconds.
+   */
+  static final long CAGG_THRESHOLD_NS = 3_600_000_000_000L;
+
+  /**
+   * Queries the {@code timeseries_hourly} continuous aggregate (TS-OPT3).
+   *
+   * <p>This view stores one pre-aggregated row per ({@code timeseries_id}, 1-hour bucket),
+   * so fetching a 6-month overview reads at most ~4 380 rows instead of the raw tens of
+   * millions.  The returned points use the bucket start-time as their timestamp and the
+   * per-bucket average as their value.
+   *
+   * <p>Only {@link DataPointValueType#Double} and {@link DataPointValueType#Integer} are
+   * supported (the view only aggregates numeric columns).  For other types an empty list
+   * is returned so the caller can fall back to the raw path.
+   *
+   * <p><strong>Cold-cache caveat:</strong> The refresh policy populates the last 25 hours
+   * on a 1-hour schedule.  For a brand-new channel, or for data older than 7 days that
+   * has not yet been materialized, the CAgg may return no rows.  Callers should treat an
+   * empty result as a signal to fall back to {@link #queryPreAggregated} rather than
+   * surfacing an empty chart.
+   *
+   * @param timeseriesId internal timeseries row ID (matches {@code timeseries_hourly.timeseries_id})
+   * @param valueType    the value type of the channel; non-numeric types return empty
+   * @param startNs      window start in nanoseconds since epoch (inclusive)
+   * @param endNs        window end in nanoseconds since epoch (inclusive)
+   * @param maxPoints    the maximum number of points the caller wants; used only to
+   *                     decide whether this method should be called — routing logic lives
+   *                     in {@link de.dlr.shepard.data.timeseries.services.TimeseriesService}
+   * @return list of hourly-bucketed data points, possibly empty on cold cache
+   */
+  @Timed(value = "shepard.timeseries-data-point.cagg-query")
+  @SuppressWarnings("unchecked")
+  public List<TimeseriesDataPoint> queryCagg(
+    int timeseriesId,
+    DataPointValueType valueType,
+    long startNs,
+    long endNs,
+    int maxPoints
+  ) {
+    if (valueType != DataPointValueType.Double && valueType != DataPointValueType.Integer) {
+      return Collections.emptyList();
+    }
+
+    // Select avg_double for Double channels, avg_int for Integer channels.
+    // Both are pre-computed by V1.12.1 timeseries_hourly.
+    String avgCol = (valueType == DataPointValueType.Double) ? "avg_double" : "avg_int";
+
+    String sql = """
+      SELECT hour_bucket AS timestamp,
+             %s AS value
+      FROM timeseries_hourly
+      WHERE timeseries_id = :timeseriesId
+        AND hour_bucket >= :startNs
+        AND hour_bucket <= :endNs
+      ORDER BY hour_bucket
+      """.formatted(avgCol);
+
+    return entityManager
+      .createNativeQuery(sql, TimeseriesDataPoint.class)
+      .setParameter("timeseriesId", timeseriesId)
+      .setParameter("startNs", startNs)
+      .setParameter("endNs", endNs)
+      .getResultList();
+  }
+
+  /**
+   * Returns {@code true} when the CAgg path should be preferred for the given window
+   * and target point count.
+   *
+   * <p>The heuristic: if the nanoseconds per desired point exceeds 1 hour, one row from
+   * the hourly CAgg represents at most one "pixel" on the chart, so the CAgg is both
+   * cheaper and sufficient in resolution.
+   *
+   * @param windowNs  query window length in nanoseconds
+   * @param maxPoints number of points the caller wants (LTTB target)
+   * @return {@code true} when CAgg routing is preferred
+   */
+  public static boolean shouldUseCagg(long windowNs, int maxPoints) {
+    if (maxPoints <= 0 || windowNs <= 0) return false;
+    return (windowNs / maxPoints) > CAGG_THRESHOLD_NS;
+  }
+
+  /**
    * Computes the trapezoidal integral ∫v dt over [startNs, endNs] for the whole range,
    * returning a single {@link TimeseriesDataPoint} at the midpoint timestamp.
    *

@@ -9,6 +9,7 @@ import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
 import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
 import de.dlr.shepard.data.timeseries.model.TimeseriesEntity;
 import de.dlr.shepard.data.timeseries.model.enums.DataPointValueType;
+import de.dlr.shepard.data.timeseries.model.enums.QueryStrategy;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository;
 import de.dlr.shepard.data.timeseries.utilities.ObjectTypeEvaluator;
@@ -188,13 +189,8 @@ public class TimeseriesService {
   /**
    * Fetch channel data with LTTB-optimised query routing (TS-OPT1).
    *
-   * <p>For large windows (bucket ≥ 1 ms after dividing window by target×5),
-   * issues a SQL {@code time_bucket()} pre-aggregation query that returns only
-   * {@code target*5} rows, then applies LTTB in Java on that reduced set.
-   * For small windows or non-numeric types, falls back to raw point fetch + LTTB.
-   *
-   * <p>Result: DB→Java transfer is reduced by up to rawRowCount/numBuckets
-   * (e.g. 360× for a 1-hour 100 Hz channel with target=200).
+   * <p>Equivalent to {@link #getDataPointsLttbOptimised(long, Timeseries, long, long, int, QueryStrategy)}
+   * with {@link QueryStrategy#AUTO}.
    */
   @ActivateRequestContext
   public List<TimeseriesDataPoint> getDataPointsLttbOptimised(
@@ -204,23 +200,79 @@ public class TimeseriesService {
     long endNs,
     int lttbTarget
   ) {
+    return getDataPointsLttbOptimised(containerId, timeseries, startNs, endNs, lttbTarget, QueryStrategy.AUTO);
+  }
+
+  /**
+   * Fetch channel data with LTTB-optimised query routing (TS-OPT1 + TS-OPT3).
+   *
+   * <p>The {@code strategy} parameter controls which storage tier is used:
+   * <ul>
+   *   <li>{@link QueryStrategy#AUTO} — uses the 1-hour continuous aggregate
+   *       ({@code timeseries_hourly}) when the window-per-pixel exceeds 1 hour
+   *       and the CAgg returns non-empty results; falls back to the TS-OPT1
+   *       pre-aggregation path when the window is smaller or the CAgg is cold.</li>
+   *   <li>{@link QueryStrategy#CAGG} — always queries {@code timeseries_hourly};
+   *       accepts that data within the last ~1 hour may be absent.</li>
+   *   <li>{@link QueryStrategy#RAW} — always queries {@code timeseries_data_points}
+   *       directly, bypassing both the CAgg and pre-aggregation tiers.</li>
+   * </ul>
+   *
+   * <p>Result: for wide-window overview queries the CAgg path reduces DB→Java
+   * transfer by up to (rawRowCount / numHourBuckets) — typically 3 600× for a 100 Hz
+   * channel viewed over 6 months.
+   */
+  @ActivateRequestContext
+  public List<TimeseriesDataPoint> getDataPointsLttbOptimised(
+    long containerId,
+    Timeseries timeseries,
+    long startNs,
+    long endNs,
+    int lttbTarget,
+    QueryStrategy strategy
+  ) {
     Optional<TimeseriesEntity> entityOpt = timeseriesRepository.findTimeseries(containerId, timeseries);
     if (entityOpt.isEmpty()) return Collections.emptyList();
 
     TimeseriesEntity entity = entityOpt.get();
     int tsId = entity.getId();
     DataPointValueType valueType = entity.getValueType();
+    long windowNs = endNs - startNs;
 
-    long bucketNs = TimeseriesDataPointRepository.choosePreaggBucketNs(endNs - startNs, lttbTarget);
     List<TimeseriesDataPoint> points;
 
-    if (bucketNs > 0 && (valueType == DataPointValueType.Double || valueType == DataPointValueType.Integer)) {
-      Log.debugf("TS-OPT1 preagg: tsId=%d window=%dms bucketMs=%d target=%d",
-        tsId, (endNs - startNs) / 1_000_000, bucketNs / 1_000_000, lttbTarget);
-      points = timeseriesDataPointRepository.queryPreAggregated(tsId, valueType, startNs, endNs, bucketNs);
-    } else {
+    // --- TS-OPT3: CAgg routing ---
+    boolean tryCagg = (strategy == QueryStrategy.CAGG) ||
+      (strategy == QueryStrategy.AUTO &&
+        TimeseriesDataPointRepository.shouldUseCagg(windowNs, lttbTarget));
+
+    if (tryCagg) {
+      Log.debugf("TS-OPT3 cagg: tsId=%d windowDays=%.1f target=%d strategy=%s",
+        tsId, windowNs / 86_400_000_000_000.0, lttbTarget, strategy);
+      points = timeseriesDataPointRepository.queryCagg(tsId, valueType, startNs, endNs, lttbTarget);
+
+      if (!points.isEmpty() || strategy == QueryStrategy.CAGG) {
+        // CAgg had data (or caller explicitly requested CAGG — accept empty)
+        return de.dlr.shepard.data.timeseries.util.Lttb.downsample(points, lttbTarget);
+      }
+      // CAgg was cold/empty — fall through to TS-OPT1
+      Log.debugf("TS-OPT3 cagg returned 0 rows (cold cache), falling back to TS-OPT1: tsId=%d", tsId);
+    }
+
+    // --- TS-OPT1: raw pre-aggregation + LTTB ---
+    if (strategy == QueryStrategy.RAW) {
       var queryParams = new TimeseriesDataPointsQueryParams(startNs, endNs, null, null, null);
       points = timeseriesDataPointRepository.queryDataPoints(tsId, valueType, queryParams);
+    } else {
+      long bucketNs = TimeseriesDataPointRepository.choosePreaggBucketNs(windowNs, lttbTarget);
+      if (bucketNs > 0 && (valueType == DataPointValueType.Double || valueType == DataPointValueType.Integer)) {
+        Log.debugf("TS-OPT1 preagg: tsId=%d window=%dms bucketMs=%d target=%d",
+          tsId, windowNs / 1_000_000, bucketNs / 1_000_000, lttbTarget);
+        points = timeseriesDataPointRepository.queryPreAggregated(tsId, valueType, startNs, endNs, bucketNs);
+      } else {
+        var queryParams = new TimeseriesDataPointsQueryParams(startNs, endNs, null, null, null);
+        points = timeseriesDataPointRepository.queryDataPoints(tsId, valueType, queryParams);
+      }
     }
 
     return de.dlr.shepard.data.timeseries.util.Lttb.downsample(points, lttbTarget);
