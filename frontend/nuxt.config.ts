@@ -212,7 +212,7 @@ export default defineNuxtConfig({
       // Keep echarts/zrender out of the Nitro SSR bundle — their circular ESM
       // dependencies cause a TDZ error when bundled by Rollup. Charts are always
       // wrapped in <ClientOnly> so they never render on the server.
-      external: ["echarts", "zrender"],
+      external: ["echarts", "zrender", "uplot"],
     },
     css: {
       preprocessorOptions: {
