@@ -325,6 +325,23 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
   }
 
   /**
+   * PROV1k — look up a DataObject by its {@code appId} (UUID v7).
+   *
+   * <p>Used by {@link de.dlr.shepard.context.collection.services.DataObjectService}
+   * to resolve {@code TypedPredecessorIO.predecessorAppId} entries to DataObject
+   * instances for graph-edge wiring.
+   *
+   * @param appId the DataObject's UUID v7 appId
+   * @return the DataObject, or {@code null} if not found
+   */
+  public DataObject findByAppId(String appId) {
+    if (appId == null || appId.isBlank()) return null;
+    String cypher = "MATCH (d:DataObject {appId: $appId}) RETURN d";
+    var hits = session.query(DataObject.class, cypher, Map.of("appId", appId));
+    return StreamSupport.stream(hits.spliterator(), false).findFirst().orElse(null);
+  }
+
+  /**
    * Delete dataObject and all related references
    *
    * @param shepardId identifies the dataObject

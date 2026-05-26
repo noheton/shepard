@@ -1,14 +1,19 @@
 package de.dlr.shepard.v2.dataobject.io;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.references.basicreference.entities.BasicReference;
 import de.dlr.shepard.context.references.file.entities.FileBundleReference;
 import de.dlr.shepard.context.references.structureddata.entities.StructuredDataReference;
 import de.dlr.shepard.context.references.timeseriesreference.model.TimeseriesReference;
+import io.quarkus.logging.Log;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -47,6 +52,28 @@ public class DataObjectDetailV2IO extends DataObjectIO {
    */
   @Schema(readOnly = true, description = "Direct predecessors of this DataObject.")
   private List<DataObjectSummaryIO> predecessorSummaries = new ArrayList<>();
+
+  /**
+   * PROV1k — typed predecessor relationships for this DataObject.
+   *
+   * <p>Each entry pairs a compact predecessor summary with the PROV-O / FAIR²R
+   * relationship type stored in {@code typedPredecessorsJson}. When the stored
+   * JSON is null (pre-PROV1k DataObjects) all entries default to
+   * {@code "prov:wasInformedBy"} for backward compatibility.
+   *
+   * <p>Null (omitted from JSON) when the DataObject has no predecessors.
+   */
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "PROV1k — typed predecessor list. Null when no predecessors. " +
+      "Each entry carries the predecessor's summary (appId, id, name, status) " +
+      "and the PROV-O / FAIR²R relationship type. " +
+      "Pre-PROV1k predecessors default to 'prov:wasInformedBy'."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private List<TypedPredecessorSummaryIO> typedPredecessorSummaries;
 
   /**
    * Compact summaries of all direct successors (appId, id, name, status).
@@ -201,6 +228,58 @@ public class DataObjectDetailV2IO extends DataObjectIO {
 
     // PROV1j — surface the stored provenance mode (null = human default).
     this.provenanceMode = dataObject.getProvenanceMode();
+
+    // PROV1k — build typed predecessor summary list.
+    // Parse typedPredecessorsJson to get per-predecessor relationship types,
+    // then cross-reference with the loaded predecessor DataObject list.
+    if (!dataObject.getPredecessors().isEmpty()) {
+      Map<String, String> appIdToType = parseTypedPredecessorsJson(dataObject.getTypedPredecessorsJson());
+      List<TypedPredecessorSummaryIO> tpList = new ArrayList<>();
+      for (DataObject p : dataObject.getPredecessors()) {
+        if (p.isDeleted()) continue;
+        String rType = appIdToType.getOrDefault(p.getAppId(), TypedPredecessorIO.DEFAULT_TYPE);
+        tpList.add(new TypedPredecessorSummaryIO(
+          p.getAppId(),
+          p.getShepardId() != null ? p.getShepardId() : -1L,
+          p.getName(),
+          p.getStatus(),
+          rType
+        ));
+      }
+      this.typedPredecessorSummaries = tpList.isEmpty() ? null : tpList;
+    }
+  }
+
+  // ── helper ───────────────────────────────────────────────────────────────
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+
+  /**
+   * PROV1k — parse the {@code typedPredecessorsJson} string stored on the
+   * DataObject node into a map of {@code appId → relationshipType}.
+   *
+   * <p>Returns an empty map when the stored JSON is null, blank, or malformed.
+   * Malformed JSON is logged at WARN level and treated as "no typed entries"
+   * so callers fall back to the default {@code "prov:wasInformedBy"}.
+   */
+  static Map<String, String> parseTypedPredecessorsJson(String json) {
+    if (json == null || json.isBlank()) return Map.of();
+    try {
+      List<TypedPredecessorIO> list = MAPPER.readValue(
+        json,
+        new TypeReference<List<TypedPredecessorIO>>() {}
+      );
+      Map<String, String> result = new HashMap<>();
+      for (TypedPredecessorIO tp : list) {
+        if (tp.predecessorAppId() != null) {
+          result.put(tp.predecessorAppId(), tp.effectiveRelationshipType());
+        }
+      }
+      return result;
+    } catch (Exception e) {
+      Log.warnf("PROV1k: failed to parse typedPredecessorsJson — falling back to defaults. %s", e.getMessage());
+      return Map.of();
+    }
   }
 
   // ── inner class ──────────────────────────────────────────────────────────

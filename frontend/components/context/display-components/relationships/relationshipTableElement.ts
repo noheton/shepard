@@ -1,6 +1,12 @@
 export type RelationshipTableElement = {
   id: number;
   relationship: string | undefined;
+  /**
+   * PROV1k — optional typed predecessor relationship type for Predecessor entries.
+   * One of: "prov:wasInformedBy", "prov:wasRevisionOf", "fair2r:repairs".
+   * Absent (undefined) for non-predecessor relationship types.
+   */
+  predecessorRelationshipType?: string;
   name: { value: string; path?: string };
   information: {
     type:

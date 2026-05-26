@@ -64,6 +64,27 @@ public class DataObject extends AbstractDataObject {
   private String provenanceMode;
 
   /**
+   * PROV1k — typed predecessor relationships serialised as JSON.
+   *
+   * <p>Stores a JSON array of
+   * {@link de.dlr.shepard.v2.dataobject.io.TypedPredecessorIO} records
+   * so each predecessor edge can carry a PROV-O / FAIR²R relationship type
+   * ({@code "prov:wasInformedBy"}, {@code "prov:wasRevisionOf"},
+   * {@code "fair2r:repairs"}) without requiring a Neo4j
+   * {@code @RelationshipEntity}.
+   *
+   * <p>Schema-free additive property — older DataObjects that predate PROV1k
+   * have {@code typedPredecessorsJson = null}; the service falls back to the
+   * untyped {@code predecessors} relationship list in that case.
+   *
+   * <p>Populated by
+   * {@link de.dlr.shepard.context.collection.services.DataObjectService}
+   * when a {@link de.dlr.shepard.v2.dataobject.io.CreateDataObjectV2IO}
+   * request body carries a non-empty {@code typedPredecessors} list.
+   */
+  private String typedPredecessorsJson;
+
+  /**
    * For testing purposes only
    *
    * @param id identifies the entity

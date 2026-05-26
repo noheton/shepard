@@ -9,6 +9,14 @@ interface DataObjectRelationshipsTable {
   dataObjectId: number;
   relatedEntities: RelatedEntity[];
   isAllowedToEditCollection: boolean;
+  /**
+   * PROV1k — optional map of predecessor numeric id → PROV-O / FAIR²R
+   * relationship type. When provided, the typed relationship chip is shown
+   * next to the "Predecessor" label in the Relationship column.
+   * Omit (undefined) for backward-compat with callers that don't yet have
+   * typed predecessor info.
+   */
+  predecessorRelationshipTypes?: Map<number, string>;
 }
 
 const props = defineProps<DataObjectRelationshipsTable>();
@@ -62,7 +70,14 @@ function getRelationshipElementById(
 }
 
 const tableItems = computed(() =>
-  props.relatedEntities.map(mapRelatedEntityToRelationshipTableElement),
+  props.relatedEntities.map(entity => {
+    const item = mapRelatedEntityToRelationshipTableElement(entity);
+    // PROV1k: attach typed predecessor relationship type when available.
+    if (item.relationship === "Predecessor" && props.predecessorRelationshipTypes) {
+      item.predecessorRelationshipType = props.predecessorRelationshipTypes.get(entity.id);
+    }
+    return item;
+  }),
 );
 
 const headers = [
@@ -109,11 +124,20 @@ const headers = [
     <template
       #[`item.relationship`]="{
         value,
+        item,
       }: {
         value: RelationshipTableElement['relationship'];
+        item: RelationshipTableElement;
       }"
     >
-      <DataObjectRelationshipsRelationshipCell :value="value" />
+      <div class="d-flex align-center">
+        <DataObjectRelationshipsRelationshipCell :value="value" />
+        <!-- PROV1k: show typed relationship chip for predecessors -->
+        <PredecessorRelationshipTypeChip
+          v-if="item.predecessorRelationshipType"
+          :relationship-type="item.predecessorRelationshipType"
+        />
+      </div>
     </template>
     <template
       #[`item.name`]="{ value }: { value: RelationshipTableElement['name'] }"
