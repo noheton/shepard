@@ -393,7 +393,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `08b2a196` | 2026-05-26 | chore | 2k | 1k | 0.14 | 0 | 0 | 0.14 | 0.05 | LOW | chore: stage package-lock.json (three + uplot + @types/three deps from Trace3D + uPlot waves) |
 | `1e609f7ef` | 2026-05-26 | code | 22k | 7k | 2.39 | 0 | 2 | 4.39 | 1.59 | LOW | fix(frontend): UX-ERR-STATE-COLLECTION-MISSING + UX-PAGE-SHELL-RESPONSIVE-WIDTH — NotFoundPanel, PageShell, isError on useFetchCollection, 6 pages updated |
 | `791a10209` | 2026-05-26 | code | 30k | 8k | 7.98 | 10 | 2 | 19.98 | 7.25 | LOW | feat(ux): UX-DOPANEL-TOTAL-COUNT — Content-Range + X-Total-Count headers, countByCollectionByShepardIds DAO, listDataObjectsWithCount client, "Showing X–Y of Z" + jump-to-page in CollectionDataObjectsPanel |
-| (pending) | 2026-05-26 | code | 18k | 5k | 2.20 | 0 | 2 | 4.20 | 1.52 | LOW | fix(ux): UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK — lazy DataObject map with 5-min TTL, three honest lineage empty states, NuxtLink row wrappers, 2 new Vitest test files |
+| `41ec17f99` | 2026-05-26 | code | 18k | 5k | 2.20 | 0 | 2 | 4.20 | 1.52 | LOW | fix(ux): UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK — lazy DataObject map with 5-min TTL, three honest lineage empty states, NuxtLink row wrappers, 2 new Vitest test files |
 
 ---
 
