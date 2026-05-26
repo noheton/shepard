@@ -1,5 +1,6 @@
 package de.dlr.shepard.v2.dataobject.io;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import lombok.Data;
@@ -45,6 +46,28 @@ public class DataObjectListItemV2IO extends DataObjectIO {
     description = "Number of non-deleted StructuredDataReferences attached to this DataObject."
   )
   private long structuredDataCount;
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "Earliest data-point timestamp across all timeseries channels of this DataObject, " +
+      "in nanoseconds since Unix epoch. Null when no timeseries data exists or " +
+      "`?include=time-bounds` was not requested."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Long timeBoundsStart;
+
+  @Schema(
+    readOnly = true,
+    nullable = true,
+    description =
+      "Latest data-point timestamp across all timeseries channels of this DataObject, " +
+      "in nanoseconds since Unix epoch. Null when no timeseries data exists or " +
+      "`?include=time-bounds` was not requested."
+  )
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Long timeBoundsEnd;
 
   /**
    * Copies all fields from {@code dataObject} (via the {@link DataObjectIO}

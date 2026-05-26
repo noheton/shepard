@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -156,6 +159,44 @@ public class TimeseriesDataPointRepository {
       }
       if (batchReporter != null) batchReporter.accept(batchIndex, batch.size());
     }
+  }
+
+  /**
+   * Returns the earliest and latest data-point timestamps (nanoseconds since
+   * epoch) for each of the requested TimeseriesContainer Neo4j IDs.
+   *
+   * <p>A single SQL pass — one row per container ID that has any data points.
+   * Containers with no rows are absent from the result map (the caller maps
+   * that to a {@code null} time-bounds pair).
+   *
+   * @param containerIds Neo4j long IDs of {@code TimeseriesContainer} nodes
+   * @return map of container_id → {@code long[]{minTimeNs, maxTimeNs}}
+   */
+  @SuppressWarnings("unchecked")
+  public Map<Long, long[]> findTimeBoundsByContainerIds(List<Long> containerIds) {
+    if (containerIds == null || containerIds.isEmpty()) return Collections.emptyMap();
+
+    // Container IDs are Neo4j long IDs (database-generated, never user-supplied),
+    // so inlining them as literals is safe and avoids JDBC array-parameter friction.
+    String inClause = containerIds.stream()
+      .map(Object::toString)
+      .collect(Collectors.joining(","));
+    String sql =
+      "SELECT t.container_id, MIN(tdp.time) AS min_time, MAX(tdp.time) AS max_time " +
+      "FROM timeseries t " +
+      "JOIN timeseries_data_points tdp ON tdp.timeseries_id = t.id " +
+      "WHERE t.container_id IN (" + inClause + ") " +
+      "GROUP BY t.container_id";
+
+    List<Object[]> rows = entityManager.createNativeQuery(sql).getResultList();
+    Map<Long, long[]> out = new HashMap<>(rows.size() * 2);
+    for (Object[] row : rows) {
+      long containerId = ((Number) row[0]).longValue();
+      long minTime = ((Number) row[1]).longValue();
+      long maxTime = ((Number) row[2]).longValue();
+      out.put(containerId, new long[] { minTime, maxTime });
+    }
+    return out;
   }
 
   @Timed(value = "shepard.timeseries-data-point.compression")

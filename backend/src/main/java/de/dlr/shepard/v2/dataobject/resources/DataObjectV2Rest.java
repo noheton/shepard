@@ -13,6 +13,7 @@ import de.dlr.shepard.context.collection.daos.DataObjectDAO;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
@@ -42,9 +43,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -99,6 +102,9 @@ public class DataObjectV2Rest {
   DataObjectDAO dataObjectDAO;
 
   @Inject
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
+
+  @Inject
   PermissionsService permissionsService;
 
   @Inject
@@ -125,6 +131,11 @@ public class DataObjectV2Rest {
       "Filtering: `name` does a case-insensitive substring match. Each row " +
       "also carries `referenceIds[]` (legacy long ids of all refs) and " +
       "`childrenIds[]` (direct child DOs).\n\n" +
+      "Optional enrichment via `?include=time-bounds`: adds `timeBoundsStart` and " +
+      "`timeBoundsEnd` (epoch nanoseconds) to each item, reflecting the earliest and " +
+      "latest data-point timestamps across all timeseries channels. Null on items " +
+      "with no timeseries data. Omitted from the response entirely when " +
+      "`?include=time-bounds` is not requested.\n\n" +
       "Auth: Read on the parent Collection. DataObjects inherit Collection " +
       "permissions; there is no per-DO permission gate.\n\n" +
       "Next step: `GET /v2/collections/{collectionAppId}/data-objects/{dataObjectAppId}` " +
@@ -132,7 +143,10 @@ public class DataObjectV2Rest {
   )
   @APIResponse(
     responseCode = "200",
-    description = "DataObject page (may be empty). Each item includes `timeseriesCount`, `fileCount`, `structuredDataCount`.",
+    description =
+      "DataObject page (may be empty). Each item includes `timeseriesCount`, `fileCount`, " +
+      "`structuredDataCount`. When `?include=time-bounds` is set, `timeBoundsStart`/`timeBoundsEnd` " +
+      "are also populated (null means no data yet).",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -143,6 +157,7 @@ public class DataObjectV2Rest {
     @QueryParam(Constants.QP_NAME) String name,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
+    @QueryParam("include") String include,
     @Context SecurityContext sc
   ) {
     Long collectionOgmId = resolveOrNull(collectionAppId);
@@ -167,10 +182,41 @@ public class DataObjectV2Rest {
     }
     Map<String, long[]> counts = dataObjectDAO.findRefCountsByAppIds(appIds);
 
+    // Optional: per-DataObject time bounds from TimescaleDB.
+    // Two extra round-trips (one Cypher + one SQL) only when ?include=time-bounds.
+    boolean includeTimeBounds = include != null && include.contains("time-bounds");
+    Map<String, List<Long>> doToContainerIds = Collections.emptyMap();
+    Map<Long, long[]> containerTimeBounds = Collections.emptyMap();
+    if (includeTimeBounds && !appIds.isEmpty()) {
+      doToContainerIds = dataObjectDAO.findTsContainerIdsByDataObjectAppIds(appIds);
+      List<Long> allContainerIds = doToContainerIds.values().stream()
+        .flatMap(List::stream)
+        .distinct()
+        .collect(Collectors.toList());
+      if (!allContainerIds.isEmpty()) {
+        containerTimeBounds = timeseriesDataPointRepository.findTimeBoundsByContainerIds(allContainerIds);
+      }
+    }
+
     var result = new ArrayList<DataObjectListItemV2IO>(dataObjects.size());
     for (var d : dataObjects) {
       long[] c = d.getAppId() != null ? counts.getOrDefault(d.getAppId(), new long[] { 0, 0, 0 }) : new long[] { 0, 0, 0 };
-      result.add(new DataObjectListItemV2IO(d, c[0], c[1], c[2]));
+      var item = new DataObjectListItemV2IO(d, c[0], c[1], c[2]);
+      if (includeTimeBounds && d.getAppId() != null) {
+        List<Long> cIds = doToContainerIds.getOrDefault(d.getAppId(), Collections.emptyList());
+        Long minNs = null;
+        Long maxNs = null;
+        for (Long cId : cIds) {
+          long[] bounds = containerTimeBounds.get(cId);
+          if (bounds != null) {
+            if (minNs == null || bounds[0] < minNs) minNs = bounds[0];
+            if (maxNs == null || bounds[1] > maxNs) maxNs = bounds[1];
+          }
+        }
+        item.setTimeBoundsStart(minNs);
+        item.setTimeBoundsEnd(maxNs);
+      }
+      result.add(item);
     }
     return Response.ok(result)
       .header("Cache-Control", "max-age=300, must-revalidate")
@@ -603,7 +649,7 @@ public class DataObjectV2Rest {
   private Response enforceAccess(long ogmId, AccessType accessType, SecurityContext sc) {
     String caller = sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
     if (caller == null) return Response.status(Response.Status.UNAUTHORIZED).build();
-    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller, 0L)) {
+    if (!permissionsService.isAccessTypeAllowedForUser(ogmId, accessType, caller)) {
       return Response.status(Response.Status.FORBIDDEN).build();
     }
     return null;

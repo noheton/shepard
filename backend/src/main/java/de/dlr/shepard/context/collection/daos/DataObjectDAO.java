@@ -519,4 +519,42 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     return out;
   }
 
+  /**
+   * For each DataObject appId in the input list, returns the Neo4j long IDs of
+   * all non-deleted TimeseriesContainers reachable via its TimeseriesReferences.
+   *
+   * <p>Used by the {@code ?include=time-bounds} feature on the DataObject list
+   * endpoint to fan out to TimescaleDB for per-DataObject MIN/MAX time in a
+   * single SQL pass.
+   *
+   * @param appIds DataObject appIds (one page worth)
+   * @return map of DataObject appId → list of TimeseriesContainer Neo4j long ids
+   */
+  public Map<String, List<Long>> findTsContainerIdsByDataObjectAppIds(List<String> appIds) {
+    if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
+
+    String cypher =
+      "UNWIND $dataObjectAppIds AS doAppId " +
+      "MATCH (d:DataObject {appId: doAppId}) " +
+      "OPTIONAL MATCH (d)-[:has_reference]->(tr:TimeseriesReference)-[:is_in_container]->(tc:TimeseriesContainer) " +
+      "  WHERE NOT coalesce(tr.deleted, false) " +
+      "RETURN d.appId AS appId, collect(DISTINCT id(tc)) AS containerNeo4jIds";
+
+    var qResult = session.query(cypher, Map.of("dataObjectAppIds", appIds));
+    Map<String, List<Long>> out = new LinkedHashMap<>();
+    for (Map<String, Object> row : qResult.queryResults()) {
+      String appId = (String) row.get("appId");
+      if (appId == null) continue;
+      List<Long> ids = new ArrayList<>();
+      Object raw = row.get("containerNeo4jIds");
+      if (raw instanceof Iterable<?> iter) {
+        for (Object item : iter) {
+          if (item instanceof Number n) ids.add(n.longValue());
+        }
+      }
+      out.put(appId, ids);
+    }
+    return out;
+  }
+
 }

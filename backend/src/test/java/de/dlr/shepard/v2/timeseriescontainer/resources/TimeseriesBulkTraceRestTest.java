@@ -2,37 +2,36 @@ package de.dlr.shepard.v2.timeseriescontainer.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPoint;
-import de.dlr.shepard.data.timeseries.model.TimeseriesDataPointsQueryParams;
+import de.dlr.shepard.data.timeseries.io.TimeseriesWithDataPoints;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkTraceChannelIO;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkTraceRequestIO;
-import de.dlr.shepard.v2.timeseriescontainer.io.BulkTraceResultIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit coverage for the TS-OPT2 bulk-trace endpoint:
- * {@code POST /v2/timeseries-containers/{containerId}/channels/bulk}.
+ * Unit coverage for the TS-OPT2 bulk channel data endpoint:
+ * {@code POST /v2/timeseries-containers/{containerId}/channels/data/bulk}.
  *
- * <p>Verifies: container permission check, role echo, empty-result on unknown channel,
- * LTTB delegation, and raw-fetch fallback.
+ * <p>Verifies: container permission check, UUID resolution, empty-result
+ * on unknown channel, and result forwarding.
  */
 class TimeseriesBulkTraceRestTest {
 
   private TimeseriesContainerChannelsRest resource;
   private TimeseriesService serviceMock;
   private TimeseriesContainerService containerServiceMock;
+  private TsChannelResolver resolverMock;
 
   private static final long CONTAINER_ID = 42L;
   private static final long START_NS     = 1_000_000_000L;
@@ -43,9 +42,12 @@ class TimeseriesBulkTraceRestTest {
     resource             = new TimeseriesContainerChannelsRest();
     serviceMock          = mock(TimeseriesService.class);
     containerServiceMock = mock(TimeseriesContainerService.class);
+    resolverMock         = mock(TsChannelResolver.class);
     inject(resource, "timeseriesService",          serviceMock);
     inject(resource, "timeseriesContainerService", containerServiceMock);
-    // tsChannelResolver not needed for the bulk-trace path (5-tuple resolution happens inline)
+    inject(resource, "tsChannelResolver",          resolverMock);
+    when(resolverMock.bulkFindByShepardIds(any())).thenReturn(List.of());
+    when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
   }
 
   private static void inject(Object target, String fieldName, Object value) throws Exception {
@@ -54,108 +56,71 @@ class TimeseriesBulkTraceRestTest {
     f.set(target, value);
   }
 
-  private static BulkTraceChannelIO ch(String role, String measurement, String field) {
-    return new BulkTraceChannelIO(role, measurement, null, null, null, field);
-  }
-
-  private static TimeseriesDataPoint pt(long t, double v) {
-    return new TimeseriesDataPoint(t, v);
-  }
-
   // ── Container permission check ─────────────────────────────────────────────
 
   @Test
   void alwaysChecksContainerPermission() {
-    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
-      .thenReturn(List.of());
-
-    resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, "lttb", null, List.of(ch("x", "tcp", "X"))));
+    resource.getBulkChannelData(CONTAINER_ID,
+      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
     verify(containerServiceMock).getContainer(CONTAINER_ID);
   }
 
-  // ── Role label echoed verbatim ─────────────────────────────────────────────
+  // ── Empty result when no channel resolves ────────────────────────────────
 
   @Test
-  void roleLabel_echoedInResult() {
-    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
-      .thenReturn(List.of(pt(START_NS, 1.0)));
+  void unknownShepardId_returnsEmptyList() {
+    UUID unknown = UUID.randomUUID();
+    when(resolverMock.bulkFindByShepardIds(List.of(unknown))).thenReturn(List.of());
+    when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any())).thenReturn(List.of());
 
-    Response resp = resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, "lttb", null,
-        List.of(ch("rot_a", "kinematics", "degrees"))));
+    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+      new BulkChannelDataRequestIO(List.of(unknown), START_NS, END_NS));
 
     assertThat(resp.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    List<BulkTraceResultIO> body = (List<BulkTraceResultIO>) resp.getEntity();
-    assertThat(body).hasSize(1);
-    assertThat(body.get(0).role()).isEqualTo("rot_a");
+    List<TimeseriesWithDataPoints> body = (List<TimeseriesWithDataPoints>) resp.getEntity();
+    assertThat(body).isEmpty();
   }
 
-  // ── Unknown channel returns empty points, not 404 ─────────────────────────
+  // ── Results forwarded verbatim ────────────────────────────────────────────
 
   @Test
-  void unknownChannel_returnsEmptyPoints() {
-    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
-      .thenReturn(List.of());
+  void resolvedChannels_returnedInResponse() {
+    TimeseriesWithDataPoints resultItem = mock(TimeseriesWithDataPoints.class);
+    when(serviceMock.getManyDataPointsByEntities(anyLong(), any(), any()))
+      .thenReturn(List.of(resultItem));
 
-    Response resp = resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, "lttb", null,
-        List.of(ch("x", "no_such_measurement", "no_such_field"))));
+    Response resp = resource.getBulkChannelData(CONTAINER_ID,
+      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
     assertThat(resp.getStatus()).isEqualTo(200);
     @SuppressWarnings("unchecked")
-    List<BulkTraceResultIO> body = (List<BulkTraceResultIO>) resp.getEntity();
-    assertThat(body.get(0).points()).isEmpty();
+    List<TimeseriesWithDataPoints> body = (List<TimeseriesWithDataPoints>) resp.getEntity();
+    assertThat(body).hasSize(1).contains(resultItem);
   }
 
-  // ── Multi-role: all roles returned ────────────────────────────────────────
+  // ── Multi-channel: all channels queried ────────────────────────────────────
 
   @Test
-  void multiRole_allRolesReturned() {
-    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
-      .thenReturn(List.of(pt(START_NS, 0.0)));
+  void multiChannel_delegatesWithAllIds() {
+    UUID id1 = UUID.randomUUID();
+    UUID id2 = UUID.randomUUID();
+    UUID id3 = UUID.randomUUID();
 
-    Response resp = resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, "lttb", 500,
-        List.of(ch("x", "tcp", "X"), ch("y", "tcp", "Y"), ch("z", "tcp", "Z"))));
+    resource.getBulkChannelData(CONTAINER_ID,
+      new BulkChannelDataRequestIO(List.of(id1, id2, id3), START_NS, END_NS));
 
-    assertThat(resp.getStatus()).isEqualTo(200);
-    @SuppressWarnings("unchecked")
-    List<BulkTraceResultIO> body = (List<BulkTraceResultIO>) resp.getEntity();
-    assertThat(body).extracting(BulkTraceResultIO::role)
-      .containsExactlyInAnyOrder("x", "y", "z");
+    verify(resolverMock).bulkFindByShepardIds(List.of(id1, id2, id3));
   }
 
-  // ── LTTB path used when downsample=lttb ───────────────────────────────────
+  // ── Delegates to getManyDataPointsByEntities ────────────────────────────────
 
   @Test
-  void lttbFlag_delegatesToLttbMethod() {
-    when(serviceMock.getDataPointsLttbOptimised(anyLong(), any(), anyLong(), anyLong(), anyInt()))
-      .thenReturn(List.of());
+  void delegatesToManyPointsService() {
+    resource.getBulkChannelData(CONTAINER_ID,
+      new BulkChannelDataRequestIO(List.of(UUID.randomUUID()), START_NS, END_NS));
 
-    resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, "lttb", 1000,
-        List.of(ch("x", "tcp", "X"))));
-
-    verify(serviceMock).getDataPointsLttbOptimised(
-      anyLong(), any(), anyLong(), anyLong(), anyInt());
-  }
-
-  // ── Raw fetch when downsample absent ──────────────────────────────────────
-
-  @Test
-  void noDownsample_delegatesToRawFetch() {
-    when(serviceMock.getDataPointsByTimeseriesActivatedRequestContext(
-        anyLong(), any(), any(TimeseriesDataPointsQueryParams.class)))
-      .thenReturn(List.of());
-
-    resource.getBulkTraceData(CONTAINER_ID,
-      new BulkTraceRequestIO(START_NS, END_NS, null, null,
-        List.of(ch("x", "tcp", "X"))));
-
-    verify(serviceMock).getDataPointsByTimeseriesActivatedRequestContext(
-      anyLong(), any(), any(TimeseriesDataPointsQueryParams.class));
+    verify(serviceMock).getManyDataPointsByEntities(anyLong(), any(), any());
   }
 }

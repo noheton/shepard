@@ -24,6 +24,7 @@ import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
 import de.dlr.shepard.context.collection.io.DataObjectIO;
 import de.dlr.shepard.context.collection.services.DataObjectService;
+import de.dlr.shepard.data.timeseries.repositories.TimeseriesDataPointRepository;
 import de.dlr.shepard.v2.dataobject.io.DataObjectDetailV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectListItemV2IO;
 import de.dlr.shepard.v2.dataobject.io.DataObjectSummaryIO;
@@ -72,6 +73,9 @@ class DataObjectV2RestTest {
   DataObjectDAO dataObjectDAO;
 
   @Mock
+  TimeseriesDataPointRepository timeseriesDataPointRepository;
+
+  @Mock
   PermissionsService permissionsService;
 
   @Mock
@@ -98,11 +102,14 @@ class DataObjectV2RestTest {
     resource.entityIdResolver = entityIdResolver;
     resource.validator = validator;
     resource.objectMapper = new ObjectMapper();
+    resource.timeseriesDataPointRepository = timeseriesDataPointRepository;
     when(securityContext.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
     when(validator.validate(any())).thenReturn(Collections.emptySet());
     // Default: batch count query returns empty map (counts default to 0).
     when(dataObjectDAO.findRefCountsByAppIds(any())).thenReturn(Collections.emptyMap());
+    // Default: time-bounds DAO returns empty map (no TS containers).
+    when(dataObjectDAO.findTsContainerIdsByDataObjectAppIds(any())).thenReturn(Collections.emptyMap());
   }
 
   // ── list ──────────────────────────────────────────────────────────────────
@@ -110,7 +117,7 @@ class DataObjectV2RestTest {
   @Test
   void listReturns404WhenCollectionUnknown() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenThrow(new NotFoundException());
-    Response r = resource.list(COLL_APP_ID, null, 0, 50, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, null, securityContext);
     assertEquals(404, r.getStatus());
     verify(dataObjectService, never()).getAllDataObjectsByShepardIds(anyLong(), any(), any());
   }
@@ -118,9 +125,9 @@ class DataObjectV2RestTest {
   @Test
   void listReturns403WhenNoReadOnCollection() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(false);
-    Response r = resource.list(COLL_APP_ID, null, 0, 50, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, null, securityContext);
     assertEquals(403, r.getStatus());
   }
 
@@ -128,12 +135,12 @@ class DataObjectV2RestTest {
   void listReturns200WithRows() {
     DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
 
-    Response r = resource.list(COLL_APP_ID, null, 0, 50, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -146,7 +153,7 @@ class DataObjectV2RestTest {
   void listIncludesRefCounts() {
     DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
       .thenReturn(true);
     when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
       .thenReturn(List.of(d));
@@ -154,7 +161,7 @@ class DataObjectV2RestTest {
     when(dataObjectDAO.findRefCountsByAppIds(List.of(DO_APP_ID)))
       .thenReturn(Map.of(DO_APP_ID, new long[] { 3L, 5L, 2L }));
 
-    Response r = resource.list(COLL_APP_ID, null, 0, 50, securityContext);
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, null, securityContext);
 
     assertEquals(200, r.getStatus());
     @SuppressWarnings("unchecked")
@@ -165,6 +172,50 @@ class DataObjectV2RestTest {
     assertEquals(3L, item.getTimeseriesCount());
     assertEquals(5L, item.getFileCount());
     assertEquals(2L, item.getStructuredDataCount());
+  }
+
+  @Test
+  void listIncludesTimeBoundsWhenRequested() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    long containerNeo4jId = 77L;
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d));
+    when(dataObjectDAO.findTsContainerIdsByDataObjectAppIds(List.of(DO_APP_ID)))
+      .thenReturn(Map.of(DO_APP_ID, List.of(containerNeo4jId)));
+    when(timeseriesDataPointRepository.findTimeBoundsByContainerIds(List.of(containerNeo4jId)))
+      .thenReturn(Map.of(containerNeo4jId, new long[] { 1_000_000L, 9_000_000L }));
+
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, "time-bounds", securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    assertEquals(1, body.size());
+    DataObjectListItemV2IO item = body.get(0);
+    assertEquals(1_000_000L, item.getTimeBoundsStart());
+    assertEquals(9_000_000L, item.getTimeBoundsEnd());
+  }
+
+  @Test
+  void listTimeBoundsAbsentWhenNotRequested() {
+    DataObject d = makeDataObject(DO_OGM_ID, DO_APP_ID, "sensor-track-1");
+    when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Read), eq(CALLER)))
+      .thenReturn(true);
+    when(dataObjectService.getAllDataObjectsByShepardIds(eq(COLL_OGM_ID), any(), eq(null)))
+      .thenReturn(List.of(d));
+
+    Response r = resource.list(COLL_APP_ID, null, 0, 50, null, securityContext);
+
+    assertEquals(200, r.getStatus());
+    @SuppressWarnings("unchecked")
+    List<DataObjectListItemV2IO> body = (List<DataObjectListItemV2IO>) r.getEntity();
+    assertEquals(1, body.size());
+    assertNull(body.get(0).getTimeBoundsStart());
+    assertNull(body.get(0).getTimeBoundsEnd());
   }
 
   // ── get ───────────────────────────────────────────────────────────────────
@@ -219,7 +270,7 @@ class DataObjectV2RestTest {
   @Test
   void createReturns403WhenNoWriteOnCollection() {
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
     DataObjectIO body = new DataObjectIO();
     body.setName("new do");
@@ -232,7 +283,7 @@ class DataObjectV2RestTest {
   void createReturns201WithMintedAppId() {
     DataObject created = makeDataObject(99L, "018f9c5a-9999-7000-a000-000000000099", "new do");
     when(entityIdResolver.resolveLong(COLL_APP_ID)).thenReturn(COLL_OGM_ID);
-    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER), anyLong()))
+    when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
     DataObjectIO body = new DataObjectIO();
     body.setName("new do");
