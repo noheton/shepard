@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| PERF7 | 2026-05-26 | code | 25k | 8k | 2.90 | 5 | 2 | 9.90 | 3.59 | MEDIUM | perf(frontend): PERF7 — lazy channel preview via IntersectionObserver + in-flight dedup |
 | PERF6 | 2026-05-26 | code | 18k | 5k | 2.10 | 5 | 2 | 9.10 | 3.30 | MEDIUM | perf(frontend): PERF6 — singleton DataObject fetch across lineage + prov graphs |
 | KIP1l-pending | 2026-05-26 | code | 20k | 6k | 2.30 | 5 | 2 | 9.30 | 3.38 | MEDIUM | feat(kip): KIP1l — existing-publication confirmation on re-publish |
 | KIP1k-pending | 2026-05-26 | code | 40k | 15k | 6.30 | 20 | 5 | 31.30 | 11.36 | MEDIUM | feat(kip): KIP1k — publication-status badge on Collection + DataObject pages |

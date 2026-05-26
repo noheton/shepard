@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TimeseriesEntity } from "@dlr-shepard/backend-client";
-import { useFetchChannelPreview } from "~/composables/container/useFetchChannelPreview";
+import { useChannelPreviewLazy } from "~/composables/container/useFetchChannelPreview";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
 
 const props = defineProps<{
@@ -8,14 +8,20 @@ const props = defineProps<{
   containerId: number;
 }>();
 
+// PERF7 — lazy-load: the fetch fires only when this element enters the viewport.
+// This prevents the 200-concurrent-request storm when a user expands all rows
+// in a large timeseries container (see aidocs/16 PERF7).
+const rootEl = ref<HTMLElement | null>(null);
+
 // LTTB downsampling by default — shape-preserving and orders of magnitude
 // lighter on the wire and on the chart renderer than the raw series. The
 // toggle below lets the user opt back to every sample when fidelity matters
 // more than performance.
 const useDownsample = ref(true);
-const { data, loading, downsampled, refetch } = useFetchChannelPreview(
+const { data, loading, downsampled, refetch } = useChannelPreviewLazy(
   props.containerId,
   props.channel,
+  rootEl,
 );
 
 watch(useDownsample, v => refetch(v));
@@ -30,7 +36,7 @@ const series = computed<TimeseriesSeries[]>(() => {
 </script>
 
 <template>
-  <div class="channel-preview pa-2">
+  <div ref="rootEl" class="channel-preview pa-2">
     <div class="d-flex align-center justify-end mb-1 mr-1" style="gap: 8px">
       <v-chip
         v-if="downsampled && !loading"
