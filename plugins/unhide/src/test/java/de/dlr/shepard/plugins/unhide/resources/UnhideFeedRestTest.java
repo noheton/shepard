@@ -21,6 +21,7 @@ import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
@@ -36,6 +37,7 @@ class UnhideFeedRestTest {
 
   private HttpHeaders headers;
   private UriInfo uriInfo;
+  private SecurityContext secCtx;
 
   @BeforeEach
   void setUp() {
@@ -47,7 +49,10 @@ class UnhideFeedRestTest {
 
     headers = mock(HttpHeaders.class);
     uriInfo = mock(UriInfo.class);
+    secCtx = mock(SecurityContext.class);
     when(uriInfo.getBaseUri()).thenReturn(URI.create("https://shepard.example.dlr.de/"));
+    // Default: non-admin caller
+    when(secCtx.isUserInRole(Constants.INSTANCE_ADMIN_ROLE)).thenReturn(false);
   }
 
   // ─── annotation gates ────────────────────────────────────────────────────
@@ -75,7 +80,7 @@ class UnhideFeedRestTest {
     cfg.setEnabled(false);
     when(configService.current()).thenReturn(cfg);
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(503, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
@@ -95,7 +100,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(200, r.getStatus());
     assertTrue(r.getMediaType().toString().contains("ld+json"));
@@ -112,7 +117,7 @@ class UnhideFeedRestTest {
     when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn(null);
     when(configService.verifyHarvestKey(null)).thenReturn(false);
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(401, r.getStatus());
     assertEquals("application/problem+json", r.getMediaType().toString());
@@ -130,7 +135,7 @@ class UnhideFeedRestTest {
     when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn("wrong-key");
     when(configService.verifyHarvestKey("wrong-key")).thenReturn(false);
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(401, r.getStatus());
     verify(feedService, never()).buildFeed(any(), anyString(), anyInt(), anyInt());
@@ -147,10 +152,69 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(200, r.getStatus());
     verify(feedService).buildFeed(any(), anyString(), anyInt(), anyInt());
+  }
+
+  // ─── UH1f — instance-admin fallback ─────────────────────────────────────
+
+  @Test
+  void feed_returns200_whenPrivate_adminPrincipal_noApiKey() {
+    // UH1f: instance-admin role bypasses harvest-key check on private feed.
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    cfg.setFeedPublic(false);
+    when(configService.current()).thenReturn(cfg);
+    when(secCtx.isUserInRole(Constants.INSTANCE_ADMIN_ROLE)).thenReturn(true);
+    when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
+      .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
+
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
+
+    assertEquals(200, r.getStatus());
+    assertTrue(r.getMediaType().toString().contains("ld+json"));
+    // verifyHarvestKey must NOT be called — admin path skips the key check entirely
+    verify(configService, never()).verifyHarvestKey(anyString());
+    verify(feedService).buildFeed(any(), anyString(), anyInt(), anyInt());
+  }
+
+  @Test
+  void feed_returns401_whenPrivate_nonAdmin_noApiKey() {
+    // UH1f: non-admin caller without harvest key → 401 (unchanged behaviour).
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    cfg.setFeedPublic(false);
+    when(configService.current()).thenReturn(cfg);
+    when(secCtx.isUserInRole(Constants.INSTANCE_ADMIN_ROLE)).thenReturn(false);
+    when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn(null);
+    when(configService.verifyHarvestKey(null)).thenReturn(false);
+
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
+
+    assertEquals(401, r.getStatus());
+    ProblemJson p = (ProblemJson) r.getEntity();
+    assertEquals(UnhideFeedRest.PROBLEM_TYPE_HARVEST_KEY_ABSENT, p.type());
+    verify(feedService, never()).buildFeed(any(), anyString(), anyInt(), anyInt());
+  }
+
+  @Test
+  void feed_returns200_whenPrivate_adminPrincipal_nullSecCtx() {
+    // UH1f: null SecurityContext (e.g. test harness) → fallthrough to harvest-key check.
+    UnhideConfig cfg = new UnhideConfig();
+    cfg.setEnabled(true);
+    cfg.setFeedPublic(false);
+    when(configService.current()).thenReturn(cfg);
+    when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn("correct-key");
+    when(configService.verifyHarvestKey("correct-key")).thenReturn(true);
+    when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
+      .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
+
+    // null SecurityContext — should not throw; harvest-key auth still applies
+    Response r = rest.feed(null, null, false, headers, uriInfo, null);
+
+    assertEquals(200, r.getStatus());
   }
 
   @Test
@@ -162,7 +226,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    rest.feed(2, 50, false, headers, uriInfo);
+    rest.feed(2, 50, false, headers, uriInfo, secCtx);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 2, 50);
   }
@@ -176,7 +240,7 @@ class UnhideFeedRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt()))
       .thenReturn(new FeedIO(FeedIO.defaultContext(), List.of(), Map.of()));
 
-    rest.feed(null, null, false, headers, uriInfo);
+    rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 0, UnhideFeedService.DEFAULT_PAGE_SIZE);
   }

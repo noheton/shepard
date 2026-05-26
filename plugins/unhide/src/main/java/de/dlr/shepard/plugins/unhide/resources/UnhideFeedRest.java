@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -43,6 +44,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>{@code :UnhideConfig.enabled=false} → 503 RFC 7807
  *       {@code unhide.feed.disabled} (no auth attempted).</li>
  *   <li>{@code feedPublic=true} → 200 (no auth required).</li>
+ *   <li>{@code feedPublic=false} AND caller has the
+ *       {@code instance-admin} JWT role → 200 (UH1f admin fallback,
+ *       harvest-key check skipped).</li>
  *   <li>{@code feedPublic=false} AND X-API-KEY header present AND
  *       it hashes to {@code :UnhideConfig.harvestApiKeyHash} → 200.</li>
  *   <li>Otherwise → 401 RFC 7807 {@code unhide.harvest-key.absent}.</li>
@@ -50,21 +54,18 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p><b>UH1e — {@code ?validate=true} diagnostic mode.</b> When
  * {@code validate=true} is passed the same auth gates above apply
- * (disabled → 503, private+no-key → 401). The feed is built as
- * normal, then structural validation runs on the page's entries.
- * The response is an {@link UnhideValidationReportIO} as
+ * (disabled → 503, private+no-key → 401, admin → 200). The feed is
+ * built as normal, then structural validation runs on the page's
+ * entries. The response is an {@link UnhideValidationReportIO} as
  * {@code application/json} (not {@code application/ld+json} — the
  * report is not a JSON-LD document). Page semantics are preserved:
  * {@code ?validate=true&page=N} validates page N only.
  *
- * <p><b>Auth-fallback simplification.</b> The {@code aidocs/67} design
- * mentions "OR caller has instance-admin role" as a private-feed
- * fallback. Phase 1 omits the instance-admin shortcut and surfaces
- * the harvest key as the sole non-public auth path — operationally
- * cleaner (one auth model for the harvest path) and the admin
- * inspection path is "mint a harvest key, then curl it" which is
- * what the CLI does anyway. The instance-admin fallback can be
- * grafted on in UH1f if operator feedback wants it.
+ * <p><b>UH1f — instance-admin fallback.</b> When {@code feedPublic=false},
+ * a caller authenticated with the {@code instance-admin} JWT role bypasses
+ * the harvest-key check entirely. The harvest-key path remains fully
+ * functional; this is an additive auth path for admin inspection without
+ * requiring a harvest key to be minted or rotated.
  *
  * @see UnhideConfigService
  * @see UnhideFeedService
@@ -122,7 +123,8 @@ public class UnhideFeedRest {
     @QueryParam("page-size") Integer pageSize,
     @QueryParam("validate") @DefaultValue("false") boolean validate,
     @Context HttpHeaders headers,
-    @Context UriInfo uriInfo
+    @Context UriInfo uriInfo,
+    @Context SecurityContext securityContext
   ) {
     UnhideConfig cfg = configService.current();
     if (!cfg.isEnabled()) {
@@ -138,18 +140,25 @@ public class UnhideFeedRest {
     }
 
     if (!cfg.isFeedPublic()) {
-      String apiKey = headers == null ? null : headers.getHeaderString(Constants.API_KEY_HEADER);
-      if (!configService.verifyHarvestKey(apiKey)) {
-        Log.debugf("UH1a: feed request rejected — feedPublic=false, X-API-KEY %s",
-          apiKey == null ? "absent" : "did not match harvest hash");
-        return problem(
-          PROBLEM_TYPE_HARVEST_KEY_ABSENT,
-          "Valid harvest API key required",
-          Status.UNAUTHORIZED,
-          "This feed is non-public. Set X-API-KEY to the harvest API key (mint via " +
-          "POST /v2/admin/unhide/harvest-key/rotate) or flip feedPublic=true via " +
-          "PATCH /v2/admin/unhide/config."
-        );
+      // UH1f: instance-admin JWT role bypasses the harvest-key check.
+      boolean isAdmin = securityContext != null &&
+        securityContext.isUserInRole(Constants.INSTANCE_ADMIN_ROLE);
+      if (!isAdmin) {
+        String apiKey = headers == null ? null : headers.getHeaderString(Constants.API_KEY_HEADER);
+        if (!configService.verifyHarvestKey(apiKey)) {
+          Log.debugf("UH1a: feed request rejected — feedPublic=false, X-API-KEY %s",
+            apiKey == null ? "absent" : "did not match harvest hash");
+          return problem(
+            PROBLEM_TYPE_HARVEST_KEY_ABSENT,
+            "Valid harvest API key required",
+            Status.UNAUTHORIZED,
+            "This feed is non-public. Set X-API-KEY to the harvest API key (mint via " +
+            "POST /v2/admin/unhide/harvest-key/rotate), flip feedPublic=true via " +
+            "PATCH /v2/admin/unhide/config, or authenticate as an instance-admin."
+          );
+        }
+      } else {
+        Log.debugf("UH1f: feed request allowed — feedPublic=false but caller has instance-admin role");
       }
     }
 

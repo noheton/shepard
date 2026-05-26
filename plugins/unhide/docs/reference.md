@@ -448,23 +448,18 @@ only used on a fresh DB.
 
 The feed endpoint's access predicate is **runtime-mutable** —
 which is why `:UnhideConfig` is a singleton with an admin REST
-surface, not a deploy-time-only config. Three states:
+surface, not a deploy-time-only config. Four states (evaluated in order):
 
 1. **`enabled=false`** → 503 `unhide.feed.disabled`. No auth attempted.
 2. **`enabled=true` AND `feedPublic=true`** → 200, no auth required.
-3. **`enabled=true` AND `feedPublic=false`** → 200 only when the
+3. **`enabled=true` AND `feedPublic=false` AND caller has the
+   `instance-admin` JWT role** → 200 (UH1f admin fallback; harvest-key
+   check skipped entirely). Useful for operators inspecting the private
+   feed without having to mint or carry a harvest key.
+4. **`enabled=true` AND `feedPublic=false`** → 200 only when the
    request carries `X-API-KEY: <plaintext>` whose SHA-256 hex matches
    `:UnhideConfig.harvestApiKeyHash`. Constant-time compare guards
-   against timing attacks.
-
-> **Phase 1 simplification.** `aidocs/67 §5.1` mentions a
-> private-feed fallback for instance-admin callers (so an admin can
-> inspect the private feed without a harvest key). Phase 1 omits
-> this — the harvest key is the sole non-public auth path. The
-> admin inspection flow is "mint a key, curl with it", which
-> matches how `shepard-admin unhide rotate-harvest-key` works. The
-> instance-admin fallback can graft on in a follow-up slice if
-> operator feedback wants it.
+   against timing attacks. Otherwise → 401 `unhide.harvest-key.absent`.
 
 ## Registering with Unhide
 

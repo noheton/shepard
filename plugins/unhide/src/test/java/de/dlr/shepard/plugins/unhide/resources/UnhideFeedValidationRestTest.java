@@ -20,6 +20,7 @@ import de.dlr.shepard.plugins.unhide.services.UnhideFeedService;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
@@ -43,6 +44,7 @@ class UnhideFeedValidationRestTest {
 
   private HttpHeaders headers;
   private UriInfo uriInfo;
+  private SecurityContext secCtx;
 
   @BeforeEach
   void setUp() {
@@ -54,7 +56,10 @@ class UnhideFeedValidationRestTest {
 
     headers = mock(HttpHeaders.class);
     uriInfo = mock(UriInfo.class);
+    secCtx = mock(SecurityContext.class);
     when(uriInfo.getBaseUri()).thenReturn(URI.create("https://shepard.example.dlr.de/"));
+    // Default: non-admin caller
+    when(secCtx.isUserInRole(Constants.INSTANCE_ADMIN_ROLE)).thenReturn(false);
   }
 
   // ─── validate=true still blocked by disabled toggle ─────────────────────
@@ -65,7 +70,7 @@ class UnhideFeedValidationRestTest {
     cfg.setEnabled(false);
     when(configService.current()).thenReturn(cfg);
 
-    Response r = rest.feed(null, null, true, headers, uriInfo);
+    Response r = rest.feed(null, null, true, headers, uriInfo, secCtx);
 
     assertEquals(503, r.getStatus());
     verify(feedService, never()).buildFeed(any(), anyString(), anyInt(), anyInt());
@@ -83,7 +88,7 @@ class UnhideFeedValidationRestTest {
     when(headers.getHeaderString(Constants.API_KEY_HEADER)).thenReturn(null);
     when(configService.verifyHarvestKey(null)).thenReturn(false);
 
-    Response r = rest.feed(null, null, true, headers, uriInfo);
+    Response r = rest.feed(null, null, true, headers, uriInfo, secCtx);
 
     assertEquals(401, r.getStatus());
     verify(feedService, never()).buildFeed(any(), anyString(), anyInt(), anyInt());
@@ -100,7 +105,7 @@ class UnhideFeedValidationRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt())).thenReturn(feed);
     when(feedService.validateFeed(feed)).thenReturn(new UnhideValidationReportIO(true, 0, List.of()));
 
-    Response r = rest.feed(null, null, true, headers, uriInfo);
+    Response r = rest.feed(null, null, true, headers, uriInfo, secCtx);
 
     assertEquals(200, r.getStatus());
     String ct = r.getMediaType().toString();
@@ -116,7 +121,7 @@ class UnhideFeedValidationRestTest {
     when(configService.current()).thenReturn(cfg);
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt())).thenReturn(emptyFeed());
 
-    Response r = rest.feed(null, null, false, headers, uriInfo);
+    Response r = rest.feed(null, null, false, headers, uriInfo, secCtx);
 
     assertEquals(200, r.getStatus());
     String ct = r.getMediaType().toString();
@@ -136,7 +141,7 @@ class UnhideFeedValidationRestTest {
     UnhideValidationReportIO expected = new UnhideValidationReportIO(true, 0, List.of());
     when(feedService.validateFeed(feed)).thenReturn(expected);
 
-    Response r = rest.feed(null, null, true, headers, uriInfo);
+    Response r = rest.feed(null, null, true, headers, uriInfo, secCtx);
 
     assertEquals(200, r.getStatus());
     assertInstanceOf(UnhideValidationReportIO.class, r.getEntity());
@@ -155,7 +160,7 @@ class UnhideFeedValidationRestTest {
     when(feedService.buildFeed(any(), anyString(), anyInt(), anyInt())).thenReturn(feed);
     when(feedService.validateFeed(feed)).thenReturn(new UnhideValidationReportIO(true, 0, List.of()));
 
-    rest.feed(3, 50, true, headers, uriInfo);
+    rest.feed(3, 50, true, headers, uriInfo, secCtx);
 
     verify(feedService).buildFeed(cfg, "https://shepard.example.dlr.de/", 3, 50);
   }
