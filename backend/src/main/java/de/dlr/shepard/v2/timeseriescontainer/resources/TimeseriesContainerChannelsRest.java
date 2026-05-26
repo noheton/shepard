@@ -8,6 +8,7 @@ import de.dlr.shepard.data.timeseries.repositories.TsChannelResolver;
 import de.dlr.shepard.data.timeseries.services.TimeseriesContainerService;
 import de.dlr.shepard.data.timeseries.services.TimeseriesService;
 import de.dlr.shepard.v2.timeseriescontainer.io.BulkChannelDataRequestIO;
+import de.dlr.shepard.v2.timeseriescontainer.io.CopyIngestRequestIO;
 import de.dlr.shepard.v2.timeseriescontainer.io.TimeseriesChannelV2IO;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -170,5 +171,43 @@ public class TimeseriesContainerChannelsRest {
       new TimeseriesDataPointsQueryParams(body.start(), body.end(), null, null, null));
 
     return Response.ok(results).build();
+  }
+
+  // ── TS-OPT3-COPY: high-throughput COPY-protocol single-channel ingest ────────
+
+  @POST
+  @Path("/{containerId}/channels/{shepardId}/data/ingest")
+  @Operation(
+    summary = "High-throughput COPY ingest for a single channel (TS-OPT3-COPY).",
+    description = "Uses the PostgreSQL COPY protocol, which is 3–5× faster than the " +
+      "VALUES INSERT path for bulk historical loads. The channel (identified by shepardId) " +
+      "must already exist; create it first via the regular endpoint if needed. " +
+      "No ON CONFLICT handling is applied: timestamps must be unique within the batch " +
+      "and must not duplicate rows already stored for this channel. " +
+      "Designed for high-throughput import scripts that batch thousands of points per call."
+  )
+  @APIResponse(responseCode = "204", description = "Data ingested successfully.")
+  @APIResponse(responseCode = "400", description = "Validation error or duplicate timestamp.")
+  @APIResponse(responseCode = "401", description = "Authentication required.")
+  @APIResponse(responseCode = "403", description = "Caller lacks Write permission on the container.")
+  @APIResponse(responseCode = "404", description = "No channel with that shepardId in this container.")
+  public Response ingestChannelData(
+    @PathParam("containerId") long containerId,
+    @PathParam("shepardId") UUID shepardId,
+    @NotNull @Valid CopyIngestRequestIO body
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+
+    var entity = tsChannelResolver.findByShepardId(shepardId)
+      .filter(e -> e.getContainerId() == containerId)
+      .orElse(null);
+    if (entity == null) {
+      return Response.status(Response.Status.NOT_FOUND)
+        .entity("No channel with shepardId " + shepardId + " in container " + containerId)
+        .build();
+    }
+
+    timeseriesService.ingestDataPointsCopy(containerId, entity, body.dataPoints());
+    return Response.noContent().build();
   }
 }

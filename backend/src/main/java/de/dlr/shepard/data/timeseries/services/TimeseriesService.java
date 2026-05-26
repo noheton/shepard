@@ -241,6 +241,46 @@ public class TimeseriesService {
   }
 
   /**
+   * Ingest data points for an already-resolved channel entity using PostgreSQL COPY.
+   *
+   * <p>COPY is 3–5× faster than the VALUES INSERT path ({@link #saveDataPoints}) for
+   * bulk loads because it streams CSV directly to the server without per-row parsing
+   * overhead. The trade-off: no {@code ON CONFLICT DO UPDATE} — timestamps must be
+   * unique within the batch and must not duplicate rows already in the table.
+   *
+   * <p>The channel entity must already exist; this method does NOT create channels.
+   * Callers are responsible for resolving {@code shepardId → TimeseriesEntity} first.
+   *
+   * @param containerId the owning container (used only for the permission check)
+   * @param entity      the already-resolved channel entity
+   * @param points      data points to ingest; timestamps must be unique
+   * @throws de.dlr.shepard.common.exceptions.InvalidBodyException on duplicate timestamp
+   * @throws RuntimeException wrapping any other COPY failure
+   */
+  public void ingestDataPointsCopy(
+    long containerId,
+    TimeseriesEntity entity,
+    List<TimeseriesDataPoint> points
+  ) {
+    timeseriesContainerService.getContainer(containerId);
+    timeseriesContainerService.assertIsAllowedToEditContainer(containerId);
+
+    try {
+      timeseriesDataPointRepository.insertManyDataPointsWithCopyCommandBatched(
+        points, entity, 0, null, null);
+    } catch (java.sql.SQLException ex) {
+      String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+      if (msg.contains("duplicate") || msg.contains("unique")) {
+        throw new InvalidBodyException(
+          "Duplicate (timeseries_id, time) pair detected during COPY ingest. " +
+          "Ensure timestamps are unique and do not overlap with existing rows."
+        );
+      }
+      throw new RuntimeException("COPY ingest failed: " + ex.getMessage(), ex);
+    }
+  }
+
+  /**
    * Fetch data points for a list of already-resolved channel entities.
    * Skips the per-channel {@code findTimeseries} lookup — callers that
    * already hold {@link TimeseriesEntity} objects (e.g. after a single
