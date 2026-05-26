@@ -33,14 +33,14 @@ section and the `upgrade-overlay` section.
 | `fragment` | 39 |
 | `concept` | 18 |
 | `idea` | 10 |
-| `feature-defined` | 86 |
+| `feature-defined` | 87 |
 | `audited-by-personas` | 70 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 62 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **340** |
+| **total docs** | **341** |
 | **UNTAGGED** | **1** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -133,11 +133,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (86)
+## feature-defined (87)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
 | [`aidocs/43-reverse-engineered-requirements.md`](43-reverse-engineered-requirements.md) | 43 — Reverse-engineered requirements (to be challenged) | 2026-05-24 | 2026-05-24 |
+| [`aidocs/agent-findings/185-v5-survey-bundle.md`](agent-findings/185-v5-survey-bundle.md) | v5 Survey Bundle (v15.10) | 2026-05-26 | — |
 | [`aidocs/agent-findings/aas-edc-reuse-survey-2026-05-23.md`](agent-findings/aas-edc-reuse-survey-2026-05-23.md) | AAS + EDC reuse survey for `shepard-plugin-aas` + `shepard-plugin-edc` | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/bug-148-do-perms-seeded-2026-05-24.md`](agent-findings/bug-148-do-perms-seeded-2026-05-24.md) | BUG-148 — DataObject Permissions seeding: WORKS AS DESIGNED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/file-storage-routing-audit-2026-05-24.md`](agent-findings/file-storage-routing-audit-2026-05-24.md) | File-storage routing audit — Garage vs Mongo GridFS, 2026-05-24 | 2026-05-24 | 2026-05-24 |
@@ -203,7 +204,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
-| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-26 | 2026-05-23 |
+| [`aidocs/strategy/103-research-network.md`](strategy/103-research-network.md) | Shepard research network — DLR eLib + external-peer reconstruction | 2026-05-26 | 2026-05-26 |
 | [`aidocs/strategy/104-author-research-profile.md`](strategy/104-author-research-profile.md) | Author research profile — Florian Krebs, DLR ZLP Augsburg | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/105-postgres-multitenant-decision.md`](strategy/105-postgres-multitenant-decision.md) | aidocs/105 — POSTGRES-MULTITENANT decision: one PG, N schemas, ACCEPTED | 2026-05-24 | 2026-05-24 |
 | [`aidocs/strategy/106-shepard-industrial-ai-role.md`](strategy/106-shepard-industrial-ai-role.md) | 106 — Shepard's Role in the Industrial-AI Value Chain | 2026-05-24 | 2026-05-26 |
