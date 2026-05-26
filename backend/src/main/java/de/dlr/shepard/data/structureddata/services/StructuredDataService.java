@@ -56,9 +56,16 @@ public class StructuredDataService {
       throw new InvalidBodyException("The specified payload is not json parsable");
     }
 
-    // Remove fields beginning with an underscore (protected)
-    var forbidden = toInsert.keySet().stream().filter(k -> k.startsWith("_")).toList();
-    forbidden.forEach(toInsert::remove);
+    // Only _id (MongoDB primary key) and _meta (Shepard metadata anchor) are reserved.
+    // All other underscore-prefixed keys are caller-controlled; they pass through unchanged.
+    // Silently stripping every _* key caused silent data loss for fields like _my_field.
+    var conflicting = toInsert.keySet().stream()
+        .filter(k -> k.equals(ID_ATTR) || k.equals(META_OBJECT))
+        .toList();
+    if (!conflicting.isEmpty()) {
+      throw new InvalidBodyException(
+          "Payload contains reserved keys that cannot be set by the caller: " + conflicting);
+    }
 
     // Add meta data
     var newName = payload.getStructuredData() != null ? payload.getStructuredData().getName() : null;

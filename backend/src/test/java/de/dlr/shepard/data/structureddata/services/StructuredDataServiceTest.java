@@ -96,14 +96,11 @@ public class StructuredDataServiceTest extends BaseTestCase {
   }
 
   @Test
-  public void createStructuredDataTest_forbiddenKeys() {
+  public void createStructuredDataTest_underscorePrefixedKeyPassesThrough() {
+    // _a is user data (not a reserved key) — it must survive to Mongo unchanged
     String payload = "{\"_a\":\"b\", \"c\":\"d\"}";
-    String payloadCleaned = "{\"c\":\"d\"}";
     Date date = new Date();
     ObjectId oid = new ObjectId();
-    StructuredData data = new StructuredData("name", date);
-    Document toInsert = Document.parse(payloadCleaned);
-    toInsert.append("_meta", data);
 
     when(dateHelper.getDate()).thenReturn(date);
     when(mongoDatabase.getCollection("collection")).thenReturn(collection);
@@ -111,19 +108,47 @@ public class StructuredDataServiceTest extends BaseTestCase {
       new Answer<Void>() {
         @Override
         public Void answer(InvocationOnMock invocation) throws Throwable {
-          Object[] args = invocation.getArguments();
-          ((Document) args[0]).append("_id", oid);
-          return null; // void method, so return null
+          ((Document) invocation.getArguments()[0]).append("_id", oid);
+          return null;
         }
       }
     )
       .when(collection)
-      .insertOne(toInsert);
+      .insertOne(any(Document.class));
 
     var expectedData = new StructuredData();
     expectedData.setName("name");
     var actual = service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload));
     assertEquals(new StructuredData(oid.toHexString(), date, "name"), actual);
+
+    // verify _a was NOT stripped — it must be in the document sent to Mongo
+    var captor = ArgumentCaptor.forClass(Document.class);
+    verify(collection).insertOne(captor.capture());
+    assertEquals("b", captor.getValue().get("_a"));
+  }
+
+  @Test
+  public void createStructuredDataTest_reservedKey_id_isRejected() {
+    String payload = "{\"_id\":\"1234\", \"c\":\"d\"}";
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
+
+    var expectedData = new StructuredData();
+    expectedData.setName("name");
+    assertThrows(InvalidBodyException.class, () ->
+      service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
+    verify(collection, never()).insertOne(any(Document.class));
+  }
+
+  @Test
+  public void createStructuredDataTest_reservedKey_meta_isRejected() {
+    String payload = "{\"_meta\":{\"x\":\"y\"}, \"c\":\"d\"}";
+    when(mongoDatabase.getCollection("collection")).thenReturn(collection);
+
+    var expectedData = new StructuredData();
+    expectedData.setName("name");
+    assertThrows(InvalidBodyException.class, () ->
+      service.createStructuredData("collection", new StructuredDataPayload(expectedData, payload)));
+    verify(collection, never()).insertOne(any(Document.class));
   }
 
   @Test
