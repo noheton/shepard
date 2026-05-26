@@ -1,4 +1,4 @@
-# RUNBOOK — MFFD v16.3 content transfer (2026-05-26)
+# RUNBOOK — MFFD v16.4 content transfer (2026-05-26)
 
 **Task #145.** All 8514 MFFD-Dropbox DataObjects are clean skeletons (zero payload).
 The gate is pre-cleared (`import_ready=2026-05-26` on dest collection 661923).
@@ -38,7 +38,7 @@ curl -fsSL -o mffd-import-v15.py \
 
 # Verify SHA256 (must match exactly):
 sha256sum mffd-import-v15.py
-# expected: 930f1457828b69505bfa39d98dc3f79b9718fac6ca3a9016f2fff1a202168cf8
+# expected: 67d87489ca2507c81a5141617c33900cb958f020051cd4b6e494d5bae857c77a
 
 # Also fetch the runner:
 curl -fsSL -o mffd-runner.sh \
@@ -136,6 +136,9 @@ This will confirm Task #145 complete and unlock the post-ingest DB audit.
   detects they exist and skips the skeleton phase entirely.
 - Bugs D (multi-OID parser miss), F/F2 (FileReference container reuse), and G
   (TS reference creation order) are all fixed in v16.3.
+- v16.4 adds: `_refresh_session()` after reconnect (stale pool flush), workers
+  default lowered 8→4 (connection-reset ceiling), upload retry loop with
+  file-handle re-open (5 attempts, exp backoff 4→60s).
 - The gate pre-clear was applied 2026-05-24 via:
   `PATCH /shepard/api/collections/661923 {"attributes":{"import_ready":"2026-05-26"}}`
   Confirmed HTTP 200; dest JWT verified live 2026-05-26.

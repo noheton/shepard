@@ -168,7 +168,7 @@ PRESERVE_HIERARCHY_WORKERS: int = max(
     # `os.environ.get(k, "8")` returns '' when the var is set-but-empty
     # (common when an empty `.env` line wins over the default). `or "8"`
     # rescues both cases.
-    1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS") or "8")
+    1, int(os.environ.get("MFFD_PRESERVE_HIERARCHY_WORKERS") or "4")  # was "8" — v16.4 lowered to stay under connection-reset threshold
 )
 
 # v16 PRESERVE-HIERARCHY — sentinel for "parentId kwarg not supplied" on
@@ -737,6 +737,23 @@ class ShepardClient:
         # Format: "<agent-id>; actedOnBehalfOf=<email>"
         if ai_agent:
             self._s.headers["X-AI-Agent"] = ai_agent
+
+    def _refresh_session(self) -> None:
+        """Drop stale connection pool; recreate session with identical headers.
+
+        Called after a reconnect wait so broken pooled TCP connections don't
+        haunt subsequent requests (Learning 5 — 2026-05-24 DB audit).
+        Safe under JWTHotswapMechanism: the hotswap mutates self._s.headers in-
+        place, so we snapshot headers BEFORE closing the old session.
+        """
+        old = self._s
+        new_s = Session()
+        new_s.headers.update(dict(old.headers))  # snapshot first, then close
+        self._s = new_s
+        try:
+            old.close()
+        except Exception:
+            pass
 
     # ── Warmup ────────────────────────────────────────────────────────────────
 
@@ -1480,36 +1497,14 @@ class ShepardClient:
     ) -> bool:
         size = path.stat().st_size
 
-        # v2 singleton (fork instances)
+        # v2 singleton (fork instances) — with retry (Learning 4/6: ConnectionReset
+        # under workers=8 fan-out; file handle re-opened each attempt because
+        # multipart upload consumes the stream on the first read).
         url_v2 = f"{self._base}/v2/files"
         params = {"parentDataObjectAppId": app_id, "name": display}
-        try:
-            with path.open("rb") as fh:
-                with tqdm(
-                    total=size,
-                    unit="B",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    desc=f"  ↑ {display[:40]}",
-                    leave=False,
-                    file=sys.stderr,
-                ) as bar:
-                    wrapped = _TqdmReader(fh, bar)
-                    r = self._s.post(url_v2, params=params, files={"file": (Path(display).name, wrapped)}, timeout=600)
-            if r.status_code not in (404, 405):
-                if r.ok:
-                    return True
-                print(f"  [http {r.status_code}] v2 upload {display}: {r.text[:300]}")
-                return False
-        except Exception as exc:
-            print(f"  [net] v2 upload {path.name}: {exc}")
-
-        # v1 fallback
-        if coll_id is not None and do_id is not None:
-            url_v1 = (
-                f"{self._base}/shepard/api/collections/{coll_id}"
-                f"/dataObjects/{do_id}/fileReferences"
-            )
+        _upload_max_attempts = 5
+        _upload_backoff = 4.0
+        for _attempt in range(1, _upload_max_attempts + 1):
             try:
                 with path.open("rb") as fh:
                     with tqdm(
@@ -1517,17 +1512,69 @@ class ShepardClient:
                         unit="B",
                         unit_scale=True,
                         unit_divisor=1024,
-                        desc=f"  ↑ {display[:40]} (v1)",
+                        desc=f"  ↑ {display[:40]}",
                         leave=False,
                         file=sys.stderr,
                     ) as bar:
                         wrapped = _TqdmReader(fh, bar)
-                        r = self._s.post(url_v1, files={"file": (display, wrapped)}, timeout=600)
-                if r.ok:
-                    return True
-                print(f"  [http {r.status_code}] v1 upload {display}: {r.text[:300]}")
+                        r = self._s.post(url_v2, params=params, files={"file": (Path(display).name, wrapped)}, timeout=600)
+                if r.status_code not in (404, 405):
+                    if r.ok:
+                        return True
+                    if _attempt < _upload_max_attempts:
+                        print(f"  [http {r.status_code}] v2 upload {display} attempt {_attempt}/{_upload_max_attempts}: {r.text[:200]} — retrying in {_upload_backoff:.0f}s")
+                        time.sleep(_upload_backoff)
+                        _upload_backoff = min(_upload_backoff * 2, 60.0)
+                        continue
+                    print(f"  [http {r.status_code}] v2 upload {display}: {r.text[:300]}")
+                    break  # fall through to v1
+                break  # 404/405 → v2 not available, try v1
             except Exception as exc:
-                print(f"  [net] v1 upload {path.name}: {exc}")
+                if _attempt < _upload_max_attempts:
+                    print(f"  [net] v2 upload {path.name} attempt {_attempt}/{_upload_max_attempts}: {exc} — retrying in {_upload_backoff:.0f}s")
+                    time.sleep(_upload_backoff)
+                    _upload_backoff = min(_upload_backoff * 2, 60.0)
+                else:
+                    print(f"  [net] v2 upload {path.name}: {exc}")
+        else:
+            return False  # all v2 attempts non-404/405 failed
+
+        # v1 fallback
+        if coll_id is not None and do_id is not None:
+            url_v1 = (
+                f"{self._base}/shepard/api/collections/{coll_id}"
+                f"/dataObjects/{do_id}/fileReferences"
+            )
+            _upload_backoff = 4.0
+            for _attempt in range(1, _upload_max_attempts + 1):
+                try:
+                    with path.open("rb") as fh:
+                        with tqdm(
+                            total=size,
+                            unit="B",
+                            unit_scale=True,
+                            unit_divisor=1024,
+                            desc=f"  ↑ {display[:40]} (v1)",
+                            leave=False,
+                            file=sys.stderr,
+                        ) as bar:
+                            wrapped = _TqdmReader(fh, bar)
+                            r = self._s.post(url_v1, files={"file": (display, wrapped)}, timeout=600)
+                    if r.ok:
+                        return True
+                    if _attempt < _upload_max_attempts:
+                        print(f"  [http {r.status_code}] v1 upload {display} attempt {_attempt}/{_upload_max_attempts}: {r.text[:200]} — retrying in {_upload_backoff:.0f}s")
+                        time.sleep(_upload_backoff)
+                        _upload_backoff = min(_upload_backoff * 2, 60.0)
+                    else:
+                        print(f"  [http {r.status_code}] v1 upload {display}: {r.text[:300]}")
+                except Exception as exc:
+                    if _attempt < _upload_max_attempts:
+                        print(f"  [net] v1 upload {path.name} attempt {_attempt}/{_upload_max_attempts}: {exc} — retrying in {_upload_backoff:.0f}s")
+                        time.sleep(_upload_backoff)
+                        _upload_backoff = min(_upload_backoff * 2, 60.0)
+                    else:
+                        print(f"  [net] v1 upload {path.name}: {exc}")
 
         return False
 
@@ -2391,6 +2438,7 @@ class ShepardClient:
                             f"after {attempt} attempts)",
                             flush=True,
                         )
+                        self._refresh_session()  # flush stale pooled connections (Learning 5)
                     return r
                 last_label = f"HTTP {r.status_code}"
             except (
