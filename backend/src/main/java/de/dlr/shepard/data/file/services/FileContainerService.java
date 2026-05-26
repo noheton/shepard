@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RequestScoped
@@ -286,6 +287,17 @@ public class FileContainerService extends AbstractContainerService<FileContainer
       throw nfe;
     }
 
+    // NEO-AUDIT-002 write-path guard: providerId must be non-null before
+    // persistence. The stamp above (result.setProviderId(adapter.id()))
+    // always sets it; this check is a belt-and-braces assertion that
+    // catches any future refactor that branches before the stamp.
+    if (result != null) {
+      Objects.requireNonNull(
+        result.getProviderId(),
+        "ShepardFile.providerId must be set before persistence (NEO-AUDIT-002)"
+      );
+    }
+
     fileContainer.addFile(result);
     fileContainerDAO.createOrUpdate(fileContainer);
 
@@ -466,6 +478,12 @@ public class FileContainerService extends AbstractContainerService<FileContainer
     ShepardFile file = new ShepardFile(oid, dateHelper.getDate(), fileName, null);
     file.setFileSize(fileSize);
     file.setProviderId(adapter.id());
+
+    // NEO-AUDIT-002 write-path guard — mirrors the same assertion in createFile().
+    Objects.requireNonNull(
+      file.getProviderId(),
+      "ShepardFile.providerId must be set before persistence (NEO-AUDIT-002)"
+    );
 
     container.addFile(file);
     fileContainerDAO.createOrUpdate(container);

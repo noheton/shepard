@@ -806,4 +806,63 @@ public class FileContainerServiceTest {
     // payloadVersionDAO.createOrUpdate should NOT have been called
     org.mockito.Mockito.verify(payloadVersionDAO, org.mockito.Mockito.never()).createOrUpdate(any());
   }
+
+  // ---------- NEO-AUDIT-002: effectiveProviderId NULL-coalesce fallback ----------
+
+  @Test
+  public void getFile_nullProviderIdRowFallsBackToGridfs() {
+    // NEO-AUDIT-002: a pre-V79 :ShepardFile row with providerId = NULL must
+    // still route correctly via the reader-side NULL-coalesce in
+    // effectiveProviderId(), which returns GridFsFileStorage.ID ("gridfs").
+    // V79 migration + write-path guard prevent future NULL rows; this test
+    // locks in the belt-and-braces fallback for any row that arrives NULL
+    // transiently (test fixtures, race window, future refactor bug).
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+
+    // Deliberately leave providerId = null (no setProviderId call).
+    ShepardFile fileWithNullProviderId = new ShepardFile("oid", new Date(), "data.bin", "md5");
+    container.setFiles(List.of(fileWithNullProviderId));
+
+    NamedInputStream payload = new NamedInputStream("oid", null, "data.bin", 512L);
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    // effectiveProviderId() coalesces null → "gridfs"; GridFsFileStorage
+    // delegates to FileService.getPayload — mock that downstream call.
+    when(fileService.getPayload("mongoId", "oid")).thenReturn(payload);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+
+    // Must NOT throw — the coalesce routes to gridfs silently.
+    var actual = service.getFile(1L, "oid");
+
+    assertEquals("data.bin", actual.getName());
+    // Verify the gridfs adapter (FileService.getPayload) was called — confirming
+    // the null→gridfs coalesce routed through the right adapter.
+    verify(fileService).getPayload("mongoId", "oid");
+  }
+
+  @Test
+  public void getFile_blankProviderIdRowFallsBackToGridfs() {
+    // NEO-AUDIT-002: a row with providerId = "" (blank) should also coalesce
+    // to gridfs — the effectiveProviderId guard covers both null and blank.
+    FileContainer container = new FileContainer(1L);
+    container.setMongoId("mongoId");
+
+    ShepardFile fileWithBlankProviderId = new ShepardFile("oid2", new Date(), "blank.txt", "md5");
+    fileWithBlankProviderId.setProviderId("  "); // whitespace-only
+    container.setFiles(List.of(fileWithBlankProviderId));
+
+    NamedInputStream payload = new NamedInputStream("oid2", null, "blank.txt", 0L);
+    when(dao.findByNeo4jId(1L)).thenReturn(container);
+    when(fileService.getPayload("mongoId", "oid2")).thenReturn(payload);
+    when(authenticationContext.getCurrentUserName()).thenReturn(defaultUser.getUsername());
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Read), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+    when(permissionsService.isAccessTypeAllowedForUser(eq(1L), eq(AccessType.Write), eq(defaultUser.getUsername()), anyLong())).thenReturn(true);
+
+    var actual = service.getFile(1L, "oid2");
+
+    assertEquals("blank.txt", actual.getName());
+    verify(fileService).getPayload("mongoId", "oid2");
+  }
 }
