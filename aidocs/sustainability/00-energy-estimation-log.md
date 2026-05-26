@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| PERF4a-4b | 2026-05-26 | code | 6k | 3k | 0.87 | 0 | 0 | 0.87 | 0.32 | MEDIUM | feat(perf): PERF4a+4b — k6 per-endpoint SLO script + README (new file only; no backend compute) |
 | TEST1 | 2026-05-26 | refactor | 2k | 0.5k | 0.02 | 0 | 0 | 0.02 | 8 | LOW | refactor(backend): TEST1 — rename 7 Quarkus-bootstrapped tests to *QuarkusTest.java; remove explicit pom.xml excludes |
 | V14-V90-BUG148 | 2026-05-26 | code | 12k | 4k | 1.65 | 20 | 5 | 26.65 | 9.68 | MEDIUM | fix(backend): V14-WHERE-CLAUSE-TIGHTEN + BUG-148-DESIGN-ASSERT-TEST — V90 migration + anti-regression test |
 | Wave12a | 2026-05-26 | code | 20k | 6k | 2.30 | 0 | 0 | 2.30 | 0.84 | MEDIUM | feat(ux): Wave12a — sidebar superset fix + keyboard shortcut + collection page improvements |
@@ -507,4 +508,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | PERF5 — batch DataObjectService N+1 Neo4j loop into single `WHERE d.shepardId IN $ids` query via `DataObjectDAO.findByCollectionAndShepardIds`; 2 unit tests. ~0.002 kWh / ~0.8 gCO₂e (inference only; net runtime savings: up to N-1 Neo4j round-trips per create/update at MFFD scale). | Claude Sonnet 4.6 |
 | 2026-05-26 | COMP-SE-ROLES + COMP-SE-DOCS + API3 — DLR SE compliance docs (SEA naming, AK classification) + container safe-delete design doc. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | PERF9 — channel-edit checkbox virtualization: search filter + v-virtual-scroll in ShowTimeseriesReferenceDialog; TimeseriesReferencePicker already handled. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-05-26 | UX-PROV1 — Ancestor Chain panel: `AncestorChainPanel.vue` + `useFetchPredecessorChain.ts` + 9 Vitest tests; reuses ANC-1 `predecessor-chain` endpoint; advanced-mode gate on DataObject detail page. ~0.15 kWh / ~60 gCO₂e. | Claude Sonnet 4.6 |
 
