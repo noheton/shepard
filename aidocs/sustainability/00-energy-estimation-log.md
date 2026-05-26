@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| M4Ia-pending | 2026-05-26 | mixed | 30k | 8k | 3.65 | 20 | 5 | 28.65 | 10.40 | MEDIUM | feat(semantics): M4I-a — canonical URL + fetchOnSeed for metadata4ing vocabulary |
 | DB-INV1-pending | 2026-05-26 | doc | 60k | 12k | 5.16 | 0 | 0 | 5.16 | 1.87 | LOW | docs(data): DB-INV1 — multi-substrate schema inventory snapshot |
 | P22-pending | 2026-05-26 | mixed | 12k | 4k | 1.85 | 0 | 0 | 1.85 | 0.67 | MEDIUM | test(sse): P22 — SSE proxy-compat smoke test + Caddy buffering findings |
 | F6-pending | 2026-05-26 | code | 8k | 3k | 1.42 | 20 | 5 | 26.42 | 9.59 | MEDIUM | feat(auth): F6 — PolicyDecisionPoint seam (OPA/Cedar future-proof interface) |

@@ -544,6 +544,34 @@ class OntologySeedServiceTest {
     assertEquals("Turtle", nasa.format, "NASA Thesaurus stub format (fallback)");
   }
 
+  /**
+   * M4I-a — metadata4ing manifest entry carries {@code fetchUrl} and
+   * {@code fetchFormat=Turtle} so the seed service fetches the full
+   * canonical ~150-term TTL on first start (303 → RWTH GitLab Pages),
+   * falling back to the bundled 7-class stub when offline. The stub
+   * inline-format and canonical URL must remain unchanged (they back
+   * the existing {@link #realManifest_metadata4ingCarriesNfdi4ingIriPrefixAndCcBy4Licence}
+   * assertions).
+   */
+  @Test
+  void realManifest_metadata4ing_hasFetchUrl_andTurtleFormat() {
+    Session session = mock(Session.class);
+    var svc = new OntologySeedService(session, true, Set.of(), new ObjectMapper(), getClass().getClassLoader());
+    var m4i = svc.loadManifest().stream()
+      .filter(e -> "metadata4ing".equals(e.id))
+      .findFirst()
+      .orElseThrow(() -> new AssertionError("metadata4ing missing from manifest"));
+    assertEquals("https://w3id.org/nfdi4ing/metadata4ing/1.4.0/", m4i.fetchUrl,
+      "M4I-a: metadata4ing fetchUrl must be the w3id.org permanent identifier (303 → canonical TTL)");
+    assertEquals("Turtle", m4i.fetchFormat,
+      "M4I-a: metadata4ing fetchFormat must be Turtle (not RDF/XML; the remote file is a .ttl)");
+    // Stub format + canonicalUrl must remain unchanged — they back the
+    // existing ONT1b assertions and the inline-fallback path.
+    assertEquals("Turtle", m4i.format, "metadata4ing stub format (fallback) unchanged");
+    assertEquals("https://w3id.org/nfdi4ing/metadata4ing/1.4.0/", m4i.canonicalUrl,
+      "metadata4ing canonicalUrl unchanged (1.4.0 permanent identifier)");
+  }
+
   // ---------- Real-classpath sanity test ------------------------------------
 
   /**
