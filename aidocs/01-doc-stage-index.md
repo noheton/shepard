@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 38 |
-| `concept` | 14 |
+| `concept` | 15 |
 | `idea` | 10 |
 | `feature-defined` | 85 |
 | `audited-by-personas` | 63 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 60 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **331** |
+| **total docs** | **332** |
 | **UNTAGGED** | **7** |
 
 ## UNTAGGED (needs `stage:` front-matter)
@@ -100,10 +100,11 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (14)
+## concept (15)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
+| [`aidocs/agent-findings/mffd-welding-ts-analysis-cases.md`](agent-findings/mffd-welding-ts-analysis-cases.md) | MFFD CRW Welding Time-Series — Analysis Case Definitions | 2026-05-26 | — |
 | [`aidocs/data/45-gridfs-to-s3-evaluation.md`](data/45-gridfs-to-s3-evaluation.md) | GridFS → S3 — Evaluation | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/50-experiment-orchestration.md`](data/50-experiment-orchestration.md) | Experiment Orchestration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
@@ -158,7 +159,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md`](agent-findings/ui-018-019-hypothesis-recheck-2026-05-24.md) | UI Hypothesis Re-check 2026-05-24 — UI-018 + UI-019 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/ux-scrutinizer-workflows-2026-05-24.md`](agent-findings/ux-scrutinizer-workflows-2026-05-24.md) | UX Scrutinizer — Workflow + Click Minimisation, 2026-05-24 | 2026-05-24 | 2026-05-24 |
 | [`aidocs/data/107-cite-nanotom-shepard-substrate.md`](data/107-cite-nanotom-shepard-substrate.md) | aidocs/107 — CITE + Nanotom as shepard data-management substrate | 2026-05-24 | 2026-05-26 |
-| [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-ingestion-plan.md) | MFFD Dump Ingestion Plan | 2026-05-26 | — |
+| [`aidocs/data/108-mffd-dump-ingestion-plan.md`](data/108-mffd-dump-ingestion-plan.md) | MFFD Dump Ingestion Plan | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/35-hdf5-hsds-implementation-design.md`](data/35-hdf5-hsds-implementation-design.md) | HDF5 / HSDS Implementation Design (E7 → A5 series) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/46-payload-versioning-design.md`](data/46-payload-versioning-design.md) | Payload Versioning — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/78-cad-geometry-annotator.md`](data/78-cad-geometry-annotator.md) | aidocs/78 — 3D Geometry & FEM Annotator (`shepard-plugin-cad`) | 2026-05-23 | 2026-05-23 |
