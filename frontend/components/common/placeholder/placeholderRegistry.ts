@@ -201,8 +201,20 @@ export const PLACEHOLDER_ENTRIES: PlaceholderEntry[] = [
     designDoc: "aidocs/semantics/98-shapes-views-and-process-model.md",
     backend: "shipped",
   },
+  {
+    slug: "ontology-alignment",
+    surface: "admin",
+    title: "Ontology Alignment Registry",
+    subtitle:
+      "Read-only registry of how core Shepard concepts map onto upper-ontology classes (BFO 2020, IAO, PROV-O, IOF Core). Seeded by V67 migration; operator runbook: aidocs/semantics/97.",
+    endpoint: "/v2/semantic/ontology/alignment",
+    backlogRow: "TPL3",
+    designDoc: "aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md",
+    backend: "shipped",
+  },
 ];
 
+// TPL3: +1 for ontology-alignment (2026-05-26)
 export const EXPECTED_PLACEHOLDER_COUNT = PLACEHOLDER_ENTRIES.length;
 
 export function findPlaceholder(slug: string): PlaceholderEntry | undefined {

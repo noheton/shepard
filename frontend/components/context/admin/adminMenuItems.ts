@@ -24,6 +24,7 @@ export enum AdminFragments {
   USERS_GIT = "users-git",
   AI_CONFIG = "ai-config",
   BACKUP = "backup",
+  ONTOLOGY_ALIGNMENT = "ontology-alignment",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -137,5 +138,10 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Backup",
     fragment: AdminFragments.BACKUP,
     icon: "mdi-backup-restore",
+  },
+  {
+    name: "Ontology Alignment",
+    fragment: AdminFragments.ONTOLOGY_ALIGNMENT,
+    icon: "mdi-graph-outline",
   },
 ];

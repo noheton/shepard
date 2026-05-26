@@ -1,8 +1,16 @@
 ---
-stage: idea
-last-stage-change: 2026-05-23
+stage: feature-defined
+last-stage-change: 2026-05-26
 name: TPL3 — Upper-ontology bootstrap migration + starter kit
-description: Implementation design for TPL3 (M1 milestone of the Shapes-as-Templates family). Specifies the V64 Cypher bootstrap migration seeding BFO 2020 + IOF Core + IAO + EMMO Core + CHAMEO + MSEO + m4i + f(ai)²r + PROV-O + dcterms + schema.org SemanticRepository nodes, plus a five-template instance starter kit (Measurement, Sample, ProcessStep, Document, Dataset). Companion to aidocs/semantics/96 (upper-ontology alignment design) and aidocs/semantics/95 (SHACL templates and individuals); preconditions for TPL4, TPL5, TPL10.
+description: >
+  TPL3a-lite shipped 2026-05-26 — V70 Cypher migration seeding 12 (:OntologyAlignment) nodes
+  (BFO 2020 / IAO / PROV-O / IOF Core) + GET /v2/semantic/ontology/alignment admin endpoint
+  (OntologyAlignment entity/DAO/IO/Rest). Full TTL-loaded axiomatic layer (TPL3b) and
+  SemanticRepository registrations remain queued. Original scope: V64 Cypher bootstrap seeding
+  BFO 2020 + IOF Core + IAO + EMMO Core + CHAMEO + MSEO + m4i + f(ai)²r + PROV-O + dcterms +
+  schema.org SemanticRepository nodes, plus a five-template instance starter kit.
+  Companion to aidocs/semantics/96 (upper-ontology alignment) and aidocs/semantics/95
+  (SHACL templates and individuals); preconditions for TPL4/TPL5/TPL10.
 ---
 
 # 97 — TPL3 — Upper-ontology bootstrap migration + starter kit

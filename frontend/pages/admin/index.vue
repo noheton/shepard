@@ -188,6 +188,12 @@ const landingCards = [
     title: "Backup",
     description: "Nightly pg_dump + Wal-G policy (designed; ships PG-COLLAPSE-002).",
   },
+  {
+    fragment: AdminFragments.ONTOLOGY_ALIGNMENT,
+    icon: "mdi-graph-outline",
+    title: "Ontology Alignment",
+    description: "Read-only registry: how Shepard concepts map to BFO/IAO/PROV-O upper-ontology classes (TPL3).",
+  },
 ];
 </script>
 
@@ -272,6 +278,10 @@ const landingCards = [
     <PlaceholderFragmentPane
       v-if="routeFragment === AdminFragments.BACKUP"
       slug="backup"
+    />
+    <PlaceholderFragmentPane
+      v-if="routeFragment === AdminFragments.ONTOLOGY_ALIGNMENT"
+      slug="ontology-alignment"
     />
   </PaneLayout>
 </template>
