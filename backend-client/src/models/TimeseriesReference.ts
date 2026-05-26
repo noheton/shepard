@@ -102,11 +102,48 @@ export interface TimeseriesReference {
      */
     timeseries: Array<Timeseries>;
     /**
-     * 
+     *
      * @type {number}
      * @memberof TimeseriesReference
      */
     timeseriesContainerId: number;
+    /**
+     * TM1: timestamp semantics. WALL_CLOCK (default) or EXPERIMENT_RELATIVE.
+     * null = legacy row, treat as WALL_CLOCK.
+     * Fork addition (no upstream 5.2.0 key).
+     * @type {string}
+     * @memberof TimeseriesReference
+     */
+    timeReference?: string | null;
+    /**
+     * TM1: UTC nanoseconds of experiment t=0.
+     * Only meaningful when timeReference = EXPERIMENT_RELATIVE.
+     * Fork addition (no upstream 5.2.0 key).
+     * @type {number}
+     * @memberof TimeseriesReference
+     */
+    wallClockOffset?: number | null;
+    /**
+     * TM1: provenance of wallClockOffset (e.g. manual, ffprobe, SA_sync, NTP_marker).
+     * Fork addition (no upstream 5.2.0 key).
+     * @type {string}
+     * @memberof TimeseriesReference
+     */
+    wallClockOffsetSource?: string | null;
+    /**
+     * AI1c: background-computed quality score in [0.0, 1.0]. null = not yet scored.
+     * Read-only. Fork addition (no upstream 5.2.0 key).
+     * @type {number}
+     * @memberof TimeseriesReference
+     */
+    readonly qualityScore?: number | null;
+    /**
+     * AI1c: epoch millis of the last quality-score run. null = never scored.
+     * Read-only. Fork addition (no upstream 5.2.0 key).
+     * @type {number}
+     * @memberof TimeseriesReference
+     */
+    readonly lastScoredAt?: number | null;
 }
 
 /**
@@ -149,6 +186,11 @@ export function TimeseriesReferenceFromJSONTyped(json: any, ignoreDiscriminator:
         'end': json['end'],
         'timeseries': ((json['timeseries'] as Array<any>).map(TimeseriesFromJSON)),
         'timeseriesContainerId': json['timeseriesContainerId'],
+        'timeReference': json['timeReference'] == null ? undefined : json['timeReference'],
+        'wallClockOffset': json['wallClockOffset'] == null ? undefined : json['wallClockOffset'],
+        'wallClockOffsetSource': json['wallClockOffsetSource'] == null ? undefined : json['wallClockOffsetSource'],
+        'qualityScore': json['qualityScore'] == null ? undefined : json['qualityScore'],
+        'lastScoredAt': json['lastScoredAt'] == null ? undefined : json['lastScoredAt'],
     };
 }
 

@@ -34,6 +34,7 @@ export * from './SubscriptionApi';
 export * from './TimeseriesContainerApi';
 export * from './TimeseriesMigrationApi';
 export * from './TimeseriesReferenceApi';
+export * from './TimeseriesReferenceV2Api';
 export * from './UriReferenceApi';
 export * from './MeApi';
 export * from './MeRoleInApi';

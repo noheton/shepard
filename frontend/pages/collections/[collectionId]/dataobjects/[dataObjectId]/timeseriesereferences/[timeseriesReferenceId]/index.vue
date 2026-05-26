@@ -43,19 +43,24 @@ const { collection, isAllowedToEditCollection } =
   useFetchCollection(collectionId);
 const { dataObject } = useFetchDataObject(collectionId, dataObjectId);
 
-const { timeseriesReference } = useFetchTimeseriesReference(
+const { timeseriesReference, fetchTimeseriesReference } = useFetchTimeseriesReference(
   collectionId,
   dataObjectId,
   timeseriesReferenceId,
 );
 
-// TA1a + AI1b — show interval/point annotations on this reference and let
-// editors invoke anomaly detection inline. The generated client doesn't yet
-// expose appId, so cast defensively (every Java entity carries appId since L2a).
-const timeseriesReferenceAppId = computed<string | undefined>(() => {
-  const raw = timeseriesReference.value as unknown as { appId?: string } | undefined;
-  return raw?.appId ?? undefined;
-});
+// TM1a — refresh the reference after a time-reference patch so the panel
+// shows the updated mode / offset immediately.
+async function onTimeReferenceUpdated() {
+  await fetchTimeseriesReference(collectionId, dataObjectId, timeseriesReferenceId);
+}
+
+// TA1a + AI1b — appId is now typed in the model (TM1a added it to the
+// backend-client TypeScript interface). The cast below is retained for
+// safety when the server returns a pre-TM1a row that omits appId.
+const timeseriesReferenceAppId = computed<string | undefined>(
+  () => timeseriesReference.value?.appId ?? undefined,
+);
 const {
   annotations: tsAnnotations,
   loading: tsAnnotationsLoading,
@@ -382,6 +387,30 @@ watch(timeseriesReference, () => {
                 </div>
               </ExpansionPanelItem>
             </ExpansionPanels>
+
+            <!-- TM1a — time-reference model section -->
+            <section class="page-section mt-4">
+              <div class="page-section-head">
+                <div class="text-h5 text-textbody1">Time reference</div>
+              </div>
+              <v-card variant="outlined" class="pa-3">
+                <TimeReferencePanel
+                  v-if="timeseriesReferenceAppId"
+                  :app-id="timeseriesReferenceAppId"
+                  :time-reference="timeseriesReference.timeReference"
+                  :wall-clock-offset="timeseriesReference.wallClockOffset"
+                  :wall-clock-offset-source="timeseriesReference.wallClockOffsetSource"
+                  :can-edit="!!isAllowedToEditCollection"
+                  @updated="onTimeReferenceUpdated"
+                />
+                <div
+                  v-else
+                  class="text-caption text-medium-emphasis"
+                >
+                  No appId — time-reference edit unavailable on this reference.
+                </div>
+              </v-card>
+            </section>
 
             <v-row align="center" justify="space-between" class="mt-2">
               <v-col>
