@@ -80,6 +80,7 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           size="x-small"
           icon="mdi-folder-outline"
           title="Open collection"
+          aria-label="Open collection"
         />
         <v-btn
           :to="`/collections/${dataObject.collectionId}/dataObjects/${dataObject.id}`"
@@ -87,12 +88,14 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
           size="x-small"
           icon="mdi-arrow-right"
           title="Open data object"
+          aria-label="Open data object"
         />
         <v-btn
           variant="text"
           size="x-small"
           :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
           :title="expanded ? 'Hide referenced slices' : 'Show referenced slices'"
+          :aria-label="expanded ? 'Hide referenced slices' : 'Show referenced slices'"
           @click="onToggleExpand"
         />
       </div>
@@ -100,7 +103,7 @@ function nanosToHumanRange(startNs: number, endNs: number): string {
   </v-list-item>
 
   <div v-if="expanded" class="referenced-detail">
-    <div v-if="loading" class="d-flex align-center ga-2 py-2 px-4 text-medium-emphasis text-body-2">
+    <div v-if="loading" role="status" class="d-flex align-center ga-2 py-2 px-4 text-medium-emphasis text-body-2">
       <v-progress-circular indeterminate size="14" width="2" />
       Loading referenced slices…
     </div>

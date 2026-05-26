@@ -220,6 +220,7 @@ watch(structuredDataReference, () => {
                     <ActionButton
                       v-if="value.showPayload.enabled"
                       icon="mdi-eye-outline"
+                      aria-label="View structured data"
                       @click="
                         () =>
                           onShowStructuredDataContentDialog(
@@ -230,6 +231,7 @@ watch(structuredDataReference, () => {
                     <ActionButton
                       v-if="value.showPayload.enabled && isAllowedToEditCollection"
                       icon="mdi-pencil-outline"
+                      aria-label="Edit structured data"
                       @click="
                         () =>
                           onEditStructuredDataContent(

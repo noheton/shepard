@@ -43,10 +43,10 @@ const headers = [
         @click="emit('select-user-group', rowProps.item)"
       >
         <template #[`item.id`]>
-          <span class="text-textbody">#{{ rowProps.item.id }}</span>
+          <span class="text-textbody1">#{{ rowProps.item.id }}</span>
         </template>
         <template #[`item.name`]>
-          <span class="text-textbody">{{ rowProps.item.name }}</span>
+          <span class="text-textbody1">{{ rowProps.item.name }}</span>
         </template>
         <template #[`item.createdAt`]>
           <CreatedTableCell

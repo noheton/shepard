@@ -8,7 +8,7 @@
 
     <v-app-bar-title>
       <v-btn to="/" style="border-bottom: unset">
-        <v-img src="../../assets/shepard_logo.svg" height="29" width="153" />
+        <v-img src="../../assets/shepard_logo.svg" height="29" width="153" alt="shepard" />
       </v-btn>
       <!-- Instance organisation name from ROR config (INST1 / task #23).
            Shown only when the instance-admin has set a rorId + orgName.
@@ -51,6 +51,7 @@
         density="compact"
         variant="outlined"
         hide-details
+        label="Search"
         placeholder="Search shepard…"
         prepend-inner-icon="mdi-magnify"
         clearable
@@ -216,7 +217,7 @@
       <!-- Desktop: secondary nav behind overflow menu -->
       <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">
-          <v-btn icon="mdi-dots-vertical" class="d-none d-md-inline-flex" v-bind="menuProps" />
+          <v-btn icon="mdi-dots-vertical" aria-label="More navigation options" class="d-none d-md-inline-flex" v-bind="menuProps" />
         </template>
         <v-list density="compact" nav>
           <v-list-item to="/help" title="Help" prepend-icon="mdi-help-circle-outline" />
@@ -227,6 +228,7 @@
       <!-- NTF1a: notification bell with unread badge -->
       <v-btn
         icon
+        aria-label="Notifications"
         @click="toggleNotificationPanel"
       >
         <v-badge
@@ -257,6 +259,7 @@
               v-if="!headerAvatarError && headerUserAppId"
               :src="headerAvatarUrl"
               cover
+              alt=""
               @error="headerAvatarError = true"
             />
             <span v-else class="text-body-2 font-weight-medium">
@@ -281,12 +284,12 @@
           </span>
         </div>
       </v-btn>
-      <v-btn class="d-none d-md-inline-flex" icon="mdi-theme-light-dark" @click="toggleTheme" />
+      <v-btn class="d-none d-md-inline-flex" icon="mdi-theme-light-dark" aria-label="Toggle colour theme" @click="toggleTheme" />
       <v-btn :prepend-icon="authIcon" class="d-none d-md-inline-flex" @click="handleAuth()">
         {{ isSignedIn ? "Sign Out" : "Sign In" }}
       </v-btn>
       <!-- Mobile: sign out/in icon only -->
-      <v-btn class="d-md-none" :icon="authIcon" @click="handleAuth()" />
+      <v-btn class="d-md-none" :icon="authIcon" :aria-label="isSignedIn ? 'Sign Out' : 'Sign In'" @click="handleAuth()" />
       <!-- DLR institutional mark, subordinate to the shepard wordmark.
            Matches the docs-site utility-bar treatment. -->
       <a

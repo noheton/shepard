@@ -166,8 +166,8 @@ const chartOption = computed(() => {
 
 <template>
   <div>
-    <div v-if="loading" class="d-flex justify-center pa-8">
-      <v-progress-circular indeterminate />
+    <div v-if="loading" role="status" class="d-flex justify-center pa-8">
+      <v-progress-circular indeterminate aria-label="Loading lineage graph" />
     </div>
     <div
       v-else-if="!dataObjects.length"

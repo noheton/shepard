@@ -29,7 +29,7 @@ withDefaults(
         v-if="inverted"
         class="d-flex flex-column align-center justify-center"
       >
-        <v-img :src="imageSrc" :width="imageWidth" :height="imageHeight" />
+        <v-img :src="imageSrc" :width="imageWidth" :height="imageHeight" :alt="title" />
       </v-col>
       <v-col style="max-width: 400px">
         <v-row class="text-subtitle-1 text-semibold">
@@ -47,7 +47,7 @@ withDefaults(
         v-if="!inverted"
         class="d-flex flex-column align-center justify-center"
       >
-        <v-img :src="imageSrc" :width="imageWidth" :height="imageHeight" />
+        <v-img :src="imageSrc" :width="imageWidth" :height="imageHeight" :alt="title" />
       </v-col>
     </div>
   </v-container>

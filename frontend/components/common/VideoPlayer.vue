@@ -60,7 +60,7 @@ onUnmounted(() => {
 <template>
   <div class="video-player-wrapper">
     <div v-if="isLoading" class="video-loading">
-      <v-progress-circular indeterminate color="white" size="32" />
+      <v-progress-circular indeterminate color="white" size="32" aria-label="Loading video" />
     </div>
     <v-alert
       v-else-if="loadError"

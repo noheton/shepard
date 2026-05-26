@@ -196,7 +196,7 @@ const TARGET_KIND_OPTIONS = [
     />
 
     <template v-else>
-      <v-progress-linear v-if="isLoading" indeterminate color="primary" />
+      <v-progress-linear v-if="isLoading" indeterminate color="primary" aria-label="Loading activity log" />
 
       <v-table density="compact" class="activity-log">
         <thead>

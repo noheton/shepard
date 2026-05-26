@@ -94,8 +94,8 @@ const location = computed(() => {
   <div :id="AboutFragments.ORGANIZATION" class="d-flex flex-column ga-3">
     <div class="text-h4 pb-2">Organization</div>
 
-    <div v-if="identityLoading" class="d-flex align-center ga-2 text-medium-emphasis">
-      <v-progress-circular indeterminate size="16" width="2" />
+    <div v-if="identityLoading" role="status" class="d-flex align-center ga-2 text-medium-emphasis">
+      <v-progress-circular indeterminate size="16" width="2" aria-hidden="true" />
       Loading instance identity…
     </div>
 
@@ -112,8 +112,8 @@ const location = computed(() => {
     <template v-else>
       <div class="text-h5">{{ displayName ?? identity.rorId }}</div>
 
-      <div v-if="rorLoading" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
-        <v-progress-circular indeterminate size="14" width="2" />
+      <div v-if="rorLoading" role="status" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
+        <v-progress-circular indeterminate size="14" width="2" aria-hidden="true" />
         Fetching details from ror.org…
       </div>
       <v-alert

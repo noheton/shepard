@@ -42,6 +42,7 @@ onUnmounted(() => revoke());
         height="48"
         cover
         class="rounded"
+        alt=""
       />
       <v-icon v-else color="grey-lighten-1" size="28">mdi-image-outline</v-icon>
     </template>

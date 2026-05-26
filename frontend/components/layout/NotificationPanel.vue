@@ -24,8 +24,8 @@
 
     <v-divider />
 
-    <div v-if="isLoading" class="d-flex justify-center pa-6">
-      <v-progress-circular indeterminate size="28" />
+    <div v-if="isLoading" role="status" class="d-flex justify-center pa-6">
+      <v-progress-circular indeterminate size="28" aria-label="Loading notifications" />
     </div>
 
     <div v-else-if="notifications.length === 0" class="pa-6 text-center text-medium-emphasis">

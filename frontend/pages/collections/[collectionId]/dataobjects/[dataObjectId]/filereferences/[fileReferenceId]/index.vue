@@ -238,6 +238,7 @@ watch(fileReference, () => {
                     <ActionButton
                       v-if="value.download.enabled"
                       icon="mdi-tray-arrow-down"
+                      aria-label="Download file"
                       @click="() => onDownloadFile(value.download)"
                     />
                     <ActionButton
@@ -246,6 +247,7 @@ watch(fileReference, () => {
                         value.showDetails.fileType !== 'unknown'
                       "
                       icon="mdi-eye-outline"
+                      aria-label="View file"
                       @click="() => onShowFileContentDialog(value.showDetails)"
                     />
                   </ActionContainer>

@@ -212,7 +212,7 @@ const headers = [
       <!-- ID column -->
       <template #[`item.id`]="{ item }: { item: OntologyBundleIO }">
         <div class="d-flex flex-column">
-          <span class="text-textbody font-weight-medium">{{ item.id }}</span>
+          <span class="text-textbody1 font-weight-medium">{{ item.id }}</span>
           <span
             v-if="item.iriPrefix"
             class="text-caption text-medium-emphasis"
@@ -225,7 +225,7 @@ const headers = [
       <!-- Name column -->
       <template #[`item.name`]="{ item }: { item: OntologyBundleIO }">
         <div class="d-flex flex-column">
-          <span class="text-textbody">{{ item.name || "—" }}</span>
+          <span class="text-textbody1">{{ item.name || "—" }}</span>
           <span v-if="item.license" class="text-caption text-medium-emphasis">
             <v-icon size="x-small" icon="mdi-scale-balance" />
             {{ item.license }}

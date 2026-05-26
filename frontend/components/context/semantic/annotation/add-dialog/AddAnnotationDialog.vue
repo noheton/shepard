@@ -166,7 +166,18 @@ const onSubmit = async () => {
         <!-- Property ─────────────────────────────────────────────────────── -->
         <v-row class="pt-6">
           <v-col class="pb-1">
-            <div class="text-subtitle-2 text-medium-emphasis">Property</div>
+            <div class="text-subtitle-2 text-medium-emphasis d-flex align-center ga-1">
+              Property
+              <v-tooltip
+                text="The semantic property (predicate) from a controlled vocabulary, e.g. rdfs:type, chameo:hasMeasurementPrinciple. Search by term name or paste an IRI directly."
+                max-width="320"
+                location="top"
+              >
+                <template #activator="{ props: tip }">
+                  <v-icon v-bind="tip" size="14" color="medium-emphasis" icon="mdi-help-circle-outline" />
+                </template>
+              </v-tooltip>
+            </div>
           </v-col>
         </v-row>
         <v-row>

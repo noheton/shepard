@@ -246,8 +246,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div>
-    <div v-if="loading" class="d-flex justify-center pa-8">
-      <v-progress-circular indeterminate />
+    <div v-if="loading" role="status" class="d-flex justify-center pa-8">
+      <v-progress-circular indeterminate aria-label="Loading channel data" />
     </div>
     <div
       v-else-if="error"
@@ -409,16 +409,32 @@ onBeforeUnmount(() => {
           No data points yet. Enable live mode to stream incoming data, or upload a CSV.
         </template>
       </div>
-      <TimeseriesChart
-        v-else
-        :series="series"
-        height="300px"
-        :show-legend="true"
-        :smooth="smoothChart && !stepChart"
-        :step="stepChart"
-        :animation-duration="chartAnimationMs"
-        :visible-window-ms="chartVisibleWindowMs"
-      />
+      <!-- Live mode: uPlot for high-performance canvas rendering.
+           uPlot has no animation by design — data snaps immediately,
+           which is correct for high-frequency feeds.
+           Static mode: ECharts (TimeseriesChart) with LTTB downsampling
+           and DataZoom scrubber. -->
+      <ClientOnly>
+        <UPlotChart
+          v-if="liveMode"
+          :series="series"
+          height="300px"
+          :show-legend="true"
+          :smooth="smoothChart && !stepChart"
+          :step="stepChart"
+          :visible-window-ms="chartVisibleWindowMs"
+        />
+        <TimeseriesChart
+          v-else
+          :series="series"
+          height="300px"
+          :show-legend="true"
+          :smooth="smoothChart && !stepChart"
+          :step="stepChart"
+          :animation-duration="chartAnimationMs"
+          :visible-window-ms="chartVisibleWindowMs"
+        />
+      </ClientOnly>
     </div>
   </div>
 </template>

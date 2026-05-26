@@ -42,7 +42,7 @@ const { capabilities, loaded: capabilitiesLoaded } = useInstanceCapabilities();
 
     <div>
       <div class="text-subtitle-1 font-weight-medium mb-2">Active plugins</div>
-      <div v-if="!capabilitiesLoaded" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
+      <div v-if="!capabilitiesLoaded" role="status" class="d-flex align-center ga-2 text-medium-emphasis text-body-2">
         <v-progress-circular indeterminate size="14" width="2" />
         Loading…
       </div>

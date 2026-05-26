@@ -365,6 +365,7 @@ watch(timeseriesReference, () => {
                 </template>
                 <div
                   v-if="chartPayloadLoading || !chartPayloadFetched"
+                  role="status"
                   class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-4"
                 >
                   <v-progress-circular indeterminate size="16" width="2" />
@@ -477,28 +478,29 @@ watch(timeseriesReference, () => {
               </template>
               <template #[`item.metrics.COUNT`]="{ item }">
                 <span v-if="item.metrics?.COUNT" class="text-mono">{{ item.metrics.COUNT }}</span>
-                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" />
+                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" aria-label="Loading metric" />
                 <span v-else class="text-medium-emphasis">—</span>
               </template>
               <template #[`item.metrics.MIN`]="{ item }">
                 <span v-if="item.metrics?.MIN" class="text-mono">{{ item.metrics.MIN }}</span>
-                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" />
+                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" aria-label="Loading metric" />
                 <span v-else class="text-medium-emphasis">—</span>
               </template>
               <template #[`item.metrics.MAX`]="{ item }">
                 <span v-if="item.metrics?.MAX" class="text-mono">{{ item.metrics.MAX }}</span>
-                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" />
+                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" aria-label="Loading metric" />
                 <span v-else class="text-medium-emphasis">—</span>
               </template>
               <template #[`item.metrics.MEAN`]="{ item }">
                 <span v-if="item.metrics?.MEAN" class="text-mono">{{ item.metrics.MEAN }}</span>
-                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" />
+                <v-progress-circular v-else-if="item.metricsLoading" indeterminate size="12" width="2" aria-label="Loading metric" />
                 <span v-else class="text-medium-emphasis">—</span>
               </template>
               <template #[`item.annotations`]="{ item }">
                 <v-progress-circular
                   v-if="item.annotationsLoading"
                   indeterminate
+                  aria-label="Loading annotations"
                   size="12"
                   width="2"
                 />
@@ -570,6 +572,7 @@ watch(timeseriesReference, () => {
 
               <div
                 v-if="tsAnnotationsLoading"
+                role="status"
                 class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-2"
               >
                 <v-progress-circular indeterminate size="14" width="2" />

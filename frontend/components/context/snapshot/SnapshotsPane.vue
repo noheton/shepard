@@ -184,8 +184,8 @@ const nameRules = [
   </div>
 
   <!-- List section -->
-  <div v-if="isLoading" class="d-flex justify-center py-4">
-    <v-progress-circular indeterminate color="primary" size="28" />
+  <div v-if="isLoading" role="status" class="d-flex justify-center py-4">
+    <v-progress-circular indeterminate color="primary" size="28" aria-label="Loading snapshots" />
   </div>
 
   <div v-else-if="snapshots.length === 0 && !showCreateForm" class="text-medium-emphasis text-body-2 py-2">

@@ -69,7 +69,7 @@ function statusIcon(status: FileUploadState["status"]): string {
     <!-- Aggregate -->
     <div class="d-flex flex-column ga-1">
       <div class="d-flex align-center justify-space-between">
-        <span class="text-subtitle-2 text-textbody">
+        <span class="text-subtitle-2 text-textbody1">
           {{
             aggregate.filesTotal > 1
               ? `Uploading ${aggregate.filesDone} / ${aggregate.filesTotal} files`

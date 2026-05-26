@@ -18,6 +18,7 @@ defineProps<{ label: string; hint?: string }>();
       height="77"
       width="77"
       class="mx-auto"
+      alt=""
     />
     <div>
       <span class="text-body-2 text-textbody2">{{ label }}</span>

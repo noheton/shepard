@@ -151,6 +151,7 @@ useHead({
             height="220"
             cover
             class="collection-hero-banner"
+            :alt="collection.name ? `Hero image for ${collection.name}` : 'Collection hero image'"
           >
             <template #error>
               <!-- Graceful 404 handling: simply show nothing when the image fails. -->

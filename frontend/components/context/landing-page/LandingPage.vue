@@ -92,6 +92,7 @@ const dataObjectIconSrc = computed(() =>
           height="120"
           width="465"
           class="mb-3"
+          alt="shepard"
         />
         <div class="text-subtitle-1">
           Storage for Heterogeneous Product and Research Data
@@ -159,6 +160,7 @@ const dataObjectIconSrc = computed(() =>
             width="64"
             height="64"
             class="mb-4 flex-grow-0"
+            alt=""
           />
           <div class="text-subtitle-1 text-semibold mb-2">
             1 — Store raw data
@@ -181,6 +183,7 @@ const dataObjectIconSrc = computed(() =>
             width="64"
             height="64"
             class="mb-4 flex-grow-0"
+            alt=""
           />
           <div class="text-subtitle-1 text-semibold mb-2">
             2 — Describe with data objects
@@ -203,6 +206,7 @@ const dataObjectIconSrc = computed(() =>
             width="64"
             height="64"
             class="mb-4 flex-grow-0"
+            alt=""
           />
           <div class="text-subtitle-1 text-semibold mb-2">
             3 — Organise in collections

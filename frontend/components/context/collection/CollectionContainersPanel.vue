@@ -46,9 +46,10 @@ function containerLabel(type: string): string {
   <div>
     <div
       v-if="isLoading"
+      role="status"
       class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-2"
     >
-      <v-progress-circular indeterminate size="14" width="2" />
+      <v-progress-circular indeterminate size="14" width="2" aria-hidden="true" />
       Loading…
     </div>
     <div

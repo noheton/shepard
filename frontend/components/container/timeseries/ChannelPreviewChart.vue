@@ -54,7 +54,7 @@ const series = computed<TimeseriesSeries[]>(() => {
       />
     </div>
     <div v-if="loading" class="d-flex justify-center align-center" style="height:200px">
-      <v-progress-circular indeterminate size="24" />
+      <v-progress-circular indeterminate size="24" aria-label="Loading chart" />
     </div>
     <div
       v-else-if="!series.length"

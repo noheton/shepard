@@ -120,6 +120,7 @@ function relativeTime(date: Date | null | undefined): string {
               v-if="!avatarError && avatarUrl"
               :src="avatarUrl"
               cover
+              alt=""
               @error="avatarError = true"
             />
             <span v-else class="text-h5 font-weight-medium">

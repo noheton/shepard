@@ -33,6 +33,7 @@ defineProps<{
           size="x-small"
           icon="mdi-folder-outline"
           title="Open collection"
+          aria-label="Open collection"
         />
         <v-btn
           :to="`/collections/${dataObject.collectionId}/dataObjects/${dataObject.id}`"
@@ -40,6 +41,7 @@ defineProps<{
           size="x-small"
           icon="mdi-arrow-right"
           title="Open data object"
+          aria-label="Open data object"
         />
       </div>
     </template>

@@ -14,7 +14,7 @@ defineProps<{
 
 <style lang="scss" scoped>
 a {
-  color: rgb(var(--v-theme-textbody));
+  color: rgb(var(--v-theme-textbody1));
   text-decoration: none;
 }
 a:hover {

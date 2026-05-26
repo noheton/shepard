@@ -129,10 +129,10 @@ async function onDelete() {
           :hide-default-footer="true"
         >
           <template #[`item.name`]="{ item }: { item: SemanticRepository }">
-            <span class="text-textbody">{{ item.name }}</span>
+            <span class="text-textbody1">{{ item.name }}</span>
           </template>
           <template #[`item.id`]="{ item }: { item: SemanticRepository }">
-            <span class="text-textbody">#{{ item.id }}</span>
+            <span class="text-textbody1">#{{ item.id }}</span>
           </template>
           <template #[`item.url`]="{ item }: { item: SemanticRepository }">
             <TextLink
@@ -145,7 +145,7 @@ async function onDelete() {
             #[`item.createdAt`]="{ item }: { item: SemanticRepository }"
           >
             <div class="d-flex flex-column">
-              <span class="text-textbody">
+              <span class="text-textbody1">
                 {{ item.createdAt ? toShortDateString(item.createdAt) : "-" }}
               </span>
               <span v-if="item.createdBy" class="text-textbody2">

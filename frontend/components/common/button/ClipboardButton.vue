@@ -24,6 +24,7 @@ const copyText = () => {
     density="compact"
     variant="text"
     color="medium-emphasis"
+    aria-label="Copy to clipboard"
     @click="copyText"
   />
 </template>

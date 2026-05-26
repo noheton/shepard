@@ -25,7 +25,7 @@
       </v-chip-group>
     </div>
 
-    <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate />
+    <v-progress-linear v-if="loading && pagedItems.length === 0" indeterminate aria-label="Loading datasets" />
 
     <EmptyListIcon
       v-else-if="!loading && pagedItems.length === 0"
@@ -49,6 +49,8 @@
           v-for="row in pagedItems"
           :key="row.id"
           class="do-row"
+          tabindex="0"
+          @keydown.enter="navigateTo(row.id)"
           @click="navigateTo(row.id)"
         >
           <td>
@@ -281,8 +283,11 @@ function formatRelative(d: Date): string {
 .do-row {
   cursor: pointer;
 }
-.do-row:hover {
+.do-row:hover,
+.do-row:focus-visible {
   background-color: rgb(var(--v-theme-focus1));
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: -2px;
 }
 .ref-kind-cell {
   white-space: nowrap;

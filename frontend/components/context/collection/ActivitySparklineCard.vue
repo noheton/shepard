@@ -218,6 +218,7 @@ const bucketLabel = computed<string>(() => {
           density="compact"
           variant="outlined"
           hide-details
+          aria-label="Activity time range"
           @update:model-value="onRangeChange"
         />
       </div>

@@ -1,7 +1,11 @@
 <template>
   <v-app>
+    <!-- A11y: skip-to-main-content link. Visually hidden until focused;
+         becomes visible when a keyboard user tabs to it, allowing them to
+         bypass the navigation bar and jump directly into the page content. -->
+    <a href="#main-content" class="sr-only sr-only-focusable">Skip to main content</a>
     <HeaderBar />
-    <v-main class="bg-canvas">
+    <v-main id="main-content" class="bg-canvas">
       <slot />
     </v-main>
     <!-- Sticky bottom-right snackbar when the backend has rolled to a

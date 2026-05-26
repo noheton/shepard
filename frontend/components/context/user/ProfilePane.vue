@@ -170,6 +170,7 @@ async function saveJupyterUrl() {
             v-if="!avatarError && userAppId"
             :src="avatarUrl(userAppId)"
             cover
+            alt=""
             @error="onAvatarError"
           />
           <span v-else class="text-h5 font-weight-medium">

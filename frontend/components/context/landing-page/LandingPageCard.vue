@@ -37,7 +37,7 @@ const iconSrc = computed(() => {
     class="d-flex flex-column"
   >
     <template #prepend>
-      <v-img :src="iconSrc" height="32" width="32" />
+      <v-img :src="iconSrc" height="32" width="32" alt="" />
     </template>
     <template #title>
       <div class="text-subtitle-2">{{ title }}</div>

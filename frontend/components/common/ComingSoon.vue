@@ -5,6 +5,7 @@
       src="@/assets/coming-soon.jpg"
       max-width="50%"
       class="align-self-center"
+      alt="Coming soon"
     />
   </div>
 </template>

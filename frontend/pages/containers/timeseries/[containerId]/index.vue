@@ -290,8 +290,8 @@ useHead({
           title="Referenced by"
           :count="linkedDataObjects?.length"
         >
-          <div v-if="linkedDataObjectsLoading" class="pa-4">
-            <v-progress-circular indeterminate size="20" />
+          <div v-if="linkedDataObjectsLoading" role="status" class="pa-4">
+            <v-progress-circular indeterminate size="20" aria-label="Loading linked datasets" />
           </div>
           <div
             v-else-if="!linkedDataObjects || linkedDataObjects.length === 0"

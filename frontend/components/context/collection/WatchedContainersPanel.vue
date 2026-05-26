@@ -55,7 +55,7 @@ function availabilityChipLabel(a?: string): string {
 
 <template>
   <div>
-    <div v-if="loading" class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-2">
+    <div v-if="loading" role="status" class="d-flex align-center ga-2 text-medium-emphasis text-body-2 pa-2">
       <v-progress-circular indeterminate size="14" width="2" />
       Loading watched containers…
     </div>
