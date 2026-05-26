@@ -13,11 +13,14 @@ const open = defineModel<boolean>({ default: false });
 
 const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
-const xIdx    = ref<number | null>(null);
-const yIdx    = ref<number | null>(null);
-const zIdx    = ref<number | null>(null);
-const valueIdx = ref<number | null>(null);
-const colormap = ref<ColormapName>("inferno");
+const xIdx      = ref<number | null>(null);
+const yIdx      = ref<number | null>(null);
+const zIdx      = ref<number | null>(null);
+const valueIdx  = ref<number | null>(null);
+const eulerAIdx = ref<number | null>(null);
+const eulerBIdx = ref<number | null>(null);
+const eulerCIdx = ref<number | null>(null);
+const colormap  = ref<ColormapName>("inferno");
 
 const channelItems = computed(() =>
   props.channels.map((ch, i) => ({
@@ -29,13 +32,22 @@ const channelItems = computed(() =>
 function openTrace3D() {
   const pick = (i: number | null): Timeseries | null =>
     i !== null ? (props.channels[i] ?? null) : null;
-  const x = pick(xIdx.value);
-  const y = pick(yIdx.value);
-  const z = pick(zIdx.value);
-  const v = pick(valueIdx.value);
+  const x  = pick(xIdx.value);
+  const y  = pick(yIdx.value);
+  const z  = pick(zIdx.value);
+  const v  = pick(valueIdx.value);
+  const eA = pick(eulerAIdx.value);
+  const eB = pick(eulerBIdx.value);
+  const eC = pick(eulerCIdx.value);
   if (!x || !y || !z) return;
 
-  const roles = { x, y, z, ...(v ? { value: v } : {}) };
+  const roles = {
+    x, y, z,
+    ...(v  ? { value: v  } : {}),
+    ...(eA ? { rot_a: eA } : {}),
+    ...(eB ? { rot_b: eB } : {}),
+    ...(eC ? { rot_c: eC } : {}),
+  };
   const rolesParam = btoa(JSON.stringify(roles));
 
   navigateTo({
@@ -57,7 +69,9 @@ const canOpen = computed(
 watch(open, (v) => {
   if (v) {
     xIdx.value = null; yIdx.value = null; zIdx.value = null;
-    valueIdx.value = null; colormap.value = "inferno";
+    valueIdx.value = null;
+    eulerAIdx.value = null; eulerBIdx.value = null; eulerCIdx.value = null;
+    colormap.value = "inferno";
   }
 });
 </script>
@@ -111,6 +125,34 @@ watch(open, (v) => {
           label="Colormap"
           density="compact"
           variant="outlined"
+        />
+        <v-divider class="my-1" />
+        <div class="text-caption text-medium-emphasis">
+          Tool orientation — KUKA Euler A/B/C (optional)
+        </div>
+        <v-select
+          v-model="eulerAIdx"
+          :items="channelItems"
+          label="Euler A  (rot around world Z)"
+          density="compact"
+          variant="outlined"
+          clearable
+        />
+        <v-select
+          v-model="eulerBIdx"
+          :items="channelItems"
+          label="Euler B  (rot around world Y)"
+          density="compact"
+          variant="outlined"
+          clearable
+        />
+        <v-select
+          v-model="eulerCIdx"
+          :items="channelItems"
+          label="Euler C  (rot around world X)"
+          density="compact"
+          variant="outlined"
+          clearable
         />
       </v-card-text>
       <v-card-actions class="pb-4 px-4">

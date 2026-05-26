@@ -45,9 +45,30 @@ const isFetching    = ref(false);
 const isRendering   = ref(false);
 const renderError   = ref<string | null>(null);
 
-interface TracePoint { x: number; y: number; z: number; value: number }
-const tracePoints = ref<TracePoint[]>([]);
-const valueLabel  = ref<string>("");
+interface TracePoint {
+  x: number; y: number; z: number; value: number;
+  t: number;
+  eulerA?: number; eulerB?: number; eulerC?: number;
+}
+const tracePoints  = ref<TracePoint[]>([]);
+const valueLabel   = ref<string>("");
+const brushSlider  = ref([0, 100]);
+const brushRange   = computed(() => ({
+  from: (brushSlider.value[0] ?? 0) / 100,
+  to:   (brushSlider.value[1] ?? 100) / 100,
+}));
+const brushTimeRange = computed(() => {
+  const pts = tracePoints.value;
+  if (pts.length === 0) return null;
+  const n = pts.length;
+  const startIdx = Math.round((brushSlider.value[0]! / 100) * (n - 1));
+  const endIdx   = Math.round((brushSlider.value[1]! / 100) * (n - 1));
+  const startT = pts[startIdx]?.t;
+  const endT   = pts[endIdx]?.t;
+  if (startT === undefined || endT === undefined) return null;
+  const fmt = (ns: number) => new Date(ns / 1e6).toISOString().slice(11, 23);
+  return `${fmt(startT)} → ${fmt(endT)}`;
+});
 
 // ── v2 base URL ───────────────────────────────────────────────────────────────
 function getV2Base(): string {
@@ -162,11 +183,18 @@ async function renderTrace() {
   }
 
   try {
-    const [xPts, yPts, zPts, vPts] = await Promise.all([
+    const rotAB = byRole.get("rot_a");
+    const rotBB = byRole.get("rot_b");
+    const rotCB = byRole.get("rot_c");
+
+    const [xPts, yPts, zPts, vPts, rotAPts, rotBPts, rotCPts] = await Promise.all([
       fetchChannel(xB.parsed, startNs, endNs),
       fetchChannel(yB.parsed, startNs, endNs),
       fetchChannel(zB.parsed, startNs, endNs),
-      vB?.parsed ? fetchChannel(vB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
+      vB?.parsed    ? fetchChannel(vB.parsed,    startNs, endNs) : Promise.resolve([] as [number, number][]),
+      rotAB?.parsed ? fetchChannel(rotAB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
+      rotBB?.parsed ? fetchChannel(rotBB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
+      rotCB?.parsed ? fetchChannel(rotCB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
     ]);
 
     if (xPts.length < 2) {
@@ -175,15 +203,20 @@ async function renderTrace() {
       return;
     }
 
-    // Align y, z, value onto x timestamps by linear interpolation
+    // Align y/z/value/euler channels onto x timestamps by linear interpolation
     const pts: TracePoint[] = xPts.map(([t, xv]) => ({
       x:     xv,
       y:     yPts.length >= 2 ? lerpSeries(yPts, t) : 0,
       z:     zPts.length >= 2 ? lerpSeries(zPts, t) : 0,
       value: vPts.length >= 2 ? lerpSeries(vPts, t) : NaN,
+      t,
+      ...(rotAPts.length >= 2 ? { eulerA: lerpSeries(rotAPts, t) } : {}),
+      ...(rotBPts.length >= 2 ? { eulerB: lerpSeries(rotBPts, t) } : {}),
+      ...(rotCPts.length >= 2 ? { eulerC: lerpSeries(rotCPts, t) } : {}),
     }));
 
     tracePoints.value = pts;
+    brushSlider.value = [0, 100];
     valueLabel.value = vB
       ? `${vB.role} (${vB.parsed?.symbolicName ?? "?"})${vB.unit ? " [" + vB.unit.split("/").pop() + "]" : ""}`
       : "time gradient";
@@ -407,11 +440,39 @@ onMounted(() => {
           :points="tracePoints"
           :colormap="colormapName"
           :label="valueLabel"
+          :brush-range="brushRange"
         />
         <template #fallback>
           <v-skeleton-loader type="image" height="500" />
         </template>
       </ClientOnly>
+
+      <!-- ── time brush ─────────────────────────────────────────────────── -->
+      <v-card v-if="tracePoints.length > 0" variant="outlined" class="mt-3 px-4 pt-3 pb-2">
+        <div class="d-flex align-center ga-2 mb-1">
+          <v-icon size="small" color="primary">mdi-timeline-clock-outline</v-icon>
+          <span class="text-caption font-weight-medium">Time brush</span>
+          <v-spacer />
+          <v-btn size="x-small" variant="text" density="compact" @click="brushSlider = [0, 100]">
+            Reset
+          </v-btn>
+        </div>
+        <v-range-slider
+          v-model="brushSlider"
+          :min="0"
+          :max="100"
+          :step="0.5"
+          color="primary"
+          track-color="grey-darken-3"
+          density="compact"
+          hide-details
+          thumb-label
+        />
+        <div class="text-caption text-medium-emphasis mt-1">
+          {{ brushSlider[0] }}% → {{ brushSlider[1] }}%
+          <span v-if="brushTimeRange" class="ml-2">· {{ brushTimeRange }} UTC</span>
+        </div>
+      </v-card>
 
       <v-card v-if="tracePoints.length > 0" variant="tonal" color="success" class="mt-2 pa-3">
         <span class="text-body-2">
