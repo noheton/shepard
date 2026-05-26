@@ -65,8 +65,10 @@ async function getToken(): Promise<string | null> {
  *
  * Returns { events, remaining } where `remaining` is the portion of the buffer
  * that has not yet been terminated by a blank line.
+ *
+ * Exported for unit testing (parseBuffer.test.ts / useCollectionEvents.test.ts).
  */
-function parseBuffer(buffer: string): { events: CollectionEventIO[]; remaining: string } {
+export function parseBuffer(buffer: string): { events: CollectionEventIO[]; remaining: string } {
   const events: CollectionEventIO[] = [];
   let remaining = buffer;
 
