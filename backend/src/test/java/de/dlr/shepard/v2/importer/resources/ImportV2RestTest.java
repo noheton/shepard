@@ -343,6 +343,7 @@ class ImportV2RestTest {
     Response r = resource.getContext(COLL_APP_ID, true, sc);
 
     assertEquals(200, r.getStatus());
+    verify(semanticAnnotationDAO).findByCollectionAppId(COLL_APP_ID);
     ImportContextIO body = (ImportContextIO) r.getEntity();
     assertNotNull(body.semanticGraph());
     assertEquals(1, body.semanticGraph().annotations().size());
