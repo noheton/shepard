@@ -267,6 +267,24 @@ Packet (0-based integer)
 > and aligns with the `TS-IDc` / appId migration design. The time-window model is
 > not replicated.
 
+> **Multi-source timeseries design (2026-05-26):** The current dump contains TPS/FSD
+> channels only. Additional timeseries sources are expected in a subsequent dump:
+> tape laying head data (consolidation force, temperature, lay pressure) and robot
+> joint data (J1–J6 axis positions). Each source will get its own named
+> `TimeseriesContainer` + `TimeseriesReference` under the same Track DataObject:
+>
+> ```
+> Track-NNNN  (DataObject)
+> ├─ TimeseriesReference "TPS/FSD"         → TimeseriesContainer (PosX/Y/Z, PosA/B/C, VAxis, IOS, GPR)
+> ├─ TimeseriesReference "Robot Joints"    → TimeseriesContainer (J1..J6 joint angles)  [when available]
+> └─ TimeseriesReference "Tape Head"       → TimeseriesContainer (force, temp, lay pressure)  [when available]
+> ```
+>
+> The `TimeseriesReference.name` field carries the source label. Future platform work
+> (backlog `MFFD-TS-MULTIREF-01`) will allow a single Reference to select channels
+> from multiple containers — until then, multiple named References per DataObject is
+> the correct pattern. UI design: graphical channel + interval selector (see task #228).
+
 ---
 
 ### 3.3 Bridge/Frame Welding (step 4) — partially in dump
@@ -594,6 +612,8 @@ These are the analysis opportunities grounded in the actual data:
 3. **NDT outcomes:** Is there a structured record of NDT pass/fail per weld seam? The Confluence wiki export may have this as a table — worth parsing.
 4. **AAS packages:** Where are the AASX files for the AFP robot and CRW machine? Are they in `tool_sources/aas-models/`?
 5. **N: drive access:** Confirmed accessible from DLR systems (user 2026-05-26). Backlog item MFFD-NDRIVE-01 tracks setting up the mount on the DLR cube for scripted ingest. `MFFD_Demonstrator_Recursive_Tree.json` is a PowerShell tree dump of `N:\Messdaten\MFFD_Demonstrator\` — use it as the inventory reference for Phase 7 planning.
+6. **Additional timeseries data (pending):** A supplementary dump containing tape laying head telemetry and robot joint data (J1–J6) for the AFP tracks is expected. When it arrives, each new source gets its own named `TimeseriesReference` + `TimeseriesContainer` per Track DO (see §3.2 multi-source note). The inventory of channels and file formats will be documented in this plan once the dump is received.
+7. **Multi-container TimeseriesReference:** Current `TimeseriesReference` supports one container per reference. Long-term design (backlog `MFFD-TS-MULTIREF-01`): extend so a single Reference can span multiple containers, with graphical channel + interval selection in the UI. Until shipped, multiple named References per DataObject is the correct pattern.
 
 ---
 
