@@ -1,0 +1,73 @@
+{
+  "panel": "S2",
+  "weld_date": "2024-07-21",
+  "operator": "K. Neumann",
+  "process": "cUS-W",
+  "result": "PASS",
+  "stringers": [
+    {
+      "stringer_id": "STR-S2-01",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 353.4,
+      "avg_force_N": 590.8,
+      "pull_test_N": 2843.3,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-02",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 331.3,
+      "avg_force_N": 589.6,
+      "pull_test_N": 2886.6,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-03",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 352.3,
+      "avg_force_N": 614.0,
+      "pull_test_N": 2815.2,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-04",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 341.1,
+      "avg_force_N": 599.1,
+      "pull_test_N": 2787.9,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-05",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 333.9,
+      "avg_force_N": 599.3,
+      "pull_test_N": 2795.4,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-06",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 350.1,
+      "avg_force_N": 598.1,
+      "pull_test_N": 2916.5,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-07",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 351.0,
+      "avg_force_N": 594.4,
+      "pull_test_N": 2916.5,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S2-08",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 354.1,
+      "avg_force_N": 596.6,
+      "pull_test_N": 2807.7,
+      "spec_min_pull_test_N": 2500
+    }
+  ]
+}

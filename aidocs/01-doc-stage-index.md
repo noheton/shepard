@@ -34,13 +34,13 @@ section and the `upgrade-overlay` section.
 | `concept` | 24 |
 | `idea` | 9 |
 | `feature-defined` | 94 |
-| `audited-by-personas` | 71 |
+| `audited-by-personas` | 72 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
 | `deployed` | 66 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **357** |
+| **total docs** | **358** |
 | **UNTAGGED** | **0** |
 
 ## fragment (39)
@@ -229,7 +229,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ux/76-uplot-timeseries-chart.md`](ux/76-uplot-timeseries-chart.md) | 76 — uPlot Timeseries Chart | 2026-05-23 | 2026-05-23 |
 | [`aidocs/ux/78-containerless-basic-mode.md`](ux/78-containerless-basic-mode.md) | 78 — Container-hiding Basic Mode | 2026-05-23 | 2026-05-23 |
 
-## audited-by-personas (71)
+## audited-by-personas (72)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -258,6 +258,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/agent-findings/gh-lean-traceability-consult-2026-05-23.md`](agent-findings/gh-lean-traceability-consult-2026-05-23.md) | gh-lean-traceability-consult — 2026-05-23 | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/manufacturing-quality.md`](agent-findings/manufacturing-quality.md) | Manufacturing Quality Readiness Assessment | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/mffd-cleanup-2026-05-22.md`](agent-findings/mffd-cleanup-2026-05-22.md) | MFFD-Dropbox (collection 515365) cleanup — 2026-05-22 | 2026-05-23 | 2026-05-23 |
+| [`aidocs/agent-findings/mffd-process-chain-gap-analysis.md`](agent-findings/mffd-process-chain-gap-analysis.md) | MFFD Synthetic Seed — Process Chain Gap Analysis | 2026-05-26 | — |
 | [`aidocs/agent-findings/ogm-hydration-audit-2026-05-24.md`](agent-findings/ogm-hydration-audit-2026-05-24.md) | OGM-HYDRATION-AUDIT — v2 DAO sweep (2026-05-24) | 2026-05-24 | 2026-05-24 |
 | [`aidocs/agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md`](agent-findings/persona-api-scrutinizer-gh-pm-2026-05-23.md) | Persona — API Scrutinizer (Minimalist) — GH-PM adoption review | 2026-05-23 | 2026-05-26 |
 | [`aidocs/agent-findings/persona-audit-logstore-2026-05-23.md`](agent-findings/persona-audit-logstore-2026-05-23.md) | Persona audit — log-store-sidecar design (`aidocs/integrations/94`) | 2026-05-23 | 2026-05-26 |

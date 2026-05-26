@@ -14,9 +14,9 @@ Run::
 
 Output layout::
 
-    data/timeseries/   afp-q1-*.csv, stringer-q1-*.csv, frame-punkt-*.csv, …
-    data/structured/   ndt-q1-report.json, stringer-q1-quality.json, …
-    data/files/        afp-layup-recipe-q1.md, rework-q1-protocol.md, …
+    data/timeseries/   afp-s1-*.csv, stringer-s1-*.csv, frame-punkt-*.csv, …
+    data/structured/   ndt-s1-report.json, stringer-s1-quality.json, …
+    data/files/        afp-layup-recipe-s1.md, rework-s1-protocol.md, …
     data/manifest.json
 """
 
@@ -40,7 +40,7 @@ CAMPAIGN_START = datetime(2024, 7, 15, 7, 0, 0, tzinfo=timezone.utc)
 # ── sample rates and durations ─────────────────────────────────────────────────
 # AFP slow process: 1 Hz, 10-min representative slice (real layup is ~8 h)
 AFP_HZ, AFP_S = 1, 600
-# Continuous resistance welding: 10 Hz, 2 min per panel
+# Continuous ultrasonic welding: 10 Hz, 2 min per section
 WELD_HZ, WELD_S = 10, 120
 # Frame spot / bridge welding: 10 Hz, 90 s
 FRAME_HZ, FRAME_S = 10, 90
@@ -63,30 +63,21 @@ class Ch:
 
 # ── AFP channels ──────────────────────────────────────────────────────────────
 AFP_CH: dict[str, Ch] = {
-    "tcp_temp_C":            Ch(155.0,  3.0, "°C",   ramp=60.0),   # tool-centre-point temperature
+    "nip_point_temp_C":      Ch(155.0,  3.0, "°C",   ramp=60.0),   # nip-point temperature (IR camera at consolidation roller)
     "consolidation_force_N": Ch(280.0, 15.0, "N",    ramp=30.0),   # AFP nip-roll force
     "layup_speed_mm_s":      Ch(120.0,  8.0, "mm/s", ramp=20.0),   # head traverse speed
     "head_temp_C":           Ch(215.0,  5.0, "°C",   ramp=120.0),  # heating head
-    "substrate_temp_C":      Ch( 85.0,  4.0, "°C",   ramp=180.0), # panel surface
+    "substrate_temp_C":      Ch(160.0,  4.0, "°C",   ramp=180.0),  # panel surface (LM-PAEK crystallinity requires 160–200 °C tooling temperature)
     "nip_pressure_bar":      Ch(  6.5,  0.3, "bar"),                # consolidation pressure
 }
 
-# ── Continuous resistance welding channels (stringers) ────────────────────────
+# ── Continuous ultrasonic welding channels (stringers) ─────────────────────────
 WELD_CH: dict[str, Ch] = {
-    "weld_current_A":      Ch(650.0, 30.0, "A"),
-    "weld_voltage_V":      Ch( 12.5,  0.8, "V"),
-    "weld_force_N":        Ch(520.0, 25.0, "N"),
-    "weld_zone_temp_C":    Ch(330.0, 12.0, "°C"),
-    "traverse_speed_mm_s": Ch( 15.0,  1.5, "mm/s"),
-}
-
-# ── Frame spot / bridge welding channels ──────────────────────────────────────
-FRAME_CH: dict[str, Ch] = {
-    "spot_current_A":   Ch(4500.0, 200.0, "A"),
-    "spot_voltage_V":   Ch(   2.2,   0.2, "V"),
-    "spot_force_N":     Ch(1800.0,  80.0, "N"),
-    "electrode_temp_C": Ch( 185.0,  15.0, "°C"),
-    "displacement_mm":  Ch(   0.8,   0.05, "mm"),
+    "sonotrode_amplitude_um": Ch( 45.0,  3.0, "µm"),         # ultrasonic amplitude at horn tip
+    "weld_force_N":           Ch(600.0, 25.0, "N"),           # pneumatic downforce
+    "traverse_speed_mm_s":    Ch( 10.0,  0.8, "mm/s"),        # tool traverse along stringer
+    "contact_temp_C":         Ch(340.0, 15.0, "°C",ramp=5.0), # near-field IR at weld zone
+    "weld_energy_J":          Ch(  8.5,  0.6, "J"),           # cumulative energy per mm
 }
 
 # ── Assembly alignment channels ───────────────────────────────────────────────
@@ -122,14 +113,14 @@ def _csv(path: Path, rows: list[tuple[int, float]]) -> None:
 
 # ── generators ────────────────────────────────────────────────────────────────
 def gen_afp(rng: np.random.Generator, out: Path, panel: str, anomaly: bool) -> None:
-    """AFP layup telemetry.
+    """AFP layup telemetry.  panel is "s1" or "s2" (sections of the single 8m upper-shell skin).
 
-    Q1 anomaly: ``consolidation_force_N`` drops ~32 % and ``tcp_temp_C`` spikes
+    S1 anomaly: ``consolidation_force_N`` drops ~32 % and ``nip_point_temp_C`` spikes
     +18 °C at t = 280–320 s (ply-5 interval), simulating the transient resin-starved
     zone that active thermography later detects as a 45 cm² delamination at rib
     station 7.
     """
-    t0 = 0.0 if panel == "q1" else 3600.0  # Q2 starts 1 h after Q1 (parallel)
+    t0 = 0.0 if panel == "s1" else 3600.0  # S2 starts 1 h after S1 (parallel)
     n = AFP_S * AFP_HZ
     for name, ch in AFP_CH.items():
         rows: list[tuple[int, float]] = []
@@ -141,7 +132,7 @@ def gen_afp(rng: np.random.Generator, out: Path, panel: str, anomaly: bool) -> N
             if anomaly and 280 <= t_s <= 320:
                 if name == "consolidation_force_N":
                     val = ch.nom * 0.68 + rng.normal(0, ch.std * 2)
-                elif name == "tcp_temp_C":
+                elif name == "nip_point_temp_C":
                     val = ch.nom + 18.0 + rng.normal(0, ch.std * 1.5)
             rows.append((ts, round(val, 4)))
         _csv(out / "timeseries" / f"afp-{panel}-{name}.csv", rows)
@@ -150,9 +141,9 @@ def gen_afp(rng: np.random.Generator, out: Path, panel: str, anomaly: bool) -> N
 
 
 def gen_stringer(rng: np.random.Generator, out: Path, panel: str) -> None:
-    """Continuous resistance welding: 8 stringers, 12 s weld / 3 s reposition."""
+    """Continuous ultrasonic welding (cUS-W): 8 stringers per section, 12 s weld / 3 s reposition."""
     day = 4 * 86400
-    shift = 0 if panel == "q1" else 21600  # Q1 morning, Q2 afternoon
+    shift = 0 if panel == "s1" else 21600  # S1 morning, S2 afternoon
     n = WELD_S * WELD_HZ
     t = np.arange(n) / WELD_HZ
     active = (t % 15.0) < 12.0           # True during weld pass
@@ -161,10 +152,11 @@ def gen_stringer(rng: np.random.Generator, out: Path, panel: str) -> None:
         for i in range(n):
             ts = _ts(CAMPAIGN_START, day + shift, i, WELD_HZ)
             if active[i]:
-                val = ch.nom + rng.normal(0, ch.std)
-            elif name in ("weld_current_A", "weld_voltage_V", "weld_force_N"):
-                val = float(rng.uniform(0, 5))
-            elif name == "weld_zone_temp_C":
+                ramp = min(1.0, (t[i] % 15.0) / ch.ramp) if ch.ramp else 1.0
+                val = ch.nom * ramp + rng.normal(0, ch.std)
+            elif name in ("sonotrode_amplitude_um", "weld_force_N", "weld_energy_J"):
+                val = 0.0
+            elif name == "contact_temp_C":
                 val = 80.0 + rng.normal(0, 5)   # cooling between passes
             else:
                 val = 0.0
@@ -174,31 +166,49 @@ def gen_stringer(rng: np.random.Generator, out: Path, panel: str) -> None:
 
 
 def gen_frame(rng: np.random.Generator, out: Path, step: str) -> None:
-    """Spot (Punktschweißen) or bridge (Brückenschweißen) welding: 0.5 s pulse / 2.5 s idle."""
+    """Schweißbrücke (bridge welding): 14-channel dual-head resistance welding for C-frame attachment.
+
+    Both Punktschweißen and Brückenschweißen use the same 14-channel spec;
+    BridgePosition ramps linearly from 856 to 7841 mm across the weld sequence
+    (simulating the weld head traversing the bridge).  CM_p, W1_U, W1_p, W2_p
+    are correlated as observed in the real data.
+    """
     day = 8 * 86400
     shift = 0 if step == "punkt" else 18000
     n = FRAME_S * FRAME_HZ
-    t = np.arange(n) / FRAME_HZ
-    active = (t % 3.0) < 0.5
-    for name, ch in FRAME_CH.items():
-        rows: list[tuple[int, float]] = []
-        for i in range(n):
-            ts = _ts(CAMPAIGN_START, day + shift, i, FRAME_HZ)
-            if active[i]:
-                val = ch.nom + rng.normal(0, ch.std)
-            elif name in ("spot_current_A", "spot_voltage_V", "spot_force_N"):
-                val = 0.0
-            elif name == "electrode_temp_C":
-                val = 80.0 + rng.normal(0, 8)
-            else:
-                val = float(rng.normal(0, 0.01))
-            rows.append((ts, round(val, 4)))
+
+    bridge_pos = np.linspace(856.0, 7841.0, n)
+    # Correlated channels — CM_p drives W1_U, W1_p, W2_p
+    cm_p_base = rng.normal(4.0, 0.3, n).clip(3.0, 5.0)
+    w1_u_base = 22.0 + (cm_p_base - 4.0) * 5.0 + rng.normal(0, 0.5, n)
+    w1_p_base = 0.40 + (cm_p_base - 4.0) * 0.04 + rng.normal(0, 0.02, n)
+    w2_p_base = cm_p_base + rng.normal(0, 0.05, n)
+    w2_u_base = w1_u_base * 0.62 + rng.normal(0, 0.3, n)
+
+    channels: dict[str, np.ndarray] = {
+        "BridgePosition": bridge_pos,
+        "CM_I":   np.full(n, 5.0) + rng.normal(0, 0.05, n),
+        "CM_p":   cm_p_base,
+        "CM_t":   np.full(n, 5.0) + rng.normal(0, 0.02, n),
+        "W1_I":   np.full(n, 17.5) + rng.normal(0, 0.3, n),
+        "W1_U":   w1_u_base.clip(18.0, 28.0),
+        "W1_p":   w1_p_base.clip(0.25, 0.55),
+        "W1_t":   np.full(n, 65.0) + rng.normal(0, 0.1, n),
+        "W2_I":   np.full(n, 8.0) + rng.normal(0, 0.05, n),
+        "W2_U":   w2_u_base.clip(11.0, 16.0),
+        "W2_p":   w2_p_base.clip(3.0, 5.0),
+        "W2_t":   np.full(n, 120.0) + rng.normal(0, 0.1, n),
+        "WC_I":   np.full(n, 5.0) + rng.normal(0, 0.05, n),
+        "WC_t":   np.full(n, 120.0) + rng.normal(0, 0.1, n),
+    }
+    for name, vals in channels.items():
+        rows = [(_ts(CAMPAIGN_START, day + shift, i, FRAME_HZ), round(float(vals[i]), 4)) for i in range(n)]
         _csv(out / "timeseries" / f"frame-{step}-{name}.csv", rows)
-    print(f"  Frame welding ({step}): {len(FRAME_CH)} channels × {FRAME_S} s @ {FRAME_HZ} Hz", flush=True)
+    print(f"  Frame welding ({step}): 14 channels × {FRAME_S} s @ {FRAME_HZ} Hz", flush=True)
 
 
 def gen_assembly(rng: np.random.Generator, out: Path) -> None:
-    """Q1 + Q2 Stringerverbindung: dx/dy converge to zero; clamp ramps; joint heats."""
+    """S1 + S2 Stringerverbindung: dx/dy converge to zero; clamp ramps; joint heats."""
     day = 10 * 86400
     n = ASSY_S * ASSY_HZ
     t = np.arange(n) / ASSY_HZ
@@ -253,9 +263,9 @@ def gen_structured(out: Path) -> None:
     sd = out / "structured"
     sd.mkdir(parents=True, exist_ok=True)
 
-    # Q1 FAIL — delamination found
-    (sd / "ndt-q1-report.json").write_text(json.dumps({
-        "panel": "Q1",
+    # S1 FAIL — delamination found
+    (sd / "ndt-s1-report.json").write_text(json.dumps({
+        "panel": "S1",
         "inspection_date": "2024-07-16T09:00:00Z",
         "inspector": "C. Wagner",
         "method": "Active Thermography",
@@ -278,53 +288,54 @@ def gen_structured(out: Path) -> None:
         ),
     }, indent=2))
 
-    # Q2 PASS
-    (sd / "ndt-q2-report.json").write_text(json.dumps({
-        "panel": "Q2",
+    # S2 PASS
+    (sd / "ndt-s2-report.json").write_text(json.dumps({
+        "panel": "S2",
         "inspection_date": "2024-07-16T13:30:00Z",
         "inspector": "C. Wagner",
         "method": "Active Thermography",
         "equipment": "FLIR X6900sc (IR-CAM-02)",
         "result": "PASS",
         "defects": [],
-        "notes": "No defects above 20 cm² threshold detected.  Q2 cleared for stringer welding.",
+        "notes": "No defects above 20 cm² threshold detected.  S2 cleared for stringer welding.",
     }, indent=2))
 
-    # Q1 re-check PASS (after rework)
-    (sd / "ndt-q1-recheck.json").write_text(json.dumps({
-        "panel": "Q1",
+    # S1 re-check PASS (after rework)
+    (sd / "ndt-s1-recheck.json").write_text(json.dumps({
+        "panel": "S1",
         "inspection_date": "2024-07-18T11:00:00Z",
         "inspector": "C. Wagner",
         "method": "Active Thermography",
         "equipment": "FLIR X6900sc (IR-CAM-02)",
         "result": "PASS",
-        "rework_reference": "REWORK-Q1-001",
+        "rework_reference": "REWORK-S1-001",
         "defects": [],
         "notes": (
-            "Re-inspection after rework REWORK-Q1-001.  "
+            "Re-inspection after rework REWORK-S1-001.  "
             "No defects above threshold at rib station 7 or adjacent areas.  "
-            "Q1 cleared for stringer welding."
+            "S1 cleared for stringer welding."
         ),
     }, indent=2))
 
-    # Stringer quality logs (Q1 and Q2)
+    # Stringer quality logs (S1 and S2)
     rng_q = np.random.default_rng(42)
-    for panel in ("q1", "q2"):
+    for panel in ("s1", "s2"):
         stringers = [
             {
-                "stringer_id": f"STR-{panel.upper()}-{i:02d}",
+                "stringer_id": f"STR-S{panel[-1].upper()}-{i:02d}",
                 "weld_result": "PASS",
-                "peak_temp_C": round(float(320.0 + rng_q.uniform(5, 20)), 1),
-                "avg_force_N": round(float(515.0 + rng_q.uniform(-10, 10)), 1),
-                "pull_test_N": round(float(2800.0 + rng_q.uniform(-100, 100)), 1),
+                "peak_contact_temp_C": round(float(340.0 + rng_q.uniform(-10, 20)), 1),
+                "avg_force_N": round(float(600.0 + rng_q.uniform(-15, 15)), 1),
+                "pull_test_N": round(float(2850.0 + rng_q.uniform(-100, 100)), 1),
                 "spec_min_pull_test_N": 2500,
             }
             for i in range(1, 9)
         ]
         (sd / f"stringer-{panel}-quality.json").write_text(json.dumps({
             "panel": panel.upper(),
-            "weld_date": "2024-07-19" if panel == "q1" else "2024-07-21",
-            "operator": "R. Hoffmann" if panel == "q1" else "K. Neumann",
+            "weld_date": "2024-07-19" if panel == "s1" else "2024-07-21",
+            "operator": "R. Hoffmann" if panel == "s1" else "K. Neumann",
+            "process": "cUS-W",
             "result": "PASS",
             "stringers": stringers,
         }, indent=2))
@@ -337,32 +348,32 @@ def gen_files(out: Path) -> None:
     fd = out / "files"
     fd.mkdir(parents=True, exist_ok=True)
 
-    (fd / "afp-layup-recipe-q1.md").write_text(
-        "# AFP Layup Recipe — Q1 Shell (synthetic)\n\n"
+    (fd / "afp-layup-recipe-s1.md").write_text(
+        "# AFP Layup Recipe — S1 Section (upper shell) (synthetic)\n\n"
         "**Material:** CF/LMPAEK 16 mm tape (lot CF-LMPAEK-2024-07-A)  \n"
-        "**Equipment:** AFP Robot 01 (Coriolis Composites A-PPT 16)  \n"
+        "**Equipment:** AFPT MTLH on KUKA KR270 R2700 ceiling-mount robot  \n"
         "**Total plies:** 18 | **Stacking:** [0/90/±45/0/90/±45/0/90]s\n\n"
-        "| Ply | Angle | Speed (mm/s) | TCP (°C) | Force (N) | Note |\n"
-        "|-----|-------|-------------|----------|-----------|------|\n"
-        "| 1   | 0°   | 120         | 155      | 280       | nominal |\n"
-        "| 2   | 90°  | 120         | 155      | 280       | nominal |\n"
-        "| 3   | +45° | 100         | 158      | 290       | nominal |\n"
-        "| 4   | -45° | 100         | 158      | 290       | nominal |\n"
-        "| 5   | 0°   | 120         | 155      | 280       |"
-        " **⚠ anomaly t=280–320 s: force drop + temp spike** |\n"
-        "| 6–18| …    | …           | …        | …         | nominal |\n\n"
+        "| Ply | Angle | Speed (mm/s) | Nip-pt (°C) | Force (N) | Note |\n"
+        "|-----|-------|-------------|-------------|-----------|------|\n"
+        "| 1   | 0°   | 120         | 155         | 280       | nominal |\n"
+        "| 2   | 90°  | 120         | 155         | 280       | nominal |\n"
+        "| 3   | +45° | 100         | 158         | 290       | nominal |\n"
+        "| 4   | -45° | 100         | 158         | 290       | nominal |\n"
+        "| 5   | 0°   | 120         | 155         | 280       |"
+        " **⚠ anomaly t=280–320 s: force drop + nip-pt temp spike** |\n"
+        "| 6–18| …    | …           | …           | …         | nominal |\n\n"
         "_Synthetic showcase data.  Not real DLR MFFD data._\n"
     )
-    (fd / "afp-layup-recipe-q2.md").write_text(
-        "# AFP Layup Recipe — Q2 Shell (synthetic)\n\n"
+    (fd / "afp-layup-recipe-s2.md").write_text(
+        "# AFP Layup Recipe — S2 Section (upper shell) (synthetic)\n\n"
         "**Material:** CF/LMPAEK 16 mm tape (lot CF-LMPAEK-2024-07-B)  \n"
-        "**Equipment:** AFP Robot 01 (Coriolis Composites A-PPT 16)  \n"
+        "**Equipment:** AFPT MTLH on KUKA KR270 R2700 ceiling-mount robot  \n"
         "**Total plies:** 18 | **Stacking:** [0/90/±45/0/90/±45/0/90]s\n\n"
-        "All 18 plies within specification.  Q2 cleared for NDT on 2024-07-16.\n\n"
+        "All 18 plies within specification.  S2 cleared for NDT on 2024-07-16.\n\n"
         "_Synthetic showcase data.  Not real DLR MFFD data._\n"
     )
-    (fd / "rework-q1-protocol.md").write_text(
-        "# Rework Protocol REWORK-Q1-001 (synthetic)\n\n"
+    (fd / "rework-s1-protocol.md").write_text(
+        "# Rework Protocol REWORK-S1-001 (synthetic)\n\n"
         "**Date:** 2024-07-17 | **Operator:** A. Fischer  \n"
         "**Reference defect:** DEF-001 — rib station 7, 45.2 cm², depth 0.4 mm\n\n"
         "## Procedure\n"
@@ -373,21 +384,22 @@ def gen_files(out: Path) -> None:
         "5. Cool-down to < 50 °C before release\n\n"
         "## Outcome\n"
         "Rework area 45 cm².  Released for re-inspection "
-        "(see `ndt-q1-recheck.json`).\n\n"
+        "(see `ndt-s1-recheck.json`).\n\n"
         "_Synthetic showcase data.  Not real DLR MFFD data._\n"
     )
     (fd / "welding-protocol.md").write_text(
-        "# Resistance Welding Protocol Template (synthetic)\n\n"
-        "**Process:** Continuous Resistance Welding (CRW)  \n"
+        "# Continuous Ultrasonic Welding (cUS-W) Protocol Template (synthetic)\n\n"
+        "**Process:** Continuous Ultrasonic Welding (cUS-W) — robot-based  \n"
         "**Material system:** CF/LMPAEK  \n"
-        "**Target zone temp:** 330 °C ± 20 °C  \n"
-        "**Traverse speed:** 15 mm/s ± 2 mm/s  \n"
-        "**Force:** 520 N ± 30 N\n\n"
+        "**Sonotrode amplitude:** 45 µm ± 3 µm  \n"
+        "**Weld force:** 600 N ± 25 N  \n"
+        "**Traverse speed:** 10 mm/s ± 0.8 mm/s  \n"
+        "**Target weld-zone temp:** 340 °C ± 15 °C\n\n"
         "## Acceptance criteria\n"
-        "- Peak weld zone temp: 300–360 °C\n"
-        "- Average force: 490–560 N\n"
+        "- Peak contact temp: 310–370 °C\n"
+        "- Average force: 575–625 N\n"
         "- Pull test per stringer: ≥ 2 500 N\n\n"
-        "_Synthetic showcase data.  Not real DLR MFFD data._\n"
+        "_Synthetic showcase data. Not real DLR MFFD data._\n"
     )
     (fd / "lbr-cleat-spec.md").write_text(
         "# LBR iiwa Cleat Installation Specification (synthetic)\n\n"
@@ -418,10 +430,10 @@ def main(argv: list[str] | None = None) -> None:
 
     rng = np.random.default_rng(RNG_SEED)
     print("Generating MFFD showcase synthetic data …", flush=True)
-    gen_afp(rng, out, "q1", anomaly=True)
-    gen_afp(rng, out, "q2", anomaly=False)
-    gen_stringer(rng, out, "q1")
-    gen_stringer(rng, out, "q2")
+    gen_afp(rng, out, "s1", anomaly=True)
+    gen_afp(rng, out, "s2", anomaly=False)
+    gen_stringer(rng, out, "s1")
+    gen_stringer(rng, out, "s2")
     gen_frame(rng, out, "punkt")
     gen_frame(rng, out, "bruecke")
     gen_assembly(rng, out)

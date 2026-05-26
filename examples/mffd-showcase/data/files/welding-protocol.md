@@ -1,14 +1,15 @@
-# Resistance Welding Protocol Template (synthetic)
+# Continuous Ultrasonic Welding (cUS-W) Protocol Template (synthetic)
 
-**Process:** Continuous Resistance Welding (CRW)  
+**Process:** Continuous Ultrasonic Welding (cUS-W) — robot-based  
 **Material system:** CF/LMPAEK  
-**Target zone temp:** 330 °C ± 20 °C  
-**Traverse speed:** 15 mm/s ± 2 mm/s  
-**Force:** 520 N ± 30 N
+**Sonotrode amplitude:** 45 µm ± 3 µm  
+**Weld force:** 600 N ± 25 N  
+**Traverse speed:** 10 mm/s ± 0.8 mm/s  
+**Target weld-zone temp:** 340 °C ± 15 °C
 
 ## Acceptance criteria
-- Peak weld zone temp: 300–360 °C
-- Average force: 490–560 N
+- Peak contact temp: 310–370 °C
+- Average force: 575–625 N
 - Pull test per stringer: ≥ 2 500 N
 
-_Synthetic showcase data.  Not real DLR MFFD data._
+_Synthetic showcase data. Not real DLR MFFD data._

@@ -1,0 +1,73 @@
+{
+  "panel": "S1",
+  "weld_date": "2024-07-19",
+  "operator": "R. Hoffmann",
+  "process": "cUS-W",
+  "result": "PASS",
+  "stringers": [
+    {
+      "stringer_id": "STR-S1-01",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 353.2,
+      "avg_force_N": 598.2,
+      "pull_test_N": 2921.7,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-02",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 350.9,
+      "avg_force_N": 587.8,
+      "pull_test_N": 2945.1,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-03",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 352.8,
+      "avg_force_N": 608.6,
+      "pull_test_N": 2775.6,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-04",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 343.5,
+      "avg_force_N": 596.1,
+      "pull_test_N": 2935.4,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-05",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 349.3,
+      "avg_force_N": 609.7,
+      "pull_test_N": 2838.7,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-06",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 336.8,
+      "avg_force_N": 601.6,
+      "pull_test_N": 2762.8,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-07",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 354.8,
+      "avg_force_N": 603.9,
+      "pull_test_N": 2901.6,
+      "spec_min_pull_test_N": 2500
+    },
+    {
+      "stringer_id": "STR-S1-08",
+      "weld_result": "PASS",
+      "peak_contact_temp_C": 340.6,
+      "avg_force_N": 614.1,
+      "pull_test_N": 2928.6,
+      "spec_min_pull_test_N": 2500
+    }
+  ]
+}
