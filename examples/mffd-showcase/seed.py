@@ -31,9 +31,12 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Iterable
+
+import requests as _http
 
 from shepard_client import (  # type: ignore
     ApiClient,
@@ -617,6 +620,45 @@ def upload_do_structured(
 # ---------------------------------------------------------------------------
 # File upload
 
+def _v2_base(host: str) -> str:
+    return re.sub(r"/shepard/api/?$", "/v2", host.rstrip("/"))
+
+
+def _get_fc_app_id(host: str, api_key: str, fc_id: int) -> str:
+    resp = _http.get(f"{host}/fileContainers/{fc_id}", headers={"X-API-KEY": api_key}, timeout=30)
+    resp.raise_for_status()
+    return resp.json()["appId"]
+
+
+def _upload_file_presigned(v2_base: str, api_key: str, container_app_id: str, path: Path) -> str:
+    fname = path.name
+    # Step 1: obtain presigned PUT URL + oid
+    r1 = _http.post(
+        f"{v2_base}/file-containers/{container_app_id}/upload-url",
+        json={"fileName": fname},
+        headers={"X-API-KEY": api_key},
+        timeout=30,
+    )
+    r1.raise_for_status()
+    d = r1.json()
+    upload_url, oid = d["uploadUrl"], d["oid"]
+    # Step 2: PUT bytes directly to S3 — Content-Disposition is part of the signed headers
+    data = path.read_bytes()
+    r2 = _http.put(upload_url, data=data, timeout=60,
+                   headers={"Content-Disposition": f'attachment; filename="{fname}"'})
+    r2.raise_for_status()
+    # Step 3: commit — registers the ShepardFile node
+    ctype = "text/markdown" if fname.endswith(".md") else "application/octet-stream"
+    r3 = _http.post(
+        f"{v2_base}/file-containers/{container_app_id}/upload-url/commit",
+        json={"oid": oid, "fileName": fname, "contentType": ctype, "fileSize": len(data)},
+        headers={"X-API-KEY": api_key},
+        timeout=30,
+    )
+    r3.raise_for_status()
+    return oid
+
+
 def upload_do_files(
     apis: Apis,
     coll: Collection,
@@ -632,14 +674,19 @@ def upload_do_files(
             _log("SKIP", ref_name, "FileReference", r.id)
             return
 
+    host = apis.client.configuration.host.rstrip("/")
+    api_key = (apis.client.configuration.api_key or {}).get("apikey", "")
+    v2 = _v2_base(host)
+    fc_app_id = _get_fc_app_id(host, api_key, fc.id)
+
     oids: list[str] = []
     for fname in md_files:
         path = data_dir / "files" / fname
         if not path.exists():
             _log("SKIP", fname, "file (missing)")
             continue
-        sf = apis.file_container.create_file(fc.id, str(path))
-        oids.append(sf.oid)
+        oid = _upload_file_presigned(v2, api_key, fc_app_id, path)
+        oids.append(oid)
 
     if not oids:
         return
