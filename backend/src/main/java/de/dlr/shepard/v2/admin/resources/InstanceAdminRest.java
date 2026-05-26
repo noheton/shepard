@@ -93,15 +93,18 @@ public class InstanceAdminRest {
   @Path("/instance-admins")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
-  @Operation(description = "List Neo4j-side instance-admin grants (with audit metadata).")
+  @Operation(
+    summary = "List Neo4j-side instance-admin grants.",
+    description = "Returns all active `:InstanceAdminGrant` nodes with their `grantedBy` and `grantedAt` audit fields."
+  )
   @APIResponse(
-    description = "ok",
+    description = "List of all active Neo4j-side instance-admin grants with audit metadata.",
     responseCode = "200",
     content = @Content(
       schema = @Schema(type = SchemaType.ARRAY, implementation = InstanceAdminGrantIO.class)
     )
   )
-  @APIResponse(description = "forbidden", responseCode = "403")
+  @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response listInstanceAdmins(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<InstanceAdminGrantIO> grants = instanceAdminService.listInstanceAdmins();
@@ -112,14 +115,17 @@ public class InstanceAdminRest {
   @Path("/instance-admins")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
-  @Operation(description = "Grant the instance-admin role to a user.")
+  @Operation(
+    summary = "Grant the instance-admin role to a user.",
+    description = "Creates a `:InstanceAdminGrant` node in Neo4j recording who granted the role and when. The OIDC role is unaffected by this call."
+  )
   @APIResponse(
-    description = "created",
+    description = "New instance-admin grant created; body contains the grant with its `grantedBy` and `grantedAt` fields.",
     responseCode = "201",
     content = @Content(schema = @Schema(implementation = InstanceAdminGrantIO.class))
   )
-  @APIResponse(description = "not found", responseCode = "404")
-  @APIResponse(description = "forbidden", responseCode = "403")
+  @APIResponse(description = "No user with that username found in the system.", responseCode = "404")
+  @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response grantInstanceAdmin(
     @Context SecurityContext securityContext,
     @RequestBody(required = true, content = @Content(schema = @Schema(implementation = GrantInstanceAdminIO.class))) @Valid GrantInstanceAdminIO body
@@ -134,10 +140,13 @@ public class InstanceAdminRest {
   @Path("/instance-admins/{username}")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
-  @Operation(description = "Revoke the Neo4j-side instance-admin grant from a user.")
-  @APIResponse(description = "deleted", responseCode = "204")
-  @APIResponse(description = "not found", responseCode = "404")
-  @APIResponse(description = "forbidden", responseCode = "403")
+  @Operation(
+    summary = "Revoke the Neo4j-side instance-admin grant from a user.",
+    description = "Removes the `:InstanceAdminGrant` node for the named user. The OIDC role (if any) is not affected by this call."
+  )
+  @APIResponse(description = "Neo4j-side instance-admin grant revoked successfully.", responseCode = "204")
+  @APIResponse(description = "No Neo4j-side instance-admin grant found for that username.", responseCode = "404")
+  @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response revokeInstanceAdmin(
     @Context SecurityContext securityContext,
     @PathParam("username") @NotBlank String username
@@ -156,15 +165,18 @@ public class InstanceAdminRest {
   @Path("/permission-audit")
   @RolesAllowed(Constants.INSTANCE_ADMIN_ROLE)
   @Tag(name = "Admin")
-  @Operation(description = "List BasicEntity nodes that lack a :has_permissions edge (post-C3).")
+  @Operation(
+    summary = "List entities with orphaned permissions.",
+    description = "Returns all `:BasicEntity` nodes that have no `:has_permissions` edge (post-C3 integrity check). Run the repair endpoint to recreate the missing edges."
+  )
   @APIResponse(
-    description = "ok",
+    description = "List of BasicEntity nodes that have no `:has_permissions` edge; an empty array means no orphans.",
     responseCode = "200",
     content = @Content(
       schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditEntryIO.class)
     )
   )
-  @APIResponse(description = "forbidden", responseCode = "403")
+  @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
   public Response permissionAudit(@Context SecurityContext securityContext) {
     requireInstanceAdmin(securityContext);
     List<PermissionAuditEntryIO> orphans = permissionAuditService.listOrphans();
@@ -194,14 +206,14 @@ public class InstanceAdminRest {
                   "from/to (ISO-8601), and pagination via page/size."
   )
   @APIResponse(
-    description = "ok",
+    description = "Page of permission audit log entries (GRANT/REVOKE/UPDATE events) sorted by occurred_at DESC.",
     responseCode = "200",
     content = @Content(
       schema = @Schema(type = SchemaType.ARRAY, implementation = PermissionAuditLogEntryIO.class)
     )
   )
-  @APIResponse(description = "forbidden", responseCode = "403")
-  @APIResponse(description = "bad request (invalid ISO-8601 date)", responseCode = "400")
+  @APIResponse(description = "Caller lacks the instance-admin role.", responseCode = "403")
+  @APIResponse(description = "The `from` or `to` query parameter is not a valid ISO-8601 instant string.", responseCode = "400")
   public Response permissionAuditLog(
     @Context SecurityContext securityContext,
     @QueryParam("entityAppId") String entityAppId,

@@ -25,6 +25,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -114,6 +117,40 @@ public class SqlTimeseriesRest {
    * @return 200 on success; 400 on bad DSL; 404 if feature disabled; 504 on query timeout
    */
   @POST
+  @Tag(name = "Timeseries SQL (v2)")
+  @Operation(
+    summary = "Execute a timeseries SQL DSL query and stream results.",
+    description =
+      "Accepts a `SqlQuerySpec` body and streams matching rows in the format negotiated by " +
+      "the `Accept` header (`text/csv` default, `application/json`, or `application/x-ndjson`). " +
+      "Row count is capped at the instance's `max-rows` limit (default 1,000,000); query " +
+      "duration is capped by the Postgres `statement_timeout`. When the row cap fires, the " +
+      "HTTP trailer `x-shepard-truncated: true` is emitted and the stream closes cleanly. " +
+      "Container IDs in the request are automatically filtered to those the caller has Read " +
+      "permission on; unknown or forbidden IDs are silently excluded."
+  )
+  @APIResponse(
+    responseCode = "200",
+    description = "Rows streamed in the negotiated format. " +
+      "Sets `Content-Disposition: attachment; filename=\"timeseries.csv\"` for CSV. " +
+      "The `x-shepard-truncated` trailer is `true` when the row cap was reached before all matching rows were returned."
+  )
+  @APIResponse(
+    responseCode = "400",
+    description = "DSL body is syntactically invalid, or the number of permitted container IDs exceeds the per-request cap (1000)."
+  )
+  @APIResponse(
+    responseCode = "401",
+    description = "Authentication required — no valid JWT or X-API-KEY was supplied."
+  )
+  @APIResponse(
+    responseCode = "404",
+    description = "SQL timeseries feature is disabled (`shepard.timeseries.sql.enabled=false`); enable via the admin config endpoint."
+  )
+  @APIResponse(
+    responseCode = "504",
+    description = "Query exceeded the configured `statement_timeout`; retry with tighter time-range or container filters, or raise the duration cap via `PATCH /v2/admin/sql-timeseries/config`."
+  )
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces({"text/csv", MediaType.APPLICATION_JSON, NDJSON_TYPE})
   public Response query(

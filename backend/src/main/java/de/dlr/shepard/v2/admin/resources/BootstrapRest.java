@@ -44,9 +44,9 @@ public class BootstrapRest {
     description = "Consume the one-shot bootstrap token + grant instance-admin to a user. " +
     "Unauthenticated — the token is the auth proof. Token-replay returns 403."
   )
-  @APIResponse(description = "granted", responseCode = "201")
-  @APIResponse(description = "forbidden — token mismatch or already consumed", responseCode = "403")
-  @APIResponse(description = "user not found", responseCode = "404")
+  @APIResponse(description = "Bootstrap token accepted; instance-admin role granted to the specified user.", responseCode = "201")
+  @APIResponse(description = "Token does not match or has already been consumed; replay is not permitted.", responseCode = "403")
+  @APIResponse(description = "No user with the given username exists in the system.", responseCode = "404")
   public Response bootstrap(
     @RequestBody(
       required = true,
