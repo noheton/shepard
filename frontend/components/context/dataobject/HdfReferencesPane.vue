@@ -65,6 +65,9 @@ const showCreateDialog = ref(false);
 const showDeleteDialog = ref(false);
 const deleteTarget = ref<HdfReference | null>(null);
 
+const showAnnotateDialog = ref(false);
+const annotateTarget = ref<HdfReference | null>(null);
+
 const createForm = reactive<HdfReferenceCreateBody>({
   hdfContainerAppId: "",
   datasetPath: "",
@@ -139,6 +142,12 @@ async function submitCreate() {
   }
 }
 
+// ── Annotate ──────────────────────────────────────────────────────────────
+function openAnnotate(ref: HdfReference) {
+  annotateTarget.value = ref;
+  showAnnotateDialog.value = true;
+}
+
 // ── Delete ────────────────────────────────────────────────────────────────
 function openDelete(ref: HdfReference) {
   deleteTarget.value = ref;
@@ -204,7 +213,7 @@ onMounted(fetchReferences);
           <th>Container</th>
           <th>Dataset Path</th>
           <th>Description</th>
-          <th v-if="canEdit" />
+          <th />
         </tr>
       </thead>
       <tbody>
@@ -216,8 +225,18 @@ onMounted(fetchReferences);
             <code>{{ ref.datasetPath ?? "—" }}</code>
           </td>
           <td>{{ ref.description ?? "—" }}</td>
-          <td v-if="canEdit" class="text-right">
+          <td class="text-right">
             <v-btn
+              icon="mdi-tag-outline"
+              variant="plain"
+              density="compact"
+              color="secondary"
+              :data-testid="`hdf-ref-annotate-${ref.appId}`"
+              title="Annotate this reference"
+              @click="openAnnotate(ref)"
+            />
+            <v-btn
+              v-if="canEdit"
               icon="mdi-delete-outline"
               variant="plain"
               density="compact"
@@ -280,6 +299,14 @@ onMounted(fetchReferences);
       v-model:show-dialog="showDeleteDialog"
       :prompt-text="`Delete HDF reference to ${deleteTarget?.datasetPath}?`"
       @confirmed="confirmDelete"
+    />
+
+    <!-- Annotate dialog (A5c-annotation) -->
+    <AnnotationDialog
+      v-if="showAnnotateDialog"
+      v-model:show-dialog="showAnnotateDialog"
+      :subject-app-id="annotateTarget?.appId"
+      subject-kind="HdfReference"
     />
   </div>
 </template>

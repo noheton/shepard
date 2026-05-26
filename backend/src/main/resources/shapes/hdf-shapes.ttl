@@ -1,0 +1,63 @@
+# hdf-shapes.ttl — SHACL shapes for the HDF5 plugin (A5c-annotation).
+#
+# Declares hdf:HdfReferenceShape so that SHACL validation can enforce
+# that any SemanticAnnotation whose subjectKind is "HdfReference" carries
+# at minimum a dataset-path predicate when hdf:hasDatasetPath is used.
+#
+# Aligned with the V87 vocabulary bootstrap: prefix hdf resolves to
+# <https://shepard.dlr.de/ontology/hdf#>.
+#
+# Auto-loaded by SemanticShapeLoader from classpath:/shapes/*.ttl —
+# no wiring needed.
+
+@prefix hdf:     <https://shepard.dlr.de/ontology/hdf#> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+
+# ── Class declaration ──────────────────────────────────────────────────
+
+hdf:HdfReference a owl:Class ;
+    rdfs:label "HDF5 Reference"@en ;
+    rdfs:comment "A per-DataObject anchor pointing to a specific HDF5 dataset path within an HdfContainer."@en .
+
+# ── Property declarations ──────────────────────────────────────────────
+
+hdf:hasDatasetPath a owl:DatatypeProperty ;
+    rdfs:domain hdf:HdfReference ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "has dataset path"@en ;
+    rdfs:comment "The HDF5 dataset path within the container, e.g. /sensor_data/channel_A."@en .
+
+hdf:hasContainerAppId a owl:DatatypeProperty ;
+    rdfs:domain hdf:HdfReference ;
+    rdfs:range  xsd:string ;
+    rdfs:label  "has container appId"@en ;
+    rdfs:comment "The appId (UUID v7) of the HdfContainer this reference points into."@en .
+
+# ── SHACL node shape ──────────────────────────────────────────────────
+
+hdf:HdfReferenceShape a sh:NodeShape ;
+    sh:targetClass hdf:HdfReference ;
+    rdfs:label "HdfReference shape"@en ;
+    rdfs:comment "Validates SemanticAnnotations whose subjectKind is HdfReference."@en ;
+
+    sh:property [
+        sh:path        hdf:hasDatasetPath ;
+        sh:datatype    xsd:string ;
+        sh:minLength   1 ;
+        sh:maxCount    1 ;
+        sh:name        "dataset path"@en ;
+        sh:description "HDF5 dataset path — must be non-blank when supplied."@en ;
+    ] ;
+
+    sh:property [
+        sh:path        hdf:hasContainerAppId ;
+        sh:datatype    xsd:string ;
+        sh:minLength   1 ;
+        sh:maxCount    1 ;
+        sh:name        "container appId"@en ;
+        sh:description "UUID v7 of the HdfContainer — must be non-blank when supplied."@en ;
+    ] .

@@ -150,7 +150,51 @@ Response (201):
 
 Permissions: the caller needs **WRITE** on the DataObject's parent Collection.
 The HDF container does **not** need to be accessible to the caller — the reference
-only records the appId, not the bytes. Annotation hookup (E6) is deferred.
+only records the appId, not the bytes.
+
+### Annotating an HdfReference (A5c-annotation)
+
+Every `HdfReference` is annotatable via the standard
+[semantic annotation surface](/reference/semantic-annotations/) — no
+HDF-specific endpoint is needed.
+
+**UI.** The `HdfReferencesPane` displays a `mdi-tag-outline` Annotate
+button on every reference row (visible to all readers, not gated by edit
+permission). Clicking it opens the shared `AnnotationDialog` pre-populated
+with the reference's `appId` and `subjectKind="HdfReference"`.
+
+**API.** Use the polymorphic annotation endpoint:
+
+```http
+POST /v2/annotations
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "subjectAppId": "<hdfReferenceAppId>",
+  "subjectKind": "HdfReference",
+  "predicateIri": "https://shepard.dlr.de/ontology/hdf#hasDatasetPath",
+  "valueIri": null,
+  "valueLiteral": "/sensor_data/channel_A"
+}
+```
+
+**Vocabulary.** The `hdf` prefix (`https://shepard.dlr.de/ontology/hdf#`)
+is seeded as a `:Vocabulary` node by `V87__hdf_vocabulary.cypher`. It
+appears in the admin Semantic Repos list as "HDF5 Vocabulary" and is
+available for autocomplete in the annotation dialog.
+
+**SHACL shape.** `hdf:HdfReferenceShape` (auto-loaded from
+`classpath:/shapes/hdf-shapes.ttl`) declares two optional property shapes:
+
+| Property | Description |
+|---|---|
+| `hdf:hasDatasetPath` | HDF5 dataset path, e.g. `/sensor_data/channel_A` |
+| `hdf:hasContainerAppId` | UUID v7 of the target `HdfContainer` |
+
+Both properties are optional (`sh:minCount` not set to 1) — you can
+annotate with any predicate from any vocabulary; the shape only constrains
+the `hdf:` namespace predicates when they are used.
 
 ### `GET /v2/hdf-containers/{appId}/file` — offline HDF5 download
 

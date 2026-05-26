@@ -97,7 +97,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/46-gridfs-to-s3-migration-runbook.md`](data/46-gridfs-to-s3-migration-runbook.md) | GridFS → S3 (Garage) Migration — Operator Runbook | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/50-experiment-orchestration.md`](data/50-experiment-orchestration.md) | Experiment Orchestration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
-| [`aidocs/data/r4-novacrate-evaluation.md`](data/r4-novacrate-evaluation.md) | R4 — NovaCrate evaluation for RO-Crate metadata editing | 2026-05-26 | — |
+| [`aidocs/data/r4-novacrate-evaluation.md`](data/r4-novacrate-evaluation.md) | R4 — NovaCrate evaluation for RO-Crate metadata editing | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | AAS Backend Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/60-shepard-edge.md`](integrations/60-shepard-edge.md) | shepard Edge — Concept Design | 2026-05-23 | 2026-05-23 |

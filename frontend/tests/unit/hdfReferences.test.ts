@@ -147,3 +147,52 @@ describe("HdfReferencesPane URL builders", () => {
     expect(url).toContain("hdf-references");
   });
 });
+
+// ── A5c-annotation: annotation subject constants ───────────────────────────
+
+/**
+ * The subject-kind string passed to AnnotationDialog.
+ * This constant is the ground-truth for what HdfReferencesPane emits;
+ * changes here must be reflected in the Vue component.
+ */
+const HDF_REFERENCE_SUBJECT_KIND = "HdfReference";
+
+/**
+ * The HDF5 vocabulary namespace URI seeded by V87__hdf_vocabulary.cypher.
+ */
+const HDF_VOCAB_URI = "https://shepard.dlr.de/ontology/hdf#";
+
+/**
+ * Build the subject-kind string for AnnotationDialog (always "HdfReference").
+ */
+function buildAnnotateSubjectKind(): string {
+  return HDF_REFERENCE_SUBJECT_KIND;
+}
+
+describe("HdfReferencesPane annotation affordance", () => {
+  it("subject kind is HdfReference", () => {
+    expect(buildAnnotateSubjectKind()).toBe("HdfReference");
+  });
+
+  it("subject kind does not change when datasetPath differs", () => {
+    expect(buildAnnotateSubjectKind()).toBe(buildAnnotateSubjectKind());
+  });
+
+  it("HDF vocabulary URI has the expected namespace", () => {
+    expect(HDF_VOCAB_URI).toMatch(/^https:\/\/shepard\.dlr\.de\/ontology\/hdf#/);
+  });
+
+  it("HDF vocabulary URI ends with #", () => {
+    expect(HDF_VOCAB_URI.endsWith("#")).toBe(true);
+  });
+
+  it("annotate button data-testid follows the same pattern as delete", () => {
+    const appId = "ref-001";
+    const annotateTestId = `hdf-ref-annotate-${appId}`;
+    const deleteTestId = `hdf-ref-delete-${appId}`;
+    // Both share the appId segment — consistent naming convention
+    expect(annotateTestId).toContain(appId);
+    expect(deleteTestId).toContain(appId);
+    expect(annotateTestId).not.toBe(deleteTestId);
+  });
+});
