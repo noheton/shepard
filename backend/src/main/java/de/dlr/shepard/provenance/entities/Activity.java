@@ -168,6 +168,28 @@ public class Activity implements HasId, HasAppId {
   @Property("secretVersion")
   private Integer secretVersion;
 
+  /**
+   * Distributed-ledger anchor receipt — set by the ledger service
+   * (TPL17 / {@code aidocs/integrations/111}) when an operator triggers
+   * anchoring via {@code POST /v2/admin/ledger/anchor}.
+   *
+   * <p>Stored as a JSON string with this stable shape:
+   * <pre>{@code
+   * {
+   *   "provider": "bloxberg",
+   *   "digest":   "<sha256-hex of the activity's JSON-LD canonical form>",
+   *   "txHash":   "0x...",
+   *   "anchoredAt": "<ISO-8601>",
+   *   "receipt":  { /* verbatim provider response *\/ }
+   * }
+   * }</pre>
+   *
+   * {@code null} for activities that have not been anchored (the common case
+   * for non-production deployments or before the ledger feature is enabled).
+   */
+  @Property("ledgerAnchor")
+  private String ledgerAnchor;
+
   public Activity(
     String actionKind,
     String targetKind,
