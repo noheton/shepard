@@ -18,7 +18,8 @@
 > instantiates the `shepard + databus + MOSS` DataHub stack.
 
 This is a self-contained showcase that exercises shepard end-to-end:
-seven hot-fire test runs, ten sensor channels each at 100 Hz × 30 s,
+fifteen hot-fire test runs (thirteen fired + two hold days), twenty-eight
+sensor channels each at 100 Hz × 30 s,
 phase-of-burn semantic annotations, two debrief lab-journal entries,
 three Collection versions (best-effort), and an investigation-sub-tree
 with predecessor/successor links that follow a fuel-turbopump vibration
@@ -62,7 +63,7 @@ examples/lumen-showcase/
 ├── data/
 │   ├── generate.py           # deterministic synthetic data generator
 │   ├── manifest.json         # generator output summary (post-generate)
-│   ├── timeseries/           # 60 CSVs (10 channels × 6 fired runs)
+│   ├── timeseries/           # 364 CSVs (28 channels × 13 fired runs)
 │   ├── files/                # CAD stubs, test reports, photo stub
 │   └── structured/           # one JSON run-log per run + schema sketch
 └── notebooks/
@@ -185,9 +186,9 @@ produce only `SKIP` lines (idempotent).
 ## Determinism check (operator quick-verify)
 
 ```
-$ python data/generate.py
-OK generated 7 runs into .../examples/lumen-showcase/data
-OK anomaly: TR-004 vib_fuel_pump peak 12.669 g rms at t=7.85 s (rng_seed=2024)
+$ python3 data/generate.py
+OK generated 15 runs into .../examples/lumen-showcase/data
+OK anomaly: TR-004 vib_fuel_pump peak 12.591 g rms at t=8.29 s (rng_seed=2024)
 ```
 
 ## Where the disclaimer lives
@@ -199,6 +200,24 @@ places:
    in `seed.py`'s `COLLECTION_DESCRIPTION`).
 2. The opening paragraph of this README.
 3. The opening paragraph of `docs/showcase.md`.
+
+## Data provenance
+
+The channel set and campaign narrative in this showcase are shaped after four
+published DLR eLib sources on the real LUMEN programme. **These citations are
+for domain plausibility only — no real LUMEN measurement values appear in this
+dataset. All numbers are deterministic synthetic outputs of
+`data/generate.py` (`numpy.random.default_rng(2024)`).**
+
+| Bib key | Description |
+|---------|-------------|
+| `traudt_2019_lumen_status` | Traudt et al. 2019 — LUMEN programme overview; LOX/LCH4 expander-bleed cycle, 25 kN-class engine, target mixture ratio ~3.4. Motivates `propellant=LOX/LCH4` and `target_mixture_ratio=3.4` on every DataObject. |
+| `riccius_2022_lumen_turbine` | Riccius et al. 2022 — turbine fatigue indicators; motivates the `strain_nozzle` and thermal (`tc_nozzle`, `tc_injector`) channel set. |
+| `gulczynski_2023_lumen_fatigue` | Gulczynski et al. 2023 — turbopump fatigue assessment; basis for the `turbopump_vibration_rms_g` and `turbopump_bearing_temp_degC` channels and the TR-004 bearing-precursor anomaly narrative (vibration spike at t=8 s, sustained 0.5 s, peak ~12 g rms). |
+| `hardi_2025_lumen_testbed` | Hardi et al. 2025 — P3-Lampoldshausen test-bed instrumentation; informs channel naming conventions and measurement location labels (`P3-Lampoldshausen`). |
+
+All four bib entries are in `docs/_data/references.bib` in the Shepard fork
+repository.
 
 ## Limits and known gaps
 

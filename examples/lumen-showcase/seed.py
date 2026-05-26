@@ -1,6 +1,6 @@
 """Idempotent seeder for the LUMEN-inspired hot-fire showcase.
 
-Synthesizes the campaign Collection plus seven test runs into a running
+Synthesizes the campaign Collection plus fifteen test runs into a running
 shepard backend. Re-running the script produces the same final entity tree
 (by-name lookup before create); ``--reset`` deletes the showcase Collection
 first.
@@ -12,6 +12,27 @@ Usage
 
 The script only depends on numpy, the existing ``shepard-client`` Python
 package, and the standard library.
+
+Engineering context
+-------------------
+Channel set and campaign narrative are shaped after the published DLR LUMEN
+(Liquid Upper-stage deMonstrator ENgine) programme — a LOX/LCH4 expander-bleed
+cycle demonstrator at P3-Lampoldshausen. **No real LUMEN measurement values are
+used; all numbers are synthetic outputs of data/generate.py
+(numpy.random.default_rng(2024)).**
+
+References (bib keys from docs/_data/references.bib):
+  [traudt_2019_lumen_status]      Traudt et al. 2019 — LUMEN programme overview;
+                                  LOX/LCH4 expander-bleed cycle, 25 kN-class engine,
+                                  mixture ratio ~3.4.
+  [riccius_2022_lumen_turbine]    Riccius et al. 2022 — turbine fatigue indicators;
+                                  informs the strain_nozzle and thermal channel set.
+  [gulczynski_2023_lumen_fatigue] Gulczynski et al. 2023 — turbopump fatigue
+                                  assessment; basis for turbopump_vibration_rms_g,
+                                  turbopump_bearing_temp_degC, and the TR-004
+                                  bearing-precursor anomaly narrative.
+  [hardi_2025_lumen_testbed]      Hardi et al. 2025 — P3 test-bed instrumentation;
+                                  informs channel naming and measurement locations.
 """
 
 from __future__ import annotations
@@ -113,6 +134,10 @@ CHANNELS: list[tuple[str, str]] = [
     ("strain_nozzle", "ustrain"),
     ("acc_gimbal_x",  "g"),
     ("acc_gimbal_y",  "g"),
+    # --- LOX/LCH4 expander-bleed specific channels (per Gulczynski 2023 + Hardi 2025) ---
+    ("turbopump_vibration_rms_g",   "g_rms"),  # turbopump housing vibration RMS; TR-004 anomaly channel
+    ("turbopump_bearing_temp_degC", "degC"),    # turbopump bearing temperature; bearing-health monitor
+    ("lch4_temperature_K",          "K"),       # LCH4 propellant inlet temperature (~111 K cryogenic)
 ]
 
 PHASES: list[tuple[str, float, float]] = [

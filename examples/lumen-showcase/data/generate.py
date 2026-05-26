@@ -4,11 +4,31 @@ The dataset is fictional. Numerical values are plausible for a 25 kN-class
 LOX/LCH4 expander-bleed demonstrator but are synthesized with a fixed RNG
 seed so the output is reproducible bit-for-bit.
 
+Engineering context
+-------------------
+Channel set and signal shapes are informed by four published DLR eLib sources
+on the real LUMEN (Liquid Upper-stage deMonstrator ENgine) programme at
+Lampoldshausen. **These publications are cited for domain plausibility only —
+no real LUMEN measurement values appear in this file.**
+
+References (bib keys from docs/_data/references.bib):
+  [traudt_2019_lumen_status]     Traudt et al. 2019 — LUMEN programme overview;
+                                 LOX/LCH4 expander-bleed cycle, 25 kN-class engine.
+  [riccius_2022_lumen_turbine]   Riccius et al. 2022 — turbine fatigue indicators;
+                                 motivates strain_nozzle and thermal channel set.
+  [gulczynski_2023_lumen_fatigue] Gulczynski et al. 2023 — turbopump fatigue
+                                 assessment; basis for turbopump_vibration_rms_g
+                                 and turbopump_bearing_temp_degC channels and the
+                                 TR-004 anomaly narrative (bearing precursor).
+  [hardi_2025_lumen_testbed]     Hardi et al. 2025 — P3 test-bed instrumentation;
+                                 informs channel naming conventions, measurement
+                                 locations, and sampling approach.
+
 Run:
     python data/generate.py [--out data]
 
 This produces:
-    data/timeseries/tr-{N}-{channel}.csv      (25 channels x 15 runs)
+    data/timeseries/tr-{N}-{channel}.csv      (28 channels x 15 runs)
     data/structured/tr-{N}-runlog.json        (operator run log per run)
     data/structured/schema.json               (run-log JSON schema sketch)
     data/files/tr-{N}-cad-stub.bin            (4 KB placeholder per run)
@@ -115,6 +135,24 @@ CHANNELS: list[ChannelSpec] = [
     ChannelSpec("strain_nozzle", "ustrain","nozzle throat hoop strain",            450.0,  7.0,  0.78,  "combustion"),
     ChannelSpec("acc_gimbal_x",  "g",      "gimbal actuator x-axis acceleration",    0.05,  0.08, 1.0,   "gimbal"),
     ChannelSpec("acc_gimbal_y",  "g",      "gimbal actuator y-axis acceleration",    0.04,  0.07, 1.0,   "gimbal"),
+    # --- LOX/LCH4 expander-bleed specific channels (per Gulczynski 2023 + Hardi 2025) ---
+    # Dedicated turbopump health monitoring: vibration RMS and bearing temperature.
+    # The TR-004 anomaly is a bearing-precursor spike on this channel (peak ~12 g rms
+    # during ramp_up, sustained 0.5 s at t=8 s).  See _inject_anomaly().
+    ChannelSpec("turbopump_vibration_rms_g", "g_rms",
+                "turbopump housing vibration RMS (bearing health monitor)",
+                1.5, 0.18, 1.05, "combustion"),
+    # Bearing temperature: cryogenic-to-hot gradient; LOX/LCH4 turbopumps run
+    # warmer than LH2 equivalents. Nominal ~210 °C; TR-004 shows a slow creep
+    # correlated with the vibration precursor (synthetic — no real LUMEN value).
+    ChannelSpec("turbopump_bearing_temp_degC", "degC",
+                "turbopump bearing temperature",
+                210.0, 2.5, 1.02, "combustion"),
+    # LCH4 propellant temperature at engine inlet: cryogenic methane sits near
+    # 111 K at ambient pressure (vs ~20 K for LH2).  Tracked to verify conditioning.
+    ChannelSpec("lch4_temperature_K", "K",
+                "LCH4 propellant temperature at engine inlet",
+                111.0, 0.6, 1.0, "tank"),
 ]
 
 CHANNEL_BY_NAME = {c.name: c for c in CHANNELS}
@@ -239,23 +277,41 @@ def _baseline_envelope(spec: ChannelSpec, t: np.ndarray) -> np.ndarray:
 def _inject_anomaly(
     spec: ChannelSpec, run_idx: int, t: np.ndarray, baseline: np.ndarray, rng: np.random.Generator
 ) -> np.ndarray:
-    """TR-004 fuel-turbopump vibration spike: 0.5 s sustained, peak 12 g rms,
-    centred at t = 8 s (mid ramp_up). Returns the modified baseline (in place
-    style — caller passes a fresh copy)."""
-    if spec.name != "vib_fuel_pump":
-        return baseline
+    """TR-004 turbopump bearing-precursor event (per Gulczynski 2023 fatigue narrative).
+
+    Two channels carry the anomaly signature:
+      - vib_fuel_pump: classic broadband vibration spike; 0.5 s sustained, peak
+        ~12 g rms, centred at t = 8 s (mid ramp_up). This is the primary
+        detection channel used by the anomaly-analysis notebook.
+      - turbopump_vibration_rms_g: dedicated turbopump housing vibration RMS
+        monitor; the same spike is present but at reduced amplitude (~9 g rms peak)
+        reflecting sensor location differences.  Corroborates the vib_fuel_pump
+        reading and mirrors the multi-sensor redundancy described in Hardi 2025.
+
+    Returns the modified baseline (in-place style — caller passes a fresh copy).
+    """
     if run_idx != 4:  # TR-004 (1-indexed)
         return baseline
-    # Plateau-shaped event: rises into 12 g, holds ~0.5 s, decays back.
+    if spec.name not in ("vib_fuel_pump", "turbopump_vibration_rms_g"):
+        return baseline
+    # Plateau-shaped event: rises into peak, holds ~0.5 s, decays back.
     t0, t1 = 7.75, 8.30
     envelope = np.zeros_like(t)
     rise = (t >= 7.65) & (t < t0)
     plateau = (t >= t0) & (t < t1)
     decay = (t >= t1) & (t < 8.45)
-    envelope[rise] = (t[rise] - 7.65) / (t0 - 7.65) * 9.6  # rise to +9.6 over baseline
-    envelope[plateau] = 9.6
-    envelope[decay] = 9.6 * (1.0 - (t[decay] - t1) / (8.45 - t1))
-    # small jitter on top of the plateau so peak hovers near 12.x g
+    if spec.name == "vib_fuel_pump":
+        # Primary channel: peak ~12 g rms (rise to +9.6 over 2.4 g baseline).
+        envelope[rise] = (t[rise] - 7.65) / (t0 - 7.65) * 9.6
+        envelope[plateau] = 9.6
+        envelope[decay] = 9.6 * (1.0 - (t[decay] - t1) / (8.45 - t1))
+    else:
+        # turbopump_vibration_rms_g: housing sensor, slightly attenuated (~7.5
+        # rise over 1.5 g baseline → peak ~9 g rms).
+        envelope[rise] = (t[rise] - 7.65) / (t0 - 7.65) * 7.5
+        envelope[plateau] = 7.5
+        envelope[decay] = 7.5 * (1.0 - (t[decay] - t1) / (8.45 - t1))
+    # Small jitter on top of the plateau so peak hovers at realistic values.
     envelope = envelope + rng.normal(0.0, 0.15, size=envelope.shape) * (envelope > 0)
     return baseline + envelope
 
@@ -273,8 +329,10 @@ def _generate_channel(
     noise[quiet_mask] *= 0.4
     val = base + noise
     val = _inject_anomaly(spec, run_idx, t, val, rng)
-    # TR-006 has a noticeably-clean fuel-pump vibration trace (post-bearing-replacement)
-    if spec.name == "vib_fuel_pump" and run_idx == 6:
+    # TR-006 has a noticeably-clean turbopump vibration trace (post-bearing-replacement).
+    # Applies to both primary (vib_fuel_pump) and dedicated housing monitor
+    # (turbopump_vibration_rms_g): the bearing fix resolves both signatures.
+    if spec.name in ("vib_fuel_pump", "turbopump_vibration_rms_g") and run_idx == 6:
         # Slightly tighter envelope: cap noise and trim baseline slightly.
         val = base * 0.95 + rng.normal(0.0, spec.noise_sigma * 0.6, size=t.shape)
     # Clip by unit

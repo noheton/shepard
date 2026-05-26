@@ -1,6 +1,7 @@
 package de.dlr.shepard.v2.importer.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,6 +24,8 @@ import org.mockito.MockitoAnnotations;
  *
  * <p>All Neo4j I/O is mocked.  Tests exercise acquire idempotency,
  * stale-heartbeat eviction, heartbeat, release, abandon, and cancel.
+ * A real {@link ImportDiagnosticsLog} (no external deps) is injected so that
+ * IMP-DIAG event emission is also verified.
  */
 class ImportLockServiceTest {
 
@@ -33,13 +36,18 @@ class ImportLockServiceTest {
   @Mock
   ImportLockDAO importLockDAO;
 
+  ImportDiagnosticsLog diagnosticsLog;
+
   ImportLockService service;
 
   @BeforeEach
   void setUp() {
     MockitoAnnotations.openMocks(this);
+    // Use a real (lightweight) diagnostics log — it has no external dependencies.
+    diagnosticsLog = new ImportDiagnosticsLog();
     service = new ImportLockService();
     service.importLockDAO = importLockDAO;
+    service.diagnosticsLog = diagnosticsLog;
 
     // Default: save returns argument with an appId
     when(importLockDAO.createOrUpdate(any(ImportLock.class)))
@@ -66,6 +74,12 @@ class ImportLockServiceTest {
     assertNotNull(result.getStartedAt());
     assertNotNull(result.getLastHeartbeatAt());
     verify(importLockDAO).createOrUpdate(result);
+
+    // IMP-DIAG: a WARMUP event must have been emitted for the new lock.
+    var events = diagnosticsLog.query(result.getLockId(), null, null);
+    assertFalse(events.isEmpty(), "acquire() must emit a WARMUP diagnostic event");
+    assertEquals("WARMUP", events.get(0).phase());
+    assertEquals("INFO",   events.get(0).level());
   }
 
   // ─── acquire: fresh lock exists → conflict ────────────────────────────────
@@ -168,6 +182,10 @@ class ImportLockServiceTest {
     assertNotNull(result);
     assertEquals("COMPLETED", result.getStatus());
     verify(importLockDAO).createOrUpdate(result);
+
+    // IMP-DIAG: a COMPLETE/INFO event must have been emitted.
+    var events = diagnosticsLog.query(LOCK_ID, "INFO", "COMPLETE");
+    assertFalse(events.isEmpty(), "release() must emit a COMPLETE INFO diagnostic event");
   }
 
   @Test
@@ -200,6 +218,11 @@ class ImportLockServiceTest {
     assertEquals("FAILED", result.getStatus());
     assertEquals("out of memory", result.getErrorMessage());
     verify(importLockDAO).createOrUpdate(result);
+
+    // IMP-DIAG: a COMPLETE/ERROR event must have been emitted.
+    var events = diagnosticsLog.query(LOCK_ID, "ERROR", "COMPLETE");
+    assertFalse(events.isEmpty(), "abandon() must emit a COMPLETE ERROR diagnostic event");
+    assertTrue(events.get(0).message().contains("out of memory"));
   }
 
   @Test

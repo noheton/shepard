@@ -248,4 +248,10 @@ public class Constants {
   public static final String SPATIAL_DATA_REFERENCES = "spatialDataReferences";
   public static final String SPATIAL_DATA_REFERENCE = "spatialDataReference";
   public static final String SPATIAL_DATA_REFERENCE_ID = "spatialDataReferenceId";
+
+  // TPL4 — annotation dual-write constants
+  /** Source tag applied to synthetic annotations backfilled from DataObject attributes. */
+  public static final String ANNOTATION_SOURCE_ATTRIBUTES_BACKFILL = "attributes-backfill";
+  /** Predicate IRI prefix for backfilled attribute annotations (TPL4 dual-write). */
+  public static final String TPL4_ATTRIBUTE_PREDICATE_PREFIX = "urn:shepard:attribute:";
 }

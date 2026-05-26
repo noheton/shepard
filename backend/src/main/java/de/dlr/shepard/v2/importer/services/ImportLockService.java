@@ -2,11 +2,13 @@ package de.dlr.shepard.v2.importer.services;
 
 import de.dlr.shepard.common.identifier.AppIdGenerator;
 import de.dlr.shepard.v2.importer.daos.ImportLockDAO;
+import de.dlr.shepard.v2.importer.entities.ImportDiagnosticEvent;
 import de.dlr.shepard.v2.importer.entities.ImportLock;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 /**
  * IMP-LOCK — business logic for the persistent import-in-progress lock.
@@ -40,6 +42,12 @@ import java.util.List;
  * <h2>Why not a single-row mutex</h2>
  * <p>Keeping all lock history (COMPLETED, FAILED, ABANDONED, …) lets operators reconstruct
  * the import timeline across restarts without consulting application logs.
+ *
+ * <h2>IMP-DIAG integration</h2>
+ * <p>Each lifecycle transition emits a structured event to {@link ImportDiagnosticsLog}
+ * so that the diagnostic REST surface can show the Java-side lock history even before
+ * the external Python importer pushes its own events.  The diagnostic {@code runId}
+ * equals the lock's {@code lockId}.
  */
 @ApplicationScoped
 public class ImportLockService {
@@ -47,8 +55,13 @@ public class ImportLockService {
   /** Heartbeat age above which a RUNNING lock is considered abandoned (5 minutes). */
   static final long STALE_HEARTBEAT_MS = 5L * 60L * 1_000L;
 
+  // Package-private to allow test injection without reflection
+  // (same pattern as all other service unit tests in this package).
   @Inject
   ImportLockDAO importLockDAO;
+
+  @Inject
+  ImportDiagnosticsLog diagnosticsLog;
 
   // ─── Public API ───────────────────────────────────────────────────────────
 
@@ -105,6 +118,19 @@ public class ImportLockService {
     ImportLock saved = importLockDAO.createOrUpdate(lock);
     Log.infof("IMP-LOCK: acquired lock %s for collection %s by %s",
       saved.getLockId(), targetCollectionAppId, startedBy);
+
+    // IMP-DIAG: emit WARMUP / import-started event.
+    diagnosticsLog.log(
+      saved.getLockId(),
+      ImportDiagnosticEvent.LEVEL_INFO,
+      ImportDiagnosticEvent.PHASE_WARMUP,
+      null,
+      "Import started",
+      Map.of(
+        "startedBy", startedBy,
+        "targetCollectionAppId", targetCollectionAppId
+      )
+    );
     return saved;
   }
 
@@ -153,6 +179,16 @@ public class ImportLockService {
     lock.setLastHeartbeatAt(System.currentTimeMillis());
     ImportLock saved = importLockDAO.createOrUpdate(lock);
     Log.infof("IMP-LOCK: lock %s released (COMPLETED)", lockId);
+
+    // IMP-DIAG: emit COMPLETE event.
+    diagnosticsLog.log(
+      lockId,
+      ImportDiagnosticEvent.LEVEL_INFO,
+      ImportDiagnosticEvent.PHASE_COMPLETE,
+      null,
+      "Import completed successfully",
+      Map.of()
+    );
     return saved;
   }
 
@@ -180,6 +216,17 @@ public class ImportLockService {
     lock.setLastHeartbeatAt(System.currentTimeMillis());
     ImportLock saved = importLockDAO.createOrUpdate(lock);
     Log.warnf("IMP-LOCK: lock %s abandoned (FAILED): %s", lockId, errorMessage);
+
+    // IMP-DIAG: emit COMPLETE-phase ERROR event so the failure is visible
+    // in diagnostics queries regardless of which phase the Python script was in.
+    diagnosticsLog.log(
+      lockId,
+      ImportDiagnosticEvent.LEVEL_ERROR,
+      ImportDiagnosticEvent.PHASE_COMPLETE,
+      null,
+      "Import failed: " + errorMessage,
+      Map.of("errorMessage", errorMessage)
+    );
     return saved;
   }
 
