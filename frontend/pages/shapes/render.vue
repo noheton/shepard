@@ -1,14 +1,23 @@
 <script setup lang="ts">
 /**
- * /shapes/render — VIEW_RECIPE render playground (TPL2b).
+ * /shapes/render — VIEW_RECIPE render playground (TPL2b / M1).
  *
  * Calls POST /v2/shapes/render → shows channel binding declarations
- * → fetches TS data per role → renders a 3D trace via Trace3DCanvas.
+ * → fetches TS data per role → dispatches to the renderer named in
+ * body.renderer:
+ *
+ *   "trace-3d" | "tresjs"  → <Trace3DView> (flat-array adapter + legend)
+ *   "table"                → inline <v-table> of channel values
+ *   (unknown)              → <PlaceholderImplStatus> noting the unsupported hint
  *
  * Beta: bindings come back status=DECLARED (no live resolution).
  * User supplies the TS container ID to complete the pipeline until TPL2c ships.
+ *
+ * Design: aidocs/platform/83-tpl1-tpl2-shapes-templates-views.md §Frontend dispatch
  */
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
+import type { Trace3DColorScheme } from "~/components/container/timeseries/Trace3DView.vue";
+import Trace3DView from "~/components/container/timeseries/Trace3DView.vue";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
 useHead({ title: "Shape render playground | shepard" });
@@ -254,6 +263,35 @@ async function renderTrace() {
 
 const colormapOptions: ColormapName[] = ["inferno", "viridis", "plasma"];
 
+// ── renderer dispatch helpers ─────────────────────────────────────────────────
+
+/** Normalise the renderer hint to a canonical token for template branching. */
+const rendererKind = computed<"trace-3d" | "table" | "unknown">(() => {
+  const r = renderer.value?.toLowerCase() ?? "";
+  if (r === "trace-3d" || r === "tresjs") return "trace-3d";
+  if (r === "table")                       return "table";
+  return "unknown";
+});
+
+/**
+ * Maps the ColormapName selected in the colormap picker to
+ * Trace3DColorScheme understood by Trace3DView.
+ * Trace3DView only accepts "heat" | "cool" | "viridis".
+ */
+const trace3DColorScheme = computed<Trace3DColorScheme>(() => {
+  switch (colormapName.value) {
+    case "viridis": return "viridis";
+    case "plasma":  return "heat";   // closest heat-family map
+    default:        return "heat";
+  }
+});
+
+/** Flat arrays extracted from tracePoints for Trace3DView. */
+const xData     = computed(() => tracePoints.value.map(p => p.x));
+const yData     = computed(() => tracePoints.value.map(p => p.y));
+const zData     = computed(() => tracePoints.value.map(p => p.z));
+const valueData = computed(() => tracePoints.value.map(p => p.value));
+
 const canRender = computed(() =>
   bindings.value.some(b => b.role === "x" && b.parsed) &&
   bindings.value.some(b => b.role === "y" && b.parsed) &&
@@ -459,18 +497,80 @@ onMounted(() => {
         <pre class="text-caption">{{ renderError }}</pre>
       </v-alert>
 
-      <!-- ── 3D canvas ───────────────────────────────────────────────────── -->
-      <ClientOnly v-if="tracePoints.length > 0">
-        <Trace3DCanvas
-          :points="tracePoints"
-          :colormap="colormapName"
-          :label="valueLabel"
-          :brush-range="brushRange"
-        />
-        <template #fallback>
-          <v-skeleton-loader type="image" height="500" />
-        </template>
-      </ClientOnly>
+      <!-- ── renderer dispatch ──────────────────────────────────────────── -->
+      <!--
+        Branch on renderer hint from POST /v2/shapes/render.
+        Design: aidocs/platform/83 §Frontend dispatch pattern.
+      -->
+      <template v-if="tracePoints.length > 0">
+
+        <!-- trace-3d / tresjs → Trace3DView (flat-array adapter + color-bar) -->
+        <ClientOnly v-if="rendererKind === 'trace-3d'">
+          <Trace3DView
+            :x-data="xData"
+            :y-data="yData"
+            :z-data="zData"
+            :value-data="valueData"
+            :value-label="valueLabel"
+            :color-scheme="trace3DColorScheme"
+          />
+          <template #fallback>
+            <v-skeleton-loader type="image" height="500" />
+          </template>
+        </ClientOnly>
+
+        <!-- table → inline binding-values table -->
+        <v-card v-else-if="rendererKind === 'table'" variant="outlined" class="mt-2">
+          <v-card-title class="text-subtitle-2 d-flex align-center ga-1">
+            <v-icon size="small">mdi-table</v-icon>
+            Channel values — table renderer
+          </v-card-title>
+          <v-table density="compact">
+            <thead>
+              <tr>
+                <th>role</th>
+                <th>x (first)</th>
+                <th>y (first)</th>
+                <th>z (first)</th>
+                <th>value (first)</th>
+                <th>points</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-caption">all roles</td>
+                <td class="text-caption">{{ xData[0]?.toFixed(4) ?? "—" }}</td>
+                <td class="text-caption">{{ yData[0]?.toFixed(4) ?? "—" }}</td>
+                <td class="text-caption">{{ zData[0]?.toFixed(4) ?? "—" }}</td>
+                <td class="text-caption">{{ valueData[0]?.toFixed(4) ?? "—" }}</td>
+                <td class="text-caption">{{ tracePoints.length }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </v-card>
+
+        <!-- unknown renderer → placeholder with hint -->
+        <v-alert
+          v-else
+          type="warning"
+          variant="tonal"
+          class="mt-2"
+          density="compact"
+        >
+          <strong>Unsupported renderer: <code>{{ renderer ?? "(none)" }}</code></strong>
+          — {{ tracePoints.length }} points were fetched but no frontend component
+          handles this renderer hint yet.
+          Supported renderers: <code>trace-3d</code>, <code>tresjs</code>, <code>table</code>.
+          <br />
+          <span class="text-caption text-medium-emphasis">
+            To add a new renderer: implement a Vue component and add a dispatch
+            branch in <code>frontend/pages/shapes/render.vue</code> →
+            <code>rendererKind</code> computed +
+            the template <code>v-if / v-else-if</code> tree.
+          </span>
+        </v-alert>
+
+      </template>
 
       <!-- ── time brush ─────────────────────────────────────────────────── -->
       <v-card v-if="tracePoints.length > 0" variant="outlined" class="mt-3 px-4 pt-3 pb-2">

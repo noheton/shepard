@@ -32,8 +32,8 @@ section and the `upgrade-overlay` section.
 |---|---|
 | `fragment` | 39 |
 | `concept` | 18 |
-| `idea` | 10 |
-| `feature-defined` | 89 |
+| `idea` | 9 |
+| `feature-defined` | 90 |
 | `audited-by-personas` | 71 |
 | `feedback-implemented` | 1 |
 | `tests-implemented` | 4 |
@@ -118,7 +118,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/workflows/54-templates-as-first-class-entity.md`](workflows/54-templates-as-first-class-entity.md) | Templates as a First-Class Entity — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/55-provenance-and-activity-overhaul.md`](workflows/55-provenance-and-activity-overhaul.md) | Provenance and Activity Overhaul — Design | 2026-05-23 | 2026-05-26 |
 
-## idea (10)
+## idea (9)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -127,13 +127,12 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/platform/106-requirements-traceability.md`](platform/106-requirements-traceability.md) | 106 — Requirements traceability — research direction | 2026-05-23 | 2026-05-23 |
 | [`aidocs/platform/68-plugin-vs-core-overview.md`](platform/68-plugin-vs-core-overview.md) | 68 — Plugin-vs-core architecture overview | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI Opportunities — Traditional ML + LLM Integration | 2026-05-23 | 2026-05-23 |
-| [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/101-diva-project-context.md`](strategy/101-diva-project-context.md) | 101 — DIVA: Drone Integration via AAS (project context) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/75-dfg-eresearch-funding.md`](strategy/75-dfg-eresearch-funding.md) | aidocs/75 — DFG e-Research-Technologien: Antragsfähigkeit und Konzeptskizze | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/76-shepard-users-and-citations.md`](strategy/76-shepard-users-and-citations.md) | aidocs/76 — shepard: Known users, citations, and ecosystem | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/30-provenance-and-lineage-design.md`](workflows/30-provenance-and-lineage-design.md) | Provenance and Data Lineage — Design Exploration | 2026-05-23 | 2026-05-26 |
 
-## feature-defined (89)
+## feature-defined (90)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -203,6 +202,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/semantics/65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | 65 — Admin-configurable ontology pre-seeding (with custom-bundle support) | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/94-metadata4ing-integration-design.md`](semantics/94-metadata4ing-integration-design.md) | 94 — Deepening metadata4ing (m4i) integration into Shepard's semantic graph | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/96-upper-ontology-alignment.md`](semantics/96-upper-ontology-alignment.md) | 96 — Upper-ontology alignment (BFO 2020 + IOF Core + IAO + PROV-O) | 2026-05-23 | 2026-05-23 |
+| [`aidocs/semantics/97-tpl3-upper-ontology-bootstrap.md`](semantics/97-tpl3-upper-ontology-bootstrap.md) | 97 — TPL3 — Upper-ontology bootstrap migration + starter kit | 2026-05-26 | 2026-05-23 |
 | [`aidocs/semantics/fair4ml-fair4ai-fai2r-2026-05-23.md`](semantics/fair4ml-fair4ai-fai2r-2026-05-23.md) | FAIR4ML × FAIR for AI × f(ai)²r — comparative survey + alignment plan | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/100-shepard-bt-zlp-rollout-plan.md`](strategy/100-shepard-bt-zlp-rollout-plan.md) | Shepard rollout plan — BT / ZLP Augsburg cells | 2026-05-23 | 2026-05-23 |
 | [`aidocs/strategy/102-institute-youtube-profile.md`](strategy/102-institute-youtube-profile.md) | 102 — DLR Institute of Structures and Design: YouTube channel as vision + use-case source | 2026-05-23 | 2026-05-23 |
@@ -297,7 +297,7 @@ These files have no `stage:` field. Add one per the taxonomy in `aidocs/00-doc-s
 | [`aidocs/agent-findings/vis-plugin-survey-addendum-cad-fem.md`](agent-findings/vis-plugin-survey-addendum-cad-fem.md) | Visualization plugin survey — addendum: CAD + FEM | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/vis-plugin-survey.md`](agent-findings/vis-plugin-survey.md) | Visualization plugin survey | 2026-05-23 | 2026-05-23 |
 | [`aidocs/agent-findings/worktree-consolidation-triage-2026-05-23.md`](agent-findings/worktree-consolidation-triage-2026-05-23.md) | Worktree Consolidation Triage — 2026-05-23 | 2026-05-23 | 2026-05-26 |
-| [`aidocs/ai-policy/147-oecd-ai-alignment.md`](ai-policy/147-oecd-ai-alignment.md) | Shepard AI design × authoritative policy alignment — 9-source × 4-band matrix | 2026-05-26 | — |
+| [`aidocs/ai-policy/147-oecd-ai-alignment.md`](ai-policy/147-oecd-ai-alignment.md) | Shepard AI design × authoritative policy alignment — 9-source × 4-band matrix | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/94-log-store-sidecar-design.md`](integrations/94-log-store-sidecar-design.md) | 94 — Log-store-with-shape sidecar design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/95-shacl-templates-and-individuals.md`](semantics/95-shacl-templates-and-individuals.md) | 95 — SHACL templates, named individuals, and ontology-driven UI | 2026-05-23 | 2026-05-23 |
 | [`aidocs/semantics/98-shapes-views-and-process-model.md`](semantics/98-shapes-views-and-process-model.md) | 98 — Shapes, views, and the MFFD process model | 2026-05-23 | 2026-05-23 |
