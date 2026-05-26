@@ -180,7 +180,25 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- CLI: picocli annotations for shepard-admin video subcommands (VID1c) -->
+    <!--
+      VID1c — CLI side: the plugin contributes shepard-admin video subcommands
+      via the AdminCliCommandProvider SPI in de.dlr.shepard.cli.plugin.
+      The CLI and picocli are both provided (the shepard-admin.jar bundles them).
+      Self-exclusion keeps the build acyclic when the CLI's with-plugins profile
+      pulls this plugin back in.
+    -->
+    <dependency>
+      <groupId>de.dlr.shepard</groupId>
+      <artifactId>shepard-admin</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>de.dlr.shepard.plugins</groupId>
+          <artifactId>shepard-plugin-video</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
