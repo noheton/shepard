@@ -110,6 +110,7 @@ build/
 
 # Claude Code agent worktrees and local session state
 .claude/
+.claire/
 
 # Maven build output
 **/target/
