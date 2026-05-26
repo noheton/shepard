@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| R4-pending | 2026-05-26 | doc | 8k | 3k | 1.42 | 0 | 0 | 1.42 | 0.52 | LOW | docs(data): R4 — NovaCrate RO-Crate evaluation verdict |
 | EXP1o-pending | 2026-05-26 | code | 30k | 10k | 4.55 | 0 | 0 | 4.55 | 1.65 | LOW | refactor(backend): EXP1o — ExportService strategy pattern for payload-kind dispatch |
 | VIS-S2-pending | 2026-05-26 | doc | 5k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | LOW | docs(ops): VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc |
 | G1h-pending | 2026-05-26 | doc | 20k | 7k | 3.10 | 0 | 0 | 3.10 | 1.13 | LOW | docs(git): G1h — no-op investigation; short-circuit not possible for GitHub adapter |

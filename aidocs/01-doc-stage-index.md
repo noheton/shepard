@@ -31,7 +31,7 @@ section and the `upgrade-overlay` section.
 | stage | count |
 |---|---|
 | `fragment` | 39 |
-| `concept` | 20 |
+| `concept` | 21 |
 | `idea` | 9 |
 | `feature-defined` | 92 |
 | `audited-by-personas` | 71 |
@@ -40,7 +40,7 @@ section and the `upgrade-overlay` section.
 | `deployed` | 66 |
 | `decommissioned` | 49 |
 | `upgrade-vX:vY` (overlay) | 0 |
-| **total docs** | **351** |
+| **total docs** | **352** |
 | **UNTAGGED** | **0** |
 
 ## fragment (39)
@@ -87,7 +87,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/strategy/96-hokitep-zlp-extension-and-joint-usecase.md`](strategy/96-hokitep-zlp-extension-and-joint-usecase.md) | HoKiTeP — ZLP extension and joint use-case orchestration | 2026-05-23 | 2026-05-23 |
 | [`aidocs/workflows/31-rocrate-export-optimisation.md`](workflows/31-rocrate-export-optimisation.md) | 31 — RO-Crate Export Optimisation | 2026-05-23 | 2026-05-23 |
 
-## concept (20)
+## concept (21)
 
 | doc | title | last-stage-change | last-touched |
 |---|---|---|---|
@@ -97,6 +97,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/data/46-gridfs-to-s3-migration-runbook.md`](data/46-gridfs-to-s3-migration-runbook.md) | GridFS → S3 (Garage) Migration — Operator Runbook | 2026-05-26 | 2026-05-26 |
 | [`aidocs/data/50-experiment-orchestration.md`](data/50-experiment-orchestration.md) | Experiment Orchestration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/data/53-file-reference-rename-video-content.md`](data/53-file-reference-rename-video-content.md) | FileReference Rename + Video Payload Kind — Design | 2026-05-23 | 2026-05-23 |
+| [`aidocs/data/r4-novacrate-evaluation.md`](data/r4-novacrate-evaluation.md) | R4 — NovaCrate evaluation for RO-Crate metadata editing | 2026-05-26 | — |
 | [`aidocs/integrations/110-file-format-parser-plugin.md`](integrations/110-file-format-parser-plugin.md) | 110 — File-format parser plugin SPI | 2026-05-26 | 2026-05-26 |
 | [`aidocs/integrations/52-aas-backend-integration.md`](integrations/52-aas-backend-integration.md) | AAS Backend Integration — Design | 2026-05-23 | 2026-05-23 |
 | [`aidocs/integrations/60-shepard-edge.md`](integrations/60-shepard-edge.md) | shepard Edge — Concept Design | 2026-05-23 | 2026-05-23 |
