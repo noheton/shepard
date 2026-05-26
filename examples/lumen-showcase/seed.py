@@ -369,6 +369,33 @@ def reset(apis: Apis) -> None:
             _log("SKIP", name, f"delete failed: {str(exc)[:80]}")
 
 
+# ---------------------------------------------------------------------------
+# FAIR metadata constants — applied by best_effort_fair_metadata() after
+# all DataObjects exist.  Declared here so they are easy to adjust.
+
+FAIR_LICENSE = "CC-BY-4.0"
+"""SPDX license expression.  CC BY 4.0 suits synthetic showcase data that
+we want others to freely reuse; operators managing real institutional data
+should override with their actual license."""
+
+FAIR_ACCESS_RIGHTS_OPEN = "OPEN"
+"""Default access-rights value for openly available DataObjects."""
+
+FAIR_ACCESS_RIGHTS_RESTRICTED = "RESTRICTED"
+"""Access-rights value for the anomaly-investigation sub-tree (TR-004
+children) — demonstrates the RESTRICTED posture on sensitive in-flight
+data without requiring an actual embargo end-date."""
+
+FAIR_FUNDER = "DFG"
+"""Funding body attribute on the root Collection (illustrative; the LUMEN
+programme is DFG-relevant through its clean-propulsion mandate)."""
+
+FAIR_GRANT_ID = "EXC-2075"
+"""Grant identifier attribute on the root Collection (illustrative;
+EXC-2075 = SimTech Cluster of Excellence, used here purely to show the
+funder/grantId pattern — not the actual LUMEN grant number)."""
+
+
 def ensure_collection(apis: Apis) -> Collection:
     existing = _find_collection_by_name(apis, COLLECTION_NAME)
     if existing is not None:
@@ -380,7 +407,14 @@ def ensure_collection(apis: Apis) -> Collection:
         else:
             _log("SKIP", COLLECTION_NAME, "Collection", existing.id)
         return existing
-    coll = Collection(name=COLLECTION_NAME, description=COLLECTION_DESCRIPTION)
+    coll = Collection(
+        name=COLLECTION_NAME,
+        description=COLLECTION_DESCRIPTION,
+        attributes={
+            "funder": FAIR_FUNDER,
+            "grantId": FAIR_GRANT_ID,
+        },
+    )
     coll = apis.collection.create_collection(coll)
     perms = apis.collection.get_collection_permissions(coll.id)
     perms.permission_type = PermissionType.PUBLIC
@@ -1394,6 +1428,104 @@ def best_effort_git_references(
             _log("SKIP", f"{do.name}/{path}", f"GitReference create error: {str(exc)[:60]}")
 
 
+def best_effort_fair_metadata(
+    apis: Apis,
+    coll: Collection,
+    runs: dict[int, DataObject],
+    investigation: DataObject,
+) -> None:
+    """Stamp FAIR license + access-rights on the Collection and every DataObject.
+
+    FAIR5 — applied via PATCH /v2/collections/{appId} and
+    PATCH /v2/collections/{collAppId}/data-objects/{doAppId} so the metadata-
+    completeness widget scores 100/100 on the demo showcase.
+
+    - Collection: license=CC-BY-4.0, accessRights=OPEN (synthetic showcase)
+    - TR-001..TR-015: same
+    - Investigation sub-tree (under TR-004): accessRights=RESTRICTED to
+      demonstrate the restricted-data posture on sensitive in-flight findings
+    - Publications DataObject: license=CC-BY-4.0, accessRights=OPEN
+
+    Skips gracefully on any auth/network/not-deployed error.  Each PATCH is
+    individually best-effort; a failure on one DataObject does not block others.
+    """
+    import urllib.error as _ue
+    import urllib.request as _ur
+
+    host = apis.client.configuration.host.rstrip("/")
+    v2_base = _v2_base_from_host(host)
+    api_key = apis.client.configuration.api_key.get("apikey", "")
+    headers = {
+        "X-API-KEY": api_key,
+        "Content-Type": "application/merge-patch+json",
+        "Accept": "application/json",
+    }
+
+    def _patch(url: str, body: dict) -> bool:
+        """Issue an RFC 7396 PATCH; return True on success, False otherwise."""
+        try:
+            data = json.dumps(body).encode("utf-8")
+            req = _ur.Request(url, data=data, headers=headers, method="PATCH")
+            with _ur.urlopen(req, timeout=10):
+                return True
+        except _ue.HTTPError as e:
+            if e.code in (401, 403):
+                _log("SKIP", url, f"FAIR PATCH (auth: HTTP {e.code})")
+            elif e.code in (404, 501):
+                _log("SKIP", url, f"FAIR PATCH (not found / not deployed: HTTP {e.code})")
+            else:
+                _log("SKIP", url, f"FAIR PATCH HTTP {e.code}")
+            return False
+        except Exception as exc:
+            _log("SKIP", url, f"FAIR PATCH error: {str(exc)[:80]}")
+            return False
+
+    # 1. Collection — also refreshes funder/grantId attributes in case the
+    #    Collection was created before this seed version added them.
+    coll_app_id = _collection_app_id(coll, apis)
+    if not coll_app_id:
+        _log("SKIP", coll.name, "FAIR metadata (no collection appId — pre-L2d backend?)")
+        return
+
+    coll_url = f"{v2_base}/v2/collections/{coll_app_id}"
+    # NOTE: PATCH replaces the attributes map in full (RFC 7396 field-level merge).
+    # We include funder + grantId here so re-runs on collections created by an
+    # older seed version also pick them up.
+    if _patch(coll_url, {
+        "license": FAIR_LICENSE,
+        "accessRights": FAIR_ACCESS_RIGHTS_OPEN,
+        "attributes": {"funder": FAIR_FUNDER, "grantId": FAIR_GRANT_ID},
+    }):
+        _log("OK", coll.name, f"FAIR metadata (license={FAIR_LICENSE}, accessRights=OPEN)", coll_app_id)
+
+    # 2. TR-001..TR-015 — all openly licensed synthetic data.
+    ok_runs = 0
+    for n, run_do in runs.items():
+        do_app_id = _data_object_app_id(run_do, apis)
+        if not do_app_id:
+            continue
+        url = f"{v2_base}/v2/collections/{coll_app_id}/data-objects/{do_app_id}"
+        if _patch(url, {"license": FAIR_LICENSE, "accessRights": FAIR_ACCESS_RIGHTS_OPEN}):
+            ok_runs += 1
+    _log("OK", "TR-001..TR-015", f"FAIR metadata ({ok_runs}/{len(runs)} patched)")
+
+    # 3. Investigation sub-tree — RESTRICTED to demonstrate the posture.
+    inv_app_id = _data_object_app_id(investigation, apis)
+    if inv_app_id:
+        url = f"{v2_base}/v2/collections/{coll_app_id}/data-objects/{inv_app_id}"
+        if _patch(url, {"license": FAIR_LICENSE, "accessRights": FAIR_ACCESS_RIGHTS_RESTRICTED}):
+            _log("OK", investigation.name, "FAIR metadata (accessRights=RESTRICTED)", inv_app_id)
+
+    # 4. Publications DataObject — publicly available literature, OPEN.
+    pub_do = _find_child_data_object(apis, coll.id, "Publications", parent_id=None)
+    if pub_do is not None:
+        pub_app_id = _data_object_app_id(pub_do, apis)
+        if pub_app_id:
+            url = f"{v2_base}/v2/collections/{coll_app_id}/data-objects/{pub_app_id}"
+            if _patch(url, {"license": FAIR_LICENSE, "accessRights": FAIR_ACCESS_RIGHTS_OPEN}):
+                _log("OK", "Publications", "FAIR metadata (accessRights=OPEN)", pub_app_id)
+
+
 def best_effort_tag_collection_activities(apis: Apis, coll: Collection) -> None:
     """Generate provenance Activity records tagged with the collection's appId.
 
@@ -2102,6 +2234,12 @@ def main(argv: list[str] | None = None) -> int:
     # Publications DataObject + turbine template (best-effort).
     best_effort_publications(apis, coll, sc)
     best_effort_template(apis, coll)
+
+    # FAIR5 — stamp license + accessRights on Collection and all DataObjects.
+    # Runs after publications so the Publications DO exists when we PATCH it.
+    # Uses v2 PATCH (RFC 7396 merge-patch) so it is backward-compatible with
+    # older backends: 404/501 on the v2 endpoint is treated as a graceful SKIP.
+    best_effort_fair_metadata(apis, coll, runs, investigation)
 
     # Tag collection-level activities via v2 PATCH so the sparkline is non-empty.
     # The v1 API paths (numeric ids) produce targetAppId=null in ProvenanceCaptureFilter;
