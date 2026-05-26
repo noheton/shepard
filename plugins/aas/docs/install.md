@@ -48,13 +48,97 @@ standard image; drop-in operators rely on the filesystem scan).
 
 | Key | Default | Description |
 |---|---|---|
-| `shepard.plugins.aas.enabled` | `true` | Runtime toggle. `false` disables all AAS endpoints without removing the JAR. |
-| `shepard.aas.registry.url` | (none) | External IDTA AAS Registry base URL. Omit to disable registry sync. |
-| `shepard.aas.registry.api-key` | (none) | Bearer token for the registry. Omit for open registries. |
-| `shepard.aas.base-url` | (none) | Public URL of this shepard instance, embedded in Shell descriptor endpoints. |
+| `shepard.plugins.aas.enabled` | `true` | Plugin-level toggle. `false` disables all AAS endpoints without removing the JAR. |
+| `shepard.aas.enabled` | `false` | Deploy-time seed for the `:AasConfig.enabled` runtime field. Seeded once on first start; subsequent runtime changes use `PATCH /v2/admin/aas/config`. |
+| `shepard.aas.registry.url` | (none) | Deploy-time seed for the registry URL. Overridden at runtime via `PATCH /v2/admin/aas/config` with `{"registryUrl": "..."}`. |
+| `shepard.aas.registry.api-key` | (none) | Deploy-time seed for the registry Bearer token. Overridden at runtime via `PATCH /v2/admin/aas/config` with `{"registryApiKey": "..."}`. |
+| `shepard.aas.base-url` | (none) | Deploy-time seed for the public Shepard base URL. Overridden at runtime via `PATCH /v2/admin/aas/config` with `{"baseUrl": "..."}`. |
 
-All keys are deploy-time-only. A runtime-mutable `:AasPluginConfig` endpoint
-(`/v2/admin/aas/config`) is tracked as a follow-up (`AAS1-plugin-runtime`).
+**Runtime precedence:** the `:AasConfig` Neo4j singleton (seeded on first
+startup from the deploy-time defaults above) wins over deploy-time properties.
+Use `GET /v2/admin/aas/config` to read the live runtime value; use
+`PATCH /v2/admin/aas/config` to mutate fields without restarting.
+
+---
+
+## Admin runtime config (AAS1l)
+
+The AAS plugin exposes a runtime-mutable config singleton following the
+UH1a / N1c2 operator-knob pattern.
+
+### Read the current config
+
+```http
+GET /v2/admin/aas/config
+Authorization: Bearer <instance-admin token>
+```
+
+Example response:
+
+```json
+{
+  "enabled": true,
+  "registryUrl": "https://registry.example.dlr.de",
+  "apiKeyPresent": true,
+  "baseUrl": "https://shepard.example.dlr.de"
+}
+```
+
+Note: `apiKeyPresent` is a boolean — the raw registry API key is never
+returned. To check or rotate the key, `PATCH` with `{"registryApiKey": "new-key"}`.
+
+### Update config at runtime (RFC 7396 merge-patch)
+
+```http
+PATCH /v2/admin/aas/config
+Authorization: Bearer <instance-admin token>
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "registryUrl": "https://registry.example.dlr.de",
+  "baseUrl": "https://shepard.example.dlr.de"
+}
+```
+
+All fields are optional (RFC 7396 semantics — absent = leave unchanged).
+Setting a string field to `null` clears it. Setting `"registryApiKey": null`
+revokes the stored key (open registries need no auth).
+
+### CLI parity
+
+```bash
+# Read config
+shepard-admin aas config status
+
+# Enable the AAS integration
+shepard-admin aas config enable
+
+# Set registry URL
+shepard-admin aas config set-registry-url https://registry.example.dlr.de
+
+# Set base URL
+shepard-admin aas config set-base-url https://shepard.example.dlr.de
+
+# Set registry API key
+shepard-admin aas config set-registry-api-key <token>
+
+# Revoke registry API key
+shepard-admin aas config revoke-registry-api-key
+```
+
+All CLI commands support `--output={human,json}`, `--url`, and `--api-key`
+flags per the L1 baseline CLI pattern.
+
+### `:AasConfig` Neo4j fields
+
+| Field | Type | Description |
+|---|---|---|
+| `appId` | UUID v7 (unique) | Singleton identifier; constrained by V88 migration. |
+| `enabled` | boolean | Master toggle for the AAS integration. |
+| `registryUrl` | String (nullable) | IDTA AAS Registry base URL. |
+| `registryApiKey` | String (nullable) | Bearer token for the registry (never returned via GET). |
+| `baseUrl` | String (nullable) | Public Shepard URL for shell descriptor endpoints. |
 
 ---
 

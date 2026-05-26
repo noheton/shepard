@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.aas.services;
 
 import de.dlr.shepard.plugins.aas.daos.AasRegistrationDAO;
+import de.dlr.shepard.plugins.aas.entities.AasConfig;
 import de.dlr.shepard.plugins.aas.entities.AasRegistration;
 import de.dlr.shepard.plugins.aas.services.AasRegistryClient.RegistrationResult;
 import de.dlr.shepard.context.collection.daos.CollectionDAO;
@@ -38,6 +39,11 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * <p>The startup sync runs on a virtual thread so it does not block the Quarkus
  * readiness probe. Concurrent invocations are serialised by {@code synchronized}
  * on {@link #syncAll()}.
+ *
+ * <p>AAS1l: {@link #configService} provides runtime-mutable config values
+ * ({@code registryUrl}, {@code registryApiKey}, {@code baseUrl}) that override
+ * the deploy-time {@code @ConfigProperty} fields. When the service is not
+ * available (null, e.g. in unit tests), the deploy-time values are used.
  */
 @ApplicationScoped
 public class AasRegistryOutboxService {
@@ -58,6 +64,14 @@ public class AasRegistryOutboxService {
   @Inject
   RequestContextController requestContextController;
 
+  /**
+   * AAS1l: runtime-mutable config. When the :AasConfig singleton is available,
+   * its values take precedence over the deploy-time @ConfigProperty fallbacks.
+   * Null in unit tests that set the @ConfigProperty fields directly.
+   */
+  @Inject
+  AasConfigService configService;
+
   @ConfigProperty(name = "shepard.aas.registry.url")
   Optional<String> registryUrl;
 
@@ -68,10 +82,13 @@ public class AasRegistryOutboxService {
   Optional<String> baseUrl;
 
   void onStart(@Observes StartupEvent event) {
-    if (registryUrl.isEmpty() || registryUrl.get().isBlank()) {
+    // AAS1l: prefer runtime :AasConfig over deploy-time @ConfigProperty
+    Optional<String> effectiveUrl = effectiveRegistryUrl();
+    if (effectiveUrl.isEmpty() || effectiveUrl.get().isBlank()) {
       Log.debug("AAS1-reg: no registry URL configured; skipping startup sync");
       return;
     }
+    final String urlForLog = effectiveUrl.get();
     Thread.ofVirtual()
       .name("aas-registry-startup-sync")
       .start(() -> {
@@ -79,13 +96,72 @@ public class AasRegistryOutboxService {
         try {
           syncAll();
         } catch (RuntimeException e) {
-          Log.warnf(e, "AAS1-reg: startup sync failed; shells not registered at %s", registryUrl.get());
+          Log.warnf(e, "AAS1-reg: startup sync failed; shells not registered at %s", urlForLog);
         } finally {
           if (activated) {
             requestContextController.deactivate();
           }
         }
       });
+  }
+
+  /**
+   * AAS1l: resolve the effective registry URL, preferring the
+   * runtime-mutable :AasConfig singleton over the deploy-time
+   * @ConfigProperty fallback.
+   *
+   * <p>Null-safe — when {@code configService} is null (unit tests that
+   * inject the @ConfigProperty fields directly) the deploy-time
+   * Optional is returned unchanged.
+   */
+  Optional<String> effectiveRegistryUrl() {
+    if (configService != null) {
+      try {
+        AasConfig cfg = configService.current();
+        if (cfg.getRegistryUrl() != null && !cfg.getRegistryUrl().isBlank()) {
+          return Optional.of(cfg.getRegistryUrl());
+        }
+      } catch (Exception e) {
+        Log.debugf("AAS1l: could not read :AasConfig for registryUrl; using deploy-time config: %s", e.getMessage());
+      }
+    }
+    return registryUrl;
+  }
+
+  /**
+   * AAS1l: resolve the effective registry API key, preferring the
+   * runtime-mutable :AasConfig singleton over the deploy-time fallback.
+   */
+  Optional<String> effectiveRegistryApiKey() {
+    if (configService != null) {
+      try {
+        AasConfig cfg = configService.current();
+        if (cfg.getRegistryApiKey() != null && !cfg.getRegistryApiKey().isBlank()) {
+          return Optional.of(cfg.getRegistryApiKey());
+        }
+      } catch (Exception e) {
+        Log.debugf("AAS1l: could not read :AasConfig for registryApiKey; using deploy-time config: %s", e.getMessage());
+      }
+    }
+    return registryApiKey;
+  }
+
+  /**
+   * AAS1l: resolve the effective base URL, preferring the
+   * runtime-mutable :AasConfig singleton over the deploy-time fallback.
+   */
+  Optional<String> effectiveBaseUrl() {
+    if (configService != null) {
+      try {
+        AasConfig cfg = configService.current();
+        if (cfg.getBaseUrl() != null && !cfg.getBaseUrl().isBlank()) {
+          return Optional.of(cfg.getBaseUrl());
+        }
+      } catch (Exception e) {
+        Log.debugf("AAS1l: could not read :AasConfig for baseUrl; using deploy-time config: %s", e.getMessage());
+      }
+    }
+    return baseUrl;
   }
 
   /**
@@ -98,11 +174,12 @@ public class AasRegistryOutboxService {
    * @return count of shells successfully registered in this invocation
    */
   public synchronized int syncAll() {
-    if (registryUrl.isEmpty() || registryUrl.get().isBlank()) {
+    Optional<String> effectiveUrl = effectiveRegistryUrl();
+    if (effectiveUrl.isEmpty() || effectiveUrl.get().isBlank()) {
       Log.debug("AAS1-reg: syncAll() called with no registry URL configured; no-op");
       return 0;
     }
-    String url = registryUrl.get();
+    String url = effectiveUrl.get();
     seedPendingRows(url);
     return pushPendingAndFailed(url);
   }
@@ -154,7 +231,8 @@ public class AasRegistryOutboxService {
       reg.setLastAttemptAt(now);
       reg.setUpdatedAt(now);
 
-      RegistrationResult result = registryClient.register(url, registryApiKey, descriptor);
+      // AAS1l: use the runtime-mutable API key over the deploy-time fallback
+      RegistrationResult result = registryClient.register(url, effectiveRegistryApiKey(), descriptor);
       if (result.success()) {
         reg.setStatus(AasRegistration.Status.SYNCED);
         reg.setErrorMessage(null);
@@ -176,7 +254,7 @@ public class AasRegistryOutboxService {
    * <p>The {@code endpoints} list contains one entry for the AAS Repository
    * interface ({@code AAS-3.1}) pointing to
    * {@code {baseUrl}/v2/aas/shells/{percent-encoded shellId}}.
-   * When {@code shepard.aas.base-url} is not configured, the endpoint
+   * When no base URL is configured (deploy-time or runtime), the endpoint
    * list is empty — the registry stores the descriptor but clients
    * cannot resolve it until the operator sets the base URL.
    */
@@ -191,11 +269,13 @@ public class AasRegistryOutboxService {
   }
 
   private List<EndpointIO> buildEndpoints(String shellId) {
-    if (baseUrl.isEmpty() || baseUrl.get().isBlank()) {
+    // AAS1l: prefer runtime :AasConfig baseUrl over deploy-time @ConfigProperty
+    Optional<String> effectiveBase = effectiveBaseUrl();
+    if (effectiveBase.isEmpty() || effectiveBase.get().isBlank()) {
       return List.of();
     }
     String encoded = URLEncoder.encode(shellId, StandardCharsets.UTF_8);
-    String href = baseUrl.get().stripTrailing() + "/v2/aas/shells/" + encoded;
+    String href = effectiveBase.get().stripTrailing() + "/v2/aas/shells/" + encoded;
     var proto = new ProtocolInformationIO(href, ENDPOINT_PROTOCOL, ENDPOINT_PROTOCOL_VERSIONS);
     return List.of(new EndpointIO(AAS_INTERFACE, proto));
   }

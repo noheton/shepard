@@ -131,6 +131,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | PERF7 | 2026-05-26 | code | 25k | 8k | 2.90 | 5 | 2 | 9.90 | 3.59 | MEDIUM | perf(frontend): PERF7 — lazy channel preview via IntersectionObserver + in-flight dedup |
 | PERF6 | 2026-05-26 | code | 18k | 5k | 2.10 | 5 | 2 | 9.10 | 3.30 | MEDIUM | perf(frontend): PERF6 — singleton DataObject fetch across lineage + prov graphs |
 | KIP1l-pending | 2026-05-26 | code | 20k | 6k | 2.30 | 5 | 2 | 9.30 | 3.38 | MEDIUM | feat(kip): KIP1l — existing-publication confirmation on re-publish |
+| AAS1l-pending | 2026-05-26 | code | 35k | 14k | 5.75 | 20 | 5 | 30.75 | 11.17 | MEDIUM | feat(aas): AAS1l — admin-runtime config endpoint + CLI parity |
 | KIP1k-pending | 2026-05-26 | code | 40k | 15k | 6.30 | 20 | 5 | 31.30 | 11.36 | MEDIUM | feat(kip): KIP1k — publication-status badge on Collection + DataObject pages |
 | V1C1 | 2026-05-26 | feat | 120k | 18k | 12.6 | 20 | 5 | 37.6 | 13.65 | MEDIUM | feat(v1compat): V1C1 — suppressDeprecationHeaders Phase 2 runtime toggle |
 | UH1f-pending | 2026-05-26 | code | 10k | 4k | 1.65 | 20 | 5 | 26.65 | 9.68 | MEDIUM | feat(unhide): UH1f — instance-admin auth fallback on private-feed endpoint |
