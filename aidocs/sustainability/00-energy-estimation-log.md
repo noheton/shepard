@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| TEST1 | 2026-05-26 | refactor | 2k | 0.5k | 0.02 | 0 | 0 | 0.02 | 8 | LOW | refactor(backend): TEST1 — rename 7 Quarkus-bootstrapped tests to *QuarkusTest.java; remove explicit pom.xml excludes |
 | V14-V90-BUG148 | 2026-05-26 | code | 12k | 4k | 1.65 | 20 | 5 | 26.65 | 9.68 | MEDIUM | fix(backend): V14-WHERE-CLAUSE-TIGHTEN + BUG-148-DESIGN-ASSERT-TEST — V90 migration + anti-regression test |
 | Wave12a | 2026-05-26 | code | 20k | 6k | 2.30 | 0 | 0 | 2.30 | 0.84 | MEDIUM | feat(ux): Wave12a — sidebar superset fix + keyboard shortcut + collection page improvements |
 | UI-DEEP-LINK | 2026-05-26 | code | 8k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | MEDIUM | feat(frontend): UI-DEEP-LINK-TYPED-LISTS — /containers/[type] redirect shim |

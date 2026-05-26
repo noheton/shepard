@@ -35,7 +35,7 @@ import org.junit.jupiter.api.TestInstance;
 
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class TimeseriesReferenceMetricsServiceTest {
+public class TimeseriesReferenceMetricsServiceQuarkusTest {
 
   @Inject
   TimeseriesReferenceMetricsService metricsService;

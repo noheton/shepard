@@ -25,7 +25,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class TimeseriesServiceAggregationTest {
+public class TimeseriesServiceAggregationQuarkusTest {
 
   @InjectMock
   UserService userService;

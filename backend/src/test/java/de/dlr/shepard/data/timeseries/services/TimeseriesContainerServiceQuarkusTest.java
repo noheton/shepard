@@ -17,7 +17,7 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class TimeseriesContainerServiceTest {
+public class TimeseriesContainerServiceQuarkusTest {
 
   @InjectMock
   UserService userService;

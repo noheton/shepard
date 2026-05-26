@@ -31,7 +31,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class TimeseriesCsvServiceTest {
+public class TimeseriesCsvServiceQuarkusTest {
 
   @InjectMock
   UserService userService;

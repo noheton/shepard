@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 @QuarkusTest
-public class TimeseriesServiceTest {
+public class TimeseriesServiceQuarkusTest {
 
   @Inject
   TimeseriesService timeseriesService;

@@ -34,7 +34,7 @@ import org.mockito.Mockito;
 @QuarkusTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActivateRequestContext
-public class AnnotatableTimeseriesServiceTest {
+public class AnnotatableTimeseriesServiceQuarkusTest {
 
   @InjectMock
   SemanticAnnotationService semanticAnnotationService;

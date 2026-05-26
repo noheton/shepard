@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class LabJournalTest {
+public class LabJournalQuarkusTest {
 
   @Inject
   LabJournalEntryService labJournalEntryService;

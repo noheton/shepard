@@ -486,15 +486,8 @@
                  `*QuarkusTest.java` name-convention catches most;
                  the remainder are listed explicitly. Renaming the
                  latter to the *QuarkusTest convention is the
-                 follow-up cleanup. -->
+                 follow-up cleanup (done — TEST1 2026-05-26). -->
             <exclude>**/*QuarkusTest.java</exclude>
-            <exclude>**/labJournal/services/LabJournalTest.java</exclude>
-            <exclude>**/timeseries/services/TimeseriesCsvServiceTest.java</exclude>
-            <exclude>**/timeseries/services/TimeseriesContainerServiceTest.java</exclude>
-            <exclude>**/timeseries/services/TimeseriesServiceTest.java</exclude>
-            <exclude>**/timeseries/services/TimeseriesServiceAggregationTest.java</exclude>
-            <exclude>**/timeseriesreference/TimeseriesReferenceMetricsServiceTest.java</exclude>
-            <exclude>**/semantic/services/AnnotatableTimeseriesServiceTest.java</exclude>
           </excludes>
           <includes>
             <include>${include-in-unit-tests}</include>
