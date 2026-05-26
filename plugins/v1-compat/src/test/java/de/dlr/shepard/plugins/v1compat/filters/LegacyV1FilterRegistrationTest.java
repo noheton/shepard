@@ -2,68 +2,102 @@ package de.dlr.shepard.plugins.v1compat.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.quarkus.vertx.http.runtime.filters.Filters;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.ext.Provider;
+import jakarta.enterprise.event.Observes;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 /**
- * V1COMPAT.0 — regression test for the live-validation defect 1
- * (see {@code aidocs/agent-findings/v1-compat-live-validation.md}).
+ * V1COMPAT.0 — regression test that pins the Vert.x {@code @Observes Filters}
+ * registration pattern on both filter classes.
  *
- * <p>When the plugin JAR is loaded by the backend via
- * {@code quarkus.index-dependency.shepard-plugin-v1-compat.*}, Quarkus's
- * build-time bean-removal pass drops any {@code @Provider} class that
- * isn't also CDI-scoped (because the Arc container can't see a
- * reference path to it from the rest of the application's beans).
- * The symptom is silent: the filter class is present in the JAR,
- * {@code @Path} resources from the same JAR are scanned, but the
- * filter is never registered and request/response interception never
- * fires — so the deprecation headers and the 410 gate become dead code
- * on a live deploy.
+ * <p>Background: the symptom of the original defect is that filter classes
+ * from plugin JARs are silently absent at runtime — no error is thrown, the
+ * JAR is present, but the filter never fires. Two mechanisms were tried and
+ * both fail silently from plugin JARs:
  *
- * <p>This regression test pins the fix: both filters must carry
- * <b>both</b> {@link Provider} and {@link ApplicationScoped} as a
- * class-level annotation pair. If either is removed, the live deploy
- * silently regresses and this test fails fast in {@code mvn verify}.
+ * <ul>
+ *   <li>{@code @Provider ContainerRequestFilter} — processed by Quarkus's
+ *       build-time JAX-RS scanner which only covers the main application
+ *       JAR.</li>
+ *   <li>{@code @ServerRequestFilter} / {@code @ServerResponseFilter} —
+ *       also build-time scanned; same gap.</li>
+ * </ul>
  *
- * <p>Why this test exists (not just integration coverage): the
- * existing filter unit tests directly instantiate the filter class
- * with a test-seam constructor and call {@code filter()} — they
- * bypass CDI entirely and pass cleanly even when the JAR-load
- * registration is broken. Only an annotation-level pin catches the
- * regression at unit-test scope.
+ * <p>The fix: use Quarkus's Vert.x {@link Filters} CDI event. A method
+ * annotated with {@code void registerFilter(@Observes Filters filters)} in
+ * any {@code @ApplicationScoped} CDI bean — including beans from plugin JARs
+ * indexed via {@code quarkus.index-dependency.*} — is called at runtime when
+ * Quarkus fires the {@link Filters} event. CDI event observation is
+ * JAR-origin-agnostic.
+ *
+ * <p>This test pins the fix:
+ * <ul>
+ *   <li>Both filter classes must be {@link ApplicationScoped} CDI beans.</li>
+ *   <li>Both must have a method that accepts a single {@link Filters}
+ *       parameter annotated with {@link Observes} (i.e., a CDI observer
+ *       method for the Filters event).</li>
+ * </ul>
+ *
+ * <p>If either class loses {@code @ApplicationScoped} or the observer method,
+ * the live deploy silently regresses and this test fails fast in
+ * {@code mvn verify}.
  */
 class LegacyV1FilterRegistrationTest {
 
   @Test
-  void deprecationFilter_carriesProviderAndApplicationScoped() {
-    Class<?> cls = LegacyV1DeprecationFilter.class;
-    assertThat(cls.isAnnotationPresent(Provider.class))
-      .as("LegacyV1DeprecationFilter must be @Provider so JAX-RS picks it up")
-      .isTrue();
-    assertThat(cls.isAnnotationPresent(ApplicationScoped.class))
-      .as(
-        "LegacyV1DeprecationFilter must be @ApplicationScoped so Arc keeps " +
-        "the bean when the plugin JAR is loaded via index-dependency. " +
-        "Removing this annotation silently breaks the deprecation headers " +
-        "on live deploys (see v1-compat-live-validation.md, Verification 1)."
-      )
+  void gateFilter_isApplicationScopedCdiBean() {
+    assertThat(LegacyV1GateFilter.class.isAnnotationPresent(ApplicationScoped.class))
+      .as("LegacyV1GateFilter must be @ApplicationScoped so CDI includes it in bean scanning " +
+          "and the @Observes Filters method is invoked at runtime from the plugin JAR.")
       .isTrue();
   }
 
   @Test
-  void gateFilter_carriesProviderAndApplicationScoped() {
-    Class<?> cls = LegacyV1GateFilter.class;
-    assertThat(cls.isAnnotationPresent(Provider.class))
-      .as("LegacyV1GateFilter must be @Provider so JAX-RS picks it up")
+  void gateFilter_hasObservesFiltersMethod() {
+    assertThat(hasObservesFiltersMethod(LegacyV1GateFilter.class))
+      .as("LegacyV1GateFilter must have a void method with an @Observes Filters parameter. " +
+          "This is the ONLY filter registration mechanism that works from plugin JARs. " +
+          "Replacing this with @Provider, @ServerRequestFilter, or @Priority annotations " +
+          "silently breaks the 410 gate on live deploys (see v1-compat-live-validation.md).")
       .isTrue();
-    assertThat(cls.isAnnotationPresent(ApplicationScoped.class))
-      .as(
-        "LegacyV1GateFilter must be @ApplicationScoped so Arc keeps the bean " +
-        "when the plugin JAR is loaded via index-dependency. Removing this " +
-        "annotation silently breaks the 410 gate on live deploys (see " +
-        "v1-compat-live-validation.md, Verification 3)."
-      )
+  }
+
+  @Test
+  void deprecationFilter_isApplicationScopedCdiBean() {
+    assertThat(LegacyV1DeprecationFilter.class.isAnnotationPresent(ApplicationScoped.class))
+      .as("LegacyV1DeprecationFilter must be @ApplicationScoped so CDI keeps the bean.")
       .isTrue();
+  }
+
+  @Test
+  void deprecationFilter_hasObservesFiltersMethod() {
+    assertThat(hasObservesFiltersMethod(LegacyV1DeprecationFilter.class))
+      .as("LegacyV1DeprecationFilter must have a void method with an @Observes Filters parameter. " +
+          "Removing this silently breaks Deprecation/Link/X-Shepard-Legacy headers " +
+          "on live deploys (see v1-compat-live-validation.md).")
+      .isTrue();
+  }
+
+  // ─── helper ──────────────────────────────────────────────────────────────
+
+  /**
+   * Returns {@code true} if {@code clazz} declares a method whose first
+   * (and only) parameter is of type {@link Filters} and carries the
+   * {@link Observes} annotation — i.e., a valid CDI observer for the
+   * Quarkus Vert.x Filters event.
+   */
+  private static boolean hasObservesFiltersMethod(Class<?> clazz) {
+    for (Method m : clazz.getDeclaredMethods()) {
+      if (m.getParameterCount() != 1) continue;
+      if (!m.getParameterTypes()[0].equals(Filters.class)) continue;
+      Annotation[] paramAnnotations = m.getParameterAnnotations()[0];
+      for (Annotation a : paramAnnotations) {
+        if (a.annotationType().equals(Observes.class)) return true;
+      }
+    }
+    return false;
   }
 }

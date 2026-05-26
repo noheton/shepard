@@ -1,32 +1,31 @@
 package de.dlr.shepard.plugins.v1compat.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.core.UriInfo;
-import java.security.Principal;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * V1COMPAT.0 — covers the request-side instrumentation (counter
- * increment + first-hit dedup + write-method audit emission) and
- * the response-side header emission for
- * {@link LegacyV1DeprecationFilter}.
+ * V1COMPAT.0 — covers the instrumentation (counter increment + first-hit
+ * dedup + write-method audit emission) and the deprecation header emission
+ * for {@link LegacyV1DeprecationFilter}.
  *
- * <p>Both sides are load-bearing: the headers are how the frontend
- * banner knows the request flowed through v1; the counters are how
- * the {@code /v2/admin/legacy/v1/stats} endpoint shows operators
- * which clients are still on v1.
+ * <p>Uses Vert.x {@link RoutingContext} mocks — the filter is registered
+ * via {@code @Observes Filters}, not JAX-RS {@code @Provider}.
+ *
+ * <p><b>Principal note.</b> Because this filter runs before the JAX-RS
+ * JWTFilter, no {@code SecurityContext} is available. All v1 hits are
+ * recorded under the principal {@code "anonymous"} (Phase 1 behaviour).
  */
 class LegacyV1DeprecationFilterTest {
 
@@ -39,25 +38,32 @@ class LegacyV1DeprecationFilterTest {
     filter = new LegacyV1DeprecationFilter(stats);
   }
 
-  // ─── request side ────────────────────────────────────────────────────
+  // ─── stats recording ─────────────────────────────────────────────────
 
   @Test
-  void requestSide_v1Path_recordsHit() {
-    ContainerRequestContext request = mockRequest("shepard/api/collections/42", "GET", "alice");
-    filter.filter(request);
+  void v1Path_recordsHit() {
+    filter.handle(mockContext("/shepard/api/collections/42", "GET"));
 
     assertThat(stats.getTotalHits()).isEqualTo(1);
     assertThat(stats.snapshot().byEndpoint())
       .extracting(c -> c.pathPattern())
       .containsExactly("/shepard/api/collections");
-    assertThat(stats.snapshot().byPrincipal()).extracting(p -> p.principalSub()).containsExactly("alice");
   }
 
   @Test
-  void requestSide_v1Path_aggregatesByEndpointFamily() {
-    filter.filter(mockRequest("shepard/api/collections/1", "GET", "alice"));
-    filter.filter(mockRequest("shepard/api/collections/2", "GET", "alice"));
-    filter.filter(mockRequest("shepard/api/collections/42/dataObjects/7", "GET", "alice"));
+  void v1Path_principalAlwaysAnonymous() {
+    filter.handle(mockContext("/shepard/api/collections/42", "GET"));
+
+    assertThat(stats.snapshot().byPrincipal())
+      .extracting(p -> p.principalSub())
+      .containsExactly("anonymous");
+  }
+
+  @Test
+  void v1Path_aggregatesByEndpointFamily() {
+    filter.handle(mockContext("/shepard/api/collections/1", "GET"));
+    filter.handle(mockContext("/shepard/api/collections/2", "GET"));
+    filter.handle(mockContext("/shepard/api/collections/42/dataObjects/7", "GET"));
 
     assertThat(stats.snapshot().byEndpoint())
       .extracting(c -> c.pathPattern(), c -> c.hits())
@@ -65,95 +71,73 @@ class LegacyV1DeprecationFilterTest {
   }
 
   @Test
-  void requestSide_v2Path_isNoOp() {
-    filter.filter(mockRequest("v2/collections/abc", "GET", "alice"));
+  void v2Path_isNoOp() {
+    filter.handle(mockContext("/v2/collections/abc", "GET"));
     assertThat(stats.getTotalHits()).isZero();
   }
 
-  @Test
-  void requestSide_nullPrincipal_recordedAsAnonymous() {
-    filter.filter(mockRequest("shepard/api/healthz", "GET", null));
-    assertThat(stats.snapshot().byPrincipal()).extracting(p -> p.principalSub()).containsExactly("anonymous");
-  }
-
-  // ─── response side ────────────────────────────────────────────────────
+  // ─── deprecation headers ─────────────────────────────────────────────
 
   @Test
-  void responseSide_v1Path_emitsThreeHeaders() {
-    ContainerRequestContext request = mockRequest("shepard/api/collections", "GET", "alice");
-    ContainerResponseContext response = mock(ContainerResponseContext.class);
-    MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
-    when(response.getHeaders()).thenReturn(headers);
+  void v1Path_emitsThreeHeaders() {
+    RoutingContext rc = mockContext("/shepard/api/collections", "GET");
 
-    filter.filter(request, response);
+    filter.handle(rc);
 
-    assertThat(headers.getFirst("Deprecation")).isEqualTo("true");
-    assertThat(headers.getFirst("Link")).isEqualTo("</v2/>; rel=\"successor-version\"");
-    assertThat(headers.getFirst("X-Shepard-Legacy")).isEqualTo("true");
+    HttpServerResponse response = rc.response();
+    verify(response).putHeader("Deprecation", "true");
+    verify(response).putHeader("Link", "</v2/>; rel=\"successor-version\"");
+    verify(response).putHeader("X-Shepard-Legacy", "true");
   }
 
   @Test
-  void responseSide_v2Path_emitsNoHeaders() {
-    ContainerRequestContext request = mockRequest("v2/collections", "GET", "alice");
-    ContainerResponseContext response = mock(ContainerResponseContext.class);
-    MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
-    when(response.getHeaders()).thenReturn(headers);
+  void v2Path_emitsNoHeaders() {
+    RoutingContext rc = mockContext("/v2/collections", "GET");
 
-    filter.filter(request, response);
+    filter.handle(rc);
 
-    assertThat(headers).isEmpty();
-    verify(response, never()).getHeaders(); // never even reached
+    verify(rc.response(), never()).putHeader(anyString(), anyString());
+    verify(rc).next(); // still continues the chain for v2
   }
 
   @Test
-  void responseSide_putSingleSemantics_preventsDuplicates() {
-    ContainerRequestContext request = mockRequest("shepard/api/collections", "GET", "alice");
-    ContainerResponseContext response = mock(ContainerResponseContext.class);
-    MultivaluedMap<String, Object> headers = new MultivaluedHashMap<>();
-    when(response.getHeaders()).thenReturn(headers);
+  void v1Path_callsNextAfterSettingHeaders() {
+    RoutingContext rc = mockContext("/shepard/api/users/me", "GET");
 
-    filter.filter(request, response);
-    filter.filter(request, response); // double-fire
+    filter.handle(rc);
 
-    assertThat(headers.get("Deprecation")).hasSize(1);
-    assertThat(headers.get("Link")).hasSize(1);
-    assertThat(headers.get("X-Shepard-Legacy")).hasSize(1);
+    verify(rc).next();
   }
 
   // ─── path-pattern helper ─────────────────────────────────────────────
 
   @Test
   void pathPattern_extractsResourceFamily() {
-    assertThat(LegacyV1DeprecationFilter.pathPattern(mockRequest("shepard/api/collections", "GET", null)))
+    assertThat(LegacyV1DeprecationFilter.pathPattern("/shepard/api/collections"))
       .isEqualTo("/shepard/api/collections");
-    assertThat(LegacyV1DeprecationFilter.pathPattern(mockRequest("shepard/api/collections/42/dataObjects/7", "GET", null)))
+    assertThat(LegacyV1DeprecationFilter.pathPattern("/shepard/api/collections/42/dataObjects/7"))
       .isEqualTo("/shepard/api/collections");
-    assertThat(LegacyV1DeprecationFilter.pathPattern(mockRequest("shepard/api/users/me", "GET", null)))
+    assertThat(LegacyV1DeprecationFilter.pathPattern("/shepard/api/users/me"))
       .isEqualTo("/shepard/api/users");
-    assertThat(LegacyV1DeprecationFilter.pathPattern(mockRequest("shepard/api", "GET", null)))
+    assertThat(LegacyV1DeprecationFilter.pathPattern("/shepard/api"))
+      .isEqualTo("/shepard/api");
+    assertThat(LegacyV1DeprecationFilter.pathPattern("/shepard/api/"))
       .isEqualTo("/shepard/api");
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  //  Helpers
-  // ──────────────────────────────────────────────────────────────────────
+  // ─── helpers ─────────────────────────────────────────────────────────
 
-  private static ContainerRequestContext mockRequest(String path, String method, String principalName) {
-    ContainerRequestContext request = mock(ContainerRequestContext.class);
-    UriInfo uri = mock(UriInfo.class);
-    when(uri.getPath()).thenReturn(path);
-    when(request.getUriInfo()).thenReturn(uri);
-    when(request.getMethod()).thenReturn(method);
+  private static RoutingContext mockContext(String path, String methodName) {
+    HttpServerResponse response = mock(HttpServerResponse.class);
+    when(response.putHeader(anyString(), anyString())).thenReturn(response);
 
-    SecurityContext sc = mock(SecurityContext.class);
-    if (principalName != null) {
-      Principal principal = mock(Principal.class);
-      when(principal.getName()).thenReturn(principalName);
-      when(sc.getUserPrincipal()).thenReturn(principal);
-    } else {
-      when(sc.getUserPrincipal()).thenReturn(null);
-    }
-    when(request.getSecurityContext()).thenReturn(sc);
-    return request;
+    HttpServerRequest request = mock(HttpServerRequest.class);
+    when(request.method()).thenReturn(HttpMethod.valueOf(methodName));
+
+    RoutingContext rc = mock(RoutingContext.class);
+    when(rc.normalizedPath()).thenReturn(path);
+    when(rc.response()).thenReturn(response);
+    when(rc.request()).thenReturn(request);
+    return rc;
   }
 }

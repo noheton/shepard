@@ -3,65 +3,58 @@ package de.dlr.shepard.plugins.v1compat.filters;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
 import io.quarkus.logging.Log;
-import jakarta.annotation.Priority;
+import io.quarkus.vertx.http.runtime.filters.Filters;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.HttpMethod;
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.core.SecurityContext;
-import jakarta.ws.rs.ext.Provider;
 
 /**
- * V1COMPAT.0 — request + response filter that instruments every
+ * V1COMPAT.0 — Vert.x route filter that instruments every
  * {@code /shepard/api/...} request (when the v1 surface is on) per
  * the design's clarification 3 lean D (hybrid).
  *
- * <p>On every request:
+ * <p>On every v1 request (pre-JAX-RS processing):
  * <ol>
- *   <li>increment the in-memory counters
+ *   <li>Set three additive deprecation headers per CL1:
+ *       {@code Deprecation: true} + {@code Link: </v2/>; rel="successor-version"}
+ *       (RFC 8594) + {@code X-Shepard-Legacy: true}. These are set before
+ *       {@link RoutingContext#next()} so they survive into the final HTTP
+ *       response that RESTEasy Reactive writes.</li>
+ *   <li>Increment the in-memory counters
  *       ({@link LegacyV1StatsService#recordHit});</li>
- *   <li>WARN once per {@code (path, principal)} pair per process
- *       lifetime (deduplicated via
- *       {@link LegacyV1StatsService#checkAndMarkFirstHit}) so the
- *       high-rate MQTT collectors mentioned in
- *       {@code aidocs/103 R4} don't flood the log;</li>
- *   <li>for write methods (POST / PUT / PATCH / DELETE), emit one
- *       INFO-level audit line documenting the mutation — the
- *       durable {@code :Activity} audit trail PROV1a already
- *       captures the request via the existing pipeline, so this
- *       filter only adds a structured marker for grep-from-WARN
- *       audits.</li>
+ *   <li>WARN once per {@code path-pattern} per process lifetime (deduplicated
+ *       via {@link LegacyV1StatsService#checkAndMarkFirstHit}) so high-rate
+ *       collectors don't flood the log;</li>
+ *   <li>For write methods (POST / PUT / PATCH / DELETE), emit one INFO-level
+ *       audit line documenting the mutation.</li>
  * </ol>
  *
- * <p>On every response:
- * <ol>
- *   <li>add the three additive deprecation headers per CL1 (the
- *       header-strategy clarification): {@code Deprecation: true} +
- *       {@code Link: </v2/>; rel="successor-version"} (RFC 8594) +
- *       {@code X-Shepard-Legacy: true} (fork-specific marker the
- *       frontend banner watches).</li>
- * </ol>
+ * <p><b>Principal.</b> This filter runs at Vert.x level, strictly before
+ * the JAX-RS JWTFilter (which runs later in the request processing chain).
+ * No {@code SecurityContext} is available here. All v1 hits are recorded
+ * under the principal {@code "anonymous"} in Phase 1. Phase 2 enhancement:
+ * parse the {@code Authorization} header to extract the sub claim directly.
  *
- * <p><b>Priority.</b> {@code Priorities.AUTHENTICATION + 1} —
- * strictly AFTER {@code JWTFilter} (1000), so the {@link
- * SecurityContext} has been populated and the principal sub is
- * available for the per-{@code (path, sub)} dedup. Mirrors
- * {@code UserFilter}'s exact priority placement.
+ * <p><b>Priority.</b> Vert.x priority 190 — runs after the gate filter
+ * (200) and therefore only processes requests that the gate filter passed
+ * through (i.e., v1 is enabled). If the gate filter emitted 410 and did
+ * not call {@code rc.next()}, this filter is never invoked.
  *
- * <p>The 410-gate filter ({@link LegacyV1GateFilter}) runs even
- * earlier — at {@code AUTHENTICATION - 100}. When the surface is
- * gated off, the gate's {@code abortWith} short-circuits the
- * pipeline before this filter runs; the headers + counters apply
- * only to requests that get to the resource.
+ * <p><b>Registration.</b> Uses Quarkus's Vert.x {@link Filters} CDI event
+ * via {@code @Observes}. See {@link LegacyV1GateFilter} class javadoc for
+ * why {@code @Provider} and {@code @ServerRequestFilter} do not work from
+ * plugin JARs.
  */
-@Provider
 @ApplicationScoped
-@Priority(Priorities.AUTHENTICATION + 1)
-public class LegacyV1DeprecationFilter implements ContainerRequestFilter, ContainerResponseFilter {
+public class LegacyV1DeprecationFilter {
+
+  /**
+   * Vert.x filter priority. Lower than the gate filter (200) so this only
+   * runs when the gate passed the request through.
+   */
+  static final int DEPRECATION_PRIORITY = 190;
 
   @Inject
   LegacyV1StatsService stats;
@@ -74,51 +67,54 @@ public class LegacyV1DeprecationFilter implements ContainerRequestFilter, Contai
     this.stats = stats;
   }
 
-  @Override
-  public void filter(ContainerRequestContext request) {
-    if (!LegacyV1GateFilter.isV1Path(request)) return;
-
-    String pattern = pathPattern(request);
-    String principal = principalSub(request);
-    stats.recordHit(pattern, principal);
-
-    if (stats.checkAndMarkFirstHit(pattern, principal)) {
-      Log.warnf(
-        "V1COMPAT.0: first v1 hit this process by principal '%s' on path-pattern '%s'. " +
-        "The /shepard/api/... surface is deprecated; migrate to /v2/. " +
-        "See /v2/admin/legacy/v1/stats for the full breakdown.",
-        principal,
-        pattern
-      );
-    }
-
-    if (isWriteMethod(request.getMethod())) {
-      // PROV1a's ProvenanceCaptureFilter persists the durable :Activity
-      // row; this INFO line is the human-readable audit marker that
-      // operators grep when investigating "who wrote what via v1
-      // after we declared v1 deprecated". Reads (GET) are silent
-      // here per the design's lean D (counters only, no audit).
-      Log.infof(
-        "V1COMPAT.0 WRITE: principal='%s' method=%s path='%s' pattern='%s'",
-        principal,
-        request.getMethod(),
-        request.getUriInfo() == null ? "" : request.getUriInfo().getPath(),
-        pattern
-      );
-    }
+  void registerFilter(@Observes Filters filters) {
+    filters.register(this::handle, DEPRECATION_PRIORITY);
+    Log.debugf("V1COMPAT.0: LegacyV1DeprecationFilter registered at Vert.x priority %d", DEPRECATION_PRIORITY);
   }
 
-  @Override
-  public void filter(ContainerRequestContext request, ContainerResponseContext response) {
-    if (!LegacyV1GateFilter.isV1Path(request)) return;
-    if (response == null || response.getHeaders() == null) return;
-    // putSingle (not add) so a double-fire of the filter — e.g.
-    // through Quarkus's internal forwarding — doesn't produce
-    // duplicate headers. Per RFC 8594 §3 / §4 a single value per
-    // header is the correct shape.
-    response.getHeaders().putSingle("Deprecation", "true");
-    response.getHeaders().putSingle("Link", "</v2/>; rel=\"successor-version\"");
-    response.getHeaders().putSingle("X-Shepard-Legacy", "true");
+  void handle(RoutingContext rc) {
+    String path = rc.normalizedPath();
+    if (!LegacyV1GateFilter.isV1Path(path)) {
+      rc.next();
+      return;
+    }
+
+    // Set deprecation headers before passing to the next handler.
+    // Vert.x putHeader semantics replace any existing value, so a double-fire
+    // of this filter (e.g. internal forwarding) never produces duplicate headers.
+    // Per RFC 8594 §3/§4 a single value per header is the correct shape.
+    rc.response()
+      .putHeader("Deprecation", "true")
+      .putHeader("Link", "</v2/>; rel=\"successor-version\"")
+      .putHeader("X-Shepard-Legacy", "true");
+
+    // Stats and audit logging. This filter runs before JWTFilter (JAX-RS layer),
+    // so SecurityContext is not available and the principal is always "anonymous".
+    String pattern = pathPattern(path);
+    stats.recordHit(pattern, "anonymous");
+
+    if (stats.checkAndMarkFirstHit(pattern, "anonymous")) {
+      Log.warnf(
+        "V1COMPAT.0: first v1 hit this process on path-pattern '%s'. " +
+        "The /shepard/api/... surface is deprecated; migrate to /v2/. " +
+        "See /v2/admin/legacy/v1/stats for the full breakdown.",
+        pattern
+      );
+    }
+
+    String method = rc.request().method().name();
+    if (isWriteMethod(method)) {
+      // PROV1a's ProvenanceCaptureFilter persists the durable :Activity row;
+      // this INFO line is the human-readable audit marker for grep audits.
+      Log.infof(
+        "V1COMPAT.0 WRITE: method=%s path='%s' pattern='%s'",
+        method,
+        path,
+        pattern
+      );
+    }
+
+    rc.next();
   }
 
   // ──────────────────────────────────────────────────────────────────────
@@ -126,46 +122,32 @@ public class LegacyV1DeprecationFilter implements ContainerRequestFilter, Contai
   // ──────────────────────────────────────────────────────────────────────
 
   /**
-   * Reduce a full v1 path to its endpoint family — the second path
-   * segment after {@code shepard/api/}. Used as the counter key so a
-   * thousand {@code /shepard/api/collections/42/dataObjects/7} hits
-   * roll up to one {@code /shepard/api/collections} row rather than
-   * a thousand distinct counters.
+   * Reduce a full v1 path to its endpoint family — the first path segment
+   * after {@code /shepard/api/}. Used as the counter key so a thousand
+   * {@code /shepard/api/collections/42/dataObjects/7} hits roll up to one
+   * {@code /shepard/api/collections} row.
+   *
+   * <p>Expects a Vert.x normalized path (WITH leading slash).
    *
    * <p>Examples:
    * <ul>
-   *   <li>{@code shepard/api/collections} → {@code /shepard/api/collections}</li>
-   *   <li>{@code shepard/api/collections/42/dataObjects/7} → {@code /shepard/api/collections}</li>
-   *   <li>{@code shepard/api/users/me} → {@code /shepard/api/users}</li>
-   *   <li>{@code shepard/api} (bare) → {@code /shepard/api}</li>
+   *   <li>{@code /shepard/api/collections} → {@code /shepard/api/collections}</li>
+   *   <li>{@code /shepard/api/collections/42/dataObjects/7} → {@code /shepard/api/collections}</li>
+   *   <li>{@code /shepard/api/users/me} → {@code /shepard/api/users}</li>
+   *   <li>{@code /shepard/api} (bare) → {@code /shepard/api}</li>
    * </ul>
    */
-  static String pathPattern(ContainerRequestContext request) {
-    String prefix = Constants.SHEPARD_API; // "shepard/api"
-    String path = request.getUriInfo() == null ? "" : request.getUriInfo().getPath();
-    if (path == null || path.isBlank()) return "/" + prefix;
-    String trimmed = path.startsWith("/") ? path.substring(1) : path;
-    if (!trimmed.startsWith(prefix)) return "/" + trimmed; // shouldn't happen post-isV1Path
-    String tail = trimmed.length() > prefix.length() + 1 ? trimmed.substring(prefix.length() + 1) : "";
-    if (tail.isEmpty()) return "/" + prefix;
+  static String pathPattern(String path) {
+    String prefix = "/" + Constants.SHEPARD_API; // "/shepard/api"
+    if (path == null || path.isBlank()) return prefix;
+    if (!path.startsWith(prefix)) return path; // shouldn't happen post-isV1Path check
+    // path.length() <= prefix.length() + 1 covers both "/shepard/api" and "/shepard/api/"
+    if (path.length() <= prefix.length() + 1) return prefix;
+    String tail = path.substring(prefix.length() + 1); // skip "/shepard/api/"
+    if (tail.isEmpty()) return prefix;
     int slash = tail.indexOf('/');
     String family = slash < 0 ? tail : tail.substring(0, slash);
-    return "/" + prefix + "/" + family;
-  }
-
-  /**
-   * Resolve the principal sub for the per-{@code (path, sub)} dedup.
-   * Prefers the JWT/API-key sub claim; falls back to the JAX-RS
-   * {@link SecurityContext#getUserPrincipal()}; finally falls back
-   * to {@code "anonymous"}. We deliberately don't include the
-   * remote IP here — Phase 1 stats are per-principal, not per-IP.
-   */
-  static String principalSub(ContainerRequestContext request) {
-    SecurityContext sc = request.getSecurityContext();
-    if (sc != null && sc.getUserPrincipal() != null && sc.getUserPrincipal().getName() != null) {
-      return sc.getUserPrincipal().getName();
-    }
-    return "anonymous";
+    return prefix + "/" + family;
   }
 
   private static boolean isWriteMethod(String method) {

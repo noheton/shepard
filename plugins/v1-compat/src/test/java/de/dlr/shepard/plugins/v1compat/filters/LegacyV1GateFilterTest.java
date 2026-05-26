@@ -1,28 +1,30 @@
 package de.dlr.shepard.plugins.v1compat.filters;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import de.dlr.shepard.common.exceptions.ProblemJson;
-import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1ConfigService;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.ext.web.RoutingContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 /**
- * V1COMPAT.0 — load-bearing tests for the 410 gate filter. The
- * gate is what makes the operator's runtime flip of
- * {@code :LegacyV1Config.enabled=false} observable to callers; if
- * the wire shape is wrong or the path-detection is wrong, the
- * operator's gesture is silent and the deprecation lever is
- * effectively broken.
+ * V1COMPAT.0 — load-bearing tests for the 410 gate filter. The gate is
+ * what makes the operator's runtime flip of
+ * {@code :LegacyV1Config.enabled=false} observable to callers; if the
+ * wire shape is wrong or the path-detection is wrong, the operator's
+ * gesture is silent and the deprecation lever is effectively broken.
+ *
+ * <p>Uses Vert.x {@link RoutingContext} mocks — the filter is registered
+ * via {@code @Observes Filters} (not JAX-RS {@code @Provider}) so the
+ * handler receives a Vert.x routing context, not a JAX-RS request context.
  */
 class LegacyV1GateFilterTest {
 
@@ -36,121 +38,127 @@ class LegacyV1GateFilterTest {
   }
 
   @Test
-  void v1Path_enabledTrue_filterIsNoOp() {
+  void v1Path_enabledTrue_callsNext() {
     when(service.isEnabled()).thenReturn(true);
+    RoutingContext rc = mockContext("/shepard/api/collections");
 
-    ContainerRequestContext request = mockRequest("shepard/api/collections");
-    filter.filter(request);
+    filter.handle(rc);
 
-    verify(request, never()).abortWith(org.mockito.ArgumentMatchers.any());
+    verify(rc).next();
+    verify(rc.response(), never()).setStatusCode(anyInt());
   }
 
   @Test
   void v1Path_enabledFalse_emits410WithProblemJsonBody() {
     when(service.isEnabled()).thenReturn(false);
+    RoutingContext rc = mockContext("/shepard/api/collections/42");
 
-    ContainerRequestContext request = mockRequest("shepard/api/collections/42");
-    filter.filter(request);
+    filter.handle(rc);
 
-    ArgumentCaptor<Response> captor = ArgumentCaptor.forClass(Response.class);
-    verify(request).abortWith(captor.capture());
+    verify(rc, never()).next();
+    HttpServerResponse response = rc.response();
+    verify(response).setStatusCode(410);
+    verify(response).putHeader("Content-Type", "application/problem+json");
+    verify(response).putHeader("Deprecation", "true");
+    verify(response).putHeader("Link", "</v2/>; rel=\"successor-version\"");
+    verify(response).putHeader("X-Shepard-Legacy", "true");
 
-    Response response = captor.getValue();
-    assertThat(response.getStatus()).isEqualTo(Response.Status.GONE.getStatusCode());
-    assertThat(response.getHeaderString("Content-Type")).isEqualTo(Constants.APPLICATION_PROBLEM_JSON);
-    assertThat(response.getHeaderString("Deprecation")).isEqualTo("true");
-    assertThat(response.getHeaderString("Link")).isEqualTo("</v2/>; rel=\"successor-version\"");
-    assertThat(response.getHeaderString("X-Shepard-Legacy")).isEqualTo("true");
-
-    Object entity = response.getEntity();
-    assertThat(entity).isInstanceOf(ProblemJson.class);
-    ProblemJson body = (ProblemJson) entity;
-    assertThat(body.type()).isEqualTo(LegacyV1GateFilter.PROBLEM_TYPE_V1_DISABLED);
-    assertThat(body.title()).isEqualTo("Legacy v1 surface disabled");
-    assertThat(body.status()).isEqualTo(410);
-    assertThat(body.detail())
-      .contains("legacy /shepard/api/... surface is disabled")
-      .contains("Migrate to /v2/");
-    assertThat(body.instance()).isEqualTo("/shepard/api/collections/42");
+    ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+    verify(response).end(bodyCaptor.capture());
+    String body = bodyCaptor.getValue();
+    assertThat(body).contains("\"type\":\"" + LegacyV1GateFilter.PROBLEM_TYPE_V1_DISABLED + "\"");
+    assertThat(body).contains("\"title\":\"" + LegacyV1GateFilter.PROBLEM_TITLE + "\"");
+    assertThat(body).contains("\"status\":410");
+    assertThat(body).contains("\"detail\":\"" + LegacyV1GateFilter.PROBLEM_DETAIL + "\"");
+    assertThat(body).contains("/shepard/api/collections/42");
   }
 
   @Test
   void v2Path_filterIsNoOp_regardlessOfEnabled() {
     when(service.isEnabled()).thenReturn(false);
+    RoutingContext rc = mockContext("/v2/collections/abc");
 
-    ContainerRequestContext request = mockRequest("v2/collections/abc");
-    filter.filter(request);
+    filter.handle(rc);
 
-    verify(request, never()).abortWith(org.mockito.ArgumentMatchers.any());
-    // The service should not even be consulted for non-v1 paths
+    verify(rc).next();
+    verify(rc.response(), never()).setStatusCode(anyInt());
     verify(service, never()).isEnabled();
   }
 
   @Test
   void healthzPath_filterIsNoOp() {
     when(service.isEnabled()).thenReturn(false);
+    RoutingContext rc = mockContext("/healthz");
 
-    ContainerRequestContext request = mockRequest("healthz");
-    filter.filter(request);
+    filter.handle(rc);
 
-    verify(request, never()).abortWith(org.mockito.ArgumentMatchers.any());
+    verify(rc).next();
     verify(service, never()).isEnabled();
   }
 
   @Test
   void barePrefix_treatedAsV1Path() {
     when(service.isEnabled()).thenReturn(false);
+    RoutingContext rc = mockContext("/shepard/api");
 
-    // Edge case: an operator hitting the bare "/shepard/api" without
-    // a trailing slash — still an attempt against the v1 surface.
-    ContainerRequestContext request = mockRequest("shepard/api");
-    filter.filter(request);
+    filter.handle(rc);
 
-    verify(request).abortWith(org.mockito.ArgumentMatchers.any());
+    verify(rc.response()).setStatusCode(410);
+    verify(rc, never()).next();
   }
 
   @Test
   void unrelatedPrefix_treatedAsNonV1Path() {
     when(service.isEnabled()).thenReturn(false);
+    RoutingContext rc = mockContext("/v2/something/shepard/api/thing");
 
-    // A path that *contains* "shepard/api" but doesn't start with it
-    // must NOT be 410'd — defends against an accidental prefix match.
-    ContainerRequestContext request = mockRequest("v2/something/shepard/api/thing");
-    filter.filter(request);
+    filter.handle(rc);
 
-    verify(request, never()).abortWith(org.mockito.ArgumentMatchers.any());
+    verify(rc).next();
+    verify(rc.response(), never()).setStatusCode(anyInt());
   }
 
   @Test
-  void isV1Path_nullRequest_returnsFalse() {
+  void isV1Path_null_returnsFalse() {
     assertThat(LegacyV1GateFilter.isV1Path(null)).isFalse();
   }
 
   @Test
-  void isV1Path_nullUriInfo_returnsFalse() {
-    ContainerRequestContext request = mock(ContainerRequestContext.class);
-    when(request.getUriInfo()).thenReturn(null);
-    assertThat(LegacyV1GateFilter.isV1Path(request)).isFalse();
+  void isV1Path_emptyString_returnsFalse() {
+    assertThat(LegacyV1GateFilter.isV1Path("")).isFalse();
   }
 
   @Test
-  void isV1Path_nullPath_returnsFalse() {
-    ContainerRequestContext request = mock(ContainerRequestContext.class);
-    UriInfo uri = mock(UriInfo.class);
-    when(uri.getPath()).thenReturn(null);
-    when(request.getUriInfo()).thenReturn(uri);
-    assertThat(LegacyV1GateFilter.isV1Path(request)).isFalse();
+  void isV1Path_v1WithSegment_returnsTrue() {
+    assertThat(LegacyV1GateFilter.isV1Path("/shepard/api/collections")).isTrue();
   }
 
-  // ──────────────────────────────────────────────────────────────────────
-  //  Helpers
-  // ──────────────────────────────────────────────────────────────────────
+  @Test
+  void isV1Path_barePrefix_returnsTrue() {
+    assertThat(LegacyV1GateFilter.isV1Path("/shepard/api")).isTrue();
+  }
 
-  private static ContainerRequestContext mockRequest(String path) {
-    ContainerRequestContext request = mock(ContainerRequestContext.class);
-    UriInfo uri = mock(UriInfo.class);
-    when(uri.getPath()).thenReturn(path);
-    when(request.getUriInfo()).thenReturn(uri);
-    return request;
+  @Test
+  void isV1Path_v2Path_returnsFalse() {
+    assertThat(LegacyV1GateFilter.isV1Path("/v2/collections")).isFalse();
+  }
+
+  @Test
+  void isV1Path_containsV1PrefixButDoesntStartWith_returnsFalse() {
+    assertThat(LegacyV1GateFilter.isV1Path("/v2/something/shepard/api/thing")).isFalse();
+  }
+
+  // ─── helpers ─────────────────────────────────────────────────────────────
+
+  private static RoutingContext mockContext(String path) {
+    HttpServerResponse response = mock(HttpServerResponse.class);
+    // Builder-pattern stubs so chained calls work
+    when(response.setStatusCode(anyInt())).thenReturn(response);
+    when(response.putHeader(anyString(), anyString())).thenReturn(response);
+
+    RoutingContext rc = mock(RoutingContext.class);
+    when(rc.normalizedPath()).thenReturn(path);
+    when(rc.response()).thenReturn(response);
+    return rc;
   }
 }
