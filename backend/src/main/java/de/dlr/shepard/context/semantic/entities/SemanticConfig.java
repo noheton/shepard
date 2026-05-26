@@ -129,6 +129,22 @@ public class SemanticConfig implements HasId, HasAppId {
   @Property("suggestionModelId")
   private String suggestionModelId;
 
+  // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-013 — operator-configurable delete-policy for annotations.
+   * <ul>
+   *   <li>{@code "author-or-manager"} (default) — the annotation author OR any collection
+   *       manager may delete the annotation.</li>
+   *   <li>{@code "author-only"} — only the annotation author may delete; managers are blocked.</li>
+   *   <li>{@code "manager-only"} — only collection managers may delete; authors who lack
+   *       manager access are blocked.</li>
+   * </ul>
+   * Nullable; null is treated as {@code "author-or-manager"} (the default).
+   */
+  @Property("annotationDeletePolicy")
+  private String annotationDeletePolicy;
+
   @Override
   public String getUniqueId() {
     return id == null ? null : id.toString();

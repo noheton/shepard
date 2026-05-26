@@ -40,6 +40,15 @@ public class SemanticConfigIO {
   @Schema(description = "Identifier of the AI model used for annotation suggestions. Null = server default.", nullable = true)
   private String suggestionModelId;
 
+  // ─── SEMA-V6-013 fields ──────────────────────────────────────────────────
+
+  @Schema(
+    description = "SEMA-V6-013 — who may delete annotations: 'author-or-manager' (default), " +
+      "'author-only', or 'manager-only'. Null = default (author-or-manager).",
+    nullable = true
+  )
+  private String annotationDeletePolicy;
+
   /** Map from entity. */
   public static SemanticConfigIO from(SemanticConfig c) {
     SemanticConfigIO io = new SemanticConfigIO();
@@ -50,6 +59,7 @@ public class SemanticConfigIO {
     io.annotationMode         = c.getAnnotationMode();
     io.suggestionEnabled      = c.isSuggestionEnabled();
     io.suggestionModelId      = c.getSuggestionModelId();
+    io.annotationDeletePolicy = c.getAnnotationDeletePolicy();
     return io;
   }
 }
