@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| DOC-STAGE2-pending | 2026-05-26 | code | 30k | 10k | 4.55 | 0 | 0 | 4.55 | 1.65 | LOW | fix(ci): DOC-STAGE2 — pre-commit hook + CI step for doc-stage index drift |
 | PROV1k-pending | 2026-05-26 | code | 120k | 40k | 17.78 | 20 | 5 | 42.78 | 15.53 | MEDIUM | feat(prov): PROV1k — typed predecessor relationships (prov:wasRevisionOf / fair2r:repairs) |
 | A5c-pending | 2026-05-26 | code | 55k | 18k | 8.28 | 20 | 5 | 33.28 | 12.08 | MEDIUM | feat(hdf5): A5c — HdfReference per-DataObject anchor at dataset path |
 | V5-META-SURVEY | 2026-05-26 | research | 60k | 8k | 7.78 | 0 | 0 | 7.78 | 2.82 | LOW | docs(v5-survey): V5-METADATA-SURVEY — metadata enrichment opportunities from v5 OpenAPI surface |

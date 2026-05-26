@@ -1,0 +1,38 @@
+name: Doc-stage index check
+
+# Fails if:
+#  - aidocs/01-doc-stage-index.md is out of date (regenerated output differs
+#    from the file on disk)
+#  - any aidocs/**/*.md is missing a `stage:` YAML front-matter field
+#
+# Run on PRs and pushes that touch aidocs/ or the generator script.
+# Stdlib-only Python — no extra dependencies.
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - "aidocs/**"
+      - "scripts/regenerate-doc-stage-index.py"
+      - ".github/workflows/doc-stage-check.yml"
+  pull_request:
+    paths:
+      - "aidocs/**"
+      - "scripts/regenerate-doc-stage-index.py"
+      - ".github/workflows/doc-stage-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  doc-stage-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check doc-stage index currency
+        run: python3 scripts/regenerate-doc-stage-index.py --check

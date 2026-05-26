@@ -249,10 +249,16 @@ def render_index(rows: list[dict]) -> str:
     return "\n".join(parts).rstrip() + "\n"
 
 
+def check_missing_stages(rows: list[dict]) -> list[str]:
+    """Return a list of relative paths whose `stage:` field is missing."""
+    return [row["path"] for row in rows if "UNTAGGED" in row["stages"]]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
-                    help="Exit non-zero if the on-disk index doesn't match.")
+                    help="Exit non-zero if the on-disk index doesn't match "
+                         "or if any aidocs/*.md file is missing a stage: field.")
     ap.add_argument("--stats", action="store_true",
                     help="Print the stage histogram to stdout and exit.")
     args = ap.parse_args()
@@ -270,19 +276,28 @@ def main() -> int:
         print(f"  {'UNTAGGED':24s} {len(grouped['UNTAGGED']):4d}")
         return 0
 
+    # Always report missing-stage files regardless of --check or write mode.
+    missing = check_missing_stages(rows)
+    for path in missing:
+        print(f"Missing stage: field in: {path}", file=sys.stderr)
+
     rendered = render_index(rows)
 
     if args.check:
         existing = INDEX_PATH.read_text(encoding="utf-8") if INDEX_PATH.exists() else ""
-        if existing != rendered:
+        drift = existing != rendered
+        if drift:
             print(f"DRIFT: {INDEX_PATH} is out of date. Run without --check to update.",
                   file=sys.stderr)
+        if missing or drift:
             return 1
-        print(f"OK: {INDEX_PATH} matches generated output.")
+        print(f"OK: {INDEX_PATH} matches generated output. No missing stage: fields.")
         return 0
 
     INDEX_PATH.write_text(rendered, encoding="utf-8")
     print(f"Wrote {INDEX_PATH} ({len(rows)} docs).")
+    if missing:
+        return 1
     return 0
 
 
