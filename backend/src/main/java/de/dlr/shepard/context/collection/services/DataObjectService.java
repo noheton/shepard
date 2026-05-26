@@ -61,6 +61,9 @@ public class DataObjectService {
   @Inject
   CollectionWatcherService collectionWatcherService;
 
+  @Inject
+  AttributeAnnotationDualWriteService attributeAnnotationDualWriteService;
+
   /**
    * Creates a DataObject
    *
@@ -118,6 +121,9 @@ public class DataObjectService {
         collection.getId()
       );
     }
+
+    // TPL4: mirror legacy attributes as synthetic SemanticAnnotation nodes when toggle is on.
+    attributeAnnotationDualWriteService.backfillFromAttributes(created);
 
     return created;
   }
@@ -330,6 +336,10 @@ public class DataObjectService {
     old.setUpdatedBy(user);
     DataObject updated = dataObjectDAO.createOrUpdate(old);
     cutDeleted(updated);
+
+    // TPL4: refresh synthetic SemanticAnnotation nodes from updated attributes when toggle is on.
+    attributeAnnotationDualWriteService.backfillFromAttributes(updated);
+
     return updated;
   }
 
