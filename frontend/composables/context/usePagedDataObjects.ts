@@ -8,6 +8,8 @@ export interface PagedDataObjectsOptions {
   name: Ref<string>;
   page: Ref<number>;
   pageSize?: number;
+  /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
+  includeTimeBounds?: boolean;
 }
 
 export interface PagedDataObjectsResult {
@@ -32,6 +34,7 @@ export interface PagedDataObjectsResult {
 export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObjectsResult {
   const { collectionId, collectionAppId, name, page } = opts;
   const pageSize = opts.pageSize ?? 25;
+  const includeTimeBounds = opts.includeTimeBounds ?? false;
 
   const items = ref<DataObjectListItemV2[]>([]);
   const totalItems = ref<number | null>(null);
@@ -55,6 +58,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
           name: nameFilter,
           page: currentPage,
           size: pageSize,
+          include: includeTimeBounds ? 'time-bounds' : undefined,
         });
       } else {
         batch = (await v1Api.value.getAllDataObjects({

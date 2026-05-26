@@ -8,6 +8,8 @@ export interface ListDataObjectsV2Request {
   name?: string;
   page?: number;
   size?: number;
+  /** Comma-separated enrichment flags. Pass "time-bounds" to populate timeBoundsStart/End on each item. */
+  include?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export class DataObjectV2Api extends runtime.BaseAPI {
     if (requestParameters['name'] != null) queryParameters['name'] = requestParameters['name'];
     if (requestParameters['page'] != null) queryParameters['page'] = requestParameters['page'];
     if (requestParameters['size'] != null) queryParameters['size'] = requestParameters['size'];
+    if (requestParameters['include'] != null) queryParameters['include'] = requestParameters['include'];
 
     const headerParameters: runtime.HTTPHeaders = {};
     if (this.configuration && this.configuration.accessToken) {

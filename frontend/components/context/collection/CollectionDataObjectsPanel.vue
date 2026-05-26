@@ -40,6 +40,7 @@
           <th style="width: 1%; white-space: nowrap" title="References attached to this DataObject">Refs</th>
           <th style="width: 1%; white-space: nowrap" title="Direct children DataObjects">Children</th>
           <th style="width: 1%; white-space: nowrap" title="Incoming DataObjectReferences">Incoming</th>
+          <th v-if="anyTimeBounds" style="width: 140px; white-space: nowrap" title="Timeseries data coverage across collection timeline">Time span</th>
           <th style="width: 1%; white-space: nowrap">Created</th>
         </tr>
       </thead>
@@ -91,6 +92,24 @@
               <v-icon size="small">mdi-import</v-icon>
             </v-badge>
             <span v-else class="text-medium-emphasis">—</span>
+          </td>
+          <td v-if="anyTimeBounds" class="time-bar-cell">
+            <v-tooltip v-if="row.timeBoundsStart != null && row.timeBoundsEnd != null" :text="timeBoundsTooltip(row.timeBoundsStart, row.timeBoundsEnd)" location="top">
+              <template #activator="{ props: tp }">
+                <svg v-bind="tp" class="time-bar-svg" width="120" height="10" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="0" y="3" width="120" height="4" rx="2" fill="rgba(0,0,0,0.08)" />
+                  <rect
+                    :x="timeBoundsBarLeft(row.timeBoundsStart) * 120"
+                    y="3"
+                    :width="Math.max(3, timeBoundsBarWidth(row.timeBoundsStart, row.timeBoundsEnd) * 120)"
+                    height="4"
+                    rx="2"
+                    fill="rgb(var(--v-theme-primary))"
+                  />
+                </svg>
+              </template>
+            </v-tooltip>
+            <span v-else class="text-medium-emphasis" style="font-size: 11px">—</span>
           </td>
           <td class="text-no-wrap text-medium-emphasis" :title="row.createdAt.toISOString()">
             {{ formatRelative(row.createdAt) }}
@@ -161,6 +180,7 @@ const { items: rawItems, loading, hasMore } = usePagedDataObjects({
   name: serverName,
   page,
   pageSize: 25,
+  includeTimeBounds: true,
 });
 
 interface Row {
@@ -175,6 +195,8 @@ interface Row {
   childCount: number;
   incomingCount: number;
   createdAt: Date;
+  timeBoundsStart: number | null;
+  timeBoundsEnd: number | null;
 }
 
 const rows = computed<Row[]>(() =>
@@ -190,8 +212,43 @@ const rows = computed<Row[]>(() =>
     childCount: (d.childrenIds ?? []).length,
     incomingCount: (d.incomingIds ?? []).length,
     createdAt: d.createdAt instanceof Date ? d.createdAt : new Date(d.createdAt as unknown as string),
+    timeBoundsStart: d.timeBoundsStart ?? null,
+    timeBoundsEnd: d.timeBoundsEnd ?? null,
   })),
 );
+
+// Time-bounds derived values — null-safe
+const anyTimeBounds = computed(() => rows.value.some(r => r.timeBoundsStart != null));
+
+const globalTimeBoundsMin = computed<number | null>(() => {
+  const vals = rows.value.map(r => r.timeBoundsStart).filter((v): v is number => v != null);
+  return vals.length > 0 ? Math.min(...vals) : null;
+});
+const globalTimeBoundsMax = computed<number | null>(() => {
+  const vals = rows.value.map(r => r.timeBoundsEnd).filter((v): v is number => v != null);
+  return vals.length > 0 ? Math.max(...vals) : null;
+});
+
+function timeBoundsBarLeft(start: number): number {
+  const gMin = globalTimeBoundsMin.value;
+  const gMax = globalTimeBoundsMax.value;
+  if (gMin == null || gMax == null || gMax === gMin) return 0;
+  return (start - gMin) / (gMax - gMin);
+}
+
+function timeBoundsBarWidth(start: number, end: number): number {
+  const gMin = globalTimeBoundsMin.value;
+  const gMax = globalTimeBoundsMax.value;
+  if (gMin == null || gMax == null || gMax === gMin) return 1;
+  return (end - start) / (gMax - gMin);
+}
+
+function timeBoundsTooltip(startNs: number, endNs: number): string {
+  // nanoseconds → milliseconds for Date
+  const startMs = startNs / 1_000_000;
+  const endMs   = endNs   / 1_000_000;
+  return `${new Date(startMs).toLocaleString()} → ${new Date(endMs).toLocaleString()}`;
+}
 
 const pagedItems = computed<Row[]>(() => {
   if (!statusFilter.value) return rows.value;
@@ -238,5 +295,14 @@ function formatRelative(d: Date): string {
 }
 .reference-link:hover {
   text-decoration: underline;
+}
+.time-bar-cell {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  vertical-align: middle;
+}
+.time-bar-svg {
+  display: block;
+  cursor: default;
 }
 </style>
