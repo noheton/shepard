@@ -340,6 +340,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `c31fc636` | 2026-05-20 | code | 260k | 90k | 39.44 | 20 | 5 | 64.44 | 23.39 | LOW | feat: per-kind ref counts, anomaly detection fix, collection containers panel |
 | `878e3338` | 2026-05-20 | code | 16k | 4k | 2.00 | 20 | 5 | 27.00 | 9.80 | LOW | fix(UI): align collection page section headers with content edge |
 | `ee50a8f1` | 2026-05-20 | code | 45k | 15k | 6.67 | 20 | 5 | 31.67 | 11.50 | LOW | feat(UX): warn on expired session and prompt re-auth (#49) |
+| `dc43bfdc` | 2026-05-26 | code | 150k | 45k | 22.22 | 20 | 5 | 47.22 | 17.14 | LOW | feat(sema-v6): SEMA-V6-001/002/003 — SemanticAnnotation v6 columns, Vocab... |
 
 ---
 
@@ -427,4 +428,5 @@ following ship, the log gets re-grounded:
 | Date       | Change                                                                | By |
 |------------|-----------------------------------------------------------------------|----|
 | 2026-05-23 | Initial creation. Backfill 2026-05-20 → 2026-05-23 (214 commits).     | Claude Opus 4.7 (1M context) + Flo |
+| 2026-05-26 | Added `dc43bfdc` (SEMA-V6-001/002/003) entry.                         | Claude Sonnet 4.6 |
 
