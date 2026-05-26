@@ -3,12 +3,16 @@
 # dependencies = ["requests"]
 # ///
 #!/usr/bin/env python3
-"""mffd-ts-export.py — Export all timeseries + file references from DLR cube3.
+"""mffd-ts-export.py — Full export from a Shepard collection (DLR cube3).
 
-Traverses the AFP tapelaying collection (coll_id=48297, ~8000 DOs), fetches
-every TimeseriesReference and FileReference per DataObject, and downloads all
-payloads. Output is keyed by DataObject name so data can be associated after
-ID churn.
+Traverses every DataObject in the target collection(s) and saves:
+  • metadata.json       — full DO dict (attributes, parent, predecessors, …)
+  • ts/<ref>.csv        — ROW-format timeseries CSV per TimeseriesReference
+  • files/<name>        — raw payload per FileReference OID
+  • structured/<ref>.json — decoded payload per StructuredDataReference
+
+AFP tapelaying (coll_id=48297, ~8000 DOs) is the primary target.
+Bridge welding is opt-in via INCLUDE_BRIDGEWELDING=1.
 
 Usage (on DLR cube3 or any host with DLR intranet access):
     SOURCE_SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de \\
@@ -18,24 +22,24 @@ Usage (on DLR cube3 or any host with DLR intranet access):
     # Also include bridge welding:
     INCLUDE_BRIDGEWELDING=1 uv run python mffd-ts-export.py
 
-    # Skip file download (TS only):
-    SKIP_FILES=1 uv run python mffd-ts-export.py
-
-    # Skip TS download (files only):
-    SKIP_TS=1 uv run python mffd-ts-export.py
+    # Skip individual payload types:
+    SKIP_FILES=1 SKIP_TS=1 SKIP_STRUCTURED=1 uv run python mffd-ts-export.py
 
     # Resume an interrupted run — idempotent, skips existing non-empty files.
     uv run python mffd-ts-export.py
 
 Output layout:
     ts-export/
-    ├── manifest.json              ← DO name → refs + channel list
+    ├── manifest.json
     ├── tapelaying/
     │   └── <do_name>/
+    │       ├── metadata.json          ← full DataObject JSON (attrs, links)
     │       ├── ts/
     │       │   └── <ref_name>.csv     ← ROW-format timeseries CSV
-    │       └── files/
-    │           └── <filename>         ← raw file payload (name from ref)
+    │       ├── files/
+    │       │   └── <filename>         ← raw file payload (name from ref)
+    │       └── structured/
+    │           └── <ref_name>.json    ← decoded StructuredDataReference payload
     └── bridgewelding/
         └── ...
 """
@@ -53,8 +57,10 @@ import requests
 SOURCE_URL            = os.environ["SOURCE_SHEPARD_URL"].rstrip("/")
 SOURCE_KEY            = os.environ["SOURCE_SHEPARD_API_KEY"]
 INCLUDE_BRIDGEWELDING = os.environ.get("INCLUDE_BRIDGEWELDING", "").lower() in ("1", "true", "yes")
-SKIP_TS               = os.environ.get("SKIP_TS",    "").lower() in ("1", "true", "yes")
-SKIP_FILES            = os.environ.get("SKIP_FILES", "").lower() in ("1", "true", "yes")
+SKIP_TS               = os.environ.get("SKIP_TS",         "").lower() in ("1", "true", "yes")
+SKIP_FILES            = os.environ.get("SKIP_FILES",      "").lower() in ("1", "true", "yes")
+SKIP_STRUCTURED       = os.environ.get("SKIP_STRUCTURED", "").lower() in ("1", "true", "yes")
+SKIP_METADATA         = os.environ.get("SKIP_METADATA",   "").lower() in ("1", "true", "yes")
 
 # AFP tapelaying is the primary target (~8000 DOs, dataset/1-Tapelaying/mffd-tapelaying)
 COLLECTIONS: dict[str, int] = {
@@ -137,6 +143,11 @@ def file_refs_for(coll_id: int, do_id: int) -> list[dict]:
     return r.json() if r else []
 
 
+def structured_refs_for(coll_id: int, do_id: int) -> list[dict]:
+    r = _get(f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}/structuredDataReferences")
+    return r.json() if r else []
+
+
 def export_ts_csv(coll_id: int, do_id: int, ref_id: int) -> bytes | None:
     """Export timeseries reference as ROW-format CSV (preserves native sampling)."""
     r = _get(
@@ -180,6 +191,42 @@ def download_file_payload(coll_id: int, do_id: int, fref_id: int, oid: str, dest
     return True
 
 
+def download_structured_payload(coll_id: int, do_id: int, ref_id: int) -> list[dict] | None:
+    """Fetch StructuredDataReference payload. Returns list of {name, payload} dicts."""
+    r = _get(
+        f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+        f"/structuredDataReferences/{ref_id}/payload",
+        timeout=120,
+    )
+    if r is None:
+        return None
+
+    try:
+        items = r.json()
+    except Exception:
+        return None
+
+    if not items:
+        return None
+
+    # Each item: {structuredData: {name, ...}, payload: "<json-encoded-string>"}
+    # The payload field is a JSON-encoded string — decode the inner value.
+    result = []
+    for item in items:
+        name = (item.get("structuredData") or {}).get("name") or "unknown"
+        raw_payload = item.get("payload")
+        if raw_payload is None:
+            continue
+        # Decode inner JSON string if needed (Bug E: payload is double-encoded)
+        try:
+            decoded = json.loads(raw_payload) if isinstance(raw_payload, str) else raw_payload
+        except (json.JSONDecodeError, TypeError):
+            decoded = raw_payload
+        result.append({"name": name, "data": decoded})
+
+    return result if result else None
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def safe_name(s: str) -> str:
@@ -213,8 +260,9 @@ def main():
 
     totals = {
         "dos": 0,
-        "ts_exported": 0, "ts_skipped": 0, "ts_empty": 0,
-        "file_exported": 0, "file_skipped": 0, "file_empty": 0,
+        "ts_exported": 0,     "ts_skipped": 0,     "ts_empty": 0,
+        "file_exported": 0,   "file_skipped": 0,   "file_empty": 0,
+        "struct_exported": 0, "struct_skipped": 0, "struct_empty": 0,
     }
 
     for slug, coll_id in COLLECTIONS.items():
@@ -234,12 +282,22 @@ def main():
             do_count += 1
             totals["dos"] += 1
 
+            do_dir = coll_dir / do_name
             do_manifest = coll_manifest["dos"].setdefault(do_name, {
-                "do_id": do_id,
-                "do_name": do.get("name"),
-                "ts_refs": [],
-                "file_refs": [],
+                "do_id":     do_id,
+                "do_name":   do.get("name"),
+                "ts_refs":        [],
+                "file_refs":      [],
+                "structured_refs":[],
             })
+
+            # ── DataObject metadata ───────────────────────────────────────────
+            if not SKIP_METADATA:
+                meta_path = do_dir / "metadata.json"
+                if not meta_path.exists():
+                    do_dir.mkdir(parents=True, exist_ok=True)
+                    with meta_path.open("w") as f:
+                        json.dump(do, f, indent=2)
 
             # ── Timeseries ────────────────────────────────────────────────────
             if not SKIP_TS:
@@ -318,8 +376,8 @@ def main():
                     )
 
                     for oid, fname in entries:
-                        key      = f"{fref_id}:{oid}"
-                        dest     = files_dir / safe_name(fname)
+                        key  = f"{fref_id}:{oid}"
+                        dest = files_dir / safe_name(fname)
 
                         if dest.exists() and dest.stat().st_size > 0 and key in existing_file_keys:
                             totals["file_skipped"] += 1
@@ -347,6 +405,47 @@ def main():
                             existing_file_keys.add(key)
                         totals["file_exported"] += 1
 
+            # ── Structured data references ────────────────────────────────────
+            if not SKIP_STRUCTURED:
+                srefs = structured_refs_for(coll_id, do_id)
+                existing_sref_ids = {e["ref_id"] for e in do_manifest.get("structured_refs", [])}
+                struct_dir = coll_dir / do_name / "structured"
+
+                for sref in srefs:
+                    sref_id  = sref["id"]
+                    ref_name = safe_name(sref.get("name") or f"struct-{sref_id}")
+                    out_path = struct_dir / f"{ref_name}.json"
+
+                    if out_path.exists() and out_path.stat().st_size > 0 and sref_id in existing_sref_ids:
+                        totals["struct_skipped"] += 1
+                        continue
+
+                    print(f"  [struct] {do_name}/structured/{ref_name} ... ", end="", flush=True)
+                    payload = download_structured_payload(coll_id, do_id, sref_id)
+                    if payload is None:
+                        totals["struct_empty"] += 1
+                        print("empty", flush=True)
+                        continue
+
+                    struct_dir.mkdir(parents=True, exist_ok=True)
+                    with out_path.open("w") as f:
+                        json.dump(payload, f, indent=2)
+
+                    row_count = sum(
+                        len(p["data"]) if isinstance(p["data"], list) else 1
+                        for p in payload
+                    )
+                    print(f"{len(payload)} table(s), ~{row_count} rows", flush=True)
+
+                    if sref_id not in existing_sref_ids:
+                        do_manifest["structured_refs"].append({
+                            "ref_id":   sref_id,
+                            "ref_name": sref.get("name") or f"struct-{sref_id}",
+                            "file":     f"{slug}/{do_name}/structured/{ref_name}.json",
+                        })
+                        existing_sref_ids.add(sref_id)
+                    totals["struct_exported"] += 1
+
             # Persist manifest after every DO — survives interruption
             with manifest_path.open("w") as f:
                 json.dump(manifest, f, indent=2)
@@ -354,7 +453,9 @@ def main():
             if do_count % 100 == 0:
                 print(
                     f"  ... {do_count} DOs  "
-                    f"ts={totals['ts_exported']}  files={totals['file_exported']}",
+                    f"ts={totals['ts_exported']}  "
+                    f"files={totals['file_exported']}  "
+                    f"struct={totals['struct_exported']}",
                     flush=True,
                 )
 
@@ -378,6 +479,11 @@ Export complete
     exported     : {totals['file_exported']}
     skipped      : {totals['file_skipped']}  (already present)
     empty/error  : {totals['file_empty']}
+
+  Structured data
+    exported     : {totals['struct_exported']}
+    skipped      : {totals['struct_skipped']}  (already present)
+    empty        : {totals['struct_empty']}
 
   Manifest       : {manifest_path}
 {'='*64}
