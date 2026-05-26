@@ -104,6 +104,18 @@ public class ImportPlan implements HasAppId {
   @Property("warningsJson")
   private String warningsJson;
 
+  /**
+   * Full canonical manifest JSON string that was validated.
+   * Persisted in IMP2+ so the execute leg can deserialise and run the manifest
+   * without requiring the caller to re-submit it.
+   *
+   * <p>Plans validated before IMP2 was deployed have this field {@code null}.
+   * The execute endpoint treats a {@code null} value as a "pre-IMP2 plan"
+   * (plan sealing only added this field in migration V83) and rejects with 410.
+   */
+  @Property("manifestJson")
+  private String manifestJson;
+
   /** Testing helper. */
   public ImportPlan(long id) {
     this.id = id;
