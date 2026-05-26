@@ -134,8 +134,12 @@ Key observations:
 ### Gap 1: No `:Vocabulary` / `:Predicate` nodes (the empty UI cause)
 
 The frontend `/semantic/vocabularies` page calls `GET /v2/admin/semantic/ontologies`
-(N1c2 endpoint — returns `OntologyBundleListIO`). That endpoint **does work** (returns
-401 without auth, 200 with admin auth). However, the `OntologyBundleListIO` response
+(N1c2 endpoint — returns `OntologyBundleListIO`). That endpoint is **wired**
+(`SemanticAdminRest.java` line 209 confirms `@GET @Path("/ontologies")`); it returns
+401 without auth (verified). The 200-with-admin-auth path was not exercised directly
+due to a dev-stack OIDC `iss` mismatch (token `iss=https://shepard-auth.nuclide.systems/…`
+vs. backend expecting `http://shepard-auth.nuclide.systems:8082/…`).
+However, the `OntologyBundleListIO` response
 shape describes the n10s-loaded bundles by ID/title/enabled status — **not the structured
 `:Vocabulary` node tree**. Since the page renders the bundle list from this endpoint,
 it would show something if the user had instance-admin — but today non-admin users hit
