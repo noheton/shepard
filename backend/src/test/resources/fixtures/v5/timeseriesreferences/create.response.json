@@ -1,0 +1,22 @@
+{
+  "appId" : "<<ANY-STRING>>",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "dataObjectId" : "<<ANY-LONG>>",
+  "end" : "<<ANY-LONG>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "TimeseriesReferenceWireFixture",
+  "revision" : 1,
+  "start" : "<<ANY-LONG>>",
+  "timeseries" : [ {
+    "device" : "dev",
+    "field" : "field",
+    "location" : "loc",
+    "measurement" : "meas",
+    "symbolicName" : "symName"
+  } ],
+  "timeseriesContainerId" : "<<ANY-LONG>>",
+  "type" : "TimeseriesReference",
+  "updatedAt" : null,
+  "updatedBy" : null
+}

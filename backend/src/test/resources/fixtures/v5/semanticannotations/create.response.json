@@ -1,0 +1,12 @@
+{
+  "id" : "<<ANY-LONG>>",
+  "name" : "ingredient::Almond milk",
+  "numericValue" : null,
+  "propertyIRI" : "http://dbpedia.org/ontology/ingredient",
+  "propertyName" : "ingredient",
+  "propertyRepositoryId" : "<<ANY-LONG>>",
+  "unitIRI" : null,
+  "valueIRI" : "http://dbpedia.org/resource/Almond_milk",
+  "valueName" : "Almond milk",
+  "valueRepositoryId" : "<<ANY-LONG>>"
+}

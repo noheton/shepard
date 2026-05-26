@@ -1,0 +1,9 @@
+{
+  "callbackURL" : "http://my-callback-url.local",
+  "createdAt" : "<<ANY-STRING>>",
+  "createdBy" : "<<ANY-STRING>>",
+  "id" : "<<ANY-LONG>>",
+  "name" : "SubscriptionWireFixture",
+  "requestMethod" : "POST",
+  "subscribedURL" : "http://my-subscribed-url.local"
+}

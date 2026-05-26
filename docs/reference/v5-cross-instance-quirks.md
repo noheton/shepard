@@ -76,16 +76,26 @@ on `mvn verify` — the operator never sees the broken wire.
 | TimeseriesContainers       | `POST /timeseriesContainers`     | 1 |
 | StructuredDataContainers   | `POST /structuredDataContainers` | 1 |
 | StructuredDataReferences   | `POST .../structuredDataReferences` | 1 |
+| FileReferences             | `POST .../fileReferences`        | 1 |
+| TimeseriesReferences       | `POST .../timeseriesReferences`  | 1 |
+| Subscriptions              | `POST /users/{username}/subscriptions` | 1 |
+| UserGroups                 | `POST /userGroups`               | 1 |
+| SemanticAnnotations        | `POST /collections/{id}/semanticAnnotations` | 1 |
 | Users                      | `GET /users/{username}`          | 1 |
 | Permissions                | `GET /collections/{id}/permissions` | 1 |
 
-**Gaps deliberately left for follow-up:** `FileReference` (needs
-multipart upload), `TimeseriesReference` (needs Timescale row insertion +
-extensive payload setup), `Subscription`, `UserGroup`, `SemanticAnnotation`,
-the `/shepard/api/collections/{id}/export` shape, the `/v2/` surface
-(out of scope per task; `/v2/` is intentionally evolving). Adding any of
-these is a 1-test, 1-fixture exercise per the "Adding a fixture" recipe
-in `V5WireFidelityTest`'s javadoc.
+**Export endpoint deliberately excluded:** `GET /collections/{id}/export`
+returns `application/octet-stream` (binary ZIP), not JSON. The
+`V5JsonNormalizer` framework is JSON-only; extending it to cover binary
+streams is out of scope for this corpus. The export shape should be
+covered by a dedicated binary-integrity test (separate from the v5
+wire-fidelity suite) if byte-level contract enforcement is required.
+
+**Remaining gaps:** `Subscription` GET single, `FileReference` GET single,
+`TimeseriesReference` GET single, `UserGroup` GET single — these are
+straightforward 1-test, 1-fixture additions per the "Adding a fixture"
+recipe in `V5WireFidelityTest`'s javadoc. The `/v2/` surface is out of
+scope per task; `/v2/` is intentionally evolving.
 
 ## Running the corpus
 

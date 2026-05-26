@@ -460,4 +460,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added PROV1l entry (anonymizeInProvenance GDPR consent toggle).         | Claude Sonnet 4.6 |
 | 2026-05-26 | Added SEMA-V6-014 entry (personal vocabulary minting + admin toggle).  | Claude Sonnet 4.6 |
 | 2026-05-26 | Added FAIR2+FAIR3 entry (createdByOrcid stamp + embargoEndDate + PublishService enforcement). | Claude Sonnet 4.6 |
+| 2026-05-26 | V1C2 — v5 wire-fidelity fixture corpus: 5 new fixture types (FileRef, TSRef, Subscription, UserGroup, SemanticAnnotation) + 5 IT test classes. | Claude Sonnet 4.6 |
 
