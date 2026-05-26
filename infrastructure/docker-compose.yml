@@ -79,7 +79,7 @@ services:
       # into /opt/shepard/neo4j/plugins by hand and remove this env var —
       # the n10s bootstrap hook gracefully degrades when the procedures
       # aren't found.
-      NEO4J_PLUGINS: '["n10s"]'
+      NEO4J_PLUGINS: '["apoc","n10s"]'
       # n10s exposes procedures under the `n10s.*` namespace; both lists
       # must include it or `CALL n10s.graphconfig.init` is denied.
       # APOC is included pre-emptively because most shepard deployments
