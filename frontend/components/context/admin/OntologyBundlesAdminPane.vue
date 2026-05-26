@@ -265,6 +265,7 @@ const headers = [
           v-if="togglingId === item.id"
           indeterminate
           size="20"
+          aria-label="Updating"
         />
         <v-switch
           v-else

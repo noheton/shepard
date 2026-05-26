@@ -313,6 +313,7 @@ async function handleRefreshAll() {
           size="18"
           width="2"
           class="ml-2"
+          aria-label="Migration in progress"
         />
       </v-card-title>
       <v-card-text class="d-flex flex-column ga-3">

@@ -108,6 +108,7 @@ function stateColor(state: PluginEntryIO["state"]): string {
             indeterminate
             size="24"
             class="mr-2"
+            aria-label="Updating"
           />
 
           <v-switch

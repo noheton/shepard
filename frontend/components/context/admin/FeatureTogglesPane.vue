@@ -62,6 +62,7 @@ async function onToggle(feature: FeatureToggleIO, newValue: boolean) {
             indeterminate
             size="24"
             class="mr-4"
+            aria-label="Saving"
           />
         </template>
 
