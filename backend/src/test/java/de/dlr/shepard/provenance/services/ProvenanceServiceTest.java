@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -126,5 +128,45 @@ class ProvenanceServiceTest {
     assertTrue(service.isEnabled());
     service.enabled = false;
     assertEquals(false, service.isEnabled());
+  }
+
+  // NEO-AUDIT-001: edge-wiring tests — verify wireEdges is called after save
+
+  @Test
+  void wireEdgesCalledAfterSuccessfulRecord() {
+    service.record("CREATE", "Collection", "appId-1", "alice",
+      "POST /v2/collections", "POST", "v2/collections", 201, 1L, 2L);
+    // Verify wireEdges called with the saved activity + correct params
+    verify(activityDAO).wireEdges(any(Activity.class), eq("alice"), eq("appId-1"), eq("CREATE"));
+  }
+
+  @Test
+  void wireEdgesCalledWithNullTargetWhenNoTarget() {
+    service.record("CREATE", null, null, "alice",
+      "POST /v2/collections", "POST", "v2/collections", 201, 1L, 2L);
+    verify(activityDAO).wireEdges(any(Activity.class), eq("alice"), eq((String) null), eq("CREATE"));
+  }
+
+  @Test
+  void wireEdgesCalledWithUpdateActionKind() {
+    service.record("UPDATE", "Collection", "appId-2", "bob",
+      "PATCH /v2/collections/appId-2", "PATCH", "v2/collections/appId-2", 200, 1L, 2L);
+    verify(activityDAO).wireEdges(any(Activity.class), eq("bob"), eq("appId-2"), eq("UPDATE"));
+  }
+
+  @Test
+  void wireEdgesNotCalledWhenDisabled() {
+    service.enabled = false;
+    service.record("CREATE", null, null, "alice", "s", "POST", "p", 201, 1L, 2L);
+    verify(activityDAO, never()).wireEdges(any(), anyString(), any(), anyString());
+  }
+
+  @Test
+  void wireEdgesNotCalledWhenDaoThrows() {
+    when(activityDAO.createOrUpdate(any(Activity.class))).thenThrow(new RuntimeException("Neo4j down"));
+    Activity result = service.record("CREATE", null, null, "alice", "s", "POST", "p", 201, 1L, 2L);
+    assertNull(result);
+    // createOrUpdate threw before wireEdges was reached
+    verify(activityDAO, never()).wireEdges(any(), any(), any(), any());
   }
 }

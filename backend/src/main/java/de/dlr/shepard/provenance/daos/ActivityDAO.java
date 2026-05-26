@@ -285,6 +285,59 @@ public class ActivityDAO extends GenericDAO<Activity> {
     public long totalCount;
   }
 
+  /**
+   * Wire the three PROV-O edges for a freshly saved {@link Activity}.
+   *
+   * <ul>
+   *   <li>{@code (:Activity)-[:WAS_ASSOCIATED_WITH]->(:User)} — agent who
+   *       performed the action (PROV-O canonical OUTGOING direction).</li>
+   *   <li>{@code (:Activity)-[:GENERATED]->(:BasicEntity)} — target entity
+   *       created by a {@code CREATE} action.</li>
+   *   <li>{@code (:Activity)-[:USED]->(:BasicEntity)} — target entity
+   *       read / mutated by a {@code READ / UPDATE / DELETE / EXECUTE} action.</li>
+   * </ul>
+   *
+   * <p>All three MERGEs are idempotent. Only the edges relevant to this
+   * activity's {@code actionKind} and available identifiers are executed.
+   * Failures are logged and suppressed — provenance edges are observability,
+   * never contract (see {@code aidocs/55 §4}).
+   *
+   * <p>Called from {@link de.dlr.shepard.provenance.services.ProvenanceService#record}
+   * immediately after the activity node is saved, inside the same best-effort
+   * try/catch envelope.
+   */
+  public void wireEdges(Activity saved, String agentUsername, String targetAppId, String actionKind) {
+    if (saved == null || saved.getAppId() == null) return;
+
+    // Edge 1: WAS_ASSOCIATED_WITH → User (always, when username known)
+    if (agentUsername != null && !agentUsername.isBlank()) {
+      String cypher =
+        "MATCH (a:Activity {appId: $actAppId})" +
+        " MATCH (u:User {username: $username})" +
+        " MERGE (a)-[:WAS_ASSOCIATED_WITH]->(u)";
+      try {
+        session.query(cypher, Map.of("actAppId", saved.getAppId(), "username", agentUsername));
+      } catch (RuntimeException e) {
+        io.quarkus.logging.Log.debugf(e, "PROV-O WAS_ASSOCIATED_WITH edge failed for Activity %s", saved.getAppId());
+      }
+    }
+
+    // Edge 2: GENERATED (CREATE) or USED (non-CREATE) → target BasicEntity
+    if (targetAppId != null && !targetAppId.isBlank()) {
+      String edgeLabel = "CREATE".equals(actionKind) ? "GENERATED" : "USED";
+      String cypher =
+        "MATCH (a:Activity {appId: $actAppId})" +
+        " MATCH (e:BasicEntity {appId: $targetAppId})" +
+        " MERGE (a)-[:" + edgeLabel + "]->(e)";
+      try {
+        session.query(cypher, Map.of("actAppId", saved.getAppId(), "targetAppId", targetAppId));
+      } catch (RuntimeException e) {
+        io.quarkus.logging.Log.debugf(e, "PROV-O %s edge failed for Activity %s → %s",
+          edgeLabel, saved.getAppId(), targetAppId);
+      }
+    }
+  }
+
   @Override
   public Class<Activity> getEntityType() {
     return Activity.class;
