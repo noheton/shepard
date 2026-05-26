@@ -150,7 +150,8 @@ public class DataObjectV2Rest {
     description =
       "DataObject page (may be empty). Each item includes `timeseriesCount`, `fileCount`, " +
       "`structuredDataCount`. When `?include=time-bounds` is set, `timeBoundsStart`/`timeBoundsEnd` " +
-      "are also populated (null means no data yet).",
+      "are also populated (null means no data yet). Use `?status=READY` (or DRAFT, IN_REVIEW, " +
+      "PUBLISHED, ARCHIVED) to filter server-side by lifecycle status.",
     content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = DataObjectListItemV2IO.class))
   )
   @APIResponse(responseCode = "401", description = "Authentication required.")
@@ -159,6 +160,7 @@ public class DataObjectV2Rest {
   public Response list(
     @PathParam("collectionAppId") @NotBlank String collectionAppId,
     @QueryParam(Constants.QP_NAME) String name,
+    @QueryParam("status") String status,
     @QueryParam("page") @DefaultValue("0") @PositiveOrZero int page,
     @QueryParam("size") @DefaultValue("50") @PositiveOrZero int size,
     @QueryParam("include") String include,
@@ -175,6 +177,7 @@ public class DataObjectV2Rest {
 
     var params = new QueryParamHelper();
     if (name != null) params = params.withName(name);
+    if (status != null) params = params.withStatus(status);
     params = params.withPageAndSize(safePage, safeSize);
 
     var dataObjects = dataObjectService.getAllDataObjectsByShepardIds(collectionOgmId, params, null);

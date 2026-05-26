@@ -6,6 +6,8 @@ import type { DataObjectListItemV2 } from '../models/DataObjectListItemV2';
 export interface ListDataObjectsV2Request {
   collectionAppId: string;
   name?: string;
+  /** Filter by lifecycle status server-side (e.g. "READY", "DRAFT", "IN_REVIEW", "PUBLISHED", "ARCHIVED"). */
+  status?: string;
   page?: number;
   size?: number;
   /** Comma-separated enrichment flags. Pass "time-bounds" to populate timeBoundsStart/End on each item. */
@@ -31,6 +33,7 @@ export class DataObjectV2Api extends runtime.BaseAPI {
 
     const queryParameters: runtime.HTTPQuery = {};
     if (requestParameters['name'] != null) queryParameters['name'] = requestParameters['name'];
+    if (requestParameters['status'] != null) queryParameters['status'] = requestParameters['status'];
     if (requestParameters['page'] != null) queryParameters['page'] = requestParameters['page'];
     if (requestParameters['size'] != null) queryParameters['size'] = requestParameters['size'];
     if (requestParameters['include'] != null) queryParameters['include'] = requestParameters['include'];

@@ -173,13 +173,14 @@ function onSearchChange() {
   scheduleSearch();
 }
 
-// Reset page when status filter changes (client-side, no server round-trip needed)
+// Reset page when status filter changes and trigger a server-side refetch
 watch(statusFilter, () => { page.value = 0; });
 
 const { items: rawItems, loading, hasMore } = usePagedDataObjects({
   collectionId: props.collectionId,
   collectionAppId,
   name: serverName,
+  status: statusFilter,
   page,
   pageSize: 25,
   includeTimeBounds: true,
@@ -252,10 +253,9 @@ function timeBoundsTooltip(startNs: number, endNs: number): string {
   return `${new Date(startMs).toLocaleString()} → ${new Date(endMs).toLocaleString()}`;
 }
 
-const pagedItems = computed<Row[]>(() => {
-  if (!statusFilter.value) return rows.value;
-  return rows.value.filter(r => r.status === statusFilter.value);
-});
+// Server-side status filter: rows already contain only the matching status.
+// Alias for template compatibility.
+const pagedItems = rows;
 
 function navigateTo(dataObjectId: number) {
   router.push(`/collections/${props.collectionId}/dataobjects/${dataObjectId}`);

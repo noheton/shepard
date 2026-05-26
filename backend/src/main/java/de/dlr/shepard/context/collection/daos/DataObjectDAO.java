@@ -241,6 +241,10 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
           "})";
       }
     }
+    if (paramsWithShepardIds.hasStatus()) {
+      paramsMap.put("status", paramsWithShepardIds.getStatus());
+      where += " AND d.status = $status";
+    }
 
     String query = match + where + " WITH d";
     if (paramsWithShepardIds.hasOrderByAttribute()) {

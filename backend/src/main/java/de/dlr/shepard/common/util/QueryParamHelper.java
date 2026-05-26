@@ -13,6 +13,7 @@ import lombok.ToString;
 public class QueryParamHelper {
 
   private String name;
+  private String status;
   private PaginationHelper pagination;
   private Long parentId;
   private Long predecessorId;
@@ -27,6 +28,15 @@ public class QueryParamHelper {
 
   public boolean hasName() {
     return this.name != null;
+  }
+
+  public QueryParamHelper withStatus(String status) {
+    this.status = status;
+    return this;
+  }
+
+  public boolean hasStatus() {
+    return this.status != null;
   }
 
   public QueryParamHelper withPageAndSize(int page, int size) {

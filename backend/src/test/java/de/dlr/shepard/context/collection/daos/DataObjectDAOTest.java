@@ -1910,4 +1910,67 @@ public class DataObjectDAOTest extends BaseTestCase {
     assertEquals(List.of(), row.get("fileRefs"));
     assertEquals(List.of(), row.get("sdRefs"));
   }
+
+  // ── UX-DOPANEL-STATUS-SERVER: server-side status filter ──────────────────
+
+  /**
+   * UX-DOPANEL-STATUS-SERVER — when {@code withStatus("READY")} is set the
+   * generated Cypher adds {@code AND d.status = $status} and the status is put
+   * into the params map.
+   */
+  @Test
+  public void findByStatusByShepardIdsTest() {
+    var c1 = new Collection(100L);
+    c1.setShepardId(1001L);
+    var d1 = new DataObject(1L);
+    d1.setShepardId(11L);
+    d1.setStatus("READY");
+    var d2 = new DataObject(2L);
+    d2.setShepardId(21L);
+    d2.setStatus("DRAFT");
+    d1.setCollection(c1);
+    d2.setCollection(c1);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", null);
+    paramsMap.put("status", "READY");
+
+    String query =
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " AND d.status = $status WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
+
+    var params = new QueryParamHelper().withStatus("READY");
+    var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
+    verify(session).query(DataObject.class, query, paramsMap);
+    assertEquals(List.of(d1), actual);
+  }
+
+  /**
+   * UX-DOPANEL-STATUS-SERVER — when no status is set the Cypher does NOT
+   * include the status predicate and the params map does NOT contain
+   * {@code "status"}.
+   */
+  @Test
+  public void findWithoutStatusFilterByShepardIdsTest() {
+    var c1 = new Collection(100L);
+    c1.setShepardId(1001L);
+    var d1 = new DataObject(1L);
+    d1.setShepardId(11L);
+    d1.setCollection(c1);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("name", null);
+    // "status" must NOT be in paramsMap when no status filter is requested
+
+    String query =
+      "MATCH (v:Version)<-[:has_version]-(c:Collection)-[hdo:has_dataobject]->(d:DataObject { deleted: FALSE }) WHERE c.shepardId=1001 AND " +
+      CypherQueryHelper.getVersionHeadPart("v") +
+      " WITH d MATCH path=(d)-[*0..1]-(n) WHERE n.deleted = FALSE OR n.deleted IS NULL RETURN d, nodes(path), relationships(path)";
+    when(session.query(DataObject.class, query, paramsMap)).thenReturn(List.of(d1));
+
+    var params = new QueryParamHelper();
+    var actual = dao.findByCollectionByShepardIds(c1.getShepardId(), params);
+    verify(session).query(DataObject.class, query, paramsMap);
+    assertEquals(List.of(d1), actual);
+  }
 }

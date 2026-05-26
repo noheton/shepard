@@ -6,6 +6,8 @@ export interface PagedDataObjectsOptions {
   collectionId: number;
   collectionAppId: Ref<string | null>;
   name: Ref<string>;
+  /** When non-empty, filters DataObjects server-side by lifecycle status (e.g. "READY"). */
+  status?: Ref<string | "">;
   page: Ref<number>;
   pageSize?: number;
   /** When true, each item includes timeBoundsStart / timeBoundsEnd (2 extra DB round-trips). */
@@ -33,6 +35,7 @@ export interface PagedDataObjectsResult {
  */
 export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObjectsResult {
   const { collectionId, collectionAppId, name, page } = opts;
+  const status = opts.status;
   const pageSize = opts.pageSize ?? 25;
   const includeTimeBounds = opts.includeTimeBounds ?? false;
 
@@ -47,6 +50,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
   async function fetch() {
     const appId = collectionAppId.value;
     const nameFilter = name.value.trim() || undefined;
+    const statusFilter = status?.value || undefined;
     const currentPage = page.value;
 
     loading.value = true;
@@ -56,6 +60,7 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
         batch = await v2Api.value.listDataObjects({
           collectionAppId: appId,
           name: nameFilter,
+          status: statusFilter,
           page: currentPage,
           size: pageSize,
           include: includeTimeBounds ? 'time-bounds' : undefined,
@@ -78,7 +83,10 @@ export function usePagedDataObjects(opts: PagedDataObjectsOptions): PagedDataObj
     }
   }
 
-  watch([collectionAppId, name, page], () => {
+  const watchSources = status
+    ? [collectionAppId, name, status, page] as const
+    : [collectionAppId, name, page] as const;
+  watch(watchSources, () => {
     void fetch();
   }, { immediate: true });
 

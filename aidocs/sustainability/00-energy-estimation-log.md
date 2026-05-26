@@ -382,7 +382,8 @@ df.groupby('kind')['total_Wh_est'].describe()
 | *(pending)* | 2026-05-26 | code | 25k | 8k | 3.08 | 0 | 3 | 6.08 | 2.21 | LOW | feat(sema): SEMA-V6-011 — SEMA-V6 field population + import-key filter in attribute dual-write; 3 new tests (9 total); aidocs/16+34+energy updated |
 | (pending) | 2026-05-26 | code | 35k | 10k | 4.17 | 8 | 5 | 17.17 | 6.23 | LOW | feat(sema): SEMA-V6-014 — personal vocabulary minting + personalVocabulariesEnabled admin toggle |
 | *(pending)* | 2026-05-26 | code | 40k | 14k | 5.14 | 12 | 3 | 20.14 | 7.31 | LOW | feat(rdm): FAIR2+FAIR3 — createdByOrcid stamp + embargoEndDate + PublishService enforcement; 8 backend + 10 Vitest tests; V84 migration; aidocs/16+34+44+energy updated |
-| *(pending)* | 2026-05-26 | infra | 6k | 2k | 0.68 | 0 | 0 | 0.68 | 0.25 | LOW | fix(timescaledb): TS-AUDIT-003 CHECK constraint + TS-AUDIT-005 pg_stat_statements; 2 SQL migrations; compose updated |
+| `5bcebdd67` | 2026-05-26 | infra | 6k | 2k | 0.68 | 0 | 0 | 0.68 | 0.25 | LOW | fix(timescaledb): TS-AUDIT-003 CHECK constraint + TS-AUDIT-005 pg_stat_statements; 2 SQL migrations; compose updated |
+| `5c851329b` | 2026-05-26 | code | 30k | 10k | 3.50 | 0 | 2 | 5.50 | 2.00 | MEDIUM | fix(semantics): M4I-b — canonical m4i predicates (realizesMethod, obo:RO_0002233/4) + obo context + m4i:investigates on READ; 142-line test update |
 | `eded009a2` | 2026-05-26 | code | 80k | 25k | 14.44 | 20 | 5 | 39.44 | 14.32 | MEDIUM | feat(video): VID1c — :VideoConfig Neo4j singleton + GET/PATCH /v2/admin/video/config + 4 CLI subcommands + V87 migration + 9 tests |
 | `36cbb595` | 2026-05-26 | code | 45k | 12k | 6.94 | 0 | 5 | 11.94 | 4.34 | MEDIUM | fix(frontend): TS build errors — auto-import stale .nuxt, v-switch nullability, test assertions, IndependenceProofApi barrel export |
 | `f56d349e` | 2026-05-26 | code | 90k | 28k | 15.89 | 20 | 5 | 40.89 | 14.85 | MEDIUM | feat(aas): AAS1l — :AasConfig singleton + GET/PATCH /v2/admin/aas/config + CLI + V88 migration + 17 tests (cherry-pick from worktree) |
@@ -491,4 +492,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added UI-DEEP-LINK-TYPED-LISTS entry (/containers/[type] redirect shim). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added TS-AUDIT-003/005 entry (CHECK constraint + pg_stat_statements migrations). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added VID1c, TS-fixes, AAS1l cherry-pick, video-pom-fix ×2, package-lock entries. | Claude Sonnet 4.6 |
+| 2026-05-26 | Backfilled hash for TS-AUDIT-003/005 (`5bcebdd67`); added M4I-b entry (`5c851329b`). | Claude Sonnet 4.6 |
 
