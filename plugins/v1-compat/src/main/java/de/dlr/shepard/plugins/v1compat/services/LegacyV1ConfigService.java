@@ -77,9 +77,11 @@ public class LegacyV1ConfigService {
   boolean installDefaultEnabled;
 
   /**
-   * Tiny in-process cache for the hot-path enabled read. Tuple of
-   * (enabled, expiresAtMillis). Replaced atomically on every
-   * cache-miss read or after a PATCH.
+   * Tiny in-process cache for hot-path flag reads. Snapshot of
+   * (enabled, suppressDeprecationHeaders, expiresAtMillis). Both
+   * runtime-mutable flags are fetched in a single DAO read so the
+   * filter path never issues two round-trips per v1 request.
+   * Replaced atomically on every cache-miss read or after any PATCH.
    */
   private final AtomicReference<CachedState> cache = new AtomicReference<>(null);
 
@@ -154,6 +156,25 @@ public class LegacyV1ConfigService {
   }
 
   /**
+   * Phase 2 (V1C1) hot-path read used by
+   * {@code LegacyV1DeprecationFilter}. Shares the same in-process
+   * cache snapshot as {@link #isEnabled()} so both reads are served
+   * from a single DAO round-trip on the v1 hot path.
+   *
+   * <p>Fail-closed on DB error: returns {@code false} (headers are
+   * emitted) when the singleton cannot be read — the safe default is
+   * "show the deprecation warning rather than silently suppress it".
+   */
+  public boolean isSuppressDeprecationHeaders() {
+    CachedState cached = cache.get();
+    long now = clock.nowMillis();
+    if (cached != null && cached.expiresAtMillis > now) {
+      return cached.suppressDeprecationHeaders;
+    }
+    return refreshCacheState(now).suppressDeprecationHeaders;
+  }
+
+  /**
    * Force-refresh the cache. Mainly for tests + the post-PATCH
    * invalidation path; also called on cache miss by
    * {@link #isEnabled()}.
@@ -162,7 +183,7 @@ public class LegacyV1ConfigService {
     return refreshCache(clock.nowMillis());
   }
 
-  private boolean refreshCache(long now) {
+  private CachedState refreshCacheState(long now) {
     boolean activated = false;
     try {
       activated = requestContextController.activate();
@@ -175,14 +196,17 @@ public class LegacyV1ConfigService {
     try {
       LegacyV1Config row = dao.findSingleton();
       boolean enabled = row == null ? installDefaultEnabled : row.isEnabled();
-      cache.set(new CachedState(enabled, now + CACHE_TTL_MILLIS));
-      return enabled;
+      boolean suppressHeaders = row != null && row.isSuppressDeprecationHeaders();
+      CachedState state = new CachedState(enabled, suppressHeaders, now + CACHE_TTL_MILLIS);
+      cache.set(state);
+      return state;
     } catch (RuntimeException ex) {
       // Fail-open: v1 stays available when the DB is down — better a
       // few extra v1 hits than a 410 storm during a Neo4j hiccup.
       Log.warnf(ex, "V1COMPAT.0: failed to read :LegacyV1Config; falling back to deploy-time default %b", installDefaultEnabled);
-      cache.set(new CachedState(installDefaultEnabled, now + CACHE_TTL_MILLIS));
-      return installDefaultEnabled;
+      CachedState fallback = new CachedState(installDefaultEnabled, false, now + CACHE_TTL_MILLIS);
+      cache.set(fallback);
+      return fallback;
     } finally {
       if (activated) {
         try {
@@ -192,6 +216,10 @@ public class LegacyV1ConfigService {
         }
       }
     }
+  }
+
+  private boolean refreshCache(long now) {
+    return refreshCacheState(now).enabled;
   }
 
   /**
@@ -240,6 +268,40 @@ public class LegacyV1ConfigService {
     return row;
   }
 
+  /**
+   * Phase 2 (V1C1) — apply a runtime patch to the
+   * {@code suppressDeprecationHeaders} field. Invalidates the hot-path
+   * cache after write so the next filter invocation picks up the new
+   * value immediately. Mirrors the {@link #setEnabled} shape exactly.
+   *
+   * @param suppress new value for the suppress-deprecation-headers toggle
+   * @param actor    username of the admin doing the patch (nullable)
+   * @return the post-patch singleton
+   */
+  public synchronized LegacyV1Config setSuppressDeprecationHeaders(boolean suppress, String actor) {
+    LegacyV1Config row = current();
+    if (row.isSuppressDeprecationHeaders() != suppress) {
+      row.setSuppressDeprecationHeaders(suppress);
+      row.setUpdatedAt(clock.nowMillis());
+      row.setUpdatedBy(actor);
+      row = dao.createOrUpdate(row);
+      Log.infof(
+        "V1COMPAT.1: :LegacyV1Config.suppressDeprecationHeaders flipped to %b by %s (appId=%s).",
+        suppress,
+        actor == null ? "<unknown>" : actor,
+        row.getAppId()
+      );
+      invalidateCache();
+    } else {
+      Log.debugf(
+        "V1COMPAT.1: :LegacyV1Config.suppressDeprecationHeaders already %b — no-op patch from %s.",
+        suppress,
+        actor == null ? "<unknown>" : actor
+      );
+    }
+    return row;
+  }
+
   /** Invalidate the hot-path cache; next read triggers a DB refresh. */
   public void invalidateCache() {
     cache.set(null);
@@ -255,14 +317,16 @@ public class LegacyV1ConfigService {
     long nowMillis();
   }
 
-  /** Cache tuple — enabled value + monotonic expiry. */
+  /** Cache snapshot — all hot-path flag values + monotonic expiry. */
   private static final class CachedState {
 
     final boolean enabled;
+    final boolean suppressDeprecationHeaders;
     final long expiresAtMillis;
 
-    CachedState(boolean enabled, long expiresAtMillis) {
+    CachedState(boolean enabled, boolean suppressDeprecationHeaders, long expiresAtMillis) {
       this.enabled = enabled;
+      this.suppressDeprecationHeaders = suppressDeprecationHeaders;
       this.expiresAtMillis = expiresAtMillis;
     }
   }

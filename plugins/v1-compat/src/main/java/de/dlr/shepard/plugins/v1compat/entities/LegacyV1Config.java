@@ -23,10 +23,7 @@ import org.neo4j.ogm.annotation.Property;
  * against {@code /v2/admin/legacy/v1/config} mutate this node in
  * place.
  *
- * <p>Field set is the <b>minimal</b> Phase 1 shape per
- * {@code aidocs/platform/103a} clarification 2 lean A
- * — just {@code enabled}. Per-endpoint disable, log-level enums,
- * suppress-deprecation-headers, etc. are deferred to Phase 2.
+ * <p>Phase 1 shipped {@code enabled} only. Phase 2 (V1C1) adds:
  *
  * <ul>
  *   <li>{@link #enabled} — master toggle. When {@code true} (the
@@ -39,6 +36,16 @@ import org.neo4j.ogm.annotation.Property;
  *       circuits every {@code /shepard/api/...} request with HTTP 410
  *       Gone + an RFC 7807 problem-detail body
  *       ({@code v1-disabled}).</li>
+ *   <li>{@link #suppressDeprecationHeaders} — when {@code true}, the
+ *       {@code LegacyV1DeprecationFilter} skips the three additive
+ *       deprecation headers ({@code Deprecation}, {@code Link},
+ *       {@code X-Shepard-Legacy}).  Default {@code false}.  Useful for
+ *       strict-compatibility mode where downstream clients reject
+ *       unknown headers.</li>
+ *   <li>{@link #stripAppIdFromResponses} — Phase 3 knob; declared here
+ *       so the config shape is stable but the behaviour wiring is
+ *       deferred to V1C2 (see TODO on the field). Default
+ *       {@code false}.</li>
  * </ul>
  *
  * <p><b>Precedence.</b> Runtime field value wins; deploy-time
@@ -93,6 +100,29 @@ public class LegacyV1Config implements HasAppId {
   /** Username of the admin who last modified the config. */
   @Property("updatedBy")
   private String updatedBy;
+
+  /**
+   * Phase 2 (V1C1) — when {@code true}, the
+   * {@code LegacyV1DeprecationFilter} does NOT emit the three additive
+   * deprecation headers ({@code Deprecation: true},
+   * {@code Link: </v2/>; rel="successor-version"},
+   * {@code X-Shepard-Legacy: true}). Stats / audit logging is
+   * unaffected. Default {@code false} so a fresh install still emits
+   * the headers.
+   */
+  @Property("suppressDeprecationHeaders")
+  private boolean suppressDeprecationHeaders = false;
+
+  /**
+   * Phase 2 field — declared here so the config shape is stable.
+   * Behaviour wiring (strip {@code appId} from v1 response bodies for
+   * strict-compat mode) is deferred to V1C2. Default {@code false}.
+   *
+   * <p>TODO(V1C2): wire suppression into the v1 response serialiser /
+   * JAX-RS container response filter once the V1C2 task lands.
+   */
+  @Property("stripAppIdFromResponses")
+  private boolean stripAppIdFromResponses = false;
 
   /** For testing purposes only. */
   public LegacyV1Config(long id) {

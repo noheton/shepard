@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.dlr.shepard.plugins.v1compat.services.LegacyV1ConfigService;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
@@ -32,10 +33,14 @@ class LegacyV1DeprecationFilterTest {
   private LegacyV1StatsService stats;
   private LegacyV1DeprecationFilter filter;
 
+  private LegacyV1ConfigService config;
+
   @BeforeEach
   void setUp() {
     stats = new LegacyV1StatsService();
-    filter = new LegacyV1DeprecationFilter(stats);
+    config = mock(LegacyV1ConfigService.class);
+    when(config.isSuppressDeprecationHeaders()).thenReturn(false);
+    filter = new LegacyV1DeprecationFilter(stats, config);
   }
 
   // ─── stats recording ─────────────────────────────────────────────────
@@ -106,6 +111,60 @@ class LegacyV1DeprecationFilterTest {
 
     filter.handle(rc);
 
+    verify(rc).next();
+  }
+
+  // ─── V1C1: suppressDeprecationHeaders toggle ─────────────────────────
+
+  @Test
+  void suppressTrue_noHeadersEmitted_butStatsStillRecorded() {
+    when(config.isSuppressDeprecationHeaders()).thenReturn(true);
+
+    RoutingContext rc = mockContext("/shepard/api/collections", "GET");
+    filter.handle(rc);
+
+    // Headers must NOT be emitted when suppress=true
+    verify(rc.response(), never()).putHeader(anyString(), anyString());
+
+    // Stats recording must still happen regardless of suppress
+    assertThat(stats.getTotalHits()).isEqualTo(1);
+  }
+
+  @Test
+  void suppressFalse_defaultBehaviour_headersStillEmitted() {
+    // config mock already returns false by default in setUp(); this test pins
+    // that the default (suppress=false) keeps the original emit behaviour.
+    when(config.isSuppressDeprecationHeaders()).thenReturn(false);
+
+    RoutingContext rc = mockContext("/shepard/api/collections/42", "GET");
+    filter.handle(rc);
+
+    verify(rc.response()).putHeader("Deprecation", "true");
+    verify(rc.response()).putHeader("Link", "</v2/>; rel=\"successor-version\"");
+    verify(rc.response()).putHeader("X-Shepard-Legacy", "true");
+  }
+
+  @Test
+  void nullConfig_treatedAsSuppressFalse_headersEmitted() {
+    // When config is null (legacy single-arg ctor), headers are always emitted.
+    LegacyV1DeprecationFilter nullConfigFilter = new LegacyV1DeprecationFilter(stats);
+
+    RoutingContext rc = mockContext("/shepard/api/collections", "GET");
+    nullConfigFilter.handle(rc);
+
+    verify(rc.response()).putHeader("Deprecation", "true");
+    verify(rc.response()).putHeader("Link", "</v2/>; rel=\"successor-version\"");
+    verify(rc.response()).putHeader("X-Shepard-Legacy", "true");
+  }
+
+  @Test
+  void suppressTrue_v1Path_chainContinues() {
+    when(config.isSuppressDeprecationHeaders()).thenReturn(true);
+
+    RoutingContext rc = mockContext("/shepard/api/users/me", "GET");
+    filter.handle(rc);
+
+    // Even when headers are suppressed, the filter must still call next()
     verify(rc).next();
   }
 

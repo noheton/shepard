@@ -254,6 +254,89 @@ class LegacyV1ConfigServiceTest {
     verify(dao).createOrUpdate(any(LegacyV1Config.class));
   }
 
+  // ─── V1C1: isSuppressDeprecationHeaders hot-path ─────────────────────────
+
+  @Test
+  void isSuppressDeprecationHeaders_defaultFalse_whenRowExists() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setEnabled(true);
+    row.setSuppressDeprecationHeaders(false);
+    when(dao.findSingleton()).thenReturn(row);
+
+    assertFalse(service.isSuppressDeprecationHeaders(), "default false");
+  }
+
+  @Test
+  void isSuppressDeprecationHeaders_trueWhenSet() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setEnabled(true);
+    row.setSuppressDeprecationHeaders(true);
+    when(dao.findSingleton()).thenReturn(row);
+
+    assertTrue(service.isSuppressDeprecationHeaders(), "reflects entity field");
+  }
+
+  @Test
+  void isSuppressDeprecationHeaders_falseWhenNoRowExists() {
+    // No row in DB — falls back to false (headers emitted by default).
+    when(dao.findSingleton()).thenReturn(null);
+
+    assertFalse(service.isSuppressDeprecationHeaders(), "no row ⇒ false");
+  }
+
+  @Test
+  void isSuppressDeprecationHeaders_sharedCacheWithIsEnabled_singleDaoRead() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setEnabled(true);
+    row.setSuppressDeprecationHeaders(true);
+    when(dao.findSingleton()).thenReturn(row);
+
+    // Both calls must be served from the same cache entry after one DAO read.
+    assertTrue(service.isEnabled());
+    assertTrue(service.isSuppressDeprecationHeaders());
+    // isEnabled() populated the cache; isSuppressDeprecationHeaders() read from it.
+    verify(dao, times(1)).findSingleton();
+  }
+
+  // ─── V1C1: setSuppressDeprecationHeaders ─────────────────────────────────
+
+  @Test
+  void setSuppressDeprecationHeaders_flipsField_invalidatesCache_stampsAudit() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setEnabled(true);
+    row.setSuppressDeprecationHeaders(false);
+    row.setAppId("01HF-BBB");
+    when(dao.findSingleton()).thenReturn(row);
+
+    // Warm the cache first
+    assertFalse(service.isSuppressDeprecationHeaders());
+
+    clock.addAndGet(1_000L);
+    LegacyV1Config patched = service.setSuppressDeprecationHeaders(true, "admin@example");
+
+    assertTrue(patched.isSuppressDeprecationHeaders());
+    assertEquals(1_700_000_001_000L, patched.getUpdatedAt());
+    assertEquals("admin@example", patched.getUpdatedBy());
+    verify(dao).createOrUpdate(any(LegacyV1Config.class));
+
+    // Cache invalidation: next read must hit DB again
+    service.isSuppressDeprecationHeaders();
+    verify(dao, times(3)).findSingleton(); // 1 from isEnabled warm, 1 from current(), 1 from post-patch read
+  }
+
+  @Test
+  void setSuppressDeprecationHeaders_noOpWhenAlreadyAtValue() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setSuppressDeprecationHeaders(false);
+    when(dao.findSingleton()).thenReturn(row);
+
+    LegacyV1Config result = service.setSuppressDeprecationHeaders(false, "admin@example");
+
+    assertFalse(result.isSuppressDeprecationHeaders());
+    verify(dao, never()).createOrUpdate(any(LegacyV1Config.class));
+    assertNull(result.getUpdatedBy(), "no audit stamp on a no-op patch");
+  }
+
   // ─── regression: no startup-time seed (live-validation defect 2) ──────────
 
   /**

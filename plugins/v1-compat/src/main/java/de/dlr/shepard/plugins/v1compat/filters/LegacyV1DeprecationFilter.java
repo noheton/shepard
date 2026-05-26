@@ -1,6 +1,7 @@
 package de.dlr.shepard.plugins.v1compat.filters;
 
 import de.dlr.shepard.common.util.Constants;
+import de.dlr.shepard.plugins.v1compat.services.LegacyV1ConfigService;
 import de.dlr.shepard.plugins.v1compat.services.LegacyV1StatsService;
 import io.quarkus.logging.Log;
 import io.quarkus.vertx.http.runtime.filters.Filters;
@@ -59,12 +60,22 @@ public class LegacyV1DeprecationFilter {
   @Inject
   LegacyV1StatsService stats;
 
+  @Inject
+  LegacyV1ConfigService config;
+
   /** Production no-arg ctor for CDI. */
   public LegacyV1DeprecationFilter() {}
 
-  /** Test-seam ctor — inject the service directly. */
+  /** Test-seam ctor — inject stats service only (config defaults to null → headers always emitted). */
   public LegacyV1DeprecationFilter(LegacyV1StatsService stats) {
     this.stats = stats;
+    this.config = null;
+  }
+
+  /** Test-seam ctor — inject both services directly. */
+  public LegacyV1DeprecationFilter(LegacyV1StatsService stats, LegacyV1ConfigService config) {
+    this.stats = stats;
+    this.config = config;
   }
 
   void registerFilter(@Observes Filters filters) {
@@ -79,14 +90,18 @@ public class LegacyV1DeprecationFilter {
       return;
     }
 
-    // Set deprecation headers before passing to the next handler.
+    // Set deprecation headers before passing to the next handler — unless the
+    // operator has set suppressDeprecationHeaders=true in :LegacyV1Config.
     // Vert.x putHeader semantics replace any existing value, so a double-fire
     // of this filter (e.g. internal forwarding) never produces duplicate headers.
     // Per RFC 8594 §3/§4 a single value per header is the correct shape.
-    rc.response()
-      .putHeader("Deprecation", "true")
-      .putHeader("Link", "</v2/>; rel=\"successor-version\"")
-      .putHeader("X-Shepard-Legacy", "true");
+    boolean suppress = config != null && config.isSuppressDeprecationHeaders();
+    if (!suppress) {
+      rc.response()
+        .putHeader("Deprecation", "true")
+        .putHeader("Link", "</v2/>; rel=\"successor-version\"")
+        .putHeader("X-Shepard-Legacy", "true");
+    }
 
     // Stats and audit logging. This filter runs before JWTFilter (JAX-RS layer),
     // so SecurityContext is not available and the principal is always "anonymous".

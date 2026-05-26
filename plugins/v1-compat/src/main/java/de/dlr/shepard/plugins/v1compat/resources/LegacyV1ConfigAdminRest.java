@@ -78,11 +78,14 @@ public class LegacyV1ConfigAdminRest {
   @Consumes({ Constants.APPLICATION_MERGE_PATCH_JSON, MediaType.APPLICATION_JSON })
   @Operation(
     summary = "RFC 7396 merge-patch the :LegacyV1Config singleton.",
-    description = "Phase 1 minimal shape: only the `enabled` field is patchable. Absent " +
-    "field = leave alone; explicit true/false = flip. Flipping `enabled=false` makes " +
-    "every /shepard/api/... request return HTTP 410 Gone with an RFC 7807 problem-" +
-    "detail body. The runtime value wins over the deploy-time install default forever " +
-    "after the first PATCH."
+    description = "Phase 2 shape: `enabled` and `suppressDeprecationHeaders` are patchable. " +
+    "Absent field = leave alone; explicit true/false = flip. Flipping `enabled=false` makes " +
+    "every /shepard/api/... request return HTTP 410 Gone. Flipping " +
+    "`suppressDeprecationHeaders=true` silences the Deprecation/Link/X-Shepard-Legacy " +
+    "response headers without affecting v1 response bodies. Fields are patched " +
+    "independently: a patch body of `{\\\"enabled\\\":false}` leaves " +
+    "`suppressDeprecationHeaders` unchanged. The runtime value wins over the deploy-time " +
+    "install default forever after the first PATCH."
   )
   @APIResponse(
     responseCode = "200",
@@ -91,14 +94,20 @@ public class LegacyV1ConfigAdminRest {
   )
   @APIResponse(responseCode = "403", description = "Caller lacks the instance-admin role.")
   public Response patchConfig(LegacyV1ConfigPatchIO patch, @Context SecurityContext sc) {
-    if (patch == null || patch.enabled() == null) {
+    if (patch == null || (patch.enabled() == null && patch.suppressDeprecationHeaders() == null)) {
       // No-op patch — return the current state (RFC 7396 "absent =
       // leave alone" — an empty body is a no-op merge-patch).
       LegacyV1Config current = service.current();
       return Response.ok(LegacyV1ConfigIO.from(current)).build();
     }
     String actor = sc != null && sc.getUserPrincipal() != null ? sc.getUserPrincipal().getName() : null;
-    LegacyV1Config post = service.setEnabled(patch.enabled(), actor);
+    LegacyV1Config post = service.current();
+    if (patch.enabled() != null) {
+      post = service.setEnabled(patch.enabled(), actor);
+    }
+    if (patch.suppressDeprecationHeaders() != null) {
+      post = service.setSuppressDeprecationHeaders(patch.suppressDeprecationHeaders(), actor);
+    }
     return Response.ok(LegacyV1ConfigIO.from(post)).build();
   }
 }

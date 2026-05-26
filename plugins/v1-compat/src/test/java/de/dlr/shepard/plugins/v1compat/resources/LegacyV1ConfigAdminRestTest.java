@@ -57,10 +57,11 @@ class LegacyV1ConfigAdminRestTest {
     row.setEnabled(true);
     when(service.current()).thenReturn(row);
 
-    Response response = rest.patchConfig(new LegacyV1ConfigPatchIO(null), null);
+    Response response = rest.patchConfig(new LegacyV1ConfigPatchIO(null, null), null);
 
     assertThat(response.getStatus()).isEqualTo(200);
     verify(service, org.mockito.Mockito.never()).setEnabled(org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
+    verify(service, org.mockito.Mockito.never()).setSuppressDeprecationHeaders(org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
   }
 
   @Test
@@ -73,6 +74,7 @@ class LegacyV1ConfigAdminRestTest {
 
     assertThat(response.getStatus()).isEqualTo(200);
     verify(service, org.mockito.Mockito.never()).setEnabled(org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
+    verify(service, org.mockito.Mockito.never()).setSuppressDeprecationHeaders(org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
   }
 
   @Test
@@ -141,5 +143,77 @@ class LegacyV1ConfigAdminRestTest {
 
     assertThat(response.getStatus()).isEqualTo(200);
     verify(service).setEnabled(true, null);
+  }
+
+  // ─── V1C1: suppressDeprecationHeaders ─────────────────────────────────
+
+  @Test
+  void patch_suppressDeprecationHeaders_true_callsService() {
+    LegacyV1Config post = new LegacyV1Config();
+    post.setSuppressDeprecationHeaders(true);
+    post.setUpdatedBy("admin@example");
+    when(service.current()).thenReturn(new LegacyV1Config());
+    when(service.setSuppressDeprecationHeaders(eq(true), eq("admin@example"))).thenReturn(post);
+
+    SecurityContext sc = mock(SecurityContext.class);
+    Principal principal = mock(Principal.class);
+    when(principal.getName()).thenReturn("admin@example");
+    when(sc.getUserPrincipal()).thenReturn(principal);
+
+    Response response = rest.patchConfig(new LegacyV1ConfigPatchIO(null, true), sc);
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    LegacyV1ConfigIO body = (LegacyV1ConfigIO) response.getEntity();
+    assertThat(body.suppressDeprecationHeaders()).isTrue();
+    verify(service).setSuppressDeprecationHeaders(true, "admin@example");
+    verify(service, org.mockito.Mockito.never()).setEnabled(org.mockito.ArgumentMatchers.anyBoolean(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void patch_suppressDeprecationHeaders_false_callsService() {
+    LegacyV1Config post = new LegacyV1Config();
+    post.setSuppressDeprecationHeaders(false);
+    when(service.current()).thenReturn(new LegacyV1Config());
+    when(service.setSuppressDeprecationHeaders(eq(false), eq(null))).thenReturn(post);
+
+    Response response = rest.patchConfig(new LegacyV1ConfigPatchIO(null, false), null);
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    LegacyV1ConfigIO body = (LegacyV1ConfigIO) response.getEntity();
+    assertThat(body.suppressDeprecationHeaders()).isFalse();
+    verify(service).setSuppressDeprecationHeaders(false, null);
+  }
+
+  @Test
+  void patch_bothFields_callsBothServices() {
+    LegacyV1Config post = new LegacyV1Config();
+    post.setEnabled(false);
+    post.setSuppressDeprecationHeaders(true);
+    when(service.current()).thenReturn(new LegacyV1Config());
+    when(service.setEnabled(eq(false), eq(null))).thenReturn(post);
+    when(service.setSuppressDeprecationHeaders(eq(true), eq(null))).thenReturn(post);
+
+    Response response = rest.patchConfig(new LegacyV1ConfigPatchIO(false, true), null);
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    verify(service).setEnabled(false, null);
+    verify(service).setSuppressDeprecationHeaders(true, null);
+  }
+
+  @Test
+  void getConfig_includesSuppressDeprecationHeadersInProjection() {
+    LegacyV1Config row = new LegacyV1Config();
+    row.setEnabled(true);
+    row.setSuppressDeprecationHeaders(true);
+    row.setAppId("01HF-BBB");
+    when(service.current()).thenReturn(row);
+
+    Response response = rest.getConfig();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    LegacyV1ConfigIO body = (LegacyV1ConfigIO) response.getEntity();
+    assertThat(body.suppressDeprecationHeaders()).isTrue();
+    assertThat(body.stripAppIdFromResponses()).isFalse(); // default
+    assertThat(body.appId()).isEqualTo("01HF-BBB");
   }
 }
