@@ -126,6 +126,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 
 | commit_sha | date_utc | kind | tokens_in_est | tokens_out_est | llm_Wh_est | build_Wh_est | ci_Wh_est | total_Wh_est | gCO2eq_est | confidence | notes |
 |------------|----------|------|---------------|----------------|------------|--------------|-----------|--------------|------------|------------|-------|
+| G1h-pending | 2026-05-26 | doc | 20k | 7k | 3.10 | 0 | 0 | 3.10 | 1.13 | LOW | docs(git): G1h — no-op investigation; short-circuit not possible for GitHub adapter |
 | FAIR5-pending | 2026-05-26 | code | 15k | 5k | 2.30 | 0 | 0 | 2.30 | 0.84 | LOW | feat(seed): FAIR5 — FAIR-complete license + accessRights on lumen seed |
 | J1g-pending | 2026-05-26 | code | 25k | 8k | 3.90 | 0 | 0 | 3.90 | 1.42 | LOW | refactor(backend): J1g — LabJournalEntryRest CRUD logic → service layer |
 | UI14-pending | 2026-05-26 | code | 20k | 7k | 3.10 | 0 | 0 | 3.10 | 1.13 | LOW | feat(ui): UI14 — "Shared with me" section on PersonalDigest |
