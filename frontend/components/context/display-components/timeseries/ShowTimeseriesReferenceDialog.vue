@@ -1,4 +1,14 @@
 <script setup lang="ts">
+// PERF9 (2026-05-26): This component previously rendered all channels as
+// unvirtualized v-checkbox rows. Fix: added a search filter (channelSearch +
+// filteredTimeseries) that reduces the visible set at MFFD scale, plus a
+// v-virtual-scroll path for the filtered list when >20 channels are visible
+// and no rows are expanded (expanded rows have variable height incompatible
+// with fixed-height virtual scroll — fall back to plain v-for in that case).
+// Color indices stay tied to the original channel index so the chart legend
+// stays in sync regardless of which filter is active.
+// Filtering reuses channelMatchesSearch from ~/utils/timeseriesChannelFilter.ts
+// (same utility used by the full-page timeseries reference view).
 import type {
   ResponseError,
   SemanticAnnotation,
@@ -13,6 +23,7 @@ import { useFetchTimeseriesPayload } from "~/composables/context/useFetchTimeser
 import type { Metrics } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import { useFetchTimeseriesReferenceMetrics } from "~/composables/context/useFetchTimeseriesReferencesMetrics";
 import type { TimeseriesSeries } from "~/components/common/chart/types";
+import { channelMatchesSearch } from "~/utils/timeseriesChannelFilter";
 
 type TimeseriesMetrics = {
   metrics?: Metrics;
@@ -200,6 +211,31 @@ function toggleAllMetrics() {
     expandedMetrics.value = new Set(props.timeseries.map(getTimeseriesKey));
   }
 }
+
+// ── channel search / filter ───────────────────────────────────────────────────
+
+/** Search query typed by the user to narrow the channel list. */
+const channelSearch = ref("");
+
+/**
+ * Timeseries rows visible after applying channelSearch.
+ * Each entry carries the original channel index so color-swatch assignments
+ * remain stable regardless of which subset the filter produces.
+ */
+const filteredTimeseries = computed<Array<{ ts: Timeseries; originalIdx: number }>>(() =>
+  props.timeseries
+    .map((ts, idx) => ({ ts, originalIdx: idx }))
+    .filter(({ ts }) => channelMatchesSearch(ts, channelSearch.value)),
+);
+
+/**
+ * When filteredTimeseries.length > 20 AND no rows are currently expanded,
+ * we use v-virtual-scroll (fixed 52px row height). If any row is expanded
+ * the height varies — fall back to a plain v-for in that case.
+ */
+const useVirtualScroll = computed(
+  () => filteredTimeseries.value.length > 20 && expandedMetrics.value.size === 0,
+);
 </script>
 
 <template>
@@ -256,67 +292,131 @@ function toggleAllMetrics() {
             @click="toggleAllMetrics"
           >{{ allMetricsExpanded ? 'Collapse all' : 'Expand all' }}</v-btn>
         </div>
-        <div
-          v-for="(ts, idx) in timeseries"
-          :key="getTimeseriesKey(ts)"
-          class="channel-row mb-1"
-        >
-          <!-- header row: color swatch + checkbox + label + expand metrics -->
-          <div class="d-flex align-center">
-            <div
-              class="color-swatch mr-2 flex-shrink-0"
-              :style="{ background: getColor(idx) }"
-            />
-            <v-checkbox
-              :model-value="enabledKeys.has(getTimeseriesKey(ts))"
-              density="compact"
-              hide-details
-              class="flex-shrink-0 mr-1"
-              @update:model-value="toggleChannel(getTimeseriesKey(ts))"
-            />
-            <span
-              class="text-body-2 flex-grow-1"
-              style="cursor: pointer"
-              @click="toggleChannel(getTimeseriesKey(ts))"
-            >{{ channelLabel(ts) }}</span>
-            <v-btn
-              density="compact"
-              variant="text"
-              size="small"
-              :icon="expandedMetrics.has(getTimeseriesKey(ts)) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-              @click="toggleMetrics(getTimeseriesKey(ts))"
-            />
-          </div>
 
-          <!-- expanded: metrics grid + annotations -->
-          <div
-            v-if="expandedMetrics.has(getTimeseriesKey(ts))"
-            class="ml-10 mt-1 mb-2"
-          >
-            <div class="metrics-grid text-body-2 text-medium-emphasis mb-2">
-              <template
-                v-for="(val, key) in timeseriesMetrics[getTimeseriesKey(ts)]?.metrics"
-                :key="key"
-              >
-                <span class="metric-label">{{ metricsNames[key] ?? key }}:</span>
-                <span class="metric-value">{{ val }}</span>
-              </template>
+        <!-- PERF9: search filter — reduces visible rows at MFFD scale (200+ channels) -->
+        <v-text-field
+          v-if="timeseries.length > 10"
+          v-model="channelSearch"
+          clearable
+          density="compact"
+          hide-details
+          placeholder="Filter channels…"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          class="mb-2"
+        />
+        <div
+          v-if="filteredTimeseries.length === 0 && channelSearch"
+          class="text-body-2 text-medium-emphasis mb-2"
+        >
+          No channels match "{{ channelSearch }}"
+        </div>
+
+        <!-- PERF9: virtual-scroll path (>20 rows, none expanded) -->
+        <v-virtual-scroll
+          v-if="useVirtualScroll"
+          :items="filteredTimeseries"
+          :item-height="52"
+          :max-height="420"
+        >
+          <template #default="{ item: { ts, originalIdx } }">
+            <div
+              :key="getTimeseriesKey(ts)"
+              class="channel-row mb-1"
+            >
+              <div class="d-flex align-center">
+                <div
+                  class="color-swatch mr-2 flex-shrink-0"
+                  :style="{ background: getColor(originalIdx) }"
+                />
+                <v-checkbox
+                  :model-value="enabledKeys.has(getTimeseriesKey(ts))"
+                  density="compact"
+                  hide-details
+                  class="flex-shrink-0 mr-1"
+                  @update:model-value="toggleChannel(getTimeseriesKey(ts))"
+                />
+                <span
+                  class="text-body-2 flex-grow-1"
+                  style="cursor: pointer"
+                  @click="toggleChannel(getTimeseriesKey(ts))"
+                >{{ channelLabel(ts) }}</span>
+                <v-btn
+                  density="compact"
+                  variant="text"
+                  size="small"
+                  :icon="expandedMetrics.has(getTimeseriesKey(ts)) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                  @click="toggleMetrics(getTimeseriesKey(ts))"
+                />
+              </div>
             </div>
-            <div class="d-flex flex-wrap gap-1">
-              <SemanticAnnotationChip
-                v-for="annotation in timeseriesMetrics[getTimeseriesKey(ts)]?.annotations"
-                :key="annotation.id"
-                :can-delete="!!isAllowedToEditCollection"
-                :annotation="annotation"
-                :annotated-type="
-                  timeseriesMetrics[getTimeseriesKey(ts)]?.timeseriesObj
-                    ? new AnnotatedTimeseries(timeseriesMetrics[getTimeseriesKey(ts)]!.timeseriesObj!)
-                    : new AnnotatedReference(collectionId, dataObjectId, props.timeseriesReferenceId)
-                "
+          </template>
+        </v-virtual-scroll>
+
+        <!-- plain v-for path: ≤20 rows OR at least one row is expanded -->
+        <template v-else>
+          <div
+            v-for="{ ts, originalIdx } in filteredTimeseries"
+            :key="getTimeseriesKey(ts)"
+            class="channel-row mb-1"
+          >
+            <!-- header row: color swatch + checkbox + label + expand metrics -->
+            <div class="d-flex align-center">
+              <div
+                class="color-swatch mr-2 flex-shrink-0"
+                :style="{ background: getColor(originalIdx) }"
+              />
+              <v-checkbox
+                :model-value="enabledKeys.has(getTimeseriesKey(ts))"
+                density="compact"
+                hide-details
+                class="flex-shrink-0 mr-1"
+                @update:model-value="toggleChannel(getTimeseriesKey(ts))"
+              />
+              <span
+                class="text-body-2 flex-grow-1"
+                style="cursor: pointer"
+                @click="toggleChannel(getTimeseriesKey(ts))"
+              >{{ channelLabel(ts) }}</span>
+              <v-btn
+                density="compact"
+                variant="text"
+                size="small"
+                :icon="expandedMetrics.has(getTimeseriesKey(ts)) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                @click="toggleMetrics(getTimeseriesKey(ts))"
               />
             </div>
+
+            <!-- expanded: metrics grid + annotations -->
+            <div
+              v-if="expandedMetrics.has(getTimeseriesKey(ts))"
+              class="ml-10 mt-1 mb-2"
+            >
+              <div class="metrics-grid text-body-2 text-medium-emphasis mb-2">
+                <template
+                  v-for="(val, key) in timeseriesMetrics[getTimeseriesKey(ts)]?.metrics"
+                  :key="key"
+                >
+                  <span class="metric-label">{{ metricsNames[key] ?? key }}:</span>
+                  <span class="metric-value">{{ val }}</span>
+                </template>
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <SemanticAnnotationChip
+                  v-for="annotation in timeseriesMetrics[getTimeseriesKey(ts)]?.annotations"
+                  :key="annotation.id"
+                  :can-delete="!!isAllowedToEditCollection"
+                  :annotation="annotation"
+                  :annotated-type="
+                    timeseriesMetrics[getTimeseriesKey(ts)]?.timeseriesObj
+                      ? new AnnotatedTimeseries(timeseriesMetrics[getTimeseriesKey(ts)]!.timeseriesObj!)
+                      : new AnnotatedReference(collectionId, dataObjectId, props.timeseriesReferenceId)
+                  "
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
 
         <div class="d-flex justify-end mt-4">
           <v-btn

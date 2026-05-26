@@ -130,6 +130,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | V14-V90-BUG148 | 2026-05-26 | code | 12k | 4k | 1.65 | 20 | 5 | 26.65 | 9.68 | MEDIUM | fix(backend): V14-WHERE-CLAUSE-TIGHTEN + BUG-148-DESIGN-ASSERT-TEST — V90 migration + anti-regression test |
 | Wave12a | 2026-05-26 | code | 20k | 6k | 2.30 | 0 | 0 | 2.30 | 0.84 | MEDIUM | feat(ux): Wave12a — sidebar superset fix + keyboard shortcut + collection page improvements |
 | UI-DEEP-LINK | 2026-05-26 | code | 8k | 2k | 0.80 | 0 | 0 | 0.80 | 0.29 | MEDIUM | feat(frontend): UI-DEEP-LINK-TYPED-LISTS — /containers/[type] redirect shim |
+| PERF9 | 2026-05-26 | code | 8k | 3k | 0.83 | 0 | 0 | 0.83 | 0.30 | MEDIUM | perf(frontend): PERF9 — search filter + v-virtual-scroll in ShowTimeseriesReferenceDialog; TimeseriesReferencePicker already handled |
 | PERF7 | 2026-05-26 | code | 25k | 8k | 2.90 | 5 | 2 | 9.90 | 3.59 | MEDIUM | perf(frontend): PERF7 — lazy channel preview via IntersectionObserver + in-flight dedup |
 | PERF6 | 2026-05-26 | code | 18k | 5k | 2.10 | 5 | 2 | 9.10 | 3.30 | MEDIUM | perf(frontend): PERF6 — singleton DataObject fetch across lineage + prov graphs |
 | KIP1l-pending | 2026-05-26 | code | 20k | 6k | 2.30 | 5 | 2 | 9.30 | 3.38 | MEDIUM | feat(kip): KIP1l — existing-publication confirmation on re-publish |
@@ -505,4 +506,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | UX-SPATIAL-VIEWER-OR-BANNER + UX-SIDEBAR-COLLAPSE: spatial banner, video scaffold page + test, sidebar desktop collapse toggle. ~0.003 kWh / ~1.1 gCO₂e. | Claude Sonnet 4.6 |
 | 2026-05-26 | PERF5 — batch DataObjectService N+1 Neo4j loop into single `WHERE d.shepardId IN $ids` query via `DataObjectDAO.findByCollectionAndShepardIds`; 2 unit tests. ~0.002 kWh / ~0.8 gCO₂e (inference only; net runtime savings: up to N-1 Neo4j round-trips per create/update at MFFD scale). | Claude Sonnet 4.6 |
 | 2026-05-26 | COMP-SE-ROLES + COMP-SE-DOCS + API3 — DLR SE compliance docs (SEA naming, AK classification) + container safe-delete design doc. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-05-26 | PERF9 — channel-edit checkbox virtualization: search filter + v-virtual-scroll in ShowTimeseriesReferenceDialog; TimeseriesReferencePicker already handled. ~0.03 kWh / ~12 gCO₂e. | Claude Sonnet 4.6 |
 

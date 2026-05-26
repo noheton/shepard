@@ -109,7 +109,7 @@ section and the `upgrade-overlay` section.
 | [`aidocs/ops/p22-sse-proxy-compat-findings.md`](ops/p22-sse-proxy-compat-findings.md) | P22 — SSE proxy-compatibility findings | 2026-05-26 | 2026-05-26 |
 | [`aidocs/ops/vis-s2-garage-omezarr-storage-policy.md`](ops/vis-s2-garage-omezarr-storage-policy.md) | VIS-S2 — Garage S3 + OME-Zarr storage-policy operator doc | 2026-05-26 | 2026-05-26 |
 | [`aidocs/platform/56-v2-api-simplification-output-profiles-mcp.md`](platform/56-v2-api-simplification-output-profiles-mcp.md) | `/v2/` API Simplification — Flat Paths, Output Profiles, MCP-Friendly OpenAPI | 2026-05-23 | 2026-05-23 |
-| [`aidocs/platform/API3-container-safe-delete-design.md`](platform/API3-container-safe-delete-design.md) | API3 — Safe-Delete Design for Container Endpoints | 2026-05-26 | — |
+| [`aidocs/platform/API3-container-safe-delete-design.md`](platform/API3-container-safe-delete-design.md) | API3 — Safe-Delete Design for Container Endpoints | 2026-05-26 | 2026-05-26 |
 | [`aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | Internal Semantic Repository via Neosemantics — Design | 2026-05-23 | 2026-05-26 |
 | [`aidocs/strategy/190-thesis-idea-timeline.md`](strategy/190-thesis-idea-timeline.md) | Thesis Idea Timeline | 2026-05-26 | 2026-05-26 |
 | [`aidocs/workflows/40-spw-stc-integration-design.md`](workflows/40-spw-stc-integration-design.md) | shepard-process-wizard + shepard-timeseries-collector integration design | 2026-05-23 | 2026-05-23 |

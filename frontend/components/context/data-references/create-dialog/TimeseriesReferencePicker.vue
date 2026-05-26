@@ -1,4 +1,10 @@
 <script setup lang="ts">
+// PERF9 (2026-05-26): This component was reviewed as a candidate for
+// virtualization. It uses <v-autocomplete multiple> (Vuetify 3) which already
+// virtualizes its dropdown list and provides built-in type-to-filter.
+// No v-checkbox row loop exists here — the unvirtualized pattern lives in
+// ShowTimeseriesReferenceDialog.vue (see that file for the PERF9 fix).
+// No changes needed in this file.
 import type { TimeseriesRefItem } from "./CreateDataReferenceDialog.vue";
 import type { TimeseriesRef } from "./DataRef";
 import TimeseriesReferenceTimePicker from "./TimeseriesReferenceTimePicker.vue";
