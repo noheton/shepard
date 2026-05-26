@@ -121,6 +121,30 @@ public class SemanticAnnotationV2DAO extends GenericDAO<SemanticAnnotation> {
       .toList();
   }
 
+  // ─── back-pointer stamp ────────────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-007 — stamp the {@code sourceActivityAppId} back-pointer onto an
+   * existing {@code :SemanticAnnotation} node after the {@link
+   * de.dlr.shepard.provenance.services.ProvenanceService} has minted the Activity.
+   *
+   * <p>Using a targeted Cypher {@code SET} rather than a full
+   * {@code createOrUpdate()} avoids re-writing every field when only the
+   * back-pointer needs to land. Best-effort: a {@code null} or blank
+   * {@code activityAppId} is a no-op.
+   *
+   * @param annotationAppId  the {@code appId} of the annotation to update
+   * @param activityAppId    the {@code appId} of the Activity to stamp
+   */
+  public void setSourceActivityAppId(String annotationAppId, String activityAppId) {
+    if (annotationAppId == null || annotationAppId.isBlank()) return;
+    if (activityAppId == null || activityAppId.isBlank()) return;
+    String query =
+      "MATCH (a:SemanticAnnotation {appId: $annotationAppId}) " +
+      "SET a.sourceActivityAppId = $activityAppId";
+    runQuery(query, Map.of("annotationAppId", annotationAppId, "activityAppId", activityAppId));
+  }
+
   // ─── helpers ───────────────────────────────────────────────────────────────
 
   /** Escape special Cypher regex chars to prevent injection via the text-search query. */
