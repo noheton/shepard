@@ -16,6 +16,11 @@ four content types depending on the request's `Accept` header.
 > [Monitor Collection activity](../help/monitor-collection-activity.md)
 > page in the help track. This page is the wire-shape deep-dive.
 
+> **Instance admins** — for the instance-wide viewer under
+> **Admin → Activity Log**, see the
+> [Instance-wide activity log](../help/admin-activity-log.md)
+> help page.
+
 ## What gets captured
 
 A `:Activity` Neo4j node lands for every authenticated 2xx response
