@@ -105,6 +105,13 @@ wait-for-health:
 smoke: build-backend
 	@$(COMPOSE_DIR)/smoke-test.sh
 
+# Fast variant: run the smoke script without a backend rebuild. Use after
+# frontend-only or backend-only deploys where the build already happened
+# (image-backend / image-frontend both call their respective build targets).
+# This avoids the 60+ min Quarkus augmentation when only the frontend changed.
+smoke-fast:
+	@$(COMPOSE_DIR)/smoke-test.sh
+
 # Per `feedback_deploy_after_visible_features.md`: build → image → redeploy → smoke-test.
 # All three redeploy targets chain through wait-for-health + smoke so a green
 # `make redeploy` is genuine confidence the deploy worked, not just an image swap.
@@ -118,17 +125,17 @@ smoke: build-backend
 redeploy-backend: preflight-env image-backend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend
 	@$(MAKE) wait-for-health
-	@$(MAKE) smoke
+	@$(MAKE) smoke-fast
 
 redeploy-frontend: preflight-env image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate frontend
 	@$(MAKE) wait-for-health
-	@$(MAKE) smoke
+	@$(MAKE) smoke-fast
 
 redeploy: preflight-env image-backend image-frontend
 	cd $(COMPOSE_DIR) && docker compose up -d --no-build --force-recreate backend frontend
 	@$(MAKE) wait-for-health
-	@$(MAKE) smoke
+	@$(MAKE) smoke-fast
 
 # Escape hatch: full rebuild + deploy WITHOUT the post-deploy verification. Use
 # when the smoke test is the thing you're iterating on, or when you knowingly
