@@ -369,7 +369,7 @@ useHead({
             <!-- Deeper-dive content stays in collapsibles. Snapshots and
                  Publishing are dev/admin tooling — hidden in basic mode. -->
             <v-row no-gutters>
-              <ExpansionPanels :default-open="[0]">
+              <ExpansionPanels :default-open="[0, 1, 3]">
                 <ExpansionPanelItem
                   :count="Object.keys(collection.attributes ?? {}).length"
                   title="Attributes"

@@ -275,7 +275,7 @@ const dataObjectAccessRights = computed<string | null>(() => {
             </section>
 
             <v-row no-gutters>
-              <ExpansionPanels :default-open="[2, 3]">
+              <ExpansionPanels :default-open="[1, 2, 3, 4]">
                 <ExpansionPanelItem
                   :count="Object.keys(dataObject.attributes ?? {}).length"
                   title="Attributes"
