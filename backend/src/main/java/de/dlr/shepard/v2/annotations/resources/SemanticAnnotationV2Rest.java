@@ -7,6 +7,9 @@ import de.dlr.shepard.common.identifier.EntityIdResolver;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
+import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.filters.ProvenanceCaptureFilter;
+import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
@@ -19,12 +22,14 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -88,6 +93,19 @@ public class SemanticAnnotationV2Rest {
 
   @Inject
   OntologyConfigService ontologyConfigService;
+
+  /** SEMA-V6-007 — mints `:Activity` nodes for annotation mutations. */
+  @Inject
+  ProvenanceService provenanceService;
+
+  /**
+   * SEMA-V6-007 — injected so handlers can set
+   * {@link ProvenanceCaptureFilter#PROP_SKIP_CAPTURE} after calling
+   * {@link ProvenanceService#record} directly, preventing a duplicate
+   * {@code :Activity} row from the response filter.
+   */
+  @Context
+  ContainerRequestContext requestContext;
 
   // ─── LIST ──────────────────────────────────────────────────────────────────
 
@@ -288,7 +306,12 @@ public class SemanticAnnotationV2Rest {
   @APIResponse(responseCode = "400", description = "Missing required fields or object invariant violated (RFC 7807).")
   @APIResponse(responseCode = "401", description = "Authentication required.")
   @APIResponse(responseCode = "403", description = "Caller cannot Write the subject entity.")
-  public Response create(CreateAnnotationIO body, @Context SecurityContext sc) {
+  public Response create(
+    CreateAnnotationIO body,
+    @Context SecurityContext sc,
+    @HeaderParam("X-AI-Agent") String aiAgentHeader
+  ) {
+    long startedAtMillis = System.currentTimeMillis();
     String caller = callerName(sc);
     if (caller == null) return unauthorized();
 
@@ -336,7 +359,14 @@ public class SemanticAnnotationV2Rest {
     annotation.setValueName(hasLiteral ? body.getObjectLiteral() : null);
     annotation.setNumericValue(body.getNumericValue());
     annotation.setUnitIRI(body.getUnitIri());
-    annotation.setSourceMode(body.getSourceMode() != null ? body.getSourceMode() : "human");
+    // SEMA-V6-007: if X-AI-Agent header is present and sourceMode not explicitly given,
+    // default to "ai" rather than "human" (EU AI Act Art-50 transparency hook).
+    String resolvedSourceMode = body.getSourceMode() != null
+      ? body.getSourceMode()
+      : (aiAgentHeader != null && !aiAgentHeader.isBlank() ? "ai" : "human");
+    annotation.setSourceMode(resolvedSourceMode);
+    // Client-supplied sourceActivityAppId is accepted but will be overwritten below
+    // if ProvenanceService mints a new Activity for this create.
     annotation.setSourceActivityAppId(body.getSourceActivityAppId());
     annotation.setAgentUsername(caller);  // SEMA-V6-013: record the author username at creation
     annotation.setValidFromMillis(body.getValidFromMillis());
@@ -344,6 +374,17 @@ public class SemanticAnnotationV2Rest {
     annotation.setConfidence(body.getConfidence() != null ? body.getConfidence() : 1.0);
 
     annotationDAO.createOrUpdate(annotation);
+
+    // SEMA-V6-007: record :Activity, back-stamp Neo4j node, and stamp in-memory
+    // entity so the 201 response body carries sourceActivityAppId.
+    String activityAppId = recordAnnotationActivity(
+      "CREATE", annotation.getAppId(), caller, startedAtMillis,
+      "POST /v2/annotations — created annotation " + annotation.getAppId()
+    );
+    if (activityAppId != null) {
+      annotation.setSourceActivityAppId(activityAppId);
+    }
+
     Log.infof("SemanticAnnotationV2Rest: created annotation %s on %s/%s by %s",
       annotation.getAppId(), annotation.getSubjectKind(), annotation.getSubjectAppId(), caller);
     return Response.status(Response.Status.CREATED).entity(new AnnotationIO(annotation)).build();
@@ -377,6 +418,11 @@ public class SemanticAnnotationV2Rest {
     UpdateAnnotationIO body,
     @Context SecurityContext sc
   ) {
+    // Note: X-AI-Agent header is not inspected on update — the "collaborative"
+    // sourceMode flip (human annotation later touched by AI → 🤝 "collaborative")
+    // is SEMA-V6-007 follow-up scope. See McpToolSupport.HEADER_AI_AGENT for the
+    // shared constant when that work lands.
+    long startedAtMillis = System.currentTimeMillis();
     String caller = callerName(sc);
     if (caller == null) return unauthorized();
 
@@ -415,6 +461,17 @@ public class SemanticAnnotationV2Rest {
     if (body.getSourceMode() != null) annotation.setSourceMode(body.getSourceMode());
 
     annotationDAO.createOrUpdate(annotation);
+
+    // SEMA-V6-007: record :Activity, back-stamp Neo4j node, and stamp in-memory
+    // entity so the 200 response body carries the new sourceActivityAppId.
+    String activityAppId = recordAnnotationActivity(
+      "UPDATE", annotation.getAppId(), caller, startedAtMillis,
+      "PUT /v2/annotations/" + appId + " — updated annotation"
+    );
+    if (activityAppId != null) {
+      annotation.setSourceActivityAppId(activityAppId);
+    }
+
     return Response.ok(new AnnotationIO(annotation)).build();
   }
 
@@ -442,6 +499,7 @@ public class SemanticAnnotationV2Rest {
     @PathParam("appId") String appId,
     @Context SecurityContext sc
   ) {
+    long startedAtMillis = System.currentTimeMillis();
     String caller = callerName(sc);
     if (caller == null) return unauthorized();
 
@@ -484,8 +542,107 @@ public class SemanticAnnotationV2Rest {
       return notFound("annotation", appId);
     }
     annotationDAO.deleteByNeo4jId(annotation.getId());
+
+    // SEMA-V6-007: record :Activity for the delete.
+    // No back-stamp needed — annotation is deleted.
+    recordDeleteActivity(appId, caller, startedAtMillis);
+
     Log.infof("SemanticAnnotationV2Rest: deleted annotation %s by %s (policy=%s)", appId, caller, policy);
     return Response.noContent().build();
+  }
+
+  // ─── SEMA-V6-007 provenance helpers ──────────────────────────────────────
+
+  /**
+   * Record a CREATE or UPDATE {@code :Activity} for an annotation write, back-stamp
+   * {@code sourceActivityAppId} on the annotation node (Cypher SET), AND return the
+   * Activity appId so the caller can stamp the in-memory entity before building the
+   * response body.
+   *
+   * <p>Best-effort — any failure is swallowed and {@code null} is returned.
+   * Sets {@link ProvenanceCaptureFilter#PROP_SKIP_CAPTURE} on the request context
+   * so the response filter does not write a duplicate row.
+   *
+   * @param actionKind       {@code "CREATE"} or {@code "UPDATE"}
+   * @param annotationAppId  the appId of the annotation that was written
+   * @param caller           authenticated username
+   * @param startedAtMillis  millis captured at handler entry
+   * @param summary          short human-readable summary
+   * @return the minted Activity appId, or {@code null} if capture failed / disabled
+   */
+  private String recordAnnotationActivity(
+    String actionKind,
+    String annotationAppId,
+    String caller,
+    long startedAtMillis,
+    String summary
+  ) {
+    String activityAppId = null;
+    try {
+      long endedAtMillis = System.currentTimeMillis();
+      int httpStatus = "CREATE".equals(actionKind) ? 201 : 200;
+      String method   = "CREATE".equals(actionKind) ? "POST" : "PUT";
+      String path     = "v2/annotations" + ("CREATE".equals(actionKind) ? "" : "/" + annotationAppId);
+
+      Activity activity = provenanceService.record(
+        actionKind,
+        "SemanticAnnotation",
+        annotationAppId,
+        caller,
+        summary,
+        method,
+        path,
+        httpStatus,
+        startedAtMillis,
+        endedAtMillis
+      );
+
+      if (activity != null && activity.getAppId() != null) {
+        activityAppId = activity.getAppId();
+        // Back-stamp: write the Activity appId onto the annotation node in Neo4j.
+        annotationDAO.setSourceActivityAppId(annotationAppId, activityAppId);
+      }
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEMA-V6-007: provenance capture skipped for annotation=%s", annotationAppId);
+    } finally {
+      // Tell the response filter not to emit a second :Activity row.
+      try {
+        if (requestContext != null) {
+          requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+        }
+      } catch (RuntimeException ignored) { /* best-effort */ }
+    }
+    return activityAppId;
+  }
+
+  /**
+   * Record a DELETE {@code :Activity} for an annotation deletion.
+   * No back-stamp is needed — the annotation node is gone.
+   */
+  private void recordDeleteActivity(String annotationAppId, String caller, long startedAtMillis) {
+    try {
+      long endedAtMillis = System.currentTimeMillis();
+      provenanceService.record(
+        "DELETE",
+        "SemanticAnnotation",
+        annotationAppId,
+        caller,
+        "DELETE /v2/annotations/" + annotationAppId + " — deleted annotation",
+        "DELETE",
+        "v2/annotations/" + annotationAppId,
+        204,
+        startedAtMillis,
+        endedAtMillis
+      );
+    } catch (RuntimeException e) {
+      Log.debugf(e, "SEMA-V6-007: delete provenance capture skipped for annotation=%s", annotationAppId);
+    } finally {
+      try {
+        if (requestContext != null) {
+          requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+        }
+      } catch (RuntimeException ignored) { /* best-effort */ }
+    }
   }
 
   // ─── permission helpers ───────────────────────────────────────────────────

@@ -49,6 +49,20 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
 
   static final String PROP_STARTED_AT_MILLIS = "shepard.provenance.startedAtMillis";
 
+  /**
+   * SEMA-V6-007 — when a handler has already called {@link ProvenanceService#record}
+   * directly (e.g. annotation create/update/delete, which need the returned Activity
+   * appId to back-stamp {@code :SemanticAnnotation.sourceActivityAppId}), it sets this
+   * request property so the response filter skips its own capture and avoids a
+   * duplicate {@code :Activity} row.
+   *
+   * <p>Usage in handlers:
+   * <pre>{@code
+   *   requestContext.setProperty(ProvenanceCaptureFilter.PROP_SKIP_CAPTURE, Boolean.TRUE);
+   * }</pre>
+   */
+  public static final String PROP_SKIP_CAPTURE = "shepard.provenance.skip-capture";
+
   /** Header forwarded by the MFFD importer carrying the source-side username. */
   static final String HDR_SOURCE_USERNAME     = "X-Source-User-Username";
   /** Header forwarded by the MFFD importer carrying the source-side display name. */
@@ -84,6 +98,10 @@ public class ProvenanceCaptureFilter implements ContainerRequestFilter, Containe
   @Override
   public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
     if (!provenance.isEnabled()) return;
+
+    // SEMA-V6-007: handler already called ProvenanceService.record() directly
+    // and set this property — skip to avoid a duplicate :Activity row.
+    if (Boolean.TRUE.equals(request.getProperty(PROP_SKIP_CAPTURE))) return;
 
     String method = request.getMethod();
     boolean isMutation = isMutation(method);

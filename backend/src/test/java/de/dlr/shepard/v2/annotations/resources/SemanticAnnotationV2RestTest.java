@@ -2,7 +2,9 @@ package de.dlr.shepard.v2.annotations.resources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,10 +16,13 @@ import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.context.semantic.entities.SemanticConfig;
 import de.dlr.shepard.context.semantic.services.OntologyConfigService;
+import de.dlr.shepard.provenance.entities.Activity;
+import de.dlr.shepard.provenance.services.ProvenanceService;
 import de.dlr.shepard.v2.annotations.daos.SemanticAnnotationV2DAO;
 import de.dlr.shepard.v2.annotations.io.AnnotationIO;
 import de.dlr.shepard.v2.annotations.io.CreateAnnotationIO;
 import de.dlr.shepard.v2.annotations.io.UpdateAnnotationIO;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.security.Principal;
@@ -53,6 +58,12 @@ class SemanticAnnotationV2RestTest {
   OntologyConfigService ontologyConfigService;
 
   @Mock
+  ProvenanceService provenanceService;
+
+  @Mock
+  ContainerRequestContext requestContext;
+
+  @Mock
   SecurityContext sc;
 
   @Mock
@@ -68,6 +79,8 @@ class SemanticAnnotationV2RestTest {
     resource.permissionsService = permissionsService;
     resource.entityIdResolver = entityIdResolver;
     resource.ontologyConfigService = ontologyConfigService;
+    resource.provenanceService = provenanceService;
+    resource.requestContext = requestContext;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -83,6 +96,11 @@ class SemanticAnnotationV2RestTest {
     // Default: policy singleton returns null (= 'author-or-manager' default)
     SemanticConfig defaultConfig = new SemanticConfig();
     when(ontologyConfigService.loadSingleton()).thenReturn(defaultConfig);
+
+    // Default: provenance capture is a no-op unless overridden per test
+    when(provenanceService.record(anyString(), anyString(), anyString(), anyString(),
+        anyString(), anyString(), anyString(), anyInt(), anyLong(), anyLong()))
+      .thenReturn(null);
   }
 
   // ─── list ────────────────────────────────────────────────────────────────
@@ -176,7 +194,7 @@ class SemanticAnnotationV2RestTest {
   void create_returns201AndPersists() {
     CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "CF/LMPAEK", null);
 
-    Response r = resource.create(body, sc);
+    Response r = resource.create(body, sc, null);
 
     assertThat(r.getStatus()).isEqualTo(201);
     verify(annotationDAO).createOrUpdate(any(SemanticAnnotation.class));
@@ -189,32 +207,32 @@ class SemanticAnnotationV2RestTest {
 
   @Test
   void create_returns400WhenBodyNull() {
-    assertThat(resource.create(null, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(null, sc, null).getStatus()).isEqualTo(400);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
   @Test
   void create_returns400WhenSubjectAppIdBlank() {
     CreateAnnotationIO body = createBody("DataObject", "", PREDICATE_IRI, "v", null);
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(400);
   }
 
   @Test
   void create_returns400WhenSubjectKindBlank() {
     CreateAnnotationIO body = createBody("", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(400);
   }
 
   @Test
   void create_returns400WhenPredicateIriBlank() {
     CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, "", "v", null);
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(400);
   }
 
   @Test
   void create_returns400WhenBothLiteralAndIriProvided() {
     CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", "http://example.org/v");
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(400);
   }
 
   @Test
@@ -223,7 +241,7 @@ class SemanticAnnotationV2RestTest {
     body.setSubjectAppId(SUBJ_APP_ID);
     body.setSubjectKind("DataObject");
     body.setPredicateIri(PREDICATE_IRI);
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(400);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(400);
   }
 
   @Test
@@ -231,7 +249,7 @@ class SemanticAnnotationV2RestTest {
     when(permissionsService.isAccessAllowedForDataObjectAppId(eq(SUBJ_APP_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(false);
     CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "v", null);
-    assertThat(resource.create(body, sc).getStatus()).isEqualTo(403);
+    assertThat(resource.create(body, sc, null).getStatus()).isEqualTo(403);
     verify(annotationDAO, never()).createOrUpdate(any());
   }
 
@@ -243,7 +261,7 @@ class SemanticAnnotationV2RestTest {
     body.setPredicateIri(PREDICATE_IRI);
     body.setObjectIri("http://example.org/material/CF_LMPAEK");
 
-    Response r = resource.create(body, sc);
+    Response r = resource.create(body, sc, null);
     assertThat(r.getStatus()).isEqualTo(201);
     AnnotationIO io = (AnnotationIO) r.getEntity();
     assertThat(io.getObjectIri()).isEqualTo("http://example.org/material/CF_LMPAEK");
@@ -458,6 +476,81 @@ class SemanticAnnotationV2RestTest {
 
     Response r = resource.delete(ANN_APP_ID, sc);
     assertThat(r.getStatus()).isEqualTo(403);
+  }
+
+  // ─── SEMA-V6-007: provenance back-pointer and AI-mode detection ──────────
+
+  /**
+   * SEMA-V6-007 — POST annotation: verify that the 201 response body carries
+   * a non-null {@code sourceActivityAppId} equal to the Activity minted by
+   * {@link ProvenanceService#record}.
+   */
+  @Test
+  void createAnnotation_writesSourceActivityAppId() {
+    Activity stubActivity = new Activity();
+    stubActivity.setAppId("act-test-uuid");
+    when(provenanceService.record(anyString(), anyString(), anyString(), anyString(),
+        anyString(), anyString(), anyString(), anyInt(), anyLong(), anyLong()))
+      .thenReturn(stubActivity);
+
+    CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "CF/LMPAEK", null);
+    Response r = resource.create(body, sc, null);
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getSourceActivityAppId())
+      .as("sourceActivityAppId must be the appId minted by ProvenanceService")
+      .isEqualTo("act-test-uuid");
+    // DAO back-stamp must also have been called
+    verify(annotationDAO).setSourceActivityAppId(anyString(), eq("act-test-uuid"));
+  }
+
+  /**
+   * SEMA-V6-007 — PUT annotation: verify that a new {@code sourceActivityAppId}
+   * is written for every update (CLAUDE.md: "Every annotation write records a
+   * typed {@code :Activity}").
+   */
+  @Test
+  void updateAnnotation_writesNewSourceActivityAppId() {
+    Activity stubActivity = new Activity();
+    stubActivity.setAppId("act-update-uuid");
+    when(provenanceService.record(anyString(), anyString(), anyString(), anyString(),
+        anyString(), anyString(), anyString(), anyInt(), anyLong(), anyLong()))
+      .thenReturn(stubActivity);
+
+    var ann = annotation(ANN_APP_ID, SUBJ_APP_ID, "DataObject", PREDICATE_IRI, "old-value");
+    ann.setSourceActivityAppId("act-old-uuid");
+    when(annotationDAO.findByAnnotationAppId(ANN_APP_ID)).thenReturn(ann);
+
+    UpdateAnnotationIO body = new UpdateAnnotationIO();
+    body.setObjectLiteral("new-value");
+    Response r = resource.update(ANN_APP_ID, body, sc);
+
+    assertThat(r.getStatus()).isEqualTo(200);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getSourceActivityAppId())
+      .as("sourceActivityAppId must reflect the Activity minted for this update, not the old value")
+      .isEqualTo("act-update-uuid");
+    verify(annotationDAO).setSourceActivityAppId(eq(ANN_APP_ID), eq("act-update-uuid"));
+  }
+
+  /**
+   * SEMA-V6-007 — POST annotation with {@code X-AI-Agent} header: verify that
+   * {@code sourceMode} defaults to {@code "ai"} when the header is present and
+   * the caller does not supply an explicit {@code sourceMode}.
+   */
+  @Test
+  void createAnnotation_withAiAgentHeader_setsSourceModeAi() {
+    CreateAnnotationIO body = createBody("DataObject", SUBJ_APP_ID, PREDICATE_IRI, "CF/LMPAEK", null);
+    // sourceMode not set → resource must infer "ai" from the header
+
+    Response r = resource.create(body, sc, "MyTestAgent/1.0");
+
+    assertThat(r.getStatus()).isEqualTo(201);
+    AnnotationIO io = (AnnotationIO) r.getEntity();
+    assertThat(io.getSourceMode())
+      .as("X-AI-Agent header present without explicit sourceMode → must default to 'ai'")
+      .isEqualTo("ai");
   }
 
   // ─── helpers ─────────────────────────────────────────────────────────────
