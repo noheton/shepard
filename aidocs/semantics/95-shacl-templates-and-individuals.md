@@ -1036,6 +1036,11 @@ queryable as a first-class capability.
 
 ### Network-shaped views — what TPL6 actually ships
 
+> **Full design:** `aidocs/platform/109-tpl6-network-shaped-data-organisation.md`
+> (stage: feature-defined, 2026-05-26) is the SSOT for TPL6 implementation
+> detail — graph schema, REST endpoints, migration scripts, acceptance tests,
+> and phasing. This section is a summary only; **109 is authoritative**.
+
 **Honest scoping note:** earlier drafts of this part promised four
 network-shaped renderers including a free-form "knowledge graph"
 view rendered as a force-directed layout. At MFFD scale the
@@ -1044,9 +1049,10 @@ layouts hairball above ~150 nodes, and even hierarchical layouts
 struggle. The **real win** in TPL6 is **multi-parent membership**
 (a DataObject can belong to multiple Collections) plus
 **cross-reference indicators on detail pages** that let users
-laterally navigate the graph node-by-node. Full knowledge-graph
-rendering is demoted to a v2 concern once the substrate handles
-streaming sub-graph queries.
+laterally navigate the graph node-by-node. The graph network view
+(TPL6c) is viable for v1 with a 200-node viewport cap + zoom-to-subgraph
+interaction (see `aidocs/platform/109 §5`); full unbounded graph rendering
+remains deferred to v2.
 
 TPL6 v1 ships:
 
@@ -1758,10 +1764,10 @@ RDM platforms have **none** of this infrastructure.
 | **TPL5a** | Git ontology ingestion: backend git client, ROBOT-style validation, webhook receiver | 4 |
 | **TPL5b** | Git ontology ingestion: admin UI, dry-run diff preview, branch-per-environment. **MUST include rollback procedure:** admin approves a bad ontology load → instances start failing SHACL → `git revert` upstream → "Sync now" admin click → preview shows diff in reverse → instances depending on removed terms get flagged for manual review. The shape-pinning model (instances pin to a shape version) gives most of the safety; the explicit rollback path closes the gap for the un-pinned middle. | 3 |
 | **TPL5c** | DLR ontology audit (`aidocs/agent-findings/dlr-ontology-catalog.md`) + integration shortlist | 1 |
-| **TPL6a** | Multi-parent membership in V2 schema + endpoints + migration | 5 |
-| **TPL6b** | Saved-query / saved-view storage + Vue widget | 5 |
-| **TPL6c** | Network views (process network + knowledge graph) — reuses existing graph renderer | 5 |
-| **TPL6d** | Cross-Collection navigation polish — namespace-aware breadcrumbs | 3 |
+| **TPL6a** | Multi-parent membership in V2 schema + endpoints + migration → `aidocs/platform/109` | 5 |
+| **TPL6b** | Saved-query / saved-view storage + Vue widget → `aidocs/platform/109` | 5 |
+| **TPL6c** | Network views (process network + knowledge graph, 200-node viewport cap) → `aidocs/platform/109` | 5 |
+| **TPL6d** | Cross-Collection navigation polish — namespace-aware breadcrumbs → `aidocs/platform/109` | 3 |
 
 Total: ~70 days. Realistic delivery in **10 weeks one-engineer** or
 **6 weeks parallelised**. Three milestones:
