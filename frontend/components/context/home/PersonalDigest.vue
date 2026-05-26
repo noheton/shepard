@@ -32,6 +32,27 @@ const userAppId = computed<string | undefined>(() => {
   return raw ?? undefined;
 });
 
+// Display name of the current user — matches the `createdBy` field that the
+// backend serialises via DisplayNameResolver.effectiveDisplayName().
+// Used to split "my collections" from "shared with me" without an extra fetch.
+const userDisplayName = computed<string | undefined>(() =>
+  user.value?.effectiveDisplayName ?? user.value?.username ?? undefined,
+);
+
+// Split collections into "mine" (I created them) and "shared" (someone else
+// did, but I can access them). Only split after both the user profile and the
+// collection list have loaded — during the loading window, every collection
+// would appear in the "shared" bucket since the display name is not yet known.
+const myCollections = computed(() => {
+  if (!userDisplayName.value || loading.value) return collections.value;
+  return collections.value.filter(c => c.createdBy === userDisplayName.value);
+});
+
+const sharedCollections = computed(() => {
+  if (!userDisplayName.value || loading.value) return [];
+  return collections.value.filter(c => c.createdBy !== userDisplayName.value);
+});
+
 function v2BaseUrl(): string {
   const explicit = publicConfig.backendV2ApiUrl as string | undefined;
   if (explicit && explicit.length > 0) return explicit;
@@ -336,7 +357,7 @@ function relativeTime(date: Date | null | undefined): string {
         <!-- Collection cards -->
         <template v-else>
           <v-col
-            v-for="collection in collections"
+            v-for="collection in myCollections"
             :key="collection.id"
             cols="12"
             sm="6"
@@ -460,9 +481,69 @@ function relativeTime(date: Date | null | undefined): string {
       </div>
     </template>
 
-    <!-- TODO: "Shared with me" section (v2) — split collections where
-         collection.createdBy !== currentUser.appId into a separate
-         flat v-list below the "My collections" grid. -->
+    <!-- "Shared with me" section — collections created by other users that
+         the current user can access. Only rendered once data is available
+         and at least one shared collection exists. Visible in both basic
+         and advanced mode (useful to everyone). -->
+    <template v-if="!loading && sharedCollections.length > 0">
+      <div
+        class="d-flex align-center mb-4 mt-6 ga-2"
+        data-testid="shared-collections-section"
+      >
+        <v-icon icon="mdi-account-multiple-outline" color="primary" size="20" />
+        <div class="text-h6 font-weight-medium">Shared with me</div>
+        <v-chip size="x-small" variant="tonal" class="ms-1">
+          {{ sharedCollections.length }}
+        </v-chip>
+      </div>
+      <v-list
+        lines="two"
+        variant="outlined"
+        rounded="lg"
+        class="mb-6 pa-0"
+      >
+        <v-list-item
+          v-for="(collection, idx) in sharedCollections"
+          :key="collection.id"
+          :to="`/collections/${collection.id}`"
+          :data-testid="`shared-collection-row-${idx}`"
+          :divider="idx < sharedCollections.length - 1"
+        >
+          <template #prepend>
+            <v-avatar
+              :color="avatarColor(collection.createdBy)"
+              size="32"
+              :title="collection.createdBy"
+            >
+              <span style="font-size:12px; color:white; font-weight:500">
+                {{ collection.createdBy.charAt(0).toUpperCase() }}
+              </span>
+            </v-avatar>
+          </template>
+
+          <v-list-item-title class="text-body-2 font-weight-medium">
+            {{ collection.name }}
+          </v-list-item-title>
+          <v-list-item-subtitle class="text-caption text-medium-emphasis">
+            {{ collection.createdBy }}
+            <span v-if="collection.updatedAt ?? collection.createdAt" class="ms-1">
+              · {{ relativeTime(collection.updatedAt ?? collection.createdAt) }}
+            </span>
+          </v-list-item-subtitle>
+
+          <template #append>
+            <v-chip
+              size="x-small"
+              variant="text"
+              color="primary"
+              append-icon="mdi-arrow-right"
+            >
+              View
+            </v-chip>
+          </template>
+        </v-list-item>
+      </v-list>
+    </template>
 
     <!-- Collection creation dialog -->
     <CreateCollectionDialog
