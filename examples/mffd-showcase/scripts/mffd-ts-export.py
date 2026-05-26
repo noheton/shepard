@@ -1,18 +1,14 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["requests", "tqdm"]
+# dependencies = ["requests"]
 # ///
 #!/usr/bin/env python3
-"""mffd-ts-export.py — Export all timeseries from DLR cube3 MFFD collections.
+"""mffd-ts-export.py — Export all timeseries + file references from DLR cube3.
 
-Traverses both MFFD source collections (tapelaying + bridgewelding), fetches
-every TimeseriesReference per DataObject, and exports the raw data as CSV.
-Output is keyed by DataObject name so the data can be associated later even
-after IDs change.
-
-Scope: AFP tapelaying collection (coll_id=48297, ~8000 DOs under
-dataset/1-Tapelaying/mffd-tapelaying). Bridge welding is excluded by default
-(set INCLUDE_BRIDGEWELDING=1 to add it).
+Traverses the AFP tapelaying collection (coll_id=48297, ~8000 DOs), fetches
+every TimeseriesReference and FileReference per DataObject, and downloads all
+payloads. Output is keyed by DataObject name so data can be associated after
+ID churn.
 
 Usage (on DLR cube3 or any host with DLR intranet access):
     SOURCE_SHEPARD_URL=https://backend.bt-au-cube3.intra.dlr.de \\
@@ -22,18 +18,26 @@ Usage (on DLR cube3 or any host with DLR intranet access):
     # Also include bridge welding:
     INCLUDE_BRIDGEWELDING=1 uv run python mffd-ts-export.py
 
-    # Resume an interrupted run (skips already-exported files):
-    uv run python mffd-ts-export.py   # idempotent — skips existing CSVs
+    # Skip file download (TS only):
+    SKIP_FILES=1 uv run python mffd-ts-export.py
+
+    # Skip TS download (files only):
+    SKIP_TS=1 uv run python mffd-ts-export.py
+
+    # Resume an interrupted run — idempotent, skips existing non-empty files.
+    uv run python mffd-ts-export.py
 
 Output layout:
     ts-export/
-    ├── manifest.json              ← stable index: DO name → refs + channel list
+    ├── manifest.json              ← DO name → refs + channel list
     ├── tapelaying/
     │   └── <do_name>/
-    │       └── <ref_name>.csv     ← ROW-format timeseries CSV
+    │       ├── ts/
+    │       │   └── <ref_name>.csv     ← ROW-format timeseries CSV
+    │       └── files/
+    │           └── <filename>         ← raw file payload (name from ref)
     └── bridgewelding/
-        └── <do_name>/
-            └── <ref_name>.csv
+        └── ...
 """
 
 import json
@@ -46,9 +50,11 @@ import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-SOURCE_URL              = os.environ["SOURCE_SHEPARD_URL"].rstrip("/")
-SOURCE_KEY              = os.environ["SOURCE_SHEPARD_API_KEY"]
-INCLUDE_BRIDGEWELDING   = os.environ.get("INCLUDE_BRIDGEWELDING", "").lower() in ("1", "true", "yes")
+SOURCE_URL            = os.environ["SOURCE_SHEPARD_URL"].rstrip("/")
+SOURCE_KEY            = os.environ["SOURCE_SHEPARD_API_KEY"]
+INCLUDE_BRIDGEWELDING = os.environ.get("INCLUDE_BRIDGEWELDING", "").lower() in ("1", "true", "yes")
+SKIP_TS               = os.environ.get("SKIP_TS",    "").lower() in ("1", "true", "yes")
+SKIP_FILES            = os.environ.get("SKIP_FILES", "").lower() in ("1", "true", "yes")
 
 # AFP tapelaying is the primary target (~8000 DOs, dataset/1-Tapelaying/mffd-tapelaying)
 COLLECTIONS: dict[str, int] = {
@@ -68,21 +74,20 @@ SESSION = requests.Session()
 SESSION.headers.update({"X-API-KEY": SOURCE_KEY, "Accept": "application/json"})
 
 
-def _get(path: str, params: dict | None = None, *, timeout: int = 60) -> requests.Response | None:
-    url = SOURCE_URL + path
+def _request(method: str, url: str, *, params=None, stream=False, timeout=60) -> requests.Response | None:
     for attempt in range(RETRY_MAX):
         try:
-            r = SESSION.get(url, params=params, timeout=timeout)
+            r = SESSION.request(method, url, params=params, stream=stream, timeout=timeout)
             if r.status_code == 401:
                 print(f"\n[FATAL] 401 Unauthorized — JWT expired. Re-mint and restart.", flush=True)
                 sys.exit(2)
             if r.status_code == 429 or r.status_code >= 500:
                 wait = RETRY_BASE * (2 ** attempt)
-                print(f"  [{r.status_code}] {url} — retry in {wait:.0f}s", flush=True)
+                print(f"  [{r.status_code}] retry in {wait:.0f}s  {url}", flush=True)
                 time.sleep(wait)
                 continue
             if not r.ok:
-                print(f"  [WARN] {r.status_code} {url}", flush=True)
+                print(f"  [WARN] {r.status_code}  {url}", flush=True)
                 return None
             return r
         except requests.RequestException as exc:
@@ -93,10 +98,18 @@ def _get(path: str, params: dict | None = None, *, timeout: int = 60) -> request
     return None
 
 
+def _get(path: str, params=None, *, timeout=60) -> requests.Response | None:
+    return _request("GET", SOURCE_URL + path, params=params, timeout=timeout)
+
+
+def _get_stream(path: str, *, timeout=600) -> requests.Response | None:
+    return _request("GET", SOURCE_URL + path, stream=True, timeout=timeout)
+
+
 # ── v5 API traversal ──────────────────────────────────────────────────────────
 
 def all_dos(coll_id: int):
-    """Yield every DataObject in a collection (paginated). Yields raw dicts."""
+    """Yield every DataObject in a collection (paginated)."""
     page = 0
     while True:
         r = _get(
@@ -115,23 +128,17 @@ def all_dos(coll_id: int):
 
 
 def ts_refs_for(coll_id: int, do_id: int) -> list[dict]:
-    """Return list of timeseriesReference dicts for a DataObject."""
     r = _get(f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}/timeseriesReferences")
-    if r is None:
-        return []
-    return r.json()
+    return r.json() if r else []
 
 
-def container_channels(container_id: int) -> list[dict]:
-    """Return timeseries channel tuples for a container (measurement/device/location/symbolicName/field)."""
-    r = _get(f"/shepard/api/timeseriesContainers/{container_id}/timeseries")
-    if r is None:
-        return []
-    return r.json()
+def file_refs_for(coll_id: int, do_id: int) -> list[dict]:
+    r = _get(f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}/fileReferences")
+    return r.json() if r else []
 
 
 def export_ts_csv(coll_id: int, do_id: int, ref_id: int) -> bytes | None:
-    """Export timeseries reference as ROW-format CSV."""
+    """Export timeseries reference as ROW-format CSV (preserves native sampling)."""
     r = _get(
         f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
         f"/timeseriesReferences/{ref_id}/export",
@@ -141,24 +148,58 @@ def export_ts_csv(coll_id: int, do_id: int, ref_id: int) -> bytes | None:
     if r is None:
         return None
     content = r.content
-    # empty body = placeholder container
     if not content or len(content) < 8:
         return None
     return content
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+def download_file_payload(coll_id: int, do_id: int, fref_id: int, oid: str, dest: Path) -> bool:
+    """Stream a single file payload to disk. Returns True on success."""
+    if oid:
+        path = (f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+                f"/fileReferences/{fref_id}/payload/{oid}")
+    else:
+        path = (f"/shepard/api/collections/{coll_id}/dataObjects/{do_id}"
+                f"/fileReferences/{fref_id}/payload")
+
+    r = _get_stream(path)
+    if r is None:
+        return False
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    size = 0
+    with dest.open("wb") as fh:
+        for chunk in r.iter_content(chunk_size=256 * 1024):
+            if chunk:
+                fh.write(chunk)
+                size += len(chunk)
+
+    if size == 0:
+        dest.unlink(missing_ok=True)
+        return False
+    return True
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def safe_name(s: str) -> str:
-    """Make a string safe for use as a directory/file name."""
     return "".join(c if c.isalnum() or c in "-_." else "_" for c in str(s))
 
+
+def fmt_bytes(n: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.0f}{unit}"
+        n //= 1024
+    return f"{n:.0f}TB"
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     manifest_path = OUT_DIR / "manifest.json"
 
-    # Load existing manifest if resuming
     if manifest_path.exists():
         with manifest_path.open() as f:
             manifest = json.load(f)
@@ -170,20 +211,21 @@ def main():
             "collections": {},
         }
 
-    totals = {"dos": 0, "refs": 0, "exported": 0, "skipped": 0, "empty": 0}
+    totals = {
+        "dos": 0,
+        "ts_exported": 0, "ts_skipped": 0, "ts_empty": 0,
+        "file_exported": 0, "file_skipped": 0, "file_empty": 0,
+    }
 
     for slug, coll_id in COLLECTIONS.items():
-        if ONLY and ONLY != slug:
-            continue
-
         coll_dir = OUT_DIR / slug
         coll_dir.mkdir(exist_ok=True)
 
         coll_manifest = manifest["collections"].setdefault(slug, {"id": coll_id, "dos": {}})
 
-        print(f"\n{'='*60}", flush=True)
+        print(f"\n{'='*64}", flush=True)
         print(f"Collection: {slug}  (id={coll_id})", flush=True)
-        print(f"{'='*60}", flush=True)
+        print(f"{'='*64}", flush=True)
 
         do_count = 0
         for do in all_dos(coll_id):
@@ -192,106 +234,153 @@ def main():
             do_count += 1
             totals["dos"] += 1
 
-            refs = ts_refs_for(coll_id, do_id)
-            if not refs:
-                continue
-
-            do_dir = coll_dir / do_name
             do_manifest = coll_manifest["dos"].setdefault(do_name, {
                 "do_id": do_id,
                 "do_name": do.get("name"),
                 "ts_refs": [],
+                "file_refs": [],
             })
-            # Index existing refs by ref_id for resume
-            existing_ref_ids = {entry["ref_id"] for entry in do_manifest.get("ts_refs", [])}
 
-            for ref in refs:
-                ref_id   = ref["id"]
-                ref_name = safe_name(ref.get("name") or f"ts-{ref_id}")
-                container_id = ref.get("timeseriesContainerId") or 0
+            # ── Timeseries ────────────────────────────────────────────────────
+            if not SKIP_TS:
+                refs = ts_refs_for(coll_id, do_id)
+                existing_ts_ids = {e["ref_id"] for e in do_manifest.get("ts_refs", [])}
+                ts_dir = coll_dir / do_name / "ts"
 
-                totals["refs"] += 1
+                for ref in refs:
+                    ref_id   = ref["id"]
+                    ref_name = safe_name(ref.get("name") or f"ts-{ref_id}")
+                    container_id = ref.get("timeseriesContainerId") or 0
+                    csv_path = ts_dir / f"{ref_name}.csv"
 
-                csv_path = do_dir / f"{ref_name}.csv"
+                    if csv_path.exists() and ref_id in existing_ts_ids:
+                        totals["ts_skipped"] += 1
+                        continue
 
-                # Resume: skip if already exported
-                if csv_path.exists() and ref_id in existing_ref_ids:
-                    totals["skipped"] += 1
-                    print(f"  [skip] {do_name}/{ref_name}.csv", flush=True)
-                    continue
+                    print(f"  [ts] {do_name}/{ref_name} ... ", end="", flush=True)
+                    csv_bytes = export_ts_csv(coll_id, do_id, ref_id)
+                    if csv_bytes is None:
+                        totals["ts_empty"] += 1
+                        print("empty", flush=True)
+                        continue
 
-                print(f"  [export] {do_name}/{ref_name} (ref={ref_id}, ctr={container_id}) ... ",
-                      end="", flush=True)
+                    ts_dir.mkdir(parents=True, exist_ok=True)
+                    csv_path.write_bytes(csv_bytes)
 
-                csv_bytes = export_ts_csv(coll_id, do_id, ref_id)
-                if csv_bytes is None:
-                    totals["empty"] += 1
-                    print("empty", flush=True)
-                    continue
+                    try:
+                        rows_data = [
+                            line.decode("utf-8", errors="replace").split(",")
+                            for line in csv_bytes.split(b"\n")[1:] if line.strip()
+                        ]
+                        channels = sorted({
+                            (r[0], r[1], r[2], r[3], r[4])
+                            for r in rows_data if len(r) >= 5
+                        })
+                        channel_list = [
+                            {"measurement": c[0], "device": c[1], "location": c[2],
+                             "symbolicName": c[3], "field": c[4]}
+                            for c in channels
+                        ]
+                    except Exception:
+                        channel_list = []
 
-                do_dir.mkdir(exist_ok=True)
-                csv_path.write_bytes(csv_bytes)
+                    row_count = max(0, csv_bytes.count(b"\n") - 1)
+                    print(f"{row_count} rows, {len(channel_list)} channels", flush=True)
 
-                # Parse header row for channel list
-                try:
-                    header_line = csv_bytes.split(b"\n")[0].decode("utf-8", errors="replace")
-                    # ROW format: measurement,device,location,symbolicName,field,timestamp,value
-                    # Channel identity is the unique (measurement,device,location,symbolicName,field)
-                    rows = [line.decode("utf-8", errors="replace").split(",")
-                            for line in csv_bytes.split(b"\n")[1:] if line.strip()]
-                    channels = list({
-                        (r[0], r[1], r[2], r[3], r[4])
-                        for r in rows if len(r) >= 5
-                    })
-                    channel_list = [
-                        {"measurement": c[0], "device": c[1], "location": c[2],
-                         "symbolicName": c[3], "field": c[4]}
-                        for c in sorted(channels)
-                    ]
-                except Exception:
-                    channel_list = []
+                    if ref_id not in existing_ts_ids:
+                        do_manifest["ts_refs"].append({
+                            "ref_id":       ref_id,
+                            "ref_name":     ref.get("name") or f"ts-{ref_id}",
+                            "container_id": container_id,
+                            "file":         f"{slug}/{do_name}/ts/{ref_name}.csv",
+                            "rows":         row_count,
+                            "channels":     channel_list,
+                        })
+                        existing_ts_ids.add(ref_id)
+                    totals["ts_exported"] += 1
 
-                row_count = max(0, csv_bytes.count(b"\n") - 1)
-                print(f"{row_count} rows, {len(channel_list)} channels", flush=True)
+            # ── File references ───────────────────────────────────────────────
+            if not SKIP_FILES:
+                frefs = file_refs_for(coll_id, do_id)
+                existing_file_keys = {e["key"] for e in do_manifest.get("file_refs", [])}
+                files_dir = coll_dir / do_name / "files"
 
-                # Add to manifest (avoid duplicates on resume)
-                if ref_id not in existing_ref_ids:
-                    do_manifest["ts_refs"].append({
-                        "ref_id":       ref_id,
-                        "ref_name":     ref.get("name") or f"ts-{ref_id}",
-                        "container_id": container_id,
-                        "file":         f"{slug}/{do_name}/{ref_name}.csv",
-                        "rows":         row_count,
-                        "channels":     channel_list,
-                    })
-                    existing_ref_ids.add(ref_id)
+                for fref in frefs:
+                    fref_id   = fref["id"]
+                    base_name = fref.get("name") or fref.get("fileName") or f"file-{fref_id}"
+                    oids      = fref.get("fileOids") or []
 
-                totals["exported"] += 1
+                    # Normalise: one entry per OID (or one bare entry if no OIDs)
+                    entries = (
+                        [(str(oid), base_name if len(oids) == 1 else f"{base_name}.{i}")
+                         for i, oid in enumerate(oids)]
+                        if oids else [("", base_name)]
+                    )
 
-            # Persist manifest after each DO so progress survives interruptions
+                    for oid, fname in entries:
+                        key      = f"{fref_id}:{oid}"
+                        dest     = files_dir / safe_name(fname)
+
+                        if dest.exists() and dest.stat().st_size > 0 and key in existing_file_keys:
+                            totals["file_skipped"] += 1
+                            continue
+
+                        print(f"  [file] {do_name}/files/{fname} ... ", end="", flush=True)
+                        ok = download_file_payload(coll_id, do_id, fref_id, oid, dest)
+                        if not ok:
+                            totals["file_empty"] += 1
+                            print("empty/error", flush=True)
+                            continue
+
+                        size_bytes = dest.stat().st_size
+                        print(fmt_bytes(size_bytes), flush=True)
+
+                        if key not in existing_file_keys:
+                            do_manifest["file_refs"].append({
+                                "key":      key,
+                                "fref_id":  fref_id,
+                                "ref_name": base_name,
+                                "oid":      oid,
+                                "file":     f"{slug}/{do_name}/files/{safe_name(fname)}",
+                                "size":     size_bytes,
+                            })
+                            existing_file_keys.add(key)
+                        totals["file_exported"] += 1
+
+            # Persist manifest after every DO — survives interruption
             with manifest_path.open("w") as f:
                 json.dump(manifest, f, indent=2)
 
             if do_count % 100 == 0:
-                print(f"  ... {do_count} DOs processed so far", flush=True)
+                print(
+                    f"  ... {do_count} DOs  "
+                    f"ts={totals['ts_exported']}  files={totals['file_exported']}",
+                    flush=True,
+                )
 
-        print(f"\nDone {slug}: {do_count} DOs traversed", flush=True)
+        print(f"\nDone {slug}: {do_count} DOs", flush=True)
 
-    # Final manifest write
     manifest["exported_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     with manifest_path.open("w") as f:
         json.dump(manifest, f, indent=2)
 
     print(f"""
-{'='*60}
+{'='*64}
 Export complete
-  DOs traversed : {totals['dos']}
-  TS refs found : {totals['refs']}
-  Exported      : {totals['exported']}
-  Skipped       : {totals['skipped']}  (already present — resume)
-  Empty/skip    : {totals['empty']}    (0-byte placeholder containers)
-  Manifest      : {manifest_path}
-{'='*60}
+  DOs traversed  : {totals['dos']}
+
+  Timeseries
+    exported     : {totals['ts_exported']}
+    skipped      : {totals['ts_skipped']}  (already present)
+    empty        : {totals['ts_empty']}    (0-byte placeholder)
+
+  Files
+    exported     : {totals['file_exported']}
+    skipped      : {totals['file_skipped']}  (already present)
+    empty/error  : {totals['file_empty']}
+
+  Manifest       : {manifest_path}
+{'='*64}
 """, flush=True)
 
 
