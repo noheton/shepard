@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Worktree Consolidation Triage — 2026-05-23
 
 Triage of the six dirty agent worktrees flagged in `aidocs/16` tasks

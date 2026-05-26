@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona — API Scrutinizer (Minimalist) — GH-PM adoption review
 
 **Persona.** API Scrutinizer (Minimalist) per CLAUDE.md §3.

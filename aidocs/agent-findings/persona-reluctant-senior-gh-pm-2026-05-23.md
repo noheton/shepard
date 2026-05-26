@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Reluctant Senior Researcher — audit of `aidocs/strategy/85`
 **Persona.** 28 years at DLR. 40 TB on shared NFS. 600-row Excel master.
 **Date.** 2026-05-23.

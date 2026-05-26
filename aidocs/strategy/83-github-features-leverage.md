@@ -1,3 +1,8 @@
+---
+stage: deployed
+last-stage-change: 2026-05-23
+---
+
 # GitHub features — what shepard uses, deliberately skips, and why
 
 > **Status:** Live design doc, captured 2026-05-23 alongside the

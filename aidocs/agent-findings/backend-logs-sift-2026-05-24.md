@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-24
+---
+
 # Backend logs sift — 2026-05-24 ~06:00 CEST
 
 Window: `docker logs --since 6h infrastructure-backend-1`

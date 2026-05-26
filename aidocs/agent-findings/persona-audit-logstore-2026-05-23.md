@@ -1,6 +1,6 @@
 ---
 title: Persona audit — log-store-sidecar design (aidocs/integrations/94)
-stage: feature-defined → audited-by-personas
+stage: audited-by-personas
 last-stage-change: 2026-05-23
 audience: contributors, reviewers
 audits: aidocs/integrations/94-log-store-sidecar-design.md

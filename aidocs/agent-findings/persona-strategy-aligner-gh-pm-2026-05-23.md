@@ -1,3 +1,8 @@
+---
+stage: audited-by-personas
+last-stage-change: 2026-05-23
+---
+
 # Persona — Strategy Aligner & Executive Advisor on GH-PM adoption (2026-05-23)
 
 **Lens.** I have 42 seconds in the elevator with Prof. Voggenreiter. He
