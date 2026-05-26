@@ -103,24 +103,8 @@ useHead({
   },
 });
 
-// LIC1 (FAIR-1): defensive computed accessors mirroring the collection
-// detail page — the generated client model may not yet expose these fields
-// even though the wire payload carries them.
-const dataObjectLicense = computed<string | null>(() => {
-  if (!dataObject.value) return null;
-  const raw = (dataObject.value as unknown as { license?: string | null }).license;
-  return raw ?? null;
-});
-const dataObjectAccessRights = computed<string | null>(() => {
-  if (!dataObject.value) return null;
-  const raw = (dataObject.value as unknown as { accessRights?: string | null })
-    .accessRights;
-  return raw ?? null;
-});
-
-// LIC1 (FAIR-1): defensive computed accessors mirroring the collection
-// detail page — the generated client model may not yet expose these fields
-// even though the wire payload carries them.
+// LIC1 (FAIR-1): defensive computed accessors — the generated client model may
+// not yet expose these fields even though the wire payload carries them.
 const dataObjectLicense = computed<string | null>(() => {
   if (!dataObject.value) return null;
   const raw = (dataObject.value as unknown as { license?: string | null }).license;

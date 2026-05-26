@@ -190,7 +190,6 @@ useHead({
             <!-- LIC1: FAIR metadata strip — license + accessRights. Shown only
                  when at least one is set; null means undeclared and we
                  deliberately don't show "—" here (the edit dialog is the
-<<<<<<< HEAD
                  affordance to set them).
                  #metadata-license-edit doubles as the RDM-005 deep-link
                  target — the completeness widget scrolls here on the
@@ -198,11 +197,6 @@ useHead({
             <v-row
               v-if="collectionLicense || collectionAccessRights"
               id="metadata-license-edit"
-=======
-                 affordance to set them). -->
-            <v-row
-              v-if="collectionLicense || collectionAccessRights"
->>>>>>> worktree-agent-a798dc76c44bb41b0
               no-gutters
               class="pb-3 ga-2 align-center"
             >
@@ -215,7 +209,6 @@ useHead({
                 :access-rights="collectionAccessRights"
               />
             </v-row>
-<<<<<<< HEAD
             <!-- RDM-005 deep-link anchor — also placed unconditionally so
                  the scrollIntoView target exists even when both fields
                  are unset (the most common "needs fixing" state). -->
@@ -227,8 +220,6 @@ useHead({
               No license or access-rights set — use the Edit dialog above
               to add them.
             </div>
-=======
->>>>>>> worktree-agent-a798dc76c44bb41b0
             <v-row
               no-gutters
               class="justify-end pb-2 ga-2 align-center"

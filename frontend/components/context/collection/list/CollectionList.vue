@@ -17,28 +17,25 @@ const { queryParams } = useCollectionListQueryParams();
 const { isWatched, toggle: toggleWatched } = useWatchedCollections();
 const { advancedMode } = useAdvancedMode();
 
-<<<<<<< HEAD
-// UI-011 (2026-05-24): "large" collection threshold for the # DOs chip.
-// 1000+ DataObjects pulls the row out of the "small showcase" bucket and
-// signals to the picker "this is a real workhorse collection". Conservative
-// — no further bands until we have evidence the gradation helps.
+// UI-011: "large" collection threshold for the # DOs chip.
 const LARGE_COLLECTION_THRESHOLD = 1000;
-
-// UI-011: Description preview chars in the list cell. ~120 keeps the row
-// at a single line for typical descriptions; longer text gets a "…" tail
-// and the full markdown is reachable on the detail page.
+// UI-011: Description preview chars in the list cell.
 const DESCRIPTION_PREVIEW_CHARS = 120;
 
+// LIC1: defensive accessor — Collection client model may not yet expose accessRights.
+function rowAccessRights(item: Collection): string | null {
+  return (item as unknown as { accessRights?: string | null }).accessRights ?? null;
+}
+
 // Headers are computed so we can hide the numeric ID column when the user
-// is not in advanced mode. The ID is the legacy long Neo4j PK and will go
-// away with the appId migration; for normal users it's a noisy column.
+// is not in advanced mode. accessRights is always shown (LIC1).
 const headers = computed(() => {
   const cols = [];
   if (advancedMode.value) {
     cols.push({
       title: "ID",
       key: "id",
-      width: "8%",
+      width: "7%",
       cellProps: { class: "text-body-2 text-textbody2" },
     });
   }
@@ -46,23 +43,28 @@ const headers = computed(() => {
     {
       title: "Name",
       key: "name",
-      width: advancedMode.value ? "22%" : "26%",
+      width: advancedMode.value ? "20%" : "24%",
       cellProps: { class: "text-subtitle-2 word-wrap-anywhere" },
     },
     {
       title: "Description",
       key: "description",
-      width: "32%",
+      width: "28%",
       sortable: false,
       cellProps: { class: "text-body-2 text-textbody2 word-wrap-anywhere" },
     },
     {
+      title: "Access",
+      key: "accessRights",
+      width: "9%",
+      sortable: false,
+      cellProps: { class: "text-body-2" },
+    },
+    {
       title: "# DOs",
       key: "doCount",
-      width: "10%",
+      width: "8%",
       align: "end" as const,
-      // Client-side sort by computed count — `Collection.dataObjectIds` is
-      // already on the v2 list response, no extra fetch.
       sort: (_a: unknown, _b: unknown, itemA: Collection, itemB: Collection) => {
         return (itemA.dataObjectIds?.length ?? 0) - (itemB.dataObjectIds?.length ?? 0);
       },
@@ -71,68 +73,16 @@ const headers = computed(() => {
     {
       title: "Last updated",
       key: "updatedAt",
-      width: "13%",
+      width: "12%",
       sort: (a: Date | null | undefined, b: Date | null | undefined) => {
         return (a?.valueOf() ?? 0) - (b?.valueOf() ?? 0);
       },
       cellProps: { class: "text-body-2 text-textbody2 word-wrap-anywhere" },
-=======
-// LIC1: defensive accessor — the generated `Collection` client model may not
-// yet expose `accessRights`, but the wire payload carries it. Keeping the
-// cast out of template prevents the Vue compiler from misparsing `as unknown`
-// in v-if attribute strings.
-function rowAccessRights(item: Collection): string | null {
-  return (item as unknown as { accessRights?: string | null }).accessRights ?? null;
-}
-
-const headers = [
-  {
-    title: "ID",
-    key: "id",
-    width: "8%",
-    cellProps: {
-      class: "text-body-1",
-    },
-  },
-  {
-    title: "Name",
-    key: "name",
-    width: "32%",
-    cellProps: {
-      class: "text-subtitle-2 word-wrap-anywhere",
-    },
-  },
-  // LIC1: surface accessRights at list level so an auditor can scan a page of
-  // collections and immediately see open vs. restricted vs. closed.
-  {
-    title: "Access",
-    key: "accessRights",
-    width: "12%",
-    sortable: false,
-    cellProps: {
-      class: "text-body-2",
-    },
-  },
-  {
-    title: "Created by",
-    key: "createdBy",
-    width: "18%",
-    cellProps: {
-      class: "text-body-1 word-wrap-anywhere",
-    },
-  },
-  {
-    title: "Created at",
-    key: "createdAt",
-    width: "18%",
-    sort: (a: Date, b: Date) => {
-      return a.valueOf() - b.valueOf();
->>>>>>> worktree-agent-a798dc76c44bb41b0
     },
     {
       title: "Created by",
       key: "createdBy",
-      width: advancedMode.value ? "10%" : "12%",
+      width: advancedMode.value ? "9%" : "11%",
       cellProps: { class: "text-body-2 text-textbody2 word-wrap-anywhere" },
     },
     {
@@ -196,11 +146,9 @@ function onPageChange(page: number) {
         v-bind="rowProps"
         @click="router.push(collectionsPath + rowProps.item.id)"
       >
-<<<<<<< HEAD
         <template v-if="advancedMode" #[`item.id`]>
           <span data-testid="collection-row-id">{{ rowProps.item.id }}</span>
-=======
-        <template #[`item.id`]>{{ rowProps.item.id }}</template>
+        </template>
         <template #[`item.name`]>{{ rowProps.item.name }}</template>
         <template #[`item.accessRights`]>
           <AccessRightsChip
@@ -209,12 +157,6 @@ function onPageChange(page: number) {
           />
           <span v-else class="text-disabled">—</span>
         </template>
-        <template #[`item.createdBy`]>{{ rowProps.item.createdBy }}</template>
-        <template #[`item.createdAt`]>
-          {{ toShortDateString(rowProps.item.createdAt) }}
->>>>>>> worktree-agent-a798dc76c44bb41b0
-        </template>
-        <template #[`item.name`]>{{ rowProps.item.name }}</template>
         <template #[`item.description`]>
           <span
             v-if="rowProps.item.description"

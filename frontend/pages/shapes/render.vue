@@ -8,8 +8,6 @@
  * Beta: bindings come back status=DECLARED (no live resolution).
  * User supplies the TS container ID to complete the pipeline until TPL2c ships.
  */
-import { TimeseriesContainerApi } from "@dlr-shepard/backend-client";
-import { useShepardApi } from "~/composables/common/api/useShepardApi";
 import { lerpSeries, type ColormapName } from "~/utils/colormap";
 import PlaceholderImplStatus from "~/components/common/placeholder/PlaceholderImplStatus.vue";
 
@@ -123,32 +121,48 @@ async function fetchBindings() {
   }
 }
 
-// ── fetch one channel's data ───────────────────────────────────────────────────
-async function fetchChannel(
-  parsed: NonNullable<Binding["parsed"]>,
+// ── bulk channel fetch (TS-OPT2) — one request for all roles ─────────────────
+async function fetchBulkTrace(
+  channels: { role: string; parsed: NonNullable<Binding["parsed"]> }[],
   startNs: number,
   endNs: number,
-): Promise<[number, number][]> {
-  if (!containerId.value.trim()) return [];
+): Promise<Map<string, [number, number][]>> {
+  const result = new Map<string, [number, number][]>();
+  if (!containerId.value.trim() || channels.length === 0) return result;
   const id = Number(containerId.value.trim());
-  if (!isFinite(id)) return [];
+  if (!isFinite(id)) return result;
+
   try {
-    const result = await useShepardApi(TimeseriesContainerApi).value.getTimeseries({
-      timeseriesContainerId: id,
-      measurement:  parsed.measurement,
-      device:       parsed.device,
-      location:     parsed.location,
-      symbolicName: parsed.symbolicName,
-      field:        parsed.field,
-      start:        startNs,
-      end:          endNs,
-      downsample:   "lttb",
-      maxPoints:    2000,
-    });
-    return (result.points ?? []).map(p => [p.timestamp!, p.value!] as [number, number]);
+    const res = await fetch(
+      getV2Base() + `/v2/timeseries-containers/${id}/channels/bulk`,
+      {
+        method:  "POST",
+        headers: getAuthHeaders(),
+        body:    JSON.stringify({
+          start:     startNs,
+          end:       endNs,
+          downsample: "lttb",
+          maxPoints:  2000,
+          channels:   channels.map(c => ({
+            role:         c.role,
+            measurement:  c.parsed.measurement,
+            device:       c.parsed.device || null,
+            location:     c.parsed.location || null,
+            symbolicName: c.parsed.symbolicName || null,
+            field:        c.parsed.field,
+          })),
+        }),
+      },
+    );
+    if (!res.ok) return result;
+    const body: { role: string; points: { timestamp: number; value: number }[] }[] = await res.json();
+    for (const entry of body) {
+      result.set(entry.role, (entry.points ?? []).map(p => [p.timestamp, p.value] as [number, number]));
+    }
   } catch {
-    return [];
+    /* swallow — caller will see missing keys as empty arrays */
   }
+  return result;
 }
 
 // ── render trace ──────────────────────────────────────────────────────────────
@@ -173,7 +187,6 @@ async function renderTrace() {
   const xB = byRole.get("x");
   const yB = byRole.get("y");
   const zB = byRole.get("z");
-  const vB = byRole.get("value") ?? byRole.get("color") ?? byRole.get("intensity");
 
   if (!xB?.parsed || !yB?.parsed || !zB?.parsed) {
     renderError.value = "Template must declare roles x, y, and z to render a 3D trace. Found: " +
@@ -183,19 +196,31 @@ async function renderTrace() {
   }
 
   try {
+    // Build role→parsed map, including optional channels
+    const roleChannels: { role: string; parsed: NonNullable<Binding["parsed"]> }[] = [
+      { role: "x", parsed: xB.parsed },
+      { role: "y", parsed: yB.parsed },
+      { role: "z", parsed: zB.parsed },
+    ];
+    const vB = byRole.get("value") ?? byRole.get("color") ?? byRole.get("intensity");
+    if (vB?.parsed)              roleChannels.push({ role: "value",  parsed: vB.parsed });
     const rotAB = byRole.get("rot_a");
     const rotBB = byRole.get("rot_b");
     const rotCB = byRole.get("rot_c");
+    if (rotAB?.parsed) roleChannels.push({ role: "rot_a", parsed: rotAB.parsed });
+    if (rotBB?.parsed) roleChannels.push({ role: "rot_b", parsed: rotBB.parsed });
+    if (rotCB?.parsed) roleChannels.push({ role: "rot_c", parsed: rotCB.parsed });
 
-    const [xPts, yPts, zPts, vPts, rotAPts, rotBPts, rotCPts] = await Promise.all([
-      fetchChannel(xB.parsed, startNs, endNs),
-      fetchChannel(yB.parsed, startNs, endNs),
-      fetchChannel(zB.parsed, startNs, endNs),
-      vB?.parsed    ? fetchChannel(vB.parsed,    startNs, endNs) : Promise.resolve([] as [number, number][]),
-      rotAB?.parsed ? fetchChannel(rotAB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
-      rotBB?.parsed ? fetchChannel(rotBB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
-      rotCB?.parsed ? fetchChannel(rotCB.parsed, startNs, endNs) : Promise.resolve([] as [number, number][]),
-    ]);
+    // Single bulk request replaces N parallel single-channel calls (TS-OPT2)
+    const byRolePts = await fetchBulkTrace(roleChannels, startNs, endNs);
+    const empty: [number, number][] = [];
+    const xPts    = byRolePts.get("x")     ?? empty;
+    const yPts    = byRolePts.get("y")     ?? empty;
+    const zPts    = byRolePts.get("z")     ?? empty;
+    const vPts    = byRolePts.get("value") ?? empty;
+    const rotAPts = byRolePts.get("rot_a") ?? empty;
+    const rotBPts = byRolePts.get("rot_b") ?? empty;
+    const rotCPts = byRolePts.get("rot_c") ?? empty;
 
     if (xPts.length < 2) {
       renderError.value = `Channel '${xB.role}' returned ${xPts.length} points. Check the container ID and time window.`;
