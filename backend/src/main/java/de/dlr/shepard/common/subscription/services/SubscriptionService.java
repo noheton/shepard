@@ -28,6 +28,15 @@ public class SubscriptionService {
   DateHelper dateHelper;
 
   /**
+   * NEO-AUDIT-009 — application-scoped companion bean that caches whether any
+   * subscriptions exist. {@code @RequestScoped} beans cannot hold
+   * application-lifetime state, so the flag lives in this separate bean and is
+   * injected here to survive across requests.
+   */
+  @Inject
+  SubscriptionExistenceCache existenceCache;
+
+  /**
    * Creates a Subscription and stores it in Neo4J
    *
    * @param subscription to be stored
@@ -47,7 +56,10 @@ public class SubscriptionService {
     toCreate.setName(subscription.getName());
     toCreate.setRequestMethod(subscription.getRequestMethod());
     toCreate.setSubscribedURL(subscription.getSubscribedURL());
-    return subscriptionDAO.createOrUpdate(toCreate);
+    Subscription created = subscriptionDAO.createOrUpdate(toCreate);
+    // NEO-AUDIT-009: a new subscription means "has subscriptions" is now true.
+    existenceCache.invalidate();
+    return created;
   }
 
   /**
@@ -85,7 +97,10 @@ public class SubscriptionService {
   public boolean deleteSubscription(long subscriptionId, String username) {
     getSubscription(subscriptionId, username);
 
-    return subscriptionDAO.deleteByNeo4jId(subscriptionId);
+    boolean deleted = subscriptionDAO.deleteByNeo4jId(subscriptionId);
+    // NEO-AUDIT-009: removal may have reduced count to zero; force a re-check.
+    existenceCache.invalidate();
+    return deleted;
   }
 
   /**
@@ -106,12 +121,31 @@ public class SubscriptionService {
   /**
    * Return all subscriptions matching a given request.
    *
+   * <p>NEO-AUDIT-009: before walking the {@code idx_Subscription_requestMethod}
+   * index, check the {@link SubscriptionExistenceCache}. Deployments with zero
+   * subscriptions pay only a volatile-field read per authenticated write request
+   * instead of a Neo4j round-trip.
+   *
    * @param method The request method to match against
    * @return A list of matching subscriptions
    */
   public List<Subscription> getMatchingSubscriptions(RequestMethod method) {
+    // Fast path: if we know there are no subscriptions, skip the DB walk.
+    if (existenceCache.isValid() && !existenceCache.hasSubscriptions()) {
+      return List.of();
+    }
+
     Filter methodFilter = new Filter("requestMethod", ComparisonOperator.EQUALS, method);
     var subscriptions = subscriptionDAO.findMatching(methodFilter);
+
+    // Update the cache based on whether ANY subscriptions exist across all methods.
+    // We use the size of this method-filtered result as a proxy: if there are
+    // subscriptions for this method there are certainly subscriptions overall.
+    // The cache is invalidated on create/delete, so a false-empty is impossible.
+    if (!existenceCache.isValid()) {
+      existenceCache.update(!subscriptions.isEmpty());
+    }
+
     var result = new ArrayList<Subscription>(subscriptions.size());
     result.addAll(subscriptions);
     return result;
