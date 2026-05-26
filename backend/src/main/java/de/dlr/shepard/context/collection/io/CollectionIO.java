@@ -49,6 +49,24 @@ public class CollectionIO extends AbstractDataObjectIO {
   @Schema(nullable = true)
   private String heroImageUrl;
 
+  /**
+   * Optional free-text label describing the origin of this Collection,
+   * e.g. "tapelaying", "bridgewelding", "v15-redrive-1". Intended to
+   * disambiguate multiple Collections with the same {@code name} that
+   * were created by successive import runs (NEO-AUDIT-007).
+   *
+   * <p>Same {@code @JsonInclude(NON_NULL)} treatment as {@code heroImageUrl}:
+   * {@link CollectionIO} is shared with the v1 {@code /shepard/api/collections}
+   * surface. Without this annotation, a null value would leak onto the v1 wire
+   * as {@code "importedFrom": null}, violating the byte-fidelity compat policy
+   * (upstream 5.2.0 has no such key). The annotation omits the key entirely
+   * when null, keeping v1 byte-identical to upstream while surfacing the field
+   * on v2 when set.
+   */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  @Schema(nullable = true)
+  private String importedFrom;
+
   public CollectionIO(Collection collection) {
     super(collection);
     this.dataObjectIds = extractShepardIds(collection.getDataObjects());
@@ -61,6 +79,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     }
 
     this.heroImageUrl = collection.getHeroImageUrl();
+    this.importedFrom = collection.getImportedFrom();
   }
 
   @Override
@@ -73,7 +92,8 @@ public class CollectionIO extends AbstractDataObjectIO {
       HasId.areEqualSets(dataObjectIds, other.dataObjectIds) &&
       HasId.areEqualSets(incomingIds, other.incomingIds) &&
       Objects.equals(defaultFileContainerId, other.defaultFileContainerId) &&
-      Objects.equals(heroImageUrl, other.heroImageUrl)
+      Objects.equals(heroImageUrl, other.heroImageUrl) &&
+      Objects.equals(importedFrom, other.importedFrom)
     );
   }
 
@@ -85,6 +105,7 @@ public class CollectionIO extends AbstractDataObjectIO {
     result = prime * result + HasId.hashcodeHelper(incomingIds);
     result = prime * result + Objects.hashCode(defaultFileContainerId);
     result = prime * result + Objects.hashCode(heroImageUrl);
+    result = prime * result + Objects.hashCode(importedFrom);
     return result;
   }
 }

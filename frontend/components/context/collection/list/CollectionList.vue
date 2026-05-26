@@ -149,7 +149,14 @@ function onPageChange(page: number) {
         <template v-if="advancedMode" #[`item.id`]>
           <span data-testid="collection-row-id">{{ rowProps.item.id }}</span>
         </template>
-        <template #[`item.name`]>{{ rowProps.item.name }}</template>
+        <template #[`item.name`]>
+          {{ rowProps.item.name }}
+          <span
+            v-if="(rowProps.item as any).importedFrom"
+            class="text-caption text-medium-emphasis ml-2"
+            data-testid="collection-row-imported-from"
+          >({{ (rowProps.item as any).importedFrom }})</span>
+        </template>
         <template #[`item.accessRights`]>
           <AccessRightsChip
             v-if="rowAccessRights(rowProps.item)"

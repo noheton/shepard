@@ -38,6 +38,22 @@ public class Collection extends AbstractDataObject implements HasPermissions {
    */
   private String heroImageUrl;
 
+  /**
+   * Optional free-text label describing the origin of this Collection,
+   * e.g. "tapelaying", "bridgewelding", "v15-redrive-1". Intended to
+   * disambiguate multiple Collections with the same {@code name} that
+   * were created by successive import runs (NEO-AUDIT-007).
+   *
+   * <p>Additive nullable field; no Neo4j migration is needed. Existing
+   * {@code :Collection} nodes without this property are read as {@code null}
+   * by Spring Data Neo4j OGM.
+   *
+   * <p>Exposed only on the {@code /v2/} surface — the legacy
+   * {@code /shepard/api/} endpoints are unaffected (see
+   * {@code CollectionIO} {@code @JsonInclude(NON_NULL)} note).
+   */
+  private String importedFrom;
+
   @Relationship(type = Constants.HAS_DATAOBJECT)
   private List<DataObject> dataObjects = new ArrayList<>();
 

@@ -120,6 +120,16 @@ export interface Collection {
      * @memberof Collection
      */
     accessRights?: string | null;
+    /**
+     * NEO-AUDIT-007 — optional free-text label describing the origin of this
+     * Collection, e.g. "tapelaying", "bridgewelding", "v15-redrive-1".
+     * Disambiguates multiple Collections with the same name created by
+     * successive import runs. Absent when null (JsonInclude NON_NULL on
+     * the v1 wire surface). Exposed only on the /v2/ surface.
+     * @type {string}
+     * @memberof Collection
+     */
+    importedFrom?: string | null;
 }
 
 /**
@@ -163,6 +173,7 @@ export function CollectionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'heroImageUrl': json['heroImageUrl'] == null ? undefined : json['heroImageUrl'],
         'license': json['license'] == null ? undefined : json['license'],
         'accessRights': json['accessRights'] == null ? undefined : json['accessRights'],
+        'importedFrom': json['importedFrom'] == null ? undefined : json['importedFrom'],
     };
 }
 
@@ -180,6 +191,6 @@ export function CollectionToJSON(value?: Omit<Collection, 'id'|'createdAt'|'crea
         'heroImageUrl': value['heroImageUrl'],
         'license': value['license'],
         'accessRights': value['accessRights'],
+        'importedFrom': value['importedFrom'],
     };
 }
-
