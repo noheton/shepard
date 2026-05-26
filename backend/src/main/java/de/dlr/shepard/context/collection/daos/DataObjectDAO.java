@@ -607,6 +607,45 @@ public class DataObjectDAO extends VersionableEntityDAO<DataObject> {
     return iter.hasNext() ? iter.next() : Map.of("tsRefs", List.of(), "fileRefs", List.of(), "sdRefs", List.of());
   }
 
+  /**
+   * PERF5 — batch-fetch DataObjects by collection + a set of shepardIds in a single
+   * Cypher round-trip. Replaces the N+1 loop in
+   * {@link de.dlr.shepard.context.collection.services.DataObjectService#findRelatedDataObjects}.
+   *
+   * <p>The query mirrors the shape of {@link #findByCollectionByShepardIds} but uses
+   * {@code d.shepardId IN $shepardIds} instead of a single-value equality, removing
+   * one DB hit per requested ID.
+   *
+   * <p>Deleted DataObjects are included in the result (the service layer checks
+   * {@code dataObject.isDeleted()} and throws {@code InvalidBodyException} for them,
+   * preserving the pre-PERF5 validation contract).
+   *
+   * @param collectionShepardId the owning collection's shepardId
+   * @param shepardIds          the DataObject shepardIds to fetch (must be non-empty;
+   *                            caller must guard against empty input)
+   * @return list of matching DataObjects (order is DB-determined, not input-order)
+   */
+  public List<DataObject> findByCollectionAndShepardIds(long collectionShepardId, List<Long> shepardIds) {
+    if (shepardIds == null || shepardIds.isEmpty()) return Collections.emptyList();
+
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("shepardIds", shepardIds);
+
+    String query =
+      "MATCH (c:Collection)-[:has_dataobject]->(d:DataObject)" +
+      " WHERE c.shepardId=" +
+      collectionShepardId +
+      " AND d.shepardId IN $shepardIds" +
+      " WITH d " +
+      CypherQueryHelper.getReturnPart("d");
+
+    var result = new ArrayList<DataObject>();
+    for (var obj : findByQuery(query, paramsMap)) {
+      result.add(obj);
+    }
+    return result;
+  }
+
   public Map<String, long[]> findRefCountsByAppIds(List<String> appIds) {
     if (appIds == null || appIds.isEmpty()) return Collections.emptyMap();
 

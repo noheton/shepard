@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const sidebarOpen = ref(false);
+// UX-SIDEBAR-COLLAPSE: desktop collapse toggle.
+// When collapsed, the sidebar column shrinks to 48px showing only the toggle
+// button; the main content column expands to fill the available space.
+const sidebarCollapsed = ref(false);
 </script>
 
 <template>
@@ -19,15 +23,36 @@ const sidebarOpen = ref(false);
 
     <v-container fluid class="pa-0 fill-height align-start overflow-x-auto">
       <v-row no-gutters class="fill-height flex-nowrap">
-        <!-- Desktop (lg+): sidebar as a fixed column. CSS-only show/hide via
-             d-none + d-lg-block — no JS reactivity, no SSR/hydration mismatch. -->
-        <v-col cols="3" class="d-none d-lg-block">
-          <CollectionSidebar />
+        <!-- Desktop (lg+): sidebar as a fixed column.
+             When collapsed, the column is reduced to 48px (just the toggle
+             button); when expanded it occupies the normal cols="3" width.
+             The d-none + d-lg-flex keeps this out of the mobile DOM entirely. -->
+        <v-col
+          class="d-none d-lg-flex flex-column"
+          :style="sidebarCollapsed ? 'width: 48px; min-width: 48px; max-width: 48px; overflow: hidden' : ''"
+          :cols="sidebarCollapsed ? undefined : 3"
+        >
+          <!-- Collapse/expand toggle button — always visible at desktop -->
+          <div class="d-flex justify-end pa-1">
+            <v-btn
+              :icon="sidebarCollapsed ? 'mdi-menu' : 'mdi-menu-open'"
+              size="small"
+              variant="text"
+              density="compact"
+              :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+              @click="sidebarCollapsed = !sidebarCollapsed"
+            />
+          </div>
+          <div v-show="!sidebarCollapsed" style="flex: 1; overflow: hidden">
+            <CollectionSidebar />
+          </div>
         </v-col>
         <!-- Main panel: responsive width + padding via Vuetify breakpoint props.
              Below lg this is the only column (full width, pa-3); at lg+ it
-             takes the remaining 9 cols beside the sidebar with pa-8. -->
-        <v-col cols="12" lg="9" class="pa-3 pa-lg-8" style="min-width: 0">
+             takes the remaining space beside the sidebar with pa-8.
+             When the sidebar is collapsed at lg+, this column naturally expands
+             because the sidebar column is only 48px wide. -->
+        <v-col cols="12" :lg="sidebarCollapsed ? 12 : 9" class="pa-3 pa-lg-8" style="min-width: 0">
           <!-- Mobile-only button to open the sidebar drawer. -->
           <div class="d-lg-none mb-3">
             <v-btn

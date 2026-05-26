@@ -502,21 +502,66 @@ public class DataObjectService {
     return dataObject;
   }
 
+  /**
+   * PERF5 — batch replacement for the old per-ID loop.
+   *
+   * <p>Previously this method issued one {@code findByShepardId} query per element
+   * in {@code referencedShepardIds}, producing N round-trips for a DataObject with N
+   * predecessors. At MFFD scale (8 500+ DataObjects) this was catastrophic.
+   *
+   * <p>The new implementation:
+   * <ol>
+   *   <li>Validates self-references up front (throws {@code InvalidBodyException}).</li>
+   *   <li>Calls {@link de.dlr.shepard.context.collection.daos.DataObjectDAO#findByCollectionAndShepardIds}
+   *       to fetch all matching DataObjects in a single {@code WHERE d.shepardId IN $ids} query.</li>
+   *   <li>Post-validates that every requested ID was found and is not deleted, and that
+   *       each result belongs to the same collection — preserving the pre-PERF5 contract.</li>
+   * </ol>
+   */
   private List<DataObject> findRelatedDataObjects(
     long collectionShepardId,
     long[] referencedShepardIds,
     Long dataObjectShepardId
   ) {
-    if (referencedShepardIds == null) return new ArrayList<>();
+    if (referencedShepardIds == null || referencedShepardIds.length == 0) return new ArrayList<>();
 
+    // 1. Self-reference check (preserve existing throw semantics).
+    if (dataObjectShepardId != null) {
+      for (long id : referencedShepardIds) {
+        if (id == dataObjectShepardId) {
+          throw new InvalidBodyException("Self references are not allowed.");
+        }
+      }
+    }
+
+    // 2. Batch fetch — one Cypher round-trip for all IDs.
+    List<Long> idList = Arrays.stream(referencedShepardIds).boxed().collect(Collectors.toList());
+    List<DataObject> found = dataObjectDAO.findByCollectionAndShepardIds(collectionShepardId, idList);
+
+    // Index by shepardId for O(1) look-up in the post-validation pass.
+    var foundByShepardId = found.stream()
+      .collect(Collectors.toMap(DataObject::getShepardId, d -> d));
+
+    // 3. Post-validate every requested ID in input order (preserves error contract).
     var result = new ArrayList<DataObject>(referencedShepardIds.length);
-    /*
-     * TODO: seems to be inefficient since this loops generates referencedIds.length
-     * calls to Neo4j this could possibly be packed into one query (or in chunks of
-     * queries in case of a large referencedIds array)
-     */
-    for (var shepardId : referencedShepardIds) {
-      result.add(findRelatedDataObject(collectionShepardId, shepardId, dataObjectShepardId));
+    for (long requestedId : referencedShepardIds) {
+      DataObject dataObject = foundByShepardId.get(requestedId);
+      if (dataObject == null || dataObject.isDeleted()) {
+        throw new InvalidBodyException(
+          "The DataObject with id %d could not be found.".formatted(requestedId)
+        );
+      }
+      // Cross-collection guard: objects that belong to a different collection
+      // are simply absent from the batch result (the Cypher filters by
+      // collectionShepardId), so they fall into the null branch above.
+      // The explicit check below is a safety net for edge-cases where the
+      // collection pointer is populated incorrectly.
+      if (!dataObject.getCollection().getShepardId().equals(collectionShepardId)) {
+        throw new InvalidBodyException(
+          "Related data objects must belong to the same collection as the new data object"
+        );
+      }
+      result.add(dataObject);
     }
     return result;
   }

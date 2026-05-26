@@ -2,10 +2,15 @@ package de.dlr.shepard.context.collection.daos;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import de.dlr.shepard.BaseTestCase;
@@ -2035,5 +2040,48 @@ public class DataObjectDAOTest extends BaseTestCase {
 
     verify(session).query(expectedQuery, paramsMap);
     assertEquals(7L, count);
+  }
+
+  /**
+   * PERF5 — batch fetch: 3 requested IDs, 2 returned by the DB (one absent),
+   * assert the two found DataObjects are returned.
+   */
+  @Test
+  public void findByCollectionAndShepardIds_returnsMatchingDataObjects() {
+    var d1 = new DataObject(1L);
+    d1.setShepardId(11L);
+    var d2 = new DataObject(2L);
+    d2.setShepardId(21L);
+    // shepardId 31 is intentionally not included in the mock return (simulates "not found")
+
+    List<Long> requestedIds = List.of(11L, 21L, 31L);
+    Map<String, Object> paramsMap = new HashMap<>();
+    paramsMap.put("shepardIds", requestedIds);
+
+    String expectedQuery =
+      "MATCH (c:Collection)-[:has_dataobject]->(d:DataObject)" +
+      " WHERE c.shepardId=1001 AND d.shepardId IN $shepardIds" +
+      " WITH d " +
+      CypherQueryHelper.getReturnPart("d");
+
+    when(session.query(DataObject.class, expectedQuery, paramsMap)).thenReturn(List.of(d1, d2));
+
+    List<DataObject> result = dao.findByCollectionAndShepardIds(1001L, requestedIds);
+
+    verify(session).query(DataObject.class, expectedQuery, paramsMap);
+    assertEquals(2, result.size());
+    assertTrue(result.contains(d1));
+    assertTrue(result.contains(d2));
+  }
+
+  /**
+   * PERF5 — empty input must return an empty list without touching the DB session.
+   */
+  @Test
+  public void findByCollectionAndShepardIds_emptyInput_returnsEmpty() {
+    List<DataObject> result = dao.findByCollectionAndShepardIds(1001L, Collections.emptyList());
+
+    assertEquals(Collections.emptyList(), result);
+    verifyNoInteractions(session);
   }
 }

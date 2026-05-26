@@ -393,6 +393,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | `08b2a196` | 2026-05-26 | chore | 2k | 1k | 0.14 | 0 | 0 | 0.14 | 0.05 | LOW | chore: stage package-lock.json (three + uplot + @types/three deps from Trace3D + uPlot waves) |
 | `1e609f7ef` | 2026-05-26 | code | 22k | 7k | 2.39 | 0 | 2 | 4.39 | 1.59 | LOW | fix(frontend): UX-ERR-STATE-COLLECTION-MISSING + UX-PAGE-SHELL-RESPONSIVE-WIDTH — NotFoundPanel, PageShell, isError on useFetchCollection, 6 pages updated |
 | `791a10209` | 2026-05-26 | code | 30k | 8k | 7.98 | 10 | 2 | 19.98 | 7.25 | LOW | feat(ux): UX-DOPANEL-TOTAL-COUNT — Content-Range + X-Total-Count headers, countByCollectionByShepardIds DAO, listDataObjectsWithCount client, "Showing X–Y of Z" + jump-to-page in CollectionDataObjectsPanel |
+| (pending) | 2026-05-26 | code | 18k | 5k | 2.20 | 0 | 2 | 4.20 | 1.52 | LOW | fix(ux): UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK — lazy DataObject map with 5-min TTL, three honest lineage empty states, NuxtLink row wrappers, 2 new Vitest test files |
 
 ---
 
@@ -499,4 +500,7 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added UX-ERR-STATE + UX-PAGE-SHELL entry (NotFoundPanel + PageShell + 6 pages). | Claude Sonnet 4.6 |
 | 2026-05-26 | Added UX-DOPANEL-TOTAL-COUNT entry (Content-Range header + Showing X-Y of Z + page jump). | Claude Sonnet 4.6 |
 | 2026-05-26 | COMP-NCR-STATUS — extended status vocabulary (FAILED/NCR_OPEN/REJECTED): validation, OpenAPI enumerations, MCP descriptions, frontend chips + 2 unit tests. ~0.004 kWh / ~1.7 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-05-26 | Added UX-DATAOBJECT-MAP-LAZY + UX-LINEAGE-EMPTY-VS-NOEDGES + UX-ROW-AS-LINK entry (lazy DO map, three honest lineage states, NuxtLink rows + 2 test files). | Claude Sonnet 4.6 |
+| 2026-05-26 | UX-SPATIAL-VIEWER-OR-BANNER + UX-SIDEBAR-COLLAPSE: spatial banner, video scaffold page + test, sidebar desktop collapse toggle. ~0.003 kWh / ~1.1 gCO₂e. | Claude Sonnet 4.6 |
+| 2026-05-26 | PERF5 — batch DataObjectService N+1 Neo4j loop into single `WHERE d.shepardId IN $ids` query via `DataObjectDAO.findByCollectionAndShepardIds`; 2 unit tests. ~0.002 kWh / ~0.8 gCO₂e (inference only; net runtime savings: up to N-1 Neo4j round-trips per create/update at MFFD scale). | Claude Sonnet 4.6 |
 

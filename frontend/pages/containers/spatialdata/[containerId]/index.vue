@@ -69,6 +69,18 @@ useHead({
           </v-row>
         </v-container>
       </v-col>
+      <!-- UX-SPATIAL-VIEWER-OR-BANNER: spatial viewer is in development (SPATIAL-V6).
+           This banner replaces a blank page so users know the container exists and
+           data is stored — the viewer is just not ready yet. -->
+      <v-col cols="12" class="mt-4">
+        <v-alert
+          type="info"
+          variant="tonal"
+          prepend-icon="mdi-map-marker-outline"
+          title="Spatial data viewer — in development (SPATIAL-V6)"
+          text="The in-browser viewer for spatial / GIS data is not yet available. The container and its stored data are intact. Download the raw payload or check back when SPATIAL-V6 ships."
+        />
+      </v-col>
     </v-row>
     <NotFoundPanel v-else-if="isFetchError" />
     <CenteredLoadingSpinner v-else />
