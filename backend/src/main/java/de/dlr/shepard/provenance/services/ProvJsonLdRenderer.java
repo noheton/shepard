@@ -45,6 +45,7 @@ public class ProvJsonLdRenderer {
   static final String PROV_NS = "http://www.w3.org/ns/prov#";
   static final String M4I_NS = "http://w3id.org/nfdi4ing/metadata4ing#";
   static final String SHEPARD_NS = "https://noheton.github.io/shepard/prov#";
+  static final String OBO_NS = "http://purl.obolibrary.org/obo/";
 
   /**
    * Render the activity list as plain PROV-O JSON-LD.
@@ -97,7 +98,7 @@ public class ProvJsonLdRenderer {
     }
     if (activity.getActionKind() != null) {
       actNode.put("prov:type", "shepard:" + activity.getActionKind());
-      actNode.put("m4i:hasMethod", "shepard:method/" + activity.getActionKind());
+      actNode.put("m4i:realizesMethod", "shepard:method/" + activity.getActionKind());
     }
     if (activity.getSummary() != null) actNode.put("shepard:summary", activity.getSummary());
     if (activity.getOriginInstance() != null) actNode.put("shepard:originInstance", activity.getOriginInstance());
@@ -113,10 +114,11 @@ public class ProvJsonLdRenderer {
       boolean isWrite = ProvJsonRenderer.isWriteAction(activity.getActionKind());
       if (isRead) {
         actNode.put("prov:used", Map.of("@id", entityId));
-        actNode.put("m4i:hasInput", Map.of("@id", entityId));
+        actNode.put("obo:RO_0002233", Map.of("@id", entityId));
+        actNode.put("m4i:investigates", Map.of("@id", entityId));
       } else if (isWrite) {
         actNode.put("prov:generated", Map.of("@id", entityId));
-        actNode.put("m4i:hasOutput", Map.of("@id", entityId));
+        actNode.put("obo:RO_0002234", Map.of("@id", entityId));
       }
     }
 
@@ -187,10 +189,10 @@ public class ProvJsonLdRenderer {
         actNode.put("prov:endedAtTime", typedDateTime(a.getEndedAtMillis()));
       }
       if (a.getActionKind() != null) {
-        // Pragmatic m4i:hasMethod mapping (POST/PUT/PATCH/DELETE → Create/Update/Delete);
-        // surface the same value via prov:type for PROV-O parsers.
+        // m4i:realizesMethod (canonical m4i 1.4.0 predicate, replacing non-canonical
+        // m4i:hasMethod); surface the same value via prov:type for PROV-O parsers.
         actNode.put("prov:type", "shepard:" + a.getActionKind());
-        if (m4i) actNode.put("m4i:hasMethod", "shepard:method/" + a.getActionKind());
+        if (m4i) actNode.put("m4i:realizesMethod", "shepard:method/" + a.getActionKind());
       }
       if (a.getSummary() != null) actNode.put("shepard:summary", a.getSummary());
       if (a.getOriginInstance() != null) actNode.put("shepard:originInstance", a.getOriginInstance());
@@ -217,10 +219,13 @@ public class ProvJsonLdRenderer {
         boolean isWrite = ProvJsonRenderer.isWriteAction(a.getActionKind());
         if (isRead) {
           actNode.put("prov:used", Map.of("@id", entityId));
-          if (m4i) actNode.put("m4i:hasInput", Map.of("@id", entityId));
+          if (m4i) {
+            actNode.put("obo:RO_0002233", Map.of("@id", entityId));
+            actNode.put("m4i:investigates", Map.of("@id", entityId));
+          }
         } else if (isWrite) {
           actNode.put("prov:generated", Map.of("@id", entityId));
-          if (m4i) actNode.put("m4i:hasOutput", Map.of("@id", entityId));
+          if (m4i) actNode.put("obo:RO_0002234", Map.of("@id", entityId));
         }
         Map<String, Object> entityNode = new LinkedHashMap<>();
         entityNode.put("@id", entityId);
@@ -244,6 +249,7 @@ public class ProvJsonLdRenderer {
     ctx.put("xsd", "http://www.w3.org/2001/XMLSchema#");
     if (m4i) {
       ctx.put("m4i", M4I_NS);
+      ctx.put("obo", OBO_NS);
     }
     return ctx;
   }

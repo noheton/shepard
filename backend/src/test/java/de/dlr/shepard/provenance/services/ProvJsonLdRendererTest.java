@@ -243,13 +243,15 @@ class ProvJsonLdRendererTest {
   // --- m4i flavour --------------------------------------------------------
 
   @Test
-  void m4iContextDeclaresAllNamespaces() {
+  void m4iContextDeclaresAllNamespacesIncludingObo() {
     var out = renderer.renderMetadata4ing(List.of(make("a-1", "CREATE", "alice", "Collection", "c-1")));
     @SuppressWarnings("unchecked")
     Map<String, String> ctx = (Map<String, String>) out.get("@context");
     assertEquals("http://www.w3.org/ns/prov#", ctx.get("prov"));
     assertEquals("http://w3id.org/nfdi4ing/metadata4ing#", ctx.get("m4i"));
     assertTrue(ctx.get("shepard").startsWith("https://"));
+    assertEquals("http://purl.obolibrary.org/obo/", ctx.get("obo"),
+      "m4i profile must declare obo prefix for obo:RO_0002233 / obo:RO_0002234");
   }
 
   @Test
@@ -300,8 +302,8 @@ class ProvJsonLdRendererTest {
   }
 
   @Test
-  void m4iHasInputPresentForReadAndHasOutputForWrite() {
-    // READ → hasInput
+  void m4iOboRO0002233PresentForReadAndOboRO0002234ForWrite() {
+    // READ → obo:RO_0002233 (has_input) + m4i:investigates
     var readOut = renderer.renderMetadata4ing(List.of(make("a-r", "READ", "alice", "Collection", "c-1")));
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> readGraph = (List<Map<String, Object>>) readOut.get("@graph");
@@ -310,10 +312,12 @@ class ProvJsonLdRendererTest {
       .filter(n -> "shepard:activity/a-r".equals(n.get("@id")))
       .findFirst()
       .orElseThrow();
-    assertNotNull(readActivity.get("m4i:hasInput"));
-    assertNull(readActivity.get("m4i:hasOutput"));
+    assertNotNull(readActivity.get("obo:RO_0002233"), "READ must carry obo:RO_0002233 (has_input)");
+    assertNull(readActivity.get("obo:RO_0002234"), "READ must not carry obo:RO_0002234");
+    assertNull(readActivity.get("m4i:hasInput"), "old m4i:hasInput must not appear");
+    assertNotNull(readActivity.get("m4i:investigates"), "READ must carry m4i:investigates");
 
-    // CREATE → hasOutput
+    // CREATE → obo:RO_0002234 (has_output)
     var writeOut = renderer.renderMetadata4ing(List.of(make("a-w", "CREATE", "alice", "Collection", "c-1")));
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> writeGraph = (List<Map<String, Object>>) writeOut.get("@graph");
@@ -322,12 +326,14 @@ class ProvJsonLdRendererTest {
       .filter(n -> "shepard:activity/a-w".equals(n.get("@id")))
       .findFirst()
       .orElseThrow();
-    assertNotNull(writeActivity.get("m4i:hasOutput"));
-    assertNull(writeActivity.get("m4i:hasInput"));
+    assertNotNull(writeActivity.get("obo:RO_0002234"), "CREATE must carry obo:RO_0002234 (has_output)");
+    assertNull(writeActivity.get("obo:RO_0002233"), "CREATE must not carry obo:RO_0002233");
+    assertNull(writeActivity.get("m4i:hasOutput"), "old m4i:hasOutput must not appear");
+    assertNull(writeActivity.get("m4i:investigates"), "CREATE must not carry m4i:investigates");
   }
 
   @Test
-  void m4iHasMethodPlaceholderPresentWhenActionKindKnown() {
+  void m4iRealizesMethodPresentWhenActionKindKnown() {
     var out = renderer.renderMetadata4ing(List.of(make("a-1", "CREATE", "alice", "Collection", "c-1")));
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> graph = (List<Map<String, Object>>) out.get("@graph");
@@ -336,11 +342,101 @@ class ProvJsonLdRendererTest {
       .filter(n -> "shepard:activity/a-1".equals(n.get("@id")))
       .findFirst()
       .orElseThrow();
-    // Pragmatic m4i:hasMethod mapping ships as a shepard:method/<kind>
-    // IRI; PROV-O readers see the parallel prov:type carrying the same
-    // value.
-    assertEquals("shepard:method/CREATE", activity.get("m4i:hasMethod"));
+    // Canonical m4i:realizesMethod (m4i 1.4.0); PROV-O readers see the
+    // parallel prov:type carrying the same value.
+    assertEquals("shepard:method/CREATE", activity.get("m4i:realizesMethod"),
+      "m4i:realizesMethod must carry the canonical predicate");
+    assertNull(activity.get("m4i:hasMethod"), "old non-canonical m4i:hasMethod must not appear");
     assertEquals("shepard:CREATE", activity.get("prov:type"));
+  }
+
+  // --- M4I-b canonical predicate assertions (realizesMethod, obo:RO) -------
+
+  @Test
+  void m4iRealizesMethodPresentAndHasMethodAbsent() {
+    // realizesMethod must appear; old non-canonical hasMethod must not
+    var out = renderer.renderMetadata4ing(List.of(make("a-1", "UPDATE", "alice", "Collection", "c-1")));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> graph = (List<Map<String, Object>>) out.get("@graph");
+    Map<String, Object> activity = graph.stream()
+      .filter(n -> "shepard:activity/a-1".equals(n.get("@id")))
+      .findFirst().orElseThrow();
+    assertNotNull(activity.get("m4i:realizesMethod"),
+      "canonical m4i:realizesMethod must appear in m4i flavour");
+    assertNull(activity.get("m4i:hasMethod"),
+      "non-canonical m4i:hasMethod must NOT appear in m4i flavour");
+  }
+
+  @Test
+  void m4iOboPredicatesPresentAndOldM4iPredicatesAbsent() {
+    // READ → obo:RO_0002233; old m4i:hasInput banned
+    var readOut = renderer.renderMetadata4ing(List.of(make("a-r", "READ", "bob", "DataObject", "d-1")));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> readGraph = (List<Map<String, Object>>) readOut.get("@graph");
+    Map<String, Object> readAct = readGraph.stream()
+      .filter(n -> "shepard:activity/a-r".equals(n.get("@id")))
+      .findFirst().orElseThrow();
+    assertNotNull(readAct.get("obo:RO_0002233"),
+      "READ in m4i flavour must carry obo:RO_0002233 (has_input)");
+    assertNull(readAct.get("m4i:hasInput"),
+      "non-canonical m4i:hasInput must NOT appear");
+
+    // DELETE → obo:RO_0002234; old m4i:hasOutput banned
+    var deleteOut = renderer.renderMetadata4ing(List.of(make("a-d", "DELETE", "bob", "DataObject", "d-2")));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> deleteGraph = (List<Map<String, Object>>) deleteOut.get("@graph");
+    Map<String, Object> deleteAct = deleteGraph.stream()
+      .filter(n -> "shepard:activity/a-d".equals(n.get("@id")))
+      .findFirst().orElseThrow();
+    assertNotNull(deleteAct.get("obo:RO_0002234"),
+      "DELETE in m4i flavour must carry obo:RO_0002234 (has_output)");
+    assertNull(deleteAct.get("m4i:hasOutput"),
+      "non-canonical m4i:hasOutput must NOT appear");
+  }
+
+  @Test
+  void m4iContextIncludesOboPrefixWhenM4i() {
+    var m4iOut = renderer.renderMetadata4ing(List.of(make("a-1", "CREATE", "alice", "Collection", "c-1")));
+    @SuppressWarnings("unchecked")
+    Map<String, String> ctx = (Map<String, String>) m4iOut.get("@context");
+    assertEquals("http://purl.obolibrary.org/obo/", ctx.get("obo"),
+      "obo prefix must be declared when m4i profile is active");
+  }
+
+  @Test
+  void provOContextDoesNotIncludeOboPrefixOrM4i() {
+    var provOOut = renderer.renderProvO(List.of(make("a-1", "CREATE", "alice", "Collection", "c-1")));
+    @SuppressWarnings("unchecked")
+    Map<String, String> ctx = (Map<String, String>) provOOut.get("@context");
+    assertFalse(ctx.containsKey("obo"), "obo prefix must NOT appear in plain PROV-O context");
+    assertFalse(ctx.containsKey("m4i"), "m4i prefix must NOT appear in plain PROV-O context");
+  }
+
+  @Test
+  void m4iInvestigatesOnReadActivity() {
+    var out = renderer.renderMetadata4ing(List.of(make("a-r", "READ", "alice", "Collection", "c-1")));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> graph = (List<Map<String, Object>>) out.get("@graph");
+    Map<String, Object> activity = graph.stream()
+      .filter(n -> "shepard:activity/a-r".equals(n.get("@id")))
+      .findFirst().orElseThrow();
+    assertNotNull(activity.get("m4i:investigates"),
+      "READ activities in m4i flavour must carry m4i:investigates");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> inv = (Map<String, Object>) activity.get("m4i:investigates");
+    assertEquals("shepard:entity/c-1", inv.get("@id"));
+  }
+
+  @Test
+  void m4iInvestigatesAbsentOnWriteActivity() {
+    var out = renderer.renderMetadata4ing(List.of(make("a-w", "CREATE", "alice", "Collection", "c-1")));
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> graph = (List<Map<String, Object>>) out.get("@graph");
+    Map<String, Object> activity = graph.stream()
+      .filter(n -> "shepard:activity/a-w".equals(n.get("@id")))
+      .findFirst().orElseThrow();
+    assertNull(activity.get("m4i:investigates"),
+      "non-READ activities must NOT carry m4i:investigates");
   }
 
   // --- dispatch -----------------------------------------------------------
@@ -516,21 +612,27 @@ class ProvJsonLdRendererTest {
   }
 
   @Test
-  void renderActivityAsM4iNode_createMapsToHasOutput() {
+  void renderActivityAsM4iNode_createMapsToOboRO0002234() {
     Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
     Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
-    assertNotNull(node.get("m4i:hasOutput"));
+    assertNotNull(node.get("obo:RO_0002234"), "CREATE must carry obo:RO_0002234 (has_output)");
     assertNotNull(node.get("prov:generated"));
-    assertNull(node.get("m4i:hasInput"));
+    assertNull(node.get("obo:RO_0002233"), "CREATE must not carry obo:RO_0002233");
+    assertNull(node.get("m4i:hasOutput"), "old m4i:hasOutput must not appear");
+    assertNull(node.get("m4i:hasInput"), "old m4i:hasInput must not appear");
+    assertNull(node.get("m4i:investigates"), "CREATE must not carry m4i:investigates");
   }
 
   @Test
-  void renderActivityAsM4iNode_readMapsToHasInput() {
+  void renderActivityAsM4iNode_readMapsToOboRO0002233AndInvestigates() {
     Activity a = make("a-r", "READ", "alice", "Collection", "c-1");
     Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
-    assertNotNull(node.get("m4i:hasInput"));
+    assertNotNull(node.get("obo:RO_0002233"), "READ must carry obo:RO_0002233 (has_input)");
     assertNotNull(node.get("prov:used"));
-    assertNull(node.get("m4i:hasOutput"));
+    assertNotNull(node.get("m4i:investigates"), "READ must carry m4i:investigates");
+    assertNull(node.get("obo:RO_0002234"), "READ must not carry obo:RO_0002234");
+    assertNull(node.get("m4i:hasInput"), "old m4i:hasInput must not appear");
+    assertNull(node.get("m4i:hasOutput"), "old m4i:hasOutput must not appear");
   }
 
   @Test
@@ -545,10 +647,12 @@ class ProvJsonLdRendererTest {
   }
 
   @Test
-  void renderActivityAsM4iNode_hasMethod_setOnActionKind() {
+  void renderActivityAsM4iNode_realizesMethod_setOnActionKind() {
     Activity a = make("a-1", "CREATE", "alice", "Collection", "c-1");
     Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
-    assertEquals("shepard:method/CREATE", node.get("m4i:hasMethod"));
+    assertEquals("shepard:method/CREATE", node.get("m4i:realizesMethod"),
+      "canonical m4i:realizesMethod must be set");
+    assertNull(node.get("m4i:hasMethod"), "old non-canonical m4i:hasMethod must not appear");
     assertEquals("shepard:CREATE", node.get("prov:type"));
   }
 
@@ -567,8 +671,9 @@ class ProvJsonLdRendererTest {
     a.setActionKind("EXECUTE");
     a.setStartedAtMillis(1L);
     Map<String, Object> node = renderer.renderActivityAsM4iNode(a);
-    assertNull(node.get("m4i:hasInput"));
-    assertNull(node.get("m4i:hasOutput"));
+    assertNull(node.get("obo:RO_0002233"));
+    assertNull(node.get("obo:RO_0002234"));
+    assertNull(node.get("m4i:investigates"));
     assertNull(node.get("prov:used"));
     assertNull(node.get("prov:generated"));
   }
