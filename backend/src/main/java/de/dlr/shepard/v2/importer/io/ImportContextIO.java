@@ -38,9 +38,8 @@ public record ImportContextIO(
    * Semantic vocabulary snapshot.
    *
    * @param annotations semantic annotations currently attached to DataObjects
-   *                    in this collection (may be an empty list if none exist
-   *                    or if the DAO does not yet support collection-scoped
-   *                    listing — see TODO in {@code ImportV2Rest}).
+   *                    in this collection (may be an empty list when no
+   *                    annotations exist on DataObjects in this collection).
    */
   public record SemanticGraphIO(
     List<AnnotationSummaryIO> annotations

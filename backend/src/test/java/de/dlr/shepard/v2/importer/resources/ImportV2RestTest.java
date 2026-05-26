@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
+import de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.v2.importer.daos.ImportPlanDAO;
 import de.dlr.shepard.v2.importer.entities.ImportPlan;
 import de.dlr.shepard.v2.importer.io.ImportContextIO;
@@ -57,6 +59,9 @@ class ImportV2RestTest {
   CollectionPropertiesDAO collectionPropertiesDAO;
 
   @Mock
+  SemanticAnnotationDAO semanticAnnotationDAO;
+
+  @Mock
   SecurityContext sc;
 
   @Mock
@@ -72,6 +77,7 @@ class ImportV2RestTest {
     resource.importPlanDAO = importPlanDAO;
     resource.permissionsService = permissionsService;
     resource.collectionPropertiesDAO = collectionPropertiesDAO;
+    resource.semanticAnnotationDAO = semanticAnnotationDAO;
 
     when(sc.getUserPrincipal()).thenReturn(principal);
     when(principal.getName()).thenReturn(CALLER);
@@ -81,6 +87,9 @@ class ImportV2RestTest {
       .thenReturn(Optional.of(COLL_OGM_ID));
     when(permissionsService.isAccessTypeAllowedForUser(eq(COLL_OGM_ID), eq(AccessType.Write), eq(CALLER)))
       .thenReturn(true);
+    // Default: no annotations (safe default; individual tests override as needed)
+    when(semanticAnnotationDAO.findByCollectionAppId(COLL_APP_ID))
+      .thenReturn(List.of());
   }
 
   // ─── POST /validate — happy path ──────────────────────────────────────────
@@ -291,12 +300,13 @@ class ImportV2RestTest {
   }
 
   @Test
-  void testGetContext_withSemanticGraph() {
-    // Collection exists and caller has Read permission.
+  void testGetContext_withSemanticGraph_emptyCollection() {
+    // Collection exists and caller has Read permission; no annotations yet.
     when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER))
       .thenReturn(true);
     when(importPlanDAO.countDataObjects(COLL_APP_ID)).thenReturn(3L);
     when(importPlanDAO.getRawCollectionFingerprintInput(COLL_APP_ID)).thenReturn("3|1716218461000");
+    when(semanticAnnotationDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of());
 
     Response r = resource.getContext(COLL_APP_ID, true, sc);
 
@@ -305,11 +315,60 @@ class ImportV2RestTest {
     assertNotNull(body);
     assertEquals(COLL_APP_ID, body.collectionAppId());
     assertEquals(3L, body.dataObjectCount());
-    // semanticGraph must be present (non-null) when requested.
+    // semanticGraph present (non-null) when requested.
     assertNotNull(body.semanticGraph(),
       "semanticGraph must be present when includeSemanticGraph=true");
-    // Annotation list may be empty (collection-scoped DAO not yet wired — see TODO).
+    // Empty annotation list is valid — not null.
     assertNotNull(body.semanticGraph().annotations());
+    assertTrue(body.semanticGraph().annotations().isEmpty(),
+      "annotations must be empty when collection has none");
+  }
+
+  @Test
+  void testGetContext_withSemanticGraph_annotationsProjectedCorrectly() {
+    // IMP1 — verifies the AnnotationSummaryIO projection maps all five fields correctly.
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER))
+      .thenReturn(true);
+    when(importPlanDAO.countDataObjects(COLL_APP_ID)).thenReturn(2L);
+    when(importPlanDAO.getRawCollectionFingerprintInput(COLL_APP_ID)).thenReturn("2|1716218461000");
+
+    SemanticAnnotation ann = new SemanticAnnotation(99L);
+    ann.setAppId("019e3c96-0000-7000-a000-000000000099");
+    ann.setPropertyName("propellant");
+    ann.setValueName("LOX/LH2");
+    ann.setPropertyIRI("http://example.org/ns/propellant");
+    ann.setValueIRI("http://example.org/ns/LOX-LH2");
+    when(semanticAnnotationDAO.findByCollectionAppId(COLL_APP_ID)).thenReturn(List.of(ann));
+
+    Response r = resource.getContext(COLL_APP_ID, true, sc);
+
+    assertEquals(200, r.getStatus());
+    verify(semanticAnnotationDAO).findByCollectionAppId(COLL_APP_ID);
+    ImportContextIO body = (ImportContextIO) r.getEntity();
+    assertNotNull(body.semanticGraph());
+    assertEquals(1, body.semanticGraph().annotations().size());
+    ImportContextIO.AnnotationSummaryIO summary = body.semanticGraph().annotations().get(0);
+    assertEquals("019e3c96-0000-7000-a000-000000000099", summary.appId());
+    assertEquals("propellant", summary.propertyName());
+    assertEquals("LOX/LH2", summary.valueName());
+    assertEquals("http://example.org/ns/propellant", summary.propertyIRI());
+    assertEquals("http://example.org/ns/LOX-LH2", summary.valueIRI());
+  }
+
+  @Test
+  void testGetContext_withoutSemanticGraph_daoNotCalled() {
+    // IMP1 — default path (includeSemanticGraph=false) must NOT call the DAO.
+    when(permissionsService.isAccessTypeAllowedForUser(COLL_OGM_ID, AccessType.Read, CALLER))
+      .thenReturn(true);
+    when(importPlanDAO.countDataObjects(COLL_APP_ID)).thenReturn(5L);
+    when(importPlanDAO.getRawCollectionFingerprintInput(COLL_APP_ID)).thenReturn("5|1716218461000");
+
+    Response r = resource.getContext(COLL_APP_ID, false, sc);
+
+    assertEquals(200, r.getStatus());
+    verify(semanticAnnotationDAO, never()).findByCollectionAppId(any());
+    assertNull(((ImportContextIO) r.getEntity()).semanticGraph(),
+      "semanticGraph must be null when not requested");
   }
 
   @Test

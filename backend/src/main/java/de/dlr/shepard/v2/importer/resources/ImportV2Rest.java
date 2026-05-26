@@ -4,6 +4,8 @@ import de.dlr.shepard.auth.bootstrap.BootstrapTokenInitializer;
 import de.dlr.shepard.auth.permission.services.PermissionsService;
 import de.dlr.shepard.common.util.AccessType;
 import de.dlr.shepard.context.collection.daos.CollectionPropertiesDAO;
+import de.dlr.shepard.context.semantic.daos.SemanticAnnotationDAO;
+import de.dlr.shepard.context.semantic.entities.SemanticAnnotation;
 import de.dlr.shepard.v2.importer.daos.ImportPlanDAO;
 import de.dlr.shepard.v2.importer.entities.ImportPlan;
 import de.dlr.shepard.v2.importer.io.ImportContextIO;
@@ -85,6 +87,9 @@ public class ImportV2Rest {
 
   @Inject
   CollectionPropertiesDAO collectionPropertiesDAO;
+
+  @Inject
+  SemanticAnnotationDAO semanticAnnotationDAO;
 
   // ─── POST /validate ───────────────────────────────────────────────────────
 
@@ -221,12 +226,18 @@ public class ImportV2Rest {
 
     SemanticGraphIO semanticGraph = null;
     if (includeSemanticGraph) {
-      // TODO(IMP1): add a collection-scoped SemanticAnnotationDAO query that
-      //  returns all annotations attached to DataObjects within this Collection
-      //  while respecting the caller's Read permission. For now we return an
-      //  empty list — the endpoint shape is correct and agents can handle
-      //  an empty vocabulary gracefully.
-      semanticGraph = new SemanticGraphIO(List.of());
+      List<SemanticAnnotation> annotations =
+        semanticAnnotationDAO.findByCollectionAppId(collectionAppId);
+      List<AnnotationSummaryIO> summaries = annotations.stream()
+        .map(a -> new AnnotationSummaryIO(
+          a.getAppId(),
+          a.getPropertyName(),
+          a.getValueName(),
+          a.getPropertyIRI(),
+          a.getValueIRI()
+        ))
+        .toList();
+      semanticGraph = new SemanticGraphIO(summaries);
     }
 
     ImportContextIO ctx = new ImportContextIO(

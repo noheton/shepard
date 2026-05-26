@@ -347,6 +347,7 @@ df.groupby('kind')['total_Wh_est'].describe()
 | (pending) | 2026-05-26 | code | 60k | 20k | 9.44 | 20 | 5 | 34.44 | 12.50 | LOW | fix(data-objects): MFG5 — enforce DataObject status as closed enum + transition guard |
 | (pending) | 2026-05-26 | code | 18k | 5k | 2.17 | 5 | 2 | 9.17 | 3.33 | LOW | fix(importer-plugin): IMPL3 — fail-fast startup guard for default credentials in prod mode |
 | `04efd5a9` | 2026-05-26 | doc | 12k | 4k | 1.78 | 0 | 0 | 1.78 | 0.65 | LOW | docs(db): DB-DOC1 — database overview reference + troubleshooting task page |
+| *(IMP1-TODO)* | 2026-05-26 | code | 20k | 6k | 2.50 | 0 | 5 | 7.50 | 2.72 | MEDIUM | feat(import): IMP1 — collection-scoped annotation query for import context |
 
 ---
 
@@ -438,4 +439,5 @@ following ship, the log gets re-grounded:
 | 2026-05-26 | Added V5-META-SURVEY (research kind) entry.                           | Claude Sonnet 4.6 |
 | 2026-05-26 | Added PROV1i entry (SnapshotService prov:Entity auto-typing).          | Claude Sonnet 4.6 |
 | 2026-05-26 | Added IMPL3 entry (importer plugin credential guard).                  | Claude Sonnet 4.6 |
+| 2026-05-26 | Added IMP1-TODO closure entry (import context annotation query).       | Claude Sonnet 4.6 |
 
