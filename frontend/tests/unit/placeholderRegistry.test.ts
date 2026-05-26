@@ -11,7 +11,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
   it("ships the documented count of placeholders", () => {
     // findings doc commits to a specific count; if this changes the doc
     // must change too (forces same-PR coupling).
-    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(14);
+    expect(EXPECTED_PLACEHOLDER_COUNT).toBe(15);
     expect(PLACEHOLDER_ENTRIES).toHaveLength(EXPECTED_PLACEHOLDER_COUNT);
   });
 
@@ -69,7 +69,7 @@ describe("placeholderRegistry — no-UI-gap roll-out (2026-05-24)", () => {
     const route = placeholdersBySurface("route");
     expect(admin.length).toBe(8);
     expect(profile.length).toBe(1);
-    expect(route.length).toBe(5);
+    expect(route.length).toBe(6);
     expect(admin.length + profile.length + route.length).toBe(
       EXPECTED_PLACEHOLDER_COUNT,
     );
