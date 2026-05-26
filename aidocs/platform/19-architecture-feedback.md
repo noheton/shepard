@@ -13,7 +13,7 @@ This is a maintainer's-eye review of shepard as a system, not a
 re-statement of `aidocs/archive/01-repo-overview.md`. Strengths first, then
 fragilities prioritised by blast radius, then the seams that aren't
 seams yet, then risks specific to the proposals in
-`aidocs/semantics/13-search-improvements.md` and `aidocs/semantics/14-semantic-improvements.md`,
+`aidocs/semantics/13-search-improvements.md` and `aidocs/archive/semantics/14-semantic-improvements.md`,
 then a 6-month recommendation list mapped to backlog IDs in
 `aidocs/16-dispatcher-backlog.md`, then a short list of architectural
 temptations to resist.
@@ -598,7 +598,7 @@ effort if avoided.
   `aidocs/data/12-timescaledb-performance-analysis.md` (timeseries / read
   path; §11 for identifier discipline),
   `aidocs/semantics/13-search-improvements.md` (unified search),
-  `aidocs/semantics/14-semantic-improvements.md` (annotation generalisation,
+  `aidocs/archive/semantics/14-semantic-improvements.md` (annotation generalisation,
   triplestore).
 - Backlog: `aidocs/16-dispatcher-backlog.md` (A0, A1*, A3*, A4*, P2,
   P3*, P4, S1; F1/F2/F3 proposed in §5 above).

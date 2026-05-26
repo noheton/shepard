@@ -2,13 +2,13 @@
 stage: feature-defined
 last-stage-change: 2026-05-24
 audience: contributor + maintainer
-supersedes: aidocs/platform/86-ai-plugin-design.md
+supersedes: aidocs/archive/platform/86-ai-plugin-design.md
 ---
 
 # 97 — `shepard-plugin-ai` v6 SSOT — local-first AI capability
 
 **Status.** Design ready for v6 implementation wave.
-**Predecessor.** [`aidocs/platform/86-ai-plugin-design.md`](../platform/86-ai-plugin-design.md) (decommissioned in the same commit). 86 introduced the capability registry, the layered call-stack, the prompt-injection defence, the loopback MCP shape, and the `:AiActivity` provenance row — **all five carry forward unchanged**. What this doc inverts is the **deployment default**: 86 recommended a LiteLLM proxy in front of OpenAI; v6 ships a TEI sidecar in front of an open-weights model so the out-of-the-box install needs zero credentials, zero egress, zero sign-ups.
+**Predecessor.** [`aidocs/archive/platform/86-ai-plugin-design.md`](../archive/platform/86-ai-plugin-design.md) (decommissioned; moved to archive). 86 introduced the capability registry, the layered call-stack, the prompt-injection defence, the loopback MCP shape, and the `:AiActivity` provenance row — **all five carry forward unchanged**. What this doc inverts is the **deployment default**: 86 recommended a LiteLLM proxy in front of OpenAI; v6 ships a TEI sidecar in front of an open-weights model so the out-of-the-box install needs zero credentials, zero egress, zero sign-ups.
 **Depends on.** PluginManifest SPI (`aidocs/platform/47 §2.6` — PM1f sidecar declarations), `:AIConfig` admin pattern (A3b), MCP loopback (`aidocs/integrations/30`), `:Activity` provenance (PROV1a), the collapsed-PG architecture (synthesis T2).
 **First consumer.** `shepard-plugin-wiki-writer` (TEXT) + the MCP `search_by_embedding` tool (EMBEDDING).
 

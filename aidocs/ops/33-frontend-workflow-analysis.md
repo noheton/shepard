@@ -169,7 +169,7 @@ W9 — Semantic annotation.
   literally say "Refer to your ontology server to get the link"
   (`AddAnnotationDialog.vue:128-131`) — i.e. leave shepard, find an
   IRI, come back. This is precisely the case that
-  `aidocs/semantics/14-semantic-improvements.md` wants to fix with
+  `aidocs/archive/semantics/14-semantic-improvements.md` wants to fix with
   search-as-you-type over labels.
 - **Validation.** Submit is gated only on "all four non-empty"
   (`AddAnnotationDialog.vue:48-54`); no IRI sanity check, no

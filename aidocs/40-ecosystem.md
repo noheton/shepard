@@ -439,7 +439,7 @@ ecosystem diagram):
 - `aidocs/integrations/66-hmc-kip-integration.md` — HMC KIP minting
 - `aidocs/integrations/38-git-references.md` (G1 series) — git artifact tracking
 - `aidocs/platform/47-dev-experience-and-plugin-system.md` — plugin SPI
-- `aidocs/platform/30-mcp-plugin-design.md`, `aidocs/platform/86-ai-plugin-design.md`, `aidocs/platform/88-quarkus-mcp-server-migration.md` — MCP + AI surfaces
+- `aidocs/platform/30-mcp-plugin-design.md`, `aidocs/archive/platform/86-ai-plugin-design.md` (decommissioned), `aidocs/platform/88-quarkus-mcp-server-migration.md` — MCP + AI surfaces
 - `aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md` — internal semantic repository
 - `aidocs/semantics/65-admin-configurable-ontology-preseed.md` — pre-seeded ontologies
 - `aidocs/semantics/95-shacl-templates-and-individuals.md` Parts 11–15 — plugin shapes, git ingestion, DLR ontology landscape, network organisation, F(AI)²R (TPL9)

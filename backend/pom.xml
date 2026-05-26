@@ -1013,7 +1013,7 @@
           (endpointUrl, model, apiKey, enabled). Writes `:AiActivity`
           provenance nodes on every call. v0: TEXT capability only,
           OPENAI_COMPAT transport only.
-          See aidocs/platform/86-ai-plugin-design.md.
+          See aidocs/archive/platform/86-ai-plugin-design.md.
         -->
         <dependency>
           <groupId>de.dlr.shepard.plugins</groupId>

@@ -85,7 +85,7 @@ Design notes, analysis docs, and strategy docs for this fork of
 | File | Topic |
 |---|---|
 | [`13-search-improvements.md`](semantics/13-search-improvements.md) | Unified search v2 design (E2 epic, P7 series) |
-| [`14-semantic-improvements.md`](semantics/14-semantic-improvements.md) | Semantic annotation model improvements (L7, P8) |
+| [`14-semantic-improvements.md`](archive/semantics/14-semantic-improvements.md) | Semantic annotation model improvements (L7, P8) — **decommissioned; superseded by `aidocs/semantics/100-consistent-semantic-annotation-design.md`** |
 | [`43-ai-opportunities.md`](semantics/43-ai-opportunities.md) | AI opportunities survey + Lumen agent design (AI1 series) |
 | [`48-internal-semantic-repository-via-neosemantics.md`](semantics/48-internal-semantic-repository-via-neosemantics.md) | n10s internal semantic repository (N1 series) |
 | [`65-admin-configurable-ontology-preseed.md`](semantics/65-admin-configurable-ontology-preseed.md) | Admin-configurable ontology preseed + custom bundles (N1c2) |

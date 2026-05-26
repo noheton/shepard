@@ -341,7 +341,7 @@ The `shepardId` (`VersionableEntity.java:21`) is **not** the `appId`. `shepardId
 
 - `aidocs/data/12-timescaledb-performance-analysis.md` §11 — identifier discipline; this doc extends but does not duplicate.
 - `aidocs/semantics/13-search-improvements.md` §2.3, §2.6 — search results carry numeric ids today; they carry `appId` post-L2d. Cursor pagination keys.
-- `aidocs/semantics/14-semantic-improvements.md` §2.1, §2.3 — bridge nodes (Annotatable*) get `appId` like any other entity.
+- `aidocs/archive/semantics/14-semantic-improvements.md` §2.1, §2.3 — bridge nodes (Annotatable*) get `appId` like any other entity.
 - `aidocs/16-dispatcher-backlog.md` — **L2** (this), **L3** (Templates, motivating use case), **A4 / A4c / A4d** (permission cache key), **C5** (Cypher injection — gate for Phase 3), **P3** (`migration_progress` pattern), **P4** (API versioning — gate for Phase 4), **H4** (error shape — Phase 4).
 - `aidocs/platform/19-architecture-feedback.md` E14, `aidocs/platform/20-epic-roadmap.md` E5 — alignment of the ID epic with the broader roadmap.
 - `aidocs/24-authz-evolution.md` — if/when this lands, fold `PermissionsService.isAllowed` segment-dispatch into the unified interceptor (§5 risk 3).

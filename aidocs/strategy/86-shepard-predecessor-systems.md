@@ -1488,7 +1488,7 @@ This chapter is `fair2r:modeOfProduction "ai"` content with
 `fair2r:reviewedBy` Krebs himself in the testimony-and-correction
 loop of 2026-05-23 — *three* layers of human-issued corrections
 shaped the present framing (correction log:
-[`aidocs/agent-findings/predecessor-history-correction-2026-05-23.md`](../agent-findings/predecessor-history-correction-2026-05-23.md)).
+[`aidocs/archive/agent-findings/predecessor-history-correction-2026-05-23.md`](../archive/agent-findings/predecessor-history-correction-2026-05-23.md)).
 
 Thesis examiners reading this section in a later academic context
 should know: the human in the loop is both subject and editor. The

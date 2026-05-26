@@ -3,7 +3,7 @@ stage: feature-defined
 last-stage-change: 2026-05-24
 audience: contributor + maintainer
 supersedes:
-  - aidocs/semantics/14-semantic-improvements.md
+  - aidocs/archive/semantics/14-semantic-improvements.md
 ---
 
 # 100 — Consistent semantic annotation surface (UI-first + MCP CRUD)
@@ -1219,8 +1219,8 @@ an upgrading install (Flyway-tracked)."
   - `aidocs/platform/30-mcp-plugin-design.md` (tool-registration
     pattern; `McpAuthFilter`; the existing `list_annotations` tool
     extended here)
-  - `aidocs/semantics/14-semantic-improvements.md` (predecessor;
-    SUPERSEDED by this doc)
+  - `aidocs/archive/semantics/14-semantic-improvements.md` (predecessor;
+    SUPERSEDED by this doc; moved to archive)
   - `aidocs/semantics/48-internal-semantic-repository-via-neosemantics.md`
     (n10s + RDF/SPARQL view — still active)
   - `aidocs/semantics/65-admin-configurable-ontology-preseed.md`

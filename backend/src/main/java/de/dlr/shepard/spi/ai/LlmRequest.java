@@ -9,7 +9,7 @@ import java.util.List;
  *
  * <p>Layers are assembled in the order the provider must present them to
  * the model, matching the injection-safe call stack defined in
- * {@code aidocs/platform/86-ai-plugin-design.md §injection-defence}:
+ * {@code aidocs/archive/platform/86-ai-plugin-design.md §injection-defence}:
  *
  * <ol>
  *   <li>{@link #pluginSystemPrompt()} — trusted; set by the calling plugin</li>

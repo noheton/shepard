@@ -371,7 +371,7 @@ the casual-user UX loop.
 
 ## 11. Cross-references
 
-- **aidocs:** `aidocs/semantics/14-semantic-improvements.md` (the broader
+- **aidocs:** `aidocs/archive/semantics/14-semantic-improvements.md` (the broader
   semantic-annotation surface this design extends),
   `aidocs/16` (N1 series queueing entry will follow this design),
   `aidocs/22 §4.x` (`shepard-admin semantic refresh-ontologies`),

@@ -41,7 +41,7 @@ public final class AiPluginManifest implements PluginManifest {
     "Implements the LlmProvider SPI for the TEXT capability (v0). " +
     "Exposes /v2/admin/ai/capabilities for per-capability runtime config. " +
     "Writes :AiActivity provenance nodes on every call. " +
-    "See aidocs/platform/86-ai-plugin-design.md (AI1).";
+    "See aidocs/archive/platform/86-ai-plugin-design.md (AI1).";
   private static final URI REPOSITORY = URI.create("https://github.com/noheton/shepard");
   private static final String LICENCE = "Apache-2.0";
 

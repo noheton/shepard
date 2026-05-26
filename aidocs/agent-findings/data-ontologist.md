@@ -133,7 +133,7 @@ Both are dual-typed: `a owl:Class, skos:ConceptScheme; rdfs:subClassOf prov:Acti
 
 ### 1.7 Annotation coverage asymmetry
 
-From `aidocs/semantics/14-semantic-improvements.md`:
+From `aidocs/archive/semantics/14-semantic-improvements.md`:
 
 | Node type | Annotatable? | Mechanism |
 |---|---|---|

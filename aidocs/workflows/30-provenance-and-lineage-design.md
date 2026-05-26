@@ -13,7 +13,7 @@ and exporting provenance / lineage information in shepard. Settles
 exports — OpenLineage / W3C PROV-O / both") and the open question at
 `aidocs/input/input_raw.md:1256`.
 
-Companions: `aidocs/semantics/14-semantic-improvements.md` §5 (triplestore where
+Companions: `aidocs/archive/semantics/14-semantic-improvements.md` §5 (triplestore where
 PROV-O triples live long-term); `aidocs/16` rows **R2 / R2b / R2c /
 R2d / R2d2** (post-Phase-1 RO-Crate exporter); `aidocs/24` §3.7 (F3
 audit-trail sibling, not this work); `aidocs/27` and `aidocs/29`

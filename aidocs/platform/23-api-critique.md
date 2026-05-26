@@ -720,7 +720,7 @@ and the Python boilerplate, in roughly two sprints' worth of work.
 - Architecture feedback: `aidocs/platform/19-architecture-feedback.md`
   (cross-cutting concerns).
 - Search unification: `aidocs/semantics/13-search-improvements.md` (entire).
-- Semantic model: `aidocs/semantics/14-semantic-improvements.md` §2.
+- Semantic model: `aidocs/archive/semantics/14-semantic-improvements.md` §2.
 - Performance: `aidocs/data/12-timescaledb-performance-analysis.md`
   §11.A, §11.B.
 - Admin CLI ergonomics: `aidocs/ops/22-admin-cli-draft.md`.

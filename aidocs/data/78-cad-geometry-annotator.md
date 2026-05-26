@@ -417,5 +417,5 @@ DLR-internal adapters in a separate (potentially private) repository.
   CAD1 foundation and `CadReference` payload kind)
 - `aidocs/30-provenance-and-lineage.md` — provenance and lineage design (geometry conversion
   operations as PROV-O activities; links mesh upload → conversion → annotation)
-- `aidocs/semantics/14-semantic-improvements.md` — semantic annotation vocabulary
+- `aidocs/archive/semantics/14-semantic-improvements.md` — semantic annotation vocabulary
   (`GeometryAnnotation.semanticTermIri` reuses the same metadata4ing vocabulary)

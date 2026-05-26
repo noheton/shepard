@@ -1088,7 +1088,7 @@ When all of these are met, the slice is done:
 6. ~~**Should LLM-as-oracle calls use the user's session AI provider
    or the admin-configured one?**~~ **RESOLVED 2026-05-23** — not a
    design decision the ontology-mapping plugin needs to make. The AI
-   plugin's BYOK resolution chain (`aidocs/platform/86-ai-plugin-design.md
+   plugin's BYOK resolution chain (`aidocs/archive/platform/86-ai-plugin-design.md
    §4`) already handles both cases correctly:
    `(1) User per-capability override in :UserPreferences →
     (2) Instance :AiCapabilityConfig slot → (3) error`. The

@@ -14,7 +14,7 @@
     $ cd plugins/ai && mvn -DskipTests install
     $ cd backend && mvn package    # plugin is on the classpath
 
-  See `aidocs/platform/86-ai-plugin-design.md` for the design rationale
+  See `aidocs/archive/platform/86-ai-plugin-design.md` for the design rationale
   and `docs/reference/plugins.md` for the operator runbook.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -33,7 +33,7 @@
     Implements the `LlmProvider` SPI for the TEXT capability (v0).
     Exposes `/v2/admin/ai/capabilities` for per-capability runtime config.
     Writes `:AiActivity` provenance nodes on every call.
-    See aidocs/platform/86-ai-plugin-design.md (AI1).
+    See aidocs/archive/platform/86-ai-plugin-design.md (AI1).
   </description>
   <url>https://github.com/noheton/shepard</url>
 

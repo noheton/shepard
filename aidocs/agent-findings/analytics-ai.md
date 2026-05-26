@@ -13,7 +13,7 @@ six opportunity areas; quick-win specification; capability definitions for
 
 > This document is a reality-check, not a reprise of the existing design
 > work in `aidocs/semantics/43-ai-opportunities.md` or
-> `aidocs/platform/86-ai-plugin-design.md`. It benchmarks those designs
+> `aidocs/archive/platform/86-ai-plugin-design.md`. It benchmarks those designs
 > against the 2024–2025 external literature and the actual data currently
 > in the system, and names dependencies and blockers explicitly.
 

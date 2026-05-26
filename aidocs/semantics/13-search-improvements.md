@@ -14,7 +14,7 @@ search API, a richer query syntax that opens up RDF/SPARQL and SQL where
 they fit, and a path to fulltext.
 
 This is a companion to `12-timescaledb-performance-analysis.md` (read-path
-performance) and `14-semantic-improvements.md` (annotation model). All three
+performance) and `../archive/semantics/14-semantic-improvements.md` (annotation model). All three
 share a single dependency: §11.B of the performance analysis — moving
 clients toward numeric `timeseries_id` as the canonical identifier.
 
@@ -83,7 +83,7 @@ This works, but:
   syntax (`Neo4jQueryBuilder.java:162-243`) — but it is unreachable
   from the GUI without writing JSON by hand, and it is only available
   on Collection / DataObject / Reference (not on Timeseries, Files,
-  StructuredData, Spatial — see `14-semantic-improvements.md` §2).
+  StructuredData, Spatial — see `../archive/semantics/14-semantic-improvements.md` §2).
 - **No SPARQL.** Even though every annotation has `propertyIRI` /
   `valueIRI`, there is no path from "I want every entity annotated
   with `dcterms:creator` of `…/JoeBloggs`" to a result; the user has
@@ -205,7 +205,7 @@ The proposal is an explicit three-layer query language:
      registered `SemanticRepository`). Returns a list of entity
      IRIs (= IDs in shepard's namespace) which then feed back
      into `select` + page. Requires the triplestore step proposed
-     in `14-semantic-improvements.md` §6.
+     in `../archive/semantics/14-semantic-improvements.md` §6.
    - **`raw.sql`**: read-only `SELECT` against a curated set of
      views over the timeseries hypertable and StructuredData
      mirror. Roles + statement timeout + row cap enforced by
@@ -335,7 +335,7 @@ Two related affordances on top:
 - **`annotation.label` operator.** Matches the *label* (the
   human-readable string) instead of the IRI. Useful when the user
   is browsing; stale-label hazard documented in
-  `14-semantic-improvements.md` §6.
+  `../archive/semantics/14-semantic-improvements.md` §6.
 - **Find-by-annotation across kinds.**
   `select: ["Collection", "DataObject", "Timeseries"]` +
   `annotation.property = "dcterms:creator"` returns every
@@ -343,7 +343,7 @@ Two related affordances on top:
   `hasAnnotation` is implemented per-kind in the Cypher builder.
 
 This presupposes the annotation model unification in
-`14-semantic-improvements.md` §2 — annotations on
+`../archive/semantics/14-semantic-improvements.md` §2 — annotations on
 File / StructuredData / Spatial don't exist yet.
 
 ---
@@ -362,7 +362,7 @@ SPARQL is a small step with two concrete benefits:
    (`SparqlConnector.java`); reusing the same connector for
    `SERVICE <…>` in a federated query is mostly plumbing.
 2. **Reasoning.** With a triplestore (see §5 and
-   `14-semantic-improvements.md` §6) supporting RDFS/OWL inference,
+   `../archive/semantics/14-semantic-improvements.md` §6) supporting RDFS/OWL inference,
    queries become *transitively* aware of subclass / subproperty
    relationships defined in imported ontologies. "Find all
    timeseries annotated with `Sensor`" returns those annotated
@@ -446,7 +446,7 @@ This is the long-term payoff of unifying search; the steps in
 | 4. Add cursor pagination + streaming to v2. Introduce `include` and basic facets (kind facet only). | M | low |
 | 5. Add tsvector + GIN to Postgres-backed kinds (§2.4 option 2); fulltext operator routes accordingly. Resolves #763 fulltext part. | S-M | low |
 | 6. Add `raw.sql` (read-only views, statement timeout, row cap). Resolves #763 SQL part, supersedes !80. | M | medium (correct sandboxing is the risk) |
-| 7. Triplestore + `raw.sparql` (depends on `14-semantic-improvements.md` §6). Federated annotation queries. | L | medium |
+| 7. Triplestore + `raw.sparql` (depends on `../archive/semantics/14-semantic-improvements.md` §6). Federated annotation queries. | L | medium |
 | 8. Cross-store planner (§6). Removes client-side intersection patterns. | L | medium |
 
 Steps 1–3 are the minimum-viable unification and individually
@@ -490,4 +490,4 @@ open issues. Steps 7–8 are the long arc.
 - Open issues: #683, #688, #722, #758, #763 (TS payload search);
   MR !763 (annotatedTimeseries search), MR !80 (legacy concept).
 - Companion docs: `12-timescaledb-performance-analysis.md` §11.B
-  (id alignment), `14-semantic-improvements.md` (annotation model).
+  (id alignment), `../archive/semantics/14-semantic-improvements.md` (annotation model).
