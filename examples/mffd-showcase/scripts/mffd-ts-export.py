@@ -53,9 +53,17 @@ from pathlib import Path
 import requests
 
 # ── Config ────────────────────────────────────────────────────────────────────
+# Defaults: DLR cube3 intranet (kreb_fl, jti eca5887a, minted 2026-05-23).
+# Override via env if the JWT has expired and you've re-minted.
 
-SOURCE_URL            = os.environ["SOURCE_SHEPARD_URL"].rstrip("/")
-SOURCE_KEY            = os.environ["SOURCE_SHEPARD_API_KEY"]
+SOURCE_URL = os.environ.get(
+    "SOURCE_SHEPARD_URL",
+    "https://backend.bt-au-cube3.intra.dlr.de",
+).rstrip("/")
+SOURCE_KEY = os.environ.get(
+    "SOURCE_SHEPARD_API_KEY",
+    "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJrcmViX2ZsIiwiaXNzIjoiaHR0cDovL2JhY2tlbmQuYnQtYXUtY3ViZTMuaW50cmEuZGxyLmRlL3NoZXBhcmQvYXBpLyIsIm5iZiI6MTc3OTU0NDMxNSwiaWF0IjoxNzc5NTQ0MzE1LCJqdGkiOiJlY2E1ODg3YS1iZTUyLTRkMTktYTZjNS01ZDJkYjlmYzcxOGUifQ.SZNX9ne7Hbdu5bWyGsCRGdXM5kUa_R1oRfgNOHkmk5oAnGP8Uoss1dqKmFvwRiW29s-CAtD1wTc7nRq3ySlJQqakGffMWvNaNHk6PtLiBr8GYQ3kX6NY8a807bVbAcdbnO2HYfRFAT6kKMjIjmuLw16E6fZCRdVJq4J9otKu_tMN7qtprgusyoV5jZLZuXBGZIBdJAf9ucBAGoNBhi3KOI0Otonna5TK9KqMVygl2OFZa8ttvchl0j1JFevH-oC82WrvvTHEaiaeIdG37tNrzPFttiLswFMNYHXhhRORiX2d2oLRTvoQX3s9HBTRFiUFBgmwBhNoJTvJoUFdQBjA",
+)
 INCLUDE_BRIDGEWELDING = os.environ.get("INCLUDE_BRIDGEWELDING", "").lower() in ("1", "true", "yes")
 SKIP_TS               = os.environ.get("SKIP_TS",         "").lower() in ("1", "true", "yes")
 SKIP_FILES            = os.environ.get("SKIP_FILES",      "").lower() in ("1", "true", "yes")
