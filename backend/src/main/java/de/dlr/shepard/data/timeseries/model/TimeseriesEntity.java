@@ -9,11 +9,42 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrimaryKeyJoinColumn;
+import jakarta.persistence.SecondaryTable;
 import jakarta.persistence.Table;
 import java.util.UUID;
 
+/**
+ * JPA entity for the {@code timeseries} table + its {@code channel_metadata} side table.
+ *
+ * <p><b>Schema layout (TS-CORE-SCHEMA-01):</b>
+ * <ul>
+ *   <li>{@code timeseries}: id, container_id, value_type, shepard_id — the hot row</li>
+ *   <li>{@code channel_metadata}: timeseries_id, container_id, measurement, field,
+ *       device, location, symbolic_name — the identity side table</li>
+ * </ul>
+ *
+ * <p>The {@code @SecondaryTable} join is:
+ * {@code channel_metadata.timeseries_id = timeseries.id}.
+ * Hibernate automatically JOINs the secondary table for all reads; callers see a flat
+ * object with all fields populated as before.  The {@code channel_metadata.container_id}
+ * column is a constraint-helper not managed by JPA — it is populated explicitly in the
+ * native-SQL {@code upsert()} in {@link de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository}.
+ *
+ * <p><b>Important:</b> do NOT call {@code entityManager.persist()} directly on this entity —
+ * use {@link de.dlr.shepard.data.timeseries.repositories.TimeseriesRepository#upsert} which
+ * handles both tables atomically via native SQL.
+ *
+ * <p><b>Future (TS-SEMANTIC-01):</b> {@code channel_metadata} is a stepping stone.
+ * The 5-tuple will eventually migrate to {@code SemanticAnnotation / AnnotatableTimeseries}
+ * Neo4j nodes and this side table will be dropped.
+ */
 @Entity
 @Table(name = "timeseries")
+@SecondaryTable(
+  name = "channel_metadata",
+  pkJoinColumns = @PrimaryKeyJoinColumn(name = "timeseries_id")
+)
 public class TimeseriesEntity {
 
   @Id
@@ -23,20 +54,24 @@ public class TimeseriesEntity {
   @Column(name = "container_id", nullable = false)
   private long containerId;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
+  // ── 5-tuple fields — stored in channel_metadata, not in timeseries ─────────
+
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
   private String measurement;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
   private String field;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
   private String device;
 
-  @Column(columnDefinition = "TEXT", nullable = false)
+  @Column(table = "channel_metadata", columnDefinition = "TEXT", nullable = false)
   private String location;
 
-  @Column(name = "symbolic_name", columnDefinition = "TEXT", nullable = false)
+  @Column(table = "channel_metadata", name = "symbolic_name", columnDefinition = "TEXT", nullable = false)
   private String symbolicName;
+
+  // ── Primary-table columns ────────────────────────────────────────────────────
 
   @Enumerated(EnumType.STRING)
   @Column(name = "value_type", columnDefinition = "TEXT", nullable = false)

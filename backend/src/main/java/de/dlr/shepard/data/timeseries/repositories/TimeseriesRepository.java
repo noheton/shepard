@@ -41,29 +41,83 @@ public class TimeseriesRepository implements PanacheRepositoryBase<TimeseriesEnt
     return Optional.of(timeseriesList.getFirst());
   }
 
+  /**
+   * Atomically upsert a channel row across both the {@code timeseries} and
+   * {@code channel_metadata} tables.
+   *
+   * <p>Two-step native SQL:
+   * <ol>
+   *   <li>INSERT INTO timeseries (container_id, value_type) — no 5-tuple constraint here;
+   *       always produces a new row with a DB-generated shepard_id.</li>
+   *   <li>INSERT INTO channel_metadata ON CONFLICT DO NOTHING — if another thread
+   *       created the same channel concurrently, rowCount == 0.</li>
+   *   <li>On conflict (rowCount == 0): DELETE the orphan timeseries row just inserted.</li>
+   * </ol>
+   *
+   * <p>The caller always calls {@link #findTimeseries} after this method to obtain the
+   * canonical managed entity (with shepard_id and channel_metadata fully populated).
+   *
+   * <p>Do NOT use {@code entityManager.persist(entity)} for channel creation —
+   * {@code channel_metadata.container_id} is not a JPA-managed column and persist()
+   * would leave it NULL, violating the NOT NULL constraint.
+   */
+  @SuppressWarnings("unchecked")
   public void upsert(long containerId, TimeseriesEntity entity) {
-    var rowCount = entityManager
-      .createQuery(
-        "insert into TimeseriesEntity (containerId, measurement, field, symbolicName, device, location, valueType)" +
-        " values (:containerId, :measurement, :field, :symbolicName, :device, :location, :valueType)" +
-        " on conflict(containerId, measurement, field, symbolicName, device, location) do nothing"
+    // Step 1: insert the primary row, get the auto-generated id back via RETURNING
+    List<Number> ids = entityManager
+      .createNativeQuery(
+        "INSERT INTO timeseries (container_id, value_type) VALUES (:c, :v) RETURNING id"
       )
-      .setParameter("containerId", entity.getContainerId())
-      .setParameter("measurement", entity.getMeasurement())
-      .setParameter("field", entity.getField())
-      .setParameter("symbolicName", entity.getSymbolicName())
-      .setParameter("device", entity.getDevice())
-      .setParameter("location", entity.getLocation())
-      .setParameter("valueType", entity.getValueType())
+      .setParameter("c", containerId)
+      .setParameter("v", entity.getValueType().name())
+      .getResultList();
+
+    if (ids.isEmpty()) {
+      Log.warn("upsert: INSERT INTO timeseries returned no id — unexpected");
+      return;
+    }
+    int tsId = ids.get(0).intValue();
+
+    // Step 2: insert channel_metadata; skip silently on 5-tuple conflict (race)
+    int cmRows = entityManager
+      .createNativeQuery(
+        "INSERT INTO channel_metadata" +
+        " (timeseries_id, container_id, measurement, field, device, location, symbolic_name)" +
+        " VALUES (:tsId, :c, :m, :f, :dev, :loc, :sym)" +
+        " ON CONFLICT (container_id, measurement, field, symbolic_name, device, location) DO NOTHING"
+      )
+      .setParameter("tsId", tsId)
+      .setParameter("c", containerId)
+      .setParameter("m", entity.getMeasurement())
+      .setParameter("f", entity.getField())
+      .setParameter("dev", entity.getDevice())
+      .setParameter("loc", entity.getLocation())
+      .setParameter("sym", entity.getSymbolicName())
       .executeUpdate();
 
-    if (rowCount == 0) Log.warn("Upsert did not insert a timeseries record.");
-    if (rowCount == 1) Log.info("Upsert has created a new timeseries record.");
-    if (rowCount > 1) throw new RuntimeException("Upsert has changed multiple rows.");
+    if (cmRows == 0) {
+      // Race: another thread created this channel first; clean up the orphan timeseries row.
+      entityManager
+        .createNativeQuery("DELETE FROM timeseries WHERE id = :id")
+        .setParameter("id", tsId)
+        .executeUpdate();
+      Log.debugf(
+        "upsert: channel_metadata UNIQUE conflict — cleaned up orphan timeseries id=%d " +
+        "(container=%d measurement=%s field=%s)",
+        tsId, containerId, entity.getMeasurement(), entity.getField()
+      );
+    } else {
+      Log.infof(
+        "upsert: created channel — container=%d measurement=%s field=%s symbolicName=%s",
+        containerId, entity.getMeasurement(), entity.getField(), entity.getSymbolicName()
+      );
+    }
   }
 
   @Timed(value = "shepard.timeseries.delete")
   public void deleteByContainerId(long containerId) {
+    // Bulk JPQL DELETE on primary table; ON DELETE CASCADE on channel_metadata.timeseries_id
+    // propagates the deletion to channel_metadata rows automatically at the DB level.
     var rowCount = entityManager
       .createQuery("delete from TimeseriesEntity where containerId = :containerId")
       .setParameter("containerId", containerId)
