@@ -15,6 +15,7 @@ import AdminLegacyV1Pane from "~/components/context/admin/AdminLegacyV1Pane.vue"
 import AdminSqlTimeseriesPane from "~/components/context/admin/AdminSqlTimeseriesPane.vue";
 import AdminFileMigrationPane from "~/components/context/admin/AdminFileMigrationPane.vue";
 import OntologyBundlesAdminPane from "~/components/context/admin/OntologyBundlesAdminPane.vue";
+import SemanticConfigPane from "~/components/context/admin/SemanticConfigPane.vue";
 import SparqlPlaygroundPane from "~/components/context/admin/SparqlPlaygroundPane.vue";
 import PlaceholderFragmentPane from "~/components/common/placeholder/PlaceholderFragmentPane.vue";
 import SectionIndexLanding from "~/components/layout/SectionIndexLanding.vue";
@@ -88,6 +89,14 @@ const landingCards = [
     title: "Ontology Bundles",
     description:
       "Enable, disable, upload, or remove Turtle ontology bundles seeded into the internal n10s store.",
+  },
+  // SEMA-V6-014
+  {
+    fragment: AdminFragments.SEMANTIC_CONFIG,
+    icon: "mdi-tag-multiple-outline",
+    title: "Semantic Config",
+    description:
+      "Runtime knobs for annotation behaviour: personalVocabulariesEnabled, annotationMode, AI suggestions, delete policy.",
   },
   {
     fragment: AdminFragments.SPARQL_PLAYGROUND,
@@ -226,6 +235,10 @@ const landingCards = [
     />
     <OntologyBundlesAdminPane
       v-if="routeFragment === AdminFragments.ONTOLOGY_BUNDLES"
+    />
+    <!-- SEMA-V6-014: semantic config pane -->
+    <SemanticConfigPane
+      v-if="routeFragment === AdminFragments.SEMANTIC_CONFIG"
     />
     <SparqlPlaygroundPane
       v-if="routeFragment === AdminFragments.SPARQL_PLAYGROUND"

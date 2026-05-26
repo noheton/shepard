@@ -25,6 +25,8 @@ export enum AdminFragments {
   AI_CONFIG = "ai-config",
   BACKUP = "backup",
   ONTOLOGY_ALIGNMENT = "ontology-alignment",
+  // SEMA-V6-014
+  SEMANTIC_CONFIG = "semantic-config",
 }
 
 export const AdminMenuEntries: MenuEntry[] = [
@@ -143,5 +145,11 @@ export const AdminMenuEntries: MenuEntry[] = [
     name: "Ontology Alignment",
     fragment: AdminFragments.ONTOLOGY_ALIGNMENT,
     icon: "mdi-graph-outline",
+  },
+  // SEMA-V6-014
+  {
+    name: "Semantic Config",
+    fragment: AdminFragments.SEMANTIC_CONFIG,
+    icon: "mdi-tag-multiple-outline",
   },
 ];

@@ -69,6 +69,53 @@ public class VocabularyDAO extends GenericDAO<Vocabulary> {
     return out;
   }
 
+  // ─── SEMA-V6-014 additions ───────────────────────────────────────────────
+
+  /**
+   * SEMA-V6-014 — find a vocabulary by its canonical {@code uri}, or
+   * {@code null} when none exists.
+   *
+   * <p>Used as a pre-check before saving a new personal vocabulary so that
+   * a duplicate can return a proper 409 instead of letting the V72 unique
+   * constraint propagate as a 500.
+   *
+   * @param uri the vocabulary's canonical IRI (e.g.
+   *            {@code "urn:shepard:personal:<userAppId>:<name>"})
+   * @return the matching entity, or {@code null}
+   */
+  public Vocabulary findByUri(String uri) {
+    if (uri == null || uri.isBlank()) return null;
+    Filter f = new Filter("uri", ComparisonOperator.EQUALS, uri);
+    Collection<Vocabulary> hits = session.loadAll(Vocabulary.class, f, DEPTH_ENTITY);
+    if (hits == null || hits.isEmpty()) return null;
+    return hits.iterator().next();
+  }
+
+  /**
+   * SEMA-V6-014 — list all personal vocabularies owned by a given user.
+   *
+   * <p>Returns only nodes whose {@code type = "PERSONAL"} AND
+   * {@code ownedByUserAppId = userAppId}. The cross-user isolation
+   * guarantee: two different users can each have a vocabulary with the
+   * same name; this method scopes the result to the caller's appId.
+   *
+   * @param userAppId the caller's UUID v7 application-level identifier
+   * @return personal vocabularies for the owner, ordered by {@code label} ASC;
+   *         empty list when none exist
+   */
+  public List<Vocabulary> listPersonalByOwner(String userAppId) {
+    if (userAppId == null || userAppId.isBlank()) return java.util.Collections.emptyList();
+    Filter f = new Filter("ownedByUserAppId", ComparisonOperator.EQUALS, userAppId);
+    Collection<Vocabulary> hits = session.loadAll(Vocabulary.class, f, DEPTH_ENTITY);
+    List<Vocabulary> out = new ArrayList<>(hits == null ? List.of() : hits);
+    out.sort((a, b) -> {
+      String al = a == null ? "" : (a.getLabel() == null ? "" : a.getLabel());
+      String bl = b == null ? "" : (b.getLabel() == null ? "" : b.getLabel());
+      return al.compareToIgnoreCase(bl);
+    });
+    return out;
+  }
+
   @Override
   public Class<Vocabulary> getEntityType() {
     return Vocabulary.class;
