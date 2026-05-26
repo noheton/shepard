@@ -51,18 +51,16 @@ fits the `shepard_spatial.profile` hypertable (PostGIS GEOMETRY columns per aido
 ### §2 — What the FSD time-series means
 
 `FSDSet.csv` carries the AFP robot's **process parameter time series** for each track.
-The acronym "FSD" does not appear in any published AFP quality literature found during
-this investigation. The closest candidates, in descending plausibility:
 
-| Candidate expansion | Evidence | Notes |
-|---------------------|----------|-------|
-| **Fiber Stress Deviation** | Consistent with QA naming convention for deviation-from-nominal | Stress here = mechanical load on tow during laydown, not material stress |
-| **Force / Speed / Distance** (3-channel triad) | AFP robots log compaction force, head speed, and standoff distance as the primary process control variables | Would explain a multi-column CSV named "set" |
-| **Fiber Steering Data** | Used when tow paths follow curved trajectories (steering-intensive plies) | Less likely — MFFD panels are mostly straight-fibre |
+**Confirmed identity (ZLP primary source, 2026-05-26):** FSD = **Fast Send Driver** —
+a KUKA robot extension that streams high-rate process data. The "Set" suffix denotes
+the data payload (i.e., the driver's data-set output). This is ZLP-internal KUKA
+terminology; it does not appear in general AFP quality literature because it is
+specific to the KUKA robot variant used at ZLP Augsburg.
 
-**Working hypothesis:** FSD = the per-track time series of the robot's primary process
-control variables — at minimum: compaction force (N), head speed (mm/s), and possibly
-tow tension, consolidation temperature, and TCP standoff distance. These are the
+**What the FSD records:** The KUKA Fast Send Driver exports the robot's internal
+process variables at high frequency — at minimum compaction force (N), head speed
+(mm/s), TCP position, and tow tension/consolidation signals. These are the
 variables the AFP controller monitors continuously during each track pass.
 
 **Key property for Case A:** The FSD signal at track start, midpoint, and end encodes
@@ -435,12 +433,11 @@ MFFD domain.
 
 ## What surprised me
 
-1. **The FSD acronym genuinely does not exist in AFP literature.** After searching across
-   DLR elib, arXiv, Web of Science, and major AFP equipment vendor documentation, no
-   standard "FSD" metric appears. This is either a ZLP-internal naming convention or an
-   acronym from the legacy Shepard export schema. The fact that it's the `main process TS`
-   (per aidocs/108 §3.1 table) makes it critical — and entirely undocumented outside the
-   ZLP.
+1. **FSD = Fast Send Driver (KUKA robot extension, ZLP-confirmed 2026-05-26).** The acronym
+   does not appear in general AFP literature because it is a KUKA-specific term for the
+   high-rate process-data streaming interface. The "Set" suffix is the KUKA convention for
+   the driver's data-set output. The initial investigation correctly identified this as the
+   main process TS but could not confirm the expansion without ZLP primary-source input.
 
 2. **mffd_alizier has a Gantt chart** — a temporal view not present in the current Shepard
    UI at all. The AFP process is fundamentally temporal-spatial: Track 1 → Track 2 → ...

@@ -89,7 +89,7 @@ All five per-track sidecar files are co-registered outputs of a **single TPS sys
 | File | Shepard shape | Content |
 |------|--------------|---------|
 | `CameraConfig.csv` (INI format) | DataObject attribute or StructuredDataReference | Sensor calibration, robot variables, track parameters — small (~4 KB), per-track |
-| `FSDSet.csv` | TimeseriesReference | Fiber stress data — main process time-series; 16 columns, one row per scan line |
+| `FSDSet.csv` | TimeseriesReference | **Fast Send Driver** (KUKA robot extension) data — main process time-series; 16 columns, one row per scan line |
 | `PointCloud.csv` | `shepard-plugin-spatial` SpatialContainer | 3D surface scan positions and RGB classification — 6 columns, no header, one row per scan line |
 | `ProfileSet.csv` (brush data) | StructuredDataReference | Scanner trigger and AOI acquisition metadata — 13 columns, one row per scan line |
 | `ProfileSet.tif` | FileReference (FileContainer) | Profile inspection image — 2048 px wide, height = scan line count; TIF row N = scan line N |
