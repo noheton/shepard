@@ -8,6 +8,7 @@ import de.dlr.shepard.auth.security.AuthenticationContext;
 import de.dlr.shepard.auth.security.JWTPrincipal;
 import de.dlr.shepard.auth.users.entities.User;
 import de.dlr.shepard.auth.users.services.UserService;
+import de.dlr.shepard.common.exceptions.InvalidAuthException;
 import de.dlr.shepard.common.exceptions.InvalidPathException;
 import de.dlr.shepard.context.collection.entities.Collection;
 import de.dlr.shepard.context.collection.entities.DataObject;
@@ -115,5 +116,37 @@ public class LabJournalTest {
     labJournalEntryService.deleteLabJournalEntry(toBeDeleted.getId());
     List<LabJournalEntry> actual = labJournalEntryService.getLabJournalEntries(dataObject);
     assertFalse(actual.contains(toBeDeleted));
+  }
+
+  // J1g — tests for the new service methods extracted from REST layer
+
+  @Test
+  public void getLabJournalEntriesByDataObjectId_returnsEntries() {
+    labJournalEntryService.createLabJournalEntry(dataObject.getId(), "entry A");
+    labJournalEntryService.createLabJournalEntry(dataObject.getId(), "entry B");
+    List<LabJournalEntry> result = labJournalEntryService.getLabJournalEntriesByDataObjectId(dataObject.getId());
+    assertEquals(2, result.size());
+  }
+
+  @Test
+  public void assertIsCreator_success_forEntryCreatedByCurrentUser() {
+    LabJournalEntry entry = labJournalEntryService.createLabJournalEntry(dataObject.getId(), "my entry");
+    // Should not throw — current user IS the creator
+    labJournalEntryService.assertIsCreator(entry);
+  }
+
+  @Test
+  public void assertIsCreator_throwsForbidden_whenDifferentUser() {
+    // Create the entry as userName
+    LabJournalEntry entry = labJournalEntryService.createLabJournalEntry(dataObject.getId(), "owner entry");
+
+    // Switch to a different authenticated user
+    String otherUser = "other_user";
+    userService.createOrUpdateUser(new User(otherUser));
+    authenticationContext.setPrincipal(new JWTPrincipal(otherUser, "key"));
+
+    assertThrowsExactly(InvalidAuthException.class, () ->
+      labJournalEntryService.assertIsCreator(entry)
+    );
   }
 }

@@ -7,8 +7,6 @@ import de.dlr.shepard.common.exceptions.InvalidBodyException;
 import de.dlr.shepard.common.exceptions.InvalidHtmlResponse;
 import de.dlr.shepard.common.util.Constants;
 import de.dlr.shepard.common.util.HtmlSanitizer;
-import de.dlr.shepard.context.collection.entities.DataObject;
-import de.dlr.shepard.context.collection.services.DataObjectService;
 import de.dlr.shepard.context.labJournal.entities.LabJournalEntry;
 import de.dlr.shepard.context.labJournal.io.LabJournalEntryIO;
 import de.dlr.shepard.context.labJournal.services.LabJournalEntryService;
@@ -30,11 +28,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.SecurityContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
@@ -48,8 +44,6 @@ import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-//TODO: Much of the functionality of the endpoint functions can be refactored into the LabJournal Service layer
-
 @Consumes(MediaType.APPLICATION_JSON)
 @Path(Constants.SHEPARD_API + "/" + Constants.LAB_JOURNAL_ENTRIES)
 @Produces(MediaType.APPLICATION_JSON)
@@ -58,12 +52,6 @@ public class LabJournalEntryRest {
 
   @Inject
   LabJournalEntryService labJournalEntryService;
-
-  @Inject
-  DataObjectService dataObjectService;
-
-  @Context
-  private SecurityContext securityContext;
 
   @Inject
   Validator validator;
@@ -88,9 +76,8 @@ public class LabJournalEntryRest {
   public Response getLabJournalsByCollection(
     @QueryParam(Constants.DATA_OBJECT_ID) @NotNull @PositiveOrZero Long dataObjectId
   ) {
-    DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
     ArrayList<LabJournalEntryIO> result = new ArrayList<LabJournalEntryIO>();
-    for (var labJournalEntry : labJournalEntryService.getLabJournalEntries(dataObject)) {
+    for (var labJournalEntry : labJournalEntryService.getLabJournalEntriesByDataObjectId(dataObjectId)) {
       result.add(new LabJournalEntryIO(labJournalEntry));
     }
     return Response.ok(result).build();
@@ -185,11 +172,10 @@ public class LabJournalEntryRest {
       )
     ) @Valid LabJournalEntryIO labJournalEntryIO
   ) {
+    // Fetch + read-permission check (throws 404 if not found)
     LabJournalEntry labJournalEntry = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
-    String userName = securityContext.getUserPrincipal().getName();
-    if (!labJournalEntry.getCreatedBy().getUsername().equals(userName)) return Response.status(
-      Status.FORBIDDEN
-    ).build();
+    // Creator-only write policy enforced in service layer (throws 403)
+    labJournalEntryService.assertIsCreator(labJournalEntry);
 
     if (!HtmlSanitizer.isSafeHtml(labJournalEntryIO.getJournalContent())) {
       String sanitizedHtml = HtmlSanitizer.cleanHtmlString(labJournalEntryIO.getJournalContent());
@@ -257,9 +243,10 @@ public class LabJournalEntryRest {
       throw new InvalidBodyException("PATCH body must be a JSON object (RFC 7396 JSON Merge Patch)");
     }
 
+    // Fetch + read-permission check (throws 404 if not found)
     LabJournalEntry existing = labJournalEntryService.getLabJournalEntry(labJournalEntryId);
-    String userName = securityContext.getUserPrincipal().getName();
-    if (!existing.getCreatedBy().getUsername().equals(userName)) return Response.status(Status.FORBIDDEN).build();
+    // Creator-only write policy enforced in service layer (throws 403)
+    labJournalEntryService.assertIsCreator(existing);
 
     LabJournalEntryIO merged = new LabJournalEntryIO(existing);
     try {

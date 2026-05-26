@@ -55,6 +55,22 @@ public class LabJournalEntryService {
     return labJournalEntry;
   }
 
+  /**
+   * Returns all non-deleted lab journal entries for the given {@code dataObjectId},
+   * sorted newest-first.
+   *
+   * <p>This is the preferred call site — callers do not need to resolve the
+   * {@link DataObject} themselves, and the REST resource no longer needs to
+   * inject {@link DataObjectService} just for list queries.
+   *
+   * @param dataObjectId the Neo4j / OGM id of the owning DataObject
+   * @return ordered list; empty when the DataObject has no entries
+   */
+  public List<LabJournalEntry> getLabJournalEntriesByDataObjectId(Long dataObjectId) {
+    DataObject dataObject = dataObjectService.getDataObject(dataObjectId);
+    return getLabJournalEntries(dataObject);
+  }
+
   public List<LabJournalEntry> getLabJournalEntries(DataObject dataObject) {
     if (null == dataObject) return new ArrayList<LabJournalEntry>();
     collectionService.assertIsAllowedToReadCollection(dataObject.getCollection().getId());
@@ -73,6 +89,28 @@ public class LabJournalEntryService {
     collectionService.assertIsAllowedToReadCollection(getCollectionId(labJournalEntryId));
 
     return labJournalEntryDAO.findByNeo4jId(labJournalEntryId);
+  }
+
+  /**
+   * Asserts that the currently authenticated user is the creator of the given
+   * lab journal entry.
+   *
+   * <p>This check enforces the creator-only write policy: only the user who
+   * created an entry is allowed to modify or delete it. It is called by
+   * {@link #updateLabJournalEntry} and from the PATCH path in the REST resource
+   * (after a successful merge) so that both update shapes share the same rule.
+   *
+   * @param labJournalEntry the fully-hydrated entry to check
+   * @throws InvalidAuthException (→ HTTP 403) when the current user is not the creator
+   */
+  public void assertIsCreator(LabJournalEntry labJournalEntry) {
+    String currentUsername = userService.getCurrentUser().getUsername();
+    if (labJournalEntry.getCreatedBy() == null ||
+        !labJournalEntry.getCreatedBy().getUsername().equals(currentUsername)) {
+      throw new InvalidAuthException(
+        "Only the creator of a lab journal entry may modify or delete it"
+      );
+    }
   }
 
   public LabJournalEntry updateLabJournalEntry(long labJournalEntryId, String content) {
